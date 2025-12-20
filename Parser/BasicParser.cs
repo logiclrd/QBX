@@ -2,8 +2,6 @@
 using QBX.CodeModel.Expressions;
 using QBX.CodeModel.Statements;
 using QBX.LexicalAnalysis;
-using System.Buffers.Binary;
-using System.Reflection.Metadata;
 
 namespace QBX.Parser;
 
@@ -95,13 +93,40 @@ public class BasicParser
 			}
 			else if ((token.Type == TokenType.Whitespace) && !line.Statements.Any())
 				line.Indentation += token.Value;
+			else if ((token.Type == TokenType.Number) && !line.Statements.Any())
+			{
+				if (line.LineNumber.HasValue)
+					throw new SyntaxErrorException(token, "Expected: statement");
+
+				line.Indentation = "";
+				line.LineNumber = token.NumericValue;
+			}
 			else
 			{
 				if (token.Type == TokenType.Colon)
 				{
-					line.Statements.Add(ParseStatement(buffer, colonAfter: true));
-					haveContent = true;
-					buffer.Clear();
+					if (!line.Statements.Any()
+					 && (buffer.Count == 1)
+					 && (buffer[0].Type == TokenType.Identifier)
+					 && (buffer[0].Value is string labelName)
+					 && (labelName.Length > 0)
+					 && !char.IsSymbol(labelName.Last()))
+					{
+						line.Label =
+							new Label()
+							{
+								Indentation = line.Indentation,
+								Name = labelName,
+							};
+
+						line.Indentation = "";
+					}
+					else
+					{
+						line.Statements.Add(ParseStatement(buffer, colonAfter: true));
+						haveContent = true;
+						buffer.Clear();
+					}
 				}
 				else
 					buffer.Add(token);
@@ -117,6 +142,9 @@ public class BasicParser
 
 	Statement ParseStatement(ListRange<Token> tokens, bool colonAfter)
 	{
+		if (!tokens.Where(token => token.Type != TokenType.Whitespace).Any())
+			return new EmptyStatement();
+
 		var tokenHandler = new TokenHandler(tokens);
 
 		var token = tokenHandler.NextToken;
@@ -379,18 +407,181 @@ public class BasicParser
 
 				return dim;
 			}
+			case TokenType.DO:
+			case TokenType.LOOP:
+			{
+				var statement =
+					tokenHandler.NextToken.Type switch
+					{
+						TokenType.DO => new DoStatement(),
+						TokenType.LOOP => new LoopStatement(),
+
+						_ => throw new Exception("Internal error")
+					};
+
+				if (tokenHandler.HasMoreTokens)
+				{
+					var conditionTypeToken = tokenHandler.ExpectOneOf(TokenType.WHILE, TokenType.UNTIL);
+
+					switch (conditionTypeToken.Type)
+					{
+						case TokenType.WHILE: statement.ConditionType = DoConditionType.While; break;
+						case TokenType.UNTIL: statement.ConditionType = DoConditionType.Until; break;
+					}
+
+					statement.Expression = ParseExpression(tokenHandler.RemainingTokens);
+				}
+
+				return statement;
+			}
+
+			case TokenType.ELSE:
+			{
+				tokenHandler.ExpectEndOfStatement();
+
+				return new ElseStatement();
+			}
+
+			case TokenType.END:
+			{
+				// One of:
+				//   END DEF
+				//   END FUNCTION
+				//   END IF
+				//   END SELECT
+				//   END SUB
+				//   END TYPE
+				//   END [expression]
+
+				if (!tokenHandler.HasMoreTokens)
+					return new EndStatement();
+
+				Statement endBlock;
+
+				switch (tokenHandler.NextToken.Type)
+				{
+					case TokenType.DEF: endBlock = new EndDefStatement(); break;
+					case TokenType.IF: endBlock = new EndIfStatement(); break;
+					case TokenType.SELECT: endBlock = new EndSelectStatement(); break;
+					case TokenType.TYPE: endBlock = new EndTypeStatement(); break;
+
+					case TokenType.SUB: endBlock = new EndScopeStatement() { ScopeType = ScopeType.Sub }; break;
+					case TokenType.FUNCTION: endBlock = new EndScopeStatement() { ScopeType = ScopeType.Function }; break;
+
+					default: 
+					{
+						// Skip the common tail for this case.
+						return
+							new EndStatement()
+							{
+								Expression = ParseExpression(tokenHandler.RemainingTokens)
+							};
+					}
+				}
+
+				tokenHandler.Advance();
+				tokenHandler.ExpectEndOfStatement();
+
+				return endBlock;
+			}
+
+			case TokenType.FOR:
+			{
+				var forStatement = new ForStatement();
+
+				forStatement.CounterVariable = tokenHandler.ExpectIdentifier(allowTypeCharacter: true);
+
+				var clauses = SplitDelimitedList(tokenHandler.RemainingTokens, TokenType.STEP).ToList();
+
+				var rangeExpressions = SplitDelimitedList(clauses[0], TokenType.TO).ToList();
+
+				if (rangeExpressions.Count < 2)
+					throw new SyntaxErrorException(rangeExpressions[0].Last(), "Expected: TO");
+
+				if (rangeExpressions.Count > 2)
+				{
+					var range = rangeExpressions[2].Unwrap();
+
+					throw new SyntaxErrorException(tokens[range.Offset - 1], "Expected: STEP or end of statement");
+				}
+
+				forStatement.StartExpression = ParseExpression(rangeExpressions[0]);
+				forStatement.EndExpression = ParseExpression(rangeExpressions[1]);
+
+				if (clauses.Count > 2)
+					throw new SyntaxErrorException(clauses[2].First(), "Expected: end of statement");
+
+				if (clauses.Count == 2)
+					forStatement.StepExpression = ParseExpression(clauses[1]);
+
+				return forStatement;
+			}
+
+			case TokenType.GOTO:
+			case TokenType.GOSUB:
+			{
+				var statement =
+					tokenHandler.NextToken.Type switch
+					{
+						TokenType.GOTO => new GoToStatement(),
+						TokenType.GOSUB => new GoSubStatement(),
+
+						_ => throw new Exception("Internal error")
+					};
+
+				tokenHandler.Advance();
+				tokenHandler.ExpectMoreTokens();
+
+				switch (tokenHandler.NextToken.Type)
+				{
+					case TokenType.Number:
+						statement.TargetLineNumber = tokenHandler.NextToken.NumericValue;
+						break;
+
+					case TokenType.Identifier:
+						string labelName = tokenHandler.NextToken.Value ?? throw new Exception("Internal error: Identifier token with no value");
+
+						if (labelName.Length == 0)
+							throw new Exception("Internal error: Identifier token with empty string");
+
+						if (char.IsSymbol(labelName.Last()))
+							throw new SyntaxErrorException(tokenHandler.NextToken, "Expected: label");
+
+						statement.TargetLabel = labelName;
+
+						break;
+				}
+
+				tokenHandler.Advance();
+				tokenHandler.ExpectEndOfStatement();
+
+				return statement;
+			}
+
+			case TokenType.IF:
+			case TokenType.ELSEIF:
+			{
+				var statement =
+					tokenHandler.NextToken.Type switch
+					{
+						TokenType.IF => new IfStatement(),
+						TokenType.ELSEIF => new ElseIfStatement(),
+
+						_ => throw new Exception("Internal error")
+					};
+
+				if (tokens.Last().Type != TokenType.THEN)
+					throw new SyntaxErrorException(tokens.Last(), "Expected: THEN");
+
+				statement.ConditionExpression = ParseExpression(tokens.Slice(1, tokens.Count - 2));
+
+				return statement;
+			}
 		}
 
 
 	/*
-	case TokenType.DO,
-	case TokenType.ELSE,
-	case TokenType.END,
-	case TokenType.FOR,
 	case TokenType.FUNCTION,
-	case TokenType.GOSUB,
-	case TokenType.GOTO,
-	case TokenType.IF,
 	case TokenType.INPUT,
 	case TokenType.LOCATE,
 	case TokenType.LOOP,

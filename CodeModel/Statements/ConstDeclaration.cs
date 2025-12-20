@@ -7,7 +7,7 @@ public class ConstDeclaration : IRenderableCode
 	public string Identifier { get; set; }
 	public Expression Value { get; set; }
 
-	public ConstDeclaration(string identifier, Expression value`)
+	public ConstDeclaration(string identifier, Expression value)
 	{
 		Identifier = identifier;
 		Value = value;

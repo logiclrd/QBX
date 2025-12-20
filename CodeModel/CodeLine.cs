@@ -4,6 +4,8 @@ namespace QBX.CodeModel;
 
 public class CodeLine : IRenderableCode
 {
+	public decimal? LineNumber { get; set; }
+	public Label? Label { get; set; }
 	public string Indentation { get; set; } = "";
 	public List<Statement> Statements { get; } = new List<Statement>();
 
@@ -13,6 +15,20 @@ public class CodeLine : IRenderableCode
 
 	public void Render(TextWriter writer)
 	{
+		if ((LineNumber != null) && (Label != null))
+			throw new Exception("Internal error: A line cannot have both a line number and a label");
+
+		if (LineNumber != null)
+			writer.Write(LineNumber);
+
+		if (Label != null)
+		{
+			Label.Render(writer);
+
+			if ((Indentation == "") && Statements.Any())
+				writer.Write(' ');
+		}
+
 		writer.Write(Indentation);
 
 		for (int i = 0; i < Statements.Count; i++)

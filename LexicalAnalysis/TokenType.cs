@@ -36,6 +36,7 @@ public enum TokenType
 	[KeywordToken] DO,
 	[KeywordToken] DOUBLE,
 	[KeywordToken] ELSE,
+	[KeywordToken] ELSEIF,
 	[KeywordToken] END,
 	[KeywordToken] EQV,
 	[KeywordToken] EXP,
