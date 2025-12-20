@@ -47,6 +47,8 @@ public class ListRange<T> : IEnumerable<T>, IList<T>
 
 	public ListRange<T> Slice(int offset, int count) => new ListRange<T>(this, offset, count);
 
+	public (IList<T> List, int Offset, int Count) Unwrap() => (_list, _offset, _count);
+
 	public IEnumerator<T> GetEnumerator()
 	{
 		return _list.Skip(_offset).Take(_count).GetEnumerator();

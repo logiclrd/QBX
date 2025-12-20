@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using QBX.CodeModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace QBX.LexicalAnalysis;
@@ -11,6 +12,8 @@ public class Token(int line, int column, TokenType type, string value, decimal? 
 
 	public int Line => line;
 	public int Column => column;
+
+	public bool IsDataType => DataTypeConverter.TryFromToken(this, out var _);
 
 	Token Emplace(int newLine, int newColumn) => new Token(newLine, newColumn, type, value, numericValue);
 

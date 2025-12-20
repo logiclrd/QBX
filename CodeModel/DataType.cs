@@ -1,11 +1,13 @@
-﻿namespace QBX.CodeModel;
+﻿using QBX.LexicalAnalysis;
+
+namespace QBX.CodeModel;
 
 public enum DataType
 {
-	[DataTypeCharacter('%')] INTEGER,
-	[DataTypeCharacter('&')] LONG,
-	[DataTypeCharacter('!')] SINGLE,
-	[DataTypeCharacter('#')] DOUBLE,
-	[DataTypeCharacter('$')] STRING,
-	[DataTypeCharacter('@')] CURRENCY,
+	[DataTypeCharacter('%')] [DataTypeToken(TokenType.INTEGER)]  INTEGER,
+	[DataTypeCharacter('&')] [DataTypeToken(TokenType.LONG)]     LONG,
+	[DataTypeCharacter('!')] [DataTypeToken(TokenType.SINGLE)]   SINGLE,
+	[DataTypeCharacter('#')] [DataTypeToken(TokenType.DOUBLE)]   DOUBLE,
+	[DataTypeCharacter('$')] [DataTypeToken(TokenType.STRING)]   STRING,
+	[DataTypeCharacter('@')] [DataTypeToken(TokenType.CURRENCY)] CURRENCY,
 }

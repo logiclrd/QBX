@@ -2,11 +2,14 @@
 
 public enum TokenType
 {
+	Empty,
+
 	[KeywordToken] ABS,
 	[KeywordToken] AND,
 	[KeywordToken] ANY,
 	[KeywordToken] AS,
 	[KeywordToken] ATN,
+	[KeywordToken] BYVAL,
 	[KeywordToken] CALL,
 	[KeywordToken] CASE,
 	[KeywordToken] CCUR,
@@ -88,6 +91,7 @@ public enum TokenType
 	[KeywordToken] STEP,
 	[KeywordToken] STOP,
 	[KeywordToken("STR$")] STR,
+	[KeywordToken] STRING,
 	[KeywordToken] SUB,
 	[KeywordToken] TAN,
 	[KeywordToken] THEN,

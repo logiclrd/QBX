@@ -2,6 +2,8 @@
 
 public class ConstStatement : Statement
 {
+	public override StatementType Type => StatementType.Const;
+
 	public List<ConstDeclaration> Declarations { get; set; }
 
 	public ConstStatement(List<ConstDeclaration> declarations)

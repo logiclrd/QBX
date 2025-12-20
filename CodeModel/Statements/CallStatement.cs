@@ -4,9 +4,11 @@ namespace QBX.CodeModel.Statements;
 
 internal class CallStatement : Statement
 {
+	public override StatementType Type => StatementType.Call;
+
 	public CallStatementType CallStatementType { get; set; }
 	public string TargetName { get; set; }
-	private ExpressionList? Arguments { get; set; }
+	public ExpressionList? Arguments { get; set; }
 
 	public CallStatement(CallStatementType type, string targetName, ExpressionList? arguments)
 	{

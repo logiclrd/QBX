@@ -1,4 +1,6 @@
-﻿namespace QBX.CodeModel;
+﻿using QBX.CodeModel.Statements;
+
+namespace QBX.CodeModel;
 
 public class CodeLine : IRenderableCode
 {

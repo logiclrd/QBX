@@ -3,6 +3,7 @@ using QBX.CodeModel.Expressions;
 using QBX.CodeModel.Statements;
 using QBX.LexicalAnalysis;
 using System.Buffers.Binary;
+using System.Reflection.Metadata;
 
 namespace QBX.Parser;
 
@@ -51,7 +52,7 @@ public class BasicParser
 
 						continue;
 					}
-					else if ((lastStatement.Type == StatementType.EndSub) || (lastStatement.Type == StatementType.EndFunction))
+					else if (lastStatement.Type == StatementType.EndScope)
 					{
 						element.AddLine(line);
 						element = mainElement;
@@ -114,74 +115,21 @@ public class BasicParser
 			yield return line;
 	}
 
-	Statement ParseStatement(IList<Token> tokens, bool colonAfter)
+	Statement ParseStatement(ListRange<Token> tokens, bool colonAfter)
 	{
-		int tokenIndex = 1;
+		var tokenHandler = new TokenHandler(tokens);
 
-		bool NextTokenIs(TokenType type) => (tokenIndex < tokens.Count) && (tokens[tokenIndex].Type == type);
+		var token = tokenHandler.NextToken;
 
-		string ExpectIdentifier(bool allowTypeCharacter)
-		{
-			var token = tokens[tokenIndex];
+		tokenHandler.Advance();
 
-			if (token.Type != TokenType.Identifier)
-				throw new SyntaxErrorException(token, "Expected identifier");
-
-			string identifier = token.Value ?? "";
-
-			if (identifier.Length == 0)
-				throw new Exception("Internal error: Identifier token with no value");
-
-			if (!allowTypeCharacter && char.IsSymbol(identifier.Last()))
-				throw new SyntaxErrorException(token, "Cannot use a type character in this context");
-
-			return identifier;
-		}
-
-		void ExpectEndOfStatement()
-		{
-			if (tokenIndex < tokens.Count)
-				throw new SyntaxErrorException(tokens[tokenIndex], "Expected end of statement");
-		}
-
-		ListRange<Token> ExpectParenthesizedTokens()
-		{
-			if (!NextTokenIs(TokenType.OpenParenthesis))
-				throw new SyntaxErrorException(tokens[tokenIndex], "Expected: (");
-
-			int level = 1;
-
-			tokenIndex++;
-
-			int rangeStart = tokenIndex;
-
-			while ((tokenIndex < tokens.Count) && (level > 0))
-			{
-				switch (tokens[tokenIndex].Type)
-				{
-					case TokenType.OpenParenthesis: level++; break;
-					case TokenType.CloseParenthesis: level--; break;
-				}
-
-				tokenIndex++;
-			}
-
-			if (level > 0)
-				throw new SyntaxErrorException(tokens.Last(), "Expected: )");
-
-			int rangeEnd = tokenIndex - 1;
-
-			return tokens.Slice(rangeStart, rangeEnd - rangeStart);
-		}
-
-		switch (tokens[0].Type)
+		switch (token.Type)
 		{
 			case TokenType.Comment:
 			{
-				if (tokens.Count > 1)
-					throw new Exception("Internal error: Additional tokens between Comment and Newline");
+				tokenHandler.ExpectEndOfStatement("Internal error: Additional tokens between Comment and Newline");
 
-				string commentText = tokens[0].Value ?? "";
+				string commentText = tokenHandler.NextToken.Value ?? "";
 
 				var commentType = CommentStatementType.Apostrophe;
 
@@ -198,34 +146,34 @@ public class BasicParser
 
 			case TokenType.CALL:
 			{
-				string targetName = ExpectIdentifier(allowTypeCharacter: false);
+				string targetName = tokenHandler.ExpectIdentifier(allowTypeCharacter: false);
 
 				ExpressionList? arguments = null;
 
-				if (NextTokenIs(TokenType.OpenParenthesis))
+				if (tokenHandler.NextTokenIs(TokenType.OpenParenthesis))
 				{
-					var argumentTokens = ExpectParenthesizedTokens();
+					var argumentTokens = tokenHandler.ExpectParenthesizedTokens();
 
 					arguments = ParseExpressionList(argumentTokens);
 				}
 
-				ExpectEndOfStatement();
+				tokenHandler.ExpectEndOfStatement();
 
 				return new CallStatement(CallStatementType.Explicit, targetName, arguments);
 			}
 
 			case TokenType.CASE:
 			{
-				var expressions = ParseExpressionList(tokens.Slice(1));
+				var expressions = ParseExpressionList(tokenHandler.RemainingTokens);
 
 				return new CaseStatement(expressions);
 			}
 
 			case TokenType.CLS:
 			{
-				if (tokens.Count > 1)
+				if (tokenHandler.HasMoreTokens)
 				{
-					var mode = ParseExpression(tokens.Slice(1));
+					var mode = ParseExpression(tokenHandler.RemainingTokens);
 
 					return new ClsStatement(mode);
 				}
@@ -235,14 +183,14 @@ public class BasicParser
 
 			case TokenType.COLOR:
 			{
-				if (tokens.Count == 1)
+				if (!tokenHandler.HasMoreTokens)
 					return new ColorStatement(); // this is a runtime error but should parse
 				else
 				{
-					var arguments = ParseExpressionList(tokens.Slice(1));
+					var arguments = ParseExpressionList(tokenHandler.RemainingTokens);
 
 					if (arguments.Expressions.Count > 3)
-						throw new SyntaxErrorException(tokens[0], "Expected no more than 3 arguments");
+						throw new SyntaxErrorException(tokenHandler.NextToken, "Expected no more than 3 arguments");
 
 					return new ColorStatement(arguments);
 				}
@@ -250,7 +198,7 @@ public class BasicParser
 
 			case TokenType.CONST:
 			{
-				var declarationSyntax = ParseExpressionList(tokens.Slice(1));
+				var declarationSyntax = ParseExpressionList(tokenHandler.RemainingTokens);
 
 				var declarations = new List<ConstDeclaration>();
 
@@ -261,7 +209,7 @@ public class BasicParser
 					if ((syntax is not BinaryExpression binarySyntax)
 					 || (binarySyntax.Operator != Operator.Equals)
 					 || (binarySyntax.Left is not IdentifierExpression identifierSyntax))
-						throw new SyntaxErrorException(binarySyntax.OperatorToken, "Expected: name = value");
+						throw new SyntaxErrorException(syntax.Token ?? tokenHandler.NextToken, "Expected: name = value");
 
 					declarations.Add(new ConstDeclaration(identifierSyntax.Identifier, binarySyntax.Right));
 				}
@@ -269,17 +217,172 @@ public class BasicParser
 				return new ConstStatement(declarations);
 			}
 
+			case TokenType.DATA:
+			{
+				var dataItems = new List<Token>();
+
+				for (int i = 1; i < tokens.Count; i++)
+				{
+					if ((tokens[i].Type == TokenType.Number) || (tokens[i].Type == TokenType.String))
+					{
+						dataItems.Add(tokens[i]);
+
+						if ((i + 1 < tokens.Count) && (tokens[i + 1].Type == TokenType.Comma))
+							i++;
+					}
+					else if (tokens[i].Type == TokenType.Comma)
+						dataItems.Add(new Token(tokens[i].Line, tokens[i].Column, TokenType.Empty, ""));
+					else
+						throw new SyntaxErrorException(tokens[i], "Expected: string or numeric literal");
+				}
+
+				return new DataStatement(dataItems);
+			}
+
+			case TokenType.DECLARE:
+			{
+				var declarationType = tokenHandler.ExpectOneOf(TokenType.SUB, TokenType.FUNCTION);
+
+				var name = tokenHandler.ExpectIdentifier(allowTypeCharacter: true);
+
+				ParameterList? parameters = null;
+
+				if (tokenHandler.HasMoreTokens)
+				{
+					var parameterTokens = tokenHandler.ExpectParenthesizedTokens();
+
+					parameters = ParseParameterList(parameterTokens);
+				}
+
+				tokenHandler.ExpectEndOfStatement();
+
+				return new DeclareStatement(declarationType, name, parameters);
+			}
+
+			case TokenType.DEF:
+			{
+				tokenHandler.ExpectMoreTokens();
+
+				if (tokenHandler.NextToken.Type == TokenType.SEG)
+				{
+					tokenHandler.Advance();
+
+					var defSeg = new DefSegStatement();
+
+					if (tokenHandler.HasMoreTokens && (tokenHandler.NextToken.Type == TokenType.Equals))
+					{
+						tokenHandler.Advance();
+
+						defSeg.SegmentExpression = ParseExpression(tokenHandler.RemainingTokens);
+					}
+
+					return defSeg;
+				}
+				else if (tokenHandler.NextToken.Type == TokenType.Identifier)
+				{
+					var identifier = tokenHandler.ExpectIdentifier(allowTypeCharacter: true, out var identifierToken);
+
+					if (!identifier.StartsWith("FN", StringComparison.OrdinalIgnoreCase))
+						throw new SyntaxErrorException(identifierToken, "DEF function name must begin with FN");
+
+					var defFn = new DefFnStatement();
+
+					defFn.Name = identifier;
+
+					if (tokenHandler.HasMoreTokens && (tokenHandler.NextToken.Type == TokenType.OpenParenthesis))
+					{
+						var parameterListTokens = tokenHandler.ExpectParenthesizedTokens();
+
+						defFn.Parameters = ParseParameterList(parameterListTokens, allowByVal: false);
+					}
+
+					if (tokenHandler.HasMoreTokens && (tokenHandler.NextToken.Type == TokenType.Equals))
+					{
+						defFn.ExpressionBody = ParseExpression(tokenHandler.RemainingTokens);
+						tokenHandler.AdvanceToEnd();
+					}
+
+					tokenHandler.ExpectEndOfStatement();
+
+					return defFn;
+				}
+				else
+					throw new SyntaxErrorException(tokenHandler.NextToken, "Expected DEF SEG or DEF FN");
+			}
+
+			case TokenType.DEFCUR:
+			case TokenType.DEFDBL:
+			case TokenType.DEFINT:
+			case TokenType.DEFLNG:
+			case TokenType.DEFSNG:
+			case TokenType.DEFSTR:
+			{
+				var defType = new DefTypeStatement();
+
+				switch (token.Type)
+				{
+					case TokenType.DEFCUR: defType.DataType = DataType.CURRENCY; break;
+					case TokenType.DEFDBL: defType.DataType = DataType.DOUBLE; break;
+					case TokenType.DEFINT: defType.DataType = DataType.INTEGER; break;
+					case TokenType.DEFLNG: defType.DataType = DataType.LONG; break;
+					case TokenType.DEFSNG: defType.DataType = DataType.SINGLE; break;
+					case TokenType.DEFSTR: defType.DataType = DataType.STRING; break;
+				}
+
+				string? rangeStart = null;
+				string? rangeEnd = null;
+
+				rangeStart = tokenHandler.ExpectIdentifier(allowTypeCharacter: false, out var identifierToken);
+
+				if (rangeStart.Length != 1)
+					throw new SyntaxErrorException(identifierToken, "Expected: letter");
+
+				defType.RangeStart = char.ToUpperInvariant(rangeStart[0]);
+
+				if (tokenHandler.HasMoreTokens)
+				{
+					tokenHandler.Expect(TokenType.Equals);
+					tokenHandler.ExpectMoreTokens();
+
+					rangeEnd = tokenHandler.ExpectIdentifier(allowTypeCharacter: false, out identifierToken);
+
+					if (rangeEnd.Length != 1)
+						throw new SyntaxErrorException(identifierToken, "Expected: letter");
+
+					defType.RangeEnd = char.ToUpperInvariant(rangeEnd[0]);
+				}
+
+				if (defType.RangeStart == defType.RangeEnd)
+					defType.RangeEnd = null;
+				else if (defType.RangeStart > defType.RangeEnd)
+					(defType.RangeStart, defType.RangeEnd) = (defType.RangeEnd, defType.RangeStart);
+
+				tokenHandler.ExpectEndOfStatement();
+
+				return defType;
+			}
+
+			case TokenType.DIM:
+			{
+				var dim = new DimStatement();
+
+				tokenHandler.ExpectMoreTokens();
+
+				if (tokenHandler.NextToken.Type == TokenType.SHARED)
+				{
+					dim.Shared = true;
+					tokenHandler.Advance();
+				}
+
+				foreach (var range in SplitCommaDelimitedList(tokenHandler.RemainingTokens))
+					dim.Declarations.Add(ParseVariableDeclaration(range));
+
+				return dim;
+			}
+		}
+
+
 	/*
-	case TokenType.DATA,
-	case TokenType.DECLARE,
-	case TokenType.DEF,
-	case TokenType.DEFCUR,
-	case TokenType.DEFDBL,
-	case TokenType.DEFINT,
-	case TokenType.DEFLNG,
-	case TokenType.DEFSNG,
-	case TokenType.DEFSTR,
-	case TokenType.DIM,
 	case TokenType.DO,
 	case TokenType.ELSE,
 	case TokenType.END,
@@ -319,9 +422,154 @@ public class BasicParser
 		//   identifier:
 	}
 
+	IEnumerable<ListRange<Token>> SplitCommaDelimitedList(ListRange<Token> tokens)
+		=> SplitDelimitedList(tokens, TokenType.Comma);
+
+	IEnumerable<ListRange<Token>> SplitDelimitedList(ListRange<Token> tokens, TokenType delimiterType)
+	{
+		int nesting = 0;
+		int itemStart = 0;
+
+		for (int i = 0; i < tokens.Count; i++)
+		{
+			if (tokens[i].Type == delimiterType)
+			{
+				if (nesting == 0)
+				{
+					yield return tokens.Slice(itemStart, i - itemStart);
+					itemStart = i + 1;
+				}
+			}
+			else
+			{
+				switch (tokens[i].Type)
+				{
+					case TokenType.OpenParenthesis: nesting++; break;
+					case TokenType.CloseParenthesis: nesting--; break;
+				}
+			}
+
+			yield return tokens.Slice(itemStart);
+		}
+	}
+
+	VariableDeclaration ParseVariableDeclaration(ListRange<Token> tokens)
+	{
+		var tokenHandler = new TokenHandler(tokens);
+
+		var declaration = new VariableDeclaration();
+
+		tokenHandler.ExpectMoreTokens("Expected variable declaration");
+
+		declaration.Name = tokenHandler.ExpectIdentifier(allowTypeCharacter: true);
+
+		if (tokenHandler.NextTokenIs(TokenType.OpenParenthesis))
+		{
+			var subscriptTokens = tokenHandler.ExpectParenthesizedTokens();
+
+			declaration.Subscripts = new VariableDeclarationSubscriptList();
+
+			foreach (var subscript in SplitCommaDelimitedList(subscriptTokens))
+				declaration.Subscripts.Add(ParseVariableDeclarationSubscript(subscript));
+		}
+
+		return declaration;
+	}
+
+	private VariableDeclarationSubscript ParseVariableDeclarationSubscript(ListRange<Token> subscriptTokens)
+	{
+		var boundExpressions = SplitDelimitedList(subscriptTokens, TokenType.TO).ToList();
+
+		if (boundExpressions.Count > 2)
+		{
+			var range = boundExpressions[2].Unwrap();
+
+			throw new SyntaxErrorException(range.List[range.Offset - 1], "Expected: )");
+		}
+
+		var subscript = new VariableDeclarationSubscript();
+
+		subscript.Bound1 = ParseExpression(boundExpressions[0]);
+		subscript.Bound2 = ParseExpression(boundExpressions[1]);
+
+		return subscript;
+	}
+
+	ParameterList ParseParameterList(ListRange<Token> tokens, bool allowByVal = true)
+	{
+		var list = new ParameterList();
+
+		foreach (var range in SplitCommaDelimitedList(tokens))
+			list.Parameters.Add(ParseParameterDefinition(range, allowByVal));
+
+		return list;
+	}
+
+	ParameterDefinition ParseParameterDefinition(ListRange<Token> tokens, bool allowByVal)
+	{
+		var param = new ParameterDefinition();
+
+		try
+		{
+			int tokenIndex = 0;
+
+			if (tokens[tokenIndex].Type == TokenType.BYVAL)
+			{
+				if (!allowByVal)
+					throw new SyntaxErrorException(tokens[tokenIndex], "BYVAL is not permitted in this context");
+
+				param.IsByVal = true;
+				tokenIndex++;
+			}
+
+			if (tokens[tokenIndex].Type != TokenType.Identifier)
+				throw new SyntaxErrorException(tokens[tokenIndex], "Expected identifier");
+
+			param.Name = tokens[tokenIndex].Value ?? throw new Exception("Internal error: identifier token with no value");
+
+			tokenIndex++;
+
+			char lastChar = param.Name.Last();
+
+			if (TypeCharacter.TryParse(lastChar, out var typeCharacter))
+			{
+				param.TypeCharacter = typeCharacter;
+				param.Name = param.Name.Remove(param.Name.Length - 1);
+			}
+			else if (tokenIndex < tokens.Count)
+			{
+				if (tokens[tokenIndex].Type != TokenType.AS)
+					throw new SyntaxErrorException(tokens[tokenIndex], "Expected AS");
+
+				tokenIndex++;
+
+				if (!tokens[tokenIndex].IsDataType)
+					throw new SyntaxErrorException(tokens[tokenIndex], "Expected data type");
+
+				param.Type = DataTypeConverter.FromToken(tokens[tokenIndex]);
+
+				tokenIndex++;
+			}
+
+			if (tokenIndex < tokens.Count)
+				throw new SyntaxErrorException(tokens[tokenIndex], "Expected end of parameter definition");
+		}
+		catch (ArgumentOutOfRangeException)
+		{
+			throw new SyntaxErrorException(tokens.Last(), "Unexpected end of parameter declaration");
+		}
+
+		return param;
+	}
+
 	ExpressionList ParseExpressionList(ListRange<Token> tokens)
 	{
-		throw new Exception("TODO");
+		var list = new ExpressionList();
+
+		foreach (var range in SplitCommaDelimitedList(tokens))
+			list.Expressions.Add(ParseExpression(range));
+
+		return list;
 	}
 
 	Expression ParseExpression(ListRange<Token> tokens)

@@ -1,4 +1,4 @@
-﻿namespace QBX.CodeModel;
+﻿namespace QBX.CodeModel.Statements;
 
 public class SubStatement : Statement
 {
@@ -13,8 +13,7 @@ public class SubStatement : Statement
 		writer.Write("SUB ");
 		writer.Write(Name);
 
-		if (Parameters != null)
-			Parameters.Render(writer);
+		Parameters?.Render(writer);
 
 		if (IsStatic)
 			writer.Write(" STATIC");

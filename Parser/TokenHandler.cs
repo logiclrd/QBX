@@ -1,0 +1,158 @@
+﻿using QBX.LexicalAnalysis;
+
+namespace QBX.Parser;
+
+public class TokenHandler(ListRange<Token> tokenss)
+{
+	ListRange<Token> _tokens = tokenss;
+	int _tokenIndex = 0;
+
+	Token FindTokenToBlame()
+	{
+		if ((_tokenIndex >= 0) && (_tokenIndex < _tokens.Count))
+			return _tokens[_tokenIndex];
+
+		var range = _tokens.Unwrap();
+
+		if (range.Offset + range.Count < range.List.Count)
+			return range.List[range.Offset + range.Count];
+		else if (range.Offset > 0)
+			return range.List[range.Offset - 1];
+		else if (range.List.Count > 0)
+			return range.List.Last();
+		else
+			return new Token(0, 0, TokenType.Empty, "");
+	}
+
+	public int TokenIndex
+	{
+		get => _tokenIndex;
+		set => _tokenIndex = value;
+	}
+
+	public Token NextToken
+	{
+		get
+		{
+			if (_tokenIndex >= _tokens.Count)
+				throw new SyntaxErrorException(FindTokenToBlame(), "Unexpected end of statement/expression");
+
+			return _tokens[_tokenIndex];
+		}
+	}
+
+	public ListRange<Token> RemainingTokens => _tokens.Slice(_tokenIndex);
+
+	public void Advance()
+	{
+		if (_tokenIndex >= _tokens.Count)
+			throw new SyntaxErrorException(FindTokenToBlame(), "Unexpected end of statement/expression");
+
+		_tokenIndex++;
+	}
+
+	public void AdvanceToEnd()
+	{
+		_tokenIndex = _tokens.Count;
+	}
+
+	public bool HasMoreTokens => (_tokenIndex < _tokens.Count);
+
+	public void ExpectMoreTokens(string message = "Unexpected end of statement")
+	{
+		if (!HasMoreTokens)
+			throw new SyntaxErrorException(FindTokenToBlame(), message);
+	}
+
+	public void ExpectEndOfStatement(string message = "Expected end of statement")
+	{
+		if (HasMoreTokens)
+			throw new SyntaxErrorException(FindTokenToBlame(), message);
+	}
+
+	public bool NextTokenIs(TokenType type) => HasMoreTokens && (_tokens[_tokenIndex].Type == type);
+
+	public string ExpectIdentifier(bool allowTypeCharacter)
+		=> ExpectIdentifier(allowTypeCharacter, out _);
+
+	public string ExpectIdentifier(bool allowTypeCharacter, out Token identifierToken)
+	{
+		if (!HasMoreTokens)
+			throw new SyntaxErrorException(_tokens.Last(), "Unexpected end of statement");
+
+		identifierToken = _tokens[_tokenIndex];
+
+		if (identifierToken.Type != TokenType.Identifier)
+			throw new SyntaxErrorException(identifierToken, "Expected identifier");
+
+		string identifier = identifierToken.Value ?? "";
+
+		if (identifier.Length == 0)
+			throw new Exception("Internal error: Identifier token with no value");
+
+		if (!allowTypeCharacter && char.IsSymbol(identifier.Last()))
+			throw new SyntaxErrorException(identifierToken, "Cannot use a type character in this context");
+
+		return identifier;
+	}
+
+	public Token Expect(TokenType expectedTokenType)
+	{
+		if (!HasMoreTokens)
+			throw new SyntaxErrorException(_tokens.Last(), "Unexpected end of statement");
+
+		var token = _tokens[_tokenIndex];
+
+		if (token.Type != expectedTokenType)
+			throw new SyntaxErrorException(token, "Expected: " + expectedTokenType);
+
+		_tokenIndex++;
+
+		return token;
+	}
+
+	public Token ExpectOneOf(params TokenType[] tokenTypes)
+	{
+		if (!HasMoreTokens)
+			throw new SyntaxErrorException(_tokens.Last(), "Unexpected end of statement");
+
+		var token = _tokens[_tokenIndex];
+
+		if (!tokenTypes.Contains(token.Type))
+			throw new SyntaxErrorException(token, "Expected: " + string.Join(", ", tokenTypes));
+
+		_tokenIndex++;
+
+		return token;
+	}
+
+	public ListRange<Token> ExpectParenthesizedTokens()
+	{
+		if (!NextTokenIs(TokenType.OpenParenthesis))
+			throw new SyntaxErrorException(_tokens[_tokenIndex], "Expected: (");
+
+		int level = 1;
+
+		_tokenIndex++;
+
+		int rangeStart = _tokenIndex;
+
+		while (HasMoreTokens && (level > 0))
+		{
+			switch (_tokens[_tokenIndex].Type)
+			{
+				case TokenType.OpenParenthesis: level++; break;
+				case TokenType.CloseParenthesis: level--; break;
+			}
+
+			_tokenIndex++;
+		}
+
+		if (level > 0)
+			throw new SyntaxErrorException(_tokens.Last(), "Expected: )");
+
+		int rangeEnd = _tokenIndex - 1;
+
+		return _tokens.Slice(rangeStart, rangeEnd - rangeStart);
+	}
+}

@@ -1,8 +1,8 @@
-﻿namespace QBX.CodeModel;
+﻿namespace QBX.CodeModel.Statements;
 
 public abstract class Statement : IRenderableCode
 {
-	public StatementType Type { get; set; } = default;
+	public abstract StatementType Type { get; }
 	public virtual bool ExtraSpace => false;
 
 	public abstract void Render(TextWriter writer);

@@ -2,6 +2,8 @@
 
 public class CommentStatement(CommentStatementType type, string comment) : Statement
 {
+	public override StatementType Type => StatementType.Comment;
+
 	public CommentStatementType CommentStatementType { get; set; } = type;
 	public string Comment { get; set; } = comment;
 

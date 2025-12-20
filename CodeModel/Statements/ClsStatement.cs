@@ -4,6 +4,8 @@ namespace QBX.CodeModel.Statements;
 
 public class ClsStatement : Statement
 {
+	public override StatementType Type => StatementType.Cls;
+
 	public Expression? Mode { get; set; }
 
 	public ClsStatement()

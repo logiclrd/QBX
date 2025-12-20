@@ -1,10 +1,11 @@
-﻿using QBX.CodeModel;
-using QBX.CodeModel.Expressions;
+﻿using QBX.CodeModel.Expressions;
 
 namespace QBX.CodeModel.Statements;
 
 public class ColorStatement : Statement
 {
+	public override StatementType Type => StatementType.Color;
+
 	public ExpressionList? Arguments { get; set; }
 
 	public ColorStatement()

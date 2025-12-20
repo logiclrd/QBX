@@ -6,13 +6,12 @@ public class BinaryExpression : Expression
 {
 	public Expression Left { get; set; }
 	public Operator Operator { get; set; }
-	public Token OperatorToken { get; set; }
 	public Expression Right { get; set; }
 
 	public BinaryExpression(Expression left, Token operatorToken, Expression right)
 	{
 		Left = left;
-		OperatorToken = operatorToken;
+		Token = operatorToken;
 		Right = right;
 
 		Operator =
@@ -24,7 +23,7 @@ public class BinaryExpression : Expression
 				TokenType.Slash => Operator.Divide,
 				TokenType.Caret => Operator.Exponentiate,
 				TokenType.Backslash => Operator.IntegerDivide,
-				TokenType.MOD => Operator.Modulus,
+				TokenType.MOD => Operator.Modulo,
 
 				TokenType.Equals => Operator.Equals,
 				TokenType.NotEquals => Operator.NotEquals,
@@ -56,7 +55,7 @@ public class BinaryExpression : Expression
 			case Operator.Divide: writer.Write('/'); break;
 			case Operator.Exponentiate: writer.Write('^'); break;
 			case Operator.IntegerDivide: writer.Write('\\'); break;
-			case Operator.Modulus: writer.Write("MOD"); break;
+			case Operator.Modulo: writer.Write("MOD"); break;
 
 			case Operator.Equals: writer.Write('='); break;
 			case Operator.NotEquals: writer.Write("<>"); break;
