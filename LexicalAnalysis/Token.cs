@@ -29,7 +29,7 @@ public class Token(int line, int column, TokenType type, string value, decimal? 
 		typeof(TokenType).GetFields(BindingFlags.Public | BindingFlags.Static)
 		.Select(f => (TokenType: (TokenType)f.GetValue(null)!, Keyword: f.GetCustomAttribute<KeywordTokenAttribute>()))
 		.Where(f => f.Keyword != null)
-		.ToDictionary(key => key.Keyword!.Keyword ?? key.TokenType.ToString(), value => new Token(0, 0, value.TokenType, ""), StringComparer.OrdinalIgnoreCase);
+		.ToDictionary(key => key.Keyword!.Keyword ?? key.TokenType.ToString(), value => new Token(0, 0, value.TokenType, value.Keyword?.Keyword ?? value.TokenType.ToString()), StringComparer.OrdinalIgnoreCase);
 
 	static Dictionary<char, Token> s_characterTokens =
 		typeof(TokenType).GetFields(BindingFlags.Public | BindingFlags.Static)

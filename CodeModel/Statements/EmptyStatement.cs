@@ -1,6 +1,4 @@
-﻿using QBX.CodeModel.Statements;
-
-namespace QBX.Parser;
+﻿namespace QBX.CodeModel.Statements;
 
 public class EmptyStatement : Statement
 {

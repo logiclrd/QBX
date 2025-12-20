@@ -1,7 +1,10 @@
-﻿using QBX.CodeModel;
+﻿using Microsoft.VisualBasic.FileIO;
+using QBX.CodeModel;
 using QBX.CodeModel.Expressions;
 using QBX.CodeModel.Statements;
 using QBX.LexicalAnalysis;
+using System;
+using System.Reflection.Metadata;
 
 namespace QBX.Parser;
 
@@ -468,7 +471,7 @@ public class BasicParser
 					case TokenType.SUB: endBlock = new EndScopeStatement() { ScopeType = ScopeType.Sub }; break;
 					case TokenType.FUNCTION: endBlock = new EndScopeStatement() { ScopeType = ScopeType.Function }; break;
 
-					default: 
+					default:
 					{
 						// Skip the common tail for this case.
 						return
@@ -577,20 +580,435 @@ public class BasicParser
 
 				return statement;
 			}
+
+			case TokenType.INPUT:
+			{
+				// One of:
+				//   INPUT [;] [prompt {;|,}] variable[, variable[..]]
+				//   INPUT #filenumber, variable[, [variable[..]]
+
+				var input = new InputStatement();
+
+				if (tokenHandler.NextTokenIs(TokenType.NumberSign))
+				{
+					tokenHandler.Advance();
+
+					var fileNumberToken = tokenHandler.RemainingTokens.Slice(0, 1);
+
+					tokenHandler.ExpectOneOf(TokenType.Number, TokenType.Identifier);
+
+					input.FileNumberExpression = ParseExpression(fileNumberToken);
+
+					tokenHandler.Expect(TokenType.Comma);
+				}
+				else
+				{
+					if (tokenHandler.NextTokenIs(TokenType.Semicolon))
+					{
+						input.EchoNewLine = false;
+						tokenHandler.Advance();
+					}
+
+					if (tokenHandler.NextTokenIs(TokenType.String))
+					{
+						input.PromptString = tokenHandler.NextToken.Value;
+
+						tokenHandler.Advance();
+
+						var questionMarkToken = tokenHandler.ExpectOneOf(TokenType.Semicolon, TokenType.Comma);
+
+						input.PromptQuestionMark = (questionMarkToken.Type == TokenType.Semicolon);
+					}
+				}
+
+				var variables = SplitCommaDelimitedList(tokenHandler.RemainingTokens);
+
+				foreach (var variable in variables)
+				{
+					if (variable.Count == 0)
+					{
+						var range = variable.Unwrap();
+
+						if (range.Offset >= tokens.Count)
+							range.Offset--;
+
+						throw new SyntaxErrorException(tokens[range.Offset], "Expected: identifier");
+					}
+
+					if (variable[0].Type != TokenType.Identifier)
+						throw new SyntaxErrorException(variable[0], "Expected: identifier");
+
+					if (variable.Count > 1)
+						throw new SyntaxErrorException(variable[1], "Expected: comma or end of statement");
+
+					input.Variables.Add(variable[0].Value ?? throw new Exception("Internal error: Identifier with no value"));
+				}
+
+				return input;
+			}
+
+			case TokenType.LINE:
+			{
+				// One of:
+				//  LINE [ [STEP] (x1, y1) ] - [STEP] (x2, y2) [, [color] [, [B[F]] [, style]]]
+				//  LINE INPUT [;] ["promptstring";] stringvariable
+				//  LINE INPUT #filenumber, stringvariable
+
+				if (tokenHandler.NextTokenIs(TokenType.INPUT))
+				{
+					var lineInput = new LineInputStatement();
+
+					tokenHandler.Advance();
+
+					if (tokenHandler.NextTokenIs(TokenType.NumberSign))
+					{
+						tokenHandler.Advance();
+
+						var fileNumberToken = tokenHandler.RemainingTokens.Slice(0, 1);
+
+						tokenHandler.ExpectOneOf(TokenType.Number, TokenType.Identifier);
+
+						lineInput.FileNumberExpression = ParseExpression(fileNumberToken);
+
+						tokenHandler.Expect(TokenType.Comma);
+					}
+
+					if (tokenHandler.NextTokenIs(TokenType.Semicolon))
+					{
+						lineInput.EchoNewLine = false;
+						tokenHandler.Advance();
+					}
+					else
+					{
+						if (tokenHandler.NextTokenIs(TokenType.String))
+						{
+							lineInput.PromptString = tokenHandler.NextToken.Value;
+
+							tokenHandler.Advance();
+							tokenHandler.Expect(TokenType.Semicolon);
+						}
+					}
+
+					lineInput.Variable = tokenHandler.Expect(TokenType.Identifier);
+
+					tokenHandler.ExpectEndOfStatement();
+
+					return lineInput;
+				}
+				else
+				{
+					//  LINE [ [STEP] (x1, y1) ] - [STEP] (x2, y2) [, [color] [, [B[F]] [, style]]]
+
+					var lineStatement = new LineStatement();
+
+					if (tokenHandler.NextTokenIs(TokenType.STEP))
+					{
+						lineStatement.FromStep = true;
+						tokenHandler.Advance();
+
+						if (!tokenHandler.NextTokenIs(TokenType.OpenParenthesis))
+							throw new SyntaxErrorException(tokenHandler.NextToken, "Expected: (");
+					}
+
+					if (tokenHandler.NextTokenIs(TokenType.OpenParenthesis)
+					{
+						var fromTokens = tokenHandler.ExpectParenthesizedTokens();
+
+						if (fromTokens.Count == 0)
+						{
+							var range = fromTokens.Unwrap();
+
+							throw new SyntaxErrorException(tokens[range.Offset], "Expected: expression");
+						}
+
+						var fromExpressions = SplitCommaDelimitedList(fromTokens).ToList();
+
+						if (fromExpressions.Count == 1)
+						{
+							var range = fromTokens.Unwrap();
+
+							throw new SyntaxErrorException(tokens[range.Offset + range.Count], "Expected: ,");
+						}
+
+						if (fromExpressions.Count > 2)
+						{
+							var range = fromExpressions[1].Unwrap();
+
+							throw new SyntaxErrorException(tokens[range.Offset + range.Count], "Expected: )");
+						}
+
+						lineStatement.FromXExpression = ParseExpression(fromExpressions[0]);
+						lineStatement.ToYExpression = ParseExpression(fromExpressions[0]);
+					}
+
+					tokenHandler.Expect(TokenType.Hyphen);
+
+					if (tokenHandler.NextTokenIs(TokenType.STEP))
+					{
+						lineStatement.ToStep = true;
+						tokenHandler.Advance();
+					}
+
+					var toTokens = tokenHandler.ExpectParenthesizedTokens();
+
+					if (toTokens.Count == 0)
+					{
+						var range = toTokens.Unwrap();
+
+						throw new SyntaxErrorException(tokens[range.Offset], "Expected: expression");
+					}
+
+					var toExpressions = SplitCommaDelimitedList(toTokens).ToList();
+
+					if (toExpressions.Count == 1)
+					{
+						var range = toTokens.Unwrap();
+
+						throw new SyntaxErrorException(tokens[range.Offset + range.Count], "Expected: ,");
+					}
+
+					if (toExpressions.Count > 2)
+					{
+						var range = toExpressions[1].Unwrap();
+
+						throw new SyntaxErrorException(tokens[range.Offset + range.Count], "Expected: )");
+					}
+
+					lineStatement.ToXExpression = ParseExpression(toExpressions[0]);
+					lineStatement.ToYExpression = ParseExpression(toExpressions[0]);
+
+					// [, [color] [, [B[F]] [, style]]]
+					if (tokenHandler.NextTokenIs(TokenType.Comma))
+					{
+						tokenHandler.Advance();
+						tokenHandler.ExpectMoreTokens();
+
+						var options = SplitCommaDelimitedList(tokenHandler.RemainingTokens).ToList();
+
+						lineStatement.ColorExpression = ParseExpression(options[0]);
+
+						if (options.Count > 1)
+						{
+							var drawStyle = options[1];
+
+							if (drawStyle.Any())
+							{
+								if ((drawStyle.Count > 1)
+								 || (drawStyle[0].Type != TokenType.Identifier)
+									throw new SyntaxErrorException(drawStyle[0], "Expected: B or BF");
+
+								string drawStyleString = drawStyle[0].Value ?? throw new Exception("Internal error: Identifier token with no value");
+
+								bool isBox = drawStyleString.Equals("B", StringComparison.OrdinalIgnoreCase);
+								bool isFilledBox = drawStyleString.Equals("BF", StringComparison.OrdinalIgnoreCase);
+
+								if (isBox)
+									lineStatement.DrawStyle = LineDrawStyle.Box;
+								else if (isFilledBox)
+									lineStatement.DrawStyle = LineDrawStyle.FilledBox;
+								else
+									throw new SyntaxErrorException(drawStyle[0], "Expected: B or BF");
+							}
+
+							if (options.Count > 2)
+							{
+								lineStatement.StyleExpression = ParseExpression(options[2]);
+
+								if (options.Count > 3)
+								{
+									var range = options[3].Unwrap();
+
+									throw new SyntaxErrorException(tokens[range.Offset - 1], "Expected: end of statement");
+								}
+							}
+						}
+					}
+
+					tokenHandler.ExpectEndOfStatement();
+
+					return lineStatement;
+				}
+			}
+
+			case TokenType.LOCATE:
+			{
+				var locate = new LocateStatement();
+
+				var arguments = SplitCommaDelimitedList(tokenHandler.RemainingTokens).ToList();
+
+				locate.RowExpression = ParseExpression(arguments[0]);
+
+				if ((arguments.Count > 1) && arguments[1].Any())
+					locate.ColumnExpression = ParseExpression(arguments[1]);
+
+				if ((arguments.Count > 2) && arguments[2].Any())
+					locate.CursorVisibilityExpression = ParseExpression(arguments[2]);
+
+				if (arguments.Count > 3)
+					locate.CursorStartExpression = ParseExpression(arguments[3]);
+				if (arguments.Count > 4)
+					locate.CursorEndExpression = ParseExpression(arguments[4]);
+
+				if (arguments.Count > 5)
+				{
+					var range = arguments[5].Unwrap();
+
+					throw new SyntaxErrorException(tokens[range.Offset - 1], "Expected: end of statement");
+				}
+
+				return locate;
+			}
+
+			case TokenType.NEXT:
+			{
+				var next = new NextStatement();
+
+				if (tokenHandler.HasMoreTokens)
+				{
+					var counters = SplitCommaDelimitedList(tokenHandler.RemainingTokens).ToList();
+
+					for (int i = 0; i < counters.Count; i++)
+					{
+						var counter = ParseExpression(counters[i]);
+
+						if (counter is not IdentifierExpression)
+							throw new SyntaxErrorException(counters[i][0], "Expected: identifier");
+
+						next.CounterExpressions.Add(counter);
+					}
+				}
+
+				return next;
+			}
+
+			case TokenType.PLAY:
+			{
+				var play = new PlayStatement();
+
+				play.CommandExpression = ParseExpression(tokenHandler.RemainingTokens);
+
+				return play;
+			}
+
+			case TokenType.POKE:
+			{
+				var poke = new PokeStatement();
+
+				tokenHandler.ExpectMoreTokens();
+
+				var arguments = SplitCommaDelimitedList(tokenHandler.RemainingTokens).ToList();
+
+				if (arguments.Count < 2)
+					throw new SyntaxErrorException(tokenHandler.EndToken, "Expected: address, byte");
+
+				if (arguments.Count > 2)
+				{
+					var range = arguments[2].Unwrap();
+
+					throw new SyntaxErrorException(tokens[range.Offset - 1], "Expected: end of statement");
+				}
+
+				poke.AddressExpression = ParseExpression(arguments[0]);
+				poke.ValueExpression = ParseExpression(arguments[1]);
+
+				return poke;
+			}
+
+			case TokenType.PRINT:
+			{
+				var print = new PrintStatement();
+
+				if (tokenHandler.NextTokenIs(TokenType.NumberSign))
+				{
+					tokenHandler.Advance();
+
+					var separatorIndex = tokenHandler.FindNextUnparenthesizedOf(TokenType.Comma);
+
+					if (separatorIndex < 0)
+						throw new SyntaxErrorException(tokenHandler.EndToken, "Expected: ,");
+
+					print.FileNumberExpression = ParseExpression(tokenHandler.RemainingTokens.Slice(0, separatorIndex));
+
+					tokenHandler.Advance(separatorIndex + 1);
+				}
+
+				if (tokenHandler.NextTokenIs(TokenType.USING))
+				{
+					tokenHandler.Advance();
+
+					var separatorIndex = tokenHandler.FindNextUnparenthesizedOf(TokenType.Semicolon);
+
+					if (separatorIndex < 0)
+					{
+						var commaIndex = tokenHandler.FindNextUnparenthesizedOf(TokenType.Comma);
+
+						if (commaIndex >= 0)
+						{
+							while (commaIndex > 0)
+								tokenHandler.Advance();
+
+							throw new SyntaxErrorException(tokenHandler.NextToken, "Expected: ,");
+						}
+						else
+							throw new SyntaxErrorException(tokenHandler.EndToken, "Expected: ,");
+					}
+
+					print.UsingExpression = ParseExpression(tokenHandler.RemainingTokens.Slice(0, separatorIndex));
+
+					tokenHandler.Advance(separatorIndex + 1);
+				}
+
+				while (tokenHandler.HasMoreTokens)
+				{
+					var nextSeparatorIndex = tokenHandler.FindNextUnparenthesizedOf(TokenType.Semicolon, TokenType.Comma);
+
+					if (nextSeparatorIndex >= 0)
+					{
+						var arg = new PrintArgument();
+
+						if (nextSeparatorIndex > 0)
+							arg.Expression = ParseExpression(tokenHandler.RemainingTokens.Slice(0, nextSeparatorIndex));
+
+						tokenHandler.Advance(nextSeparatorIndex);
+
+						switch (tokenHandler.NextToken.Type)
+						{
+							case TokenType.Semicolon: arg.CursorAction = PrintCursorAction.None; break;
+							case TokenType.Comma: arg.CursorAction = PrintCursorAction.NextZone; break;
+						}
+
+						print.Arguments.Add(arg);
+
+						tokenHandler.Advance();
+					}
+					else
+					{
+						var arg = new PrintArgument();
+
+						arg.Expression = ParseExpression(tokenHandler.RemainingTokens);
+						arg.CursorAction = PrintCursorAction.NextLine;
+
+						print.Arguments.Add(arg);
+
+						tokenHandler.AdvanceToEnd();
+					}
+				}
+
+				return print;
+			}
+
+			case TokenType.RANDOMIZE:
+			{
+				var randomize = new RandomizeStatement();
+
+				if (tokenHandler.HasMoreTokens)
+					randomize.Expression = ParseExpression(tokenHandler.RemainingTokens);
+
+				return randomize;
+			}
 		}
 
-
 	/*
-	case TokenType.FUNCTION,
-	case TokenType.INPUT,
-	case TokenType.LOCATE,
-	case TokenType.LOOP,
-	case TokenType.NEXT,
-	case TokenType.PEEK,
-	case TokenType.PLAY,
-	case TokenType.POKE,
-	case TokenType.PRINT,
-	case TokenType.RANDOMIZE,
 	case TokenType.READ,
 	case TokenType.RESTORE,
 	case TokenType.RETURN,
@@ -599,6 +1017,7 @@ public class BasicParser
 	case TokenType.SHARED,
 	case TokenType.STATIC,
 	case TokenType.SUB,
+	case TokenType.FUNCTION,
 	case TokenType.TIMER,
 	case TokenType.TYPE,
 	case TokenType.VIEW,

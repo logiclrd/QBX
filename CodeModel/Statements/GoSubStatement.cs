@@ -1,6 +1,4 @@
-﻿using QBX.Parser;
-
-namespace QBX.CodeModel.Statements;
+﻿namespace QBX.CodeModel.Statements;
 
 public class GoSubStatement : GoToStatement
 {

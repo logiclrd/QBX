@@ -24,6 +24,23 @@ public class TokenHandler(ListRange<Token> tokenss)
 			return new Token(0, 0, TokenType.Empty, "");
 	}
 
+	public Token EndToken
+	{
+		get
+		{
+			if (_tokens.Count == 0)
+				return new Token(0, 0, TokenType.Empty, "");
+
+			var lastToken = _tokens.Last();
+
+			return new Token(
+				lastToken.Line,
+				lastToken.Column + (lastToken.Value?.Length ?? 1),
+				TokenType.Empty,
+				"");
+		}
+	}
+
 	public int TokenIndex
 	{
 		get => _tokenIndex;
@@ -43,12 +60,12 @@ public class TokenHandler(ListRange<Token> tokenss)
 
 	public ListRange<Token> RemainingTokens => _tokens.Slice(_tokenIndex);
 
-	public void Advance()
+	public void Advance(int count = 1)
 	{
-		if (_tokenIndex >= _tokens.Count)
+		if (_tokenIndex + count > _tokens.Count)
 			throw new SyntaxErrorException(FindTokenToBlame(), "Unexpected end of statement/expression");
 
-		_tokenIndex++;
+		_tokenIndex += count;
 	}
 
 	public void AdvanceToEnd()
@@ -154,5 +171,29 @@ public class TokenHandler(ListRange<Token> tokenss)
 		int rangeEnd = _tokenIndex - 1;
 
 		return _tokens.Slice(rangeStart, rangeEnd - rangeStart);
+	}
+
+	public int FindNextUnparenthesizedOf(params TokenType[] tokenToFind)
+	{
+		int index = 0;
+		int level = 0;
+
+		var findSet = tokenToFind.ToHashSet();
+
+		while (_tokenIndex + index < _tokens.Count)
+		{
+			if ((level == 0) && findSet.Contains(_tokens[_tokenIndex + index].Type))
+				return index;
+
+			switch (_tokens[_tokenIndex].Type)
+			{
+				case TokenType.OpenParenthesis: level++; break;
+				case TokenType.CloseParenthesis: level--; break;
+			}
+
+			index++;
+		}
+
+		return -1;
 	}
 }
