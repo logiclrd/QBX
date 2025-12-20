@@ -1,6 +1,6 @@
 ﻿namespace QBX.CodeModel.Statements;
 
-internal class LPrintWidthStatement : OutputWidthStatement
+public class LPrintWidthStatement : OutputWidthStatement
 {
 	public override StatementType Type => StatementType.LPrintWidth;
 

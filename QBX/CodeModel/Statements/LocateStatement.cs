@@ -2,7 +2,7 @@
 
 namespace QBX.CodeModel.Statements;
 
-internal class LocateStatement : Statement
+public class LocateStatement : Statement
 {
 	public override StatementType Type => StatementType.Locate;
 

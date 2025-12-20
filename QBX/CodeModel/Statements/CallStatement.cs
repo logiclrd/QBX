@@ -2,7 +2,7 @@
 
 namespace QBX.CodeModel.Statements;
 
-internal class CallStatement : Statement
+public class CallStatement : Statement
 {
 	public override StatementType Type => StatementType.Call;
 

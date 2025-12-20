@@ -2,7 +2,7 @@
 
 namespace QBX.CodeModel.Statements;
 
-internal class DefTypeStatement : Statement
+public class DefTypeStatement : Statement
 {
 	public override StatementType Type => StatementType.DefType;
 

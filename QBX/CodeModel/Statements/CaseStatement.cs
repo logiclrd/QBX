@@ -2,7 +2,7 @@
 
 namespace QBX.CodeModel.Statements;
 
-internal class CaseStatement : Statement
+public class CaseStatement : Statement
 {
 	public override StatementType Type => StatementType.Case;
 

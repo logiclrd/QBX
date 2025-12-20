@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace QBX.CodeModel.Statements;
 
-internal class ViewStatement : Statement
+public class ViewStatement : Statement
 {
 	public override StatementType Type => StatementType.View;
 

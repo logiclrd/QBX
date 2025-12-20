@@ -2,7 +2,7 @@
 
 namespace QBX.CodeModel.Statements;
 
-internal class PrintStatement : Statement
+public class PrintStatement : Statement
 {
 	public override StatementType Type => StatementType.Print;
 

@@ -1,6 +1,6 @@
 ﻿namespace QBX.LexicalAnalysis;
 
-internal class KeywordTokenAttribute : Attribute
+public class KeywordTokenAttribute : Attribute
 {
 	public string? Keyword { get; set; }
 
