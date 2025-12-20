@@ -4,7 +4,7 @@ public class ParameterDefinition : IRenderableCode
 {
 	public bool IsByVal { get; set; }
 	public string Name { get; set; } = "";
-	public TypeCharacter? TypeCharacter { get; set; } = null;
+	public string ActualName { get; set; } = "";
 	public bool IsArray { get; set; }
 	public DataType? Type { get; set; }
 

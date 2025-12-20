@@ -4,6 +4,8 @@ namespace QBX.CodeModel.Statements;
 
 public class DeclareStatement : Statement
 {
+	public override StatementType Type => StatementType.Declare;
+
 	public Token DeclarationType { get; set; }
 	public string Name { get; set; }
 	public TypeCharacter? TypeCharacter { get; set; }

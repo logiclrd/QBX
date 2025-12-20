@@ -10,7 +10,7 @@ public class LineInputStatement : Statement
 	public Expression? FileNumberExpression { get; set;  }
 	public bool EchoNewLine { get; set; }
 	public string? PromptString { get; set; }
-	public Token Variable { get; set; }
+	public string? Variable { get; set; }
 
 	public override void Render(TextWriter writer)
 	{
@@ -35,6 +35,9 @@ public class LineInputStatement : Statement
 				writer.Write(PromptString);
 				writer.Write("; ");
 			}
+
+			if (Variable == null)
+				throw new Exception("Internal error: LineInputStatement with no variable");
 
 			writer.Write(Variable);
 		}

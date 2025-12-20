@@ -4,6 +4,8 @@ namespace QBX.CodeModel.Statements;
 
 public class DataStatement : Statement
 {
+	public override StatementType Type => StatementType.Data;
+
 	public List<Token> DataItems { get; set; }
 
 	public DataStatement(List<Token> dataItems)

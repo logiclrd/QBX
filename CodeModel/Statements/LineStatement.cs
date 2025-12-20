@@ -14,7 +14,7 @@ public class LineStatement : Statement
 	public Expression? ToXExpression { get; set; }
 	public Expression? ToYExpression { get; set; }
 
-	public Expression? ColorExpression { get; set; }
+	public Expression? ColourExpression { get; set; }
 	public LineDrawStyle DrawStyle { get; set; } = LineDrawStyle.Line;
 	public Expression? StyleExpression { get; set; }
 
@@ -56,10 +56,10 @@ public class LineStatement : Statement
 		ToYExpression.Render(writer);
 		writer.Write(")");
 
-		if ((ColorExpression != null) || (DrawStyle != LineDrawStyle.Line) || (StyleExpression != null))
+		if ((ColourExpression != null) || (DrawStyle != LineDrawStyle.Line) || (StyleExpression != null))
 		{
 			writer.Write(", ");
-			ColorExpression?.Render(writer);
+			ColourExpression?.Render(writer);
 
 			if ((DrawStyle != LineDrawStyle.Line) || (StyleExpression != null))
 			{

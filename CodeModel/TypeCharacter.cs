@@ -17,14 +17,15 @@ public class TypeCharacter(DataType type) : IRenderableCode
 			))
 		.ToDictionary(key => key.Character, value => new TypeCharacter(value.DataType));
 
-	internal static bool TryParse(char ch, [NotNullWhen(true)] out TypeCharacter? typeCharacter)
+	public static bool TryParse(char ch, [NotNullWhen(true)] out TypeCharacter? typeCharacter)
 	{
-
 		return s_typeCharacterByCharacter.TryGetValue(ch, out typeCharacter);
 	}
 
+	public char Character => DataTypeCharacterAttribute.Get(Type);
+
 	public void Render(TextWriter writer)
 	{
-		writer.Write(DataTypeCharacterAttribute.Get(Type));
+		writer.Write(Character);
 	}
 }

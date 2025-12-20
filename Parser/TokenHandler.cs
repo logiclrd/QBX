@@ -47,18 +47,36 @@ public class TokenHandler(ListRange<Token> tokenss)
 		set => _tokenIndex = value;
 	}
 
-	public Token NextToken
+	public Token NextToken => this[0];
+
+	public Token this[int relativeIndex]
 	{
 		get
 		{
-			if (_tokenIndex >= _tokens.Count)
+			if (_tokenIndex + relativeIndex >= _tokens.Count)
 				throw new SyntaxErrorException(FindTokenToBlame(), "Unexpected end of statement/expression");
 
-			return _tokens[_tokenIndex];
+			return _tokens[_tokenIndex + relativeIndex];
+		}
+	}
+
+	public Token PreviousToken
+	{
+		get
+		{
+			if (_tokenIndex > 0)
+				return _tokens[_tokenIndex - 1];
+			else
+				throw new Exception("No previous token");
 		}
 	}
 
 	public ListRange<Token> RemainingTokens => _tokens.Slice(_tokenIndex);
+
+	public void Reset()
+	{
+		_tokenIndex = 0;
+	}
 
 	public void Advance(int count = 1)
 	{
@@ -81,7 +99,7 @@ public class TokenHandler(ListRange<Token> tokenss)
 			throw new SyntaxErrorException(FindTokenToBlame(), message);
 	}
 
-	public void ExpectEndOfStatement(string message = "Expected end of statement")
+	public void ExpectEndOfTokens(string message = "Expected end of statement")
 	{
 		if (HasMoreTokens)
 			throw new SyntaxErrorException(FindTokenToBlame(), message);

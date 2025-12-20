@@ -1,11 +1,8 @@
 ﻿namespace QBX.CodeModel.Statements;
 
-public class GoSubStatement : GoToStatement
+public class GoSubStatement : TargetLineStatement
 {
-	public override StatementType Type => StatementType.Loop;
+	public override StatementType Type => StatementType.GoSub;
 
-	protected override void RenderStatementName(TextWriter writer)
-	{
-		writer.Write("GOSUB");
-	}
+	protected override string StatementName => "GOSUB";
 }
