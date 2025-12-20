@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36301.6 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QBX", "QBX.csproj", "{BA35AC41-0CB7-4FE2-B2B9-2258180E963C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QBX", "QBX\QBX.csproj", "{BA35AC41-0CB7-4FE2-B2B9-2258180E963C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
