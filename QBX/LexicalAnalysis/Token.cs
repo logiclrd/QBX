@@ -4,25 +4,31 @@ using System.Reflection;
 
 namespace QBX.LexicalAnalysis;
 
-public class Token(int line, int column, TokenType type, string value, decimal? numericValue = null)
+public class Token(int line, int column, TokenType type, string value, DataType dataType = default)
 {
 	public TokenType Type => type;
 	public string? Value => value;
-	public decimal? NumericValue => numericValue;
+	public DataType DataType => dataType;
 
 	public int Line => line;
 	public int Column => column;
 
 	public bool IsDataType => DataTypeConverter.TryFromToken(this, out var _);
 
-	Token Emplace(int newLine, int newColumn) => new Token(newLine, newColumn, type, value, numericValue);
+	Token Emplace(int newLine, int newColumn) => new Token(newLine, newColumn, type, value, dataType);
 
 	public override string ToString()
 	{
 		if (Value == null)
 			return Type.ToString();
 		else
-			return Type + ": " + Value;
+		{
+			string type = (DataType != DataType.Unspecified)
+				? "(" + DataType.ToString() + ")"
+				: "";
+
+			return Type + ": " + Value + type;
+		}
 	}
 
 	static Dictionary<string, Token> s_keywordTokens =

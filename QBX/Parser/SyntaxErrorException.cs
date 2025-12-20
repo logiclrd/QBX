@@ -3,7 +3,7 @@
 namespace QBX.Parser;
 
 [Serializable]
-internal class SyntaxErrorException : Exception
+public class SyntaxErrorException : Exception
 {
 	public Token Token { get; }
 

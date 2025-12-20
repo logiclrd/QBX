@@ -1,8 +1,9 @@
-﻿namespace QBX.CodeModel.Statements;
+/*
+namespace QBX.Tests.Parser.Statements;
 
-public abstract class TargetLineStatement : Statement
+public abstract class TargetLineStatement
 {
-	public string? TargetLineNumber;
+	public decimal? TargetLineNumber;
 	public string? TargetLabel;
 
 	protected abstract string StatementName { get; }
@@ -23,3 +24,5 @@ public abstract class TargetLineStatement : Statement
 			throw new Exception($"Internal error: {StatementName} with neither line number nor label");
 	}
 }
+
+*/

@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.14.36301.6 d17.14
+# Visual Studio Version 18
+VisualStudioVersion = 18.3.11222.16 d18.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QBX", "QBX\QBX.csproj", "{BA35AC41-0CB7-4FE2-B2B9-2258180E963C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QBX.Tests", "QBX.Tests\QBX.Tests.csproj", "{94EE6854-9DF8-4FCF-9A2D-037D81D878F9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{BA35AC41-0CB7-4FE2-B2B9-2258180E963C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BA35AC41-0CB7-4FE2-B2B9-2258180E963C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BA35AC41-0CB7-4FE2-B2B9-2258180E963C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{94EE6854-9DF8-4FCF-9A2D-037D81D878F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{94EE6854-9DF8-4FCF-9A2D-037D81D878F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{94EE6854-9DF8-4FCF-9A2D-037D81D878F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{94EE6854-9DF8-4FCF-9A2D-037D81D878F9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

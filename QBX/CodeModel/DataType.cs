@@ -4,6 +4,8 @@ namespace QBX.CodeModel;
 
 public enum DataType
 {
+	Unspecified,
+
 	[DataTypeCharacter('%')] [DataTypeToken(TokenType.INTEGER)]  INTEGER,
 	[DataTypeCharacter('&')] [DataTypeToken(TokenType.LONG)]     LONG,
 	[DataTypeCharacter('!')] [DataTypeToken(TokenType.SINGLE)]   SINGLE,

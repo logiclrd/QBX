@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using QBX.CodeModel;
+using System.Collections;
 using System.Globalization;
 using System.Text;
 
@@ -8,6 +9,11 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 {
 	TextReader _input = input;
 	bool _consumed = false;
+
+	public Lexer(string text)
+		: this(new StringReader(text))
+	{
+	}
 
 	enum Mode
 	{
@@ -67,11 +73,8 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 							yield return new Token(line, column, TokenType.NewLine, "\n");
 							break;
 						}
-						else if (Token.TryForCharacter(line, column, ch, out var token))
-						{
-							yield return token;
-							break;
-						}
+						else if ((ch == '<') || (ch == '>'))
+							mode = Mode.MaybeOrEquals;
 						else if (ch == '\'')
 							mode = Mode.Comment;
 						else if (ch == '"')
@@ -84,10 +87,13 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 							mode = Mode.MaybeNumber;
 						else if (char.IsAsciiLetter(ch))
 							mode = Mode.Word;
-						else if ((ch == '<') || (ch == '>'))
-							mode = Mode.MaybeOrEquals;
 						else if (char.IsWhiteSpace(ch))
 							mode = Mode.Whitespace;
+						else if (Token.TryForCharacter(line, column, ch, out var token))
+						{
+							yield return token;
+							break;
+						}
 						else
 							throw new Exception("Couldn't parse file: Unexpected character '" + ch + "'");
 
@@ -140,7 +146,7 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 					}
 					case Mode.Comment:
 					{
-						if ((ch == '\r') || (ch == '\n'))
+						if ((ch == '\r') || (ch == '\n') || atEOF)
 						{
 							yield return new Token(line, column, TokenType.Comment, buffer.ToString());
 							buffer.Clear();
@@ -154,7 +160,7 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 					}
 					case Mode.String:
 					{
-						if ((ch == '\r') || (ch == '\n'))
+						if ((ch == '\r') || (ch == '\n') || atEOF)
 						{
 							yield return new Token(line, column, TokenType.String, buffer.ToString());
 							buffer.Clear();
@@ -215,6 +221,8 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 							buffer.Append(ch);
 						else
 						{
+							var dataType = DataType.Unspecified;
+
 							switch (ch)
 							{
 								case '%':
@@ -223,13 +231,23 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 								case '#':
 								case '@':
 									buffer.Append(ch);
+
+									switch (ch)
+									{
+										case '%': dataType = DataType.INTEGER; break;
+										case '&': dataType = DataType.LONG; break;
+										case '!': dataType = DataType.SINGLE; break;
+										case '#': dataType = DataType.DOUBLE; break;
+										case '@': dataType = DataType.CURRENCY; break;
+									}
+
 									break;
 								default:
 									reparse = true;
 									break;
 							}
 
-							yield return new Token(line, column, TokenType.Number, buffer.ToString());
+							yield return new Token(line, column, TokenType.Number, buffer.ToString(), dataType);
 							buffer.Clear();
 							mode = Mode.Any;
 						}
@@ -256,11 +274,20 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 							buffer.Append(ch);
 						else
 						{
+							var dataType = DataType.Unspecified;
+
 							switch (ch)
 							{
 								case '%':
 								case '&':
 									buffer.Append(ch);
+
+									switch (ch)
+									{
+										case '%': dataType = DataType.INTEGER; break;
+										case '&': dataType = DataType.LONG; break;
+									}
+
 									break;
 								default:
 									reparse = true;
@@ -269,7 +296,7 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 
 							string hexString = buffer.ToString(2, buffer.Length - 2);
 
-							yield return new Token(line, column, TokenType.Number, buffer.ToString(), long.Parse(hexString, NumberStyles.HexNumber));
+							yield return new Token(line, column, TokenType.Number, buffer.ToString(), dataType);
 							buffer.Clear();
 							mode = Mode.Any;
 						}
@@ -282,25 +309,27 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 							buffer.Append(ch);
 						else
 						{
+							var dataType = DataType.Unspecified;
+
 							switch (ch)
 							{
 								case '%':
 								case '&':
 									buffer.Append(ch);
+
+									switch (ch)
+									{
+										case '%': dataType = DataType.INTEGER; break;
+										case '&': dataType = DataType.LONG; break;
+									}
+
 									break;
 								default:
 									reparse = true;
 									break;
 							}
 
-							string octalString = buffer.ToString(2, buffer.Length - 2);
-
-							long octalNumber = 0;
-
-							for (int i = 0; i < octalString.Length; i++)
-								octalNumber = octalNumber * 8 + (octalString[i] - '0');
-
-							yield return new Token(line, column, TokenType.Number, buffer.ToString(), octalNumber);
+							yield return new Token(line, column, TokenType.Number, buffer.ToString(), dataType);
 							buffer.Clear();
 							mode = Mode.Any;
 						}
@@ -326,6 +355,8 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 							reparse = true;
 						}
 
+						mode = Mode.Any;
+
 						break;
 					}
 					case Mode.Word:
@@ -334,6 +365,8 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 							buffer.Append(ch);
 						else
 						{
+							var dataType = DataType.Unspecified;
+
 							switch (ch)
 							{
 								case '%':
@@ -343,6 +376,17 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 								case '@':
 								case '$':
 									buffer.Append(ch);
+
+									switch (ch)
+									{
+										case '%': dataType = DataType.INTEGER; break;
+										case '&': dataType = DataType.LONG; break;
+										case '!': dataType = DataType.SINGLE; break;
+										case '#': dataType = DataType.DOUBLE; break;
+										case '@': dataType = DataType.CURRENCY; break;
+										case '$': dataType = DataType.STRING; break;
+									}
+
 									break;
 								default:
 									reparse = true;
@@ -360,7 +404,7 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 							if (Token.TryForKeyword(line, column, word, out var keyword))
 								yield return keyword;
 							else
-								yield return new Token(line, column, TokenType.Identifier, word);
+								yield return new Token(line, column, TokenType.Identifier, word, dataType);
 
 							buffer.Clear();
 							mode = Mode.Any;

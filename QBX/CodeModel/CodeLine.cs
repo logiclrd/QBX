@@ -4,7 +4,9 @@ namespace QBX.CodeModel;
 
 public class CodeLine : IRenderableCode
 {
-	public decimal? LineNumber { get; set; }
+	// Line number must be numeric in format, but in practice is
+	// parsed as any string ###.### with total length <= 40.
+	public string? LineNumber { get; set; }
 	public Label? Label { get; set; }
 	public string Indentation { get; set; } = "";
 	public List<Statement> Statements { get; } = new List<Statement>();

@@ -1,5 +1,5 @@
 ﻿namespace QBX.LexicalAnalysis;
 
-internal class ValueTokenAttribute : Attribute
+public class ValueTokenAttribute : Attribute
 {
 }

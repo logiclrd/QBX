@@ -21,6 +21,8 @@ public class BasicParser
 
 		var comments = new List<CodeLine>();
 
+		tokenStream = tokenStream.Where(token => token.Type != TokenType.Whitespace);
+
 		foreach (var line in ParseCodeLines(tokenStream))
 		{
 			if (line.IsCommentLine && (element == mainElement))
@@ -98,11 +100,11 @@ public class BasicParser
 				line.Indentation += token.Value;
 			else if ((token.Type == TokenType.Number) && !line.Statements.Any())
 			{
-				if (line.LineNumber.HasValue)
+				if (line.LineNumber != null)
 					throw new SyntaxErrorException(token, "Expected: statement");
 
 				line.Indentation = "";
-				line.LineNumber = token.NumericValue;
+				line.LineNumber = token.Value;
 			}
 			else
 			{
@@ -150,7 +152,7 @@ public class BasicParser
 		}
 	}
 
-	Statement ParseStatement(ListRange<Token> tokens, bool colonAfter, ref bool inType)
+	internal Statement ParseStatement(ListRange<Token> tokens, bool colonAfter, ref bool inType)
 	{
 		if (!tokens.Where(token => token.Type != TokenType.Whitespace).Any())
 			return new EmptyStatement();
@@ -191,17 +193,24 @@ public class BasicParser
 			{
 				tokenHandler.ExpectEndOfTokens("Internal error: Additional tokens between Comment and Newline");
 
-				string commentText = tokenHandler.NextToken.Value ?? "";
+				string commentText = token.Value ?? "";
 
 				var commentType = CommentStatementType.Apostrophe;
 
 				if (commentText.StartsWith("'"))
 					commentText = commentText.Substring(1);
-				else if (commentText.StartsWith("REM"))
+				else if (commentText.StartsWith("REM "))
+				{
+					commentType = CommentStatementType.REM;
+					commentText = commentText.Substring(4);
+				}
+				else if (commentText == "REM")
 				{
 					commentType = CommentStatementType.REM;
 					commentText = commentText.Substring(3);
 				}
+				else
+					throw new Exception("Internal error: Unrecognized comment style");
 
 				return new CommentStatement(commentType, commentText);
 			}
@@ -581,7 +590,7 @@ public class BasicParser
 				switch (tokenHandler.NextToken.Type)
 				{
 					case TokenType.Number:
-						statement.TargetLineNumber = tokenHandler.NextToken.NumericValue;
+						statement.TargetLineNumber = tokenHandler.NextToken.Value;
 						break;
 
 					case TokenType.Identifier:
