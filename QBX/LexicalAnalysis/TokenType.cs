@@ -68,6 +68,7 @@ public enum TokenType
 	[KeywordFunction]
 	[KeywordToken] INT,
 	[KeywordToken] INTEGER,
+	[KeywordToken] IS,
 	[KeywordToken] KEY,
 	[KeywordFunction]
 	[KeywordToken("LCASE$")] LCASE,

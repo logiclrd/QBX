@@ -6,9 +6,14 @@ public class CaseStatement : Statement
 {
 	public override StatementType Type => StatementType.Case;
 
-	public ExpressionList Expressions { get; set; }
+	public CaseExpressionList? Expressions { get; set; }
+	public bool MatchElse { get; internal set; }
 
-	public CaseStatement(ExpressionList expressions)
+	public CaseStatement()
+	{
+	}
+
+	public CaseStatement(CaseExpressionList expressions)
 	{
 		Expressions = expressions;
 	}
@@ -16,6 +21,16 @@ public class CaseStatement : Statement
 	public override void Render(TextWriter writer)
 	{
 		writer.Write("CASE ");
-		Expressions.Render(writer);
+
+		if ((Expressions != null) && Expressions.Expressions.Any() && MatchElse)
+			throw new Exception("Internal error: CASE cannot have expressions and be CASE ELSE at the same time");
+
+		if (((Expressions == null) || !Expressions.Expressions.Any()) && !MatchElse)
+			throw new Exception("Internal error: empty CaseStatement");
+
+		if (MatchElse)
+			writer.Write("ELSE");
+		else
+			Expressions!.Render(writer);
 	}
 }

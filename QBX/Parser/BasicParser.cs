@@ -279,9 +279,19 @@ public class BasicParser
 
 			case TokenType.CASE:
 			{
-				var expressions = ParseExpressionList(tokenHandler.RemainingTokens, tokenHandler.EndToken);
+				if (tokenHandler.NextTokenIs(TokenType.ELSE))
+				{
+					tokenHandler.Advance();
+					tokenHandler.ExpectEndOfTokens();
 
-				return new CaseStatement(expressions);
+					return new CaseStatement() { MatchElse = true };
+				}
+				else
+				{
+					var expressions = ParseCaseExpressionList(tokenHandler.RemainingTokens, tokenHandler.EndToken);
+
+					return new CaseStatement(expressions);
+				}
 			}
 
 			case TokenType.CLS:
@@ -2053,6 +2063,64 @@ public class BasicParser
 		}
 
 		return param;
+	}
+
+	CaseExpressionList ParseCaseExpressionList(ListRange<Token> tokens, Token endToken)
+	{
+		var list = new CaseExpressionList();
+
+		var endTokenRef = new TokenRef();
+
+		foreach (var range in SplitCommaDelimitedList(tokens, endTokenRef))
+			list.Expressions.Add(ParseCaseExpression(range, endTokenRef.Token ?? endToken));
+
+		return list;
+	}
+
+	CaseExpression ParseCaseExpression(ListRange<Token> tokens, Token endToken)
+	{
+		CaseExpression caseExpression = new CaseExpression();
+
+		var tokenHandler = new TokenHandler(tokens);
+
+		if (!tokenHandler.HasMoreTokens)
+			throw new SyntaxErrorException(endToken, "Expected: case expression");
+
+		if (tokenHandler.NextTokenIs(TokenType.IS))
+		{
+			tokenHandler.Advance();
+			tokenHandler.ExpectMoreTokens();
+
+			if (!IsOperator(tokenHandler.NextToken, out var op))
+				throw new SyntaxErrorException(tokenHandler.NextToken, "Expected: relational operator");
+
+			caseExpression.RelationToExpression = (RelationalOperator)op;
+
+			if (!Enum.IsDefined(caseExpression.RelationToExpression.Value))
+				throw new SyntaxErrorException(tokenHandler.NextToken, "Expected: relational operator");
+
+			tokenHandler.Advance();
+		}
+
+		var expressions = SplitDelimitedList(tokenHandler.RemainingTokens, TokenType.TO).ToList();
+
+		if (expressions.Count > 2)
+		{
+			var range = expressions[2].Unwrap();
+
+			throw new SyntaxErrorException(tokens[range.Offset - 1], "Syntax error");
+		}
+
+		var midToken = expressions.Count == 1
+			? endToken
+			: tokens[expressions[1].Unwrap().Offset - 1];
+
+		caseExpression.Expression = ParseExpression(expressions[0], midToken);
+
+		if (expressions.Count == 2)
+			caseExpression.RangeEndExpression = ParseExpression(expressions[1], endToken);
+
+		return caseExpression;
 	}
 
 	ExpressionList ParseExpressionList(ListRange<Token> tokens, Token endToken)
