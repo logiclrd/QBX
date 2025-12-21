@@ -1,11 +1,34 @@
-/*
+using QBX.CodeModel.Statements;
+using QBX.LexicalAnalysis;
+using QBX.Parser;
+
 namespace QBX.Tests.Parser.Statements;
 
-public class ReturnStatement : TargetLineStatement
+public class ReturnStatementTests
 {
-	public override StatementType Type => StatementType.Return;
+	[TestCase("RETURN", null, null)]
+	[TestCase("RETURN 100", "100", null)]
+	[TestCase("RETURN OneHundred", null, "OneHundred")]
+	public void ShouldParse(string statement, string? expectedLineNumber, string? expectedLabel)
+	{
+		// Arrange
+		var tokens = new Lexer(statement).ToList();
 
-	protected override string StatementName => "RETURN";
+		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
+
+		bool inType = false;
+
+		var sut = new BasicParser();
+
+		// Act
+		var result = sut.ParseStatement(tokens, colonAfter: false, ref inType);
+
+		// Assert
+		result.Should().BeOfType<ReturnStatement>();
+
+		var returnResult = (ReturnStatement)result;
+
+		returnResult.TargetLabel.Should().Be(expectedLabel);
+		returnResult.TargetLineNumber.Should().Be(expectedLineNumber);
+	}
 }
-
-*/

@@ -1,33 +1,36 @@
-/*
-using QBX.CodeModel.Expressions;
+using QBX.CodeModel.Statements;
+using QBX.LexicalAnalysis;
+using QBX.Parser;
 
 namespace QBX.Tests.Parser.Statements;
 
-public class ClsStatement
+public class ClsStatementTests
 {
-	public override StatementType Type => StatementType.Cls;
-
-	public Expression? Mode { get; set; }
-
-	public ClsStatement()
+	[TestCase("CLS", false)]
+	[TestCase("CLS 0", true)]
+	[TestCase("CLS a% + b%", true)]
+	public void ShouldParse(string statement, bool expectModeExpression)
 	{
-	}
+		// Arrange
+		var tokens = new Lexer(statement).ToList();
 
-	public ClsStatement(Expression mode)
-	{
-		Mode = mode;
-	}
+		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
 
-	public override void Render(TextWriter writer)
-	{
-		writer.Write("CLS");
+		bool inType = false;
 
-		if (Mode != null)
-		{
-			writer.Write(' ');
-			Mode.Render(writer);
-		}
+		var sut = new BasicParser();
+
+		// Act
+		var result = sut.ParseStatement(tokens, colonAfter: false, ref inType);
+
+		// Assert
+		result.Should().BeOfType<ClsStatement>();
+
+		var clsResult = (ClsStatement)result;
+
+		if (expectModeExpression)
+			clsResult.Mode.Should().NotBeNull();
+		else
+			clsResult.Mode.Should().BeNull();
 	}
 }
-
-*/

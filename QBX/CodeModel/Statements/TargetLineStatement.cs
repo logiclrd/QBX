@@ -5,6 +5,8 @@ public abstract class TargetLineStatement : Statement
 	public string? TargetLineNumber;
 	public string? TargetLabel;
 
+	public virtual bool CanBeParameterless => false;
+
 	protected abstract string StatementName { get; }
 
 	public override void Render(TextWriter writer)

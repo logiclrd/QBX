@@ -15,14 +15,19 @@ public class DataStatement : Statement
 
 	public override void Render(TextWriter writer)
 	{
-		writer.Write("DATA ");
+		writer.Write("DATA");
 
-		for (int i=0; i<DataItems.Count; i++)
+		if (DataItems.Count > 0)
 		{
-			if (i > 0)
-				writer.Write(',');
+			writer.Write(' ');
 
-			writer.Write(DataItems[i].Value);
+			for (int i = 0; i < DataItems.Count; i++)
+			{
+				if (i > 0)
+					writer.Write(',');
+
+				writer.Write(DataItems[i].Value);
+			}
 		}
 	}
 }

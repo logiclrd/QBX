@@ -1,26 +1,35 @@
-/*
 using QBX.CodeModel.Expressions;
+using QBX.CodeModel.Statements;
+using QBX.LexicalAnalysis;
+using QBX.Parser;
 
 namespace QBX.Tests.Parser.Statements;
 
-public class IfStatement
+public class IfStatementTests
 {
-	public override StatementType Type => StatementType.If;
-	public Expression? ConditionExpression { get; set; }
-
-	protected virtual void RenderStatementName(TextWriter writer)
-		=> writer.Write("IF");
-
-	public override void Render(TextWriter writer)
+	[Test]
+	public void ShouldParse()
 	{
-		if (ConditionExpression == null)
-			throw new Exception("Internal error: IfStatement with no ConditionExpression");
+		// Arrange
+		string statement = "IF monitor$ = \"M\" THEN";
 
-		RenderStatementName(writer);
-		writer.Write(' ');
-		ConditionExpression.Render(writer);
-		writer.Write(" THEN");
+		var tokens = new Lexer(statement).ToList();
+
+		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
+
+		bool inType = false;
+
+		var sut = new BasicParser();
+
+		// Act
+		var result = sut.ParseStatement(tokens, colonAfter: false, ref inType);
+
+		// Assert
+		result.Should().BeOfType<IfStatement>();
+
+		var ifResult = (IfStatement)result;
+
+		ifResult.ConditionExpression.Should().BeOfType<BinaryExpression>()
+			.Which.Operator.Should().Be(Operator.Equals);
 	}
 }
-
-*/

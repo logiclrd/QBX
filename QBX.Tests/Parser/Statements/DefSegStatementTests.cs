@@ -1,24 +1,36 @@
-/*
-using QBX.CodeModel.Expressions;
+using QBX.CodeModel.Statements;
+using QBX.LexicalAnalysis;
+using QBX.Parser;
 
 namespace QBX.Tests.Parser.Statements;
 
-public class DefSegStatement
+public class DefSegStatementTests
 {
-	public override StatementType Type => StatementType.DefSeg;
-
-	public Expression? SegmentExpression { get; set; }
-
-	public override void Render(TextWriter writer)
+	[TestCase("DEF SEG", false)]
+	[TestCase("DEF SEG = &HA000", true)]
+	[TestCase("DEF SEG = ComputeSegment%(42)", true)]
+	public void ShouldParse(string statement, bool expectSegmentExpression)
 	{
-		writer.Write("DEF SEG");
+		// Arrange
+		var tokens = new Lexer(statement).ToList();
 
-		if (SegmentExpression != null)
-		{
-			writer.Write(" = ");
-			SegmentExpression.Render(writer);
-		}
+		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
+
+		bool inType = false;
+
+		var sut = new BasicParser();
+
+		// Act
+		var result = sut.ParseStatement(tokens, colonAfter: false, ref inType);
+
+		// Assert
+		result.Should().BeOfType<DefSegStatement>();
+
+		var defSegResult = (DefSegStatement)result;
+
+		if (expectSegmentExpression)
+			defSegResult.SegmentExpression.Should().NotBeNull();
+		else
+			defSegResult.SegmentExpression.Should().BeNull();
 	}
 }
-
-*/

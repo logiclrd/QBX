@@ -6,25 +6,20 @@ public class ColorStatement : Statement
 {
 	public override StatementType Type => StatementType.Color;
 
-	public ExpressionList? Arguments { get; set; }
-
-	public ColorStatement()
-	{
-	}
-
-	public ColorStatement(ExpressionList arguments)
-	{
-		Arguments = arguments;
-	}
+	public List<Expression?> Arguments { get; } = new List<Expression?>();
 
 	public override void Render(TextWriter writer)
 	{
 		writer.Write("COLOR");
 
-		if (Arguments != null)
+		for (int i = 0; i < Arguments.Count; i++)
 		{
-			writer.Write(' ');
-			Arguments.Render(writer);
+			if (i > 0)
+				writer.Write(", ");
+			else
+				writer.Write(' ');
+
+			Arguments[i]?.Render(writer);
 		}
 	}
 }

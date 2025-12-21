@@ -296,17 +296,25 @@ public class BasicParser
 
 			case TokenType.COLOR:
 			{
-				if (!tokenHandler.HasMoreTokens)
-					return new ColorStatement(); // this is a runtime error but should parse
-				else
+				var color = new ColorStatement();
+
+				if (tokenHandler.HasMoreTokens) // "COLOR" is a runtime error but should parse
 				{
-					var arguments = ParseExpressionList(tokenHandler.RemainingTokens, tokenHandler.EndToken);
+					var endTokenRef = new TokenRef();
 
-					if (arguments.Expressions.Count > 3)
+					foreach (var range in SplitCommaDelimitedList(tokenHandler.RemainingTokens, endTokenRef))
+					{
+						if (range.Any())
+							color.Arguments.Add(ParseExpression(range, endTokenRef.Token ?? tokenHandler.EndToken));
+						else
+							color.Arguments.Add(null);
+					}
+
+					if (color.Arguments.Count > 3)
 						throw new SyntaxErrorException(tokenHandler.NextToken, "Expected no more than 3 arguments");
-
-					return new ColorStatement(arguments);
 				}
+
+				return color;
 			}
 
 			case TokenType.CONST:
@@ -498,7 +506,7 @@ public class BasicParser
 			case TokenType.LOOP:
 			{
 				var statement =
-					tokenHandler.NextToken.Type switch
+					token.Type switch
 					{
 						TokenType.DO => new DoStatement(),
 						TokenType.LOOP => new LoopStatement(),
@@ -579,6 +587,8 @@ public class BasicParser
 
 				forStatement.CounterVariable = tokenHandler.ExpectIdentifier(allowTypeCharacter: true);
 
+				tokenHandler.Expect(TokenType.Equals);
+
 				var clauses = SplitDelimitedList(tokenHandler.RemainingTokens, TokenType.STEP).ToList();
 
 				var rangeExpressions = SplitDelimitedList(clauses[0], TokenType.TO).ToList();
@@ -626,6 +636,12 @@ public class BasicParser
 						_ => default(TargetLineStatement) ?? throw new Exception("Internal error")
 					};
 
+				if (statement.CanBeParameterless)
+				{
+					if (!tokenHandler.HasMoreTokens)
+						return statement;
+				}
+
 				tokenHandler.ExpectMoreTokens();
 
 				switch (tokenHandler.NextToken.Type)
@@ -658,7 +674,7 @@ public class BasicParser
 			case TokenType.ELSEIF:
 			{
 				var statement =
-					tokenHandler.NextToken.Type switch
+					token.Type switch
 					{
 						TokenType.IF => new IfStatement(),
 						TokenType.ELSEIF => new ElseIfStatement(),
@@ -949,7 +965,8 @@ public class BasicParser
 					? tokens[arguments[1].Unwrap().Offset - 1]
 					: tokenHandler.EndToken;
 
-				locate.RowExpression = ParseExpression(arguments[0], rowEndToken);
+				if (arguments[0].Count > 0)
+					locate.RowExpression = ParseExpression(arguments[0], rowEndToken);
 
 				if ((arguments.Count > 1) && arguments[1].Any())
 				{
@@ -1485,7 +1502,7 @@ public class BasicParser
 			case TokenType.FUNCTION:
 			{
 				var statement =
-					tokenHandler.NextToken.Type switch
+					token.Type switch
 					{
 						TokenType.SUB => new SubStatement(),
 						TokenType.FUNCTION => new FunctionStatement(),

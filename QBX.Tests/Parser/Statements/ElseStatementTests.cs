@@ -1,14 +1,30 @@
-/*
+using QBX.CodeModel.Expressions;
+using QBX.CodeModel.Statements;
+using QBX.LexicalAnalysis;
+using QBX.Parser;
+
 namespace QBX.Tests.Parser.Statements;
 
-public class ElseStatement
+public class ElseStatementTests
 {
-	public override StatementType Type => StatementType.Else;
-
-	public override void Render(TextWriter writer)
+	[Test]
+	public void ShouldParse()
 	{
-		writer.Write("ELSE");
+		// Arrange
+		string statement = "ELSE";
+
+		var tokens = new Lexer(statement).ToList();
+
+		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
+
+		bool inType = false;
+
+		var sut = new BasicParser();
+
+		// Act
+		var result = sut.ParseStatement(tokens, colonAfter: false, ref inType);
+
+		// Assert
+		result.Should().BeOfType<ElseStatement>();
 	}
 }
-
-*/

@@ -1,39 +1,38 @@
-/*
-using QBX.CodeModel.Expressions;
+using QBX.CodeModel.Statements;
+using QBX.LexicalAnalysis;
+using QBX.Parser;
 
 namespace QBX.Tests.Parser.Statements;
 
-public class DoStatement
+public class DoStatementTests
 {
-	public override StatementType Type => StatementType.Do;
-
-	public DoConditionType ConditionType { get; set; }
-	public Expression? Expression { get; set; }
-
-	protected virtual void RenderStatementName(TextWriter writer)
-		=> writer.Write("DO");
-
-	public override void Render(TextWriter writer)
+	[TestCase("DO", DoConditionType.None)]
+	[TestCase("DO WHILE 1", DoConditionType.While)]
+	[TestCase("DO UNTIL 0", DoConditionType.Until)]
+	public void ShouldParse(string definition, DoConditionType conditionType)
 	{
-		RenderStatementName(writer);
+		// Arrange
+		var tokens = new Lexer(definition).ToList();
 
-		switch (ConditionType)
-		{
-			case DoConditionType.None:
-				if (Expression != null)
-					throw new Exception("Internal error: Expression supplied on empty DO/LOOP");
+		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
 
-				return;
+		bool inType = false;
 
-			case DoConditionType.While: writer.Write(" WHILE "); break;
-			case DoConditionType.Until: writer.Write(" UNTIL "); break;
-		}
+		var sut = new BasicParser();
 
-		if (Expression == null)
-			throw new Exception("Internal error: No expression supplied on " + Type.ToString().ToUpperInvariant() + " " + ConditionType.ToString().ToUpperInvariant());
+		// Act
+		var result = sut.ParseStatement(tokens, colonAfter: false, ref inType);
 
-		Expression.Render(writer);
+		// Assert
+		result.Should().BeOfType<DoStatement>();
+
+		var doResult = (DoStatement)result;
+
+		doResult.ConditionType.Should().Be(conditionType);
+
+		if (conditionType == DoConditionType.None)
+			doResult.Expression.Should().BeNull();
+		else
+			doResult.Expression.Should().NotBeNull();
 	}
 }
-
-*/

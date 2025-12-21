@@ -1,24 +1,36 @@
-/*
-using QBX.CodeModel.Expressions;
+using QBX.CodeModel.Statements;
+using QBX.LexicalAnalysis;
+using QBX.Parser;
 
 namespace QBX.Tests.Parser.Statements;
 
-public class EndStatement
+public class EndStatementTests
 {
-	public override StatementType Type => StatementType.End;
-
-	public Expression? Expression { get; set; }
-
-	public override void Render(TextWriter writer)
+	[TestCase("END", false)]
+	[TestCase("END 0", true)]
+	[TestCase("END a% + b%", true)]
+	public void ShouldParse(string statement, bool expectExitCodeExpression)
 	{
-		writer.Write("END");
+		// Arrange
+		var tokens = new Lexer(statement).ToList();
 
-		if (Expression != null)
-		{
-			writer.Write(' ');
-			Expression.Render(writer);
-		}
+		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
+
+		bool inType = false;
+
+		var sut = new BasicParser();
+
+		// Act
+		var result = sut.ParseStatement(tokens, colonAfter: false, ref inType);
+
+		// Assert
+		result.Should().BeOfType<EndStatement>();
+
+		var endResult = (EndStatement)result;
+
+		if (expectExitCodeExpression)
+			endResult.Expression.Should().NotBeNull();
+		else
+			endResult.Expression.Should().BeNull();
 	}
 }
-
-*/
