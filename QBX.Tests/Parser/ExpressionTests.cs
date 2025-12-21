@@ -100,6 +100,56 @@ public class ExpressionTests
 	}
 
 	[Test]
+	public void KeywordFunction()
+	{
+		// Arrange
+		var tokens = Tokens(
+			(TokenType.TIMER, ""));
+
+		var endToken = MakeEndToken(tokens);
+
+		var sut = new BasicParser();
+
+		// Act
+		var result = sut.ParseExpression(tokens, endToken);
+
+		// Assert
+		result.Should().BeOfType<KeywordFunctionExpression>();
+
+		var keywordFunction = (KeywordFunctionExpression)result;
+
+		keywordFunction.Function.Should().Be(TokenType.TIMER);
+		keywordFunction.Arguments.Should().BeNull();
+	}
+
+	[Test]
+	public void KeywordFunctionWithParameters()
+	{
+		// Arrange
+		var tokens = Tokens(
+			(TokenType.SIN, ""),
+			(TokenType.OpenParenthesis, ""),
+			(TokenType.Number, "0"),
+			(TokenType.CloseParenthesis, ""));
+
+		var endToken = MakeEndToken(tokens);
+
+		var sut = new BasicParser();
+
+		// Act
+		var result = sut.ParseExpression(tokens, endToken);
+
+		// Assert
+		result.Should().BeOfType<KeywordFunctionExpression>();
+
+		var keywordFunction = (KeywordFunctionExpression)result;
+
+		keywordFunction.Function.Should().Be(TokenType.SIN);
+		keywordFunction.Arguments.Should().NotBeNull();
+		keywordFunction.Arguments.Expressions.Should().HaveCount(1);
+	}
+
+	[Test]
 	public void CallOrIndex()
 	{
 		// Arrange

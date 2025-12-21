@@ -1989,6 +1989,8 @@ public class BasicParser
 					return new ParenthesizedExpression(tokens[0], ParseExpression(tokens.Slice(1, tokens.Count - 2), tokens.Last()));
 				if (tokens[0].Type == TokenType.Identifier)
 					return new CallOrIndexExpression(tokens[0], ParseExpressionList(tokens.Slice(2, tokens.Count - 3), tokens.Last()));
+				if (tokens[0].IsKeywordFunction)
+					return new KeywordFunctionExpression(tokens[0], ParseExpressionList(tokens.Slice(2, tokens.Count - 3), tokens.Last()));
 			}
 
 			if (tokens.Count == 1)
@@ -1997,6 +1999,8 @@ public class BasicParser
 					return new LiteralExpression(tokens[0]);
 				if (tokens[0].Type == TokenType.Identifier)
 					return new IdentifierExpression(tokens[0]);
+				if (tokens[0].IsParameterlessKeywordFunction)
+					return new KeywordFunctionExpression(tokens[0]);
 			}
 
 			throw new SyntaxErrorException(tokens[0], "Expected: expression");
