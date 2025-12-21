@@ -128,6 +128,8 @@ public class TokenHandler(ListRange<Token> tokenss)
 		if (!allowTypeCharacter && char.IsSymbol(identifier.Last()))
 			throw new SyntaxErrorException(identifierToken, "Cannot use a type character in this context");
 
+		_tokenIndex++;
+
 		return identifier;
 	}
 

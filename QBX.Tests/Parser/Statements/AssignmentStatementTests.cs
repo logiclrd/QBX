@@ -20,6 +20,8 @@ public class AssignmentStatementTests
 
 		var tokens = new Lexer(text).ToList();
 
+		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
+
 		bool inType = false;
 
 		var sut = new BasicParser();

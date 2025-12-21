@@ -1759,10 +1759,10 @@ public class BasicParser
 					case TokenType.CloseParenthesis: nesting--; break;
 				}
 			}
-
-			endTokenRef.Token = null;
-			yield return tokens.Slice(itemStart);
 		}
+
+		endTokenRef.Token = null;
+		yield return tokens.Slice(itemStart);
 	}
 
 	VariableDeclaration ParseVariableDeclaration(ListRange<Token> tokens, Token endToken)
