@@ -1,8 +1,9 @@
+using System.Text;
+
 using QBX.CodeModel.Expressions;
 using QBX.CodeModel.Statements;
 using QBX.LexicalAnalysis;
 using QBX.Parser;
-using System.Text;
 
 namespace QBX.Tests.Parser.Statements;
 

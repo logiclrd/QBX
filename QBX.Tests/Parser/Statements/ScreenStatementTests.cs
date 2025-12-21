@@ -1,40 +1,75 @@
-/*
+using System.Text;
+
 using QBX.CodeModel.Expressions;
+using QBX.CodeModel.Statements;
+using QBX.LexicalAnalysis;
+using QBX.Parser;
 
 namespace QBX.Tests.Parser.Statements;
 
-public class ScreenStatement
+public class ScreenStatementTests
 {
-	public override StatementType Type => StatementType.Screen;
-
-	public Expression? ModeExpression { get; set; }
-	public Expression? ColourSwitchExpression { get; set; }
-	public Expression? ActivePageExpression { get; set; }
-	public Expression? VisiblePageExpression { get; set; }
-
-	public override void Render(TextWriter writer)
+	[Test]
+	public void ShouldParse(
+		[Values] bool includeColourSwitch,
+		[Values] bool includeActivePage,
+		[Values] bool includeVisiblePage)
 	{
-		writer.Write("SCREEN ");
-		ModeExpression?.Render(writer);
+		// Arrange
+		var statement = new StringBuilder();
 
-		if ((ColourSwitchExpression != null) || (ActivePageExpression != null) || (VisiblePageExpression != null))
+		statement.Append("SCREEN 0");
+
+		if (includeColourSwitch || includeActivePage || includeVisiblePage)
 		{
-			writer.Write(", ");
-			ColourSwitchExpression?.Render(writer);
+			statement.Append(", ");
 
-			if ((ActivePageExpression != null) || (VisiblePageExpression != null))
+			if (includeColourSwitch)
+				statement.Append("1");
+
+			if (includeActivePage || includeVisiblePage)
 			{
-				writer.Write(", ");
-				ActivePageExpression?.Render(writer);
+				statement.Append(", ");
 
-				if (VisiblePageExpression != null)
-				{
-					writer.Write(", ");
-					VisiblePageExpression?.Render(writer);
-				}
+				if (includeActivePage)
+					statement.Append("2");
+
+				if (includeVisiblePage)
+					statement.Append(", 3");
 			}
 		}
+
+		var tokens = new Lexer(statement.ToString()).ToList();
+
+		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
+
+		bool inType = false;
+
+		var sut = new BasicParser();
+
+		// Act
+		var result = sut.ParseStatement(tokens, ref inType);
+
+		// Assert
+		result.Should().BeOfType<ScreenStatement>();
+
+		var screenResult = (ScreenStatement)result;
+
+		screenResult.ModeExpression.Should().BeOfType<LiteralExpression>().Which.Token!.Value.Should().Be("0");
+
+		if (includeColourSwitch)
+			screenResult.ColourSwitchExpression.Should().BeOfType<LiteralExpression>().Which.Token!.Value.Should().Be("1");
+		else
+			screenResult.ColourSwitchExpression.Should().BeNull();
+
+		if (includeActivePage)
+			screenResult.ActivePageExpression.Should().BeOfType<LiteralExpression>().Which.Token!.Value.Should().Be("2");
+		else
+			screenResult.ActivePageExpression.Should().BeNull();
+
+		if (includeVisiblePage)
+			screenResult.VisiblePageExpression.Should().BeOfType<LiteralExpression>().Which.Token!.Value.Should().Be("3");
+		else
+			screenResult.VisiblePageExpression.Should().BeNull();
 	}
 }
-
-*/

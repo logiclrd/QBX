@@ -1,29 +1,45 @@
-/*
 using QBX.CodeModel.Expressions;
+using QBX.CodeModel.Statements;
+using QBX.LexicalAnalysis;
+using QBX.Parser;
 
 namespace QBX.Tests.Parser.Statements;
 
-public class ScreenWidthStatement
+public class WidthStatementTests
 {
-	public override StatementType Type => StatementType.ScreenWidth;
-
-	public Expression? WidthExpression { get; set; }
-	public Expression? HeightExpression { get; set; }
-
-	public override void Render(TextWriter writer)
+	[TestCase("WIDTH 80", true, false)]
+	[TestCase("WIDTH , 50", false, true)]
+	[TestCase("WIDTH 80, 50", true, true)]
+	public void ShouldParse(string statement, bool expectWidth, bool expectHeight)
 	{
-		if ((WidthExpression == null) && (HeightExpression == null))
-			throw new Exception("Internal error: ScreenWidthStatement with neither Width or Height expression");
+		// Arrange
+		var tokens = new Lexer(statement).ToList();
 
-		writer.Write("WIDTH ");
-		WidthExpression?.Render(writer);
+		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
 
-		if (HeightExpression != null)
-		{
-			writer.Write(", ");
-			HeightExpression.Render(writer);
-		}
+		bool inType = false;
+
+		var sut = new BasicParser();
+
+		// Act
+		var result = sut.ParseStatement(tokens, ref inType);
+
+		// Assert
+		if (result is UnresolvedWidthStatement unresolved)
+			result = unresolved.ResolveToScreenWidth();
+
+		result.Should().BeOfType<ScreenWidthStatement>();
+
+		var widthResult = (ScreenWidthStatement)result;
+
+		if (expectWidth)
+			widthResult.WidthExpression.Should().BeOfType<LiteralExpression>().Which.Token!.Value.Should().Be("80");
+		else
+			widthResult.WidthExpression.Should().BeNull();
+
+		if (expectHeight)
+			widthResult.HeightExpression.Should().BeOfType<LiteralExpression>().Which.Token!.Value.Should().Be("50");
+		else
+			widthResult.HeightExpression.Should().BeNull();
 	}
 }
-
-*/

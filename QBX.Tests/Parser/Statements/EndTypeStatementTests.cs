@@ -1,14 +1,27 @@
-/*
+using QBX.CodeModel.Statements;
+using QBX.LexicalAnalysis;
+using QBX.Parser;
+
 namespace QBX.Tests.Parser.Statements;
 
-public class EndTypeStatement
+public class EndTypeStatementTests
 {
-	public override StatementType Type => StatementType.EndType;
-
-	public override void Render(TextWriter writer)
+	[Test]
+	public void ShouldParse()
 	{
-		writer.Write("END TYPE");
+		// Arrange
+		var tokens = new Lexer("END TYPE").ToList();
+
+		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
+
+		bool inType = true;
+
+		var sut = new BasicParser();
+
+		// Act
+		var result = sut.ParseStatement(tokens, ref inType);
+
+		// Assert
+		result.Should().BeOfType<EndTypeStatement>();
 	}
 }
-
-*/

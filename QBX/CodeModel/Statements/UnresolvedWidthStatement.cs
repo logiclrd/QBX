@@ -24,4 +24,18 @@ public class UnresolvedWidthStatement : Statement
 		writer.Write(", ");
 		Expression2.Render(writer);
 	}
+
+	public ScreenWidthStatement ResolveToScreenWidth() =>
+		new ScreenWidthStatement()
+		{
+			WidthExpression = Expression1,
+			HeightExpression = Expression2,
+		};
+
+	public DeviceWidthStatement ResolveToDeviceWidth() =>
+		new DeviceWidthStatement()
+		{
+			DeviceExpression = Expression1,
+			WidthExpression = Expression2,
+		};
 }

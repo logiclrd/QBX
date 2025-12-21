@@ -1454,27 +1454,26 @@ public class BasicParser
 
 				tokenHandler.ExpectMoreTokens();
 
-				var variables = SplitCommaDelimitedList(tokenHandler.RemainingTokens);
+				var endTokenRef = new TokenRef();
 
-				foreach (var variable in variables)
+				foreach (var target in SplitCommaDelimitedList(tokenHandler.RemainingTokens, endTokenRef))
 				{
-					if (variable.Count == 0)
+					if (target.Count == 0)
 					{
-						var range = variable.Unwrap();
+						var range = target.Unwrap();
 
 						if (range.Offset >= tokens.Count)
 							range.Offset--;
 
-						throw new SyntaxErrorException(tokens[range.Offset], "Expected: identifier");
+						throw new SyntaxErrorException(tokens[range.Offset], "Expected: expression");
 					}
 
-					if (variable[0].Type != TokenType.Identifier)
-						throw new SyntaxErrorException(variable[0], "Expected: identifier");
+					var targetExpression = ParseExpression(target, endTokenRef.Token ?? tokenHandler.EndToken);
 
-					if (variable.Count > 1)
-						throw new SyntaxErrorException(variable[1], "Expected: comma or end of statement");
+					if (!targetExpression.IsValidAssignmentTarget())
+						throw new SyntaxErrorException(target[0], "Expected: valid assignment target");
 
-					read.Variables.Add(variable[0].Value ?? throw new Exception("Internal error: Identifier with no value"));
+					read.Targets.Add(targetExpression);
 				}
 
 				return read;
@@ -1895,11 +1894,19 @@ public class BasicParser
 
 				var arguments = SplitCommaDelimitedList(tokenHandler.RemainingTokens).ToList();
 
-				if (arguments.Count == 1)
+				if ((arguments.Count == 1)
+				 || ((arguments.Count == 2) && (arguments[0].Count == 0)))
 				{
 					var width = new ScreenWidthStatement();
 
-					width.WidthExpression = ParseExpression(arguments[0], tokenHandler.EndToken);
+					var screenWidthMidToken = arguments.Count == 1
+						? tokenHandler.EndToken
+						: tokens[arguments[1].Unwrap().Offset - 1];
+
+					if (arguments[0].Any())
+						width.WidthExpression = ParseExpression(arguments[0], screenWidthMidToken);
+					if (arguments.Count > 1)
+						width.HeightExpression = ParseExpression(arguments[1], tokenHandler.EndToken);
 
 					return width;
 				}

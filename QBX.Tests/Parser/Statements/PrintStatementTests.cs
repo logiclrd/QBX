@@ -1,7 +1,6 @@
 using QBX.CodeModel.Statements;
 using QBX.LexicalAnalysis;
 using QBX.Parser;
-using System.Runtime.ConstrainedExecution;
 
 namespace QBX.Tests.Parser.Statements;
 

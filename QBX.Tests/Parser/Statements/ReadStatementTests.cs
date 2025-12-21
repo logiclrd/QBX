@@ -1,24 +1,37 @@
-/*
+using QBX.CodeModel.Statements;
+using QBX.LexicalAnalysis;
+using QBX.Parser;
+
 namespace QBX.Tests.Parser.Statements;
 
-public class ReadStatement
+public class ReadStatementTests
 {
-	public override StatementType Type => StatementType.Read;
-
-	public List<string> Variables { get; } = new List<string>();
-
-	public override void Render(TextWriter writer)
+	[TestCase("READ a", 1)]
+	[TestCase("READ b, c", 2)]
+	[TestCase("READ d(e)", 1)]
+	[TestCase("READ f.g", 1)]
+	[TestCase("READ h(i).j", 1)]
+	[TestCase("READ k.l(m)", 1)]
+	[TestCase("READ d(e), f.g, h(i).j, k.l(m)", 4)]
+	public void ShouldParse(string statement, int expectedTargetCount)
 	{
-		writer.Write("READ ");
+		// Arrange
+		var tokens = new Lexer(statement).ToList();
 
-		for (int i = 0; i < Variables.Count; i++)
-		{
-			if (i > 0)
-				writer.Write(", ");
+		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
 
-			writer.Write(Variables[i]);
-		}
+		bool inType = false;
+
+		var sut = new BasicParser();
+
+		// Act
+		var result = sut.ParseStatement(tokens, ref inType);
+
+		// Assert
+		result.Should().BeOfType<ReadStatement>();
+
+		var readResult = (ReadStatement)result;
+
+		readResult.Targets.Should().HaveCount(expectedTargetCount);
 	}
 }
-
-*/
