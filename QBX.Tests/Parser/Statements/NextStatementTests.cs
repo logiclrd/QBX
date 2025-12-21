@@ -1,31 +1,40 @@
-/*
 using QBX.CodeModel.Expressions;
+using QBX.CodeModel.Statements;
+using QBX.LexicalAnalysis;
+using QBX.Parser;
 
 namespace QBX.Tests.Parser.Statements;
 
-public class NextStatement
+public class NextStatementTests
 {
-	public override StatementType Type => StatementType.Next;
-
-	public List<Expression> CounterExpressions { get; } = new List<Expression>();
-
-	public override void Render(TextWriter writer)
+	[TestCase("NEXT", new string[0])]
+	[TestCase("NEXT a%", new string[] { "a%" })]
+	[TestCase("NEXT k, j, i", new string[] { "k", "j", "i" })]
+	public void ShouldParse(string statement, string[] expectedVariables)
 	{
-		writer.Write("NEXT");
+		// Arrange
+		var tokens = new Lexer(statement).ToList();
 
-		if (CounterExpressions.Any())
+		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
+
+		bool inType = false;
+
+		var sut = new BasicParser();
+
+		// Act
+		var result = sut.ParseStatement(tokens, colonAfter: false, ref inType);
+
+		// Assert
+		result.Should().BeOfType<NextStatement>();
+
+		var nextResult = (NextStatement)result;
+
+		nextResult.CounterExpressions.Should().HaveCount(expectedVariables.Length);
+
+		for (int i = 0; i < expectedVariables.Length; i++)
 		{
-			writer.Write(' ');
-
-			for (int i = 0; i < CounterExpressions.Count; i++)
-			{
-				if (i > 0)
-					writer.Write(", ");
-
-				CounterExpressions[i].Render(writer);
-			}
+			nextResult.CounterExpressions[i].Should().BeOfType<IdentifierExpression>()
+				.Which.Token!.Value.Should().Be(expectedVariables[i]);
 		}
 	}
 }
-
-*/

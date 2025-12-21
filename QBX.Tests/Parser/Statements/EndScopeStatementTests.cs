@@ -1,22 +1,32 @@
-/*
+using QBX.CodeModel.Statements;
+using QBX.LexicalAnalysis;
+using QBX.Parser;
+
 namespace QBX.Tests.Parser.Statements;
 
-public class EndScopeStatement
+public class EndScopeStatementTests
 {
-	public override StatementType Type => StatementType.EndScope;
-
-	public ScopeType ScopeType { get; set; }
-
-	public override void Render(TextWriter writer)
+	[TestCase("END SUB", ScopeType.Sub)]
+	[TestCase("END FUNCTION", ScopeType.Function)]
+	public void ShouldParse(string statement, ScopeType expectedScopeType)
 	{
-		switch (ScopeType)
-		{
-			case ScopeType.Sub: writer.Write("END SUB"); break;
-			case ScopeType.Function: writer.Write("END FUNCTION"); break;
+		// Arrange
+		var tokens = new Lexer(statement).ToList();
 
-			default: throw new Exception("Internal error: Invalid ScopeType");
-		}
+		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
+
+		bool inType = false;
+
+		var sut = new BasicParser();
+
+		// Act
+		var result = sut.ParseStatement(tokens, colonAfter: false, ref inType);
+
+		// Assert
+		result.Should().BeOfType<EndScopeStatement>();
+
+		var endScopeResult = (EndScopeStatement)result;
+
+		endScopeResult.ScopeType.Should().Be(expectedScopeType);
 	}
 }
-
-*/
