@@ -6,18 +6,18 @@ public class AssignmentStatement : Statement
 {
 	public override StatementType Type => StatementType.Assignment;
 
-	public string Variable { get; set; } = "";
-	public Expression? Expression { get; set; }
+	public Expression? TargetExpression { get; set; }
+	public Expression? ValueExpression { get; set; }
 
 	public override void Render(TextWriter writer)
 	{
-		if (Variable == "")
-			throw new Exception("Internal error: AssignmentStatement with no variable");
-		if (Expression == null)
-			throw new Exception("Internal error: AssignmentStatement with no expression");
+		if (TargetExpression == null)
+			throw new Exception("Internal error: AssignmentStatement with no target");
+		if (ValueExpression == null)
+			throw new Exception("Internal error: AssignmentStatement with no value");
 
-		writer.Write(Variable);
+		TargetExpression.Render(writer);
 		writer.Write(" = ");
-		Expression.Render(writer);
+		ValueExpression.Render(writer);
 	}
 }

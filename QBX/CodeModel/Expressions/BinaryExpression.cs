@@ -17,6 +17,8 @@ public class BinaryExpression : Expression
 		Operator =
 			operatorToken.Type switch
 			{
+				TokenType.Period => Operator.Member,
+
 				TokenType.Plus => Operator.Add,
 				TokenType.Minus => Operator.Subtract,
 				TokenType.Asterisk => Operator.Multiply,
@@ -45,32 +47,38 @@ public class BinaryExpression : Expression
 	public override void Render(TextWriter writer)
 	{
 		Left.Render(writer);
-		writer.Write(' ');
 
-		switch (Operator)
+		if (Operator == Operator.Member)
+			writer.Write('.');
+		else
 		{
-			case Operator.Add: writer.Write('+'); break;
-			case Operator.Subtract: writer.Write('-'); break;
-			case Operator.Multiply: writer.Write('*'); break;
-			case Operator.Divide: writer.Write('/'); break;
-			case Operator.Exponentiate: writer.Write('^'); break;
-			case Operator.IntegerDivide: writer.Write('\\'); break;
-			case Operator.Modulo: writer.Write("MOD"); break;
+			writer.Write(' ');
 
-			case Operator.Equals: writer.Write('='); break;
-			case Operator.NotEquals: writer.Write("<>"); break;
-			case Operator.LessThan: writer.Write('<'); break;
-			case Operator.LessThanOrEquals: writer.Write("<="); break;
-			case Operator.GreaterThan: writer.Write('>'); break;
-			case Operator.GreaterThanOrEquals: writer.Write(">="); break;
+			switch (Operator)
+			{
+				case Operator.Add: writer.Write('+'); break;
+				case Operator.Subtract: writer.Write('-'); break;
+				case Operator.Multiply: writer.Write('*'); break;
+				case Operator.Divide: writer.Write('/'); break;
+				case Operator.Exponentiate: writer.Write('^'); break;
+				case Operator.IntegerDivide: writer.Write('\\'); break;
+				case Operator.Modulo: writer.Write("MOD"); break;
 
-			case Operator.And: writer.Write("AND"); break;
-			case Operator.Or: writer.Write("OR"); break;
-			case Operator.ExclusiveOr: writer.Write("XOR"); break;
-			case Operator.Equivalent: writer.Write("EQV"); break;
-			case Operator.Implies: writer.Write("IMP"); break;
+				case Operator.Equals: writer.Write('='); break;
+				case Operator.NotEquals: writer.Write("<>"); break;
+				case Operator.LessThan: writer.Write('<'); break;
+				case Operator.LessThanOrEquals: writer.Write("<="); break;
+				case Operator.GreaterThan: writer.Write('>'); break;
+				case Operator.GreaterThanOrEquals: writer.Write(">="); break;
 
-			default: throw new Exception("Internal error: Unspecified binary expression operator");
+				case Operator.And: writer.Write("AND"); break;
+				case Operator.Or: writer.Write("OR"); break;
+				case Operator.ExclusiveOr: writer.Write("XOR"); break;
+				case Operator.Equivalent: writer.Write("EQV"); break;
+				case Operator.Implies: writer.Write("IMP"); break;
+
+				default: throw new Exception("Internal error: Unspecified binary expression operator");
+			}
 		}
 
 		writer.Write(' ');

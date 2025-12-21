@@ -192,11 +192,6 @@ public class LexerTests
 		result[0].DataType.Should().Be(expectedType);
 	}
 
-	[TestCase("i", DataType.Unspecified)]
-	[TestCase("bob", DataType.Unspecified)]
-	[TestCase("M34", DataType.Unspecified)]
-	[TestCase("HelloWorld", DataType.Unspecified)]
-	[TestCase("Hello9World", DataType.Unspecified)]
 	public void Identifiers(
 		[Values("i", "bob", "M34", "HelloWorld", "Hello9World")]
 		string name,
@@ -204,7 +199,10 @@ public class LexerTests
 		DataType dataType)
 	{
 		// Arrange
-		string content = name + new TypeCharacter(dataType).Character;
+		string content =
+			dataType == DataType.Unspecified
+			? name
+			: name + new TypeCharacter(dataType).Character;
 
 		var sut = new Lexer(content);
 

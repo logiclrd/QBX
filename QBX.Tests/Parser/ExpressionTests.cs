@@ -177,7 +177,8 @@ public class ExpressionTests
 
 		var callOrIndex = (CallOrIndexExpression)result;
 
-		callOrIndex.Name.Should().Be(TargetName);
+		callOrIndex.Subject.Should().BeOfType<IdentifierExpression>()
+			.Which.Token!.Value.Should().Be(TargetName);
 		callOrIndex.Arguments.Expressions.Should().HaveCount(2);
 		callOrIndex.Arguments.Expressions[0].Should().BeOfType<LiteralExpression>()
 			.Which.Token!.Value.Should().Be(Argument1);
@@ -336,5 +337,182 @@ public class ExpressionTests
 
 		first.Operator.Should().Be(expectedFirstOperator);
 		second.Operator.Should().Be(expectedSecondOperator);
+	}
+
+	[Test]
+	public void Member()
+	{
+		// Arrange
+		var tokens = Tokens(
+			(TokenType.Identifier, "struct"),
+			(TokenType.Period, ""),
+			(TokenType.Identifier, "field"));
+
+		var endToken = MakeEndToken(tokens);
+
+		var sut = new BasicParser();
+
+		// Act
+		var result = sut.ParseExpression(tokens, endToken);
+
+		// Assert
+		result.Should().BeOfType<BinaryExpression>();
+
+		var binaryResult = (BinaryExpression)result;
+
+		binaryResult.Operator.Should().Be(Operator.Member);
+
+		binaryResult.Left.Should().BeOfType<IdentifierExpression>()
+			.Which.Identifier.Should().Be("struct");
+		binaryResult.Right.Should().BeOfType<IdentifierExpression>()
+			.Which.Identifier.Should().Be("field");
+	}
+
+	[Test]
+	public void MemberOfMember()
+	{
+		// Arrange
+		var tokens = Tokens(
+			(TokenType.Identifier, "struct"),
+			(TokenType.Period, ""),
+			(TokenType.Identifier, "field"),
+			(TokenType.Period, ""),
+			(TokenType.Identifier, "subfield"));
+
+		var endToken = MakeEndToken(tokens);
+
+		var sut = new BasicParser();
+
+		// Act
+		var result = sut.ParseExpression(tokens, endToken);
+
+		// Assert
+		result.Should().BeOfType<BinaryExpression>();
+
+		var binaryResult = (BinaryExpression)result;
+
+		binaryResult.Operator.Should().Be(Operator.Member);
+
+		binaryResult.Left.Should().BeOfType<BinaryExpression>();
+
+		var subBinaryResult = (BinaryExpression)binaryResult.Left;
+
+		subBinaryResult.Operator.Should().Be(Operator.Member);
+
+		subBinaryResult.Left.Should().BeOfType<IdentifierExpression>()
+			.Which.Identifier.Should().Be("struct");
+		subBinaryResult.Right.Should().BeOfType<IdentifierExpression>()
+			.Which.Identifier.Should().Be("field");
+		binaryResult.Right.Should().BeOfType<IdentifierExpression>()
+			.Which.Identifier.Should().Be("subfield");
+	}
+
+	[Test]
+	public void IndexMember()
+	{
+		// Arrange
+		var tokens = Tokens(
+			(TokenType.Identifier, "struct"),
+			(TokenType.Period, ""),
+			(TokenType.Identifier, "field"),
+			(TokenType.OpenParenthesis, ""),
+			(TokenType.Number, "1"),
+			(TokenType.CloseParenthesis, ""));
+
+		var endToken = MakeEndToken(tokens);
+
+		var sut = new BasicParser();
+
+		// Act
+		var result = sut.ParseExpression(tokens, endToken);
+
+		// Assert
+		result.Should().BeOfType<CallOrIndexExpression>();
+
+		var indexResult = (CallOrIndexExpression)result;
+
+		indexResult.Arguments.Expressions.Should().HaveCount(1);
+		indexResult.Subject.Should().BeOfType<BinaryExpression>();
+
+		var binaryResult = (BinaryExpression)indexResult.Subject;
+
+		binaryResult.Operator.Should().Be(Operator.Member);
+	}
+
+	[Test]
+	public void MemberOfArrayElement()
+	{
+		// Arrange
+		var tokens = Tokens(
+			(TokenType.Identifier, "array"),
+			(TokenType.OpenParenthesis, ""),
+			(TokenType.Number, "1"),
+			(TokenType.CloseParenthesis, ""),
+			(TokenType.Period, ""),
+			(TokenType.Identifier, "field"));
+
+		var endToken = MakeEndToken(tokens);
+
+		var sut = new BasicParser();
+
+		// Act
+		var result = sut.ParseExpression(tokens, endToken);
+
+		// Assert
+		result.Should().BeOfType<BinaryExpression>();
+
+		var binaryResult = (BinaryExpression)result;
+
+		binaryResult.Operator.Should().Be(Operator.Member);
+
+		binaryResult.Left.Should().BeOfType<CallOrIndexExpression>();
+
+		var indexResult = (CallOrIndexExpression)binaryResult.Left;
+
+		indexResult.Arguments.Expressions.Should().HaveCount(1);
+		indexResult.Subject.Should().BeOfType<IdentifierExpression>()
+			.Which.Token!.Value.Should().Be("array");
+
+		binaryResult.Right.Should().BeOfType<IdentifierExpression>()
+			.Which.Token!.Value.Should().Be("field");
+	}
+
+	[Test]
+	public void MemberPrecedence()
+	{
+		// Arrange
+		var tokens = Tokens(
+			(TokenType.Identifier, "struct"),
+			(TokenType.Period, ""),
+			(TokenType.Identifier, "field"),
+			(TokenType.Caret, ""),
+			(TokenType.Number, "2"));
+
+		var endToken = MakeEndToken(tokens);
+
+		var sut = new BasicParser();
+
+		// Act
+		var result = sut.ParseExpression(tokens, endToken);
+
+		// Assert
+		result.Should().BeOfType<BinaryExpression>();
+
+		var binaryResult = (BinaryExpression)result;
+
+		binaryResult.Operator.Should().Be(Operator.Exponentiate);
+
+		binaryResult.Left.Should().BeOfType<BinaryExpression>();
+
+		var subBinaryResult = (BinaryExpression)binaryResult.Left;
+
+		subBinaryResult.Operator.Should().Be(Operator.Member);
+
+		subBinaryResult.Left.Should().BeOfType<IdentifierExpression>()
+			.Which.Identifier.Should().Be("struct");
+		subBinaryResult.Right.Should().BeOfType<IdentifierExpression>()
+			.Which.Identifier.Should().Be("field");
+		binaryResult.Right.Should().BeOfType<LiteralExpression>()
+			.Which.Token!.Value.Should().Be("2");
 	}
 }

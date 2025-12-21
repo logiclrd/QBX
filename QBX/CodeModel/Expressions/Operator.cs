@@ -2,7 +2,9 @@
 
 public enum Operator
 {
-	[Precedence(2)] Negate, // unary
+	[Precedence(0)] Member,
+
+	[Precedence(1)] Negate, // unary
 
 	[Precedence(6)] Add,
 	[Precedence(6)] Subtract,

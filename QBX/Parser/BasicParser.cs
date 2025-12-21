@@ -3,6 +3,8 @@ using QBX.CodeModel.Expressions;
 using QBX.CodeModel.Statements;
 using QBX.LexicalAnalysis;
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace QBX.Parser;
 
 public class BasicParser
@@ -1760,21 +1762,35 @@ public class BasicParser
 
 		// If not one of the above, then one of:
 		//   subname argumentlist
-		//   variablename = expression
+		//   assignmenttarget = value
 
-		if (tokenHandler.NextTokenIs(TokenType.Equals))
+		tokenHandler.Reset();
+
+		int equalsSign = tokenHandler.FindNextUnparenthesizedOf(TokenType.Equals);
+
+		if (equalsSign > 0)
 		{
-			var assignment = new AssignmentStatement();
+			Expression? targetExpression = null;
 
-			tokenHandler.Reset();
+			try
+			{
+				targetExpression = ParseExpression(tokenHandler.RemainingTokens.Slice(0, equalsSign), tokenHandler[equalsSign]);
+			}
+			catch (SyntaxErrorException) { }
 
-			assignment.Variable = tokenHandler.ExpectIdentifier(allowTypeCharacter: true);
+			if (IsValidAssignmentTarget(targetExpression))
+			{
+				var assignment = new AssignmentStatement();
 
-			tokenHandler.Expect(TokenType.Equals);
+				assignment.TargetExpression = targetExpression;
 
-			assignment.Expression = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken);
+				tokenHandler.Advance(equalsSign);
+				tokenHandler.Expect(TokenType.Equals);
 
-			return assignment;
+				assignment.ValueExpression = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken);
+
+				return assignment;
+			}
 		}
 		else
 		{
@@ -1789,6 +1805,26 @@ public class BasicParser
 
 			return new CallStatement(CallStatementType.Implicit, targetName, arguments);
 		}
+
+		throw new SyntaxErrorException(tokens[0], "Syntax error");
+	}
+
+	private bool IsValidAssignmentTarget([NotNullWhen(true)] Expression? targetExpression)
+	{
+		if (targetExpression == null)
+			return false;
+
+		if ((targetExpression is BinaryExpression binaryTarget)
+		 && (binaryTarget.Operator == Operator.Member))
+			return true;
+
+		if (targetExpression is CallOrIndexExpression)
+			return true;
+
+		if (targetExpression is IdentifierExpression)
+			return true;
+
+		return false;
 	}
 
 	class TokenRef
@@ -2021,19 +2057,57 @@ public class BasicParser
 
 	internal Expression ParseExpression(ListRange<Token> tokens, Token endToken)
 	{
+		int level = 0;
+
+		bool tailParenthesized = (tokens.Count > 0) && (tokens.Last().Type == TokenType.CloseParenthesis);
+		int openParenthesisIndex = -1;
+
+		if (tailParenthesized)
+		{
+			for (int i = tokens.Count - 1; i >= 0; i--)
+			{
+				switch (tokens[i].Type)
+				{
+					case TokenType.CloseParenthesis: level++; break;
+					case TokenType.OpenParenthesis: level--; break;
+				}
+
+				if (level == 0)
+				{
+					openParenthesisIndex = i;
+					break;
+				}
+			}
+
+			if (openParenthesisIndex > 0)
+			{
+				Expression? subjectExpression = null;
+
+				try
+				{
+					subjectExpression = ParseExpression(tokens.Slice(0, openParenthesisIndex), tokens[openParenthesisIndex]);
+				}
+				catch (SyntaxErrorException) { }
+
+				if (IsValidIndexSubject(subjectExpression))
+				{
+					return new CallOrIndexExpression(
+						tokens[openParenthesisIndex],
+						subjectExpression,
+						ParseExpressionList(tokens.Slice(openParenthesisIndex + 1, tokens.Count - openParenthesisIndex - 2), tokens.Last()));
+				}
+			}
+		}
+
 		int lastOperatorIndex = -1;
 		int lastOperatorPrecedence = -1;
-		int level = 0;
-		bool entirelyParenthesized = tokens.Count > 2;
+
+		level = 0;
 
 		for (int i = 0; i < tokens.Count; i++)
 		{
 			if (level == 0)
 			{
-				// Allow for "identifier(...)".
-				if ((i > 1) && (i + 1 < tokens.Count))
-					entirelyParenthesized = false;
-
 				if (IsOperator(tokens[i], out var op))
 				{
 					var precedence = op.GetPrecedence();
@@ -2058,10 +2132,17 @@ public class BasicParser
 
 		if (lastOperatorIndex > 0)
 		{
+			var leftExpression = ParseExpression(tokens.Slice(0, lastOperatorIndex), tokens[lastOperatorIndex]);
+			var rightExpression = ParseExpression(tokens.Slice(lastOperatorIndex + 1), endToken);
+
+			if ((tokens[lastOperatorIndex].Type == TokenType.Period)
+			 && !IsValidMemberSubject(leftExpression))
+				throw new SyntaxErrorException(tokens[lastOperatorIndex + 1], "Expected: identifier");
+
 			return new BinaryExpression(
-				ParseExpression(tokens.Slice(0, lastOperatorIndex), tokens[lastOperatorIndex]),
+				leftExpression,
 				tokens[lastOperatorIndex],
-				ParseExpression(tokens.Slice(lastOperatorIndex + 1), endToken));
+				rightExpression);
 		}
 		else
 		{
@@ -2085,13 +2166,12 @@ public class BasicParser
 			if ((tokens[0].Type == TokenType.Minus) || (tokens[0].Type == TokenType.NOT))
 				return new UnaryExpression(tokens[0], ParseExpression(tokens.Slice(1), endToken));
 
-			if (entirelyParenthesized)
+			if (tailParenthesized)
 			{
-				if (tokens[0].Type == TokenType.OpenParenthesis)
+				if (openParenthesisIndex == 0)
 					return new ParenthesizedExpression(tokens[0], ParseExpression(tokens.Slice(1, tokens.Count - 2), tokens.Last()));
-				if (tokens[0].Type == TokenType.Identifier)
-					return new CallOrIndexExpression(tokens[0], ParseExpressionList(tokens.Slice(2, tokens.Count - 3), tokens.Last()));
-				if (tokens[0].IsKeywordFunction)
+
+				if ((openParenthesisIndex == 1) && tokens[0].IsKeywordFunction)
 					return new KeywordFunctionExpression(tokens[0], ParseExpressionList(tokens.Slice(2, tokens.Count - 3), tokens.Last()));
 			}
 
@@ -2109,10 +2189,39 @@ public class BasicParser
 		}
 	}
 
+	private bool IsValidIndexSubject([NotNullWhen(true)] Expression? expression)
+	{
+		if (expression is IdentifierExpression)
+			return true;
+
+		if ((expression is BinaryExpression binaryExpression)
+		 && (binaryExpression.Operator == Operator.Member))
+			return true;
+
+		return false;
+	}
+
+	private bool IsValidMemberSubject([NotNullWhen(true)] Expression? expression)
+	{
+		if (expression is IdentifierExpression)
+			return true;
+
+		if (expression is CallOrIndexExpression)
+			return true;
+
+		if ((expression is BinaryExpression binaryExpression)
+		 && (binaryExpression.Operator == Operator.Member))
+			return true;
+
+		return false;
+	}
+
 	private bool IsOperator(Token token, out Operator op)
 	{
 		switch (token.Type)
 		{
+			case TokenType.Period: op = Operator.Member; return true;
+
 			case TokenType.Plus: op = Operator.Add; return true;
 			case TokenType.Minus: op = Operator.Subtract; return true;
 			case TokenType.Asterisk: op = Operator.Multiply; return true;
