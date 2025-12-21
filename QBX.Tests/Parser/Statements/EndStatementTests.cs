@@ -21,7 +21,7 @@ public class EndStatementTests
 		var sut = new BasicParser();
 
 		// Act
-		var result = sut.ParseStatement(tokens, colonAfter: false, ref inType);
+		var result = sut.ParseStatement(tokens, ref inType);
 
 		// Assert
 		result.Should().BeOfType<EndStatement>();
