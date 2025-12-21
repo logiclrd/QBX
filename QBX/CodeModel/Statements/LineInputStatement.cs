@@ -12,7 +12,7 @@ public class LineInputStatement : Statement
 	public string? PromptString { get; set; }
 	public string? Variable { get; set; }
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		writer.Write("LINE INPUT ");
 

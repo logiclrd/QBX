@@ -8,7 +8,7 @@ public class FileWidthStatement : OutputWidthStatement
 
 	public Expression? FileNumberExpression { get; set; }
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		if (FileNumberExpression == null)
 			throw new Exception("Internal error: FileWidthStatement with no FileNumberExpression");

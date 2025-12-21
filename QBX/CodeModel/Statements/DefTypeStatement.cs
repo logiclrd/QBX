@@ -10,7 +10,7 @@ public class DefTypeStatement : Statement
 	public char? RangeStart { get; set; }
 	public char? RangeEnd { get; set; }
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		switch (DataType)
 		{

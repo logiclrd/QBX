@@ -1,5 +1,7 @@
 ﻿using QBX.LexicalAnalysis;
-using System.Globalization;
+using QBX.Numbers;
+
+using System.Diagnostics;
 
 namespace QBX.CodeModel.Expressions;
 
@@ -19,44 +21,7 @@ public class LiteralExpression : Expression
 		if (str == null)
 			return false;
 
-		if (char.IsSymbol(str.Last()))
-			return (str.Last() == '%');
-
-		int parsed;
-
-		if (str.StartsWith("&H", StringComparison.OrdinalIgnoreCase))
-		{
-			if (!int.TryParse(str.Substring(2), NumberStyles.HexNumber, default, out parsed))
-				return false;
-		}
-		else if (str.StartsWith("&O", StringComparison.OrdinalIgnoreCase))
-		{
-			parsed = 0;
-
-			for (int i = 2; i < str.Length; i++)
-			{
-				if (!char.IsAsciiDigit(str[i]))
-					return false;
-
-				parsed = (parsed * 8) + (str[i] - '0');
-
-				if (parsed > short.MaxValue)
-					return false;
-			}
-		}
-		else
-		{
-			if (!int.TryParse(str, out parsed))
-				return false;
-		}
-
-		if ((parsed >= short.MinValue) && (parsed <= short.MaxValue))
-		{
-			value = (short)parsed;
-			return true;
-		}
-
-		return false;
+		return NumberParser.TryAsInteger(str, out value);
 	}
 
 	public bool TryAsLong(out int value)
@@ -68,47 +33,99 @@ public class LiteralExpression : Expression
 		if (str == null)
 			return false;
 
-		if (char.IsSymbol(str.Last()))
-		{
-			if (str.Last() != '%')
-				return false;
+		return NumberParser.TryAsLong(str, out value);
+	}
 
-			str = str.Remove(str.Length - 1);
-		}
+	public bool TryAsSingle(out float value)
+	{
+		value = default;
 
-		if (str.StartsWith("&H", StringComparison.OrdinalIgnoreCase))
-		{
-			if (!int.TryParse(str.Substring(2), NumberStyles.HexNumber, default, out value))
-				return false;
-		}
-		else if (str.StartsWith("&O", StringComparison.OrdinalIgnoreCase))
-		{
-			value = 0;
+		string? str = Token?.Value;
 
-			for (int i = 2; i < str.Length; i++)
-			{
-				if (!char.IsAsciiDigit(str[i]))
-					return false;
+		if (str == null)
+			return false;
 
-				long parsedLong = (long)(value * 8) + (str[i] - '0');
+		return NumberParser.TryAsSingle(str, out value);
+	}
 
-				if (parsedLong > int.MaxValue)
-					return false;
+	public bool TryAsDouble(out double value)
+	{
+		value = default;
 
-				value = (int)parsedLong;
-			}
-		}
-		else
-		{
-			if (!int.TryParse(str, out value))
-				return false;
-		}
+		string? str = Token?.Value;
 
-		return true;
+		if (str == null)
+			return false;
+
+		return NumberParser.TryAsDouble(str, out value);
+	}
+
+	public bool TryAsCurrency(out decimal value)
+	{
+		value = default;
+
+		string? str = Token?.Value;
+
+		if (str == null)
+			return false;
+
+		return NumberParser.TryAsCurrency(str, out value);
 	}
 
 	public override void Render(TextWriter writer)
 	{
-		// TODO
+		string? str = Token?.Value;
+
+		if (str == null)
+			return;
+
+		if (str.StartsWith("\""))
+		{
+			writer.Write(str);
+			if (!str.EndsWith("\""))
+				writer.Write('"');
+		}
+		else if (str.StartsWith("&H", StringComparison.OrdinalIgnoreCase))
+		{
+			if (NumberParser.TryAsInteger(str, out var integerValue))
+				writer.Write(NumberFormatter.FormatHex(integerValue));
+			else if (NumberParser.TryAsLong(str, out var longValue))
+				writer.Write(NumberFormatter.FormatHex(longValue));
+			else
+			{
+				writer.Write(str);
+				Debugger.Break();
+			}
+		}
+		else if (str.StartsWith("&O", StringComparison.OrdinalIgnoreCase))
+		{
+			if (NumberParser.TryAsInteger(str, out var integerValue))
+				writer.Write(NumberFormatter.FormatOctal(integerValue));
+			else if (NumberParser.TryAsLong(str, out var longValue))
+				writer.Write(NumberFormatter.FormatOctal(longValue));
+			else
+			{
+				writer.Write(str);
+				Debugger.Break();
+			}
+		}
+		else
+		{
+			if (NumberParser.TryAsInteger(str, out var integerValue))
+				writer.Write(NumberFormatter.Format(integerValue));
+			else if (NumberParser.TryAsLong(str, out var longValue))
+				writer.Write(NumberFormatter.Format(longValue));
+			else if (NumberParser.TryAsSingle(str, out var singleValue))
+				writer.Write(NumberFormatter.Format(singleValue));
+			else if (NumberParser.TryAsDouble(str, out var doubleValue))
+				writer.Write(NumberFormatter.Format(doubleValue));
+			else if (NumberParser.TryAsCurrency(str, out var currencyValue))
+				writer.Write(NumberFormatter.Format(currencyValue));
+			else
+			{
+				writer.Write(str);
+				Debugger.Break();
+			}
+		}
 	}
 }

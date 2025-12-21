@@ -11,7 +11,7 @@ public class DefFnStatement : Statement
 	public ParameterList? Parameters { get; set; }
 	public Expression? ExpressionBody { get; set; }
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		writer.Write("DEF {0}", Name);
 

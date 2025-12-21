@@ -11,7 +11,7 @@ public class EventControlStatement : Statement
 	public Expression? SourceExpression { get; set; }
 	public EventControlAction Action { get; set; }
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		bool needSourceExpression = true;
 

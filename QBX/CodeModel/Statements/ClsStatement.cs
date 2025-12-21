@@ -17,7 +17,7 @@ public class ClsStatement : Statement
 		Mode = mode;
 	}
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		writer.Write("CLS");
 

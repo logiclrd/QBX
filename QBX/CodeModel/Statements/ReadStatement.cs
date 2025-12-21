@@ -8,7 +8,7 @@ public class ReadStatement : Statement
 
 	public List<Expression> Targets { get; } = new List<Expression>();
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		writer.Write("READ ");
 

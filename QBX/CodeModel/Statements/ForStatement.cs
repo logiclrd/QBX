@@ -11,7 +11,7 @@ public class ForStatement : Statement
 	public Expression? EndExpression { get; set; }
 	public Expression? StepExpression { get; set; }
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		if (StartExpression == null)
 			throw new Exception("Internal error: FOR statement with no start expression");

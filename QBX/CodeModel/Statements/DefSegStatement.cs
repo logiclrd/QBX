@@ -8,7 +8,7 @@ public class DefSegStatement : Statement
 
 	public Expression? SegmentExpression { get; set; }
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		writer.Write("DEF SEG");
 

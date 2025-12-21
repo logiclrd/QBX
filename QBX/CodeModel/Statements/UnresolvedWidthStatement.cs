@@ -14,7 +14,7 @@ public class UnresolvedWidthStatement : Statement
 	public Expression? Expression1 { get; set; }
 	public Expression? Expression2 { get; set; }
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		if ((Expression1 == null) || (Expression2 == null))
 			throw new Exception("Internal error: UnresolvedWidthStatement with a missing Width or Height expression");

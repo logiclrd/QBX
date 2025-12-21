@@ -9,7 +9,7 @@ public class PokeStatement : Statement
 	public Expression? AddressExpression { get; set; }
 	public Expression? ValueExpression { get; set; }
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		if ((AddressExpression == null) || (ValueExpression == null))
 			throw new Exception("Internal error: PokeStatement missing address or value expression");

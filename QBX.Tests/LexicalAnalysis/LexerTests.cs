@@ -325,4 +325,25 @@ public class LexerTests
 			result[i].Column.Should().Be(expected[i].Column);
 		}
 	}
+
+	[Test]
+	public void NewLineAfterWhitespace()
+	{
+		// Arrange
+		var input = "   \r\n   \r\n";
+
+		var sut = new Lexer(input);
+
+		// Act
+		var result = sut.ToList();
+
+		// Assert
+		result.Should().HaveCount(4);
+		result[0].Type.Should().Be(TokenType.Whitespace);
+		result[0].Value.Should().Be("   ");
+		result[1].Type.Should().Be(TokenType.NewLine);
+		result[2].Type.Should().Be(TokenType.Whitespace);
+		result[2].Value.Should().Be("   ");
+		result[3].Type.Should().Be(TokenType.NewLine);
+	}
 }

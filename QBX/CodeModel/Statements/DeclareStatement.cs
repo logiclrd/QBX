@@ -26,17 +26,11 @@ public class DeclareStatement : Statement
 		}
 	}
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		writer.Write("DECLARE {0} ", DeclarationType.Type);
 		writer.Write(Name);
 		TypeCharacter?.Render(writer);
-
-		if (Parameters != null)
-		{
-			writer.Write(" (");
-			Parameters.Render(writer);
-			writer.Write(')');
-		}
+		Parameters?.Render(writer);
 	}
 }

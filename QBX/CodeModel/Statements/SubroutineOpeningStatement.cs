@@ -10,7 +10,7 @@ public abstract class SubroutineOpeningStatement : Statement
 
 	protected abstract string StatementName { get; }
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		writer.Write(StatementName);
 		writer.Write(' ');

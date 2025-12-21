@@ -9,7 +9,7 @@ public class AssignmentStatement : Statement
 	public Expression? TargetExpression { get; set; }
 	public Expression? ValueExpression { get; set; }
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		if (TargetExpression == null)
 			throw new Exception("Internal error: AssignmentStatement with no target");

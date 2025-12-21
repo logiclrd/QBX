@@ -8,11 +8,10 @@ public class CodeLine : IRenderableCode
 	// parsed as any string ###.### with total length <= 40.
 	public string? LineNumber { get; set; }
 	public Label? Label { get; set; }
-	public string Indentation { get; set; } = "";
 	public List<Statement> Statements { get; } = new List<Statement>();
 	public string? EndOfLineComment { get; set; }
 
-	public bool IsEmpty => (Indentation == "") && !Statements.Any();
+	public bool IsEmpty => !Statements.Any();
 
 	public bool IsCommentLine => (Statements.Count == 1) && (Statements[0].Type == StatementType.Comment);
 
@@ -28,11 +27,9 @@ public class CodeLine : IRenderableCode
 		{
 			Label.Render(writer);
 
-			if ((Indentation == "") && Statements.Any())
+			if (Statements.Any() && (Statements[0].Indentation == ""))
 				writer.Write(' ');
 		}
-
-		writer.Write(Indentation);
 
 		for (int i = 0; i < Statements.Count; i++)
 		{
@@ -43,10 +40,15 @@ public class CodeLine : IRenderableCode
 
 			if (hasNextStatement)
 			{
+				var nextStatement = Statements[i + 1];
+
 				if (statement.ExtraSpace)
 					writer.Write(' ');
 
-				writer.Write(": ");
+				writer.Write(":");
+
+				if (nextStatement.Indentation == "")
+					writer.Write(' ');
 			}
 		}
 

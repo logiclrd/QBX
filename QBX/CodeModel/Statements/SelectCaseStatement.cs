@@ -8,7 +8,7 @@ public class SelectCaseStatement : Statement
 
 	public Expression? Expression { get; set; }
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		if (Expression == null)
 			throw new Exception("Internal error: SelectCaseStatement with no expression");

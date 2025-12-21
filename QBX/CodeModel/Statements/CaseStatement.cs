@@ -18,7 +18,7 @@ public class CaseStatement : Statement
 		Expressions = expressions;
 	}
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		writer.Write("CASE ");
 

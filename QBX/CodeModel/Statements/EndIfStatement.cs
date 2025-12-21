@@ -4,7 +4,7 @@ public class EndIfStatement : Statement
 {
 	public override StatementType Type => StatementType.EndIf;
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		writer.Write("END IF");
 	}

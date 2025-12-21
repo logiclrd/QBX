@@ -10,7 +10,7 @@ public class PrintStatement : Statement
 	public Expression? UsingExpression { get; set; }
 	public List<PrintArgument> Arguments { get; } = new List<PrintArgument>();
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		writer.Write("PRINT ");
 
@@ -30,6 +30,9 @@ public class PrintStatement : Statement
 
 		for (int i = 0; i < Arguments.Count; i++)
 		{
+			if (i > 0)
+				writer.Write(' ');
+
 			Arguments[i].Expression?.Render(writer);
 
 			switch (Arguments[i].CursorAction)

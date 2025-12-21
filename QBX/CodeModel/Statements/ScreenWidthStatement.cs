@@ -9,7 +9,7 @@ public class ScreenWidthStatement : Statement
 	public Expression? WidthExpression { get; set; }
 	public Expression? HeightExpression { get; set; }
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		if ((WidthExpression == null) && (HeightExpression == null))
 			throw new Exception("Internal error: ScreenWidthStatement with neither Width or Height expression");

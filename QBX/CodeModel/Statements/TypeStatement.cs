@@ -6,7 +6,7 @@ public class TypeStatement : Statement
 
 	public string Name { get; set; } = "";
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		writer.Write("TYPE ");
 		writer.Write(Name);

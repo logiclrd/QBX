@@ -1,28 +1,48 @@
 ﻿using QBX.LexicalAnalysis;
+using QBX.Parser;
+
+using System.Diagnostics;
 
 class Program
 {
 	static void Main()
 	{
-		using (var reader = new StreamReader(@"C:\code\QBX\Samples\NIBBLES.BAS"))
+		using (var reader1 = new StreamReader("../../../../Samples/NIBBLES.BAS"))
+		using (var reader2 = new StreamReader("../../../../Samples/NIBBLES.BAS"))
 		{
-			var lexer = new Lexer(reader);
+			var lexer = new Lexer(reader1);
 
-			var nonks = new HashSet<string>();
+			var parser = new BasicParser();
 
-			nonks.Add("TRUE");
-			nonks.Add("FALSE");
-			nonks.Add("STARTOVER");
-			nonks.Add("NEXTLEVEL");
-			nonks.Add("SAMELEVEL");
-			nonks.Add("MAXSNAKELENGTH");
+			int lineNumber = 1;
 
-			foreach (var token in lexer)
-				if (token.Type == TokenType.Identifier)
+			foreach (var line in parser.ParseCodeLines(lexer))
+			{
+				var buffer = new StringWriter();
+
+				line.Render(buffer);
+
+				string originalLine = reader2.ReadLine() ?? throw new Exception("Unexpected EOF");
+				string recreatedLine = buffer.ToString();
+
+				// CodeLine renders the EOL.
+				originalLine += "\r\n";
+
+				Console.WriteLine(recreatedLine.TrimEnd());
+
+				if (recreatedLine.TrimEnd() != originalLine.TrimEnd())
 				{
-					if ((token.Value == token.Value?.ToUpper()) && !nonks.Contains(token.Value!))
-						Console.WriteLine(token);
+					Console.WriteLine("ORIGINAL:");
+					Console.WriteLine(originalLine);
+
+					Debugger.Break();
 				}
+
+				lineNumber++;
+
+				if (lineNumber == -510)
+					Debugger.Break();
+			}
 		}
 	}
 }

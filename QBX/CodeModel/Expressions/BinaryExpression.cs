@@ -86,9 +86,10 @@ public class BinaryExpression : Expression
 
 				default: throw new Exception("Internal error: Unspecified binary expression operator");
 			}
+
+			writer.Write(' ');
 		}
 
-		writer.Write(' ');
 		Right.Render(writer);
 	}
 }

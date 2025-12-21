@@ -43,7 +43,7 @@ PRINT ""Look ma, no line number""";
 PRINT ""Hello, world""
 GOTO top
 
-retry: PRINT ""Trying again""";
+    retry: PRINT ""Trying again""";
 
 		var lexer = new Lexer(input);
 
@@ -58,6 +58,7 @@ retry: PRINT ""Trying again""";
 		lines.Should().HaveCount(5);
 		lines[0].Label.Should().NotBeNull();
 		lines[0].Label!.Name.Should().Be("top");
+		lines[0].Label!.Indentation.Should().Be("");
 		lines[0].Statements.Should().HaveCount(1);
 		lines[0].Statements[0].Should().BeOfType<EmptyStatement>();
 		lines[1].Label.Should().BeNull();
@@ -65,6 +66,7 @@ retry: PRINT ""Trying again""";
 		lines[3].Label.Should().BeNull();
 		lines[4].Label.Should().NotBeNull();
 		lines[4].Label!.Name.Should().Be("retry");
+		lines[4].Label!.Indentation.Should().Be("    ");
 		lines[4].Statements.Should().HaveCount(1);
 		lines[4].Statements[0].Should().BeOfType<PrintStatement>();
 	}
@@ -90,7 +92,7 @@ retry: PRINT ""Trying again""";
 		// Assert
 		lines.Should().HaveCount(1);
 
-		lines[0].Indentation.Should().Be(expectedIndentation);
+		lines[0].Statements[0].Indentation.Should().Be(expectedIndentation);
 	}
 
 	[TestCase("NEXT", new StatementType[] { StatementType.Next })]

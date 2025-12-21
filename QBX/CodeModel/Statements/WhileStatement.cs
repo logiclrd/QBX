@@ -8,7 +8,7 @@ public class WhileStatement : Statement
 
 	public Expression? Condition { get; set; }
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		if (Condition == null)
 			throw new Exception("Internal error: WhileStatement with no condition");

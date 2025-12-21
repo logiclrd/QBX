@@ -18,7 +18,7 @@ public class LineStatement : Statement
 	public LineDrawStyle DrawStyle { get; set; } = LineDrawStyle.Line;
 	public Expression? StyleExpression { get; set; }
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		writer.Write("LINE ");
 

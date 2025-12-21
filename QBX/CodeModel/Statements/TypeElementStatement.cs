@@ -7,11 +7,18 @@ public class TypeElementStatement : Statement
 	public string Name { get; set; } = "";
 	public DataType ElementType { get; set; }
 	public string? ElementUserType { get; set; }
+	public string? AlignmentWhitespace { get; set; }
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		writer.Write(Name);
-		writer.Write(" AS ");
+
+		if (AlignmentWhitespace != null)
+			writer.Write(AlignmentWhitespace);
+		else
+			writer.Write(' ');
+
+		writer.Write("AS ");
 
 		if ((ElementType != DataType.Unspecified) && (ElementUserType != null))
 			throw new Exception("Internal error: TypeElementStatement specifies both built-in and user-defined type");

@@ -7,7 +7,7 @@ public class VariableScopeStatement : Statement
 	public VariableScopeType ScopeType { get; set; }
 	public List<VariableScopeDeclaration> Declarations { get; } = new List<VariableScopeDeclaration>();
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		switch (ScopeType)
 		{

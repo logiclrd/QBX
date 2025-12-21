@@ -3,7 +3,15 @@
 public abstract class Statement : IRenderableCode
 {
 	public abstract StatementType Type { get; }
+	public string Indentation { get; set; } = "";
+
 	public virtual bool ExtraSpace => false;
 
-	public abstract void Render(TextWriter writer);
+	public void Render(TextWriter writer)
+	{
+		writer.Write(Indentation);
+		RenderImplementation(writer);
+	}
+
+	protected abstract void RenderImplementation(TextWriter writer);
 }

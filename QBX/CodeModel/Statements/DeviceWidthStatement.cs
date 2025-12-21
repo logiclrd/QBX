@@ -9,7 +9,7 @@ public class DeviceWidthStatement : Statement
 	public Expression? DeviceExpression { get; set; }
 	public Expression? WidthExpression { get; set; }
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		if ((DeviceExpression == null) || (WidthExpression == null))
 			throw new Exception("Internal error: DeviceWidthStatement with a missing Device or Width expression");

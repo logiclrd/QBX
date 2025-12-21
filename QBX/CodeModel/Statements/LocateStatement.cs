@@ -12,7 +12,7 @@ public class LocateStatement : Statement
 	public Expression? CursorStartExpression { get; set; }
 	public Expression? CursorEndExpression { get; set; }
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		writer.Write("LOCATE ");
 		RowExpression?.Render(writer);

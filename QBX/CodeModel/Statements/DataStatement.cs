@@ -13,19 +13,21 @@ public class DataStatement : Statement
 		DataItems = dataItems;
 	}
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		writer.Write("DATA");
 
 		if (DataItems.Count > 0)
 		{
-			writer.Write(' ');
+			if (string.IsNullOrEmpty(DataItems[0].PrecedingWhitespace))
+				writer.Write(' ');
 
 			for (int i = 0; i < DataItems.Count; i++)
 			{
 				if (i > 0)
 					writer.Write(',');
 
+				writer.Write(DataItems[i].PrecedingWhitespace);
 				writer.Write(DataItems[i].Value);
 			}
 		}

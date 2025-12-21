@@ -4,7 +4,7 @@ public class ElseStatement : Statement
 {
 	public override StatementType Type => StatementType.Else;
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		writer.Write("ELSE");
 	}

@@ -205,7 +205,7 @@ public class TokenHandler(ListRange<Token> tokenss)
 			if ((level == 0) && findSet.Contains(_tokens[_tokenIndex + index].Type))
 				return index;
 
-			switch (_tokens[_tokenIndex].Type)
+			switch (_tokens[_tokenIndex + index].Type)
 			{
 				case TokenType.OpenParenthesis: level++; break;
 				case TokenType.CloseParenthesis: level--; break;

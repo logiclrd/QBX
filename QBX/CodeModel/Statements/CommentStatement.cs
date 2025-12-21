@@ -7,7 +7,7 @@ public class CommentStatement(CommentStatementType type, string comment) : State
 	public CommentStatementType CommentStatementType { get; set; } = type;
 	public string Comment { get; set; } = comment;
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		if (CommentStatementType == CommentStatementType.REM)
 		{

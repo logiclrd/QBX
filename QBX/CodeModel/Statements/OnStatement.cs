@@ -11,7 +11,7 @@ public class OnStatement : Statement
 	public Expression? SourceExpression { get; set; }
 	public GoSubStatement? Action { get; set; }
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		if (EventType == EventType.Unknown)
 			throw new Exception("Internal error: OnStatement with no EventType");

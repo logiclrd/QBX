@@ -1,7 +1,5 @@
 ﻿using QBX.CodeModel;
 using System.Collections;
-using System.Globalization;
-using System.Reflection.Metadata;
 using System.Text;
 
 namespace QBX.LexicalAnalysis;
@@ -110,7 +108,7 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 					}
 					case Mode.Whitespace:
 					{
-						if (char.IsWhiteSpace(ch))
+						if (char.IsWhiteSpace(ch) && (ch != '\r') && (ch != '\n'))
 							buffer.Append(ch);
 						else
 						{

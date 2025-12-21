@@ -17,7 +17,7 @@ public class CallStatement : Statement
 		Arguments = arguments;
 	}
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		switch (CallStatementType)
 		{

@@ -74,6 +74,7 @@ public class BasicParser
 	internal IEnumerable<CodeLine> ParseCodeLines(IEnumerable<Token> tokenStream)
 	{
 		var enumerator = tokenStream.GetEnumerator();
+		bool tokenPeeked = false;
 
 		var line = new CodeLine();
 		var buffer = new List<Token>();
@@ -81,9 +82,13 @@ public class BasicParser
 		bool inType = false;
 		int sourceLineNumber = 1;
 		Token? precedingWhitespaceToken = null;
+		bool startsWithDATA = false;
+		bool lineConsumed = false;
 
-		while (enumerator.MoveNext())
+		while (tokenPeeked || enumerator.MoveNext())
 		{
+			tokenPeeked = false;
+
 			var token = enumerator.Current;
 
 			if (token.Type == TokenType.NewLine)
@@ -94,14 +99,20 @@ public class BasicParser
 					precedingWhitespaceToken = null;
 				}
 
-				if (line.EndOfLineComment == null)
-					line.Statements.Add(ParseStatement(buffer, isNested: false, ref inType));
+				if ((line.EndOfLineComment == null) && !lineConsumed)
+				{
+					line.Statements.Add(
+						ParseStatementWithIndentation(buffer, isNested: false, ref inType));
+				}
+
 				buffer.Clear();
 				yield return line;
 				line = new CodeLine();
 				haveContent = false;
 				sourceLineNumber++;
 				precedingWhitespaceToken = null;
+				startsWithDATA = false;
+				lineConsumed = false;
 			}
 			else if ((token.Type == TokenType.Number) && !line.Statements.Any() && !buffer.Any())
 			{
@@ -114,7 +125,6 @@ public class BasicParser
 				if (line.LineNumber != null)
 					throw new SyntaxErrorException(token, "Expected: statement");
 
-				line.Indentation = "";
 				line.LineNumber = token.Value;
 
 				precedingWhitespaceToken = null;
@@ -123,21 +133,30 @@ public class BasicParser
 			{
 				if (token.Type == TokenType.Colon)
 				{
+					int labelIndex = 0;
+					string whitespace = "";
+
+					if ((labelIndex < buffer.Count)
+					 && (buffer[labelIndex].Type == TokenType.Whitespace))
+					{
+						whitespace = buffer[labelIndex].Value ?? "";
+						labelIndex++;
+					}
+
 					if (!line.Statements.Any()
-					 && (buffer.Count == 1)
-					 && (buffer[0].Type == TokenType.Identifier)
-					 && (buffer[0].Value is string labelName)
+					 && (buffer.Count == labelIndex + 1)
+					 && (buffer[labelIndex].Type == TokenType.Identifier)
+					 && (buffer[labelIndex].Value is string labelName)
 					 && (labelName.Length > 0)
 					 && !char.IsSymbol(labelName.Last()))
 					{
 						line.Label =
 							new Label()
 							{
-								Indentation = line.Indentation,
+								Indentation = whitespace,
 								Name = labelName,
 							};
 
-						line.Indentation = "";
 						buffer.Clear();
 					}
 					else
@@ -151,21 +170,34 @@ public class BasicParser
 								token = enumerator.Current;
 
 								if (token.Type == TokenType.NewLine)
+								{
+									tokenPeeked = true;
 									break;
+								}
 
 								yield return token;
 							}
+
+							lineConsumed = true;
 						}
 
-						line.Statements.Add(ParseStatement(buffer, ConsumeTokensToEndOfLine, isNested: false, ref inType));
+						line.Statements.Add(
+							ParseStatementWithIndentation(buffer, ConsumeTokensToEndOfLine, isNested: false, inType: ref inType));
 						buffer.Clear();
 					}
 
 					haveContent = true;
 					precedingWhitespaceToken = null;
+					startsWithDATA = false;
 				}
 				else if ((token.Type == TokenType.Comment) && (token.Value != null) && token.Value.StartsWith("'"))
 				{
+					if (buffer.Any() || line.Statements.Any())
+					{
+						line.Statements.Add(ParseStatementWithIndentation(buffer, ref inType));
+						buffer.Clear();
+					}
+
 					line.EndOfLineComment = precedingWhitespaceToken?.Value + token.Value;
 					haveContent = true;
 					precedingWhitespaceToken = null;
@@ -174,15 +206,24 @@ public class BasicParser
 					precedingWhitespaceToken = token;
 				else
 				{
+					bool willStartWithDATA = startsWithDATA;
+
+					if (!buffer.Any() && (token.Type == TokenType.DATA))
+						willStartWithDATA = true;
+
 					if (precedingWhitespaceToken != null)
 					{
-						if (line.Statements.Any() || buffer.Any())
-							buffer.Add(precedingWhitespaceToken);
+						if (inType && (token.Type == TokenType.AS))
+							token.PrecedingWhitespace = precedingWhitespaceToken.Value!;
+						else if (startsWithDATA)
+							token.PrecedingWhitespace = precedingWhitespaceToken.Value!;
 						else
-							line.Indentation = precedingWhitespaceToken.Value!;
+							buffer.Add(precedingWhitespaceToken);
 
 						precedingWhitespaceToken = null;
 					}
+
+					startsWithDATA = willStartWithDATA;
 
 					buffer.Add(token);
 				}
@@ -190,7 +231,7 @@ public class BasicParser
 		}
 
 		if (buffer.Any() || haveContent)
-			line.Statements.Add(ParseStatement(buffer, isNested: false, ref inType));
+			line.Statements.Add(ParseStatementWithIndentation(buffer, isNested: false, ref inType));
 
 		if (!line.IsEmpty)
 			yield return line;
@@ -201,6 +242,33 @@ public class BasicParser
 
 			throw new SyntaxErrorException(errorLocation, "Expected: END TYPE");
 		}
+	}
+
+	internal Statement ParseStatementWithIndentation(ListRange<Token> tokens, ref bool inType)
+	{
+		return ParseStatementWithIndentation(tokens, consumeTokensToEndOfLine: () => Array.Empty<Token>(), isNested: false, ref inType);
+	}
+
+	internal Statement ParseStatementWithIndentation(ListRange<Token> tokens, bool isNested, ref bool inType)
+	{
+		return ParseStatementWithIndentation(tokens, consumeTokensToEndOfLine: () => Array.Empty<Token>(), isNested: false, ref inType);
+	}
+
+	internal Statement ParseStatementWithIndentation(ListRange<Token> tokens, Func<IEnumerable<Token>> consumeTokensToEndOfLine, bool isNested, ref bool inType)
+	{
+		var indentation = "";
+
+		if ((tokens.Count > 0) && (tokens[0].Type == TokenType.Whitespace))
+		{
+			indentation = tokens[0].Value ?? "";
+			tokens = tokens.Slice(1);
+		}
+
+		var statement = ParseStatement(tokens, consumeTokensToEndOfLine, isNested: false, ref inType);
+
+		statement.Indentation = indentation;
+
+		return statement;
 	}
 
 	internal Statement ParseStatement(ListRange<Token> tokens, ref bool inType)
@@ -231,6 +299,8 @@ public class BasicParser
 				tokenHandler.Expect(TokenType.TYPE);
 				tokenHandler.ExpectEndOfTokens();
 
+				inType = false;
+
 				return new EndTypeStatement();
 			}
 
@@ -238,7 +308,9 @@ public class BasicParser
 
 			typeElement.Name = tokenHandler.ExpectIdentifier(allowTypeCharacter: false);
 
-			tokenHandler.Expect(TokenType.AS);
+			var asToken = tokenHandler.Expect(TokenType.AS);
+
+			typeElement.AlignmentWhitespace = asToken.PrecedingWhitespace;
 
 			switch (tokenHandler.NextToken.Type)
 			{
@@ -746,6 +818,9 @@ public class BasicParser
 			{
 				tokens = tokens.Concat(consumeTokensToEndOfLine()).ToList();
 
+				tokenHandler = new TokenHandler(tokens);
+				tokenHandler.Advance();
+
 				var statement =
 					token.Type switch
 					{
@@ -769,17 +844,25 @@ public class BasicParser
 				{
 					statement.ThenBody = new List<Statement>();
 
+					void DoParseStatement(List<Statement> list, ListRange<Token> tokens, bool isNested, ref bool inType)
+					{
+						if (list.Count == 0)
+							list.Add(ParseStatement(tokens, isNested, ref inType));
+						else
+							list.Add(ParseStatementWithIndentation(tokens, isNested, ref inType));
+					}
+
 					while (true)
 					{
 						int separator = tokenHandler.FindNextUnparenthesizedOf(TokenType.Colon, TokenType.ELSE);
 
 						if ((separator < 0) || tokenHandler.NextTokenIs(TokenType.IF))
 						{
-							statement.ThenBody.Add(ParseStatement(tokenHandler.RemainingTokens, isNested: true, ref inType));
+							DoParseStatement(statement.ThenBody, tokenHandler.RemainingTokens, isNested: true, ref inType);
 							break;
 						}
 
-						statement.ThenBody.Add(ParseStatement(tokenHandler.RemainingTokens.Slice(0, separator), isNested: true, ref inType));
+						DoParseStatement(statement.ThenBody, tokenHandler.RemainingTokens.Slice(0, separator), isNested: true, ref inType);
 
 						tokenHandler.Advance(separator);
 
@@ -798,11 +881,11 @@ public class BasicParser
 
 								if ((separator < 0) || tokenHandler.NextTokenIs(TokenType.IF))
 								{
-									statement.ElseBody.Add(ParseStatement(tokenHandler.RemainingTokens, isNested: true, ref inType));
+									DoParseStatement(statement.ElseBody, tokenHandler.RemainingTokens, isNested: true, ref inType);
 									break;
 								}
 
-								statement.ElseBody.Add(ParseStatement(tokenHandler.RemainingTokens.Slice(0, separator), isNested: true, ref inType));
+								DoParseStatement(statement.ElseBody, tokenHandler.RemainingTokens.Slice(0, separator), isNested: true, ref inType);
 
 								tokenHandler.Advance(separator);
 								tokenHandler.Expect(TokenType.Colon);
@@ -2256,10 +2339,13 @@ public class BasicParser
 	{
 		var list = new ExpressionList();
 
-		var endTokenRef = new TokenRef();
+		if (tokens.Count > 0)
+		{
+			var endTokenRef = new TokenRef();
 
-		foreach (var range in SplitCommaDelimitedList(tokens, endTokenRef))
-			list.Expressions.Add(ParseExpression(range, endTokenRef.Token ?? endToken));
+			foreach (var range in SplitCommaDelimitedList(tokens, endTokenRef))
+				list.Expressions.Add(ParseExpression(range, endTokenRef.Token ?? endToken));
+		}
 
 		return list;
 	}
@@ -2369,6 +2455,8 @@ public class BasicParser
 						tokens[1].DataType));
 			}
 
+			if (tokens.Count == 0)
+				throw new SyntaxErrorException(endToken, "Expected: expression");
 			if (lastOperatorIndex == 0)
 				throw new SyntaxErrorException(tokens[0], "Expected: expression");
 

@@ -4,7 +4,7 @@ public class EmptyStatement : Statement
 {
 	public override StatementType Type => StatementType.Empty;
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 	}
 }

@@ -12,7 +12,7 @@ public class DoStatement : Statement
 	protected virtual void RenderStatementName(TextWriter writer)
 		=> writer.Write("DO");
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		RenderStatementName(writer);
 

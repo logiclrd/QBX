@@ -10,7 +10,7 @@ public class ViewportStatement : Statement
 	public Expression? TopExpression { get; set; }
 	public Expression? BottomExpression { get; set; }
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		writer.Write("VIEW PRINT");
 

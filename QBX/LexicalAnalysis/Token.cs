@@ -38,6 +38,10 @@ public class Token(int line, int column, TokenType type, string value, DataType 
 	public bool IsKeywordFunction => s_keywordFunctionsParameters.Contains(Type);
 	public bool IsParameterlessKeywordFunction => s_keywordFunctionsNoParameters.Contains(Type);
 
+	// Captured only for AS tokens inside TYPE declarations
+	// and tokens inside DATA statements.
+	public string? PrecedingWhitespace { get; set; }
+
 	Token Emplace(int newLine, int newColumn) => new Token(newLine, newColumn, type, value, dataType);
 
 	public override string ToString()
@@ -69,7 +73,7 @@ public class Token(int line, int column, TokenType type, string value, DataType 
 	static HashSet<TokenType> s_keywordFunctionsNoParameters =
 		typeof(TokenType).GetFields(BindingFlags.Public | BindingFlags.Static)
 		.Select(f => (TokenType: (TokenType)f.GetValue(null)!, Keyword: f.GetCustomAttribute<KeywordFunctionAttribute>()))
-		.Where(f => (f.Keyword != null) && !f.Keyword.TakesParameters)
+		.Where(f => (f.Keyword != null) && f.Keyword.TakesNoParameters)
 		.Select(f => f.TokenType)
 		.ToHashSet();
 

@@ -107,7 +107,7 @@ public enum TokenType
 	[KeywordToken] RETURN,
 	[KeywordFunction]
 	[KeywordToken("RIGHT$")] RIGHT,
-	[KeywordFunction(parameters: false)]
+	[KeywordFunction(parameters: true, noParameters: true)]
 	[KeywordToken] RND,
 	[KeywordToken] SCREEN,
 	[KeywordToken] SEG,

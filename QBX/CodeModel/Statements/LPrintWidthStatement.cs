@@ -4,7 +4,7 @@ public class LPrintWidthStatement : OutputWidthStatement
 {
 	public override StatementType Type => StatementType.LPrintWidth;
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		VerifyWidthExpression();
 

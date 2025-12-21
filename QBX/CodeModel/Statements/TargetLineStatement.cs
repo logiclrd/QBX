@@ -9,7 +9,7 @@ public abstract class TargetLineStatement : Statement
 
 	protected abstract string StatementName { get; }
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		writer.Write(StatementName);
 		writer.Write(' ');
@@ -21,7 +21,7 @@ public abstract class TargetLineStatement : Statement
 			writer.Write(TargetLineNumber);
 		else if (TargetLabel != null)
 			writer.Write(TargetLabel);
-		else
+		else if (!CanBeParameterless)
 			throw new Exception($"Internal error: {StatementName} with neither line number nor label");
 	}
 }

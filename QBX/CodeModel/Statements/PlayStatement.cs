@@ -8,7 +8,7 @@ public class PlayStatement : Statement
 
 	public Expression? CommandExpression { get; set; }
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		if (CommandExpression == null)
 			throw new Exception("Internal error: PlayStatement with no CommandExpression");

@@ -4,7 +4,7 @@ public class WEndStatement : Statement
 {
 	public override StatementType Type => StatementType.WEnd;
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		writer.Write("WEND");
 	}

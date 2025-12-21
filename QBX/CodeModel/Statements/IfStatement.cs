@@ -26,7 +26,7 @@ public class IfStatement : Statement
 	protected virtual void RenderStatementName(TextWriter writer)
 		=> writer.Write("IF");
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		Validate();
 
@@ -42,7 +42,12 @@ public class IfStatement : Statement
 			for (int i = 0; i < ThenBody.Count; i++)
 			{
 				if (i > 0)
-					writer.Write(": ");
+				{
+					writer.Write(':');
+
+					if (ThenBody[i].Indentation == "")
+						writer.Write(' ');
+				}
 
 				ThenBody[i].Render(writer);
 			}
@@ -55,7 +60,12 @@ public class IfStatement : Statement
 			for (int i = 0; i < ElseBody.Count; i++)
 			{
 				if (i > 0)
-					writer.Write(": ");
+				{
+					writer.Write(':');
+
+					if (ElseBody[i].Indentation == "")
+						writer.Write(':');
+				}
 
 				ElseBody[i].Render(writer);
 			}

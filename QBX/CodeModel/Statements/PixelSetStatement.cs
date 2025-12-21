@@ -12,7 +12,7 @@ public class PixelSetStatement : Statement
 	public Expression? YExpression { get; set; }
 	public Expression? ColourExpression { get; set; }
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		switch (DefaultColour)
 		{
