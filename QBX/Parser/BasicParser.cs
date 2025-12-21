@@ -1323,6 +1323,32 @@ public class BasicParser
 				return on;
 			}
 
+			case TokenType.PCOPY:
+			{
+				var pcopy = new PageCopyStatement();
+
+				tokenHandler.ExpectMoreTokens();
+
+				var arguments = SplitCommaDelimitedList(tokenHandler.RemainingTokens).ToList();
+
+				if (arguments.Count == 1)
+					throw new SyntaxErrorException(tokenHandler.EndToken, "Expected: ,");
+
+				if (arguments.Count > 2)
+				{
+					var range = arguments[2].Unwrap();
+
+					throw new SyntaxErrorException(tokens[range.Offset - 1], "Expected: end of statement");
+				}
+
+				var midToken = tokens[arguments[1].Unwrap().Offset - 1];
+
+				pcopy.SourcePageExpression = ParseExpression(arguments[0], midToken);
+				pcopy.DestinationPageExpression = ParseExpression(arguments[1], tokenHandler.EndToken);
+
+				return pcopy;
+			}
+
 			case TokenType.PLAY:
 			{
 				// One of:

@@ -43,6 +43,7 @@ public enum StatementType
 	Locate,
 	Next,
 	On,
+	PageCopy,
 	PixelSet,
 	Play,
 	Poke,

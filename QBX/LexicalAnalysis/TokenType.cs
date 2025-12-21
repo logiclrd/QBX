@@ -93,6 +93,7 @@ public enum TokenType
 	[KeywordToken] OFF,
 	[KeywordToken] ON,
 	[KeywordToken] OR,
+	[KeywordToken] PCOPY,
 	[KeywordFunction]
 	[KeywordToken] PEEK,
 	[KeywordToken] PEN,
