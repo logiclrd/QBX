@@ -5,11 +5,10 @@ namespace QBX.CodeModel.Expressions;
 public class IdentifierExpression : Expression
 {
 	public string Identifier { get; set; }
-	public Token IdentifierToken { get; set; }
 
 	public IdentifierExpression(Token token)
 	{
-		IdentifierToken = token;
+		Token = token;
 		Identifier = token.Value ?? throw new Exception("Internal error: Identifier token has no value");
 	}
 

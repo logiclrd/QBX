@@ -1890,8 +1890,119 @@ public class BasicParser
 		return list;
 	}
 
-	Expression ParseExpression(ListRange<Token> tokens, Token endToken)
+	internal Expression ParseExpression(ListRange<Token> tokens, Token endToken)
 	{
-		throw new Exception("TODO");
+		int lastOperatorIndex = -1;
+		int lastOperatorPrecedence = -1;
+		int level = 0;
+		bool entirelyParenthesized = tokens.Count > 2;
+
+		for (int i = 0; i < tokens.Count; i++)
+		{
+			if (level == 0)
+			{
+				// Allow for "identifier(...)".
+				if ((i > 1) && (i + 1 < tokens.Count))
+					entirelyParenthesized = false;
+
+				if (IsOperator(tokens[i], out var op))
+				{
+					var precedence = op.GetPrecedence();
+
+					if ((lastOperatorIndex < 0) || (lastOperatorPrecedence <= precedence))
+					{
+						lastOperatorIndex = i;
+						lastOperatorPrecedence = precedence;
+					}
+				}
+			}
+
+			switch (tokens[i].Type)
+			{
+				case TokenType.OpenParenthesis: level++; break;
+				case TokenType.CloseParenthesis: level--; break;
+			}
+
+			if (level < 0)
+				throw new SyntaxErrorException(tokens[i], "Expected: end of statement");
+		}
+
+		if (lastOperatorIndex > 0)
+		{
+			return new BinaryExpression(
+				ParseExpression(tokens.Slice(0, lastOperatorIndex), tokens[lastOperatorIndex]),
+				tokens[lastOperatorIndex],
+				ParseExpression(tokens.Slice(lastOperatorIndex + 1), endToken));
+		}
+		else
+		{
+			if ((tokens.Count == 2)
+			 && (tokens[0].Type == TokenType.Minus)
+			 && (tokens[1].Type == TokenType.Number))
+			{
+				// Coalesce "-" and a number into a single token for a negative number.
+				return new LiteralExpression(
+					new Token(
+						tokens[0].Line,
+						tokens[0].Column,
+						tokens[1].Type,
+						"-" + tokens[1].Value,
+						tokens[1].DataType));
+			}
+
+			if (lastOperatorIndex == 0)
+				throw new SyntaxErrorException(tokens[0], "Expected: expression");
+
+			if ((tokens[0].Type == TokenType.Minus) || (tokens[0].Type == TokenType.NOT))
+				return new UnaryExpression(tokens[0], ParseExpression(tokens.Slice(1), endToken));
+
+			if (entirelyParenthesized)
+			{
+				if (tokens[0].Type == TokenType.OpenParenthesis)
+					return new ParenthesizedExpression(tokens[0], ParseExpression(tokens.Slice(1, tokens.Count - 2), tokens.Last()));
+				if (tokens[0].Type == TokenType.Identifier)
+					return new CallOrIndexExpression(tokens[0], ParseExpressionList(tokens.Slice(2, tokens.Count - 3), tokens.Last()));
+			}
+
+			if (tokens.Count == 1)
+			{
+				if ((tokens[0].Type == TokenType.Number) || (tokens[0].Type == TokenType.String))
+					return new LiteralExpression(tokens[0]);
+				if (tokens[0].Type == TokenType.Identifier)
+					return new IdentifierExpression(tokens[0]);
+			}
+
+			throw new SyntaxErrorException(tokens[0], "Expected: expression");
+		}
+	}
+
+	private bool IsOperator(Token token, out Operator op)
+	{
+		switch (token.Type)
+		{
+			case TokenType.Plus: op = Operator.Add; return true;
+			case TokenType.Minus: op = Operator.Subtract; return true;
+			case TokenType.Asterisk: op = Operator.Multiply; return true;
+			case TokenType.Slash: op = Operator.Divide; return true;
+			case TokenType.Caret: op = Operator.Exponentiate; return true;
+			case TokenType.Backslash: op = Operator.IntegerDivide; return true;
+			case TokenType.MOD: op = Operator.Modulo; return true;
+
+			case TokenType.Equals: op = Operator.Equals; return true;
+			case TokenType.NotEquals: op = Operator.NotEquals; return true;
+			case TokenType.LessThan: op = Operator.LessThan; return true;
+			case TokenType.LessThanOrEquals: op = Operator.LessThanOrEquals; return true;
+			case TokenType.GreaterThan: op = Operator.GreaterThan; return true;
+			case TokenType.GreaterThanOrEquals: op = Operator.GreaterThanOrEquals; return true;
+
+			case TokenType.AND: op = Operator.And; return true;
+			case TokenType.OR: op = Operator.Or; return true;
+			case TokenType.XOR: op = Operator.ExclusiveOr; return true;
+			case TokenType.EQV: op = Operator.Equivalent; return true;
+			case TokenType.IMP: op = Operator.Implies; return true;
+		}
+
+		op = default;
+		return false;
 	}
 }

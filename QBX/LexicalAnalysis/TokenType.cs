@@ -137,9 +137,9 @@ public enum TokenType
 	[TokenCharacter('^')] Caret,
 	[TokenCharacter('|')] Pipe,
 
-	LessThanOrEquals,
-	GreaterThanOrEquals,
-	NotEquals,
+	[TokenValue("<=")] LessThanOrEquals,
+	[TokenValue(">=")] GreaterThanOrEquals,
+	[TokenValue("<>")] NotEquals,
 
 	[ValueToken] Comment,
 	[ValueToken] String,
