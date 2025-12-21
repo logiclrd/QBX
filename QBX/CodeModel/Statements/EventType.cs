@@ -1,4 +1,4 @@
-﻿namespace QBX.Parser;
+﻿namespace QBX.CodeModel.Statements;
 
 public enum EventType
 {
