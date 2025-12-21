@@ -1,6 +1,7 @@
 ﻿using QBX.CodeModel;
 using System.Collections;
 using System.Globalization;
+using System.Reflection.Metadata;
 using System.Text;
 
 namespace QBX.LexicalAnalysis;
@@ -45,6 +46,8 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 		int line = 1;
 		int column = 1;
 
+		int tokenStartColumn = column;
+
 		while (true)
 		{
 			int readResult = _input.Read();
@@ -70,7 +73,10 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 							mode = Mode.MaybeCrLf;
 						else if (ch == '\n')
 						{
-							yield return new Token(line, column, TokenType.NewLine, "\n");
+							yield return new Token(line, tokenStartColumn, TokenType.NewLine, "\n");
+							line++;
+							column = 1;
+							tokenStartColumn = column;
 							break;
 						}
 						else if ((ch == '<') || (ch == '>'))
@@ -92,6 +98,7 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 						else if (Token.TryForCharacter(line, column, ch, out var token))
 						{
 							yield return token;
+							tokenStartColumn = column + 1;
 							break;
 						}
 						else
@@ -107,10 +114,11 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 							buffer.Append(ch);
 						else
 						{
-							yield return new Token(line, column, TokenType.Whitespace, buffer.ToString());
+							yield return new Token(line, tokenStartColumn, TokenType.Whitespace, buffer.ToString());
 							buffer.Clear();
 							mode = Mode.Any;
 							reparse = true;
+							tokenStartColumn = column;
 						}
 
 						break;
@@ -119,10 +127,11 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 					{
 						if (ch == '\n')
 						{
-							yield return new Token(line, column, TokenType.NewLine, "\r\n");
+							yield return new Token(line, tokenStartColumn, TokenType.NewLine, "\r\n");
 
 							line++;
 							column = 1;
+							tokenStartColumn = 1;
 
 							buffer.Clear();
 							mode = Mode.Any;
@@ -133,6 +142,7 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 
 							line++;
 							column = 1;
+							tokenStartColumn = 1;
 
 							if (ch != '\r')
 							{
@@ -148,10 +158,11 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 					{
 						if ((ch == '\r') || (ch == '\n') || atEOF)
 						{
-							yield return new Token(line, column, TokenType.Comment, buffer.ToString());
+							yield return new Token(line, tokenStartColumn, TokenType.Comment, buffer.ToString());
 							buffer.Clear();
 							mode = Mode.Any;
 							reparse = true;
+							tokenStartColumn = column;
 						}
 						else
 							buffer.Append(ch);
@@ -162,10 +173,11 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 					{
 						if ((ch == '\r') || (ch == '\n') || atEOF)
 						{
-							yield return new Token(line, column, TokenType.String, buffer.ToString());
+							yield return new Token(line, tokenStartColumn, TokenType.String, buffer.ToString());
 							buffer.Clear();
 							mode = Mode.Any;
 							reparse = true;
+							tokenStartColumn = column;
 						}
 						else
 						{
@@ -173,9 +185,10 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 
 							if (ch == '"')
 							{
-								yield return new Token(line, column, TokenType.String, buffer.ToString());
+								yield return new Token(line, tokenStartColumn, TokenType.String, buffer.ToString());
 								buffer.Clear();
 								mode = Mode.Any;
+								tokenStartColumn = column + 1;
 							}
 						}
 
@@ -190,10 +203,11 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 						}
 						else
 						{
-							yield return Token.ForCharacter(line, column, '.');
+							yield return Token.ForCharacter(line, tokenStartColumn, '.');
 							buffer.Clear();
 							mode = Mode.Any;
 							reparse = true;
+							tokenStartColumn = column;
 						}
 
 						break;
@@ -247,9 +261,10 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 									break;
 							}
 
-							yield return new Token(line, column, TokenType.Number, buffer.ToString(), dataType);
+							yield return new Token(line, tokenStartColumn, TokenType.Number, buffer.ToString(), dataType);
 							buffer.Clear();
 							mode = Mode.Any;
+							tokenStartColumn = column;
 						}
 
 						break;
@@ -296,9 +311,10 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 
 							string hexString = buffer.ToString(2, buffer.Length - 2);
 
-							yield return new Token(line, column, TokenType.Number, buffer.ToString(), dataType);
+							yield return new Token(line, tokenStartColumn, TokenType.Number, buffer.ToString(), dataType);
 							buffer.Clear();
 							mode = Mode.Any;
+							tokenStartColumn = column;
 						}
 
 						break;
@@ -329,9 +345,10 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 									break;
 							}
 
-							yield return new Token(line, column, TokenType.Number, buffer.ToString(), dataType);
+							yield return new Token(line, tokenStartColumn, TokenType.Number, buffer.ToString(), dataType);
 							buffer.Clear();
 							mode = Mode.Any;
+							tokenStartColumn = column;
 						}
 
 						break;
@@ -342,20 +359,24 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 						{
 							switch (buffer[0])
 							{
-								case '<': yield return Token.GetStatic(line, column, TokenType.LessThanOrEquals); break;
-								case '>': yield return Token.GetStatic(line, column, TokenType.GreaterThanOrEquals); break;
+								case '<': yield return Token.GetStatic(line, tokenStartColumn, TokenType.LessThanOrEquals); break;
+								case '>': yield return Token.GetStatic(line, tokenStartColumn, TokenType.GreaterThanOrEquals); break;
 							}
 						}
 						else if (ch == '>')
-							yield return Token.GetStatic(line, column, TokenType.NotEquals);
+							yield return Token.GetStatic(line, tokenStartColumn, TokenType.NotEquals);
 						else
 						{
-							yield return Token.ForCharacter(line, column, buffer[0]);
+							yield return Token.ForCharacter(line, tokenStartColumn, buffer[0]);
 							buffer.Clear();
 							reparse = true;
 						}
 
 						mode = Mode.Any;
+						tokenStartColumn = column;
+
+						if (!reparse)
+							tokenStartColumn++;
 
 						break;
 					}
@@ -401,13 +422,17 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 								break;
 							}
 
-							if (Token.TryForKeyword(line, column, word, out var keyword))
+							if (Token.TryForKeyword(line, tokenStartColumn, word, out var keyword))
 								yield return keyword;
 							else
-								yield return new Token(line, column, TokenType.Identifier, word, dataType);
+								yield return new Token(line, tokenStartColumn, TokenType.Identifier, word, dataType);
 
 							buffer.Clear();
 							mode = Mode.Any;
+							tokenStartColumn = column;
+
+							if (!reparse)
+								tokenStartColumn++;
 						}
 
 						break;

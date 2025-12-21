@@ -237,4 +237,94 @@ public class LexerTests
 		result[0].Type.Should().Be(TokenType.Whitespace);
 		result[0].Value.Should().Be(content);
 	}
+
+	static IEnumerable<object[]> LineAndColumnTestSource()
+	{
+		object Expected(params (int Line, int Column)[] data) => data;
+
+		yield return
+			[
+				"PRINT \"Hello, world\"\n",
+				Expected((1, 1), (1, 6), (1, 7), (1, 21))
+			];
+
+		yield return//1         2         3         4         5          6
+			[//1234567890123456789012345678901234567890123456789012345678 901234567890
+				"newX# = COS(angle#) * oldX# + SIN(angle#) * oldY# ' rotate\nPRINT newX#",
+				Expected(
+					(1, 1), // "newX#"
+					(1, 6), // " "
+					(1, 7), // "="
+					(1, 8), // " "
+					(1, 9), // "COS"
+					(1, 12), // "("
+					(1, 13), // "angle#"
+					(1, 19), // ")"
+					(1, 20), // " "
+					(1, 21), // "*"
+					(1, 22), // " "
+					(1, 23), // "oldX#"
+					(1, 28), // " "
+					(1, 29), // "+"
+					(1, 30), // " "
+					(1, 31), // "SIN"
+					(1, 34), // "("
+					(1, 35), // "angle#"
+					(1, 41), // ")"
+					(1, 42), // " "
+					(1, 43), // "*"
+					(1, 44), // " "
+					(1, 45), // "oldY#"
+					(1, 50), // " "
+					(1, 51), // "' rotate"
+					(1, 59), // "\n"
+					(2, 1), // "PRINT"
+					(2, 6), // " "
+					(2, 7) // "newX#"
+				)
+			];
+
+		yield return
+			[
+				"IF a& >= 1 AND a& <= 10 THEN",
+				Expected(
+					(1, 1), // "IF"
+					(1, 3), // " "
+					(1, 4), // "a&"
+					(1, 6), // " "
+					(1, 7), // ">="
+					(1, 9), // " "
+					(1, 10), // "1"
+					(1, 11), // " "
+					(1, 12), // "AND"
+					(1, 15), // " "
+					(1, 16), // "a&"
+					(1, 18), // " "
+					(1, 19), // "<="
+					(1, 21), // " "
+					(1, 22), // "10"
+					(1, 24), // " "
+					(1, 25) // "THEN"
+				)
+			];
+	}
+
+	[TestCaseSource(nameof(LineAndColumnTestSource))]
+	public void LineAndColumn(string input, (int Line, int Column)[] expected)
+	{
+		// Arrange
+		var sut = new Lexer(input);
+
+		// Act
+		var result = sut.ToList();
+
+		// Assert
+		result.Should().HaveCount(expected.Length);
+
+		for (int i = 0; i < result.Count; i++)
+		{
+			result[i].Line.Should().Be(expected[i].Line);
+			result[i].Column.Should().Be(expected[i].Column);
+		}
+	}
 }
