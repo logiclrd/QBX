@@ -7,6 +7,8 @@ public class ParameterDefinition : IRenderableCode
 	public string ActualName { get; set; } = "";
 	public bool IsArray { get; set; }
 	public DataType? Type { get; set; }
+	public string? UserType { get; set; }
+	public bool AnyType { get; set; }
 
 	public void Render(TextWriter writer)
 	{
@@ -18,7 +20,11 @@ public class ParameterDefinition : IRenderableCode
 		if (IsArray)
 			writer.Write("()");
 
-		if (Type != null)
+		if (AnyType)
+			writer.Write(" AS ANY");
+		else if (UserType != null)
+			writer.Write(" AS {0}", UserType);
+		else if (Type != null)
 			writer.Write(" AS {0}", Type);
 	}
 }

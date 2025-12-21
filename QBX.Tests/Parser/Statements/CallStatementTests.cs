@@ -1,3 +1,66 @@
+using QBX.CodeModel.Expressions;
+using QBX.CodeModel.Statements;
+using QBX.LexicalAnalysis;
+using QBX.Parser;
+
+namespace QBX.Tests.Parser.Statements;
+
+public class CallStatementTests
+{
+	[TestCase("CALL MySub", CallStatementType.Explicit, 0)]
+	[TestCase("CALL MySub(33)", CallStatementType.Explicit, 1)]
+	[TestCase("CALL MySub(33, \"argh\")", CallStatementType.Explicit, 2)]
+	[TestCase("MySub", CallStatementType.Implicit, 0)]
+	[TestCase("MySub 33", CallStatementType.Implicit, 1)]
+	[TestCase("MySub 33, \"argh\"", CallStatementType.Implicit, 2)]
+	public void ShouldParse(string statement, CallStatementType callStatementType, int numArguments)
+	{
+		// Arrange
+		var tokens = new Lexer(statement).ToList();
+
+		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
+
+		bool inType = false;
+
+		var sut = new BasicParser();
+
+		// Act
+		var result = sut.ParseStatement(tokens, colonAfter: false, ref inType);
+
+		// Assert
+		result.Should().BeOfType<CallStatement>();
+
+		var callResult = (CallStatement)result;
+
+		callResult.CallStatementType.Should().Be(callStatementType);
+		callResult.TargetName = "MySub";
+
+		if (numArguments == 0)
+			callResult.Arguments.Should().BeNull();
+		else
+		{
+			callResult.Arguments.Should().NotBeNull();
+			callResult.Arguments!.Expressions.Should().HaveCount(numArguments);
+
+			if (numArguments > 1)
+			{
+				var arg = callResult.Arguments!.Expressions[0];
+
+				arg.Should().BeOfType<LiteralExpression>()
+					.Which.Token!.Value.Should().Be("33");
+			}
+
+			if (numArguments > 2)
+			{
+				var arg = callResult.Arguments!.Expressions[0];
+
+				arg.Should().BeOfType<LiteralExpression>()
+					.Which.Token!.Value.Should().Be("\"argh\"");
+			}
+		}
+	}
+}
+
 /*
 using QBX.CodeModel.Expressions;
 

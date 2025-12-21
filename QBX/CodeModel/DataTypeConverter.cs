@@ -10,6 +10,7 @@ public class DataTypeConverter
 {
 	static Dictionary<TokenType, DataType> s_dataTypeByTokenType =
 		typeof(DataType).GetFields(BindingFlags.Public | BindingFlags.Static)
+		.Where(field => field.Name != nameof(DataType.Unspecified))
 		.Select(field =>
 			(
 				DataType: (DataType)field.GetValue(null)!,

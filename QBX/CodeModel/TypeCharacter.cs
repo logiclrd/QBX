@@ -10,6 +10,7 @@ public class TypeCharacter(DataType type) : IRenderableCode
 
 	static Dictionary<char, TypeCharacter> s_typeCharacterByCharacter =
 		typeof(DataType).GetFields(BindingFlags.Static | BindingFlags.Public)
+		.Where(field => field.Name != nameof(DataType.Unspecified))
 		.Select(field =>
 			(
 				DataType: (DataType)field.GetValue(null)!,

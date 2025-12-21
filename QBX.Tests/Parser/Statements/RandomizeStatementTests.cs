@@ -1,3 +1,40 @@
+using QBX.CodeModel.Statements;
+using QBX.LexicalAnalysis;
+using QBX.Parser;
+
+namespace QBX.Tests.Parser.Statements;
+
+public class RandomizeStatementTests
+{
+	[TestCase("RANDOMIZE", false)]
+	[TestCase("RANDOMIZE 0", true)]
+	[TestCase("RANDOMIZE TIMER", true)]
+	public void ShouldParse(string definition, bool shouldHaveExpression)
+	{
+		// Arrange
+		var tokens = new Lexer(definition).ToList();
+
+		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
+
+		bool inType = false;
+
+		var sut = new BasicParser();
+
+		// Act
+		var result = sut.ParseStatement(tokens, colonAfter: false, ref inType);
+
+		// Assert
+		result.Should().BeOfType<RandomizeStatement>();
+
+		var randomizeResult = (RandomizeStatement)result;
+
+		if (shouldHaveExpression)
+			randomizeResult.Expression.Should().NotBeNull();
+		else
+			randomizeResult.Expression.Should().BeNull();
+	}
+}
+
 /*
 using QBX.CodeModel.Expressions;
 

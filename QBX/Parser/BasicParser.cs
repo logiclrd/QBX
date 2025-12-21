@@ -601,7 +601,7 @@ public class BasicParser
 			case TokenType.RETURN:
 			{
 				var statement =
-					tokenHandler.NextToken.Type switch
+					token.Type switch
 					{
 						TokenType.GOTO => new GoToStatement(),
 						TokenType.GOSUB => new GoSubStatement(),
@@ -611,7 +611,6 @@ public class BasicParser
 						_ => default(TargetLineStatement) ?? throw new Exception("Internal error")
 					};
 
-				tokenHandler.Advance();
 				tokenHandler.ExpectMoreTokens();
 
 				switch (tokenHandler.NextToken.Type)
@@ -1444,7 +1443,19 @@ public class BasicParser
 							throw new SyntaxErrorException(declarationTokens[0], "Identifier cannot end with %, &, !, #, $ or @");
 
 						declarationHandler.Advance();
-						declaration.Type = declarationHandler.ExpectIdentifier(allowTypeCharacter: false);
+
+						if (declarationHandler.NextTokenIs(TokenType.Identifier))
+							declaration.UserType = declarationHandler.ExpectIdentifier(allowTypeCharacter: false);
+						else
+						{
+							if (!declarationHandler.NextToken.IsDataType)
+								throw new SyntaxErrorException(declarationHandler.NextToken, "Expected data type");
+
+							declaration.Type = DataTypeConverter.FromToken(declarationHandler.NextToken);
+							//declaration.ActualName = declaration.Name + new TypeCharacter(declaration.Type.Value).Character;
+
+							declarationHandler.Advance();
+						}
 					}
 
 					declarationHandler.ExpectEndOfTokens();
@@ -1814,6 +1825,26 @@ public class BasicParser
 				declaration.Subscripts.Add(ParseVariableDeclarationSubscript(subscript, endTokenRef.Token ?? endToken));
 		}
 
+		if (tokenHandler.NextTokenIs(TokenType.AS))
+		{
+			tokenHandler.Advance();
+
+			if (tokenHandler.NextTokenIs(TokenType.Identifier))
+				declaration.UserType = tokenHandler.ExpectIdentifier(allowTypeCharacter: false);
+			else
+			{
+				if (!tokenHandler.NextToken.IsDataType)
+					throw new SyntaxErrorException(tokenHandler.NextToken, "Expected data type");
+
+				declaration.Type = DataTypeConverter.FromToken(tokenHandler.NextToken);
+				//declaration.ActualName = declaration.Name + new TypeCharacter(declaration.Type.Value).Character;
+
+				tokenHandler.Advance();
+			}
+		}
+
+		tokenHandler.ExpectEndOfTokens();
+
 		return declaration;
 	}
 
@@ -1830,12 +1861,26 @@ public class BasicParser
 
 		var subscript = new VariableDeclarationSubscript();
 
-		var bound2Range = boundExpressions[1].Unwrap();
+		switch (boundExpressions.Count)
+		{
+			case 1:
+			{
+				subscript.Bound1 = ParseExpression(boundExpressions[0], endToken);
 
-		var midToken = bound2Range.List[bound2Range.Offset - 1];
+				break;
+			}
+			case 2:
+			{
+				var bound2Range = boundExpressions[1].Unwrap();
 
-		subscript.Bound1 = ParseExpression(boundExpressions[0], midToken);
-		subscript.Bound2 = ParseExpression(boundExpressions[1], endToken);
+				var midToken = bound2Range.List[bound2Range.Offset - 1];
+
+				subscript.Bound1 = ParseExpression(boundExpressions[0], midToken);
+				subscript.Bound2 = ParseExpression(boundExpressions[1], endToken);
+
+				break;
+			}
+		}
 
 		return subscript;
 	}
@@ -1844,8 +1889,11 @@ public class BasicParser
 	{
 		var list = new ParameterList();
 
-		foreach (var range in SplitCommaDelimitedList(tokens))
-			list.Parameters.Add(ParseParameterDefinition(range, allowByVal));
+		if (tokens.Any())
+		{
+			foreach (var range in SplitCommaDelimitedList(tokens))
+				list.Parameters.Add(ParseParameterDefinition(range, allowByVal));
+		}
 
 		return list;
 	}
@@ -1880,16 +1928,38 @@ public class BasicParser
 				param.ActualName = param.Name;
 			else if (tokenIndex < tokens.Count)
 			{
+				if (tokens[tokenIndex].Type == TokenType.OpenParenthesis)
+				{
+					if (tokens[tokenIndex + 1].Type != TokenType.CloseParenthesis)
+						throw new SyntaxErrorException(tokens[tokenIndex + 1], "Expected: )");
+
+					param.IsArray = true;
+
+					tokenIndex += 2;
+				}
+
 				if (tokens[tokenIndex].Type != TokenType.AS)
 					throw new SyntaxErrorException(tokens[tokenIndex], "Expected AS");
 
 				tokenIndex++;
 
-				if (!tokens[tokenIndex].IsDataType)
-					throw new SyntaxErrorException(tokens[tokenIndex], "Expected data type");
+				if (tokens[tokenIndex].Type == TokenType.ANY)
+					param.AnyType = true;
+				else if (tokens[tokenIndex].Type == TokenType.Identifier)
+				{
+					param.UserType = tokens[tokenIndex].Value;
 
-				param.Type = DataTypeConverter.FromToken(tokens[tokenIndex]);
-				param.ActualName = param.Name + new TypeCharacter(param.Type.Value).Character;
+					if (!char.IsAsciiLetterOrDigit(param.UserType!.Last()))
+						throw new SyntaxErrorException(tokens[tokenIndex], "Type name may only contain letters and digits");
+				}
+				else
+				{
+					if (!tokens[tokenIndex].IsDataType)
+						throw new SyntaxErrorException(tokens[tokenIndex], "Expected data type");
+
+					param.Type = DataTypeConverter.FromToken(tokens[tokenIndex]);
+					param.ActualName = param.Name + new TypeCharacter(param.Type.Value).Character;
+				}
 
 				tokenIndex++;
 			}
