@@ -60,6 +60,7 @@ public enum StatementType
 	TypeElement,
 	UnresolvedWidth,
 	View,
+	Viewport,
 	WEnd,
 	While,
 }

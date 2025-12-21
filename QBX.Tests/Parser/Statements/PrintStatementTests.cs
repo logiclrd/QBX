@@ -1,53 +1,57 @@
-/*
-using QBX.CodeModel.Expressions;
+using QBX.CodeModel.Statements;
+using QBX.LexicalAnalysis;
+using QBX.Parser;
+using System.Runtime.ConstrainedExecution;
 
 namespace QBX.Tests.Parser.Statements;
 
-internal class PrintStatement
+public class PrintStatementTests
 {
-	public override StatementType Type => StatementType.Print;
-
-	public Expression? FileNumberExpression { get; set; }
-	public Expression? UsingExpression { get; set; }
-	public List<PrintArgument> Arguments { get; } = new List<PrintArgument>();
-
-	public override void Render(TextWriter writer)
+	[TestCase("PRINT", false, false, 0, PrintCursorAction.NextLine)]
+	[TestCase("PRINT ;", false, false, 1, PrintCursorAction.None)]
+	[TestCase("PRINT 3", false, false, 1, PrintCursorAction.NextLine)]
+	[TestCase("PRINT 3;", false, false, 1, PrintCursorAction.None)]
+	[TestCase("PRINT 1, 2", false, false, 2, PrintCursorAction.NextLine)]
+	[TestCase("PRINT \"a\", \"b\",", false, false, 2, PrintCursorAction.NextZone)]
+	[TestCase("PRINT #b%, \"the slithy toves\"", true, false, 1, PrintCursorAction.NextLine)]
+	[TestCase("PRINT USING \"000\"; x%", false, true, 1, PrintCursorAction.NextLine)]
+	[TestCase("PRINT #3, USING \"000\"; x%,", true, true, 1, PrintCursorAction.NextZone)]
+	public void ShouldParse(string statement, bool expectFileNumberExpression, bool expectUsingExpression, int expectedArgumentCount, PrintCursorAction expectedFinalCursorAction)
 	{
-		writer.Write("PRINT ");
+		// Arrange
+		var tokens = new Lexer(statement).ToList();
 
-		if (FileNumberExpression != null)
-		{
-			writer.Write('#');
-			FileNumberExpression.Render(writer);
-			writer.Write(", ");
-		}
+		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
 
-		if (UsingExpression != null)
-		{
-			writer.Write("USING ");
-			UsingExpression.Render(writer);
-			writer.Write("; ");
-		}
+		bool inType = false;
 
-		for (int i = 0; i < Arguments.Count; i++)
-		{
-			Arguments[i].Expression?.Render(writer);
+		var sut = new BasicParser();
 
-			switch (Arguments[i].CursorAction)
-			{
-				case PrintCursorAction.None: writer.Write(';'); break;
-				case PrintCursorAction.NextZone:
-				{
-					if (UsingExpression != null)
-						writer.Write(';');
-					else
-						writer.Write(',');
+		// Act
+		var result = sut.ParseStatement(tokens, colonAfter: false, ref inType);
 
-					break;
-				}
-			}
-		}
+		// Assert
+		result.Should().BeOfType<PrintStatement>();
+
+		var printResult = (PrintStatement)result;
+
+		if (expectFileNumberExpression)
+			printResult.FileNumberExpression.Should().NotBeNull();
+		else
+			printResult.FileNumberExpression.Should().BeNull();
+
+		if (expectUsingExpression)
+			printResult.UsingExpression.Should().NotBeNull();
+		else
+			printResult.UsingExpression.Should().BeNull();
+
+		printResult.Arguments.Should().HaveCount(expectedArgumentCount);
+
+		var finalCursorAction = PrintCursorAction.NextLine;
+
+		if (printResult.Arguments.Any())
+			finalCursorAction = printResult.Arguments.Last().CursorAction;
+
+		finalCursorAction.Should().Be(expectedFinalCursorAction);
 	}
 }
-
-*/

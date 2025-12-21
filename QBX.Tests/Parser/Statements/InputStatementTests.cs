@@ -1,54 +1,47 @@
-/*
-using QBX.CodeModel.Expressions;
+using QBX.CodeModel.Statements;
+using QBX.LexicalAnalysis;
+using QBX.Parser;
 
 namespace QBX.Tests.Parser.Statements;
 
-public class InputStatement
+public class InputStatementTests
 {
-	public override StatementType Type => StatementType.Input;
-
-	public bool EchoNewLine { get; set; } = true;
-	public string? PromptString { get; set; }
-	public bool PromptQuestionMark { get; set; } = true;
-	public Expression? FileNumberExpression { get; set; }
-	public List<string> Variables { get; } = new List<string>();
-
-	public override void Render(TextWriter writer)
+	[TestCase("INPUT a%", true, false, false, 1)]
+	[TestCase("INPUT ; b%", false, false, false, 1)]
+	[TestCase("INPUT \"Prompt\"; b$", true, true, true, 1)]
+	[TestCase("INPUT \"Prompt\", b$", true, true, false, 1)]
+	[TestCase("INPUT c%, d%", true, false, false, 2)]
+	[TestCase("INPUT c%(e%), d.f", true, false, false, 2)]
+	[TestCase("INPUT c(e%).g, d.f(e%)", true, false, false, 2)]
+	public void ShouldParse(string statement, bool expectEchoNewLine, bool expectPrompt, bool expectPromptQuestionMark, int expectedNumTargets)
 	{
-		writer.Write("INPUT ");
+		// Arrange
+		var tokens = new Lexer(statement).ToList();
 
-		if (FileNumberExpression != null)
+		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
+
+		bool inType = false;
+
+		var sut = new BasicParser();
+
+		// Act
+		var result = sut.ParseStatement(tokens, colonAfter: false, ref inType);
+
+		// Assert
+		result.Should().BeOfType<InputStatement>();
+
+		var inputResult = (InputStatement)result;
+
+		inputResult.EchoNewLine.Should().Be(expectEchoNewLine);
+
+		if (expectPrompt)
 		{
-			if (EchoNewLine || (PromptString != null))
-				throw new Exception("Internal error: Mismatched configuration of InputStatement");
-
-			writer.Write('#');
-			FileNumberExpression.Render(writer);
+			inputResult.PromptString.Should().NotBeNull();
+			inputResult.PromptQuestionMark.Should().Be(expectPromptQuestionMark);
 		}
 		else
-		{
-			if (!EchoNewLine)
-				writer.Write("; ");
+			inputResult.PromptString.Should().BeNull();
 
-			if (PromptString != null)
-			{
-				writer.Write(PromptString);
-
-				if (PromptQuestionMark)
-					writer.Write("; ");
-				else
-					writer.Write(", ");
-			}
-		}
-
-		for (int i = 0; i < Variables.Count; i++)
-		{
-			if (i > 0)
-				writer.Write(", ");
-
-			writer.Write(Variables[i]);
-		}
+		inputResult.Targets.Should().HaveCount(expectedNumTargets);
 	}
 }
-
-*/

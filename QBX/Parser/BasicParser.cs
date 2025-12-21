@@ -695,8 +695,8 @@ public class BasicParser
 			case TokenType.INPUT:
 			{
 				// One of:
-				//   INPUT [;] [prompt {;|,}] variable[, variable[..]]
-				//   INPUT #filenumber, variable[, [variable[..]]
+				//   INPUT [;] [prompt {;|,}] target[, target[..]]
+				//   INPUT #filenumber, target[, [target[..]]
 
 				var input = new InputStatement();
 
@@ -732,27 +732,26 @@ public class BasicParser
 					}
 				}
 
-				var variables = SplitCommaDelimitedList(tokenHandler.RemainingTokens);
+				var endTokenRef = new TokenRef();
 
-				foreach (var variable in variables)
+				foreach (var targetTokens in SplitCommaDelimitedList(tokenHandler.RemainingTokens, endTokenRef))
 				{
-					if (variable.Count == 0)
+					if (targetTokens.Count == 0)
 					{
-						var range = variable.Unwrap();
+						var range = targetTokens.Unwrap();
 
 						if (range.Offset >= tokens.Count)
 							range.Offset--;
 
-						throw new SyntaxErrorException(tokens[range.Offset], "Expected: identifier");
+						throw new SyntaxErrorException(tokens[range.Offset], "Expected: expression");
 					}
 
-					if (variable[0].Type != TokenType.Identifier)
-						throw new SyntaxErrorException(variable[0], "Expected: identifier");
+					var target = ParseExpression(targetTokens, endTokenRef.Token ?? tokenHandler.EndToken);
 
-					if (variable.Count > 1)
-						throw new SyntaxErrorException(variable[1], "Expected: comma or end of statement");
+					if (!target.IsValidAssignmentTarget())
+						throw new SyntaxErrorException(targetTokens[0], "Cannot assign to this expression");
 
-					input.Variables.Add(variable[0].Value ?? throw new Exception("Internal error: Identifier with no value"));
+					input.Targets.Add(target);
 				}
 
 				return input;
@@ -1593,81 +1592,112 @@ public class BasicParser
 
 			case TokenType.VIEW:
 			{
-				var view = new ViewStatement();
-
-				if (tokenHandler.NextTokenIs(TokenType.SCREEN))
+				if (tokenHandler.NextTokenIs(TokenType.PRINT))
 				{
-					view.AbsoluteCoordinates = true;
-					tokenHandler.Advance();
-				}
+					var viewport = new ViewportStatement();
 
-				var fromCoordinates = SplitCommaDelimitedList(tokenHandler.ExpectParenthesizedTokens()).ToList();
-
-				if (fromCoordinates.Count < 2)
-					throw new SyntaxErrorException(tokenHandler.PreviousToken, "Expected: expression");
-				else if (fromCoordinates.Count > 2)
-				{
-					var range = fromCoordinates[2].Unwrap();
-
-					throw new SyntaxErrorException(tokens[range.Offset - 1], "Expected: )");
-				}
-
-				var fromXEndToken = tokens[fromCoordinates[1].Unwrap().Offset - 1];
-				var fromYEndToken = tokenHandler.PreviousToken;
-
-				view.FromXExpression = ParseExpression(fromCoordinates[0], fromXEndToken);
-				view.FromYExpression = ParseExpression(fromCoordinates[1], fromYEndToken);
-
-				tokenHandler.Expect(TokenType.Hyphen);
-
-				var toCoordinates = SplitCommaDelimitedList(tokenHandler.ExpectParenthesizedTokens()).ToList();
-
-				if (toCoordinates.Count < 2)
-					throw new SyntaxErrorException(tokenHandler.PreviousToken, "Expected: expression");
-				else if (toCoordinates.Count > 2)
-				{
-					var range = toCoordinates[2].Unwrap();
-
-					throw new SyntaxErrorException(tokens[range.Offset - 1], "Expected: )");
-				}
-
-				var toXEndToken = tokens[toCoordinates[1].Unwrap().Offset - 1];
-				var toYEndToken = tokenHandler.PreviousToken;
-
-				view.ToXExpression = ParseExpression(toCoordinates[0], toXEndToken);
-				view.ToYExpression = ParseExpression(toCoordinates[1], toYEndToken);
-
-				if (tokenHandler.NextTokenIs(TokenType.Comma))
-				{
 					tokenHandler.Advance();
 
-					int separator = tokenHandler.FindNextUnparenthesizedOf(TokenType.Comma);
-
-					if (separator > 0)
+					if (tokenHandler.HasMoreTokens)
 					{
-						var expressionTokens = tokenHandler.RemainingTokens;
-						var endToken = tokenHandler.EndToken;
+						var arguments = SplitDelimitedList(tokenHandler.RemainingTokens, TokenType.TO).ToList();
 
-						if (separator >= 0)
+						if (arguments.Count < 2)
+							throw new SyntaxErrorException(tokenHandler.EndToken, "Expected: TO");
+
+						if (arguments.Count > 2)
 						{
-							expressionTokens = expressionTokens.Slice(0, separator);
-							endToken = tokenHandler[separator];
+							var range = arguments[2].Unwrap();
+
+							throw new SyntaxErrorException(tokens[range.Offset - 1], "Expected: end of statement");
 						}
 
-						view.FillColourExpression = ParseExpression(expressionTokens, endToken);
+						var midToken = tokens[arguments[1].Unwrap().Offset - 1];
 
-						tokenHandler.Advance(separator);
+						viewport.TopExpression = ParseExpression(arguments[0], midToken);
+						viewport.BottomExpression = ParseExpression(arguments[1], tokenHandler.EndToken);
 					}
+
+					return viewport;
+				}
+				else
+				{
+					var view = new ViewStatement();
+
+					if (tokenHandler.NextTokenIs(TokenType.SCREEN))
+					{
+						view.AbsoluteCoordinates = true;
+						tokenHandler.Advance();
+					}
+
+					var fromCoordinates = SplitCommaDelimitedList(tokenHandler.ExpectParenthesizedTokens()).ToList();
+
+					if (fromCoordinates.Count < 2)
+						throw new SyntaxErrorException(tokenHandler.PreviousToken, "Expected: expression");
+					else if (fromCoordinates.Count > 2)
+					{
+						var range = fromCoordinates[2].Unwrap();
+
+						throw new SyntaxErrorException(tokens[range.Offset - 1], "Expected: )");
+					}
+
+					var fromXEndToken = tokens[fromCoordinates[1].Unwrap().Offset - 1];
+					var fromYEndToken = tokenHandler.PreviousToken;
+
+					view.FromXExpression = ParseExpression(fromCoordinates[0], fromXEndToken);
+					view.FromYExpression = ParseExpression(fromCoordinates[1], fromYEndToken);
+
+					tokenHandler.Expect(TokenType.Hyphen);
+
+					var toCoordinates = SplitCommaDelimitedList(tokenHandler.ExpectParenthesizedTokens()).ToList();
+
+					if (toCoordinates.Count < 2)
+						throw new SyntaxErrorException(tokenHandler.PreviousToken, "Expected: expression");
+					else if (toCoordinates.Count > 2)
+					{
+						var range = toCoordinates[2].Unwrap();
+
+						throw new SyntaxErrorException(tokens[range.Offset - 1], "Expected: )");
+					}
+
+					var toXEndToken = tokens[toCoordinates[1].Unwrap().Offset - 1];
+					var toYEndToken = tokenHandler.PreviousToken;
+
+					view.ToXExpression = ParseExpression(toCoordinates[0], toXEndToken);
+					view.ToYExpression = ParseExpression(toCoordinates[1], toYEndToken);
 
 					if (tokenHandler.NextTokenIs(TokenType.Comma))
 					{
 						tokenHandler.Advance();
 
-						view.BorderColourExpression = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken);
-					}
-				}
+						int separator = tokenHandler.FindNextUnparenthesizedOf(TokenType.Comma);
 
-				return view;
+						if (separator > 0)
+						{
+							var expressionTokens = tokenHandler.RemainingTokens;
+							var endToken = tokenHandler.EndToken;
+
+							if (separator >= 0)
+							{
+								expressionTokens = expressionTokens.Slice(0, separator);
+								endToken = tokenHandler[separator];
+							}
+
+							view.FillColourExpression = ParseExpression(expressionTokens, endToken);
+
+							tokenHandler.Advance(separator);
+						}
+
+						if (tokenHandler.NextTokenIs(TokenType.Comma))
+						{
+							tokenHandler.Advance();
+
+							view.BorderColourExpression = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken);
+						}
+					}
+
+					return view;
+				}
 			}
 
 			case TokenType.WEND:
@@ -1778,7 +1808,7 @@ public class BasicParser
 			}
 			catch (SyntaxErrorException) { }
 
-			if (IsValidAssignmentTarget(targetExpression))
+			if ((targetExpression != null) && targetExpression.IsValidAssignmentTarget())
 			{
 				var assignment = new AssignmentStatement();
 
@@ -1807,24 +1837,6 @@ public class BasicParser
 		}
 
 		throw new SyntaxErrorException(tokens[0], "Syntax error");
-	}
-
-	private bool IsValidAssignmentTarget([NotNullWhen(true)] Expression? targetExpression)
-	{
-		if (targetExpression == null)
-			return false;
-
-		if ((targetExpression is BinaryExpression binaryTarget)
-		 && (binaryTarget.Operator == Operator.Member))
-			return true;
-
-		if (targetExpression is CallOrIndexExpression)
-			return true;
-
-		if (targetExpression is IdentifierExpression)
-			return true;
-
-		return false;
 	}
 
 	class TokenRef
@@ -2089,7 +2101,7 @@ public class BasicParser
 				}
 				catch (SyntaxErrorException) { }
 
-				if (IsValidIndexSubject(subjectExpression))
+				if ((subjectExpression != null) && subjectExpression.IsValidIndexSubject())
 				{
 					return new CallOrIndexExpression(
 						tokens[openParenthesisIndex],
@@ -2136,7 +2148,7 @@ public class BasicParser
 			var rightExpression = ParseExpression(tokens.Slice(lastOperatorIndex + 1), endToken);
 
 			if ((tokens[lastOperatorIndex].Type == TokenType.Period)
-			 && !IsValidMemberSubject(leftExpression))
+			 && !leftExpression.IsValidMemberSubject())
 				throw new SyntaxErrorException(tokens[lastOperatorIndex + 1], "Expected: identifier");
 
 			return new BinaryExpression(
@@ -2187,33 +2199,6 @@ public class BasicParser
 
 			throw new SyntaxErrorException(tokens[0], "Expected: expression");
 		}
-	}
-
-	private bool IsValidIndexSubject([NotNullWhen(true)] Expression? expression)
-	{
-		if (expression is IdentifierExpression)
-			return true;
-
-		if ((expression is BinaryExpression binaryExpression)
-		 && (binaryExpression.Operator == Operator.Member))
-			return true;
-
-		return false;
-	}
-
-	private bool IsValidMemberSubject([NotNullWhen(true)] Expression? expression)
-	{
-		if (expression is IdentifierExpression)
-			return true;
-
-		if (expression is CallOrIndexExpression)
-			return true;
-
-		if ((expression is BinaryExpression binaryExpression)
-		 && (binaryExpression.Operator == Operator.Member))
-			return true;
-
-		return false;
 	}
 
 	private bool IsOperator(Token token, out Operator op)

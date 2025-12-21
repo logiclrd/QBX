@@ -7,6 +7,9 @@ public class CallOrIndexExpression : Expression
 	public Expression Subject { get; set; }
 	public ExpressionList Arguments { get; set; }
 
+	public override bool IsValidAssignmentTarget() => true;
+	public override bool IsValidMemberSubject() => true;
+
 	public CallOrIndexExpression(Token token, Expression subject, ExpressionList arguments)
 	{
 		Token = token;

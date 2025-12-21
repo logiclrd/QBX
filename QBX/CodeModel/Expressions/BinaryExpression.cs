@@ -8,6 +8,13 @@ public class BinaryExpression : Expression
 	public Operator Operator { get; set; }
 	public Expression Right { get; set; }
 
+	public override bool IsValidAssignmentTarget()
+		=> Operator == Operator.Member;
+	public override bool IsValidIndexSubject()
+		=> Operator == Operator.Member;
+	public override bool IsValidMemberSubject()
+		=> Operator == Operator.Member;
+
 	public BinaryExpression(Expression left, Token operatorToken, Expression right)
 	{
 		Left = left;

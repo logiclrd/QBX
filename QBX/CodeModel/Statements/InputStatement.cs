@@ -10,7 +10,7 @@ public class InputStatement : Statement
 	public string? PromptString { get; set; }
 	public bool PromptQuestionMark { get; set; } = true;
 	public Expression? FileNumberExpression { get; set; }
-	public List<string> Variables { get; } = new List<string>();
+	public List<Expression> Targets { get; } = new List<Expression>();
 
 	public override void Render(TextWriter writer)
 	{
@@ -40,12 +40,12 @@ public class InputStatement : Statement
 			}
 		}
 
-		for (int i = 0; i < Variables.Count; i++)
+		for (int i = 0; i < Targets.Count; i++)
 		{
 			if (i > 0)
 				writer.Write(", ");
 
-			writer.Write(Variables[i]);
+			Targets[i].Render(writer);
 		}
 	}
 }
