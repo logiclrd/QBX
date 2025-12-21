@@ -1,22 +1,29 @@
-/*
-using QBX.CodeModel.Expressions;
+using QBX.CodeModel.Statements;
+using QBX.LexicalAnalysis;
+using QBX.Parser;
 
 namespace QBX.Tests.Parser.Statements;
 
-public class PlayStatement
+public class PlayStatementTests
 {
-	public override StatementType Type => StatementType.Play;
-
-	public Expression? CommandExpression { get; set; }
-
-	public override void Render(TextWriter writer)
+	[TestCase("PLAY \"ABCDE\"")]
+	[TestCase("PLAY song$")]
+	[TestCase("PLAY part1$ + part2$")]
+	public void ShouldParse(string statement)
 	{
-		if (CommandExpression == null)
-			throw new Exception("Internal error: PlayStatement with no CommandExpression");
+		// Arrange
+		var tokens = new Lexer(statement).ToList();
 
-		writer.Write("PLAY ");
-		CommandExpression.Render(writer);
+		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
+
+		bool inType = false;
+
+		var sut = new BasicParser();
+
+		// Act
+		var result = sut.ParseStatement(tokens, colonAfter: false, ref inType);
+
+		// Assert
+		result.Should().BeOfType<PlayStatement>();
 	}
 }
-
-*/

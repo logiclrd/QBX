@@ -1,24 +1,34 @@
-/*
-using QBX.CodeModel.Expressions;
+using QBX.CodeModel.Statements;
+using QBX.LexicalAnalysis;
+using QBX.Parser;
 
 namespace QBX.Tests.Parser.Statements;
 
-internal class CaseStatement
+public class CaseStatementTests
 {
-	public override StatementType Type => StatementType.Case;
-
-	public ExpressionList Expressions { get; set; }
-
-	public CaseStatement(ExpressionList expressions)
+	[TestCase("CASE 1", 1)]
+	[TestCase("CASE \"test\"", 1)]
+	[TestCase("CASE NEXTLEVEL", 1)]
+	[TestCase("CASE 2, a%, b% + c%", 3)]
+	public void ShouldParse(string statement, int expectedExpressionCount)
 	{
-		Expressions = expressions;
-	}
+		// Arrange
+		var tokens = new Lexer(statement).ToList();
 
-	public override void Render(TextWriter writer)
-	{
-		writer.Write("CASE ");
-		Expressions.Render(writer);
+		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
+
+		bool inType = false;
+
+		var sut = new BasicParser();
+
+		// Act
+		var result = sut.ParseStatement(tokens, colonAfter: false, ref inType);
+
+		// Assert
+		result.Should().BeOfType<CaseStatement>();
+
+		var caseResult = (CaseStatement)result;
+
+		caseResult.Expressions.Expressions.Should().HaveCount(expectedExpressionCount);
 	}
 }
-
-*/
