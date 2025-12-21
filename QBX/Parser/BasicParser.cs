@@ -176,7 +176,34 @@ public class BasicParser
 
 			tokenHandler.Expect(TokenType.AS);
 
-			typeElement.ElementType = tokenHandler.ExpectIdentifier(allowTypeCharacter: false);
+			switch (tokenHandler.NextToken.Type)
+			{
+				case TokenType.INTEGER:
+				case TokenType.LONG:
+				case TokenType.SINGLE:
+				case TokenType.DOUBLE:
+				case TokenType.STRING:
+				case TokenType.CURRENCY:
+				{
+					switch (tokenHandler.NextToken.Type)
+					{
+						case TokenType.INTEGER: typeElement.ElementType = DataType.INTEGER; break;
+						case TokenType.LONG: typeElement.ElementType = DataType.LONG; break;
+						case TokenType.SINGLE: typeElement.ElementType = DataType.SINGLE; break;
+						case TokenType.DOUBLE: typeElement.ElementType = DataType.DOUBLE; break;
+						case TokenType.STRING: typeElement.ElementType = DataType.STRING; break;
+						case TokenType.CURRENCY: typeElement.ElementType = DataType.CURRENCY; break;
+					}
+
+					tokenHandler.Advance();
+
+					break;
+				}
+
+				default:
+					typeElement.ElementUserType = tokenHandler.ExpectIdentifier(allowTypeCharacter: false);
+					break;
+			}
 
 			tokenHandler.ExpectEndOfTokens();
 
@@ -412,7 +439,7 @@ public class BasicParser
 
 				if (tokenHandler.HasMoreTokens)
 				{
-					tokenHandler.Expect(TokenType.Equals);
+					tokenHandler.Expect(TokenType.Minus);
 					tokenHandler.ExpectMoreTokens();
 
 					rangeEnd = tokenHandler.ExpectIdentifier(allowTypeCharacter: false, out identifierToken);

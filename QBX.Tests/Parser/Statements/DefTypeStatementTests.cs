@@ -1,38 +1,41 @@
-/*
 using QBX.CodeModel;
+using QBX.CodeModel.Statements;
+using QBX.LexicalAnalysis;
+using QBX.Parser;
 
 namespace QBX.Tests.Parser.Statements;
 
-internal class DefTypeStatement
+public class DefTypeStatementTests
 {
-	public override StatementType Type => StatementType.DefType;
-
-	public DataType DataType { get; set; }
-	public char? RangeStart { get; set; }
-	public char? RangeEnd { get; set; }
-
-	public override void Render(TextWriter writer)
+	[TestCase(DataType.INTEGER, "DEFINT", 'A', 'Z')]
+	[TestCase(DataType.LONG, "DEFLNG", 'B', 'Z')]
+	[TestCase(DataType.SINGLE, "DEFSNG", 'D', 'Z')]
+	[TestCase(DataType.DOUBLE, "DEFDBL", 'F', 'Z')]
+	[TestCase(DataType.STRING, "DEFSTR", 'R', 'Z')]
+	[TestCase(DataType.CURRENCY, "DEFCUR", 'T', 'Z')]
+	public void ShouldParse(DataType dataType, string statement, char rangeStart, char rangeEnd)
 	{
-		switch (DataType)
-		{
-			case DataType.CURRENCY: writer.Write("DEFCUR"); break;
-			case DataType.DOUBLE: writer.Write("DEFDBL"); break;
-			case DataType.INTEGER: writer.Write("DEFINT"); break;
-			case DataType.LONG: writer.Write("DEFLNG"); break;
-			case DataType.SINGLE: writer.Write("DEFSNG"); break;
-			case DataType.STRING: writer.Write("DEFSTR"); break;
+		// Arrange
+		var text = $"{statement} {rangeStart}-{rangeEnd}";
 
-			default: throw new Exception("Internal error: unrecognized data type for DEFtype");
-		}
+		var tokens = new Lexer(text).ToList();
 
-		if (RangeStart.HasValue)
-		{
-			writer.Write(" {0}", char.ToUpperInvariant(RangeStart.Value));
+		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
 
-			if (RangeEnd.HasValue)
-				writer.Write("-{0}", char.ToUpperInvariant(RangeEnd.Value));
-		}
+		bool inType = false;
+
+		var sut = new BasicParser();
+
+		// Act
+		var result = sut.ParseStatement(tokens, colonAfter: false, ref inType);
+
+		// Assert
+		result.Should().BeOfType<DefTypeStatement>();
+
+		var defTypeResult = (DefTypeStatement)result;
+
+		defTypeResult.DataType.Should().Be(dataType);
+		defTypeResult.RangeStart.Should().Be(rangeStart);
+		defTypeResult.RangeEnd.Should().Be(rangeEnd);
 	}
 }
-
-*/

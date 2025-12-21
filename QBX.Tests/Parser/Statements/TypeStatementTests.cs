@@ -1,17 +1,32 @@
-/*
+using QBX.CodeModel.Statements;
+using QBX.LexicalAnalysis;
+using QBX.Parser;
+
 namespace QBX.Tests.Parser.Statements;
 
-public class TypeStatement
+public class TypeStatementTests
 {
-	public override StatementType Type => StatementType.Type;
-
-	public string Name { get; set; } = "";
-
-	public override void Render(TextWriter writer)
+	[Test]
+	public void ShouldParse()
 	{
-		writer.Write("TYPE ");
-		writer.Write(Name);
+		// Arrange
+		const string TypeName = "foo";
+
+		string text = $"TYPE {TypeName}";
+
+		var tokens = new Lexer(text).ToList();
+
+		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
+
+		bool inType = false;
+
+		var sut = new BasicParser();
+
+		// Act
+		var result = sut.ParseStatement(tokens, colonAfter: false, ref inType);
+
+		// Assert
+		result.Should().BeOfType<TypeStatement>()
+			.Which.Name.Should().Be(TypeName);
 	}
 }
-
-*/
