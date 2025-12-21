@@ -21,8 +21,6 @@ public class BasicParser
 
 		var comments = new List<CodeLine>();
 
-		tokenStream = tokenStream.Where(token => token.Type != TokenType.Whitespace);
-
 		foreach (var line in ParseCodeLines(tokenStream))
 		{
 			if (line.IsCommentLine && (element == mainElement))
@@ -82,6 +80,7 @@ public class BasicParser
 		bool haveContent = false;
 		bool inType = false;
 		int sourceLineNumber = 1;
+		string precedingWhitespace = "";
 
 		while (enumerator.MoveNext())
 		{
@@ -89,12 +88,14 @@ public class BasicParser
 
 			if (token.Type == TokenType.NewLine)
 			{
-				line.Statements.Add(ParseStatement(buffer, colonAfter: false, ref inType));
+				if (line.EndOfLineComment == null)
+					line.Statements.Add(ParseStatement(buffer, colonAfter: false, ref inType));
 				buffer.Clear();
 				yield return line;
 				line = new CodeLine();
 				haveContent = false;
 				sourceLineNumber++;
+				precedingWhitespace = "";
 			}
 			else if ((token.Type == TokenType.Whitespace) && !line.Statements.Any())
 				line.Indentation += token.Value;
@@ -105,6 +106,8 @@ public class BasicParser
 
 				line.Indentation = "";
 				line.LineNumber = token.Value;
+
+				precedingWhitespace = "";
 			}
 			else
 			{
@@ -132,9 +135,21 @@ public class BasicParser
 						haveContent = true;
 						buffer.Clear();
 					}
+
+					precedingWhitespace = "";
 				}
+				else if ((token.Type == TokenType.Comment) && (token.Value != null) && token.Value.StartsWith("'"))
+				{
+					line.EndOfLineComment = precedingWhitespace + token.Value;
+					precedingWhitespace = "";
+				}
+				else if (token.Type == TokenType.Whitespace)
+					precedingWhitespace = token.Value ?? "";
 				else
+				{
+					precedingWhitespace = "";
 					buffer.Add(token);
+				}
 			}
 		}
 

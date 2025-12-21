@@ -10,6 +10,7 @@ public class CodeLine : IRenderableCode
 	public Label? Label { get; set; }
 	public string Indentation { get; set; } = "";
 	public List<Statement> Statements { get; } = new List<Statement>();
+	public string? EndOfLineComment { get; set; }
 
 	public bool IsEmpty => (Indentation == "") && !Statements.Any();
 
@@ -48,6 +49,8 @@ public class CodeLine : IRenderableCode
 				writer.Write(": ");
 			}
 		}
+
+		writer.Write(EndOfLineComment);
 
 		writer.WriteLine();
 	}
