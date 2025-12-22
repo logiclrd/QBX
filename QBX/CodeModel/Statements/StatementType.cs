@@ -43,6 +43,8 @@ public enum StatementType
 	Locate,
 	Next,
 	On,
+	Open,
+	OpenLegacy,
 	PageCopy,
 	PixelSet,
 	Play,

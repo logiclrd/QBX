@@ -324,6 +324,8 @@ public class GraphicsArray
 		public const byte ModeControl_MapDisplayAddress13_RowScan0 = 0;
 		public const byte ModeControl_MapDisplayAddress13_Address13 = 1;
 
+		public int NumColumns;
+
 		public RegisterSet Registers;
 
 		public CRTController() { Registers = new RegisterSet(this); }
@@ -356,8 +358,79 @@ public class GraphicsArray
 			public byte ModeControl = 0;
 			public byte LineCompare = 0;
 
-			// TODO: these registers
+			public byte this[int index]
+			{
+				get
+				{
+					switch (index)
+					{
+						case 0: return HorizontalTotal;
+						case 1: return EndHorizontalDisplay;
+						case 2: return StartHorizontalBlanking;
+						case 3: return EndHorizontalBlanking;
+						case 4: return StartHorizontalRetrace;
+						case 5: return EndHorizontalRetrace;
+						case 6: return VerticalTotal;
+						case 7: return Overflow;
+						case 8: return PresetRowScan;
+						case 9: return MaximumScanLine;
+						case 10: return CursorStart;
+						case 11: return CursorEnd;
+						case 12: return StartAddressHigh;
+						case 13: return StartAddressLow;
+						case 14: return CursorLocationHigh;
+						case 15: return CursorLocationLow;
+						case 16: return VerticalRetraceStart;
+						case 17: return VerticalRetraceEnd;
+						case 18: return VerticalDisplayEnd;
+						case 19: return Offset;
+						case 20: return UnderlineLocation;
+						case 21: return StartVerticalBlanking;
+						case 22: return EndVerticalBlanking;
+						case 23: return ModeControl;
+						case 24: return LineCompare;
+
+						default: return 0;
+					}
+				}
+				set
+				{
+					switch (index)
+					{
+						case 0: HorizontalTotal = value; break;
+						case 1: EndHorizontalDisplay = value; break;
+						case 2: StartHorizontalBlanking = value; break;
+						case 3: EndHorizontalBlanking = value; break;
+						case 4: StartHorizontalRetrace = value; break;
+						case 5: EndHorizontalRetrace = value; break;
+						case 6: VerticalTotal = value; break;
+						case 7: Overflow = value; break;
+						case 8: PresetRowScan = value; break;
+						case 9: MaximumScanLine = value; break;
+						case 10: CursorStart = value; break;
+						case 11: CursorEnd = value; break;
+						case 12: StartAddressHigh = value; break;
+						case 13: StartAddressLow = value; break;
+						case 14: CursorLocationHigh = value; break;
+						case 15: CursorLocationLow = value; break;
+						case 16: VerticalRetraceStart = value; break;
+						case 17: VerticalRetraceEnd = value; break;
+						case 18: VerticalDisplayEnd = value; break;
+						case 19: Offset = value; break;
+						case 20: UnderlineLocation = value; break;
+						case 21: StartVerticalBlanking = value; break;
+						case 22: EndVerticalBlanking = value; break;
+						case 23: ModeControl = value; break;
+						case 24: LineCompare = value; break;
+					}
+
+					// TODO: cached computed values
+					owner.NumColumns = HorizontalTotal + 5;
+				}
+			}
+
 			// TODO: OPEN/CLOSE statements
+			// TODO: LOCK/UNLOCK statements
 			// TODO: GET/PUT statements
 			// TODO: CIRCLE statement
 		}
@@ -374,10 +447,6 @@ public class GraphicsArray
 	CRTController _controller = new CRTController();
 	int _controllerIndex;
 
-	bool _3C0DataMode;
-	int _3C0Index;
-	byte _3C2Value;
-	int _3D4Index;
 	int _paletteReadIndex;
 	int _paletteWriteIndex;
 
@@ -396,19 +465,6 @@ public class GraphicsArray
 
 		switch (portNumber)
 		{
-			case 0x3C0:
-			{
-				if (!_3C0DataMode)
-					_3C0Index = data;
-				else
-				{
-					// TODO: write data to _3C0Index
-				}
-
-				_3C0DataMode = !_3C0DataMode;
-
-				break;
-			}
 			case MiscellaneousOutput.WritePort:
 			{
 				_miscellaneousOutput.Register = data;

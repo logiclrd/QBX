@@ -1323,6 +1323,278 @@ public class BasicParser
 				return on;
 			}
 
+			case TokenType.OPEN:
+			{
+				var commaIndex = tokenHandler.FindNextUnparenthesizedOf(TokenType.Comma);
+
+				if (commaIndex < 0)
+				{
+					// New syntax
+					var open = new OpenStatement();
+
+					var parts = SplitDelimitedList(tokenHandler.RemainingTokens, TokenType.AS).ToList();
+
+					if (parts.Count < 2)
+						throw new SyntaxErrorException(tokenHandler.EndToken, "Expected: AS");
+
+					if (parts.Count > 2)
+					{
+						var range = parts[2].Unwrap();
+
+						throw new SyntaxErrorException(tokens[range.Offset - 1], "Expected: end of statement");
+					}
+
+					// Now we have:
+					//  parts[0]     filename$ [FOR mode] [ACCESS access] [lock]
+					//  parts[1]     [#]filenumber% [LEN=reclen%]
+
+					var filenamePart = parts[0];
+					var fileNumberPart = parts[1];
+
+					if (filenamePart.Count == 0)
+					{
+						var range = parts[1].Unwrap();
+
+						throw new SyntaxErrorException(tokens[range.Offset - 1], "Expected: expression");
+					}
+
+					var filenameEndToken = tokens[fileNumberPart.Unwrap().Offset - 1];
+
+					// Peel [lock] off the end.
+					int lockIndex = filenamePart.Index()
+						.FirstOrDefault<(int Index, Token Token)>(
+							t => t.Token.Type == TokenType.LOCK, (-1, tokens[0]))
+						.Index;
+
+					Token? lockToken = null;
+
+					if (lockIndex >= 0)
+					{
+						lockToken = filenamePart[lockIndex];
+
+						var lockArgument = filenamePart.Slice(lockIndex + 1);
+
+						if (lockArgument.Count == 0)
+						{
+							var midToken = tokens[parts[1].Unwrap().Offset - 1];
+
+							throw new SyntaxErrorException(midToken, "Expected: READ or WRITE");
+						}
+
+						if (lockArgument.Count == 1)
+						{
+							if (lockArgument[0].Type == TokenType.READ)
+								open.LockMode = LockMode.LockRead;
+							else if (lockArgument[0].Type == TokenType.WRITE)
+								open.LockMode = LockMode.LockWrite;
+							else
+								throw new SyntaxErrorException(lockArgument[0], "Expected: READ or WRITE");
+						}
+
+						if (lockArgument.Count >= 2)
+						{
+							if (lockArgument[0].Type == TokenType.READ)
+							{
+								if (lockArgument[1].Type == TokenType.WRITE)
+									open.LockMode = LockMode.LockReadWrite;
+								else
+									throw new SyntaxErrorException(lockArgument[1], "Expected: AS");
+							}
+							else if (lockArgument[0].Type == TokenType.WRITE)
+								throw new SyntaxErrorException(lockArgument[1], "Expected: AS");
+							else
+								throw new SyntaxErrorException(lockArgument[0], "Expected: READ or WRITE");
+
+							if (lockArgument.Count > 2)
+								throw new SyntaxErrorException(lockArgument[2], "Expected: AS");
+						}
+
+						filenameEndToken = filenamePart[lockIndex];
+						filenamePart = filenamePart.Slice(0, lockIndex);
+					}
+
+					if (filenamePart.Last().Type == TokenType.SHARED)
+					{
+						if (lockToken != null)
+							throw new SyntaxErrorException(lockToken, "Expected: AS");
+
+						open.LockMode = LockMode.Shared;
+						filenameEndToken = filenamePart[filenamePart.Count - 1];
+						filenamePart = filenamePart.Slice(0, filenamePart.Count - 1);
+					}
+
+					// Peel [ACCESS access] off the end.
+					int accessIndex = filenamePart.Index()
+						.FirstOrDefault<(int Index, Token Token)>(
+							t => t.Token.Type == TokenType.ACCESS, (-1, tokens[0]))
+						.Index;
+
+					if (accessIndex >= 0)
+					{
+						var accessArgument = filenamePart.Slice(accessIndex + 1);
+
+						if (accessArgument.Count == 0)
+						{
+							var midToken = tokens[parts[1].Unwrap().Offset - 1];
+
+							throw new SyntaxErrorException(midToken, "Expected: READ or WRITE");
+						}
+
+						if (accessArgument.Count == 1)
+						{
+							if (accessArgument[0].Type == TokenType.READ)
+								open.AccessMode = AccessMode.Read;
+							else if (accessArgument[0].Type == TokenType.WRITE)
+								open.AccessMode = AccessMode.Write;
+							else
+								throw new SyntaxErrorException(accessArgument[0], "Expected: READ or WRITE");
+						}
+
+						if (accessArgument.Count >= 2)
+						{
+							if (accessArgument[0].Type == TokenType.READ)
+							{
+								if (accessArgument[1].Type == TokenType.WRITE)
+									open.AccessMode = AccessMode.ReadWrite;
+								else
+									throw new SyntaxErrorException(accessArgument[1], "Expected: AS");
+							}
+							else if (accessArgument[0].Type == TokenType.WRITE)
+								throw new SyntaxErrorException(accessArgument[1], "Expected: AS");
+							else
+								throw new SyntaxErrorException(accessArgument[0], "Expected: READ or WRITE");
+
+							if (accessArgument.Count > 2)
+								throw new SyntaxErrorException(accessArgument[2], "Expected: AS");
+						}
+
+						filenameEndToken = filenamePart[accessIndex];
+						filenamePart = filenamePart.Slice(0, accessIndex);
+					}
+
+					// Peel [FOR mode] off the end.
+					int forIndex = filenamePart.Index()
+						.FirstOrDefault<(int Index, Token Token)>(
+							t => t.Token.Type == TokenType.FOR, (-1, tokens[0]))
+						.Index;
+
+					if (forIndex >= 0)
+					{
+						var forArgument = filenamePart.Slice(forIndex + 1);
+
+						var openMode = OpenMode.Invalid;
+
+						if (forArgument.Count >= 1)
+						{
+							switch (forArgument[0].Type)
+							{
+								case TokenType.RANDOM: openMode = OpenMode.Random; break;
+								case TokenType.BINARY: openMode = OpenMode.Binary; break;
+								case TokenType.INPUT: openMode = OpenMode.Input; break;
+								case TokenType.OUTPUT: openMode = OpenMode.Output; break;
+								case TokenType.APPEND: openMode = OpenMode.Append; break;
+							}
+						}
+
+						if (openMode == OpenMode.Invalid)
+						{
+							var blame =
+								forArgument.Any()
+								? forArgument[0]
+								: tokens[fileNumberPart.Unwrap().Offset - 1];
+
+							throw new SyntaxErrorException(blame, "Expected: RANDOM, BINARY, INPUT, OUTPUT or APPEND");
+						}
+
+						open.OpenMode = openMode;
+
+						filenameEndToken = filenamePart[forIndex];
+						filenamePart = filenamePart.Slice(0, forIndex);
+					}
+
+					open.FileNameExpression = ParseExpression(filenamePart, filenameEndToken);
+
+					// Part 2: (AS) [#]filenumber% [LEN=reclen%]
+					int lenIndex = fileNumberPart.Index()
+						.FirstOrDefault<(int Index, Token Token)>(
+							t => t.Token.Type == TokenType.LEN, (-1, tokens[0]))
+						.Index;
+
+					var fileNumberEndToken = tokenHandler.EndToken;
+
+					if (lenIndex >= 0)
+					{
+						var lenArgs = fileNumberPart.Slice(lenIndex + 1);
+
+						if ((lenArgs.Count == 0) || (lenArgs[0].Type != TokenType.Equals))
+						{
+							var blame = lenArgs.Count > 0
+								? lenArgs[0]
+								: tokenHandler.EndToken;
+
+							throw new SyntaxErrorException(blame, "Expected: =");
+						}
+
+						lenArgs = lenArgs.Slice(1);
+
+						open.RecordLengthExpression = ParseExpression(lenArgs, tokenHandler.EndToken);
+
+						fileNumberEndToken = fileNumberPart[lenIndex];
+						fileNumberPart = fileNumberPart.Slice(0, lenIndex);
+					}
+
+					if (fileNumberPart.Count == 0)
+						throw new SyntaxErrorException(fileNumberEndToken, "Expected: expression");
+
+					if (fileNumberPart[0].Type == TokenType.NumberSign)
+						fileNumberPart = fileNumberPart.Slice(1);
+
+					open.FileNumberExpression = ParseExpression(fileNumberPart, fileNumberEndToken);
+
+					return open;
+				}
+				else
+				{
+					// Old syntax
+
+					var open = new LegacyOpenStatement();
+
+					var parts = SplitCommaDelimitedList(tokenHandler.RemainingTokens).ToList();
+
+					if (parts.Count < 3)
+						throw new SyntaxErrorException(tokenHandler.EndToken, "Expected: ,");
+
+					if (parts.Count > 4)
+					{
+						var blame = tokens[parts[4].Unwrap().Offset - 1];
+
+						throw new SyntaxErrorException(blame, "Expected: end of statement");
+					}
+
+					var midToken = tokens[parts[1].Unwrap().Offset - 1];
+
+					open.ModeExpression = ParseExpression(parts[0], midToken);
+
+					if ((parts[1].Count > 0) && (parts[1][0].Type == TokenType.NumberSign))
+						parts[1] = parts[1].Slice(1);
+
+					midToken = tokens[parts[2].Unwrap().Offset - 1];
+
+					open.FileNumberExpression = ParseExpression(parts[1], midToken);
+
+					midToken = parts.Count > 3
+						? tokens[parts[3].Unwrap().Offset - 1]
+						: tokenHandler.EndToken;
+
+					open.FileNameExpression = ParseExpression(parts[2], midToken);
+
+					if (parts.Count == 4)
+						open.RecordLengthExpression = ParseExpression(parts[3], tokenHandler.EndToken);
+
+					return open;
+				}
+			}
+
 			case TokenType.PCOPY:
 			{
 				var pcopy = new PageCopyStatement();

@@ -6,11 +6,14 @@ public enum TokenType
 
 	[KeywordFunction]
 	[KeywordToken] ABS,
+	[KeywordToken] ACCESS,
 	[KeywordToken] AND,
 	[KeywordToken] ANY,
+	[KeywordToken] APPEND,
 	[KeywordToken] AS,
 	[KeywordFunction]
 	[KeywordToken] ATN,
+	[KeywordToken] BINARY,
 	[KeywordToken] BYVAL,
 	[KeywordToken] CALL,
 	[KeywordToken] CASE,
@@ -24,6 +27,7 @@ public enum TokenType
 	[KeywordToken] CINT,
 	[KeywordFunction]
 	[KeywordToken] CLNG,
+	[KeywordToken] CLOSE,
 	[KeywordToken] CLS,
 	[KeywordToken] COLOR,
 	[KeywordToken] COM,
@@ -55,6 +59,7 @@ public enum TokenType
 	[KeywordToken] FIX,
 	[KeywordToken] FOR,
 	[KeywordToken] FUNCTION,
+	[KeywordToken] GET,
 	[KeywordToken] GOSUB,
 	[KeywordToken] GOTO,
 	[KeywordFunction]
@@ -78,6 +83,7 @@ public enum TokenType
 	[KeywordToken("LEFT$")] LEFT,
 	[KeywordToken] LINE,
 	[KeywordToken] LOCATE,
+	[KeywordToken] LOCK,
 	[KeywordFunction]
 	[KeywordToken] LOG,
 	[KeywordToken] LONG,
@@ -92,7 +98,9 @@ public enum TokenType
 	[KeywordToken("OCT$")] OCT,
 	[KeywordToken] OFF,
 	[KeywordToken] ON,
+	[KeywordToken] OPEN,
 	[KeywordToken] OR,
+	[KeywordToken] OUTPUT,
 	[KeywordToken] PCOPY,
 	[KeywordFunction]
 	[KeywordToken] PEEK,
@@ -102,6 +110,8 @@ public enum TokenType
 	[KeywordToken] PRESET,
 	[KeywordToken] PRINT,
 	[KeywordToken] PSET,
+	[KeywordToken] PUT,
+	[KeywordToken] RANDOM,
 	[KeywordToken] RANDOMIZE,
 	[KeywordToken] READ,
 	[KeywordToken] RESTORE,
@@ -150,6 +160,7 @@ public enum TokenType
 	[KeywordToken] WEND,
 	[KeywordToken] WHILE,
 	[KeywordToken] WIDTH,
+	[KeywordToken] WRITE,
 	[KeywordToken] XOR,
 
 	[TokenCharacter('#')] NumberSign,
