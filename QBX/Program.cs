@@ -1,48 +1,71 @@
-﻿using QBX.LexicalAnalysis;
-using QBX.Parser;
+﻿namespace QBX;
 
-using System.Diagnostics;
+using BdfFontParser;
+using BdfFontParser.Models;
+using QBX.Hardware;
+
+using SDL3;
+using System.Reflection;
 
 class Program
 {
-	static void Main()
+	static int Main()
 	{
-		using (var reader1 = new StreamReader("../../../../Samples/NIBBLES.BAS"))
-		using (var reader2 = new StreamReader("../../../../Samples/NIBBLES.BAS"))
+		if (!SDL.Init(SDL.InitFlags.Video))
 		{
-			var lexer = new Lexer(reader1);
-
-			var parser = new BasicParser();
-
-			int lineNumber = 1;
-
-			foreach (var line in parser.ParseCodeLines(lexer))
-			{
-				var buffer = new StringWriter();
-
-				line.Render(buffer);
-
-				string originalLine = reader2.ReadLine() ?? throw new Exception("Unexpected EOF");
-				string recreatedLine = buffer.ToString();
-
-				// CodeLine renders the EOL.
-				originalLine += "\r\n";
-
-				Console.WriteLine(recreatedLine.TrimEnd());
-
-				if (recreatedLine.TrimEnd() != originalLine.TrimEnd())
-				{
-					Console.WriteLine("ORIGINAL:");
-					Console.WriteLine(originalLine);
-
-					Debugger.Break();
-				}
-
-				lineNumber++;
-
-				if (lineNumber == -510)
-					Debugger.Break();
-			}
+			Console.WriteLine("Failed to initialize SDL: {0}", SDL.GetError());
+			return 1;
 		}
+
+		bool success = SDL.CreateWindowAndRenderer(
+			"QBX",
+			720,
+			400,
+			default,
+			out var window,
+			out var renderer);
+
+		if (!success)
+		{
+			Console.WriteLine("Failed to create window and/or renderer: {0}", SDL.GetError());
+			return 2;
+		}
+
+		IntPtr texture = default;
+		int textureWidth = -1;
+		int textureHeight = -1;
+
+		var machine = new Machine();
+
+		bool keepRunning = true;
+
+		while (keepRunning)
+		{
+			while (SDL.PollEvent(out var evt))
+			{
+				if ((SDL.EventType)evt.Type == SDL.EventType.Quit)
+				{
+					keepRunning = false;
+					break;
+				}
+			}
+
+			if (machine.Display.UpdateResolution(ref textureWidth, ref textureHeight))
+			{
+				if (texture != default)
+					SDL.DestroyTexture(texture);
+
+				texture = SDL.CreateTexture(renderer, SDL.PixelFormat.BGRA8888, SDL.TextureAccess.Streaming, textureWidth, textureHeight);
+
+				SDL.SetWindowSize(window, textureWidth, textureHeight);
+			}
+
+			machine.Display.Render(texture);
+
+			SDL.RenderTexture(renderer, texture, default, default);
+			SDL.RenderPresent(renderer);
+		}
+
+		return 0;
 	}
 }
