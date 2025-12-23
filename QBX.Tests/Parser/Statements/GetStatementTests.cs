@@ -10,7 +10,7 @@ public class GetStatementTests
 	[TestCase("GET #1", typeof(LiteralExpression), "1", false, false)]
 	[TestCase("GET filenumber%, 37&", typeof(IdentifierExpression), "filenumber%", true, false)]
 	[TestCase("GET #fn%, , mystr$", typeof(IdentifierExpression), "fn%", false, true)]
-	[TestCase("GET #3, baserecord& + rn&, array(i%).field", typeof(LiteralExpression), "3", true, true)]
+	[TestCase("GET #3, baserecord& + rn&, array(i%).fieldname", typeof(LiteralExpression), "3", true, true)]
 	public void ShouldParse(string statement, Type expectedFileNumberExpressionType, string expectedFileNumberExpressionTokenValue, bool expectRecordNumberExpression, bool expectTargetExpression)
 	{
 		// Arrange

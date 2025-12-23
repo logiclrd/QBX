@@ -429,7 +429,6 @@ public class GraphicsArray
 				}
 			}
 
-			// TODO: FIELD statements
 			// TODO: CIRCLE statement
 		}
 	}

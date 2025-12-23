@@ -753,6 +753,33 @@ public class BasicParser
 				return endBlock;
 			}
 
+			case TokenType.FIELD:
+			{
+				var field = new FieldStatement();
+
+				if (tokenHandler.NextTokenIs(TokenType.NumberSign))
+					tokenHandler.Advance();
+
+				bool isFileNumberArgument = true;
+
+				var endTokenRef = new TokenRef();
+
+				foreach (var argument in SplitCommaDelimitedList(tokenHandler.RemainingTokens, endTokenRef))
+				{
+					if (isFileNumberArgument)
+						field.FileNumberExpression = ParseExpression(argument, endTokenRef.Token ?? tokenHandler.EndToken);
+					else
+						field.FieldDefinitions.Add(ParseFieldDefinition(argument, endTokenRef.Token ?? tokenHandler.EndToken));
+
+					isFileNumberArgument = false;
+				}
+
+				if (field.FieldDefinitions.Count == 0)
+					throw new SyntaxErrorException(tokenHandler.EndToken, "Expected: ,");
+
+				return field;
+			}
+
 			case TokenType.FOR:
 			{
 				var forStatement = new ForStatement();
@@ -2506,6 +2533,26 @@ public class BasicParser
 		}
 
 		throw new SyntaxErrorException(tokens[0], "Syntax error");
+	}
+
+	private FieldDefinition ParseFieldDefinition(ListRange<Token> argument, Token endToken)
+	{
+		var tokenHandler = new TokenHandler(argument);
+
+		var midTokenIndex = tokenHandler.FindNextUnparenthesizedOf(TokenType.AS);
+
+		if (midTokenIndex < 0)
+			throw new SyntaxErrorException(endToken, "Expected: AS");
+
+		var fieldWidthExpression = ParseExpression(
+			tokenHandler.RemainingTokens.Slice(0, midTokenIndex),
+			tokenHandler[midTokenIndex]);
+
+		var targetExpression = ParseExpression(
+			tokenHandler.RemainingTokens.Slice(midTokenIndex + 1),
+			endToken);
+
+		return new FieldDefinition(fieldWidthExpression, targetExpression);
 	}
 
 	class TokenRef

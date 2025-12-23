@@ -72,4 +72,5 @@ public enum StatementType
 	Viewport,
 	WEnd,
 	While,
+	Field,
 }

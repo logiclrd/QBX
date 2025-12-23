@@ -55,6 +55,7 @@ public enum TokenType
 	[KeywordToken] EQV,
 	[KeywordFunction]
 	[KeywordToken] EXP,
+	[KeywordToken] FIELD,
 	[KeywordFunction]
 	[KeywordToken] FIX,
 	[KeywordToken] FOR,
