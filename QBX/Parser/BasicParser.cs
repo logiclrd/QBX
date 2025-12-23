@@ -413,6 +413,99 @@ public class BasicParser
 				}
 			}
 
+			case TokenType.CIRCLE:
+			{
+				var circle = new CircleStatement();
+
+				if (tokenHandler.NextTokenIs(TokenType.STEP))
+				{
+					circle.Step = true;
+					tokenHandler.Advance();
+				}
+
+				var coordinateTokens = tokenHandler.ExpectParenthesizedTokens();
+
+				var coordinates = SplitCommaDelimitedList(coordinateTokens).ToList();
+
+				if (coordinates.Count == 1)
+					throw new SyntaxErrorException(tokenHandler.PreviousToken, "Expected: expression");
+				if (coordinates.Count > 2)
+				{
+					var blame = tokens[coordinates[2].Unwrap().Offset - 1];
+
+					throw new SyntaxErrorException(blame, "Expected: )");
+				}
+
+				var midToken = tokens[coordinates[1].Unwrap().Offset - 1];
+
+				circle.XExpression = ParseExpression(coordinates[0], midToken);
+				circle.YExpression = ParseExpression(coordinates[1], tokenHandler.PreviousToken);
+
+				tokenHandler.Expect(TokenType.Comma);
+
+				if (!tokenHandler.HasMoreTokens)
+					throw new SyntaxErrorException(tokenHandler.EndToken, "Expected: expression");
+
+				var arguments = SplitCommaDelimitedList(tokenHandler.RemainingTokens).ToList();
+
+				if (!arguments.Last().Any())
+					throw new SyntaxErrorException(tokenHandler.EndToken, "Expected: expression");
+
+				midToken = arguments.Count > 1
+					? tokens[arguments[1].Unwrap().Offset - 1]
+					: tokenHandler.EndToken;
+
+				circle.RadiusExpression = ParseExpression(arguments[0], midToken);
+
+				if (arguments.Count > 1)
+				{
+					if (arguments[1].Any())
+					{
+						midToken = arguments.Count > 2
+							? tokens[arguments[2].Unwrap().Offset - 1]
+							: tokenHandler.EndToken;
+
+						circle.ColourExpression = ParseExpression(arguments[1], midToken);
+					}
+
+					if (arguments.Count > 2)
+					{
+						if (arguments[2].Any())
+						{
+							midToken = arguments.Count > 3
+								? tokens[arguments[3].Unwrap().Offset - 1]
+								: tokenHandler.EndToken;
+
+							circle.StartExpression = ParseExpression(arguments[2], midToken);
+						}
+
+						if (arguments.Count > 3)
+						{
+							if (arguments[3].Any())
+							{
+								midToken = arguments.Count > 4
+									? tokens[arguments[4].Unwrap().Offset - 1]
+									: tokenHandler.EndToken;
+
+								circle.EndExpression = ParseExpression(arguments[3], midToken);
+							}
+
+							if (arguments.Count > 5)
+							{
+								var blame = tokens[arguments[5].Unwrap().Offset - 1];
+
+								throw new SyntaxErrorException(blame, "Expected: end of statement");
+							}
+
+							if (arguments.Count == 5)
+								circle.AspectExpression = ParseExpression(arguments[4], tokenHandler.EndToken);
+						}
+					}
+				}
+
+				return circle;
+			}
+
 			case TokenType.CLOSE:
 			{
 				var closeStatement = new CloseStatement();
@@ -1216,61 +1309,65 @@ public class BasicParser
 					}
 
 					// [, [color] [, [B[F]] [, style]]]
-					if (tokenHandler.NextTokenIs(TokenType.Comma))
+					if (tokenHandler.HasMoreTokens)
 					{
-						tokenHandler.Advance();
-						tokenHandler.ExpectMoreTokens();
-
-						var options = SplitCommaDelimitedList(tokenHandler.RemainingTokens).ToList();
-
-						var colourEndToken = options.Count > 1
-							? tokens[options[1].Unwrap().Offset - 1]
-							: tokenHandler.EndToken;
-
-						lineStatement.ColourExpression = ParseExpression(options[0], colourEndToken);
-
-						if (options.Count > 1)
+						if (!tokenHandler.NextTokenIs(TokenType.Comma))
+							throw new SyntaxErrorException(tokenHandler[0], "Expected: ,");
+						else
 						{
-							var drawStyle = options[1];
+							tokenHandler.Advance();
+							tokenHandler.ExpectMoreTokens();
 
-							if (drawStyle.Any())
+							var options = SplitCommaDelimitedList(tokenHandler.RemainingTokens).ToList();
+
+							var colourEndToken = options.Count > 1
+								? tokens[options[1].Unwrap().Offset - 1]
+								: tokenHandler.EndToken;
+
+							if (options[0].Any())
+								lineStatement.ColourExpression = ParseExpression(options[0], colourEndToken);
+
+							if (options.Count > 1)
 							{
-								if ((drawStyle.Count > 1)
-								 || (drawStyle[0].Type != TokenType.Identifier))
-									throw new SyntaxErrorException(drawStyle[0], "Expected: B or BF");
+								var drawStyle = options[1];
 
-								string drawStyleString = drawStyle[0].Value ?? throw new Exception("Internal error: Identifier token with no value");
-
-								bool isBox = drawStyleString.Equals("B", StringComparison.OrdinalIgnoreCase);
-								bool isFilledBox = drawStyleString.Equals("BF", StringComparison.OrdinalIgnoreCase);
-
-								if (isBox)
-									lineStatement.DrawStyle = LineDrawStyle.Box;
-								else if (isFilledBox)
-									lineStatement.DrawStyle = LineDrawStyle.FilledBox;
-								else
-									throw new SyntaxErrorException(drawStyle[0], "Expected: B or BF");
-							}
-
-							if (options.Count > 2)
-							{
-								var styleEndToken = options.Count > 2
-									? tokens[options[2].Unwrap().Offset - 1]
-									: tokenHandler.EndToken;
-
-								lineStatement.StyleExpression = ParseExpression(options[2], styleEndToken);
-
-								if (options.Count > 3)
+								if (drawStyle.Any())
 								{
-									var range = options[3].Unwrap();
+									if ((drawStyle.Count > 1)
+									 || (drawStyle[0].Type != TokenType.Identifier))
+										throw new SyntaxErrorException(drawStyle[0], "Expected: B or BF");
 
-									throw new SyntaxErrorException(tokens[range.Offset - 1], "Expected: end of statement");
+									string drawStyleString = drawStyle[0].Value ?? throw new Exception("Internal error: Identifier token with no value");
+
+									bool isBox = drawStyleString.Equals("B", StringComparison.OrdinalIgnoreCase);
+									bool isFilledBox = drawStyleString.Equals("BF", StringComparison.OrdinalIgnoreCase);
+
+									if (isBox)
+										lineStatement.DrawStyle = LineDrawStyle.Box;
+									else if (isFilledBox)
+										lineStatement.DrawStyle = LineDrawStyle.FilledBox;
+									else
+										throw new SyntaxErrorException(drawStyle[0], "Expected: B or BF");
+								}
+
+								if (options.Count > 2)
+								{
+									var styleEndToken = options.Count > 2
+										? tokens[options[2].Unwrap().Offset - 1]
+										: tokenHandler.EndToken;
+
+									lineStatement.StyleExpression = ParseExpression(options[2], styleEndToken);
+
+									if (options.Count > 3)
+									{
+										var range = options[3].Unwrap();
+
+										throw new SyntaxErrorException(tokens[range.Offset - 1], "Expected: end of statement");
+									}
 								}
 							}
 						}
 					}
-
-					tokenHandler.ExpectEndOfTokens();
 
 					return lineStatement;
 				}
@@ -2949,13 +3046,16 @@ public class BasicParser
 						tokens[1].DataType));
 			}
 
+			// Unary expressions
+			if (tokens[0].Type == TokenType.Plus)
+				return ParseExpression(tokens.Slice(1), endToken);
+			if ((tokens[0].Type == TokenType.Minus) || (tokens[0].Type == TokenType.NOT))
+				return new UnaryExpression(tokens[0], ParseExpression(tokens.Slice(1), endToken));
+
 			if (tokens.Count == 0)
 				throw new SyntaxErrorException(endToken, "Expected: expression");
 			if (lastOperatorIndex == 0)
 				throw new SyntaxErrorException(tokens[0], "Expected: expression");
-
-			if ((tokens[0].Type == TokenType.Minus) || (tokens[0].Type == TokenType.NOT))
-				return new UnaryExpression(tokens[0], ParseExpression(tokens.Slice(1), endToken));
 
 			if (tailParenthesized)
 			{

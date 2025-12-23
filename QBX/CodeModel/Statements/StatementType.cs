@@ -7,6 +7,7 @@ public enum StatementType
 	Assignment,
 	Call,
 	Case,
+	Circle,
 	Close,
 	Cls,
 	Color,
@@ -29,6 +30,7 @@ public enum StatementType
 	EndType,
 	Empty,
 	EventControl,
+	Field,
 	FileWidth,
 	For,
 	Function,
@@ -72,5 +74,4 @@ public enum StatementType
 	Viewport,
 	WEnd,
 	While,
-	Field,
 }

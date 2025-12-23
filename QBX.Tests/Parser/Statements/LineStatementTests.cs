@@ -1,85 +1,118 @@
-/*
 using QBX.CodeModel.Expressions;
+using QBX.CodeModel.Statements;
+using QBX.LexicalAnalysis;
+using QBX.Parser;
 
 namespace QBX.Tests.Parser.Statements;
 
-public class LineStatement
+public class LineStatementTests
 {
-	public override StatementType Type => StatementType.Line;
-
-	public bool FromStep { get; set; }
-	public Expression? FromXExpression { get; set; }
-	public Expression? FromYExpression { get; set; }
-
-	public bool ToStep { get; set; }
-	public Expression? ToXExpression { get; set; }
-	public Expression? ToYExpression { get; set; }
-
-	public Expression? ColourExpression { get; set; }
-	public LineDrawStyle DrawStyle { get; set; } = LineDrawStyle.Line;
-	public Expression? StyleExpression { get; set; }
-
-	public override void Render(TextWriter writer)
+	[TestCase("LINE (1, 2)-(3, 4)",
+		false, // from step
+		typeof(LiteralExpression), "1", // x
+		typeof(LiteralExpression), "2", // y
+		false, // to step
+		typeof(LiteralExpression), "3", // x
+		typeof(LiteralExpression), "4", // y
+		null, "", // colour
+		LineDrawStyle.Line,
+		null, "")] // style
+	[TestCase("LINE STEP(x%, y%)-(3, 4), colourtable%(i%)",
+		true, // from step
+		typeof(IdentifierExpression), "x%", // x
+		typeof(IdentifierExpression), "y%", // y
+		false, // to step
+		typeof(LiteralExpression), "3", // x
+		typeof(LiteralExpression), "4", // y
+		typeof(CallOrIndexExpression), "", // colour
+		LineDrawStyle.Line,
+		null, "")] // style
+	[TestCase("LINE (1, 2)-STEP(x%, y%), , B",
+		false, // from step
+		typeof(LiteralExpression), "1", // x
+		typeof(LiteralExpression), "2", // y
+		true, // to step
+		typeof(IdentifierExpression), "x%", // x
+		typeof(IdentifierExpression), "y%", // y
+		null, "", // colour
+		LineDrawStyle.Box,
+		null, "")] // style
+	[TestCase("LINE STEP(a% + b%, -d%)-STEP(x%, y%), , BF, 13",
+		true, // from step
+		typeof(BinaryExpression), "", // x
+		typeof(UnaryExpression), "", // y
+		true, // to step
+		typeof(IdentifierExpression), "x%", // x
+		typeof(IdentifierExpression), "y%", // y
+		null, "", // colour
+		LineDrawStyle.FilledBox,
+		typeof(LiteralExpression), "13")] // style
+	public void ShouldParse(string statement,
+		bool expectedFromStep,
+		Type? expectedFromXExpressionType, string expectedFromXExpressionTokenValue,
+		Type? expectedFromYExpressionType, string expectedFromYExpressionTokenValue,
+		bool expectedToStep,
+		Type expectedToXExpressionType, string expectedToXExpressionTokenValue,
+		Type expectedToYExpressionType, string expectedToYExpressionTokenValue,
+		Type? expectedColourExpressionType, string expectedColourExpressionTokenValue,
+		LineDrawStyle expectedDrawStyle,
+		Type? expectedStyleExpressionType, string expectedStyleExpressionTokenValue)
 	{
-		writer.Write("LINE ");
+		// Arrange
+		var tokens = new Lexer(statement).ToList();
 
-		if (FromStep)
+		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
+
+		bool inType = false;
+
+		var sut = new BasicParser();
+
+		// Act
+		var result = sut.ParseStatement(tokens, ref inType);
+
+		// Assert
+		result.Should().BeOfType<LineStatement>();
+
+		var lineResult = (LineStatement)result;
+
+		lineResult.FromStep.Should().Be(expectedFromStep);
+
+		if (expectedFromXExpressionType == null)
 		{
-			writer.Write("STEP");
-
-			if ((FromXExpression == null) || (FromYExpression == null))
-				throw new Exception("Internal error: LineStatement with FromStep but no From coordinate expressions");
+			lineResult.FromXExpression.Should().BeNull();
+			lineResult.FromYExpression.Should().BeNull();
+		}
+		else
+		{
+			lineResult.FromXExpression.Should().BeOfType(expectedFromXExpressionType)
+				.And.BeAssignableTo<Expression>().Which.Token!.Value.Should().Be(expectedFromXExpressionTokenValue);
+			lineResult.FromYExpression.Should().BeOfType(expectedFromYExpressionType)
+				.And.BeAssignableTo<Expression>().Which.Token!.Value.Should().Be(expectedFromYExpressionTokenValue);
 		}
 
-		if ((FromXExpression != null) || (FromYExpression != null))
-		{
-			if ((FromXExpression == null) || (FromYExpression == null))
-				throw new Exception("Internal error: LineStatement missing one of the From coordinate expressions");
+		lineResult.ToStep.Should().Be(expectedToStep);
 
-			writer.Write('(');
-			FromXExpression.Render(writer);
-			writer.Write(", ");
-			FromYExpression.Render(writer);
-			writer.Write(')');
+		lineResult.ToXExpression.Should().BeOfType(expectedToXExpressionType)
+			.And.BeAssignableTo<Expression>().Which.Token!.Value.Should().Be(expectedToXExpressionTokenValue);
+		lineResult.ToYExpression.Should().BeOfType(expectedToYExpressionType)
+			.And.BeAssignableTo<Expression>().Which.Token!.Value.Should().Be(expectedToYExpressionTokenValue);
+
+		if (expectedColourExpressionType == null)
+			lineResult.ColourExpression.Should().BeNull();
+		else
+		{
+			lineResult.ColourExpression.Should().BeOfType(expectedColourExpressionType)
+				.And.BeAssignableTo<Expression>().Which.Token!.Value.Should().Be(expectedColourExpressionTokenValue);
 		}
 
-		writer.Write('-');
+		lineResult.DrawStyle.Should().Be(expectedDrawStyle);
 
-		if (ToStep)
-			writer.Write("STEP");
-
-		if ((ToXExpression == null) || (ToYExpression == null))
-			throw new Exception("Internal error: LineStatement missing one or both of the To coordinate expressions");
-
-		writer.Write('(');
-		ToXExpression.Render(writer);
-		writer.Write(", ");
-		ToYExpression.Render(writer);
-		writer.Write(")");
-
-		if ((ColourExpression != null) || (DrawStyle != LineDrawStyle.Line) || (StyleExpression != null))
+		if (expectedStyleExpressionType == null)
+			lineResult.StyleExpression.Should().BeNull();
+		else
 		{
-			writer.Write(", ");
-			ColourExpression?.Render(writer);
-
-			if ((DrawStyle != LineDrawStyle.Line) || (StyleExpression != null))
-			{
-				writer.Write(", ");
-
-				switch (DrawStyle)
-				{
-					case LineDrawStyle.Box: writer.Write('B'); break;
-					case LineDrawStyle.FilledBox: writer.Write("BF"); break;
-				}
-
-				if (StyleExpression != null)
-				{
-					writer.Write(", ");
-					StyleExpression.Render(writer);
-				}
-			}
+			lineResult.StyleExpression.Should().BeOfType(expectedStyleExpressionType)
+				.And.BeAssignableTo<Expression>().Which.Token!.Value.Should().Be(expectedStyleExpressionTokenValue);
 		}
 	}
 }
-
-*/

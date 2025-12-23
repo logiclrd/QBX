@@ -1,9 +1,6 @@
 ﻿using QBX.CodeModel.Expressions;
 using QBX.LexicalAnalysis;
 using QBX.Parser;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace QBX.Tests.Parser;
 
@@ -224,6 +221,8 @@ public class ExpressionTests
 			.Which.Operator.Should().Be(expectedOperator);
 	}
 
+	[TestCase(TokenType.Minus, Operator.Negate)]
+	[TestCase(TokenType.NOT, Operator.Not)]
 	public void UnaryExpressions(TokenType operatorTokenType, Operator expectedOperator)
 	{
 		// Arrange
@@ -241,6 +240,26 @@ public class ExpressionTests
 		// Assert
 		result.Should().BeOfType<UnaryExpression>()
 			.Which.Operator.Should().Be(expectedOperator);
+	}
+
+	[Test]
+	public void ElidePositiveUnaryExpressions()
+	{
+		// Arrange
+		var tokens = Tokens(
+			(TokenType.Plus, ""),
+			(TokenType.Identifier, "a"));
+
+		var endToken = MakeEndToken(tokens);
+
+		var sut = new BasicParser();
+
+		// Act
+		var result = sut.ParseExpression(tokens, endToken);
+
+		// Assert
+		result.Should().BeOfType<IdentifierExpression>()
+			.Which.Token!.Value.Should().Be("a");
 	}
 
 	[Test]

@@ -25,6 +25,7 @@ public enum TokenType
 	[KeywordToken("CHR$")] CHR,
 	[KeywordFunction]
 	[KeywordToken] CINT,
+	[KeywordToken] CIRCLE,
 	[KeywordFunction]
 	[KeywordToken] CLNG,
 	[KeywordToken] CLOSE,

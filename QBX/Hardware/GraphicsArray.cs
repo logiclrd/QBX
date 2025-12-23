@@ -428,8 +428,6 @@ public class GraphicsArray
 					owner.NumColumns = HorizontalTotal + 5;
 				}
 			}
-
-			// TODO: CIRCLE statement
 		}
 	}
 
