@@ -430,7 +430,6 @@ public class GraphicsArray
 			}
 
 			// TODO: FIELD statements
-			// TODO: RESET statements
 			// TODO: CIRCLE statement
 		}
 	}

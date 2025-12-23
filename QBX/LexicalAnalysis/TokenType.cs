@@ -114,6 +114,7 @@ public enum TokenType
 	[KeywordToken] RANDOM,
 	[KeywordToken] RANDOMIZE,
 	[KeywordToken] READ,
+	[KeywordToken] RESET,
 	[KeywordToken] RESTORE,
 	[KeywordToken] RETURN,
 	[KeywordFunction]

@@ -2002,6 +2002,13 @@ public class BasicParser
 				return read;
 			}
 
+			case TokenType.RESET:
+			{
+				tokenHandler.ExpectEndOfTokens();
+
+				return new ResetStatement();
+			}
+
 			case TokenType.SCREEN:
 			{
 				var screen = new ScreenStatement();
