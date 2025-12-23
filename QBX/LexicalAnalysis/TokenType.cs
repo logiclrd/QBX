@@ -152,6 +152,7 @@ public enum TokenType
 	[KeywordFunction]
 	[KeywordToken("UCASE$")] UCASE,
 	[KeywordToken] UEVENT,
+	[KeywordToken] UNLOCK,
 	[KeywordToken] UNTIL,
 	[KeywordToken] USING,
 	[KeywordFunction]

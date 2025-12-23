@@ -429,8 +429,6 @@ public class GraphicsArray
 				}
 			}
 
-			// TODO: OPEN/CLOSE statements
-			// TODO: LOCK/UNLOCK statements
 			// TODO: GET/PUT statements
 			// TODO: CIRCLE statement
 		}

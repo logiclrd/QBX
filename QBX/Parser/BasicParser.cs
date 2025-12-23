@@ -413,6 +413,35 @@ public class BasicParser
 				}
 			}
 
+			case TokenType.CLOSE:
+			{
+				var closeStatement = new CloseStatement();
+
+				if (tokenHandler.HasMoreTokens)
+				{
+					var arguments = SplitCommaDelimitedList(tokenHandler.RemainingTokens).ToList();
+
+					for (int i = 0; i < arguments.Count; i++)
+					{
+						var midToken =
+							(i + 1 < arguments.Count)
+							? tokens[arguments[i + 1].Unwrap().Offset - 1]
+							: tokenHandler.EndToken;
+
+						if (arguments[i].Count == 0)
+							throw new SyntaxErrorException(midToken, "Expected: expression");
+
+						if (arguments[i].First().Type == TokenType.NumberSign)
+							arguments[i] = arguments[i].Slice(1);
+
+						closeStatement.FileNumberExpressions.Add(
+							ParseExpression(arguments[i], midToken));
+					}
+				}
+
+				return closeStatement;
+			}
+
 			case TokenType.CLS:
 			{
 				if (tokenHandler.HasMoreTokens)
@@ -1222,6 +1251,64 @@ public class BasicParser
 				}
 
 				return locate;
+			}
+
+			case TokenType.LOCK:
+			case TokenType.UNLOCK:
+			{
+				FileByteRangeStatement statement;
+
+				switch (token.Type)
+				{
+					case TokenType.LOCK: statement = new LockStatement(); break;
+					case TokenType.UNLOCK: statement = new UnlockStatement(); break;
+
+					default: throw new Exception("Internal error");
+				}
+
+				if (tokenHandler.NextTokenIs(TokenType.NumberSign))
+					tokenHandler.Advance();
+
+				int comma = tokenHandler.FindNextUnparenthesizedOf(TokenType.Comma);
+
+				var fileNumberTokens = tokenHandler.RemainingTokens;
+
+				var midToken = tokenHandler.EndToken;
+
+				if (comma > 0)
+				{
+					midToken = fileNumberTokens[comma];
+					fileNumberTokens = fileNumberTokens.Slice(0, comma);
+				}
+
+				statement.FileNumberExpression = ParseExpression(fileNumberTokens, midToken);
+
+				tokenHandler.Advance(fileNumberTokens.Count);
+
+				if (tokenHandler.HasMoreTokens)
+				{
+					tokenHandler.Expect(TokenType.Comma);
+
+					var bounds = SplitDelimitedList(tokenHandler.RemainingTokens, TokenType.TO).ToList();
+
+					if (bounds.Count == 1)
+						statement.RangeStartExpression = ParseExpression(bounds[0], tokenHandler.EndToken);
+					else if (bounds.Count > 2)
+					{
+						var blame = tokens[bounds[2].Unwrap().Offset - 1];
+
+						throw new SyntaxErrorException(blame, "Expected: end of statement");
+					}
+					else
+					{
+						midToken = tokens[bounds[1].Unwrap().Offset - 1];
+
+						statement.RangeStartExpression = ParseExpression(bounds[0], midToken);
+						statement.RangeEndExpression = ParseExpression(bounds[1], tokenHandler.EndToken);
+					}
+				}
+
+				return statement;
 			}
 
 			case TokenType.LPRINT:
