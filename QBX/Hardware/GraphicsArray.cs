@@ -429,7 +429,8 @@ public class GraphicsArray
 				}
 			}
 
-			// TODO: GET/PUT statements
+			// TODO: FIELD statements
+			// TODO: RESET statements
 			// TODO: CIRCLE statement
 		}
 	}

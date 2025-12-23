@@ -792,6 +792,61 @@ public class BasicParser
 				return forStatement;
 			}
 
+			case TokenType.GET:
+			case TokenType.PUT:
+			{
+				FileBlockOperationStatement statement;
+
+				switch (token.Type)
+				{
+					case TokenType.GET: statement = new GetStatement(); break;
+					case TokenType.PUT: statement = new PutStatement(); break;
+
+					default: throw new Exception("Internal error");
+				}
+
+				if (tokenHandler.NextTokenIs(TokenType.NumberSign))
+					tokenHandler.Advance();
+
+				var arguments = SplitCommaDelimitedList(tokenHandler.RemainingTokens).ToList();
+
+				if (arguments.Count == 0)
+					throw new SyntaxErrorException(tokenHandler.EndToken, "Expected: expression");
+
+				if (arguments.Count == 1)
+					statement.FileNumberExpression = ParseExpression(arguments[0], tokenHandler.EndToken);
+				else if (arguments.Count == 2)
+				{
+					var midToken = tokens[arguments[1].Unwrap().Offset - 1];
+
+					statement.FileNumberExpression = ParseExpression(arguments[0], midToken);
+					statement.RecordNumberExpression = ParseExpression(arguments[1], tokenHandler.EndToken);
+				}
+				else if (arguments.Count == 3)
+				{
+					var midToken = tokens[arguments[1].Unwrap().Offset - 1];
+
+					statement.FileNumberExpression = ParseExpression(arguments[0], midToken);
+
+					if (arguments[1].Any())
+					{
+						midToken = tokens[arguments[2].Unwrap().Offset - 1];
+
+						statement.RecordNumberExpression = ParseExpression(arguments[1], midToken);
+					}
+
+					statement.TargetExpression = ParseExpression(arguments[2], tokenHandler.EndToken);
+				}
+				else
+				{
+					var blame = tokens[arguments[3].Unwrap().Offset - 1];
+
+					throw new SyntaxErrorException(blame, "Expected: end of statement");
+				}
+
+				return statement;
+			}
+
 			case TokenType.GOTO:
 			case TokenType.GOSUB:
 			case TokenType.RESTORE:
