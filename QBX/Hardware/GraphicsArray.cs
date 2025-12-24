@@ -1,15 +1,13 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Reflection.Metadata;
+using System.Runtime.InteropServices;
 
 namespace QBX.Hardware;
 
 public class GraphicsArray
 {
 	public byte[] VRAM = new byte[256 * 1024];
-	public int[] Palette = new int[256];
 
-	public VideoMode VideoMode = 0;
-
-	public class Graphics
+	public class GraphicsRegisters
 	{
 		public const int IndexPort = 0x3CE;
 		public const int DataPort = IndexPort + 1;
@@ -50,19 +48,22 @@ public class GraphicsArray
 
 		public const int MiscGraphics_MemoryMapMask = 12;
 		public const int MiscGraphics_MemoryMap_Flat128K = 0;
-		public const int MiscGraphics_MemoryMap_Graphics64K = 1;
-		public const int MiscGraphics_MemoryMap_MonoText32K = 2;
-		public const int MiscGraphics_MemoryMap_ColourText32K = 3;
+		public const int MiscGraphics_MemoryMap_Graphics64K = 4;
+		public const int MiscGraphics_MemoryMap_MonoText32K = 8;
+		public const int MiscGraphics_MemoryMap_ColourText32K = 12;
+		public const int MiscGraphics_ChainOddEven = 2;
+		public const int MiscGraphics_AlphanumericModeDisable = 1;
 
 		public int MemoryMapBaseAddress;
 		public int MemoryMapOffset;
 		public int MemoryMapSize;
+		public bool DisableText;
 
-		public RegisterSet Registers;
+		public readonly RegisterSet Registers;
 
-		public Graphics() { Registers = new(this); }
+		public GraphicsRegisters() { Registers = new(this); }
 
-		public class RegisterSet(Graphics owner)
+		public class RegisterSet(GraphicsRegisters owner)
 		{
 			public byte SetReset = 0;
 			public byte EnableSetReset = 0;
@@ -80,15 +81,15 @@ public class GraphicsArray
 				{
 					switch (index)
 					{
-						case Graphics.SetReset: return SetReset;
-						case Graphics.EnableSetReset: return EnableSetReset;
-						case Graphics.ColourCompare: return ColourCompare;
-						case Graphics.DataRotate: return DataRotate;
-						case Graphics.ReadMapSelect: return ReadMapSelect;
-						case Graphics.GraphicsMode: return GraphicsMode;
-						case Graphics.MiscGraphics: return MiscGraphics;
-						case Graphics.ColourDoNotCare: return ColourDoNotCare;
-						case Graphics.BitMask: return BitMask;
+						case GraphicsRegisters.SetReset: return SetReset;
+						case GraphicsRegisters.EnableSetReset: return EnableSetReset;
+						case GraphicsRegisters.ColourCompare: return ColourCompare;
+						case GraphicsRegisters.DataRotate: return DataRotate;
+						case GraphicsRegisters.ReadMapSelect: return ReadMapSelect;
+						case GraphicsRegisters.GraphicsMode: return GraphicsMode;
+						case GraphicsRegisters.MiscGraphics: return MiscGraphics;
+						case GraphicsRegisters.ColourDoNotCare: return ColourDoNotCare;
+						case GraphicsRegisters.BitMask: return BitMask;
 
 						default: return 0;
 					}
@@ -97,15 +98,15 @@ public class GraphicsArray
 				{
 					switch (index)
 					{
-						case Graphics.SetReset: SetReset = value; break;
-						case Graphics.EnableSetReset: EnableSetReset = value; break;
-						case Graphics.ColourCompare: ColourCompare = value; break;
-						case Graphics.DataRotate: DataRotate = value; break;
-						case Graphics.ReadMapSelect: ReadMapSelect = value; break;
-						case Graphics.GraphicsMode: GraphicsMode = value; break;
-						case Graphics.MiscGraphics: MiscGraphics = value; break;
-						case Graphics.ColourDoNotCare: ColourDoNotCare = value; break;
-						case Graphics.BitMask: BitMask = value; break;
+						case GraphicsRegisters.SetReset: SetReset = value; break;
+						case GraphicsRegisters.EnableSetReset: EnableSetReset = value; break;
+						case GraphicsRegisters.ColourCompare: ColourCompare = value; break;
+						case GraphicsRegisters.DataRotate: DataRotate = value; break;
+						case GraphicsRegisters.ReadMapSelect: ReadMapSelect = value; break;
+						case GraphicsRegisters.GraphicsMode: GraphicsMode = value; break;
+						case GraphicsRegisters.MiscGraphics: MiscGraphics = value; break;
+						case GraphicsRegisters.ColourDoNotCare: ColourDoNotCare = value; break;
+						case GraphicsRegisters.BitMask: BitMask = value; break;
 					}
 
 					owner.MemoryMapBaseAddress =
@@ -131,12 +132,14 @@ public class GraphicsArray
 
 							_ => throw new Exception("Internal error")
 						};
+
+					owner.DisableText = ((MiscGraphics & MiscGraphics_AlphanumericModeDisable) != 0);
 				}
 			}
 		}
 	}
 
-	public class Sequencer
+	public class SequencerRegisters
 	{
 		public const int IndexPort = 0x3C4;
 		public const int DataPort = IndexPort + 1;
@@ -146,8 +149,6 @@ public class GraphicsArray
 		public const int MapMask = 2;
 		public const int CharacterSet = 3;
 		public const int SequencerMode = 4;
-
-		public int Index = 0;
 
 		public const byte Reset_SynchronousWhenCleared = 2;
 		public const byte Reset_AsynchronousWhenCleared = 1;
@@ -163,16 +164,27 @@ public class GraphicsArray
 		public const byte MapMask_Plane2 = 4;
 		public const byte MapMask_Plane3 = 8;
 
-		public const byte CharacterSet_MaskA = 3 | 16;
-		public const byte CharacterSet_MaskB = 12 | 32;
+		public const byte CharacterSet_AMask = 3;
+		public const byte CharacterSet_AShift = 0;
+		public const byte CharacterSet_AMaskHigh = 16;
+		public const byte CharacterSet_BMask = 12;
+		public const byte CharacterSet_BShift = 2;
+		public const byte CharacterSet_BMaskHigh = 32;
 
 		public const byte SequencerMode_Chain4 = 8;
 		public const byte SequencerMode_OddEvenDisable = 4;
 		public const byte SequencerMode_ExtendedMemory = 2;
 
-		public RegisterSet Registers = new RegisterSet();
+		public int CharacterWidth;
+		public bool DotDoubling;
+		public int CharacterSetAOffset;
+		public int CharacterSetBOffset;
 
-		public class RegisterSet
+		public readonly RegisterSet Registers;
+
+		public SequencerRegisters() { Registers = new RegisterSet(this); }
+
+		public class RegisterSet(SequencerRegisters owner)
 		{
 			public byte Reset = Reset_SynchronousWhenCleared | Reset_AsynchronousWhenCleared;
 			public byte ClockingMode = 0;
@@ -186,11 +198,11 @@ public class GraphicsArray
 				{
 					switch (index)
 					{
-						case Sequencer.Reset: return Reset;
-						case Sequencer.ClockingMode: return ClockingMode;
-						case Sequencer.MapMask: return MapMask;
-						case Sequencer.CharacterSet: return CharacterSet;
-						case Sequencer.SequencerMode: return SequencerMode;
+						case SequencerRegisters.Reset: return Reset;
+						case SequencerRegisters.ClockingMode: return ClockingMode;
+						case SequencerRegisters.MapMask: return MapMask;
+						case SequencerRegisters.CharacterSet: return CharacterSet;
+						case SequencerRegisters.SequencerMode: return SequencerMode;
 
 						default: return 0;
 					}
@@ -199,22 +211,43 @@ public class GraphicsArray
 				{
 					switch (index)
 					{
-						case Sequencer.Reset: Reset = value; break;
-						case Sequencer.ClockingMode: ClockingMode = value; break;
-						case Sequencer.MapMask: MapMask = value; break;
-						case Sequencer.CharacterSet: CharacterSet = value; break;
-						case Sequencer.SequencerMode: SequencerMode = value; break;
+						case SequencerRegisters.Reset: Reset = value; break;
+						case SequencerRegisters.ClockingMode: ClockingMode = value; break;
+						case SequencerRegisters.MapMask: MapMask = value; break;
+						case SequencerRegisters.CharacterSet: CharacterSet = value; break;
+						case SequencerRegisters.SequencerMode: SequencerMode = value; break;
 					}
+
+					owner.CharacterWidth = ((ClockingMode & ClockingMode_CharacterWidth) == 0)
+						? 9
+						: 8;
+
+					owner.DotDoubling = ((ClockingMode & ClockingMode_DotClockHalfRate) != 0);
+
+					int characterSetA =
+						((CharacterSet & CharacterSet_AMask) >> CharacterSet_AShift << 1) |
+						(((CharacterSet & CharacterSet_AMaskHigh) != 0) ? 1 : 0);
+					int characterSetB =
+						((CharacterSet & CharacterSet_BMask) >> CharacterSet_BShift << 1) |
+						(((CharacterSet & CharacterSet_BMaskHigh) != 0) ? 1 : 0);
+
+					owner.CharacterSetAOffset = characterSetA * 0x2000;
+					owner.CharacterSetB = characterSetB * 0x2000;
 				}
 			}
 		}
 	}
 
-	const int PaletteReadIndexPort = 0x3C7;
-	const int PaletteWriteIndexPort = 0x3C8;
-	const int PaletteDataPort = 0x3C9;
+	public class DACRegisters
+	{
+		public const int ReadIndexPort = 0x3C7;
+		public const int WriteIndexPort = 0x3C8;
+		public const int DataPort = 0x3C9;
 
-	public class MiscellaneousOutput
+		public int[] Palette = new int[256];
+	}
+
+	public class MiscellaneousOutputRegisters
 	{
 		public const int ReadPort = 0x3CC;
 		public const int WritePort = 0x3C2;
@@ -253,7 +286,7 @@ public class GraphicsArray
 		}
 	}
 
-	public class CRTController
+	public class CRTControllerRegisters
 	{
 		public const int IndexPort = 0x3D4;
 		public const int DataPort = 0x3D5;
@@ -310,6 +343,10 @@ public class GraphicsArray
 		public const byte VerticalRetraceEnd_Bandwidth = 64;
 		public const byte VerticalRetraceEnd_EndMask = 15;
 
+		public const byte UnderlineLocation_DoubleWordAddress = 64;
+		public const byte UnderlineLocation_DivideMemoryAddressBy4 = 32;
+		public const byte UnderlineLocation_Mask = 31;
+
 		public const byte EndVerticalBlanking_Mask = 127;
 
 		public const byte ModeControl_SyncEnable = 128;
@@ -326,11 +363,29 @@ public class GraphicsArray
 
 		public int NumColumns;
 
-		public RegisterSet Registers;
+		public int NumScanLines;
+		public int SkipScans;
+		public int ScanRepeatCount;
+		public bool ScanDoubling;
+		public bool CursorVisible;
+		public int CursorScanStart;
+		public int CursorScanEnd;
+		public int StartAddress;
+		public int CursorAddress;
+		public int Stride;
+		public int UnderlineCharacterRow;
 
-		public CRTController() { Registers = new RegisterSet(this); }
+		// In text modes, ScanRepeatCount is the height of the character box. The same scan is repeated for each
+		// separate scan of the characters in the row. In graphics mode, there is no font being translated, so
+		// the repeated scan is just literally repeated. If ScanDoubling is enabled, then each individual row of
+		// the text font is independently repeated, if applicable (otherwise the scan is simply repeated
+		// ScanRepeatCount * 2 times).
 
-		public class RegisterSet(CRTController owner)
+		public readonly RegisterSet Registers;
+
+		public CRTControllerRegisters() { Registers = new RegisterSet(this); }
+
+		public class RegisterSet(CRTControllerRegisters owner)
 		{
 			public byte HorizontalTotal = 75;
 			public byte EndHorizontalDisplay = 0;
@@ -424,35 +479,179 @@ public class GraphicsArray
 						case 24: LineCompare = value; break;
 					}
 
-					// TODO: cached computed values
+					int verticalDisplayEndValue = VerticalDisplayEnd | ((Overflow & 2) << 7) | ((Overflow & 64) << 3);
+
 					owner.NumColumns = HorizontalTotal + 5;
+					owner.NumScanLines = verticalDisplayEndValue + 1;
+					owner.SkipScans = PresetRowScan & PresetRowScan_ScanMask;
+					owner.ScanRepeatCount = MaximumScanLine & MaximumScanLine_ScanMask;
+					owner.ScanDoubling = (MaximumScanLine & MaximumScanLine_ScanDoubling) != 0;
+					owner.StartAddress = (StartAddressLow << 2) | (StartAddressHigh << 10);
+					owner.CursorVisible = (CursorStart & CursorStart_Disable) == 0;
+					owner.CursorScanStart = CursorStart & CursorStart_Mask;
+					owner.CursorScanEnd = CursorEnd & CursorEnd_Mask;
+					owner.CursorAddress = CursorLocationLow | (CursorLocationHigh << 8);
+					owner.Stride = Offset * 4;
+					owner.UnderlineCharacterRow = UnderlineLocation & UnderlineLocation;
 				}
 			}
 		}
 	}
 
-	Graphics _graphics = new Graphics();
+	public class AttributeControllerRegisters
+	{
+		public const int AddressAndDataWritePort = 0x3C0;
+		public const int DataReadPort = 0x3C1;
+
+		public const int Attribute0 = 0;
+		public const int Attribute1 = 1;
+		public const int Attribute2 = 2;
+		public const int Attribute3 = 3;
+		public const int Attribute4 = 4;
+		public const int Attribute5 = 5;
+		public const int Attribute6 = 6;
+		public const int Attribute7 = 7;
+		public const int Attribute8 = 8;
+		public const int Attribute9 = 9;
+		public const int Attribute10 = 10;
+		public const int Attribute11 = 11;
+		public const int Attribute12 = 12;
+		public const int Attribute13 = 13;
+		public const int Attribute14 = 14;
+		public const int Attribute15 = 15;
+		public const int ModeControl = 16;
+		public const int OverscanPaletteIndex = 17;
+		public const int ColourPlaneEnable = 18;
+		public const int HorizontalPixelPanning = 19;
+		public const int ColourSelect = 20;
+
+		public const byte ModeControl_PaletteBits54Select = 128;
+		public const byte ModeControl_8bitColour = 64;
+		public const byte ModeControl_PixelPanningMode = 32;
+		public const byte ModeControl_BlinkEnable = 8;
+		public const byte ModeControl_LineGraphicsEnable = 4;
+		public const byte ModeControl_MonochromeEmulation = 2;
+		public const byte ModeControl_GraphicsMode = 1;
+
+		public const byte ColourPlaneEnable_Plane3 = 8;
+		public const byte ColourPlaneEnable_Plane2 = 4;
+		public const byte ColourPlaneEnable_Plane1 = 2;
+		public const byte ColourPlaneEnable_Plane0 = 1;
+
+		public const byte HorizontalPixelPanningMask = 15;
+
+		public const byte ColourSelect_Bit7 = 8;
+		public const byte ColourSelect_Bit6 = 4;
+		public const byte ColourSelect_Bit5 = 2;
+		public const byte ColourSelect_Bit4 = 1;
+
+		public bool LineGraphics;
+		public bool Use256Colours;
+		public readonly RegisterSet Registers;
+
+		public AttributeControllerRegisters() { Registers = new(this); }
+
+		public class RegisterSet(AttributeControllerRegisters owner)
+		{
+			public byte[] Attribute = new byte[16];
+			public byte ModeControl;
+			public byte OverscanPaletteIndex;
+			public byte ColourPlaneEnable;
+			public byte HorizontalPixelPanning;
+			public byte ColourSelect;
+
+			public byte this[int index]
+			{
+				get
+				{
+					switch (index)
+					{
+						case AttributeControllerRegisters.Attribute0: return Attribute[0];
+						case AttributeControllerRegisters.Attribute1: return Attribute[1];
+						case AttributeControllerRegisters.Attribute2: return Attribute[2];
+						case AttributeControllerRegisters.Attribute3: return Attribute[3];
+						case AttributeControllerRegisters.Attribute4: return Attribute[4];
+						case AttributeControllerRegisters.Attribute5: return Attribute[5];
+						case AttributeControllerRegisters.Attribute6: return Attribute[6];
+						case AttributeControllerRegisters.Attribute7: return Attribute[7];
+						case AttributeControllerRegisters.Attribute8: return Attribute[8];
+						case AttributeControllerRegisters.Attribute9: return Attribute[9];
+						case AttributeControllerRegisters.Attribute10: return Attribute[10];
+						case AttributeControllerRegisters.Attribute11: return Attribute[11];
+						case AttributeControllerRegisters.Attribute12: return Attribute[12];
+						case AttributeControllerRegisters.Attribute13: return Attribute[13];
+						case AttributeControllerRegisters.Attribute14: return Attribute[14];
+						case AttributeControllerRegisters.Attribute15: return Attribute[15];
+						case AttributeControllerRegisters.ModeControl: return ModeControl;
+						case AttributeControllerRegisters.OverscanPaletteIndex: return OverscanPaletteIndex;
+						case AttributeControllerRegisters.HorizontalPixelPanning: return HorizontalPixelPanning;
+						case AttributeControllerRegisters.ColourSelect: return ColourSelect;
+					}
+
+					return 0;
+				}
+				set
+				{
+					switch (index)
+					{
+						case AttributeControllerRegisters.Attribute0: Attribute[0] = value; break;
+						case AttributeControllerRegisters.Attribute1: Attribute[1] = value; break;
+						case AttributeControllerRegisters.Attribute2: Attribute[2] = value; break;
+						case AttributeControllerRegisters.Attribute3: Attribute[3] = value; break;
+						case AttributeControllerRegisters.Attribute4: Attribute[4] = value; break;
+						case AttributeControllerRegisters.Attribute5: Attribute[5] = value; break;
+						case AttributeControllerRegisters.Attribute6: Attribute[6] = value; break;
+						case AttributeControllerRegisters.Attribute7: Attribute[7] = value; break;
+						case AttributeControllerRegisters.Attribute8: Attribute[8] = value; break;
+						case AttributeControllerRegisters.Attribute9: Attribute[9] = value; break;
+						case AttributeControllerRegisters.Attribute10: Attribute[10] = value; break;
+						case AttributeControllerRegisters.Attribute11: Attribute[11] = value; break;
+						case AttributeControllerRegisters.Attribute12: Attribute[12] = value; break;
+						case AttributeControllerRegisters.Attribute13: Attribute[13] = value; break;
+						case AttributeControllerRegisters.Attribute14: Attribute[14] = value; break;
+						case AttributeControllerRegisters.Attribute15: Attribute[15] = value; break;
+						case AttributeControllerRegisters.ModeControl: ModeControl = value; break;
+						case AttributeControllerRegisters.OverscanPaletteIndex: OverscanPaletteIndex = value; break;
+						case AttributeControllerRegisters.HorizontalPixelPanning: HorizontalPixelPanning = value; break;
+						case AttributeControllerRegisters.ColourSelect: ColourSelect = value; break;
+					}
+
+					owner.LineGraphics = ((ModeControl & ModeControl_LineGraphicsEnable) != 0);
+					owner.Use256Colours = ((ModeControl & ModeControl_8bitColour) != 0);
+				}
+			}
+		}
+	}
+
+	public readonly GraphicsRegisters Graphics = new GraphicsRegisters();
+	public readonly SequencerRegisters Sequencer = new SequencerRegisters();
+	public readonly MiscellaneousOutputRegisters MiscellaneousOutput = new MiscellaneousOutputRegisters();
+	public readonly CRTControllerRegisters CRTController = new CRTControllerRegisters();
+	public readonly AttributeControllerRegisters AttributeController = new AttributeControllerRegisters();
+	public readonly DACRegisters DAC = new DACRegisters();
+
 	int _graphicsIndex;
-
-	Sequencer _sequencer = new Sequencer();
 	int _sequencerIndex;
+	int _crtControllerIndex;
+	int _attributeControllerIndex;
+	int _dacReadIndex;
+	int _dacWriteIndex;
+	AddressAndDataPortMode _attributeControllerPortMode;
 
-	MiscellaneousOutput _miscellaneousOutput = new MiscellaneousOutput();
-
-	CRTController _controller = new CRTController();
-	int _controllerIndex;
-
-	int _paletteReadIndex;
-	int _paletteWriteIndex;
+	enum AddressAndDataPortMode
+	{
+		Address = 0,
+		Data = 1,
+	}
 
 	public void OutPort(int portNumber, byte data)
 	{
-		if ((portNumber >= 0x3D4) && (portNumber <= 0x3DA) && _miscellaneousOutput.UseMonoIOPorts)
+		if ((portNumber >= 0x3D4) && (portNumber <= 0x3DA) && MiscellaneousOutput.UseMonoIOPorts)
 			return;
 
 		if ((portNumber >= 0x3B4) && (portNumber <= 0x3BA))
 		{
-			if (_miscellaneousOutput.UseMonoIOPorts)
+			if (MiscellaneousOutput.UseMonoIOPorts)
 				portNumber += 0x20;
 			else
 				return;
@@ -460,63 +659,79 @@ public class GraphicsArray
 
 		switch (portNumber)
 		{
-			case MiscellaneousOutput.WritePort:
+			case MiscellaneousOutputRegisters.WritePort:
 			{
-				_miscellaneousOutput.Register = data;
+				MiscellaneousOutput.Register = data;
 				break;
 			}
-			case Sequencer.IndexPort:
+			case SequencerRegisters.IndexPort:
 			{
 				_sequencerIndex = data;
 				break;
 			}
-			case Sequencer.DataPort:
+			case SequencerRegisters.DataPort:
 			{
-				_sequencer.Registers[_sequencerIndex] = data;
+				Sequencer.Registers[_sequencerIndex] = data;
 				break;
 			}
-			case Graphics.IndexPort:
+			case GraphicsRegisters.IndexPort:
 			{
 				_graphicsIndex = data;
 				break;
 			}
-			case Graphics.DataPort:
+			case GraphicsRegisters.DataPort:
 			{
-				_graphics.Registers[_graphicsIndex] = data;
+				Graphics.Registers[_graphicsIndex] = data;
 				break;
 			}
-			case CRTController.IndexPort:
+			case CRTControllerRegisters.IndexPort:
 			{
-				_controllerIndex = data;
+				_crtControllerIndex = data;
 				break;
 			}
-			case CRTController.DataPort:
+			case CRTControllerRegisters.DataPort:
 			{
-				_controller.Registers[_controllerIndex] = data;
+				CRTController.Registers[_crtControllerIndex] = data;
 				break;
 			}
-			case PaletteReadIndexPort:
+			case AttributeControllerRegisters.AddressAndDataWritePort:
 			{
-				_paletteReadIndex = data * 4;
-				break;
-			}
-			case PaletteWriteIndexPort:
-			{
-				_paletteWriteIndex = data * 4;
-				break;
-			}
-			case PaletteDataPort:
-			{
-				var paletteBytes = MemoryMarshal.Cast<int, byte>(Palette.AsSpan());
+				switch (_attributeControllerPortMode)
+				{
+					case AddressAndDataPortMode.Address:
+						_attributeControllerIndex = data;
+						_attributeControllerPortMode = AddressAndDataPortMode.Data;
+						break;
+					case AddressAndDataPortMode.Data:
+						AttributeController.Registers[_attributeControllerIndex] = data;
+						_attributeControllerPortMode = AddressAndDataPortMode.Address;
+						break;
+				}
 
-				paletteBytes[_paletteWriteIndex] = data;
+				break;
+			}
+			case DACRegisters.ReadIndexPort:
+			{
+				_dacReadIndex = data * 4;
+				break;
+			}
+			case DACRegisters.WriteIndexPort:
+			{
+				_dacWriteIndex = data * 4;
+				break;
+			}
+			case DACRegisters.DataPort:
+			{
+				var paletteBytes = MemoryMarshal.Cast<int, byte>(DAC.Palette.AsSpan());
 
-				_paletteWriteIndex++;
-				if ((_paletteWriteIndex & 3) == 3)
-					_paletteWriteIndex++;
+				paletteBytes[_dacWriteIndex] = data;
 
-				if (_paletteWriteIndex >= paletteBytes.Length)
-					_paletteWriteIndex = 0;
+				_dacWriteIndex++;
+				if ((_dacWriteIndex & 3) == 3)
+					_dacWriteIndex++;
+
+				if (_dacWriteIndex >= paletteBytes.Length)
+					_dacWriteIndex = 0;
 
 				break;
 			}
@@ -533,23 +748,27 @@ public class GraphicsArray
 	{
 		switch (portNumber)
 		{
-			case Graphics.DataPort:
-				return _graphics.Registers[_graphicsIndex];
-			case Sequencer.DataPort:
-				return _sequencer.Registers[_sequencerIndex];
+			case GraphicsRegisters.DataPort:
+				return Graphics.Registers[_graphicsIndex];
+			case SequencerRegisters.DataPort:
+				return Sequencer.Registers[_sequencerIndex];
 
-			case PaletteDataPort:
+			case 0x3DA:
+				_attributeControllerPortMode = AddressAndDataPortMode.Address;
+				break;
+
+			case DACRegisters.DataPort:
 			{
-				var paletteBytes = MemoryMarshal.Cast<int, byte>(Palette.AsSpan());
+				var paletteBytes = MemoryMarshal.Cast<int, byte>(DAC.Palette.AsSpan());
 
-				byte data = paletteBytes[_paletteReadIndex];
+				byte data = paletteBytes[_dacReadIndex];
 
-				_paletteReadIndex++;
-				if ((_paletteReadIndex & 3) == 3)
-					_paletteReadIndex++;
+				_dacReadIndex++;
+				if ((_dacReadIndex & 3) == 3)
+					_dacReadIndex++;
 
-				if (_paletteReadIndex >= paletteBytes.Length)
-					_paletteReadIndex = 0;
+				if (_dacReadIndex >= paletteBytes.Length)
+					_dacReadIndex = 0;
 
 				return data;
 			}
@@ -568,11 +787,11 @@ public class GraphicsArray
 	{
 		get
 		{
-			int offset = address - _graphics.MemoryMapBaseAddress;
+			int offset = address - Graphics.MemoryMapBaseAddress;
 
-			int linearOffset = offset + _graphics.MemoryMapOffset;
+			int linearOffset = offset + Graphics.MemoryMapOffset;
 
-			if ((offset < _graphics.MemoryMapSize)
+			if ((offset < Graphics.MemoryMapSize)
 			 && (linearOffset < VRAM.Length))
 				return VRAM[linearOffset];
 
@@ -580,11 +799,11 @@ public class GraphicsArray
 		}
 		set
 		{
-			int offset = address - _graphics.MemoryMapBaseAddress;
+			int offset = address - Graphics.MemoryMapBaseAddress;
 
-			int linearOffset = offset + _graphics.MemoryMapOffset;
+			int linearOffset = offset + Graphics.MemoryMapOffset;
 
-			if ((offset < _graphics.MemoryMapSize)
+			if ((offset < Graphics.MemoryMapSize)
 			 && (linearOffset < VRAM.Length))
 				VRAM[offset] = value;
 		}

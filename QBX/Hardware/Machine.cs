@@ -3,11 +3,11 @@
 public class Machine
 {
 	public GraphicsArray GraphicsArray { get; }
-	public Display Display { get; }
+	public Adapter Display { get; }
 
 	public Machine()
 	{
 		GraphicsArray = new GraphicsArray();
-		Display = new Display(GraphicsArray);
+		Display = new Adapter(GraphicsArray);
 	}
 }

@@ -12,9 +12,9 @@ public class Video(Machine machine)
 				break;
 			case 13:
 				machine.GraphicsArray.OutPort2(
-					GraphicsArray.Graphics.IndexPort,
-					GraphicsArray.Graphics.GraphicsMode,
-					GraphicsArray.Graphics.GraphicsMode_Shift256);
+					GraphicsArray.GraphicsRegisters.IndexPort,
+					GraphicsArray.GraphicsRegisters.GraphicsMode,
+					GraphicsArray.GraphicsRegisters.GraphicsMode_Shift256);
 
 				break;
 			default:
