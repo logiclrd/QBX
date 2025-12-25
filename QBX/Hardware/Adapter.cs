@@ -7,21 +7,22 @@ namespace QBX.Hardware;
 public unsafe class Adapter
 {
 	GraphicsArray _array;
-	int _width, _height;
+	int _width, _height, _aspect;
 
 	public Adapter(GraphicsArray array)
 	{
 		_array = array;
 	}
 
-	public bool UpdateResolution(ref int width, ref int height)
+	public bool UpdateResolution(ref int width, ref int height, ref int aspect)
 	{
-		_width = _array.Sequencer.CharacterWidth * _array.CRTController.NumColumns;
+		_width = _array.MiscellaneousOutput.BasePixelWidth >> (_array.Sequencer.DotDoubling ? 1 : 0);
 		_height = _array.CRTController.NumScanLines;
+		_aspect = _array.Sequencer.DotDoubling ? 2 : 1;
 
-		if ((width != _width) || (height != _height))
+		if ((width != _width) || (height != _height) || (aspect != _aspect))
 		{
-			(width, height) = (_width, _height);
+			(width, height, aspect) = (_width, _height, _aspect);
 			return true;
 		}
 
@@ -86,7 +87,7 @@ public unsafe class Adapter
 							colourIndex = ch;
 						else
 						{
-							// TODO: extract thePixelValue from the byte
+							// TODO: reconstruct thePixelValue from planes
 
 							byte attr = thePixelValue;
 

@@ -1,5 +1,4 @@
-﻿using System.Reflection.Metadata;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
 namespace QBX.Hardware;
 
@@ -22,37 +21,37 @@ public class GraphicsArray
 		public const int ColourDoNotCare = 7;
 		public const int BitMask = 8;
 
-		public const int SetReset_Plane0 = 1;
-		public const int SetReset_Plane1 = 2;
-		public const int SetReset_Plane2 = 4;
-		public const int SetReset_Plane3 = 8;
+		public const byte SetReset_Plane0 = 1;
+		public const byte SetReset_Plane1 = 2;
+		public const byte SetReset_Plane2 = 4;
+		public const byte SetReset_Plane3 = 8;
 
-		public const int EnableSetReset_Plane0 = 1;
-		public const int EnableSetReset_Plane1 = 2;
-		public const int EnableSetReset_Plane2 = 4;
-		public const int EnableSetReset_Plane3 = 8;
+		public const byte EnableSetReset_Plane0 = 1;
+		public const byte EnableSetReset_Plane1 = 2;
+		public const byte EnableSetReset_Plane2 = 4;
+		public const byte EnableSetReset_Plane3 = 8;
 
-		public const int DataRotate_OperationMask = 24;
-		public const int DataRotate_RotateMask = 7;
+		public const byte DataRotate_OperationMask = 24;
+		public const byte DataRotate_RotateMask = 7;
 
-		public const int DataRotate_Operation_Copy = 0;
-		public const int DataRotate_Operation_AND = 8;
-		public const int DataRotate_Operation_OR = 16;
-		public const int DataRotate_Operation_XOR = 24;
+		public const byte DataRotate_Operation_Copy = 0;
+		public const byte DataRotate_Operation_AND = 8;
+		public const byte DataRotate_Operation_OR = 16;
+		public const byte DataRotate_Operation_XOR = 24;
 
-		public const int GraphicsMode_Shift256 = 64;
-		public const int GraphicsMode_ShiftInterleave = 32;
-		public const int GraphicsMode_HostOddEvenRead = 16;
-		public const int GraphicsMode_ReadCompare = 8;
-		public const int GraphicsMode_WriteModeMask = 3;
+		public const byte GraphicsMode_Shift256 = 64;
+		public const byte GraphicsMode_ShiftInterleave = 32;
+		public const byte GraphicsMode_HostOddEvenRead = 16;
+		public const byte GraphicsMode_ReadCompare = 8;
+		public const byte GraphicsMode_WriteModeMask = 3;
 
-		public const int MiscGraphics_MemoryMapMask = 12;
-		public const int MiscGraphics_MemoryMap_Flat128K = 0;
-		public const int MiscGraphics_MemoryMap_Graphics64K = 4;
-		public const int MiscGraphics_MemoryMap_MonoText32K = 8;
-		public const int MiscGraphics_MemoryMap_ColourText32K = 12;
-		public const int MiscGraphics_ChainOddEven = 2;
-		public const int MiscGraphics_AlphanumericModeDisable = 1;
+		public const byte MiscGraphics_MemoryMapMask = 12;
+		public const byte MiscGraphics_MemoryMap_Flat128K = 0;
+		public const byte MiscGraphics_MemoryMap_Graphics64K = 4;
+		public const byte MiscGraphics_MemoryMap_MonoText32K = 8;
+		public const byte MiscGraphics_MemoryMap_ColourText32K = 12;
+		public const byte MiscGraphics_ChainOddEven = 2;
+		public const byte MiscGraphics_AlphanumericModeDisable = 1;
 
 		public int MemoryMapBaseAddress;
 		public int MemoryMapOffset;
@@ -148,7 +147,7 @@ public class GraphicsArray
 		public const int ClockingMode = 1;
 		public const int MapMask = 2;
 		public const int CharacterSet = 3;
-		public const int SequencerMode = 4;
+		public const int SequencerMemoryMode = 4;
 
 		public const byte Reset_SynchronousWhenCleared = 2;
 		public const byte Reset_AsynchronousWhenCleared = 1;
@@ -157,7 +156,9 @@ public class GraphicsArray
 		public const byte ClockingMode_Shift4 = 16;
 		public const byte ClockingMode_DotClockHalfRate = 8;
 		public const byte ClockingMode_ShiftLoadRate = 4;
-		public const byte ClockingMode_CharacterWidth = 1;
+		public const byte ClockingMode_CharacterWidthMask = 1;
+		public const byte ClockingMode_CharacterWidth_9 = 0;
+		public const byte ClockingMode_CharacterWidth_8 = 1;
 
 		public const byte MapMask_Plane0 = 1;
 		public const byte MapMask_Plane1 = 2;
@@ -171,10 +172,14 @@ public class GraphicsArray
 		public const byte CharacterSet_BShift = 2;
 		public const byte CharacterSet_BMaskHigh = 32;
 
-		public const byte SequencerMode_Chain4 = 8;
-		public const byte SequencerMode_OddEvenDisable = 4;
-		public const byte SequencerMode_ExtendedMemory = 2;
+		public const byte SequencerMemoryMode_Chain4 = 8;
+		public const byte SequencerMemoryMode_OddEvenDisable = 4;
+		public const byte SequencerMemoryMode_ExtendedMemory = 2;
 
+		public bool Plane0WriteEnable;
+		public bool Plane1WriteEnable;
+		public bool Plane2WriteEnable;
+		public bool Plane3WriteEnable;
 		public int CharacterWidth;
 		public bool DotDoubling;
 		public int CharacterSetAOffset;
@@ -190,7 +195,7 @@ public class GraphicsArray
 			public byte ClockingMode = 0;
 			public byte MapMask = MapMask_Plane0 | MapMask_Plane1;
 			public byte CharacterSet = 0;
-			public byte SequencerMode = SequencerMode_Chain4;
+			public byte SequencerMemoryMode = SequencerMemoryMode_Chain4;
 
 			public byte this[int index]
 			{
@@ -202,7 +207,7 @@ public class GraphicsArray
 						case SequencerRegisters.ClockingMode: return ClockingMode;
 						case SequencerRegisters.MapMask: return MapMask;
 						case SequencerRegisters.CharacterSet: return CharacterSet;
-						case SequencerRegisters.SequencerMode: return SequencerMode;
+						case SequencerRegisters.SequencerMemoryMode: return SequencerMemoryMode;
 
 						default: return 0;
 					}
@@ -215,10 +220,15 @@ public class GraphicsArray
 						case SequencerRegisters.ClockingMode: ClockingMode = value; break;
 						case SequencerRegisters.MapMask: MapMask = value; break;
 						case SequencerRegisters.CharacterSet: CharacterSet = value; break;
-						case SequencerRegisters.SequencerMode: SequencerMode = value; break;
+						case SequencerRegisters.SequencerMemoryMode: SequencerMemoryMode = value; break;
 					}
 
-					owner.CharacterWidth = ((ClockingMode & ClockingMode_CharacterWidth) == 0)
+					owner.Plane0WriteEnable = ((MapMask & MapMask_Plane0) != 0);
+					owner.Plane1WriteEnable = ((MapMask & MapMask_Plane1) != 0);
+					owner.Plane2WriteEnable = ((MapMask & MapMask_Plane2) != 0);
+					owner.Plane3WriteEnable = ((MapMask & MapMask_Plane3) != 0);
+
+					owner.CharacterWidth = ((ClockingMode & ClockingMode_CharacterWidthMask) == ClockingMode_CharacterWidth_9)
 						? 9
 						: 8;
 
@@ -232,7 +242,7 @@ public class GraphicsArray
 						(((CharacterSet & CharacterSet_BMaskHigh) != 0) ? 1 : 0);
 
 					owner.CharacterSetAOffset = characterSetA * 0x2000;
-					owner.CharacterSetB = characterSetB * 0x2000;
+					owner.CharacterSetBOffset = characterSetB * 0x2000;
 				}
 			}
 		}
