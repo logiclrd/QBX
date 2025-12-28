@@ -60,7 +60,7 @@ class Program
 						library.Clear();
 					}
 
-						int x = rnd.Next(-100, 420);
+					int x = rnd.Next(-100, 420);
 					int y = rnd.Next(-100, 300);
 
 					int rx = rnd.Next(50, 150);
@@ -71,7 +71,7 @@ class Program
 
 					try
 					{
-						library.Ellipse(x, y, rx, ry, -start, -end, c);
+						library.Ellipse(x, y, rx, ry, start, end, c, true, true);
 					}
 					catch
 					{

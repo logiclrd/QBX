@@ -1,7 +1,4 @@
-﻿using QBX.CodeModel.Expressions;
-using QBX.Hardware;
-using System.Data.SqlTypes;
-using System.Security.Cryptography;
+﻿using QBX.Hardware;
 
 namespace QBX.Firmware;
 
@@ -27,6 +24,12 @@ public abstract class GraphicsLibrary
 
 	public abstract void PixelSet(int x, int y, int attribute);
 
+	public virtual void HorizontalLine(int x1, int x2, int y, int attribute)
+	{
+		for (int x = x1; x <= x2; x++)
+			PixelSet(x, y, attribute);
+	}
+
 	public void Line(Point pt1, Point pt2, int attribute)
 		=> Line(pt1.X, pt1.Y, pt2.X, pt2.Y, attribute);
 
@@ -50,18 +53,26 @@ public abstract class GraphicsLibrary
 
 			int sy = Math.Sign(y2 - y1);
 
-			for (int x = x1, y = y1, yError = 0; x <= x2; x++)
-			{
-				PixelSet(x, y, attribute);
+			int xStart = x1;
+			int y = y1;
+			int yError = 0;
 
+			for (int x = x1; x <= x2; x++)
+			{
 				yError += dy;
 
 				if (yError >= dx)
 				{
+					HorizontalLine(xStart, x - 1, y, attribute);
+
+					xStart = x;
+
 					yError -= dx;
 					y += sy;
 				}
 			}
+
+			HorizontalLine(xStart, x2, y, attribute);
 		}
 		else
 		{
@@ -82,6 +93,50 @@ public abstract class GraphicsLibrary
 					x += sx;
 				}
 			}
+		}
+	}
+
+	struct PixelSpan
+	{
+		public int X1, X2;
+		public int Y;
+
+		public bool IsEmpty => Y == int.MinValue;
+
+		public static PixelSpan Empty => new() { Y = int.MinValue };
+
+		public PixelSpan(int x, int y)
+		{
+			X1 = X2 = x;
+			Y = y;
+		}
+
+		public bool Extend(int x, int y)
+		{
+			if (IsEmpty)
+			{
+				X1 = X2 = x;
+				Y = y;
+
+				return true;
+			}
+
+			if (y != Y)
+				return false;
+
+			if (X1 == x + 1)
+			{
+				X1--;
+				return true;
+			}
+
+			if (X2 == x - 1)
+			{
+				X2++;
+				return true;
+			}
+
+			return false;
 		}
 	}
 
@@ -257,39 +312,46 @@ public abstract class GraphicsLibrary
 		int sx, sy;
 		bool wrap = startAngle > endAngle;
 
-		void Plot(int octant, int xSign, int ySign)
+		bool CheckOctant(int octant, int dx, int dy)
 		{
-			int dx = sx * xSign;
-			int dy = sy * ySign;
-
 			if (startOctant <= endOctant)
 			{
 				if (!wrap && ((octant < startOctant) || (octant > endOctant)))
-					return;
+					return false;
 			}
 			else
 			{
 				if ((octant < startOctant) && (octant > endOctant))
-					return;
+					return false;
 			}
 
 			if ((startOctant == endOctant) && wrap)
 			{
 				if ((octant == startOctant) && startStopExclude.Contains(dx, dy))
-					return;
+					return false;
 			}
 			else
 			{
 				if ((octant == startOctant) && !startClip.Contains(dx, dy))
-					return;
+					return false;
 				if ((octant == endOctant) && !endClip.Contains(dx, dy))
-					return;
+					return false;
 			}
 
-			PixelSet(x + dx, y - dy, attribute);
+			return true;
 		}
 
+
 		// Quadrants 0, 3, 4 and 7
+		void PixelPlot(int octant, int xSign, int ySign)
+		{
+			int dx = sx * xSign;
+			int dy = sy * ySign;
+
+			if (CheckOctant(octant, dx, dy))
+				PixelSet(x + dx, y - dy, attribute);
+		}
+
 		sx = radiusX;
 		sy = 0;
 
@@ -303,10 +365,10 @@ public abstract class GraphicsLibrary
 
 		while (xStop >= yStop)
 		{
-			Plot(0, +1, +1);
-			Plot(3, -1, +1);
-			Plot(4, -1, -1);
-			Plot(7, +1, -1);
+			PixelPlot(0, +1, +1);
+			PixelPlot(3, -1, +1);
+			PixelPlot(4, -1, -1);
+			PixelPlot(7, +1, -1);
 
 			sy++;
 			yStop += twoRadiusXSquared;
@@ -334,12 +396,36 @@ public abstract class GraphicsLibrary
 		xStop = 0;
 		yStop = twoRadiusXSquared * radiusY;
 
+		var spans = new PixelSpan[7];
+
+		spans[1] = PixelSpan.Empty;
+		spans[2] = PixelSpan.Empty;
+		spans[5] = PixelSpan.Empty;
+		spans[6] = PixelSpan.Empty;
+
+		void SpanPlot(int octant, int xSign, int ySign)
+		{
+			int dx = sx * xSign;
+			int dy = sy * ySign;
+
+			if (CheckOctant(octant, dx, dy))
+			{
+				ref var span = ref spans[octant];
+
+				if (!span.Extend(dx, dy))
+				{
+					HorizontalLine(x + span.X1, x + span.X2, y - span.Y, attribute);
+					spans[octant] = new PixelSpan(dx, dy);
+				}
+			}
+		}
+
 		while (xStop <= yStop)
 		{
-			Plot(1, +1, +1);
-			Plot(2, -1, +1);
-			Plot(5, -1, -1);
-			Plot(6, +1, -1);
+			SpanPlot(1, +1, +1);
+			SpanPlot(2, -1, +1);
+			SpanPlot(5, -1, -1);
+			SpanPlot(6, +1, -1);
 
 			sx++;
 			xStop += twoRadiusYSquared;
@@ -354,6 +440,15 @@ public abstract class GraphicsLibrary
 				yChange += twoRadiusXSquared;
 			}
 		}
+
+		if (!spans[1].IsEmpty)
+			HorizontalLine(x + spans[1].X1, x + spans[1].X2, y - spans[1].Y, attribute);
+		if (!spans[2].IsEmpty)
+			HorizontalLine(x + spans[2].X1, x + spans[2].X2, y - spans[2].Y, attribute);
+		if (!spans[5].IsEmpty)
+			HorizontalLine(x + spans[5].X1, x + spans[5].X2, y - spans[5].Y, attribute);
+		if (!spans[6].IsEmpty)
+			HorizontalLine(x + spans[6].X1, x + spans[6].X2, y - spans[6].Y, attribute);
 
 		LastPoint = (x, y);
 	}
