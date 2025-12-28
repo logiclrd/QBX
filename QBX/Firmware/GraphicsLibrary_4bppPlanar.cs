@@ -70,7 +70,7 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 				((attribute & 8) >> 3 << shift)));
 		}
 	}
-	/*
+
 	public override void HorizontalLine(int x1, int x2, int y, int attribute)
 	{
 		if ((x2 < 0) || (x1 >= Width))
@@ -81,21 +81,16 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 		if (x1 > x2)
 			return;
 
-		attribute &= 3;
+		attribute &= 15;
 
 		if (x1 < 0)
 			x1 = 0;
 		if (x2 >= Width)
 			x2 = Width - 1;
 
-		bool evenScan = ((y & 1) == 0);
-
-		int baseOffset = (y >> 1) * _stride;
+		int scanOffset = y * _stride;
 
 		byte completeByteValue = unchecked((byte)(attribute * 0x55));
-
-		int firstPlaneOffset = baseOffset + (evenScan ? _plane0Offset : _plane1Offset);
-		int secondPlaneOffset = baseOffset + (evenScan ? _plane2Offset : _plane3Offset);
 
 		int x1Byte = x1 >> 3;
 		int x2Byte = x2 >> 3;
@@ -103,111 +98,102 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 		int x1Index = x1 & 7;
 		int x2Index = x2 & 7;
 
-		int firstPlaneLeftPixels = 4 - ((x1Index + 1) >> 1);
-		int secondPlaneLeftPixels = 4 - (x1Index >> 1);
-
-		int firstPlaneRightPixels = 1 + (x2Index >> 1);
-		int secondPlaneRightPixels = ((x2Index + 1) >> 1);
+		int leftPixels = 8 - x1Index;
+		int rightPixels = 1 + x2Index;
 
 		if (x1Byte == x2Byte)
 		{
-			byte firstPlaneLeftMask = unchecked((byte)(0b11111111 >> (8 - firstPlaneLeftPixels * 2)));
-			byte firstPlaneRightMask = unchecked((byte)(0b11111111 << (8 - firstPlaneRightPixels * 2)));
+			byte leftMask = unchecked((byte)(0b11111111 >> (8 - leftPixels)));
+			byte rightMask = unchecked((byte)(0b11111111 << (8 - rightPixels)));
 
-			byte secondPlaneLeftMask = unchecked((byte)(0b11111111 >> (8 - secondPlaneLeftPixels * 2)));
-			byte secondPlaneRightMask = unchecked((byte)(0b11111111 << (8 - secondPlaneRightPixels * 2)));
-
-			void SetByte(int planeOffset, int offset, byte leftMask, byte rightMask)
+			void SetByte(int planeOffset, int offset, byte leftMask, byte rightMask, int attributeBit)
 			{
 				byte mask = unchecked((byte)(leftMask & rightMask));
 
 				if (mask != 0)
 				{
-					int address = planeOffset + offset;
+					int address = planeOffset + scanOffset + offset;
 
-					Array.VRAM[address] = unchecked((byte)(
-						(Array.VRAM[address] & ~mask) |
-						(completeByteValue & mask)));
+					if ((attribute & attributeBit) == 0)
+						Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] & ~mask));
+					else
+						Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] | mask));
 				}
 			}
 
-			SetByte(firstPlaneOffset, x1Byte, firstPlaneLeftMask, firstPlaneRightMask);
-			SetByte(secondPlaneOffset, x1Byte, secondPlaneLeftMask, secondPlaneRightMask);
+			SetByte(_plane0Offset, x1Byte, leftMask, rightMask, 1);
+			SetByte(_plane1Offset, x1Byte, leftMask, rightMask, 2);
+			SetByte(_plane2Offset, x1Byte, leftMask, rightMask, 4);
+			SetByte(_plane3Offset, x1Byte, leftMask, rightMask, 8);
 		}
 		else
 		{
 			if (x1Index == 0)
-				firstPlaneLeftPixels = 0;
-			if (x1Index <= 1)
-				secondPlaneLeftPixels = 0;
-
-			if (x2Index >= 6)
-				firstPlaneRightPixels = 0;
+				leftPixels = 0;
 			if (x2Index == 7)
-				secondPlaneRightPixels = 0;
+				rightPixels = 0;
 
-			int firstPlaneFirstCompleteByte =
+			int firstCompleteByte =
 				x1Byte + ((x1Index == 0) ? 0 : 1);
-			int firstPlaneLastCompleteByte =
-				x2Byte - ((x2Index >= 6) ? 0 : 1);
-
-			int secondPlaneFirstCompleteByte =
-				x1Byte + ((x1Index <= 1) ? 0 : 1);
-			int secondPlaneLastCompleteByte =
+			int lastCompleteByte =
 				x2Byte - ((x2Index == 7) ? 0 : 1);
 
 			var vramSpan = Array.VRAM.AsSpan();
 
-			int firstPlaneCompleteBytes = firstPlaneLastCompleteByte - firstPlaneFirstCompleteByte + 1;
-			int secondPlaneCompleteBytes = secondPlaneLastCompleteByte - secondPlaneFirstCompleteByte + 1;
+			int completeBytes = lastCompleteByte - firstCompleteByte + 1;
 
-			if (firstPlaneCompleteBytes > 0)
+			if (completeBytes > 0)
 			{
-				vramSpan.Slice(firstPlaneOffset + firstPlaneFirstCompleteByte, firstPlaneCompleteBytes)
-					.Fill(completeByteValue);
+				vramSpan.Slice(_plane0Offset + scanOffset + firstCompleteByte, completeBytes)
+					.Fill(((attribute & 1) == 0) ? (byte)0 : (byte)255);
+				vramSpan.Slice(_plane1Offset + scanOffset + firstCompleteByte, completeBytes)
+					.Fill(((attribute & 2) == 0) ? (byte)0 : (byte)255);
+				vramSpan.Slice(_plane2Offset + scanOffset + firstCompleteByte, completeBytes)
+					.Fill(((attribute & 4) == 0) ? (byte)0 : (byte)255);
+				vramSpan.Slice(_plane3Offset + scanOffset + firstCompleteByte, completeBytes)
+					.Fill(((attribute & 8) == 0) ? (byte)0 : (byte)255);
 			}
 
-			if (secondPlaneCompleteBytes > 0)
-			{
-				vramSpan.Slice(secondPlaneOffset + secondPlaneFirstCompleteByte, secondPlaneCompleteBytes)
-					.Fill(completeByteValue);
-			}
-
-			void SetLeftPixels(int planeOffset, int offset, int count)
+			void SetLeftPixels(int planeOffset, int offset, int count, int attributeBit)
 			{
 				if (count == 0)
 					return;
 
-				byte mask = unchecked((byte)(0b11111111 >> (8 - count * 2)));
+				byte mask = unchecked((byte)(0b11111111 >> (8 - count)));
 
-				int address = planeOffset + offset - 1;
+				int address = planeOffset + scanOffset + offset - 1;
 
-				Array.VRAM[address] = unchecked((byte)(
-					(Array.VRAM[address] & ~mask) |
-					(completeByteValue & mask)));
+				if ((attribute & attributeBit) == 0)
+					Array.VRAM[address] = unchecked((byte)((Array.VRAM[address] & ~mask)));
+				else
+					Array.VRAM[address] = unchecked((byte)((Array.VRAM[address] | mask)));
 			}
 
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
-			void SetRightPixels(int planeOffset, int offset, int count)
+			void SetRightPixels(int planeOffset, int offset, int count, int attributeBit)
 			{
 				if (count == 0)
 					return;
 
-				byte mask = unchecked((byte)(0b11111111 << (8 - count * 2)));
+				byte mask = unchecked((byte)(0b11111111 << (8 - count)));
 
-				int address = planeOffset + offset + 1;
+				int address = planeOffset + scanOffset + offset + 1;
 
-				Array.VRAM[address] = unchecked((byte)(
-					(Array.VRAM[address] & ~mask) |
-					(completeByteValue & mask)));
+				if ((attribute & attributeBit) == 0)
+					Array.VRAM[address] = unchecked((byte)((Array.VRAM[address] & ~mask)));
+				else
+					Array.VRAM[address] = unchecked((byte)((Array.VRAM[address] | mask)));
 			}
 
-			SetLeftPixels(firstPlaneOffset, firstPlaneFirstCompleteByte, firstPlaneLeftPixels);
-			SetRightPixels(firstPlaneOffset, firstPlaneLastCompleteByte, firstPlaneRightPixels);
+			SetLeftPixels(_plane0Offset, firstCompleteByte, leftPixels, 1);
+			SetLeftPixels(_plane1Offset, firstCompleteByte, leftPixels, 2);
+			SetLeftPixels(_plane2Offset, firstCompleteByte, leftPixels, 4);
+			SetLeftPixels(_plane3Offset, firstCompleteByte, leftPixels, 8);
 
-			SetLeftPixels(secondPlaneOffset, secondPlaneFirstCompleteByte, secondPlaneLeftPixels);
-			SetRightPixels(secondPlaneOffset, secondPlaneLastCompleteByte, secondPlaneRightPixels);
+			SetRightPixels(_plane0Offset, lastCompleteByte, rightPixels, 1);
+			SetRightPixels(_plane1Offset, lastCompleteByte, rightPixels, 2);
+			SetRightPixels(_plane2Offset, lastCompleteByte, rightPixels, 4);
+			SetRightPixels(_plane3Offset, lastCompleteByte, rightPixels, 8);
 		}
 	}
-	*/
 }
