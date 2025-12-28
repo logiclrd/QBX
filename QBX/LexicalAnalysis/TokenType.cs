@@ -103,6 +103,7 @@ public enum TokenType
 	[KeywordToken] OPEN,
 	[KeywordToken] OR,
 	[KeywordToken] OUTPUT,
+	[KeywordToken] PALETTE,
 	[KeywordToken] PCOPY,
 	[KeywordFunction]
 	[KeywordToken] PEEK,

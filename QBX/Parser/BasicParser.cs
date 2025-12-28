@@ -1861,6 +1861,42 @@ public class BasicParser
 				}
 			}
 
+			case TokenType.PALETTE:
+			{
+				var palette = new PaletteStatement();
+
+				if (tokenHandler.NextTokenIs(TokenType.USING))
+				{
+					tokenHandler.Advance();
+
+					palette.ArrayExpression = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken);
+				}
+				else if (tokenHandler.HasMoreTokens)
+				{
+					var endTokenRef = new TokenRef();
+
+					var arguments = SplitCommaDelimitedList(tokenHandler.RemainingTokens, endTokenRef);
+
+					var enumerator = arguments.GetEnumerator();
+
+					enumerator.MoveNext();
+
+					palette.AttributeExpression = ParseExpression(enumerator.Current, endTokenRef.Token ?? tokenHandler.EndToken);
+
+					if (!enumerator.MoveNext())
+						throw new SyntaxErrorException(tokenHandler.EndToken, "Expected: ,");
+
+					var endToken = endTokenRef.Token ?? tokenHandler.EndToken;
+
+					palette.ColourExpression = ParseExpression(enumerator.Current, endToken);
+
+					if (enumerator.MoveNext())
+						throw new SyntaxErrorException(endToken, "Expected: end of statement");
+				}
+
+				return palette;
+			}
+
 			case TokenType.PCOPY:
 			{
 				var pcopy = new PageCopyStatement();

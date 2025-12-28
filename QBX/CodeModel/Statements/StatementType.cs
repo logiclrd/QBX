@@ -51,6 +51,7 @@ public enum StatementType
 	Open,
 	OpenLegacy,
 	PageCopy,
+	Palette,
 	PixelSet,
 	Play,
 	Poke,
