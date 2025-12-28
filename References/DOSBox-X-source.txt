@@ -1,0 +1,7 @@
+DOSBox-X source code:
+
+https://github.com/joncampbell123/dosbox-x/
+
+INT 10h modes specifically:
+
+https://github.com/joncampbell123/dosbox-x/blob/master/src/ints/int10_modes.cpp
