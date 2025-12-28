@@ -2,7 +2,6 @@ using QBX.CodeModel.Expressions;
 using QBX.CodeModel.Statements;
 using QBX.LexicalAnalysis;
 using QBX.Parser;
-using System.ComponentModel;
 
 namespace QBX.Tests.Parser.Statements;
 
