@@ -17,4 +17,16 @@ public class GraphicsLibrary_8bppFlat(GraphicsArray array) : GraphicsLibrary(arr
 		 && (y >= 0) && (y < Height))
 			Array.VRAM[y * Width + x] = unchecked((byte)attribute);
 	}
+
+	public override void HorizontalLine(int x1, int x2, int y, int attribute)
+	{
+		if ((x2 < 0) || (x1 >= Width))
+			return;
+		if ((y < 0) || (y >= Height))
+			return;
+
+		int o = y * Width + x1;
+
+		Array.VRAM.AsSpan().Slice(o, x2 - x1 + 1).Fill(unchecked((byte)attribute));
+	}
 }
