@@ -1,6 +1,4 @@
-﻿using QBX.Parser;
-
-using SDL3;
+﻿using SDL3;
 
 using System.Runtime.InteropServices;
 
@@ -64,10 +62,17 @@ public unsafe class Adapter
 
 			byte[] vram = _array.VRAM;
 
-			var plane0 = vram.AsSpan().Slice(0x00000, 0x10000);
-			var plane1 = vram.AsSpan().Slice(0x10000, 0x10000);
-			var plane2 = vram.AsSpan().Slice(0x20000, 0x10000);
-			var plane3 = vram.AsSpan().Slice(0x30000, 0x10000);
+			int planeSize =
+				_array.CRTController.InterleaveOnBit0 ? 8192
+				: _array.CRTController.InterleaveOnBit1 ? 16384
+				: 65536;
+
+			int startAddress = _array.CRTController.StartAddress;
+
+			var plane0 = vram.AsSpan().Slice(startAddress + 0 * planeSize, planeSize);
+			var plane1 = vram.AsSpan().Slice(startAddress + 1 * planeSize, planeSize);
+			var plane2 = vram.AsSpan().Slice(startAddress + 2 * planeSize, planeSize);
+			var plane3 = vram.AsSpan().Slice(startAddress + 3 * planeSize, planeSize);
 
 			bool promoteBit0ToBit13 = _array.CRTController.InterleaveOnBit0;
 			bool promoteBit1ToBit14 = _array.CRTController.InterleaveOnBit1;
@@ -79,13 +84,8 @@ public unsafe class Adapter
 			int fontStartA = 0x20000 + _array.Sequencer.CharacterSetAOffset;
 			int fontStartB = 0x20000 + _array.Sequencer.CharacterSetBOffset;
 
-			int baseAddress = _array.CRTController.StartAddress;
-
 			// In theory this value is derived from the CRT Controller's Offset register.
-			int stride = _width /
-				(_array.Graphics.Shift256 ? 1
-				: _array.Graphics.ShiftInterleave ? 4
-				: 8);
+			int stride = _width / (_array.Graphics.Shift256 ? 1 : 8);
 
 			bool graphicsMode = _array.Graphics.DisableText;
 			bool lineGraphics = _array.AttributeController.LineGraphics;
@@ -108,8 +108,14 @@ public unsafe class Adapter
 			if (enableBlink)
 				blinkState = ((tick / TicksPerBlinkSwitch) & 1) != 0;
 
-			int characterWidth = graphicsMode ? 1 : _array.Sequencer.CharacterWidth;
+			// How many columns between each change in offset?
+			int characterWidth = graphicsMode
+				? (use256Colours ? 1 : 8)
+				: _array.Sequencer.CharacterWidth;
 			int characterHeight = _array.CRTController.ScanRepeatCount + 1;
+
+			if (shiftInterleave)
+				characterHeight *= 2;
 
 			int attributeBits76 = _array.AttributeController.AttributeBits76;
 			int attributeBits54 = _array.AttributeController.AttributeBits54;
@@ -126,12 +132,14 @@ public unsafe class Adapter
 
 			int overscanColour = _array.AttributeController.Registers.OverscanPaletteIndex;
 
+			int planeOffset = 0;
+
 			for (int y = 0; y < _height; y++)
 			{
-				var scanIn0 = plane0.Slice(y * stride, stride);
-				var scanIn1 = plane1.Slice(y * stride, stride);
-				var scanIn2 = plane2.Slice(y * stride, stride);
-				var scanIn3 = plane3.Slice(y * stride, stride);
+				var scanIn0 = plane0.Slice(planeOffset, stride);
+				var scanIn1 = plane1.Slice(planeOffset, stride);
+				var scanIn2 = plane2.Slice(planeOffset, stride);
+				var scanIn3 = plane3.Slice(planeOffset, stride);
 				var scanOut = MemoryMarshal.Cast<byte, int>(textureBuffer.Slice(y * pitch, rowWidthOut));
 
 				int offset = 0;
@@ -140,23 +148,7 @@ public unsafe class Adapter
 
 				for (int x = 0; x < _width; x++)
 				{
-					int effectiveOffset = offset;
-
-					if (promoteBit0ToBit13)
-					{
-						effectiveOffset = (effectiveOffset >> 1) + ((effectiveOffset & 1) << 13);
-
-						if (promoteBit1ToBit14)
-							effectiveOffset = (effectiveOffset >> 1) + ((effectiveOffset & 1) << 13);
-					}
-					else if (promoteBit1ToBit14)
-					{
-						// ?
-					}
-
-					int address = baseAddress + effectiveOffset;
-
-					bool inRange = (effectiveOffset >= 0) && (effectiveOffset + 1 < vram.Length);
+					bool inRange = (offset >= 0) && (offset + 1 < planeSize);
 
 					int attribute;
 
@@ -173,8 +165,8 @@ public unsafe class Adapter
 								case 0:
 									switch (x & 1)
 									{
-										case 0: packedPixels = scanIn0[effectiveOffset]; break;
-										case 1: packedPixels = scanIn2[effectiveOffset]; break;
+										case 0: packedPixels = scanIn0[offset]; break;
+										case 1: packedPixels = scanIn2[offset]; break;
 										default: throw new Exception("Sanity failure");
 									}
 
@@ -182,8 +174,8 @@ public unsafe class Adapter
 								case 1:
 									switch (x & 1)
 									{
-										case 0: packedPixels = scanIn1[effectiveOffset]; break;
-										case 1: packedPixels = scanIn3[effectiveOffset]; break;
+										case 0: packedPixels = scanIn1[offset]; break;
+										case 1: packedPixels = scanIn3[offset]; break;
 										default: throw new Exception("Sanity failure");
 									}
 
@@ -194,17 +186,17 @@ public unsafe class Adapter
 							attribute = (packedPixels & pixelBits) >> pixelShift;
 						}
 						else if (use256Colours)
-							attribute = scanIn0[address];
+							attribute = scanIn0[offset];
 						else
 						{
 							attribute =
-								(((scanIn0[effectiveOffset] & columnBit) != 0) ? 8 : 0) |
-								(((scanIn1[effectiveOffset] & columnBit) != 0) ? 4 : 0) |
-								(((scanIn2[effectiveOffset] & columnBit) != 0) ? 2 : 0) |
-								(((scanIn3[effectiveOffset] & columnBit) != 0) ? 1 : 0);
+								(((scanIn0[offset] & columnBit) != 0) ? 8 : 0) |
+								(((scanIn1[offset] & columnBit) != 0) ? 4 : 0) |
+								(((scanIn2[offset] & columnBit) != 0) ? 2 : 0) |
+								(((scanIn3[offset] & columnBit) != 0) ? 1 : 0);
 						}
 
-						if (shiftInterleave && ((x & 1) == 0))
+						if (shiftInterleave && ((x & 1) == 1))
 						{
 							pixelBits >>= bitsPerPixelPerPlane;
 							pixelShift -= bitsPerPixelPerPlane;
@@ -218,8 +210,8 @@ public unsafe class Adapter
 					}
 					else
 					{
-						byte ch = vram[address];
-						byte attr = vram[address + 1];
+						byte ch = scanIn0[offset];
+						byte attr = scanIn0[offset + 1];
 
 						int fontStart = ((attr & 8) == 1)
 							? fontStartA
@@ -281,7 +273,7 @@ public unsafe class Adapter
 				if (characterY >= characterHeight)
 				{
 					characterY = 0;
-					offset += stride;
+					planeOffset += stride;
 				}
 			}
 		}

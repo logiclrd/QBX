@@ -39,16 +39,42 @@ class Program
 
 		var video = new Video(machine);
 
-		video.SetMode(0x13);
+		bool suppressDeadCodeWarning = !success;
 
-		var library = new GraphicsLibrary_8bppFlat(machine.GraphicsArray);
+		const int TestSCREEN = 1;
+
+		const int CGAPalette = 1;
+		const bool CGAPaletteHighIntensity = false;
+
+		const int ModeNumber =
+			(TestSCREEN == 1) ? 5 :
+			(TestSCREEN == 2) ? 6 :
+			(TestSCREEN == 12) ? 0x12 :
+			(TestSCREEN == 13) ? 0x13 : -1;
+
+		video.SetMode(ModeNumber);
+
+		if ((TestSCREEN == 1) || suppressDeadCodeWarning)
+			machine.GraphicsArray.LoadCGAPalette(CGAPalette, CGAPaletteHighIntensity);
+
+		var library =
+			TestSCREEN switch
+			{
+				1 => new GraphicsLibrary_2bppInterleaved(machine.GraphicsArray),
+				13 => new GraphicsLibrary_8bppFlat(machine.GraphicsArray),
+
+				_ => default(GraphicsLibrary) ?? throw new NotImplementedException()
+			};
 
 		Task.Run(
 			async () =>
 			{
-				double start = 1;
-				double end = 0.5;
-				int c = 15;
+				const int MaxC =
+					(TestSCREEN == 1) ? 3 :
+					(TestSCREEN == 2) ? 1 :
+					(TestSCREEN == 13) ? 255 : 15;
+
+				int c = MaxC;
 
 				var rnd = new Random(1234);
 
@@ -56,29 +82,25 @@ class Program
 				{
 					if (c == 1)
 					{
-						await Task.Delay(15);
+						await Task.Delay(350);
 						library.Clear();
 					}
 
-					int x = rnd.Next(-100, 420);
-					int y = rnd.Next(-100, 300);
-
-					int rx = rnd.Next(50, 150);
-					int ry = rnd.Next(50, 150);
-
-					start = rnd.NextDouble() * (2 * Math.PI);
-					end = rnd.NextDouble() * (2 * Math.PI);
-
-					try
+					for (int i = 0; i < Math.Max(1, 15 / MaxC); i++)
 					{
+						int x = rnd.Next(-100, 420);
+						int y = rnd.Next(-100, 300);
+
+						int rx = rnd.Next(50, 150);
+						int ry = rnd.Next(50, 150);
+
+						double start = rnd.NextDouble() * (2 * Math.PI);
+						double end = rnd.NextDouble() * (2 * Math.PI);
+
 						library.Ellipse(x, y, rx, ry, start, end, c, true, true);
-					}
-					catch
-					{
-						Console.WriteLine();
-					}
 
-					c = (c % 15) + 1;
+						c = (c % MaxC) + 1;
+					}
 				}
 			});
 

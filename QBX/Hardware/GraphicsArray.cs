@@ -705,6 +705,35 @@ public class GraphicsArray
 		ResetFont();
 	}
 
+	public void LoadCGAPalette(int cgaPalette = 1, bool intensity = false)
+	{
+		LoadVGAPalette();
+
+		switch (cgaPalette)
+		{
+			case 0:
+				AttributeController.Registers[0] = 0;
+				AttributeController.Registers[1] = unchecked((byte)(intensity ? 10 : 2));
+				AttributeController.Registers[2] = unchecked((byte)(intensity ? 12 : 4));
+				AttributeController.Registers[3] = unchecked((byte)(intensity ? 14 : 6));
+				break;
+			case 1:
+				AttributeController.Registers[0] = 0;
+				AttributeController.Registers[1] = unchecked((byte)(intensity ? 11 : 3));
+				AttributeController.Registers[2] = unchecked((byte)(intensity ? 13 : 5));
+				AttributeController.Registers[3] = unchecked((byte)(intensity ? 15 : 7));
+				break;
+			case 2:
+				AttributeController.Registers[0] = 0;
+				AttributeController.Registers[1] = 11;
+				AttributeController.Registers[2] = 12;
+				AttributeController.Registers[3] = 15;
+				break;
+
+			default: goto case 1;
+		}
+	}
+
 	public void LoadEGAPalette()
 	{
 		var paletteBytes = DAC.Palette.AsSpan();

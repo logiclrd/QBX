@@ -20,6 +20,8 @@ public abstract class GraphicsLibrary
 
 	public Point LastPoint;
 
+	public virtual void RefreshParameters() { }
+
 	public abstract void Clear();
 
 	public abstract void PixelSet(int x, int y, int attribute);

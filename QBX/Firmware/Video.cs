@@ -17,6 +17,12 @@ public class Video(Machine machine)
 		_9 = 9,
 	}
 
+	enum PaletteType
+	{
+		CGA,
+		VGA,
+	}
+
 	class ModeParameters
 	{
 		public int? ScreenNumber; // QB
@@ -24,6 +30,7 @@ public class Video(Machine machine)
 		public (int Width, int Height) Pixels;
 		public bool IsGraphicsMode;
 		public bool IsMonochrome;
+		public PaletteType PaletteType;
 		public BaseAddress BaseAddress;
 		public CharacterWidth CharacterWidth;
 		public int CharacterHeight;
@@ -45,6 +52,7 @@ public class Video(Machine machine)
 			ScreenNumber = 0,
 			Characters = (40, 25),
 			IsGraphicsMode = false,
+			PaletteType = PaletteType.VGA,
 			BaseAddress = BaseAddress.B800,
 			CharacterWidth = CharacterWidth._9,
 			CharacterHeight = 16,
@@ -65,6 +73,7 @@ public class Video(Machine machine)
 			ScreenNumber = 0,
 			Characters = (80, 25),
 			IsGraphicsMode = false,
+			PaletteType = PaletteType.VGA,
 			BaseAddress = BaseAddress.B800,
 			CharacterWidth = CharacterWidth._9,
 			CharacterHeight = 16,
@@ -85,6 +94,7 @@ public class Video(Machine machine)
 			ScreenNumber = 1,
 			Pixels = (320, 200),
 			IsGraphicsMode = true,
+			PaletteType = PaletteType.CGA,
 			BaseAddress = BaseAddress.B800,
 			CharacterWidth = CharacterWidth._8,
 			CharacterHeight = 8,
@@ -107,6 +117,7 @@ public class Video(Machine machine)
 			Pixels = (640, 200),
 			IsGraphicsMode = true,
 			IsMonochrome = true,
+			PaletteType = PaletteType.VGA,
 			BaseAddress = BaseAddress.B800,
 			CharacterWidth = CharacterWidth._8,
 			CharacterHeight = 8,
@@ -127,6 +138,7 @@ public class Video(Machine machine)
 		{
 			Characters = (80, 25),
 			IsGraphicsMode = false,
+			PaletteType = PaletteType.VGA,
 			BaseAddress = BaseAddress.B800,
 			CharacterWidth = CharacterWidth._9,
 			CharacterHeight = 16,
@@ -147,6 +159,7 @@ public class Video(Machine machine)
 			ScreenNumber = 7,
 			Pixels = (320, 200),
 			IsGraphicsMode = true,
+			PaletteType = PaletteType.VGA,
 			BaseAddress = BaseAddress.B800,
 			CharacterWidth = CharacterWidth._8,
 			CharacterHeight = 8,
@@ -168,6 +181,7 @@ public class Video(Machine machine)
 			ScreenNumber = 8,
 			Pixels = (640, 200),
 			IsGraphicsMode = true,
+			PaletteType = PaletteType.VGA,
 			BaseAddress = BaseAddress.B800,
 			CharacterWidth = CharacterWidth._8,
 			CharacterHeight = 8,
@@ -190,6 +204,7 @@ public class Video(Machine machine)
 			Pixels = (640, 350),
 			IsGraphicsMode = true,
 			IsMonochrome = true,
+			PaletteType = PaletteType.VGA,
 			BaseAddress = BaseAddress.B800,
 			CharacterWidth = CharacterWidth._8,
 			CharacterHeight = 14,
@@ -211,6 +226,7 @@ public class Video(Machine machine)
 			ScreenNumber = 9,
 			Pixels = (640, 350),
 			IsGraphicsMode = true,
+			PaletteType = PaletteType.VGA,
 			BaseAddress = BaseAddress.B800,
 			CharacterWidth = CharacterWidth._8,
 			CharacterHeight = 14,
@@ -233,6 +249,7 @@ public class Video(Machine machine)
 			Pixels = (640, 480),
 			IsGraphicsMode = true,
 			IsMonochrome = true,
+			PaletteType = PaletteType.VGA,
 			BaseAddress = BaseAddress.A000,
 			CharacterWidth = CharacterWidth._8,
 			CharacterHeight = 16,
@@ -254,6 +271,7 @@ public class Video(Machine machine)
 			ScreenNumber = 12,
 			Pixels = (640, 480),
 			IsGraphicsMode = true,
+			PaletteType = PaletteType.VGA,
 			BaseAddress = BaseAddress.A000,
 			CharacterWidth = CharacterWidth._8,
 			CharacterHeight = 16,
@@ -275,6 +293,7 @@ public class Video(Machine machine)
 			ScreenNumber = 13,
 			Pixels = (320, 200),
 			IsGraphicsMode = true,
+			PaletteType = PaletteType.VGA,
 			BaseAddress = BaseAddress.A000,
 			CharacterWidth = CharacterWidth._8,
 			CharacterHeight = 8,
@@ -547,7 +566,11 @@ public class Video(Machine machine)
 			if (!mode.IsGraphicsMode)
 				array.ResetFont();
 
-			array.LoadVGAPalette();
+			switch (mode.PaletteType)
+			{
+				case PaletteType.CGA: array.LoadCGAPalette(); break;
+				case PaletteType.VGA: array.LoadVGAPalette(); break;
+			}
 
 			array.OutPort2(
 				SequencerRegisters.IndexPort,
