@@ -10,21 +10,26 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<PackageReference Include="SDL3-CS" Version="3.*" />
+		<PackageReference Include="SDL3-CS.Native" Version="3.*" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<EditorConfigFiles Remove="C:\code\QBX\.editorconfig" />
 	</ItemGroup>
 
 	<ItemGroup>
+		<None Remove="Fonts\8x14.bin" />
 		<None Remove="Fonts\8x16.bin" />
 		<None Remove="Fonts\8x8.bin" />
+		<None Remove="Hardware\DefaultPalette.bin" />
 	</ItemGroup>
 
 	<ItemGroup>
+		<EmbeddedResource Include="Fonts\8x14.bin" />
 		<EmbeddedResource Include="Fonts\8x16.bin" />
 		<EmbeddedResource Include="Fonts\8x8.bin" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<PackageReference Include="SDL3-CS" Version="3.*" />
+		<EmbeddedResource Include="Hardware\DefaultPalette.bin" />
 	</ItemGroup>
 
 	<ItemGroup>

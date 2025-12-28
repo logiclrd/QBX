@@ -1,4 +1,4 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Runtime.CompilerServices;
 
 namespace QBX.Hardware;
 
@@ -54,9 +54,11 @@ public class GraphicsArray
 		public const byte MiscGraphics_AlphanumericModeDisable = 1;
 
 		public int MemoryMapBaseAddress;
-		public int MemoryMapOffset;
+		public int MemoryMapReadOffset;
 		public int MemoryMapSize;
 		public bool DisableText;
+		public bool Shift256;
+		public bool ShiftInterleave;
 
 		public readonly RegisterSet Registers;
 
@@ -119,7 +121,7 @@ public class GraphicsArray
 							_ => throw new Exception("Internal error")
 						};
 
-					owner.MemoryMapOffset = ReadMapSelect * 65536;
+					owner.MemoryMapReadOffset = ReadMapSelect * 65536;
 
 					owner.MemoryMapSize =
 						(MiscGraphics & MiscGraphics_MemoryMapMask) switch
@@ -133,6 +135,9 @@ public class GraphicsArray
 						};
 
 					owner.DisableText = ((MiscGraphics & MiscGraphics_AlphanumericModeDisable) != 0);
+
+					owner.Shift256 = ((GraphicsMode & GraphicsMode_Shift256) != 0);
+					owner.ShiftInterleave = ((GraphicsMode & GraphicsMode_ShiftInterleave) != 0);
 				}
 			}
 		}
@@ -184,6 +189,7 @@ public class GraphicsArray
 		public bool DotDoubling;
 		public int CharacterSetAOffset;
 		public int CharacterSetBOffset;
+		public bool OddEvenAddressingMode;
 
 		public readonly RegisterSet Registers;
 
@@ -243,6 +249,8 @@ public class GraphicsArray
 
 					owner.CharacterSetAOffset = characterSetA * 0x2000;
 					owner.CharacterSetBOffset = characterSetB * 0x2000;
+
+					owner.OddEvenAddressingMode = ((SequencerMemoryMode & SequencerMemoryMode_OddEvenDisable) == 0);
 				}
 			}
 		}
@@ -254,7 +262,37 @@ public class GraphicsArray
 		public const int WriteIndexPort = 0x3C8;
 		public const int DataPort = 0x3C9;
 
-		public int[] Palette = new int[256];
+		public byte[] Palette = new byte[768];
+		public byte[] PaletteBGRA = new byte[1024];
+
+		public void RebuildBGRA()
+		{
+			for (int i = 0; i < 256; i++)
+				RebuildBGRA(i);
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public void RebuildBGRA(int paletteIndex)
+		{
+			int sourcePaletteOffset = paletteIndex * 3;
+			int destPaletteOffset = paletteIndex * 4;
+
+			int r = Palette[sourcePaletteOffset + 0];
+			int g = Palette[sourcePaletteOffset + 1];
+			int b = Palette[sourcePaletteOffset + 2];
+
+			r = (r << 2) | (r >> 4);
+			g = (g << 2) | (g >> 4);
+			b = (b << 2) | (b >> 4);
+
+			unchecked
+			{
+				PaletteBGRA[destPaletteOffset + 0] = 255;
+				PaletteBGRA[destPaletteOffset + 1] = (byte)r;
+				PaletteBGRA[destPaletteOffset + 2] = (byte)g;
+				PaletteBGRA[destPaletteOffset + 3] = (byte)b;
+			}
+		}
 	}
 
 	public class MiscellaneousOutputRegisters
@@ -294,6 +332,12 @@ public class GraphicsArray
 				UseMonoIOPorts = (value & IOAddress) == 0;
 			}
 		}
+	}
+
+	public class InputStatusRegisters
+	{
+		public const int InputStatus0Port = 0x3C2;
+		public const int InputStatus1Port = 0x3DA;
 	}
 
 	public class CRTControllerRegisters
@@ -376,6 +420,7 @@ public class GraphicsArray
 		public int NumScanLines;
 		public int SkipScans;
 		public int ScanRepeatCount;
+		public int CharacterHeight;
 		public bool ScanDoubling;
 		public bool CursorVisible;
 		public int CursorScanStart;
@@ -384,6 +429,8 @@ public class GraphicsArray
 		public int CursorAddress;
 		public int Stride;
 		public int UnderlineCharacterRow;
+		public bool InterleaveOnBit0;
+		public bool InterleaveOnBit1;
 
 		// In text modes, ScanRepeatCount is the height of the character box. The same scan is repeated for each
 		// separate scan of the characters in the row. In graphics mode, there is no font being translated, so
@@ -495,14 +542,17 @@ public class GraphicsArray
 					owner.NumScanLines = verticalDisplayEndValue + 1;
 					owner.SkipScans = PresetRowScan & PresetRowScan_ScanMask;
 					owner.ScanRepeatCount = MaximumScanLine & MaximumScanLine_ScanMask;
+					owner.CharacterHeight = owner.ScanRepeatCount + 1;
 					owner.ScanDoubling = (MaximumScanLine & MaximumScanLine_ScanDoubling) != 0;
 					owner.StartAddress = (StartAddressLow << 2) | (StartAddressHigh << 10);
 					owner.CursorVisible = (CursorStart & CursorStart_Disable) == 0;
 					owner.CursorScanStart = CursorStart & CursorStart_Mask;
 					owner.CursorScanEnd = CursorEnd & CursorEnd_Mask;
 					owner.CursorAddress = CursorLocationLow | (CursorLocationHigh << 8);
-					owner.Stride = Offset * 4;
+					owner.Stride = Offset * 4; // TODO
 					owner.UnderlineCharacterRow = UnderlineLocation & UnderlineLocation;
+					owner.InterleaveOnBit0 = ((ModeControl & ModeControl_MapDisplayAddress13Mask) == ModeControl_MapDisplayAddress13_RowScan0);
+					owner.InterleaveOnBit1 = ((ModeControl & ModeControl_MapDisplayAddress14Mask) == ModeControl_MapDisplayAddress14_RowScan1);
 				}
 			}
 		}
@@ -510,7 +560,7 @@ public class GraphicsArray
 
 	public class AttributeControllerRegisters
 	{
-		public const int AddressAndDataWritePort = 0x3C0;
+		public const int IndexAndDataWritePort = 0x3C0;
 		public const int DataReadPort = 0x3C1;
 
 		public const int Attribute0 = 0;
@@ -550,13 +600,18 @@ public class GraphicsArray
 
 		public const byte HorizontalPixelPanningMask = 15;
 
-		public const byte ColourSelect_Bit7 = 8;
-		public const byte ColourSelect_Bit6 = 4;
-		public const byte ColourSelect_Bit5 = 2;
-		public const byte ColourSelect_Bit4 = 1;
+		public const byte ColourSelect_Bits76 = 8 | 4;
+		public const int ColourSelect_Bits76Shift = 2;
+		public const byte ColourSelect_Bits54 = 2 | 1;
+		public const int ColourSelect_Bits54Shift = 0;
 
 		public bool LineGraphics;
 		public bool Use256Colours;
+		public bool EnableBlinking;
+		public int AttributeBits76;
+		public int AttributeBits54;
+		public bool OverrideAttributeBits54;
+
 		public readonly RegisterSet Registers;
 
 		public AttributeControllerRegisters() { Registers = new(this); }
@@ -628,6 +683,10 @@ public class GraphicsArray
 
 					owner.LineGraphics = ((ModeControl & ModeControl_LineGraphicsEnable) != 0);
 					owner.Use256Colours = ((ModeControl & ModeControl_8bitColour) != 0);
+					owner.EnableBlinking = ((ModeControl & ModeControl_BlinkEnable) != 0);
+					owner.OverrideAttributeBits54 = ((ModeControl & ModeControl_PaletteBits54Select) != 0);
+					owner.AttributeBits76 = ((ColourSelect & ColourSelect_Bits76) >> ColourSelect_Bits76Shift) << 6;
+					owner.AttributeBits54 = ((ColourSelect & ColourSelect_Bits54) >> ColourSelect_Bits54Shift) << 6;
 				}
 			}
 		}
@@ -639,6 +698,90 @@ public class GraphicsArray
 	public readonly CRTControllerRegisters CRTController = new CRTControllerRegisters();
 	public readonly AttributeControllerRegisters AttributeController = new AttributeControllerRegisters();
 	public readonly DACRegisters DAC = new DACRegisters();
+
+	public GraphicsArray()
+	{
+		LoadVGAPalette();
+		ResetFont();
+	}
+
+	public void LoadEGAPalette()
+	{
+		var paletteBytes = DAC.Palette.AsSpan();
+
+		for (int i = 0; i < 64; i++)
+		{
+			int r = (i >> 0) & 0b11;
+			int g = (i >> 2) & 0b11;
+			int b = (i >> 4) & 0b11;
+
+			r *= 0b10101;
+			g *= 0b10101;
+			b *= 0b10101;
+
+			paletteBytes[0] = (byte)((b << 2) | (b >> 4));
+			paletteBytes[1] = (byte)((g << 2) | (g >> 4));
+			paletteBytes[2] = (byte)((r << 2) | (r >> 4));
+
+			paletteBytes = paletteBytes.Slice(3);
+		}
+
+		DAC.RebuildBGRA();
+
+		AttributeController.Registers[0x0] = 0x00;
+		AttributeController.Registers[0x1] = 0x01;
+		AttributeController.Registers[0x2] = 0x02;
+		AttributeController.Registers[0x3] = 0x03;
+		AttributeController.Registers[0x4] = 0x04;
+		AttributeController.Registers[0x5] = 0x05;
+		AttributeController.Registers[0x6] = 0x14; // Hello!
+		AttributeController.Registers[0x7] = 0x07;
+		AttributeController.Registers[0x8] = 0x38;
+		AttributeController.Registers[0x9] = 0x39;
+		AttributeController.Registers[0xA] = 0x3A;
+		AttributeController.Registers[0xB] = 0x3B;
+		AttributeController.Registers[0xC] = 0x3C;
+		AttributeController.Registers[0xD] = 0x3D;
+		AttributeController.Registers[0xE] = 0x3E;
+		AttributeController.Registers[0xF] = 0x3F;
+	}
+
+	public void LoadVGAPalette()
+	{
+		using (var stream = typeof(GraphicsArray).Assembly.GetManifestResourceStream("QBX.Hardware.DefaultPalette.bin"))
+		{
+			if (stream == null)
+				return; // ?
+
+			stream.ReadExactly(DAC.Palette);
+
+			DAC.RebuildBGRA();
+
+			for (int i = 0; i < 16; i++)
+				AttributeController.Registers[i] = (byte)i;
+		}
+	}
+
+	public void ResetFont()
+	{
+		string fontFileName = "8x" + CRTController.CharacterHeight + ".bin";
+
+		using (var stream = typeof(GraphicsArray).Assembly.GetManifestResourceStream("QBX.Fonts." + fontFileName))
+		{
+			if (stream != null)
+			{
+				int fontPlane = 0x20000;
+
+				for (int ch = 0; ch < 256; ch++)
+				{
+					int baseOffset = ch * 32;
+
+					for (int y = 0; y < CRTController.CharacterHeight; y++)
+						VRAM[fontPlane + baseOffset + y] = unchecked((byte)stream.ReadByte());
+				}
+			}
+		}
+	}
 
 	int _graphicsIndex;
 	int _sequencerIndex;
@@ -704,7 +847,7 @@ public class GraphicsArray
 				CRTController.Registers[_crtControllerIndex] = data;
 				break;
 			}
-			case AttributeControllerRegisters.AddressAndDataWritePort:
+			case AttributeControllerRegisters.IndexAndDataWritePort:
 			{
 				switch (_attributeControllerPortMode)
 				{
@@ -727,20 +870,21 @@ public class GraphicsArray
 			}
 			case DACRegisters.WriteIndexPort:
 			{
-				_dacWriteIndex = data * 4;
+				_dacWriteIndex = data * 3;
 				break;
 			}
 			case DACRegisters.DataPort:
 			{
-				var paletteBytes = MemoryMarshal.Cast<int, byte>(DAC.Palette.AsSpan());
+				DAC.Palette[_dacWriteIndex] = data;
 
-				paletteBytes[_dacWriteIndex] = data;
+				(int paletteIndex, int channelIndex) = int.DivRem(_dacWriteIndex, 3);
+
+				if (channelIndex == 2)
+					DAC.RebuildBGRA(paletteIndex);
 
 				_dacWriteIndex++;
-				if ((_dacWriteIndex & 3) == 3)
-					_dacWriteIndex++;
 
-				if (_dacWriteIndex >= paletteBytes.Length)
+				if (_dacWriteIndex >= DAC.Palette.Length)
 					_dacWriteIndex = 0;
 
 				break;
@@ -763,21 +907,19 @@ public class GraphicsArray
 			case SequencerRegisters.DataPort:
 				return Sequencer.Registers[_sequencerIndex];
 
-			case 0x3DA:
+			case InputStatusRegisters.InputStatus1Port:
 				_attributeControllerPortMode = AddressAndDataPortMode.Address;
 				break;
 
 			case DACRegisters.DataPort:
 			{
-				var paletteBytes = MemoryMarshal.Cast<int, byte>(DAC.Palette.AsSpan());
-
-				byte data = paletteBytes[_dacReadIndex];
+				byte data = DAC.Palette[_dacReadIndex];
 
 				_dacReadIndex++;
 				if ((_dacReadIndex & 3) == 3)
 					_dacReadIndex++;
 
-				if (_dacReadIndex >= paletteBytes.Length)
+				if (_dacReadIndex >= DAC.Palette.Length)
 					_dacReadIndex = 0;
 
 				return data;
@@ -799,7 +941,7 @@ public class GraphicsArray
 		{
 			int offset = address - Graphics.MemoryMapBaseAddress;
 
-			int linearOffset = offset + Graphics.MemoryMapOffset;
+			int linearOffset = offset + Graphics.MemoryMapReadOffset;
 
 			if ((offset < Graphics.MemoryMapSize)
 			 && (linearOffset < VRAM.Length))
@@ -811,11 +953,17 @@ public class GraphicsArray
 		{
 			int offset = address - Graphics.MemoryMapBaseAddress;
 
-			int linearOffset = offset + Graphics.MemoryMapOffset;
-
-			if ((offset < Graphics.MemoryMapSize)
-			 && (linearOffset < VRAM.Length))
-				VRAM[offset] = value;
+			if (offset < Graphics.MemoryMapSize)
+			{
+				if (Sequencer.Plane0WriteEnable)
+					VRAM[offset] = value;
+				if (Sequencer.Plane1WriteEnable)
+					VRAM[offset + 0x10000] = value;
+				if (Sequencer.Plane2WriteEnable)
+					VRAM[offset + 0x20000] = value;
+				if (Sequencer.Plane3WriteEnable)
+					VRAM[offset + 0x30000] = value;
+			}
 		}
 	}
 }

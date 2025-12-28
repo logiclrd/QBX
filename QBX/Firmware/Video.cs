@@ -23,9 +23,12 @@ public class Video(Machine machine)
 		public (int Width, int Height) Characters;
 		public (int Width, int Height) Pixels;
 		public bool IsGraphicsMode;
+		public bool IsMonochrome;
 		public BaseAddress BaseAddress;
 		public CharacterWidth CharacterWidth;
 		public int CharacterHeight;
+		public int PixelsPerAddress = 1;
+		public int MemoryAddressSize;
 		public bool ScanDoubling;
 		public bool OddEvenAddressing;
 		public bool ShiftRegisterInterleave;
@@ -45,6 +48,7 @@ public class Video(Machine machine)
 			BaseAddress = BaseAddress.B800,
 			CharacterWidth = CharacterWidth._9,
 			CharacterHeight = 16,
+			MemoryAddressSize = 1,
 			ScanDoubling = true,
 			OddEvenAddressing = false,
 			ShiftRegisterInterleave = false,
@@ -54,7 +58,7 @@ public class Video(Machine machine)
 			Chain4Mode = false,
 		};
 
-	// 2: 80x25 text mode rendered to 720x400 dots
+	// 3: 80x25 text mode rendered to 720x400 dots
 	static readonly ModeParameters Mode3 =
 		new ModeParameters()
 		{
@@ -64,6 +68,7 @@ public class Video(Machine machine)
 			BaseAddress = BaseAddress.B800,
 			CharacterWidth = CharacterWidth._9,
 			CharacterHeight = 16,
+			MemoryAddressSize = 1,
 			ScanDoubling = false,
 			OddEvenAddressing = false,
 			ShiftRegisterInterleave = false,
@@ -83,6 +88,8 @@ public class Video(Machine machine)
 			BaseAddress = BaseAddress.B800,
 			CharacterWidth = CharacterWidth._8,
 			CharacterHeight = 8,
+			PixelsPerAddress = 4,
+			MemoryAddressSize = 2,
 			ScanDoubling = true,
 			OddEvenAddressing = false,
 			ShiftRegisterInterleave = true,
@@ -99,9 +106,12 @@ public class Video(Machine machine)
 			ScreenNumber = 2,
 			Pixels = (640, 200),
 			IsGraphicsMode = true,
+			IsMonochrome = true,
 			BaseAddress = BaseAddress.B800,
 			CharacterWidth = CharacterWidth._8,
 			CharacterHeight = 8,
+			PixelsPerAddress = 8,
+			MemoryAddressSize = 2,
 			ScanDoubling = true,
 			OddEvenAddressing = false,
 			ShiftRegisterInterleave = true,
@@ -111,20 +121,21 @@ public class Video(Machine machine)
 			Chain4Mode = false,
 		};
 
-	// 7: 720x400 graphics emulating monochrome by aliasing all the planes together
+	// 7: 80x25 text rendered to 720x400 dots
 	static readonly ModeParameters Mode7 =
 		new ModeParameters()
 		{
-			Pixels = (720, 400),
-			IsGraphicsMode = true,
+			Characters = (80, 25),
+			IsGraphicsMode = false,
 			BaseAddress = BaseAddress.B800,
 			CharacterWidth = CharacterWidth._9,
 			CharacterHeight = 16,
+			MemoryAddressSize = 1,
 			ScanDoubling = false,
 			OddEvenAddressing = false,
-			ShiftRegisterInterleave = true,
+			ShiftRegisterInterleave = false,
 			Use256Colours = false,
-			PlaneMask = 0b1111,
+			PlaneMask = 0b0011,
 			HalfDotClockRate = false,
 			Chain4Mode = false,
 		};
@@ -139,9 +150,11 @@ public class Video(Machine machine)
 			BaseAddress = BaseAddress.B800,
 			CharacterWidth = CharacterWidth._8,
 			CharacterHeight = 8,
+			PixelsPerAddress = 8,
+			MemoryAddressSize = 1,
 			ScanDoubling = true,
 			OddEvenAddressing = false,
-			ShiftRegisterInterleave = true,
+			ShiftRegisterInterleave = false,
 			Use256Colours = false,
 			PlaneMask = 0,
 			HalfDotClockRate = true,
@@ -158,9 +171,11 @@ public class Video(Machine machine)
 			BaseAddress = BaseAddress.B800,
 			CharacterWidth = CharacterWidth._8,
 			CharacterHeight = 8,
+			PixelsPerAddress = 8,
+			MemoryAddressSize = 1,
 			ScanDoubling = true,
 			OddEvenAddressing = false,
-			ShiftRegisterInterleave = true,
+			ShiftRegisterInterleave = false,
 			Use256Colours = false,
 			PlaneMask = 0,
 			HalfDotClockRate = false,
@@ -174,9 +189,12 @@ public class Video(Machine machine)
 			ScreenNumber = 10,
 			Pixels = (640, 350),
 			IsGraphicsMode = true,
+			IsMonochrome = true,
 			BaseAddress = BaseAddress.B800,
 			CharacterWidth = CharacterWidth._8,
 			CharacterHeight = 14,
+			PixelsPerAddress = 8,
+			MemoryAddressSize = 2,
 			ScanDoubling = false,
 			OddEvenAddressing = false,
 			ShiftRegisterInterleave = false,
@@ -196,6 +214,8 @@ public class Video(Machine machine)
 			BaseAddress = BaseAddress.B800,
 			CharacterWidth = CharacterWidth._8,
 			CharacterHeight = 14,
+			PixelsPerAddress = 8,
+			MemoryAddressSize = 2,
 			ScanDoubling = false,
 			OddEvenAddressing = false,
 			ShiftRegisterInterleave = false,
@@ -212,9 +232,12 @@ public class Video(Machine machine)
 			ScreenNumber = 11,
 			Pixels = (640, 480),
 			IsGraphicsMode = true,
+			IsMonochrome = true,
 			BaseAddress = BaseAddress.A000,
 			CharacterWidth = CharacterWidth._8,
 			CharacterHeight = 16,
+			PixelsPerAddress = 8,
+			MemoryAddressSize = 1,
 			ScanDoubling = false,
 			OddEvenAddressing = false,
 			ShiftRegisterInterleave = false,
@@ -234,6 +257,8 @@ public class Video(Machine machine)
 			BaseAddress = BaseAddress.A000,
 			CharacterWidth = CharacterWidth._8,
 			CharacterHeight = 16,
+			PixelsPerAddress = 8,
+			MemoryAddressSize = 2,
 			ScanDoubling = false,
 			OddEvenAddressing = false,
 			ShiftRegisterInterleave = false,
@@ -253,6 +278,8 @@ public class Video(Machine machine)
 			BaseAddress = BaseAddress.A000,
 			CharacterWidth = CharacterWidth._8,
 			CharacterHeight = 8,
+			PixelsPerAddress = 1,
+			MemoryAddressSize = 4,
 			ScanDoubling = true,
 			OddEvenAddressing = false,
 			ShiftRegisterInterleave = false,
@@ -261,12 +288,6 @@ public class Video(Machine machine)
 			HalfDotClockRate = true,
 			Chain4Mode = true,
 		};
-
-	// TODO: remember how to get/set pixels, since in some cases that's all that distinguishes modes
-	//       e.g. in some modes the data is planar
-	// maybe put the pixel setting code into GraphicsArray so that it doesn't need an excuse to
-	// directly access VRAM => setup function takes a PixelDataStyle enumerated value, and then
-	// ModeParameters can supply one
 
 	static ModeParameters?[] Modes =
 		new[]
@@ -414,17 +435,24 @@ public class Video(Machine machine)
 				CRTControllerRegisters.StartHorizontalBlanking,
 				unchecked((byte)(mode.Characters.Width)));
 
-			int displayEnd =
-				mode.IsGraphicsMode
+			int numScanLines =
+				(mode.IsGraphicsMode
 				? mode.Pixels.Height
-				: (mode.Characters.Height * mode.CharacterHeight);
+				: (mode.Characters.Height * mode.CharacterHeight));
 
-			int verticalTotal = 45 + displayEnd;
+			int displayEnd = numScanLines - 1;
+
+			int verticalTotal = 46 + displayEnd;
 
 			array.OutPort2(
 				CRTControllerRegisters.IndexPort,
 				CRTControllerRegisters.VerticalTotal,
 				unchecked((byte)verticalTotal));
+
+			array.OutPort2(
+				CRTControllerRegisters.IndexPort,
+				CRTControllerRegisters.VerticalDisplayEnd,
+				unchecked((byte)displayEnd));
 
 			array.OutPort2(
 				CRTControllerRegisters.IndexPort,
@@ -479,6 +507,47 @@ public class Video(Machine machine)
 				CRTControllerRegisters.IndexPort,
 				CRTControllerRegisters.CursorLocationLow,
 				0);
+
+			array.OutPort2(
+				CRTControllerRegisters.IndexPort,
+				CRTControllerRegisters.Offset,
+				unchecked((byte)(
+				(mode.IsGraphicsMode ? mode.Pixels.Width : mode.Characters.Width)
+				/ (mode.PixelsPerAddress * mode.MemoryAddressSize * 2))));
+
+			byte crtcMode = unchecked((byte)(
+				(mode.MemoryAddressSize == 1 ? CRTControllerRegisters.ModeControl_ByteAddressing : 0) |
+				(mode.ShiftRegisterInterleave
+				? CRTControllerRegisters.ModeControl_MapDisplayAddress13_RowScan0
+				: CRTControllerRegisters.ModeControl_MapDisplayAddress13_Address13) |
+				CRTControllerRegisters.ModeControl_MapDisplayAddress14_Address14));
+
+			array.OutPort2(
+				CRTControllerRegisters.IndexPort,
+				CRTControllerRegisters.ModeControl,
+				crtcMode);
+
+			byte attributeMode = unchecked((byte)(
+				(mode.Use256Colours ? AttributeControllerRegisters.ModeControl_8bitColour : 0) |
+				(mode.IsGraphicsMode ? 0 : AttributeControllerRegisters.ModeControl_BlinkEnable) |
+				AttributeControllerRegisters.ModeControl_LineGraphicsEnable |
+				(mode.IsMonochrome ? AttributeControllerRegisters.ModeControl_MonochromeEmulation : 0) |
+				(mode.IsGraphicsMode ? AttributeControllerRegisters.ModeControl_GraphicsMode : 0)));
+
+			// reset the AttributeController port mode
+			array.InPort(InputStatusRegisters.InputStatus1Port);
+
+			array.OutPort(
+				AttributeControllerRegisters.IndexAndDataWritePort,
+				AttributeControllerRegisters.ModeControl);
+			array.OutPort(
+				AttributeControllerRegisters.IndexAndDataWritePort,
+				attributeMode);
+
+			if (!mode.IsGraphicsMode)
+				array.ResetFont();
+
+			array.LoadVGAPalette();
 
 			array.OutPort2(
 				SequencerRegisters.IndexPort,

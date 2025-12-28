@@ -1,0 +1,376 @@
+﻿using QBX.CodeModel.Expressions;
+using QBX.Hardware;
+using System.Data.SqlTypes;
+using System.Security.Cryptography;
+
+namespace QBX.Firmware;
+
+public abstract class GraphicsLibrary
+{
+	GraphicsArray _array;
+
+	public GraphicsArray Array => _array;
+
+	protected GraphicsLibrary(GraphicsArray array)
+	{
+		_array = array;
+
+		Width = _array.MiscellaneousOutput.BasePixelWidth >> (_array.Sequencer.DotDoubling ? 1 : 0);
+		Height = _array.CRTController.NumScanLines;
+	}
+
+	public int Width, Height;
+
+	public Point LastPoint;
+
+	public abstract void Clear();
+
+	public abstract void PixelSet(int x, int y, int attribute);
+
+	public void Line(Point pt1, Point pt2, int attribute)
+		=> Line(pt1.X, pt1.Y, pt2.X, pt2.Y, attribute);
+
+	public void LineTo(Point pt2, int attribute)
+		=> Line(LastPoint.X, LastPoint.Y, pt2.X, pt2.Y, attribute);
+
+	public void LineTo(int x2, int y2, int attribute)
+		=> Line(LastPoint.X, LastPoint.Y, x2, y2, attribute);
+
+	public void Line(int x1, int y1, int x2, int y2, int attribute)
+	{
+		int dx = Math.Abs(x1 - x2);
+		int dy = Math.Abs(y1 - y2);
+
+		LastPoint = (x2, y2);
+
+		if (dx > dy)
+		{
+			if (x1 > x2)
+				(x1, y1, x2, y2) = (x2, y2, x1, y1);
+
+			int sy = Math.Sign(y2 - y1);
+
+			for (int x = x1, y = y1, yError = 0; x <= x2; x++)
+			{
+				PixelSet(x, y, attribute);
+
+				yError += dy;
+
+				if (yError >= dx)
+				{
+					yError -= dx;
+					y += sy;
+				}
+			}
+		}
+		else
+		{
+			if (y1 > y2)
+				(x1, y1, x2, y2) = (x2, y2, x1, y1);
+
+			int sx = Math.Sign(x2 - x1);
+
+			for (int x = x1, y = y1, xError = 0; y <= y2; y++)
+			{
+				PixelSet(x, y, attribute);
+
+				xError += dx;
+
+				if (xError >= dy)
+				{
+					xError -= dy;
+					x += sx;
+				}
+			}
+		}
+	}
+
+	public void Ellipse(int x, int y, int radiusX, int radiusY, double startAngle, double endAngle, int attribute)
+	{
+		bool drawStartRadius = false;
+		bool drawEndRadius = false;
+
+		if (startAngle < 0)
+		{
+			startAngle = -startAngle;
+			drawStartRadius = true;
+		}
+
+		if (endAngle < 0)
+		{
+			endAngle = -endAngle;
+			drawEndRadius = true;
+		}
+
+		(int X, int Y) PointAtAngle(double angle)
+		{
+			double x = Math.Cos(angle);
+			double y = Math.Sin(angle);
+
+			x *= radiusX;
+			y *= radiusY;
+
+			return ((int)Math.Round(x), (int)Math.Round(y));
+		}
+
+		Point startPoint, endPoint;
+		int startOctant, endOctant;
+		Rect startClip, endClip, startStopExclude;
+
+		startPoint = PointAtAngle(startAngle);
+		endPoint = PointAtAngle(endAngle);
+
+		startStopExclude = Rect.Empty;
+
+		// Unless it's a perfect circle, after deformation, the angles aren't linear.
+		// The provided angles are interpreted as though we will be drawing a perfect
+		// circle, and then the resulting section is deformed to the requested
+		// ellipse. Our quadrant calculations need to work with the *actual* angle,
+		// so convert the ellipse point back.
+		startAngle = Math.Atan2(startPoint.Y, startPoint.X);
+		endAngle = Math.Atan2(endPoint.Y, endPoint.X);
+
+		if (startAngle < 0)
+			startAngle += 2 * Math.PI;
+		if (endAngle < 0)
+			endAngle += 2 * Math.PI;
+
+		startOctant = endOctant = -1;
+		startClip = endClip = Rect.Unrestricted;
+
+		// Octants divide where the tangent is a multiple of 45 degrees
+		//
+		// - Divisions at the axes where the tangent is horizontal/vertical
+		// - Divisions at the angle that produces the points with +/- 45-degree tangents.
+		//
+		// These angles are only even subdivisions when the ellipse is a perfect circle.
+		//
+		// The point of intersection with these tangent lines occurs at
+		//
+		// (rx^2 / sqrt(rx^2 + ry^2), ry^2 / sqrt(rx^2 + ry^2))
+
+		double superRadius = Math.Sqrt(radiusX * radiusX + radiusY * radiusY);
+		double octantChangeX = radiusX * radiusX / superRadius;
+		double octantChangeY = radiusY * radiusY / superRadius;
+
+		double octantChangeAngle = Math.Atan2(octantChangeY, octantChangeX);
+
+		if (startAngle < octantChangeAngle)
+		{
+			startOctant = 0;
+			(startClip.X2, startClip.Y1) = startPoint;
+		}
+		else if (startAngle < Math.PI * 0.5) // top edge
+		{
+			startOctant = 1;
+			(startClip.X2, startClip.Y1) = startPoint;
+		}
+		else if (startAngle < Math.PI - octantChangeAngle)
+		{
+			startOctant = 2;
+			(startClip.X2, startClip.Y2) = startPoint;
+		}
+		else if (startAngle < Math.PI) // left edge
+		{
+			startOctant = 3;
+			(startClip.X2, startClip.Y2) = startPoint;
+		}
+		else if (startAngle < Math.PI + octantChangeAngle)
+		{
+			startOctant = 4;
+			(startClip.X1, startClip.Y2) = startPoint;
+		}
+		else if (startAngle < Math.PI * 1.5) // bottom edge
+		{
+			startOctant = 5;
+			(startClip.X1, startClip.Y2) = startPoint;
+		}
+		else if (startAngle < 2 * Math.PI - octantChangeAngle)
+		{
+			startOctant = 6;
+			(startClip.X1, startClip.Y1) = startPoint;
+		}
+		else if (startAngle < 2 * Math.PI) // right edge
+		{
+			startOctant = 7;
+			(startClip.X1, startClip.Y1) = startPoint;
+		}
+
+		// Obvious difference: draw up to end angle instead of starting at end angle
+		// Subtle difference: end angle of 0 is treated as the end of the circle
+		if (endAngle == 0) // right edge
+		{
+			endOctant = 7;
+			(endClip.X2, endClip.Y2) = endPoint;
+		}
+		else if (endAngle < octantChangeAngle)
+		{
+			endOctant = 0;
+			(endClip.X1, endClip.Y2) = endPoint;
+		}
+		else if (endAngle < Math.PI * 0.5) // top edge
+		{
+			endOctant = 1;
+			(endClip.X1, endClip.Y2) = endPoint;
+		}
+		else if (endAngle < Math.PI - octantChangeAngle)
+		{
+			endOctant = 2;
+			(endClip.X1, endClip.Y1) = endPoint;
+		}
+		else if (endAngle < Math.PI) // left edge
+		{
+			endOctant = 3;
+			(endClip.X1, endClip.Y1) = endPoint;
+		}
+		else if (endAngle < Math.PI + octantChangeAngle)
+		{
+			endOctant = 4;
+			(endClip.X2, endClip.Y1) = endPoint;
+		}
+		else if (endAngle < Math.PI * 1.5) // bottom edge
+		{
+			endOctant = 5;
+			(endClip.X2, endClip.Y1) = endPoint;
+		}
+		else if (endAngle < 2 * Math.PI - octantChangeAngle)
+		{
+			endOctant = 6;
+			(endClip.X2, endClip.Y2) = endPoint;
+		}
+		else if (endAngle < 2 * Math.PI) // right edge
+		{
+			endOctant = 7;
+			(endClip.X2, endClip.Y2) = endPoint;
+		}
+
+		if (startOctant == endOctant)
+		{
+			startStopExclude.X1 = Math.Max(startClip.X1, endClip.X1);
+			startStopExclude.Y1 = Math.Max(startClip.Y1, endClip.Y1);
+			startStopExclude.X2 = Math.Min(startClip.X2, endClip.X2);
+			startStopExclude.Y2 = Math.Min(startClip.Y2, endClip.Y2);
+
+			if (startStopExclude.X1 > startStopExclude.X2)
+				(startStopExclude.X1, startStopExclude.X2) = (startStopExclude.X2, startStopExclude.X1);
+			if (startStopExclude.Y1 > startStopExclude.Y2)
+				(startStopExclude.Y1, startStopExclude.Y2) = (startStopExclude.Y2, startStopExclude.Y1);
+		}
+
+		// Now draw
+		if (drawStartRadius)
+			Line(x, y, x + startPoint.X, y - startPoint.Y, attribute);
+		if (drawEndRadius)
+			Line(x, y, x + endPoint.X, y - endPoint.Y, attribute);
+
+		// Common
+		// - Algorithm based on "A Fast Bresenham Type Algorithm For Drawing Ellipses" by John Kennedy
+		int twoRadiusXSquared = 2 * radiusX * radiusX;
+		int twoRadiusYSquared = 2 * radiusY * radiusY;
+		int xChange, yChange;
+		int ellipseError;
+		int xStop, yStop;
+		int sx, sy;
+		bool wrap = startAngle > endAngle;
+
+		void Plot(int octant, int xSign, int ySign)
+		{
+			int dx = sx * xSign;
+			int dy = sy * ySign;
+
+			if (startOctant <= endOctant)
+			{
+				if (!wrap && ((octant < startOctant) || (octant > endOctant)))
+					return;
+			}
+			else
+			{
+				if ((octant < startOctant) && (octant > endOctant))
+					return;
+			}
+
+			if ((startOctant == endOctant) && wrap)
+			{
+				if ((octant == startOctant) && startStopExclude.Contains(dx, dy))
+					return;
+			}
+			else
+			{
+				if ((octant == startOctant) && !startClip.Contains(dx, dy))
+					return;
+				if ((octant == endOctant) && !endClip.Contains(dx, dy))
+					return;
+			}
+
+			PixelSet(x + dx, y - dy, attribute);
+		}
+
+		// Quadrants 0, 3, 4 and 7
+		sx = radiusX;
+		sy = 0;
+
+		xChange = radiusY * radiusY * (1 - 2 * radiusX);
+		yChange = radiusX * radiusX;
+
+		ellipseError = 0;
+
+		xStop = twoRadiusYSquared * radiusX;
+		yStop = 0;
+
+		while (xStop >= yStop)
+		{
+			Plot(0, +1, +1);
+			Plot(3, -1, +1);
+			Plot(4, -1, -1);
+			Plot(7, +1, -1);
+
+			sy++;
+			yStop += twoRadiusXSquared;
+			ellipseError += yChange;
+			yChange += twoRadiusXSquared;
+
+			if (2 * ellipseError + xChange > 0)
+			{
+				sx--;
+				xStop -= twoRadiusYSquared;
+				ellipseError += xChange;
+				xChange += twoRadiusYSquared;
+			}
+		}
+
+		// Quadrants 1, 2, 5 and 6
+		sx = 0;
+		sy = radiusY;
+
+		xChange = radiusY * radiusY;
+		yChange = radiusX * radiusX * (1 - 2 * radiusY);
+
+		ellipseError = 0;
+
+		xStop = 0;
+		yStop = twoRadiusXSquared * radiusY;
+
+		while (xStop <= yStop)
+		{
+			Plot(1, +1, +1);
+			Plot(2, -1, +1);
+			Plot(5, -1, -1);
+			Plot(6, +1, -1);
+
+			sx++;
+			xStop += twoRadiusYSquared;
+			ellipseError += xChange;
+			xChange += twoRadiusYSquared;
+
+			if (2 * ellipseError + yChange > 0)
+			{
+				sy--;
+				yStop -= twoRadiusXSquared;
+				ellipseError += yChange;
+				yChange += twoRadiusXSquared;
+			}
+		}
+
+		LastPoint = (x, y);
+	}
+}

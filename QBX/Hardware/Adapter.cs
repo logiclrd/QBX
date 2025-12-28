@@ -1,5 +1,7 @@
-﻿using SDL3;
-using System;
+﻿using QBX.Parser;
+
+using SDL3;
+
 using System.Runtime.InteropServices;
 
 namespace QBX.Hardware;
@@ -7,22 +9,31 @@ namespace QBX.Hardware;
 public unsafe class Adapter
 {
 	GraphicsArray _array;
-	int _width, _height, _aspect;
+	int _width, _height;
+	int _widthScale, _heightScale;
+
+	readonly long Epoch = DateTime.UtcNow.Ticks;
+
+	long ElapsedTicks => DateTime.UtcNow.Ticks - Epoch;
+
+	const long TicksPerCursorSwitch = TimeSpan.TicksPerSecond * 16 / 60;
+	const long TicksPerBlinkSwitch = TimeSpan.TicksPerSecond * 32 / 60;
 
 	public Adapter(GraphicsArray array)
 	{
 		_array = array;
 	}
 
-	public bool UpdateResolution(ref int width, ref int height, ref int aspect)
+	public bool UpdateResolution(ref int width, ref int height, ref int widthScale, ref int heightScale)
 	{
 		_width = _array.MiscellaneousOutput.BasePixelWidth >> (_array.Sequencer.DotDoubling ? 1 : 0);
 		_height = _array.CRTController.NumScanLines;
-		_aspect = _array.Sequencer.DotDoubling ? 2 : 1;
+		_widthScale = _array.Sequencer.DotDoubling ? 2 : 1; ;
+		_heightScale = _array.CRTController.ScanDoubling ? 2 : 1;;
 
-		if ((width != _width) || (height != _height) || (aspect != _aspect))
+		if ((width != _width) || (height != _height) || (widthScale != _widthScale) || (heightScale != _heightScale))
 		{
-			(width, height, aspect) = (_width, _height, _aspect);
+			(width, height, widthScale, heightScale) = (_width, _height, _widthScale, _heightScale);
 			return true;
 		}
 
@@ -36,136 +47,242 @@ public unsafe class Adapter
 
 		try
 		{
-			var textureBuffer = new Span<byte>((void *)texture, _height * pitch);
-			int rowWidth = _width * 4;
+			var textureBuffer = new Span<byte>((void *)pixelsPtr, _height * pitch);
+			int rowWidthOut = _width * 4;
+
+			int bitsPerPixelPerPlane =
+				_array.Graphics.Shift256
+				? 8
+				: _array.Graphics.ShiftInterleave
+				? 2
+				: 1; // 16-colour modes are still 1 bpp _per plane_
+
+			bool shiftInterleave = _array.Graphics.ShiftInterleave;
+
+			int pixelBitsReset = unchecked((byte)(0b1111111100000000 >> bitsPerPixelPerPlane));
+			int pixelShiftReset = 8 - bitsPerPixelPerPlane;
 
 			byte[] vram = _array.VRAM;
-			int vramSize = _array.VRAM.Length;
 
-			var palette = _array.DAC.Palette;
-			int fontStartA = _array.Sequencer.CharacterSetAOffset;
-			int fontStartB = _array.Sequencer.CharacterSetBOffset;
+			var plane0 = vram.AsSpan().Slice(0x00000, 0x10000);
+			var plane1 = vram.AsSpan().Slice(0x10000, 0x10000);
+			var plane2 = vram.AsSpan().Slice(0x20000, 0x10000);
+			var plane3 = vram.AsSpan().Slice(0x30000, 0x10000);
 
-			int address = _array.CRTController.StartAddress;
-			int stride = _array.CRTController.Stride;
+			bool promoteBit0ToBit13 = _array.CRTController.InterleaveOnBit0;
+			bool promoteBit1ToBit14 = _array.CRTController.InterleaveOnBit1;
+
+			bool enableText = !_array.Graphics.DisableText;
+			bool oddEvenMode = _array.Sequencer.OddEvenAddressingMode;
+
+			var palette = MemoryMarshal.Cast<byte, int>(_array.DAC.PaletteBGRA);
+			int fontStartA = 0x20000 + _array.Sequencer.CharacterSetAOffset;
+			int fontStartB = 0x20000 + _array.Sequencer.CharacterSetBOffset;
+
+			int baseAddress = _array.CRTController.StartAddress;
+
+			// In theory this value is derived from the CRT Controller's Offset register.
+			int stride = _width /
+				(_array.Graphics.Shift256 ? 1
+				: _array.Graphics.ShiftInterleave ? 4
+				: 8);
 
 			bool graphicsMode = _array.Graphics.DisableText;
 			bool lineGraphics = _array.AttributeController.LineGraphics;
 			bool use256Colours = _array.AttributeController.Use256Colours;
 
-			int characterWidth = graphicsMode ? 1 : _array.Sequencer.CharacterWidth;
-			int characterHeight = _array.CRTController.ScanRepeatCount;
+			int advance = graphicsMode ? 1 : 2;
 
-			bool dotDoubling = _array.Sequencer.DotDoubling;
-			bool scanDoubling = _array.CRTController.ScanDoubling;
+			long tick = ElapsedTicks;
+
+			bool enableCursor = _array.CRTController.CursorVisible;
+			bool cursorState = false;
+			int cursorOffset = _array.CRTController.CursorAddress;
+
+			if (enableCursor)
+				cursorState = ((tick / TicksPerCursorSwitch) & 1) != 0;
+
+			bool enableBlink = _array.AttributeController.EnableBlinking;
+			bool blinkState = false;
+
+			if (enableBlink)
+				blinkState = ((tick / TicksPerBlinkSwitch) & 1) != 0;
+
+			int characterWidth = graphicsMode ? 1 : _array.Sequencer.CharacterWidth;
+			int characterHeight = _array.CRTController.ScanRepeatCount + 1;
+
+			int attributeBits76 = _array.AttributeController.AttributeBits76;
+			int attributeBits54 = _array.AttributeController.AttributeBits54;
+			bool overrideAttributeBits54 = _array.AttributeController.OverrideAttributeBits54;
+
+			int cursorScanStart = _array.CRTController.CursorScanStart;
+			int cursorScanEnd = _array.CRTController.CursorScanEnd;
 
 			int characterY = 0;
+			bool inCursorScan = (cursorScanStart == 0);
 
-			const byte Zero = (byte)0;
+			int pixelBits = pixelBitsReset;
+			int pixelShift = pixelShiftReset;
 
-			for (int y = 0; y < _width; y++)
+			int overscanColour = _array.AttributeController.Registers.OverscanPaletteIndex;
+
+			for (int y = 0; y < _height; y++)
 			{
-				var scan = textureBuffer.Slice(y * pitch, rowWidth);
+				var scanIn0 = plane0.Slice(y * stride, stride);
+				var scanIn1 = plane1.Slice(y * stride, stride);
+				var scanIn2 = plane2.Slice(y * stride, stride);
+				var scanIn3 = plane3.Slice(y * stride, stride);
+				var scanOut = MemoryMarshal.Cast<byte, int>(textureBuffer.Slice(y * pitch, rowWidthOut));
 
+				int offset = 0;
 				int characterX = 0;
-				int characterBit = 128;
+				int columnBit = 128;
 
 				for (int x = 0; x < _width; x++)
 				{
-					bool inRange = (address >= 0) && (address + 1 < vramSize);
+					int effectiveOffset = offset;
 
-					byte ch = inRange ? vram[address] : Zero;
-
-					if ((ch >= 0xC0) && (ch <= 0xDF) && (characterBit == 0))
-						characterBit = 1;
-
-					int colourIndex;
-
-					if (graphicsMode)
+					if (promoteBit0ToBit13)
 					{
-						if (use256Colours)
-							colourIndex = ch;
+						effectiveOffset = (effectiveOffset >> 1) + ((effectiveOffset & 1) << 13);
+
+						if (promoteBit1ToBit14)
+							effectiveOffset = (effectiveOffset >> 1) + ((effectiveOffset & 1) << 13);
+					}
+					else if (promoteBit1ToBit14)
+					{
+						// ?
+					}
+
+					int address = baseAddress + effectiveOffset;
+
+					bool inRange = (effectiveOffset >= 0) && (effectiveOffset + 1 < vram.Length);
+
+					int attribute;
+
+					if (!inRange)
+						attribute = overscanColour;
+					else if (graphicsMode)
+					{
+						if (shiftInterleave)
+						{
+							byte packedPixels;
+
+							switch (y & 1)
+							{
+								case 0:
+									switch (x & 1)
+									{
+										case 0: packedPixels = scanIn0[effectiveOffset]; break;
+										case 1: packedPixels = scanIn2[effectiveOffset]; break;
+										default: throw new Exception("Sanity failure");
+									}
+
+									break;
+								case 1:
+									switch (x & 1)
+									{
+										case 0: packedPixels = scanIn1[effectiveOffset]; break;
+										case 1: packedPixels = scanIn3[effectiveOffset]; break;
+										default: throw new Exception("Sanity failure");
+									}
+
+									break;
+								default: throw new Exception("Sanity failure");
+							}
+
+							attribute = (packedPixels & pixelBits) >> pixelShift;
+						}
+						else if (use256Colours)
+							attribute = scanIn0[address];
 						else
 						{
-							// TODO: reconstruct thePixelValue from planes
+							attribute =
+								(((scanIn0[effectiveOffset] & columnBit) != 0) ? 8 : 0) |
+								(((scanIn1[effectiveOffset] & columnBit) != 0) ? 4 : 0) |
+								(((scanIn2[effectiveOffset] & columnBit) != 0) ? 2 : 0) |
+								(((scanIn3[effectiveOffset] & columnBit) != 0) ? 1 : 0);
+						}
 
-							byte attr = thePixelValue;
+						if (shiftInterleave && ((x & 1) == 0))
+						{
+							pixelBits >>= bitsPerPixelPerPlane;
+							pixelShift -= bitsPerPixelPerPlane;
 
-							colourIndex = _array.AttributeController.Registers.Attribute[attr]
-								| (_array.AttributeController.Registers.ColourSelect << 4); // TODO: when do these apply
+							if (pixelBits == 0)
+							{
+								pixelBits = pixelBitsReset;
+								pixelShift = pixelShiftReset;
+							}
 						}
 					}
 					else
 					{
-						byte attrByte = inRange ? _array.VRAM[address + 1] : Zero;
+						byte ch = vram[address];
+						byte attr = vram[address + 1];
 
-						int fontOffset = (attrByte & 4) == 0
+						int fontStart = ((attr & 8) == 1)
 							? fontStartA
 							: fontStartB;
 
-						byte fontByte = vram[2 * 65536 + fontOffset + ch * 32 + characterY];
+						byte fontByte = (enableCursor && cursorState && (offset == cursorOffset) && inCursorScan)
+							? unchecked((byte)0b11111111)
+							: vram[fontStart + 32 * ch + characterY];
 
-						bool fontPixelIsSet = (fontByte & characterBit) != 0;
+						if (lineGraphics && (ch >= 0xC0) && (ch <= 0xDF) && (columnBit == 0))
+							columnBit = 1;
 
-						byte attr = fontPixelIsSet
-							? unchecked((byte)(attrByte & 15)) // foreground
-							: unchecked((byte)(attrByte >> 4)); // background
+						int effectiveForegroundColour = attr & 15;
+						int backgroundColour = attr >> 4;
 
-						colourIndex = _array.AttributeController.Registers.Attribute[attr]
-							| (_array.AttributeController.Registers.ColourSelect << 4); // TODO: when do these apply
+						if (enableBlink & ((attr & 8) != 0))
+						{
+							effectiveForegroundColour = backgroundColour;
+							attr = unchecked((byte)(attr & ~8));
+						}
+
+						attribute = ((fontByte & columnBit) != 0)
+							? effectiveForegroundColour
+							: backgroundColour;
 					}
 
-					int colour = palette[colourIndex];
+					int paletteIndex;
 
-					if (dotDoubling)
-						characterX += (x & 1);
+					if (use256Colours)
+						paletteIndex = attribute;
 					else
-						characterX++;
+					{
+						attribute |= attributeBits76;
 
-					characterBit >>= 1;
+						if (overrideAttributeBits54)
+							attribute = unchecked((byte)((attribute & ~48) | attributeBits54));
+
+						paletteIndex = _array.AttributeController.Registers.Attribute[attribute];
+					}
+
+					scanOut[x] = palette[paletteIndex];
+
+					characterX++;
+
+					columnBit >>= 1;
 
 					if (characterX >= characterWidth)
 					{
 						characterX = 0;
-						characterBit = 128;
-						address += readSize;
+						columnBit = 128;
+						offset += advance;
 					}
 				}
 
-				if (scanDoubling)
-					characterY += (y & 1);
-				else
-					characterY++;
+				characterY++;
+
+				inCursorScan = ((characterY >= cursorScanStart) && (characterY <= cursorScanEnd));
 
 				if (characterY >= characterHeight)
 				{
 					characterY = 0;
-					address += stride;
+					offset += stride;
 				}
-			}
-
-			switch (_array.VideoMode)
-			{
-				case VideoMode.TextMode:
-					//RenderTextMode();
-					break;
-				case VideoMode.CGA_320x200_2bpp:
-					RenderCGA2bpp(pixelsPtr, pitch);
-					break;
-				case VideoMode.CGA_640x200_1bpp:
-					RenderCGA1bpp(pixelsPtr, pitch);
-					break;
-				case VideoMode.VGA_640x480_1bpp:
-				case VideoMode.EGA_640x350_2bpp_Monochrome:
-				case VideoMode.EGA_320x200_4bpp:
-				case VideoMode.EGA_640x200_4bpp:
-				case VideoMode.EGA_640x350_4bpp:
-				case VideoMode.VGA_640x480_4bpp:
-					//RenderPlanarGraphics4bpp();
-					break;
-				case VideoMode.VGA_320x200_8bpp:
-					//RenderContiguousGraphics8bpp();
-					break;
 			}
 		}
 		catch { }
