@@ -198,12 +198,11 @@ public abstract class GraphicsLibrary
 
 		// Obvious difference: draw up to end angle instead of starting at end angle
 		// Subtle difference: end angle of 0 is treated as the end of the circle
-		if (endAngle == 0) // right edge
-		{
-			endOctant = 7;
-			(endClip.X2, endClip.Y2) = endPoint;
-		}
-		else if (endAngle < octantChangeAngle)
+
+		if (endAngle == 0)
+			endAngle = 2 * Math.PI;
+
+		if (endAngle < octantChangeAngle)
 		{
 			endOctant = 0;
 			(endClip.X1, endClip.Y2) = endPoint;
