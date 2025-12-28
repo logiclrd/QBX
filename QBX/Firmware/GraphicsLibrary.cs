@@ -85,23 +85,8 @@ public abstract class GraphicsLibrary
 		}
 	}
 
-	public void Ellipse(int x, int y, int radiusX, int radiusY, double startAngle, double endAngle, int attribute)
+	public void Ellipse(int x, int y, int radiusX, int radiusY, double startAngle, double endAngle, int attribute, bool drawStartRadius, bool drawEndRadius)
 	{
-		bool drawStartRadius = false;
-		bool drawEndRadius = false;
-
-		if (startAngle < 0)
-		{
-			startAngle = -startAngle;
-			drawStartRadius = true;
-		}
-
-		if (endAngle < 0)
-		{
-			endAngle = -endAngle;
-			drawEndRadius = true;
-		}
-
 		(int X, int Y) PointAtAngle(double angle)
 		{
 			double x = Math.Cos(angle);
