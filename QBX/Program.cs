@@ -41,7 +41,7 @@ class Program
 
 		bool suppressDeadCodeWarning = !success;
 
-		const int TestSCREEN = 1;
+		const int TestSCREEN = 12;
 
 		const int CGAPalette = 1;
 		const bool CGAPaletteHighIntensity = false;
@@ -61,6 +61,7 @@ class Program
 			TestSCREEN switch
 			{
 				1 => new GraphicsLibrary_2bppInterleaved(machine.GraphicsArray),
+				12 => new GraphicsLibrary_4bppPlanar(machine.GraphicsArray),
 				13 => new GraphicsLibrary_8bppFlat(machine.GraphicsArray),
 
 				_ => default(GraphicsLibrary) ?? throw new NotImplementedException()
@@ -88,8 +89,8 @@ class Program
 
 					for (int i = 0; i < Math.Max(1, 15 / MaxC); i++)
 					{
-						int x = rnd.Next(-100, 420);
-						int y = rnd.Next(-100, 300);
+						int x = rnd.Next(-100, library.Width + 100);
+						int y = rnd.Next(-100, library.Height + 100);
 
 						int rx = rnd.Next(50, 150);
 						int ry = rnd.Next(50, 150);
