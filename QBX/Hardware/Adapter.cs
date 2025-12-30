@@ -14,8 +14,8 @@ public class Adapter
 
 	long ElapsedTicks => DateTime.UtcNow.Ticks - Epoch;
 
-	const long TicksPerCursorSwitch = TimeSpan.TicksPerSecond * 16 / 60;
-	const long TicksPerBlinkSwitch = TimeSpan.TicksPerSecond * 32 / 60;
+	const long TicksPerCursorSwitch = TimeSpan.TicksPerSecond * 16 / 70;
+	const long TicksPerBlinkSwitch = TimeSpan.TicksPerSecond * 32 / 70;
 
 	public Adapter(GraphicsArray array)
 	{
