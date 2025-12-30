@@ -12,15 +12,18 @@ public abstract class GraphicsLibrary
 	{
 		_array = array;
 
-		Width = _array.MiscellaneousOutput.BasePixelWidth >> (_array.Sequencer.DotDoubling ? 1 : 0);
-		Height = _array.CRTController.NumScanLines;
+		RefreshParameters();
 	}
 
 	public int Width, Height;
 
 	public Point LastPoint;
 
-	public virtual void RefreshParameters() { }
+	public virtual void RefreshParameters()
+	{
+		Width = _array.MiscellaneousOutput.BasePixelWidth >> (_array.Sequencer.DotDoubling ? 1 : 0);
+		Height = _array.CRTController.NumScanLines;
+	}
 
 	public abstract void Clear();
 

@@ -57,7 +57,7 @@ public class Video(Machine machine)
 			CharacterWidth = CharacterWidth._9,
 			CharacterHeight = 16,
 			MemoryAddressSize = 1,
-			ScanDoubling = true,
+			ScanDoubling = false,
 			OddEvenAddressing = false,
 			ShiftRegisterInterleave = false,
 			Use256Colours = false,
@@ -564,7 +564,12 @@ public class Video(Machine machine)
 				attributeMode);
 
 			if (!mode.IsGraphicsMode)
+			{
+				for (int i = 0, o = mode.Characters.Width * mode.Characters.Height; i < o; i++)
+					array.VRAM[0x10000 + i] = 7;
+
 				array.ResetFont();
+			}
 
 			switch (mode.PaletteType)
 			{
@@ -585,25 +590,87 @@ public class Video(Machine machine)
 	{
 		var array = machine.GraphicsArray;
 
-		array.OutPort(CRTControllerRegisters.IndexPort, CRTControllerRegisters.MaximumScanLine);
+		if (array.Graphics.DisableText)
+			return;
 
-		byte maximumScanLine = array.InPort(CRTControllerRegisters.DataPort);
-
-		maximumScanLine = unchecked((byte)(maximumScanLine & ~CRTControllerRegisters.MaximumScanLine_ScanMask));
+		byte maximumScanLineValue;
+		int forceNumScanLines = 0;
 
 		switch (rows)
 		{
-			case 25: maximumScanLine |= 16; /* TODO: check if presently 350 or 400 scan lines */ break;
-			case 43: maximumScanLine |= 8; /* TODO: force 350 scan lines */ break;
-			case 50: maximumScanLine |= 8; break;
+			case 25:
+				if ((array.CRTController.NumScanLines >= 344)
+				 && (array.CRTController.NumScanLines <= 350))
+				{
+					forceNumScanLines = 350;
+					maximumScanLineValue = 13; // 8x14 font
+				}
+				else
+					maximumScanLineValue = 15; // 8x16 font
+				break;
+			case 43:
+				maximumScanLineValue = 7;
+				forceNumScanLines = 344;
+				break;
+			case 50:
+				maximumScanLineValue = 7;
+				forceNumScanLines = 400;
+				break;
+
+			default:
+				throw new Exception("Invalid row count " + rows);
 		}
 
 		// TODO: should instead offer direct set of visible scan lines and character maximum scan line here,
 		// let the caller figure out the combos and remember state that is meta to the video hardware
 
+		if (forceNumScanLines != 0)
+		{
+			array.OutPort(CRTControllerRegisters.IndexPort, CRTControllerRegisters.Overflow);
+
+			byte overflow = array.InPort(CRTControllerRegisters.DataPort);
+
+			overflow = unchecked((byte)(
+				(overflow
+					& ~CRTControllerRegisters.Overflow_VerticalDisplayEnd8
+					& ~CRTControllerRegisters.Overflow_VerticalDisplayEnd9) |
+				((forceNumScanLines >> 8) & 1) * CRTControllerRegisters.Overflow_VerticalDisplayEnd8 |
+				((forceNumScanLines >> 9) & 1) * CRTControllerRegisters.Overflow_VerticalDisplayEnd9));
+
+			array.OutPort2(
+				CRTControllerRegisters.IndexPort,
+				CRTControllerRegisters.VerticalDisplayEnd,
+				unchecked((byte)forceNumScanLines));
+
+			array.OutPort2(
+				CRTControllerRegisters.IndexPort,
+				CRTControllerRegisters.Overflow,
+				overflow);
+		}
+
+		array.OutPort(CRTControllerRegisters.IndexPort, CRTControllerRegisters.MaximumScanLine);
+
+		byte maximumScanLine = array.InPort(CRTControllerRegisters.DataPort);
+
+		maximumScanLine = unchecked((byte)(
+			(maximumScanLine & ~CRTControllerRegisters.MaximumScanLine_ScanMask) |
+			maximumScanLineValue));
+
 		array.OutPort2(
 			CRTControllerRegisters.IndexPort,
 			CRTControllerRegisters.MaximumScanLine,
 			maximumScanLine);
+
+		array.OutPort2(
+			CRTControllerRegisters.IndexPort,
+			CRTControllerRegisters.CursorStart,
+			(byte)(maximumScanLine - 1));
+
+		array.OutPort2(
+			CRTControllerRegisters.IndexPort,
+			CRTControllerRegisters.CursorEnd,
+			maximumScanLine);
+
+		array.ResetFont();
 	}
 }

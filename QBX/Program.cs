@@ -41,66 +41,115 @@ class Program
 
 		bool suppressDeadCodeWarning = !success;
 
-		const int TestSCREEN = 12;
+		int TestSCREEN = 0;
+
+		int TextColumns = 80;
+		int TextRows = 25;
+		bool Use8x14Font = true;
 
 		const int CGAPalette = 1;
 		const bool CGAPaletteHighIntensity = false;
 
-		const int ModeNumber =
-			(TestSCREEN == 1) ? 5 :
-			(TestSCREEN == 2) ? 6 :
-			(TestSCREEN == 12) ? 0x12 :
-			(TestSCREEN == 13) ? 0x13 : -1;
-
-		video.SetMode(ModeNumber);
-
-		if ((TestSCREEN == 1) || suppressDeadCodeWarning)
-			machine.GraphicsArray.LoadCGAPalette(CGAPalette, CGAPaletteHighIntensity);
-
-		var library =
-			TestSCREEN switch
-			{
-				1 => new GraphicsLibrary_2bppInterleaved(machine.GraphicsArray),
-				12 => new GraphicsLibrary_4bppPlanar(machine.GraphicsArray),
-				13 => new GraphicsLibrary_8bppFlat(machine.GraphicsArray),
-
-				_ => default(GraphicsLibrary) ?? throw new NotImplementedException()
-			};
-
 		Task.Run(
 			async () =>
 			{
-				const int MaxC =
-					(TestSCREEN == 1) ? 3 :
-					(TestSCREEN == 2) ? 1 :
-					(TestSCREEN == 13) ? 255 : 15;
-
-				int c = MaxC;
-
-				var rnd = new Random(1234);
-
-				while (true)
+				if (TestSCREEN == 0)
 				{
-					if (c == 1)
+					int ModeNumber = (TextColumns == 40) ? 1 : 3;
+
+					video.SetMode(ModeNumber);
+
+					if (Use8x14Font)
 					{
-						await Task.Delay(350);
-						library.Clear();
+						video.SetCharacterRows(43);
+						video.SetCharacterRows(25);
 					}
+					else if (TextRows != 25)
+						video.SetCharacterRows(TextRows);
 
-					for (int i = 0; i < Math.Max(1, 15 / MaxC); i++)
+					var library = new TextLibrary(machine.GraphicsArray);
+
+					library.WriteAt(0, 0, "This is a ");
+
+					int xx = library.CursorX;
+
+					int bg = 0;
+
+					while (true)
 					{
-						int x = rnd.Next(-100, library.Width + 100);
-						int y = rnd.Next(-100, library.Height + 100);
+						if (bg == 0)
+						{
+							machine.GraphicsArray.AttributeController.Registers[GraphicsArray.AttributeControllerRegisters.ModeControl]
+								^= GraphicsArray.AttributeControllerRegisters.ModeControl_BlinkEnable;
+						}
 
-						int rx = rnd.Next(50, 150);
-						int ry = rnd.Next(50, 150);
+						for (int y = 0; y < 4; y++)
+							for (int x = 0; x < 4; x++)
+							{
+								library.SetAttributes(15 - (y * 4 + x), bg);
+								library.WriteAt(xx + x * 5, y, "test");
+							}
 
-						double start = rnd.NextDouble() * (2 * Math.PI);
-						double end = rnd.NextDouble() * (2 * Math.PI);
+						await Task.Delay(350);
 
-						library.Ellipse(x, y, rx, ry, start, end, c, true, true);
+						bg = (bg + 1) & 15;
+					}
+				}
+				else
+				{
+					int ModeNumber =
+						(TestSCREEN == 1) ? 5 :
+						(TestSCREEN == 2) ? 6 :
+						(TestSCREEN == 12) ? 0x12 :
+						(TestSCREEN == 13) ? 0x13 : -1;
 
-						c = (c % MaxC) + 1;
+					video.SetMode(ModeNumber);
+
+					if ((TestSCREEN == 1) || suppressDeadCodeWarning)
+						machine.GraphicsArray.LoadCGAPalette(CGAPalette, CGAPaletteHighIntensity);
+
+					var library =
+						TestSCREEN switch
+						{
+							1 => new GraphicsLibrary_2bppInterleaved(machine.GraphicsArray),
+							12 => new GraphicsLibrary_4bppPlanar(machine.GraphicsArray),
+							13 => new GraphicsLibrary_8bppFlat(machine.GraphicsArray),
+
+							_ => default(GraphicsLibrary) ?? throw new NotImplementedException()
+						};
+
+					int MaxC =
+						(TestSCREEN == 1) ? 3 :
+						(TestSCREEN == 2) ? 1 :
+						(TestSCREEN == 13) ? 255 : 15;
+
+					int c = MaxC;
+
+					var rnd = new Random(1234);
+
+					while (true)
+					{
+						if (c == 1)
+						{
+							await Task.Delay(350);
+							library.Clear();
+						}
+
+						for (int i = 0; i < Math.Max(1, 15 / MaxC); i++)
+						{
+							int x = rnd.Next(-100, library.Width + 100);
+							int y = rnd.Next(-100, library.Height + 100);
+
+							int rx = rnd.Next(50, 150);
+							int ry = rnd.Next(50, 150);
+
+							double start = rnd.NextDouble() * (2 * Math.PI);
+							double end = rnd.NextDouble() * (2 * Math.PI);
+
+							library.Ellipse(x, y, rx, ry, start, end, c, true, true);
+
+							c = (c % MaxC) + 1;
+						}
 					}
 				}
 			});

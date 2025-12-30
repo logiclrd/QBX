@@ -59,6 +59,7 @@ public class GraphicsArray
 		public bool DisableText;
 		public bool Shift256;
 		public bool ShiftInterleave;
+		public bool HostOddEvenRead;
 
 		public readonly RegisterSet Registers;
 
@@ -138,6 +139,7 @@ public class GraphicsArray
 
 					owner.Shift256 = ((GraphicsMode & GraphicsMode_Shift256) != 0);
 					owner.ShiftInterleave = ((GraphicsMode & GraphicsMode_ShiftInterleave) != 0);
+					owner.HostOddEvenRead = ((GraphicsMode & GraphicsMode_HostOddEvenRead) != 0);
 				}
 			}
 		}
@@ -189,7 +191,7 @@ public class GraphicsArray
 		public bool DotDoubling;
 		public int CharacterSetAOffset;
 		public int CharacterSetBOffset;
-		public bool OddEvenAddressingMode;
+		public bool HostOddEvenWrite;
 
 		public readonly RegisterSet Registers;
 
@@ -250,7 +252,7 @@ public class GraphicsArray
 					owner.CharacterSetAOffset = characterSetA * 0x2000;
 					owner.CharacterSetBOffset = characterSetB * 0x2000;
 
-					owner.OddEvenAddressingMode = ((SequencerMemoryMode & SequencerMemoryMode_OddEvenDisable) == 0);
+					owner.HostOddEvenWrite = ((SequencerMemoryMode & SequencerMemoryMode_OddEvenDisable) == 0);
 				}
 			}
 		}
@@ -376,6 +378,15 @@ public class GraphicsArray
 
 		public const byte EndHorizontalRetrace_Blanking = 128;
 		public const byte EndHorizontalRetrace_EndMask = 31;
+
+		public const byte Overflow_VerticalRetraceStart9 = 128;
+		public const byte Overflow_VerticalDisplayEnd9 = 64;
+		public const byte Overflow_VerticalTotal9 = 32;
+		public const byte Overflow_LineCompare8 = 16;
+		public const byte Overflow_StartVerticalBlanking8 = 8;
+		public const byte Overflow_VerticalRetraceStart8 = 4;
+		public const byte Overflow_VerticalDisplayEnd8 = 2;
+		public const byte Overflow_VerticalTotal8 = 1;
 
 		public const byte PresetRowScan_BytePanningMask = 96;
 		public const byte PresetRowScan_BytePanningShift = 5;
@@ -970,6 +981,9 @@ public class GraphicsArray
 		{
 			int offset = address - Graphics.MemoryMapBaseAddress;
 
+			if (Graphics.HostOddEvenRead)
+				offset = (offset >> 1) | ((offset & 1) << 16);
+
 			int linearOffset = offset + Graphics.MemoryMapReadOffset;
 
 			if ((offset < Graphics.MemoryMapSize)
@@ -982,16 +996,26 @@ public class GraphicsArray
 		{
 			int offset = address - Graphics.MemoryMapBaseAddress;
 
-			if (offset < Graphics.MemoryMapSize)
+			if (Sequencer.HostOddEvenWrite)
 			{
-				if (Sequencer.Plane0WriteEnable)
+				offset = (offset >> 1) | ((offset & 1) << 16);
+
+				if (offset < Graphics.MemoryMapSize)
 					VRAM[offset] = value;
-				if (Sequencer.Plane1WriteEnable)
-					VRAM[offset + 0x10000] = value;
-				if (Sequencer.Plane2WriteEnable)
-					VRAM[offset + 0x20000] = value;
-				if (Sequencer.Plane3WriteEnable)
-					VRAM[offset + 0x30000] = value;
+			}
+			else
+			{
+				if (offset < Graphics.MemoryMapSize)
+				{
+					if (Sequencer.Plane0WriteEnable)
+						VRAM[offset] = value;
+					if (Sequencer.Plane1WriteEnable)
+						VRAM[offset + 0x10000] = value;
+					if (Sequencer.Plane2WriteEnable)
+						VRAM[offset + 0x20000] = value;
+					if (Sequencer.Plane3WriteEnable)
+						VRAM[offset + 0x30000] = value;
+				}
 			}
 		}
 	}

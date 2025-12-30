@@ -1,10 +1,10 @@
 ﻿using SDL3;
-
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace QBX.Hardware;
 
-public unsafe class Adapter
+public class Adapter
 {
 	GraphicsArray _array;
 	int _width, _height;
@@ -78,20 +78,15 @@ public unsafe class Adapter
 			bool promoteBit1ToBit14 = _array.CRTController.InterleaveOnBit1;
 
 			bool enableText = !_array.Graphics.DisableText;
-			bool oddEvenMode = _array.Sequencer.OddEvenAddressingMode;
+			bool oddEvenMode = _array.Sequencer.HostOddEvenWrite;
 
 			var palette = MemoryMarshal.Cast<byte, int>(_array.DAC.PaletteBGRA);
 			int fontStartA = 0x20000 + _array.Sequencer.CharacterSetAOffset;
 			int fontStartB = 0x20000 + _array.Sequencer.CharacterSetBOffset;
 
-			// In theory this value is derived from the CRT Controller's Offset register.
-			int stride = _width / (_array.Graphics.Shift256 ? 1 : 8);
-
 			bool graphicsMode = _array.Graphics.DisableText;
 			bool lineGraphics = _array.AttributeController.LineGraphics;
 			bool use256Colours = _array.AttributeController.Use256Colours;
-
-			int advance = graphicsMode ? 1 : 2;
 
 			long tick = ElapsedTicks;
 
@@ -117,6 +112,9 @@ public unsafe class Adapter
 			if (shiftInterleave)
 				characterHeight *= 2;
 
+			// In theory this value is derived from the CRT Controller's Offset register.
+			int stride = _width / (_array.Graphics.Shift256 ? 1 : characterWidth);
+
 			int attributeBits76 = _array.AttributeController.AttributeBits76;
 			int attributeBits54 = _array.AttributeController.AttributeBits54;
 			bool overrideAttributeBits54 = _array.AttributeController.OverrideAttributeBits54;
@@ -125,7 +123,7 @@ public unsafe class Adapter
 			int cursorScanEnd = _array.CRTController.CursorScanEnd;
 
 			int characterY = 0;
-			bool inCursorScan = (cursorScanStart == 0);
+			bool inCursorScan;
 
 			int pixelBits = pixelBitsReset;
 			int pixelShift = pixelShiftReset;
@@ -145,6 +143,8 @@ public unsafe class Adapter
 				int offset = 0;
 				int characterX = 0;
 				int columnBit = 128;
+
+				inCursorScan = (characterY >= cursorScanStart) && (characterY <= cursorScanEnd);
 
 				for (int x = 0; x < _width; x++)
 				{
@@ -211,31 +211,33 @@ public unsafe class Adapter
 					else
 					{
 						byte ch = scanIn0[offset];
-						byte attr = scanIn0[offset + 1];
+						byte attr = scanIn1[offset];
 
 						int fontStart = ((attr & 8) == 1)
 							? fontStartA
 							: fontStartB;
 
+						bool blink = false;
+
+						if (enableBlink)
+						{
+							blink = ((attr & 0b1000_0000) != 0);
+							attr &= 0b0111_1111;
+						}
+
 						byte fontByte = (enableCursor && cursorState && (offset == cursorOffset) && inCursorScan)
 							? unchecked((byte)0b11111111)
+							: (enableBlink && blink && blinkState)
+							? unchecked((byte)0b00000000)
 							: vram[fontStart + 32 * ch + characterY];
 
 						if (lineGraphics && (ch >= 0xC0) && (ch <= 0xDF) && (columnBit == 0))
 							columnBit = 1;
 
-						int effectiveForegroundColour = attr & 15;
-						int backgroundColour = attr >> 4;
-
-						if (enableBlink & ((attr & 8) != 0))
-						{
-							effectiveForegroundColour = backgroundColour;
-							attr = unchecked((byte)(attr & ~8));
-						}
-
-						attribute = ((fontByte & columnBit) != 0)
-							? effectiveForegroundColour
-							: backgroundColour;
+						if ((fontByte & columnBit) != 0)
+							attribute = attr & 15;
+						else
+							attribute = attr >> 4;
 					}
 
 					int paletteIndex;
@@ -262,7 +264,7 @@ public unsafe class Adapter
 					{
 						characterX = 0;
 						columnBit = 128;
-						offset += advance;
+						offset++;
 					}
 				}
 
@@ -274,6 +276,7 @@ public unsafe class Adapter
 				{
 					characterY = 0;
 					planeOffset += stride;
+					cursorOffset -= stride;
 				}
 			}
 		}
