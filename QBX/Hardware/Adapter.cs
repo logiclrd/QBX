@@ -132,6 +132,11 @@ public class Adapter
 
 			int planeOffset = 0;
 
+			int endHorizontalDisplay = _array.CRTController.Registers.EndHorizontalDisplay;
+
+			int overscanBGRA = palette[
+				_array.AttributeController.Registers.OverscanPaletteIndex];
+
 			for (int y = 0; y < _height; y++)
 			{
 				var scanIn0 = plane0.Slice(planeOffset, stride);
@@ -265,6 +270,16 @@ public class Adapter
 						characterX = 0;
 						columnBit = 128;
 						offset++;
+
+						if (offset == endHorizontalDisplay)
+						{
+							int remainingPixels = rowWidthOut - x;
+
+							if (remainingPixels > 0)
+								scanOut.Slice(x).Fill(overscanBGRA);
+
+							break;
+						}
 					}
 				}
 

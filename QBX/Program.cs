@@ -43,9 +43,11 @@ class Program
 
 		int TestSCREEN = 0;
 
-		int TextColumns = 80;
+		int TextColumns = 40;
 		int TextRows = 25;
-		bool Use8x14Font = true;
+		bool Use8x14Font = false;
+
+		bool Test40ColumnsWithoutHalfDotClock = false;
 
 		const int CGAPalette = 1;
 		const bool CGAPaletteHighIntensity = false;
@@ -66,6 +68,16 @@ class Program
 					}
 					else if (TextRows != 25)
 						video.SetCharacterRows(TextRows);
+
+					if (Test40ColumnsWithoutHalfDotClock)
+					{
+						machine.GraphicsArray.Sequencer.Registers[GraphicsArray.SequencerRegisters.ClockingMode] =
+							unchecked((byte)(
+								machine.GraphicsArray.Sequencer.Registers[GraphicsArray.SequencerRegisters.ClockingMode] &
+								~GraphicsArray.SequencerRegisters.ClockingMode_DotClockHalfRate));
+
+						machine.GraphicsArray.AttributeController.Registers.OverscanPaletteIndex = 13;
+					}
 
 					var library = new TextLibrary(machine.GraphicsArray);
 

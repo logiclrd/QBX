@@ -26,8 +26,8 @@ public class Video(Machine machine)
 	class ModeParameters
 	{
 		public int? ScreenNumber; // QB
-		public (int Width, int Height) Characters;
 		public (int Width, int Height) Pixels;
+		public (int Width, int Height) Characters;
 		public bool IsGraphicsMode;
 		public bool IsMonochrome;
 		public PaletteType PaletteType;
@@ -93,6 +93,7 @@ public class Video(Machine machine)
 		{
 			ScreenNumber = 1,
 			Pixels = (320, 200),
+			Characters = (40, 25),
 			IsGraphicsMode = true,
 			PaletteType = PaletteType.CGA,
 			BaseAddress = BaseAddress.B800,
@@ -115,6 +116,7 @@ public class Video(Machine machine)
 		{
 			ScreenNumber = 2,
 			Pixels = (640, 200),
+			Characters = (80, 25),
 			IsGraphicsMode = true,
 			IsMonochrome = true,
 			PaletteType = PaletteType.VGA,
@@ -158,6 +160,7 @@ public class Video(Machine machine)
 		{
 			ScreenNumber = 7,
 			Pixels = (320, 200),
+			Characters = (40, 25),
 			IsGraphicsMode = true,
 			PaletteType = PaletteType.VGA,
 			BaseAddress = BaseAddress.B800,
@@ -180,6 +183,7 @@ public class Video(Machine machine)
 		{
 			ScreenNumber = 8,
 			Pixels = (640, 200),
+			Characters = (80, 25),
 			IsGraphicsMode = true,
 			PaletteType = PaletteType.VGA,
 			BaseAddress = BaseAddress.B800,
@@ -202,6 +206,7 @@ public class Video(Machine machine)
 		{
 			ScreenNumber = 10,
 			Pixels = (640, 350),
+			Characters = (80, 25),
 			IsGraphicsMode = true,
 			IsMonochrome = true,
 			PaletteType = PaletteType.VGA,
@@ -225,6 +230,7 @@ public class Video(Machine machine)
 		{
 			ScreenNumber = 9,
 			Pixels = (640, 350),
+			Characters = (80, 25),
 			IsGraphicsMode = true,
 			PaletteType = PaletteType.VGA,
 			BaseAddress = BaseAddress.B800,
@@ -247,6 +253,7 @@ public class Video(Machine machine)
 		{
 			ScreenNumber = 11,
 			Pixels = (640, 480),
+			Characters = (80, 30),
 			IsGraphicsMode = true,
 			IsMonochrome = true,
 			PaletteType = PaletteType.VGA,
@@ -270,6 +277,7 @@ public class Video(Machine machine)
 		{
 			ScreenNumber = 12,
 			Pixels = (640, 480),
+			Characters = (80, 30),
 			IsGraphicsMode = true,
 			PaletteType = PaletteType.VGA,
 			BaseAddress = BaseAddress.A000,
@@ -292,6 +300,7 @@ public class Video(Machine machine)
 		{
 			ScreenNumber = 13,
 			Pixels = (320, 200),
+			Characters = (40, 25),
 			IsGraphicsMode = true,
 			PaletteType = PaletteType.VGA,
 			BaseAddress = BaseAddress.A000,
