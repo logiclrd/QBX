@@ -225,7 +225,10 @@ public class Program
 		var menuSelectedAccessKeyAttr = Configuration.DisplayAttributes.MenuBarSelectedItemAccessKey;
 
 		if (!showAccessKeys)
+		{
 			menuAccessKeyAttr = menuAttr;
+			menuSelectedAccessKeyAttr = menuSelectedAttr;
+		}
 
 		menuAttr.Set(TextLibrary);
 		TextLibrary.Write("  ");
