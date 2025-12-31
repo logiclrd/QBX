@@ -38,13 +38,13 @@ public class Configuration
 
 	public readonly DisplayAttributeConfiguration DisplayAttributes = new DisplayAttributeConfiguration();
 
-	public bool ShowScrollBars;
-	public int TabSize;
+	public bool ShowScrollBars = true;
+	public int TabSize = 8;
 
 	public string? IncludeFileSearchPath;
 	public string? HelpFileSearchPath;
 
-	public MouseButtonAction RightMouseButtonAction;
+	public MouseButtonAction RightMouseButtonAction = MouseButtonAction.ContextSensitiveHelp;
 
-	public bool EnableSyntaxChecking;
+	public bool EnableSyntaxChecking = true;
 }

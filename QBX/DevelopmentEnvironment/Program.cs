@@ -129,8 +129,11 @@ public class Program
 
 	public TextLibrary TextLibrary;
 
-	public Program(Machine machine)
+	public Program(Machine machine, Video video)
 	{
+		if (machine.GraphicsArray.Sequencer.CharacterWidth == 9)
+			video.SetCharacterWidth(8);
+
 		TextLibrary = new TextLibrary(machine.GraphicsArray);
 		TextLibrary.MovePhysicalCursor = false;
 
@@ -313,7 +316,7 @@ public class Program
 
 	int RenderViewport(int row, Viewport viewport, bool connectUp, bool connectDown = false, bool verticalScrollBar = true, bool horizontalScrollBar = true)
 	{
-		if (!Configuration.ShowScrollBars || !viewport.IsFocused)
+		if (!Configuration.ShowScrollBars || !viewport.IsFocused || (viewport.Height <= 1))
 		{
 			verticalScrollBar = false;
 			horizontalScrollBar = false;
@@ -340,6 +343,9 @@ public class Program
 		int viewportContentWidth = TextLibrary.Width - 2;
 		int viewportContentHeight = viewport.Height;
 
+		if (horizontalScrollBar)
+			viewportContentHeight--;
+
 		// Characters between the arrows
 		int horizontalScrollBarWidth = viewportContentWidth - 2;
 		int verticalScrollBarHeight = viewportContentHeight - 2;
@@ -347,7 +353,7 @@ public class Program
 		int CalculateScrollBarPosition(int coordinate, int scrollBarWidth, int domain)
 		{
 			if (domain == 0)
-				return 1;
+				return 0;
 
 			return coordinate * scrollBarWidth / domain;
 		}
@@ -384,7 +390,7 @@ public class Program
 
 		viewport.CachedContentTopY = row + 1;
 
-		for (int y = 0; y < viewport.Height; y++)
+		for (int y = 0; y < viewportContentHeight; y++)
 		{
 			TextLibrary.Write(leftRight);
 
@@ -437,6 +443,8 @@ public class Program
 					Configuration.DisplayAttributes.ScrollBarsandScrollArrows.Set(TextLibrary);
 					TextLibrary.Write('░');
 				}
+
+				attr.Set(TextLibrary);
 			}
 		}
 

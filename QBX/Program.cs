@@ -79,7 +79,7 @@ class Program
 						machine.GraphicsArray.AttributeController.Registers.OverscanPaletteIndex = 13;
 					}
 
-					new DevelopmentEnvironment.Program(machine);
+					new DevelopmentEnvironment.Program(machine, video);
 
 					if (Test40ColumnsWithoutHalfDotClock || !Test40ColumnsWithoutHalfDotClock)
 						return;

@@ -682,4 +682,36 @@ public class Video(Machine machine)
 
 		array.ResetFont();
 	}
+
+	public void SetCharacterWidth(int width)
+	{
+		byte clock;
+		byte characterWidth;
+
+		switch (width)
+		{
+			case 8:
+				clock = GraphicsArray.MiscellaneousOutputRegisters.Clock_25MHz;
+				characterWidth = GraphicsArray.SequencerRegisters.ClockingMode_CharacterWidth_8;
+				break;
+			case 9:
+				clock = GraphicsArray.MiscellaneousOutputRegisters.Clock_28MHz;
+				characterWidth = GraphicsArray.SequencerRegisters.ClockingMode_CharacterWidth_9;
+				break;
+
+			default:
+				throw new InvalidOperationException();
+		}
+
+		var array = machine.GraphicsArray;
+
+		array.MiscellaneousOutput.Register = unchecked((byte)(
+			(array.MiscellaneousOutput.Register & ~GraphicsArray.MiscellaneousOutputRegisters.ClockMask) |
+			clock));
+
+		array.Sequencer.Registers[GraphicsArray.SequencerRegisters.ClockingMode] = unchecked((byte)(
+			(array.Sequencer.Registers[GraphicsArray.SequencerRegisters.ClockingMode]
+				& ~GraphicsArray.SequencerRegisters.ClockingMode_CharacterWidthMask) |
+			characterWidth));
+	}
 }
