@@ -43,7 +43,7 @@ class Program
 
 		int TestSCREEN = 0;
 
-		int TextColumns = 40;
+		int TextColumns = 80;
 		int TextRows = 25;
 		bool Use8x14Font = false;
 
@@ -78,6 +78,11 @@ class Program
 
 						machine.GraphicsArray.AttributeController.Registers.OverscanPaletteIndex = 13;
 					}
+
+					new DevelopmentEnvironment.Program(machine);
+
+					if (Test40ColumnsWithoutHalfDotClock || !Test40ColumnsWithoutHalfDotClock)
+						return;
 
 					var library = new TextLibrary(machine.GraphicsArray);
 
