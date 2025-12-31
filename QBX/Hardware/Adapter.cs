@@ -1,6 +1,6 @@
-﻿using SDL3;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
+
+using SDL3;
 
 namespace QBX.Hardware;
 
@@ -14,8 +14,8 @@ public class Adapter
 
 	long ElapsedTicks => DateTime.UtcNow.Ticks - Epoch;
 
-	const long TicksPerCursorSwitch = TimeSpan.TicksPerSecond * 16 / 70;
-	const long TicksPerBlinkSwitch = TimeSpan.TicksPerSecond * 32 / 70;
+	const long TicksPerCursorSwitch = TimeSpan.TicksPerSecond * 8 / 70;
+	const long TicksPerBlinkSwitch = TimeSpan.TicksPerSecond * 16 / 70;
 
 	public Adapter(GraphicsArray array)
 	{
@@ -269,17 +269,20 @@ public class Adapter
 					{
 						characterX = 0;
 						columnBit = 128;
-						offset++;
 
 						if (offset == endHorizontalDisplay)
 						{
-							int remainingPixels = rowWidthOut - x;
+							x++;
+
+							int remainingPixels = scanOut.Length - x;
 
 							if (remainingPixels > 0)
 								scanOut.Slice(x).Fill(overscanBGRA);
 
 							break;
 						}
+
+						offset++;
 					}
 				}
 

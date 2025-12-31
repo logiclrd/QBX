@@ -70,6 +70,7 @@ public enum StatementType
 	Type,
 	TypeElement,
 	Unlock,
+	Unparsed,
 	UnresolvedWidth,
 	View,
 	Viewport,
