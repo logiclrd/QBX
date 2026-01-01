@@ -4,7 +4,7 @@ using QBX.Parser;
 
 namespace QBX.Tests.Parser.Statements;
 
-public class ViewportStatementTests
+public class TextViewportStatementTests
 {
 	[TestCase("VIEW PRINT", false)]
 	[TestCase("VIEW PRINT 3 TO 5", true)]
@@ -24,9 +24,9 @@ public class ViewportStatementTests
 		var result = sut.ParseStatement(tokens, ref inType);
 
 		// Assert
-		result.Should().BeOfType<ViewportStatement>();
+		result.Should().BeOfType<TextViewportStatement>();
 
-		var viewportResult = (ViewportStatement)result;
+		var viewportResult = (TextViewportStatement)result;
 
 		if (!expectRangeExpressions)
 		{

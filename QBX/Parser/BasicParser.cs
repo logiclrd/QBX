@@ -2415,7 +2415,7 @@ public class BasicParser
 			{
 				if (tokenHandler.NextTokenIs(TokenType.PRINT))
 				{
-					var viewport = new ViewportStatement();
+					var viewport = new TextViewportStatement();
 
 					tokenHandler.Advance();
 
@@ -2443,77 +2443,80 @@ public class BasicParser
 				}
 				else
 				{
-					var view = new ViewStatement();
+					var view = new GraphicsViewportStatement();
 
-					if (tokenHandler.NextTokenIs(TokenType.SCREEN))
+					if (tokenHandler.HasMoreTokens)
 					{
-						view.AbsoluteCoordinates = true;
-						tokenHandler.Advance();
-					}
-
-					var fromCoordinates = SplitCommaDelimitedList(tokenHandler.ExpectParenthesizedTokens()).ToList();
-
-					if (fromCoordinates.Count < 2)
-						throw new SyntaxErrorException(tokenHandler.PreviousToken, "Expected: expression");
-					else if (fromCoordinates.Count > 2)
-					{
-						var range = fromCoordinates[2].Unwrap();
-
-						throw new SyntaxErrorException(tokens[range.Offset - 1], "Expected: )");
-					}
-
-					var fromXEndToken = tokens[fromCoordinates[1].Unwrap().Offset - 1];
-					var fromYEndToken = tokenHandler.PreviousToken;
-
-					view.FromXExpression = ParseExpression(fromCoordinates[0], fromXEndToken);
-					view.FromYExpression = ParseExpression(fromCoordinates[1], fromYEndToken);
-
-					tokenHandler.Expect(TokenType.Hyphen);
-
-					var toCoordinates = SplitCommaDelimitedList(tokenHandler.ExpectParenthesizedTokens()).ToList();
-
-					if (toCoordinates.Count < 2)
-						throw new SyntaxErrorException(tokenHandler.PreviousToken, "Expected: expression");
-					else if (toCoordinates.Count > 2)
-					{
-						var range = toCoordinates[2].Unwrap();
-
-						throw new SyntaxErrorException(tokens[range.Offset - 1], "Expected: )");
-					}
-
-					var toXEndToken = tokens[toCoordinates[1].Unwrap().Offset - 1];
-					var toYEndToken = tokenHandler.PreviousToken;
-
-					view.ToXExpression = ParseExpression(toCoordinates[0], toXEndToken);
-					view.ToYExpression = ParseExpression(toCoordinates[1], toYEndToken);
-
-					if (tokenHandler.NextTokenIs(TokenType.Comma))
-					{
-						tokenHandler.Advance();
-
-						int separator = tokenHandler.FindNextUnparenthesizedOf(TokenType.Comma);
-
-						if (separator > 0)
+						if (tokenHandler.NextTokenIs(TokenType.SCREEN))
 						{
-							var expressionTokens = tokenHandler.RemainingTokens;
-							var endToken = tokenHandler.EndToken;
-
-							if (separator >= 0)
-							{
-								expressionTokens = expressionTokens.Slice(0, separator);
-								endToken = tokenHandler[separator];
-							}
-
-							view.FillColourExpression = ParseExpression(expressionTokens, endToken);
-
-							tokenHandler.Advance(separator);
+							view.AbsoluteCoordinates = true;
+							tokenHandler.Advance();
 						}
+
+						var fromCoordinates = SplitCommaDelimitedList(tokenHandler.ExpectParenthesizedTokens()).ToList();
+
+						if (fromCoordinates.Count < 2)
+							throw new SyntaxErrorException(tokenHandler.PreviousToken, "Expected: expression");
+						else if (fromCoordinates.Count > 2)
+						{
+							var range = fromCoordinates[2].Unwrap();
+
+							throw new SyntaxErrorException(tokens[range.Offset - 1], "Expected: )");
+						}
+
+						var fromXEndToken = tokens[fromCoordinates[1].Unwrap().Offset - 1];
+						var fromYEndToken = tokenHandler.PreviousToken;
+
+						view.FromXExpression = ParseExpression(fromCoordinates[0], fromXEndToken);
+						view.FromYExpression = ParseExpression(fromCoordinates[1], fromYEndToken);
+
+						tokenHandler.Expect(TokenType.Hyphen);
+
+						var toCoordinates = SplitCommaDelimitedList(tokenHandler.ExpectParenthesizedTokens()).ToList();
+
+						if (toCoordinates.Count < 2)
+							throw new SyntaxErrorException(tokenHandler.PreviousToken, "Expected: expression");
+						else if (toCoordinates.Count > 2)
+						{
+							var range = toCoordinates[2].Unwrap();
+
+							throw new SyntaxErrorException(tokens[range.Offset - 1], "Expected: )");
+						}
+
+						var toXEndToken = tokens[toCoordinates[1].Unwrap().Offset - 1];
+						var toYEndToken = tokenHandler.PreviousToken;
+
+						view.ToXExpression = ParseExpression(toCoordinates[0], toXEndToken);
+						view.ToYExpression = ParseExpression(toCoordinates[1], toYEndToken);
 
 						if (tokenHandler.NextTokenIs(TokenType.Comma))
 						{
 							tokenHandler.Advance();
 
-							view.BorderColourExpression = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken);
+							int separator = tokenHandler.FindNextUnparenthesizedOf(TokenType.Comma);
+
+							if (separator > 0)
+							{
+								var expressionTokens = tokenHandler.RemainingTokens;
+								var endToken = tokenHandler.EndToken;
+
+								if (separator >= 0)
+								{
+									expressionTokens = expressionTokens.Slice(0, separator);
+									endToken = tokenHandler[separator];
+								}
+
+								view.FillColourExpression = ParseExpression(expressionTokens, endToken);
+
+								tokenHandler.Advance(separator);
+							}
+
+							if (tokenHandler.NextTokenIs(TokenType.Comma))
+							{
+								tokenHandler.Advance();
+
+								view.BorderColourExpression = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken);
+							}
 						}
 					}
 

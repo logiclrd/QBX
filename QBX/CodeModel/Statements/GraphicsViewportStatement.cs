@@ -1,0 +1,63 @@
+﻿using QBX.CodeModel.Expressions;
+
+namespace QBX.CodeModel.Statements;
+
+public class GraphicsViewportStatement : Statement
+{
+	public override StatementType Type => StatementType.View;
+
+	public bool AbsoluteCoordinates { get; set; }
+	public Expression? FromXExpression { get; set; }
+	public Expression? FromYExpression { get; set; }
+	public Expression? ToXExpression { get; set; }
+	public Expression? ToYExpression { get; set; }
+	public Expression? FillColourExpression { get; set; }
+	public Expression? BorderColourExpression { get; set; }
+
+	protected override void RenderImplementation(TextWriter writer)
+	{
+		if ((FromXExpression == null) && (FromYExpression == null)
+		 && (ToXExpression == null) && (ToYExpression == null)
+		 && (FillColourExpression == null) && (BorderColourExpression == null))
+		{
+			if (AbsoluteCoordinates)
+				throw new Exception("Internal error: Screen-relative GraphicsViewportStatement with no parameters");
+
+			writer.Write("VIEW");
+		}
+		else
+		{
+			writer.Write("VIEW ");
+
+			if (AbsoluteCoordinates)
+				writer.Write("SCREEN ");
+
+			if ((FromXExpression == null) || (FromYExpression == null))
+				throw new Exception("Internal error: GraphicsViewportStatement missing From coordinate expression(s)");
+			if ((ToXExpression == null) || (ToYExpression == null))
+				throw new Exception("Internal error: GraphicsViewportStatement missing To coordinate expression(s)");
+
+			writer.Write('(');
+			FromXExpression.Render(writer);
+			writer.Write(", ");
+			FromYExpression.Render(writer);
+			writer.Write(")-(");
+			ToXExpression.Render(writer);
+			writer.Write(", ");
+			ToYExpression.Render(writer);
+			writer.Write(")");
+
+			if ((FillColourExpression != null) || (BorderColourExpression != null))
+			{
+				writer.Write(", ");
+				FillColourExpression?.Render(writer);
+
+				if (BorderColourExpression != null)
+				{
+					writer.Write(", ");
+					BorderColourExpression.Render(writer);
+				}
+			}
+		}
+	}
+}

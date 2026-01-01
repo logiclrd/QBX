@@ -21,7 +21,7 @@ public class TokenHandler(ListRange<Token> tokenss)
 		else if (range.List.Count > 0)
 			return range.List.Last();
 		else
-			return new Token(0, 0, TokenType.Empty, "");
+			return EndToken;
 	}
 
 	public Token EndToken
@@ -113,7 +113,7 @@ public class TokenHandler(ListRange<Token> tokenss)
 	public string ExpectIdentifier(bool allowTypeCharacter, out Token identifierToken)
 	{
 		if (!HasMoreTokens)
-			throw new SyntaxErrorException(_tokens.Last(), "Unexpected end of statement");
+			throw new SyntaxErrorException(FindTokenToBlame(), "Unexpected end of statement");
 
 		identifierToken = _tokens[_tokenIndex];
 
@@ -136,7 +136,7 @@ public class TokenHandler(ListRange<Token> tokenss)
 	public Token Expect(TokenType expectedTokenType)
 	{
 		if (!HasMoreTokens)
-			throw new SyntaxErrorException(_tokens.Last(), "Unexpected end of statement");
+			throw new SyntaxErrorException(FindTokenToBlame(), "Unexpected end of statement");
 
 		var token = _tokens[_tokenIndex];
 
@@ -151,7 +151,7 @@ public class TokenHandler(ListRange<Token> tokenss)
 	public Token ExpectOneOf(params TokenType[] tokenTypes)
 	{
 		if (!HasMoreTokens)
-			throw new SyntaxErrorException(_tokens.Last(), "Unexpected end of statement");
+			throw new SyntaxErrorException(FindTokenToBlame(), "Unexpected end of statement");
 
 		var token = _tokens[_tokenIndex];
 
@@ -166,7 +166,7 @@ public class TokenHandler(ListRange<Token> tokenss)
 	public ListRange<Token> ExpectParenthesizedTokens()
 	{
 		if (!NextTokenIs(TokenType.OpenParenthesis))
-			throw new SyntaxErrorException(_tokens[_tokenIndex], "Expected: (");
+			throw new SyntaxErrorException(FindTokenToBlame(), "Expected: (");
 
 		int level = 1;
 
@@ -186,7 +186,7 @@ public class TokenHandler(ListRange<Token> tokenss)
 		}
 
 		if (level > 0)
-			throw new SyntaxErrorException(_tokens.Last(), "Expected: )");
+			throw new SyntaxErrorException(FindTokenToBlame(), "Expected: )");
 
 		int rangeEnd = _tokenIndex - 1;
 

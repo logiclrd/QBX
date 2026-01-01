@@ -2,7 +2,7 @@
 
 namespace QBX.CodeModel.Statements;
 
-public class ViewportStatement : Statement
+public class TextViewportStatement : Statement
 {
 	public override StatementType Type => StatementType.Viewport;
 
@@ -14,7 +14,7 @@ public class ViewportStatement : Statement
 		writer.Write("VIEW PRINT");
 
 		if ((TopExpression != null) != (BottomExpression != null))
-			throw new Exception("Internal error: ViewportStatement with only one of the top & bottom expressions");
+			throw new Exception("Internal error: TextViewportStatement with only one of the top & bottom expressions");
 
 		if (TopExpression != null)
 		{
