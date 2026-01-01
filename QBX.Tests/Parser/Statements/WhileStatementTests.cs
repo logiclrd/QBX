@@ -1,24 +1,30 @@
-/*
- * TODO
- * 
-using QBX.CodeModel.Expressions;
+using QBX.CodeModel.Statements;
+using QBX.LexicalAnalysis;
+using QBX.Parser;
 
 namespace QBX.Tests.Parser.Statements;
 
-public class WhileStatement
+public class WhileStatementTests
 {
-	public override StatementType Type => StatementType.While;
-
-	public Expression? Condition { get; set; }
-
-	public override void Render(TextWriter writer)
+	[TestCase("WHILE state%")]
+	[TestCase("WHILE INKEY$")]
+	[TestCase("WHILE (WhatToDO)")]
+	public void ShouldParse(string statement)
 	{
-		if (Condition == null)
-			throw new Exception("Internal error: WhileStatement with no condition");
+		// Arrange
+		var tokens = new Lexer(statement).ToList();
 
-		writer.Write("WHILE ");
-		Condition.Render(writer);
+		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
+
+		bool inType = false;
+
+		var sut = new BasicParser();
+
+		// Act
+		var result = sut.ParseStatement(tokens, ref inType);
+
+		// Assert
+		result.Should().BeOfType<WhileStatement>()
+			.Which.Condition.Should().NotBeNull();
 	}
 }
-
-*/

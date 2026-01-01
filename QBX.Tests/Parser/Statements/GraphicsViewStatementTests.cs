@@ -10,31 +10,31 @@ public class GraphicsViewportStatementTests
 	[TestCase("VIEW",
 		false,
 		null, null, null, null, null, null, null, null,
-		null, null, null, null)]
+		null, "", null, "")]
 	[TestCase("VIEW (1, 2)-(3, 4)",
 		false,
 		typeof(LiteralExpression), "1",
 		typeof(LiteralExpression), "2",
 		typeof(LiteralExpression), "3",
 		typeof(LiteralExpression), "4",
-		null, null, null, null)]
+		null, "", null, "")]
 	[TestCase("VIEW SCREEN (a, b)-(c + d, e(f)), g(h) + i, 3",
 		true,
 		typeof(IdentifierExpression), "a",
 		typeof(IdentifierExpression), "b",
 		typeof(BinaryExpression), "",
-		typeof(CallOrIndexExpression), null,
+		typeof(CallOrIndexExpression), "",
 		typeof(BinaryExpression), "",
 		typeof(LiteralExpression), "3")]
 	public void ShouldParse(
 		string statement,
 		bool expectAbsoluteCoordinates,
-		Type? expectFromXType, string? expectFromXValue,
-		Type? expectFromYType, string? expectFromYValue,
-		Type? expectToXType, string? expectToXValue,
-		Type? expectToYType, string? expectToYValue,
-		Type? expectFillColourType, string? expectFillColourValue,
-		Type? expectBorderColourType, string? expectBorderColourValue)
+		Type? expectFromXType, string expectFromXValue,
+		Type? expectFromYType, string expectFromYValue,
+		Type? expectToXType, string expectToXValue,
+		Type? expectToYType, string expectToYValue,
+		Type? expectFillColourType, string expectFillColourValue,
+		Type? expectBorderColourType, string expectBorderColourValue)
 	{
 		// Arrange
 		var tokens = new Lexer(statement).ToList();
