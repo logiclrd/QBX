@@ -3,7 +3,7 @@ using QBX.Hardware;
 
 namespace QBX.DevelopmentEnvironment;
 
-public class Program
+public class Program : HostedProgram
 {
 	Menu[] MenuBar =
 		[
@@ -131,6 +131,8 @@ public class Program
 
 	public Program(Machine machine, Video video)
 	{
+		video.SetMode(3);
+
 		if (machine.GraphicsArray.Sequencer.CharacterWidth == 9)
 			video.SetCharacterWidth(8);
 
@@ -142,7 +144,12 @@ public class Program
 		SelectedMenu = 0;
 		IsMenuOpen = true;
 		SelectedMenuItem = 2;
+	}
 
+	public override bool EnableMainLoop => true;
+
+	public override void Run(CancellationToken cancellationToken)
+	{
 		Render();
 	}
 

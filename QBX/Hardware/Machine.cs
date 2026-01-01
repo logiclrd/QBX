@@ -6,6 +6,9 @@ public class Machine
 	public Adapter Display { get; }
 	public Keyboard Keyboard { get; }
 
+	public bool KeepRunning = true;
+	public int ExitCode = 0;
+
 	public Machine()
 	{
 		GraphicsArray = new GraphicsArray();

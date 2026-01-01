@@ -33,6 +33,9 @@ public class TextLibrary
 
 	public void RefreshParameters()
 	{
+		if (_array.CRTController.CharacterHeight == 0)
+			return;
+
 		Width = _array.CRTController.Registers.EndHorizontalDisplay + 1;
 		Height = _array.CRTController.NumScanLines / _array.CRTController.CharacterHeight;
 

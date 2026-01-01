@@ -3,9 +3,13 @@ using QBX.Parser;
 
 using System.Diagnostics;
 
-class TestDriver
+namespace QBX.TestDrivers;
+
+public class CodeModelTest : HostedProgram
 {
-	public static void ParseFormatCompare()
+	public override bool EnableMainLoop => false;
+
+	public override void Run(CancellationToken cancellationToken)
 	{
 		using (var reader1 = new StreamReader("../../../../Samples/NIBBLES.BAS"))
 		using (var reader2 = new StreamReader("../../../../Samples/NIBBLES.BAS"))

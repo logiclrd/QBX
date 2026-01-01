@@ -8,6 +8,7 @@ public class KeyEvent
 	public int ScanCode;
 
 	public bool IsEmpty => (TextCharacter == default) && (ScanCode == 0);
+	public bool IsAlphanumeric => (TextCharacter >= 32);
 
 	public string ToInKeyString()
 	{
