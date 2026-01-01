@@ -177,11 +177,16 @@ class Program
 		{
 			while (SDL.PollEvent(out var evt))
 			{
-				if ((SDL.EventType)evt.Type == SDL.EventType.Quit)
+				var eventType = (SDL.EventType)evt.Type;
+
+				if (eventType == SDL.EventType.Quit)
 				{
 					keepRunning = false;
 					break;
 				}
+
+				if ((eventType == SDL.EventType.KeyDown) || (eventType == SDL.EventType.KeyUp))
+					machine.Keyboard.HandleEvent(evt.Key);
 			}
 
 			if (machine.Display.UpdateResolution(ref textureWidth, ref textureHeight, ref widthScale, ref heightScale))
