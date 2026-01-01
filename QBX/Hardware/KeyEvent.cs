@@ -102,6 +102,10 @@ public class KeyEvent
 				case SDL.Scancode.KpMinus: ScanCode = 74; break;
 				case SDL.Scancode.KpPlus: ScanCode = 78; break;
 				case SDL.Scancode.KpEnter: ScanCode = 166; break;
+				case SDL.Scancode.Up: ScanCode = 152; break;
+				case SDL.Scancode.Left: ScanCode = 155; break;
+				case SDL.Scancode.Down: ScanCode = 160; break;
+				case SDL.Scancode.Right: ScanCode = 157; break;
 			}
 		}
 		else if (ctrlKey)
@@ -125,7 +129,7 @@ public class KeyEvent
 				case SDL.Scancode.Alpha6: TextCharacter = (char)30; break;
 				case SDL.Scancode.Minus: TextCharacter = (char)31; break;
 				case SDL.Scancode.Backspace: TextCharacter = (char)127; break;
-				case SDL.Scancode.Tab: TextCharacter = (char)148; break;
+				case SDL.Scancode.Tab: ScanCode = 148; break;
 				case SDL.Scancode.Q: TextCharacter = (char)17; break;
 				case SDL.Scancode.W: TextCharacter = (char)23; break;
 				case SDL.Scancode.E: TextCharacter = (char)5; break;
@@ -178,6 +182,10 @@ public class KeyEvent
 				case SDL.Scancode.KpEnter: TextCharacter = (char)10; break;
 				case SDL.Scancode.Kp0: ScanCode = 146; break;
 				case SDL.Scancode.KpPeriod: ScanCode = 147; break;
+				case SDL.Scancode.Up: ScanCode = 141; break;
+				case SDL.Scancode.Left: ScanCode = 115; break;
+				case SDL.Scancode.Down: ScanCode = 145; break;
+				case SDL.Scancode.Right: ScanCode = 116; break;
 			}
 		}
 		else if (shiftKey)
@@ -270,6 +278,10 @@ public class KeyEvent
 				case SDL.Scancode.KpEnter: TextCharacter = (char)13; break;
 				case SDL.Scancode.Kp0: TextCharacter = '0'; break;
 				case SDL.Scancode.KpPeriod: TextCharacter = '.'; break;
+				case SDL.Scancode.Up: ScanCode = 72; break;
+				case SDL.Scancode.Left: ScanCode = 75; break;
+				case SDL.Scancode.Down: ScanCode = 80; break;
+				case SDL.Scancode.Right: ScanCode = 77; break;
 			}
 		}
 		else
@@ -362,6 +374,10 @@ public class KeyEvent
 				case SDL.Scancode.KpEnter: TextCharacter = (char)13; break;
 				case SDL.Scancode.Kp0: if (numLock) TextCharacter = '0'; else ScanCode = 82; break;
 				case SDL.Scancode.KpPeriod: if (numLock) TextCharacter = '.'; else ScanCode = 83; break;
+				case SDL.Scancode.Up: ScanCode = 72; break;
+				case SDL.Scancode.Left: ScanCode = 75; break;
+				case SDL.Scancode.Down: ScanCode = 80; break;
+				case SDL.Scancode.Right: ScanCode = 77; break;
 			}
 		}
 	}
