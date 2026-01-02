@@ -15,7 +15,24 @@ public class CodeLine : IRenderableCode
 
 	public bool IsCommentLine => (Statements.Count == 1) && (Statements[0].Type == StatementType.Comment);
 
-	public void Render(TextWriter writer)
+	public static CodeLine CreateEmpty() => new CodeLine();
+
+	public static CodeLine CreateUnparsed(string text)
+	{
+		var line = new CodeLine();
+
+		line.Statements.Add(
+			new UnparsedStatement()
+			{
+				Text = text
+			});
+
+		return line;
+	}
+
+	public void Render(TextWriter writer) => Render(writer, includeCRLF: true);
+
+	public void Render(TextWriter writer, bool includeCRLF = true)
 	{
 		if ((LineNumber != null) && (Label != null))
 			throw new Exception("Internal error: A line cannot have both a line number and a label");
@@ -54,6 +71,7 @@ public class CodeLine : IRenderableCode
 
 		writer.Write(EndOfLineComment);
 
-		writer.WriteLine();
+		if (includeCRLF)
+			writer.WriteLine();
 	}
 }

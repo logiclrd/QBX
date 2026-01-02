@@ -6,6 +6,7 @@ public class KeyEvent
 {
 	public char TextCharacter;
 	public ScanCode ScanCode;
+	public KeyModifiers Modifiers;
 	public bool IsRight; // true for Ctrl, Alt, Shift when it is the right-hand key that is pressed
 	public bool IsRelease;
 	public bool IsKeyPad;
@@ -14,7 +15,7 @@ public class KeyEvent
 	public SDL.Scancode SDLScanCode;
 
 	public bool IsEmpty => (TextCharacter == default) && (ScanCode == 0);
-	public bool IsAlphanumeric => (TextCharacter >= 32);
+	public bool IsNormalText => (TextCharacter >= 32);
 
 	public string ToInKeyString()
 	{
@@ -28,11 +29,12 @@ public class KeyEvent
 			return "";
 	}
 
-	public KeyEvent(SDL.Scancode sdlScanCode, bool ctrlKey, bool altKey, bool shiftKey, bool capsLock, bool numLock, bool isRelease)
+	public KeyEvent(SDL.Scancode sdlScanCode, KeyModifiers modifiers, bool isRelease)
 	{
-		bool upperCase = shiftKey ^ capsLock;
+		bool upperCase = modifiers.ShiftKey ^ modifiers.CapsLock;
 
 		SDLScanCode = sdlScanCode;
+		Modifiers = modifiers;
 		IsRelease = isRelease;
 
 		switch (sdlScanCode)
@@ -88,7 +90,7 @@ public class KeyEvent
 		// Default translation, may be overridden
 		ScanCode = TranslateScanCode(sdlScanCode);
 
-		if (altKey)
+		if (modifiers.AltKey)
 		{
 			switch (sdlScanCode)
 			{
@@ -172,7 +174,7 @@ public class KeyEvent
 				case SDL.Scancode.Right: ScanCode = ScanCode.AltRight; break;
 			}
 		}
-		else if (ctrlKey)
+		else if (modifiers.CtrlKey)
 		{
 			switch (sdlScanCode)
 			{
@@ -252,7 +254,7 @@ public class KeyEvent
 				case SDL.Scancode.Right: ScanCode = ScanCode.CtrlRight; break;
 			}
 		}
-		else if (shiftKey)
+		else if (modifiers.ShiftKey)
 		{
 			switch (sdlScanCode)
 			{
@@ -425,19 +427,19 @@ public class KeyEvent
 				case SDL.Scancode.KpDivide: TextCharacter = '/'; break;
 				case SDL.Scancode.KpMultiply: TextCharacter = '*'; break;
 				case SDL.Scancode.KpMinus: TextCharacter = '-'; break;
-				case SDL.Scancode.Kp7: if (numLock) TextCharacter = '7'; else ScanCode = ScanCode.Home; break;
-				case SDL.Scancode.Kp8: if (numLock) TextCharacter = '8'; else ScanCode = ScanCode.Up; break;
-				case SDL.Scancode.Kp9: if (numLock) TextCharacter = '9'; else ScanCode = ScanCode.PageUp; break;
+				case SDL.Scancode.Kp7: if (modifiers.NumLock) TextCharacter = '7'; else ScanCode = ScanCode.Home; break;
+				case SDL.Scancode.Kp8: if (modifiers.NumLock) TextCharacter = '8'; else ScanCode = ScanCode.Up; break;
+				case SDL.Scancode.Kp9: if (modifiers.NumLock) TextCharacter = '9'; else ScanCode = ScanCode.PageUp; break;
 				case SDL.Scancode.KpPlus: TextCharacter = '+'; break;
-				case SDL.Scancode.Kp4: if (numLock) TextCharacter = '4'; else ScanCode = ScanCode.Left; break;
-				case SDL.Scancode.Kp5: if (numLock) TextCharacter = '5'; else ScanCode = ScanCode.Kp5; break;
-				case SDL.Scancode.Kp6: if (numLock) TextCharacter = '6'; else ScanCode = ScanCode.Right; break;
-				case SDL.Scancode.Kp1: if (numLock) TextCharacter = '1'; else ScanCode = ScanCode.End; break;
-				case SDL.Scancode.Kp2: if (numLock) TextCharacter = '2'; else ScanCode = ScanCode.Down; break;
-				case SDL.Scancode.Kp3: if (numLock) TextCharacter = '3'; else ScanCode = ScanCode.PageDown; break;
+				case SDL.Scancode.Kp4: if (modifiers.NumLock) TextCharacter = '4'; else ScanCode = ScanCode.Left; break;
+				case SDL.Scancode.Kp5: if (modifiers.NumLock) TextCharacter = '5'; else ScanCode = ScanCode.Kp5; break;
+				case SDL.Scancode.Kp6: if (modifiers.NumLock) TextCharacter = '6'; else ScanCode = ScanCode.Right; break;
+				case SDL.Scancode.Kp1: if (modifiers.NumLock) TextCharacter = '1'; else ScanCode = ScanCode.End; break;
+				case SDL.Scancode.Kp2: if (modifiers.NumLock) TextCharacter = '2'; else ScanCode = ScanCode.Down; break;
+				case SDL.Scancode.Kp3: if (modifiers.NumLock) TextCharacter = '3'; else ScanCode = ScanCode.PageDown; break;
 				case SDL.Scancode.KpEnter: TextCharacter = (char)13; break;
-				case SDL.Scancode.Kp0: if (numLock) TextCharacter = '0'; else ScanCode = ScanCode.Insert; break;
-				case SDL.Scancode.KpPeriod: if (numLock) TextCharacter = '.'; else ScanCode = ScanCode.Delete; break;
+				case SDL.Scancode.Kp0: if (modifiers.NumLock) TextCharacter = '0'; else ScanCode = ScanCode.Insert; break;
+				case SDL.Scancode.KpPeriod: if (modifiers.NumLock) TextCharacter = '.'; else ScanCode = ScanCode.Delete; break;
 				case SDL.Scancode.Up: ScanCode = ScanCode.Up; break;
 				case SDL.Scancode.Left: ScanCode = ScanCode.Left; break;
 				case SDL.Scancode.Down: ScanCode = ScanCode.Down; break;

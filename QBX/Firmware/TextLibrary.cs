@@ -62,6 +62,19 @@ public class TextLibrary
 			|= GraphicsArray.CRTControllerRegisters.CursorStart_Disable;
 	}
 
+	public void SetCursorScans(int start, int end)
+	{
+		_array.CRTController.Registers[GraphicsArray.CRTControllerRegisters.CursorStart] = unchecked((byte)(
+			(_array.CRTController.Registers[GraphicsArray.CRTControllerRegisters.CursorStart]
+				& ~GraphicsArray.CRTControllerRegisters.CursorStart_Mask) |
+			start));
+
+		_array.CRTController.Registers[GraphicsArray.CRTControllerRegisters.CursorEnd] = unchecked((byte)(
+			(_array.CRTController.Registers[GraphicsArray.CRTControllerRegisters.CursorEnd]
+				& ~GraphicsArray.CRTControllerRegisters.CursorEnd_Mask) |
+			end));
+	}
+
 	public void MoveCursor(int x, int y)
 	{
 		CursorX = x;

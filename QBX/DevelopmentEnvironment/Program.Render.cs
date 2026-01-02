@@ -1,4 +1,5 @@
 ﻿using QBX.Firmware;
+using QBX.Utility;
 
 using System.Text;
 
@@ -75,6 +76,7 @@ public partial class Program : HostedProgram
 			int cursorActualY = FocusedViewport.CachedContentTopY + (FocusedViewport.CursorY - FocusedViewport.ScrollY);
 
 			TextLibrary.ShowCursor();
+			TextLibrary.SetCursorScans(EnableOvertype ? 0 : 14, 15);
 			TextLibrary.MoveCursor(cursorActualX, cursorActualY);
 			TextLibrary.UpdatePhysicalCursor();
 		}
@@ -234,10 +236,15 @@ public partial class Program : HostedProgram
 			if (domain == 0)
 				return 0;
 
+			if (coordinate < 0)
+				return 0;
+			if (coordinate >= domain)
+				return scrollBarWidth;
+
 			return coordinate * scrollBarWidth / domain;
 		}
 
-		int horizontalScrollBarPosition = CalculateScrollBarPosition(viewport.ScrollX, horizontalScrollBarWidth, 256);
+		int horizontalScrollBarPosition = CalculateScrollBarPosition(viewport.ScrollX, horizontalScrollBarWidth, 306);
 		int verticalScrollBarPosition = CalculateScrollBarPosition(viewport.ScrollY, verticalScrollBarHeight, viewport.GetContentLineCount());
 
 		if (viewport.ShowMaximize)
@@ -287,13 +294,15 @@ public partial class Program : HostedProgram
 			{
 				_lineRenderBuffer.Reset();
 
-				viewport.CompilationElement?.Lines[lineIndex].Render(_lineRenderBuffer);
+				viewport.RenderLine(lineIndex, _lineRenderBuffer);
 
 				buffer = _lineRenderBuffer.GetStringBuilder();
 			}
 
 			int chars = buffer.Length - viewport.ScrollX;
 
+			if (chars < 0)
+				chars = 0;
 			if (chars > viewportContentWidth)
 				chars = viewportContentWidth;
 
@@ -363,6 +372,8 @@ public partial class Program : HostedProgram
 		}
 	}
 
+	static byte[]? _statusCharBuffer;
+
 	void RenderReferenceBar(int row)
 	{
 		int cursorX = (FocusedViewport?.CursorX ?? 0) + 1;
@@ -417,13 +428,28 @@ public partial class Program : HostedProgram
 				referenceBarRemainingChars);
 		}
 
+
+		if ((_statusCharBuffer == null) || (_statusCharBuffer.Length < 8))
+			_statusCharBuffer = new byte[8];
+
+		_statusCharBuffer.AsSpan().Fill(32);
+
+		_statusCharBuffer[0] = (byte)'|';
+		_statusCharBuffer[5] = Machine.Keyboard.Modifiers.CapsLock ? (byte)'C' : (byte)' ';
+		_statusCharBuffer[6] = Machine.Keyboard.Modifiers.NumLock ? (byte)'N' : (byte)' ';
+
 		Configuration.DisplayAttributes.ReferenceBarStatusIndicators.Set(TextLibrary);
-		TextLibrary.Write("│     N "); // TODO: what are these??
+		TextLibrary.Write(_statusCharBuffer, 0, 8);
+
+		if (cursorX > 99999)
+			cursorX = 99999;
+		if (cursorY > 999)
+			cursorY = 999;
 
 		Configuration.DisplayAttributes.ReferenceBarNormalText.Set(TextLibrary);
-		TextLibrary.WriteNumber(cursorX, 5);
+		TextLibrary.WriteNumber(cursorY, 5);
 		TextLibrary.Write(':');
-		TextLibrary.WriteNumber(cursorY, 3);
+		TextLibrary.WriteNumber(cursorX, 3);
 		TextLibrary.Write(' ');
 	}
 

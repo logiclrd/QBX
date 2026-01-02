@@ -181,7 +181,7 @@ public partial class Program
 				{
 					string inkey = "";
 
-					if (!Machine.Keyboard.AltKey)
+					if (!input.Modifiers.AltKey)
 						inkey = input.ToInKeyString();
 					else
 						inkey = input.ScanCode.ToCharacterString();
@@ -263,7 +263,7 @@ public partial class Program
 				{
 					string inkey = "";
 
-					if (!Machine.Keyboard.AltKey)
+					if (!input.Modifiers.AltKey)
 						inkey = input.ToInKeyString();
 					else
 						inkey = input.ScanCode.ToCharacterString();

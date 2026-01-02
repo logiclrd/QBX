@@ -1,7 +1,7 @@
 ﻿using System.Globalization;
 using System.Text;
 
-namespace QBX.DevelopmentEnvironment;
+namespace QBX.Utility;
 
 // This class behaves like StringWriter, but can be cleared without releasing the
 // buffer, allowing reuse without new allocations.

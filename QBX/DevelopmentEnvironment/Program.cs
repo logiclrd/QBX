@@ -1,5 +1,7 @@
-﻿using QBX.Firmware;
+﻿using QBX.CodeModel;
+using QBX.Firmware;
 using QBX.Hardware;
+using QBX.Parser;
 
 namespace QBX.DevelopmentEnvironment;
 
@@ -13,18 +15,21 @@ public partial class Program : HostedProgram
 
 	public List<Watch> Watches = new List<Watch>();
 	public Viewport? HelpViewport = null; // new Viewport() { HelpPage = new HelpPage(), IsEditable = false };
-	public Viewport PrimaryViewport = new Viewport() { IsFocused = true };
+	public Viewport PrimaryViewport;
 	public Viewport? SplitViewport;
-	public Viewport ImmediateViewport = new Viewport() { Heading = "Immediate", ShowMaximize = false, Height = 2 };
+	public Viewport ImmediateViewport;
 	public ReferenceBarAction[]? ReferenceBarActions;
 	public int SelectedReferenceBarAction = -1;
 	public string? ReferenceBarText;
 
 	public Viewport? FocusedViewport;
+	public bool EnableOvertype = false;
 
 	public UIMode Mode;
 
 	public Dialog? CurrentDialog;
+
+	public BasicParser Parser;
 
 	public Program(Machine machine, Video video)
 	{
@@ -41,9 +46,27 @@ public partial class Program : HostedProgram
 		TextLibrary = new TextLibrary(machine.GraphicsArray);
 		TextLibrary.MovePhysicalCursor = false;
 
+		Parser = new BasicParser();
+
+		PrimaryViewport =
+			new Viewport(Parser)
+			{
+				IsFocused = true
+			};
+
+		ImmediateViewport =
+			new Viewport(Parser)
+			{
+				Heading = "Immediate",
+				ShowMaximize = false,
+				Height = 2
+			};
+
 		FocusedViewport = PrimaryViewport;
 
 		Mode = UIMode.TextEditor;
+
+		StartNewCompilationUnit();
 	}
 
 	public override bool EnableMainLoop => true;
@@ -70,5 +93,13 @@ public partial class Program : HostedProgram
 				}
 			}
 		}
+	}
+
+	void StartNewCompilationUnit()
+	{
+		var unit = CompilationUnit.CreateNew();
+
+		PrimaryViewport.CompilationUnit = unit;
+		PrimaryViewport.CompilationElement = unit.Elements[0];
 	}
 }

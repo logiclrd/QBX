@@ -12,4 +12,17 @@ public class CompilationUnit : IRenderableCode
 			writer.WriteLine();
 		}
 	}
+
+	public static CompilationUnit CreateNew()
+	{
+		var unit = new CompilationUnit();
+
+		unit.Elements.Add(
+			new CompilationElement()
+			{
+				Type = CompilationElementType.Main
+			});
+
+		return unit;
+	}
 }

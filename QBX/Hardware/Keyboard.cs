@@ -7,30 +7,20 @@ public class Keyboard
 	object _sync = new();
 	Queue<KeyEvent> _inputQueue = new Queue<KeyEvent>();
 
-	public bool CtrlKey => _ctrlKey;
-	public bool AltKey => _altKey;
-	public bool ShiftKey => _shiftKey;
+	public KeyModifiers Modifiers => _modifiers;
 
-	public bool CapsLock => _capsLock;
-	public bool NumLock => _numLock;
-
-	bool _ctrlKey;
-	bool _altKey;
-	bool _shiftKey;
-
-	bool _capsLock;
-	bool _numLock = true;
+	MutableKeyModifiers _modifiers = new MutableKeyModifiers();
 
 	void UpdateModifiers()
 	{
 		var mods = SDL.GetModState();
 
-		_ctrlKey = (mods & SDL.Keymod.Ctrl) != 0;
-		_altKey = (mods & SDL.Keymod.Alt) != 0;
-		_shiftKey = (mods & SDL.Keymod.Shift) != 0;
+		_modifiers.CtrlKey = (mods & SDL.Keymod.Ctrl) != 0;
+		_modifiers.AltKey = (mods & SDL.Keymod.Alt) != 0;
+		_modifiers.ShiftKey = (mods & SDL.Keymod.Shift) != 0;
 
-		_capsLock = (mods & SDL.Keymod.Caps) != 0;
-		_numLock = (mods & SDL.Keymod.Num) != 0;
+		_modifiers.CapsLock = (mods & SDL.Keymod.Caps) != 0;
+		_modifiers.NumLock = (mods & SDL.Keymod.Num) != 0;
 	}
 
 	public void HandleEvent(SDL.KeyboardEvent evt)
@@ -49,7 +39,7 @@ public class Keyboard
 				break;
 		}
 
-		var keyEvent = new KeyEvent(evt.Scancode, _ctrlKey, _altKey, _shiftKey, _capsLock, _numLock, isRelease: !evt.Down);
+		var keyEvent = new KeyEvent(evt.Scancode, _modifiers.Clone(), isRelease: !evt.Down);
 
 		lock (_sync)
 		{
