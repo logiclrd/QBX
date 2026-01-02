@@ -112,6 +112,8 @@ public partial class Program
 			}
 			case ScanCode.Return:
 			{
+				select = false;
+
 				if (input.Modifiers.CtrlKey)
 				{
 					// Ctrl-Enter: Do not insert newline.
@@ -160,25 +162,45 @@ public partial class Program
 				break;
 			}
 			case ScanCode.Insert:
+			case ScanCode.CtrlInsert:
 			{
 				if (input.Modifiers.CtrlKey && !input.Modifiers.ShiftKey && !input.Modifiers.AltKey)
+				{
 					FocusedViewport.Clipboard.Copy();
+					select = true;
+				}
 				else if (input.Modifiers.ShiftKey && !input.Modifiers.CtrlKey && !input.Modifiers.AltKey)
+				{
+					if (FocusedViewport.Clipboard.HasSelection)
+					{
+						FocusedViewport.Clipboard.Delete();
+						newCursorX = FocusedViewport.CursorX;
+					}
+
 					FocusedViewport.Clipboard.Paste();
+					select = false;
+				}
 				else
 					EnableOvertype = !EnableOvertype;
 
 				break;
 			}
 			case ScanCode.Delete:
+			case ScanCode.CtrlDelete:
 			{
-				if (input.Modifiers.ShiftKey)
+				select = false;
+
+				if (FocusedViewport.Clipboard.HasSelection)
 				{
-					if (FocusedViewport.Clipboard.HasSelection)
-					{
+					if (input.Modifiers.ShiftKey && !input.Modifiers.CtrlKey && !input.Modifiers.AltKey)
 						FocusedViewport.Clipboard.Cut();
-						break;
-					}
+					else
+						FocusedViewport.Clipboard.Delete();
+
+					newCursorX = FocusedViewport.CursorX;
+					newCursorY = FocusedViewport.CursorY;
+
+					break;
 				}
 
 				var buffer = currentLine.Value;
@@ -207,6 +229,8 @@ public partial class Program
 			}
 			case ScanCode.Backspace:
 			{
+				select = false;
+
 				if (input.Modifiers.CtrlKey)
 					goto case ScanCode.Delete;
 
@@ -251,6 +275,8 @@ public partial class Program
 			{
 				if (input.IsNormalText && FocusedViewport.IsEditable)
 				{
+					select = false;
+
 					string inputText = input.TextCharacter.ToString();
 
 					var buffer = currentLine.Value;
@@ -338,6 +364,11 @@ public partial class Program
 				}
 			}
 		}
+
+		if (!select && !input.IsModifierKey)
+			FocusedViewport.Clipboard.StartSelection(newCursorX, newCursorY);
+		else
+			FocusedViewport.Clipboard.ExtendSelection(newCursorX, newCursorY);
 
 		FocusedViewport.CursorX = newCursorX;
 		FocusedViewport.CursorY = newCursorY;

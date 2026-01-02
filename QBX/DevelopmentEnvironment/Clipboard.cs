@@ -1,6 +1,4 @@
 ﻿using QBX.CodeModel;
-using System;
-using System.Collections.Generic;
 using System.Text;
 
 namespace QBX.DevelopmentEnvironment;
@@ -9,10 +7,21 @@ public class Clipboard(Viewport owner)
 {
 	Viewport _owner = owner;
 
+	// NB: X is exclusive upper bound, Y is inclusive.
+	//
+	// - If you select characters 2-5 in a row, you've selected 3 characters.
+	// - If you select rows 1-3, you've selected 3 rows.
+	//
+	// In other words, _clipEndX is the first character that isn't selected,
+	// while _clipEndY is the last row that is selected.
+
 	int _clipStartX, _clipStartY;
 	int _clipEndX, _clipEndY;
 	string? _clipboardContentSingleLine;
 	List<CodeLine>? _clipboardContentMultiLine;
+
+	public (int StartX, int StartY, int EndX, int EndY) GetSelectionRange()
+		=> (_clipStartX, _clipStartY, _clipEndX, _clipEndY);
 
 	public bool HasSelection => (_clipStartX != _clipEndX) || (_clipStartY != _clipEndY);
 
@@ -43,10 +52,11 @@ public class Clipboard(Viewport owner)
 		_clipboardContentSingleLine = null;
 	}
 
-	public void Cut() => CutCopy(retain: false);
-	public void Copy() => CutCopy(retain: true);
+	public void Cut() => CutCopy(retain: false, stash: true);
+	public void Copy() => CutCopy(retain: true, stash: true);
+	public void Delete() => CutCopy(retain: false, stash: false);
 
-	void CutCopy(bool retain)
+	void CutCopy(bool retain, bool stash)
 	{
 		if (!_owner.IsEditable)
 		{
@@ -54,57 +64,90 @@ public class Clipboard(Viewport owner)
 			return;
 		}
 
-		if (!retain)
+		if (!retain && stash)
 			Clear();
+
+		int effectiveStartX = Math.Min(_clipStartX, _clipEndX);
+		int effectiveEndX = Math.Max(_clipStartX, _clipEndX);
+
+		int effectiveStartY = Math.Min(_clipStartY, _clipEndY);
+		int effectiveEndY = Math.Max(_clipStartY, _clipEndY);
+
+		if ((effectiveStartX == 0) && (effectiveEndX == 0))
+			effectiveEndY--;
 
 		if (_clipStartY != _clipEndY)
 		{
-			_clipboardContentMultiLine = new List<CodeLine>();
+			_clipboardContentMultiLine = stash ? new List<CodeLine>() : null;
 
-			int lineCount = 1 + Math.Abs(_clipEndY - _clipStartX);
-			int startY = Math.Min(_clipStartY, _clipEndY);
+			int lineCount = 1 + effectiveEndY - effectiveStartY;
 
 			for (int i = 0; i < lineCount; i++)
 			{
-				_clipboardContentMultiLine.Add(_owner.GetCodeLineAt(startY));
+				_clipboardContentMultiLine?.Add(_owner.GetCodeLineAt(effectiveStartY));
 
 				if (retain)
-					startY++;
+					effectiveStartY++;
 				else
-					_owner.DeleteLine(startY);
+					_owner.DeleteLine(effectiveStartY);
 			}
 
-			_owner.CursorX = 0;
+			if (!retain)
+			{
+				_owner.CursorX = 0;
+				_owner.CursorY = effectiveStartY;
+			}
 		}
-		else if (_clipStartX != _clipEndX)
+		else if (effectiveStartX != effectiveEndX)
 		{
-			if (_clipStartY != _owner.CursorY)
+			if (effectiveStartY != _owner.CursorY)
 				throw new Exception("Internal error: Single-line selection is not on current line");
 
 			var buffer = _owner.EditCurrentLine();
 
-			int startX = Math.Min(_clipStartX, _clipEndX);
-			int charCount = 1 + Math.Abs(_clipEndX - _clipStartX);
+			int startX = Math.Min(effectiveStartX, effectiveEndX);
+			int charCount = Math.Abs(effectiveEndX - effectiveStartX);
 
 			if (startX < 0)
 				startX = 0;
 			if (startX > buffer.Length)
 				startX = buffer.Length;
-			if (startX + charCount > buffer.Length)
-				charCount = buffer.Length - startX;
+
+			int realChars = charCount;
+
+			if (startX + realChars > buffer.Length)
+				realChars = buffer.Length - startX;
+
+			int virtualChars = charCount - realChars;
 
 			if (charCount != 0)
 			{
-				_clipboardContentSingleLine = buffer.ToString(startX, charCount);
+				if (stash)
+				{
+					if (virtualChars == 0)
+						_clipboardContentSingleLine = buffer.ToString(startX, charCount);
+					else
+					{
+						var extended = new StringBuilder(charCount);
+
+						extended.Append(buffer, startX, realChars);
+
+						while (extended.Length < charCount)
+							extended.Append(' ');
+
+						_clipboardContentSingleLine = extended.ToString();
+					}
+				}
 
 				if (!retain)
 				{
-					buffer.Remove(startX, charCount);
+					buffer.Remove(startX, realChars);
 					_owner.CursorX = startX;
+					_owner.CurrentLineChanged = true;
+
+					CancelSelection();
 				}
 			}
-
-			CancelSelection();
 		}
 	}
 
@@ -122,6 +165,8 @@ public class Clipboard(Viewport owner)
 			var buffer = _owner.EditCurrentLine();
 
 			buffer.Insert(_owner.CursorX, _clipboardContentSingleLine);
+
+			_owner.CurrentLineChanged = true;
 		}
 	}
 }

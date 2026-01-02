@@ -17,6 +17,25 @@ public class KeyEvent
 	public bool IsEmpty => (TextCharacter == default) && (ScanCode == 0);
 	public bool IsNormalText => (TextCharacter >= 32);
 
+	public bool IsModifierKey
+	{
+		get
+		{
+			switch (ScanCode)
+			{
+				case ScanCode.Control:
+				case ScanCode.Alt:
+				case ScanCode.LeftShift:
+				case ScanCode.RightShift:
+				case ScanCode.CapsLock:
+				case ScanCode.NumLock:
+					return true;
+				default:
+					return false;
+			}
+		}
+	}
+
 	public string ToInKeyString()
 	{
 		if (IsEphemeral || IsRelease)

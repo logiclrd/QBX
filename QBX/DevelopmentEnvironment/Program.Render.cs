@@ -7,8 +7,16 @@ namespace QBX.DevelopmentEnvironment;
 
 public partial class Program : HostedProgram
 {
+	string _spaces = "                                                                                ";
+	string _horizontalRule = "────────────────────────────────────────────────────────────────────────────────";
+
 	void Render()
 	{
+		if (_spaces.Length < TextLibrary.Width)
+			_spaces = new string(' ', TextLibrary.Width);
+		if (_horizontalRule.Length < TextLibrary.Width)
+			_horizontalRule = new string('─', TextLibrary.Width);
+
 		bool isMenuActive = (Mode == UIMode.MenuBar) || (Mode == UIMode.Menu);
 		bool isMenuOpen = (Mode == UIMode.Menu);
 
@@ -116,10 +124,7 @@ public partial class Program : HostedProgram
 			if (i + 1 >= MenuBar.Count)
 			{
 				menuAttr.Set(TextLibrary);
-				TextLibrary.Write(
-					"                                                                                ",
-					0,
-					TextLibrary.Width - TextLibrary.CursorX - GetTextLength(MenuBar[i].Label) - 3);
+				TextLibrary.Write(_spaces, 0, TextLibrary.Width - TextLibrary.CursorX - GetTextLength(MenuBar[i].Label) - 3);
 			}
 
 			MenuBar[i].CachedX = TextLibrary.CursorX;
@@ -210,8 +215,6 @@ public partial class Program : HostedProgram
 		char topLeft = connectUp ? '├' : '┌';
 		char topRight = connectUp ? '┤' : '┐';
 
-		string top = "────────────────────────────────────────────────────────────────────────────────";
-
 		char leftRight = '│';
 
 		int middleChars = TextLibrary.Width - 2;
@@ -254,14 +257,14 @@ public partial class Program : HostedProgram
 
 		attr.Set(TextLibrary);
 		TextLibrary.Write(topLeft);
-		TextLibrary.Write(top, 0, headingLeft);
+		TextLibrary.Write(_horizontalRule, 0, headingLeft);
 		if (viewport.IsFocused)
 			attr.SetInverted(TextLibrary);
 		TextLibrary.Write(' ');
 		TextLibrary.Write(viewport.Heading);
 		TextLibrary.Write(' ');
 		attr.Set(TextLibrary);
-		TextLibrary.Write(top, 0, headingRight);
+		TextLibrary.Write(_horizontalRule, 0, headingRight);
 
 		if (viewport.ShowMaximize)
 		{
@@ -306,18 +309,68 @@ public partial class Program : HostedProgram
 			if (chars > viewportContentWidth)
 				chars = viewportContentWidth;
 
-			TextLibrary.Write(buffer, viewport.ScrollX, chars);
+			var (unselectedLeft, selected, unselectedRight) =
+				CalculateSelectionHighlight(viewport.Clipboard, lineIndex, viewport.ScrollX, viewportContentWidth);
 
-			if (chars < viewportContentWidth)
+			if (unselectedLeft != 0)
 			{
-				TextLibrary.Write(
-					"                                                                                ",
-					0,
-					viewportContentWidth - chars);
+				if (chars >= unselectedLeft)
+					TextLibrary.Write(buffer, viewport.ScrollX, unselectedLeft);
+				else
+				{
+					int virtualChars = unselectedLeft - chars;
+					int realChars = unselectedLeft - virtualChars;
+
+					TextLibrary.Write(buffer, viewport.ScrollX, realChars);
+					TextLibrary.Write(_spaces, 0, virtualChars);
+				}
+			}
+
+			chars -= unselectedLeft;
+			if (chars < 0)
+				chars = 0;
+
+			if (selected != 0)
+			{
+				attr.SetInverted(TextLibrary);
+
+				if (chars >= selected)
+					TextLibrary.Write(buffer, viewport.ScrollX + unselectedLeft, selected);
+				else
+				{
+					int virtualChars = selected - chars;
+					int realChars = selected - virtualChars;
+
+					TextLibrary.Write(buffer, viewport.ScrollX + unselectedLeft, realChars);
+					TextLibrary.Write(_spaces, 0, virtualChars);
+				}
+
+				attr.Set(TextLibrary);
+			}
+
+			chars -= selected;
+			if (chars < 0)
+				chars = 0;
+
+			if (unselectedRight != 0)
+			{
+				if (chars >= unselectedRight)
+					TextLibrary.Write(buffer, viewport.ScrollX + unselectedLeft + selected, unselectedLeft);
+				else
+				{
+					int virtualChars = unselectedRight - chars;
+					int realChars = unselectedRight - virtualChars;
+
+					TextLibrary.Write(buffer, viewport.ScrollX + unselectedLeft + selected, realChars);
+					TextLibrary.Write(_spaces, 0, virtualChars);
+				}
 			}
 
 			if (!verticalScrollBar)
+			{
+				attr.Set(TextLibrary);
 				TextLibrary.Write(leftRight);
+			}
 			else
 			{
 				if ((y == 0) || (y + 1 == viewportContentHeight))
@@ -372,6 +425,55 @@ public partial class Program : HostedProgram
 		}
 	}
 
+	(int unselectedLeft, int selected, int unselectedRight) CalculateSelectionHighlight(
+		Clipboard clipboard,
+		int lineIndex, int scrollX, int chars)
+	{
+		// In a viewport showing line lineIndex, scrolled right by scrollX characters,
+		// subdivide chars characters into unselected and selected regions.
+
+		var (startX, startY, endX, endY) = clipboard.GetSelectionRange();
+
+		int effectiveStartX = Math.Min(startX, endX);
+		int effectiveEndX = Math.Max(startX, endX);
+
+		int effectiveStartY = Math.Min(startY, endY);
+		int effectiveEndY = Math.Max(startY, endY);
+
+		if ((effectiveStartX == 0) && (effectiveEndX == 0))
+			effectiveEndY--;
+
+		// Bail if the line isn't involved in the selection range at all.
+		if ((lineIndex < effectiveStartY) || (lineIndex > effectiveEndY))
+			return (chars, 0, 0);
+
+		// Select the whole line if we're in line mode.
+		if (endY != startY)
+			return (0, chars, 0);
+
+		// Select nothing if the character range is entirely off the screen.
+		if ((effectiveEndX <= scrollX) || (effectiveStartX - scrollX >= chars))
+			return (chars, 0, 0);
+
+		int left = effectiveStartX - scrollX;
+		int selected = effectiveEndX - effectiveStartX;
+		int right = chars - (effectiveEndX - scrollX);
+
+		if (left < 0)
+		{
+			left = 0;
+			selected = effectiveEndX - scrollX;
+		}
+
+		if (right < 0)
+		{
+			right = 0;
+			selected = chars - left;
+		}
+
+		return (left, selected, right);
+	}
+
 	static byte[]? _statusCharBuffer;
 
 	void RenderReferenceBar(int row)
@@ -422,10 +524,7 @@ public partial class Program : HostedProgram
 
 		if (referenceBarRemainingChars > 0)
 		{
-			TextLibrary.Write(
-				"                                                                                ",
-				0,
-				referenceBarRemainingChars);
+			TextLibrary.Write(_spaces, 0, referenceBarRemainingChars);
 		}
 
 
@@ -519,7 +618,7 @@ public partial class Program : HostedProgram
 				int labelWidth = GetTextLength(menu.Items[i].Label);
 
 				if (labelWidth < menu.Width)
-					TextLibrary.Write("                            ", 0, menu.Width - labelWidth);
+					TextLibrary.Write(_spaces, 0, menu.Width - labelWidth);
 				if (labelWidth > menu.Width)
 					throw new Exception("Internal error");
 
