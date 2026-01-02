@@ -1170,6 +1170,27 @@ public class BasicParser
 				return input;
 			}
 
+			case TokenType.LET:
+			{
+				var letStatement = new LetStatement();
+
+				int separator = tokenHandler.FindNextUnparenthesizedOf(TokenType.Equals);
+
+				if (separator < 0)
+					throw new SyntaxErrorException(tokenHandler.EndToken, "Expected: =");
+
+				var midToken = tokens[separator];
+
+				letStatement.TargetExpression = ParseExpression(tokenHandler.RemainingTokens.Slice(0, separator), midToken);
+
+				tokenHandler.Advance(separator);
+				tokenHandler.Expect(TokenType.Equals);
+
+				letStatement.ValueExpression = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken);
+
+				return letStatement;
+			}
+
 			case TokenType.LINE:
 			{
 				// One of:

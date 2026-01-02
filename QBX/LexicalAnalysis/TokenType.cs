@@ -81,6 +81,7 @@ public enum TokenType
 	[KeywordToken("LCASE$")] LCASE,
 	[KeywordFunction]
 	[KeywordToken] LEN,
+	[KeywordToken] LET,
 	[KeywordFunction]
 	[KeywordToken("LEFT$")] LEFT,
 	[KeywordToken] LINE,

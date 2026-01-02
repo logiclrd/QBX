@@ -40,6 +40,7 @@ public enum StatementType
 	If,
 	Loop,
 	Input,
+	Let,
 	LPrint,
 	LPrintWidth,
 	Line,
