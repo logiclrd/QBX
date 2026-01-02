@@ -8,6 +8,7 @@ public class Viewport
 	public CompilationUnit? CompilationUnit;
 	public CompilationElement? CompilationElement;
 	public HelpPage? HelpPage;
+	public bool IsEditable = true;
 	public bool IsFocused = false;
 	public bool ShowMaximize = true;
 	public int Height; // Ignored for the first, which fills available space.
@@ -15,6 +16,7 @@ public class Viewport
 	public int CursorX, CursorY;
 
 	public int CachedContentTopY;
+	public int CachedContentHeight;
 
 	public int GetContentLineCount()
 	{

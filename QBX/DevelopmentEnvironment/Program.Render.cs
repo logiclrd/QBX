@@ -49,10 +49,10 @@ public partial class Program : HostedProgram
 		if (HelpViewport != null)
 			row += RenderViewport(row, HelpViewport, connectUp: false, horizontalScrollBar: false);
 
-		row += RenderViewport(row, PrimaryViewport, connectUp: false, connectDown: true);
+		row += RenderViewport(row, PrimaryViewport, connectUp: false);
 
 		if (SplitViewport != null)
-			row += RenderViewport(row, SplitViewport, connectUp: true, connectDown: true);
+			row += RenderViewport(row, SplitViewport, connectUp: true);
 
 		row += RenderViewport(row, ImmediateViewport, connectUp: true, horizontalScrollBar: false);
 
@@ -191,7 +191,7 @@ public partial class Program : HostedProgram
 
 	ResettableStringWriter _lineRenderBuffer = new ResettableStringWriter();
 
-	int RenderViewport(int row, Viewport viewport, bool connectUp, bool connectDown = false, bool verticalScrollBar = true, bool horizontalScrollBar = true)
+	int RenderViewport(int row, Viewport viewport, bool connectUp, bool verticalScrollBar = true, bool horizontalScrollBar = true)
 	{
 		if (!Configuration.ShowScrollBars || !viewport.IsFocused || (viewport.Height <= 1))
 		{
@@ -266,6 +266,7 @@ public partial class Program : HostedProgram
 		TextLibrary.Write(topRight);
 
 		viewport.CachedContentTopY = row + 1;
+		viewport.CachedContentHeight = viewportContentHeight;
 
 		for (int y = 0; y < viewportContentHeight; y++)
 		{

@@ -12,7 +12,7 @@ public partial class Program : HostedProgram
 	public Configuration Configuration = new Configuration();
 
 	public List<Watch> Watches = new List<Watch>();
-	public Viewport? HelpViewport = null; // new Viewport() { HelpPage = new HelpPage() };
+	public Viewport? HelpViewport = null; // new Viewport() { HelpPage = new HelpPage(), IsEditable = false };
 	public Viewport PrimaryViewport = new Viewport() { IsFocused = true };
 	public Viewport? SplitViewport;
 	public Viewport ImmediateViewport = new Viewport() { Heading = "Immediate", ShowMaximize = false, Height = 2 };
