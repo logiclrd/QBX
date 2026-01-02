@@ -1,5 +1,7 @@
 ﻿using QBX.Firmware;
 
+using System.Text;
+
 namespace QBX.DevelopmentEnvironment;
 
 public partial class Program : HostedProgram
@@ -277,11 +279,18 @@ public partial class Program : HostedProgram
 
 			int lineIndex = y + viewport.ScrollY;
 
-			_lineRenderBuffer.Reset();
+			StringBuilder buffer;
 
-			viewport.CompilationElement?.Lines[lineIndex].Render(_lineRenderBuffer);
+			if ((lineIndex == viewport.CursorY) && (viewport.CurrentLineBuffer != null))
+				buffer = viewport.CurrentLineBuffer;
+			else
+			{
+				_lineRenderBuffer.Reset();
 
-			var buffer = _lineRenderBuffer.GetStringBuilder();
+				viewport.CompilationElement?.Lines[lineIndex].Render(_lineRenderBuffer);
+
+				buffer = _lineRenderBuffer.GetStringBuilder();
+			}
 
 			int chars = buffer.Length - viewport.ScrollX;
 

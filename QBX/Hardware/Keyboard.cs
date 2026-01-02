@@ -40,18 +40,14 @@ public class Keyboard
 			case SDL.Scancode.NumLockClear:
 				UpdateModifiers();
 				break;
-			default:
-			{
-				var keyEvent = new KeyEvent(evt.Scancode, _ctrlKey, _altKey, _shiftKey, _capsLock, _numLock, isRelease: !evt.Down);
+		}
 
-				lock (_sync)
-				{
-					_inputQueue.Enqueue(keyEvent);
-					Monitor.PulseAll(_sync);
-				}
+		var keyEvent = new KeyEvent(evt.Scancode, _ctrlKey, _altKey, _shiftKey, _capsLock, _numLock, isRelease: !evt.Down);
 
-				break;
-			}
+		lock (_sync)
+		{
+			_inputQueue.Enqueue(keyEvent);
+			Monitor.PulseAll(_sync);
 		}
 	}
 

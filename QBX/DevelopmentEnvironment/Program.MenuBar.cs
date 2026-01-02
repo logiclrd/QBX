@@ -1,5 +1,4 @@
 ﻿using QBX.Hardware;
-using System.Xml;
 
 namespace QBX.DevelopmentEnvironment;
 
@@ -113,7 +112,14 @@ public partial class Program
 
 	public int SelectedMenu = -1;
 	public int SelectedMenuItem = -1;
-	public bool IgnoreAltRelease = false;
+	public AltRelease AltReleaseAction;
+
+	public enum AltRelease
+	{
+		CloseMenu,
+		ActivateMenuBar,
+		Ignore,
+	}
 
 	bool ActivateMenuItem(MenuItem item)
 	{
@@ -131,10 +137,14 @@ public partial class Program
 		{
 			if (input.ScanCode == ScanCode.Alt)
 			{
-				if (IgnoreAltRelease)
-					IgnoreAltRelease = false;
-				else
-					Mode = UIMode.TextEditor;
+				switch (AltReleaseAction)
+				{
+					case AltRelease.Ignore: break;
+					case AltRelease.ActivateMenuBar: SelectedMenu = 0; break;
+					case AltRelease.CloseMenu: Mode = UIMode.TextEditor; break;
+				}
+
+				AltReleaseAction = AltRelease.CloseMenu;
 			}
 		}
 		else

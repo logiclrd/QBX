@@ -12,8 +12,7 @@ public class ResettableStringWriter : TextWriter
 
 	// Constructs a new StringWriter. A new StringBuilder is automatically
 	// created and associated with the new StringWriter.
-	public ResettableStringWriter()
-			: this(new StringBuilder(), CultureInfo.CurrentCulture)
+	public ResettableStringWriter() : this(new StringBuilder(), CultureInfo.CurrentCulture)
 	{
 	}
 

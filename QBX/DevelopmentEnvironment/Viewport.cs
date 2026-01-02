@@ -1,5 +1,7 @@
 ﻿using QBX.CodeModel;
 
+using System.Text;
+
 namespace QBX.DevelopmentEnvironment;
 
 public class Viewport
@@ -14,6 +16,7 @@ public class Viewport
 	public int Height; // Ignored for the first, which fills available space.
 	public int ScrollX, ScrollY;
 	public int CursorX, CursorY;
+	public StringBuilder? CurrentLineBuffer;
 
 	public int CachedContentTopY;
 	public int CachedContentHeight;
