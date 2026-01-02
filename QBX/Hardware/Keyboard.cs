@@ -68,7 +68,7 @@ public class Keyboard
 
 		lock (_sync)
 		{
-			while (!_inputQueue.Any())
+			while (_inputQueue.Count == 0)
 				Monitor.Wait(_sync);
 
 			return true;
@@ -81,7 +81,7 @@ public class Keyboard
 
 		lock (_sync)
 		{
-			while (!_inputQueue.Any())
+			while (_inputQueue.Count == 0)
 			{
 				var remainingTime = deadline - DateTime.UtcNow;
 
@@ -89,6 +89,30 @@ public class Keyboard
 					return false;
 
 				Monitor.Wait(_sync, remainingTime);
+			}
+
+			return true;
+		}
+	}
+
+
+	public bool WaitForInput(CancellationToken cancellationToken)
+	{
+		void NotifyWaitLoop()
+		{
+			lock (_sync)
+				Monitor.PulseAll(_sync);
+		}
+
+		using (cancellationToken.Register(NotifyWaitLoop))
+		lock (_sync)
+		{
+			while (_inputQueue.Count == 0)
+			{
+				Monitor.Wait(_sync);
+
+				if (cancellationToken.IsCancellationRequested)
+					return false;
 			}
 
 			return true;

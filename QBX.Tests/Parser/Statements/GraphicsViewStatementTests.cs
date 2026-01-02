@@ -9,7 +9,7 @@ public class GraphicsViewportStatementTests
 {
 	[TestCase("VIEW",
 		false,
-		null, null, null, null, null, null, null, null,
+		null, "", null, "", null, "", null, "",
 		null, "", null, "")]
 	[TestCase("VIEW (1, 2)-(3, 4)",
 		false,
@@ -56,7 +56,7 @@ public class GraphicsViewportStatementTests
 		viewportResult.AbsoluteCoordinates.Should().Be(expectAbsoluteCoordinates);
 
 		[CustomAssertion]
-		void ExpectExpression(Expression? value, Type? expectType, string? expectValue)
+		static void ExpectExpression(Expression? value, Type? expectType, string? expectValue)
 		{
 			if (expectType == null)
 				value.Should().BeNull();
