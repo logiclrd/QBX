@@ -533,9 +533,16 @@ public partial class Program : HostedProgram
 				}
 				else
 				{
-					attr = Configuration.DisplayAttributes.PullDownMenuandListBoxNormalText;
+					if (menu.Items[i].IsEnabled)
+						attr = Configuration.DisplayAttributes.PullDownMenuandListBoxNormalText;
+					else
+						attr = Configuration.DisplayAttributes.PullDownMenuandDialogBoxDisabledItems;
+
 					accessKeyAttr = Configuration.DisplayAttributes.MenuBarAndPullDownMenuAccessKeys;
 				}
+
+				if (!menu.Items[i].IsEnabled)
+					accessKeyAttr = attr;
 
 				TextLibrary.Write(vertical);
 				RenderTextWithAccessKey(menu.Items[i].Label, attr, accessKeyAttr);

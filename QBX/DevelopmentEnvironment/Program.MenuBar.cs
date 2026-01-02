@@ -115,9 +115,14 @@ public partial class Program
 	public int SelectedMenuItem = -1;
 	public bool IgnoreAltRelease = false;
 
-	void ActivateMenuItem(MenuItem item)
+	bool ActivateMenuItem(MenuItem item)
 	{
+		if (!item.IsEnabled)
+			return false;
+
 		// TODO
+
+		return true;
 	}
 
 	void ProcessMenuBarKey(KeyEvent input)
@@ -189,8 +194,8 @@ public partial class Program
 					Mode = UIMode.TextEditor;
 					break;
 				case ScanCode.Return:
-					Mode = UIMode.TextEditor;
-					ActivateMenuItem(MenuBar[SelectedMenu].Items[SelectedMenuItem]);
+					if (ActivateMenuItem(MenuBar[SelectedMenu].Items[SelectedMenuItem]))
+						Mode = UIMode.TextEditor;
 					break;
 				case ScanCode.Left:
 				case ScanCode.Right:
@@ -226,8 +231,8 @@ public partial class Program
 
 						if (menu.ItemByAccelerator.TryGetValue(inkey, out var item))
 						{
-							Mode = UIMode.TextEditor;
-							ActivateMenuItem(item);
+							if (ActivateMenuItem(item))
+								Mode = UIMode.TextEditor;
 						}
 					}
 
