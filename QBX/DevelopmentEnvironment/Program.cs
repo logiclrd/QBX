@@ -31,6 +31,8 @@ public partial class Program : HostedProgram
 		Machine = machine;
 		Video = video;
 
+		MenuBar = CreateMenuBar();
+
 		video.SetMode(3);
 
 		if (machine.GraphicsArray.Sequencer.CharacterWidth == 9)
