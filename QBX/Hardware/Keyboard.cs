@@ -7,6 +7,13 @@ public class Keyboard
 	object _sync = new();
 	Queue<KeyEvent> _inputQueue = new Queue<KeyEvent>();
 
+	public bool CtrlKey => _ctrlKey;
+	public bool AltKey => _altKey;
+	public bool ShiftKey => _shiftKey;
+
+	public bool CapsLock => _capsLock;
+	public bool NumLock => _numLock;
+
 	bool _ctrlKey;
 	bool _altKey;
 	bool _shiftKey;

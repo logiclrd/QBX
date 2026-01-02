@@ -116,6 +116,7 @@ public partial class Program
 
 	public enum AltRelease
 	{
+		DeactivateMenuBar,
 		CloseMenu,
 		ActivateMenuBar,
 		Ignore,
@@ -141,16 +142,20 @@ public partial class Program
 				{
 					case AltRelease.Ignore: break;
 					case AltRelease.ActivateMenuBar: SelectedMenu = 0; break;
-					case AltRelease.CloseMenu: Mode = UIMode.TextEditor; break;
+					case AltRelease.DeactivateMenuBar: Mode = UIMode.TextEditor; break;
 				}
 
-				AltReleaseAction = AltRelease.CloseMenu;
+				AltReleaseAction = AltRelease.DeactivateMenuBar;
 			}
 		}
 		else
 		{
 			switch (input.ScanCode)
 			{
+				case ScanCode.Alt:
+					AltReleaseAction = AltRelease.DeactivateMenuBar;
+					break;
+
 				case ScanCode.Escape:
 					Mode = UIMode.TextEditor;
 					break;
@@ -169,7 +174,12 @@ public partial class Program
 				}
 				default:
 				{
-					string inkey = input.ToInKeyString();
+					string inkey = "";
+
+					if (!Machine.Keyboard.AltKey)
+						inkey = input.ToInKeyString();
+					else
+						inkey = input.ScanCode.ToCharacterString();
 
 					if (!string.IsNullOrEmpty(inkey))
 					{
@@ -180,6 +190,7 @@ public partial class Program
 							Mode = UIMode.Menu;
 							SelectedMenu = MenuBar.Items.IndexOf(menu);
 							SelectedMenuItem = 0;
+							AltReleaseAction = AltRelease.Ignore;
 						}
 					}
 
@@ -194,12 +205,26 @@ public partial class Program
 		if (input.IsRelease)
 		{
 			if (input.ScanCode == ScanCode.Alt)
-				Mode = UIMode.TextEditor;
+			{
+				switch (AltReleaseAction)
+				{
+					case AltRelease.Ignore: break;
+					case AltRelease.ActivateMenuBar: SelectedMenu = 0; break;
+					case AltRelease.CloseMenu: Mode = UIMode.MenuBar; break;
+					case AltRelease.DeactivateMenuBar: Mode = UIMode.TextEditor; break;
+				}
+
+				AltReleaseAction = AltRelease.CloseMenu;
+			}
 		}
 		else
 		{
 			switch (input.ScanCode)
 			{
+				case ScanCode.Alt:
+					AltReleaseAction = AltRelease.CloseMenu;
+					break;
+
 				case ScanCode.Escape:
 					Mode = UIMode.TextEditor;
 					break;
@@ -231,7 +256,12 @@ public partial class Program
 				}
 				default:
 				{
-					string inkey = input.ToInKeyString();
+					string inkey = "";
+
+					if (!Machine.Keyboard.AltKey)
+						inkey = input.ToInKeyString();
+					else
+						inkey = input.ScanCode.ToCharacterString();
 
 					if (!string.IsNullOrEmpty(inkey))
 					{
