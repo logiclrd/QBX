@@ -42,18 +42,12 @@ public class Keyboard
 				break;
 			default:
 			{
-				if (evt.Down)
-				{
-					var keyEvent = new KeyEvent(evt.Scancode, _ctrlKey, _altKey, _shiftKey, _capsLock, _numLock);
+				var keyEvent = new KeyEvent(evt.Scancode, _ctrlKey, _altKey, _shiftKey, _capsLock, _numLock, isRelease: !evt.Down);
 
-					if (!keyEvent.IsEmpty)
-					{
-						lock (_sync)
-						{
-							_inputQueue.Enqueue(keyEvent);
-							Monitor.PulseAll(_sync);
-						}
-					}
+				lock (_sync)
+				{
+					_inputQueue.Enqueue(keyEvent);
+					Monitor.PulseAll(_sync);
 				}
 
 				break;

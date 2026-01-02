@@ -1,11 +1,13 @@
 ﻿using QBX.Hardware;
+using System.Xml;
 
 namespace QBX.DevelopmentEnvironment;
 
 public partial class Program
 {
-	Menu[] MenuBar =
-		[
+	MenuBar MenuBar =
+		new MenuBar()
+		{
 			new Menu("&File", 16)
 			{
 				new MenuItem("&New Program"),
@@ -107,15 +109,131 @@ public partial class Program
 				new MenuItem("&Topic:                 F1") { IsEnabled = false },
 				new MenuItem("Using &Help       Shift+F1"),
 			}
-		];
+		};
 
-	void ProcessMenuBarKey(KeyEvent input)
+	public int SelectedMenu = -1;
+	public int SelectedMenuItem = -1;
+	public bool IgnoreAltRelease = false;
+
+	void ActivateMenuItem(MenuItem item)
 	{
 		// TODO
 	}
 
+	void ProcessMenuBarKey(KeyEvent input)
+	{
+		if (input.IsRelease)
+		{
+			if (input.ScanCode == ScanCode.Alt)
+			{
+				if (IgnoreAltRelease)
+					IgnoreAltRelease = false;
+				else
+					Mode = UIMode.TextEditor;
+			}
+		}
+		else
+		{
+			switch (input.ScanCode)
+			{
+				case ScanCode.Escape:
+					Mode = UIMode.TextEditor;
+					break;
+				case ScanCode.Return:
+				case ScanCode.Up:
+				case ScanCode.Down:
+					Mode = UIMode.Menu;
+					SelectedMenuItem = 0;
+					break;
+				case ScanCode.Left:
+				case ScanCode.Right:
+				{
+					SelectedMenu = (SelectedMenu + MenuBar.Count +
+						(input.ScanCode == ScanCode.Left ? -1 : +1)) % MenuBar.Count;
+					break;
+				}
+				default:
+				{
+					string inkey = input.ToInKeyString();
+
+					if (!string.IsNullOrEmpty(inkey))
+					{
+						MenuBar.EnsureAcceleratorLookUp();
+
+						if (MenuBar.ItemByAccelerator.TryGetValue(inkey, out var menu))
+						{
+							Mode = UIMode.Menu;
+							SelectedMenu = MenuBar.Items.IndexOf(menu);
+							SelectedMenuItem = 0;
+						}
+					}
+
+					break;
+				}
+			}
+		}
+	}
+
 	void ProcessMenuKey(KeyEvent input)
 	{
-		// TODO
+		if (input.IsRelease)
+		{
+			if (input.ScanCode == ScanCode.Alt)
+				Mode = UIMode.TextEditor;
+		}
+		else
+		{
+			switch (input.ScanCode)
+			{
+				case ScanCode.Escape:
+					Mode = UIMode.TextEditor;
+					break;
+				case ScanCode.Return:
+					Mode = UIMode.TextEditor;
+					ActivateMenuItem(MenuBar[SelectedMenu].Items[SelectedMenuItem]);
+					break;
+				case ScanCode.Left:
+				case ScanCode.Right:
+				{
+					SelectedMenu = (SelectedMenu + MenuBar.Count +
+						(input.ScanCode == ScanCode.Left ? -1 : +1)) % MenuBar.Count;
+					SelectedMenuItem = 0;
+					break;
+				}
+				case ScanCode.Up:
+				case ScanCode.Down:
+				{
+					var menu = MenuBar[SelectedMenu];
+
+					int delta = input.ScanCode == ScanCode.Down ? 1 : menu.Items.Count - 1;
+
+					do
+					{
+						SelectedMenuItem = (SelectedMenuItem + delta) % menu.Items.Count;
+					} while (menu.Items[SelectedMenuItem].IsSeparator);
+
+					break;
+				}
+				default:
+				{
+					string inkey = input.ToInKeyString();
+
+					if (!string.IsNullOrEmpty(inkey))
+					{
+						var menu = MenuBar[SelectedMenu];
+
+						menu.EnsureAcceleratorLookUp();
+
+						if (menu.ItemByAccelerator.TryGetValue(inkey, out var item))
+						{
+							Mode = UIMode.TextEditor;
+							ActivateMenuItem(item);
+						}
+					}
+
+					break;
+				}
+			}
+		}
 	}
 }

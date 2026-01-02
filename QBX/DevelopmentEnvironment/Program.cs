@@ -24,9 +24,6 @@ public partial class Program : HostedProgram
 
 	public UIMode Mode;
 
-	public int SelectedMenu = -1;
-	public int SelectedMenuItem = -1;
-
 	public Dialog? CurrentDialog;
 
 	public Program(Machine machine, Video video)
@@ -44,9 +41,8 @@ public partial class Program : HostedProgram
 
 		FocusedViewport = PrimaryViewport;
 
+		Mode = UIMode.MenuBar;
 		SelectedMenu = 0;
-		Mode = UIMode.Menu;
-		SelectedMenuItem = 2;
 	}
 
 	public override bool EnableMainLoop => true;
@@ -129,10 +125,12 @@ public partial class Program : HostedProgram
 
 		RenderReferenceBar(row);
 
-		if (isMenuOpen)
+		if (isMenuActive || isMenuOpen)
 		{
 			TextLibrary.HideCursor();
-			RenderOpenMenu();
+
+			if (isMenuOpen)
+				RenderOpenMenu();
 		}
 		else if (CurrentDialog != null)
 			CurrentDialog.Render(TextLibrary);
@@ -164,17 +162,23 @@ public partial class Program : HostedProgram
 			menuSelectedAccessKeyAttr = menuSelectedAttr;
 		}
 
+		if (!isMenuActive)
+		{
+			menuSelectedAttr = menuAttr;
+			menuSelectedAccessKeyAttr = menuAccessKeyAttr;
+		}
+
 		menuAttr.Set(TextLibrary);
 		TextLibrary.Write("  ");
 
-		for (int i = 0; i < MenuBar.Length; i++)
+		for (int i = 0; i < MenuBar.Count; i++)
 		{
 			var thisAttr = (i == SelectedMenu) ? menuSelectedAttr : menuAttr;
 			var thisAccessKeyAttr = (i == SelectedMenu) ? menuSelectedAccessKeyAttr : menuAccessKeyAttr;
 
-			if (i + 1 >= MenuBar.Length)
+			if (i + 1 >= MenuBar.Count)
 			{
-				thisAttr.Set(TextLibrary);
+				menuAttr.Set(TextLibrary);
 				TextLibrary.Write(
 					"                                                                                ",
 					0,
@@ -182,6 +186,9 @@ public partial class Program : HostedProgram
 			}
 
 			MenuBar[i].CachedX = TextLibrary.CursorX;
+
+			if (MenuBar[i].CachedX + MenuBar[i].Width + 2 >= TextLibrary.Width - 3)
+				MenuBar[i].CachedX = TextLibrary.Width - MenuBar[i].Width - 3;
 
 			RenderTextWithAccessKey(" ", thisAttr, thisAccessKeyAttr);
 			RenderTextWithAccessKey(MenuBar[i].Label, thisAttr, thisAccessKeyAttr);
@@ -479,7 +486,7 @@ public partial class Program : HostedProgram
 
 	void RenderOpenMenu()
 	{
-		if ((SelectedMenu < 0) || (SelectedMenu >= MenuBar.Length))
+		if ((SelectedMenu < 0) || (SelectedMenu >= MenuBar.Count))
 			return;
 
 		var menu = MenuBar[SelectedMenu];
