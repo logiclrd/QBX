@@ -41,8 +41,7 @@ public partial class Program : HostedProgram
 
 		FocusedViewport = PrimaryViewport;
 
-		Mode = UIMode.MenuBar;
-		SelectedMenu = 0;
+		Mode = UIMode.TextEditor;
 	}
 
 	public override bool EnableMainLoop => true;
