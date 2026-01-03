@@ -13,7 +13,11 @@ public class CodeLine : IRenderableCode
 
 	public bool IsEmpty => !Statements.Any();
 
-	public bool IsCommentLine => (Statements.Count == 1) && (Statements[0].Type == StatementType.Comment);
+	public bool IsCommentLine =>
+		((Statements.Count == 1) && (Statements[0].Type == StatementType.Comment)) ||
+		((Statements.Count == 0) && !string.IsNullOrWhiteSpace(EndOfLineComment));
+
+	public bool IsDefTypeLine => (Statements.Count == 1) && (Statements[0].Type == StatementType.DefType);
 
 	public static CodeLine CreateEmpty() => new CodeLine();
 

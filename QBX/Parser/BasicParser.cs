@@ -68,6 +68,19 @@ public class BasicParser
 
 		mainElement.AddLines(comments);
 
+		// Any DefTypeStatements at the end of elements actually apply to the following elements.
+		for (int i = 1; i < unit.Elements.Count; i++)
+		{
+			var precedingElement = unit.Elements[i - 1];
+			var followingElement = unit.Elements[i];
+
+			while ((precedingElement.Lines.Count > 0) && precedingElement.Lines.Last().IsDefTypeLine)
+			{
+				followingElement.Lines.Insert(0, precedingElement.Lines.Last());
+				precedingElement.Lines.RemoveAt(precedingElement.Lines.Count - 1);
+			}
+		}
+
 		return unit;
 	}
 
@@ -709,35 +722,46 @@ public class BasicParser
 					case TokenType.DEFSTR: defType.DataType = DataType.STRING; break;
 				}
 
-				string? rangeStart = null;
-				string? rangeEnd = null;
+				TokenRef endTokenRef = new TokenRef();
 
-				rangeStart = tokenHandler.ExpectIdentifier(allowTypeCharacter: false, out var identifierToken);
-
-				if (rangeStart.Length != 1)
-					throw new SyntaxErrorException(identifierToken, "Expected: letter");
-
-				defType.RangeStart = char.ToUpperInvariant(rangeStart[0]);
-
-				if (tokenHandler.HasMoreTokens)
+				foreach (var rangeTokens in SplitCommaDelimitedList(tokenHandler.RemainingTokens, endTokenRef))
 				{
-					tokenHandler.Expect(TokenType.Minus);
-					tokenHandler.ExpectMoreTokens();
+					var rangeTokenHandler = new TokenHandler(rangeTokens);
 
-					rangeEnd = tokenHandler.ExpectIdentifier(allowTypeCharacter: false, out identifierToken);
+					var range = new DefTypeRange();
 
-					if (rangeEnd.Length != 1)
+					string? rangeStart = null;
+					string? rangeEnd = null;
+
+					rangeStart = rangeTokenHandler.ExpectIdentifier(allowTypeCharacter: false, out var identifierToken);
+
+					if (rangeStart.Length != 1)
 						throw new SyntaxErrorException(identifierToken, "Expected: letter");
 
-					defType.RangeEnd = char.ToUpperInvariant(rangeEnd[0]);
+					range.Start = char.ToUpperInvariant(rangeStart[0]);
+
+					if (rangeTokenHandler.HasMoreTokens)
+					{
+						rangeTokenHandler.Expect(TokenType.Minus);
+						rangeTokenHandler.ExpectMoreTokens();
+
+						rangeEnd = rangeTokenHandler.ExpectIdentifier(allowTypeCharacter: false, out identifierToken);
+
+						if (rangeEnd.Length != 1)
+							throw new SyntaxErrorException(identifierToken, "Expected: letter");
+
+						range.End = char.ToUpperInvariant(rangeEnd[0]);
+					}
+
+					range.Normalize();
+
+					if (endTokenRef.Token != null)
+						rangeTokenHandler.ExpectEndOfTokens("Expected: ,");
+					else
+						rangeTokenHandler.ExpectEndOfTokens("Expected: end of statement");
+
+					defType.AddRange(range);
 				}
-
-				if (defType.RangeStart == defType.RangeEnd)
-					defType.RangeEnd = null;
-				else if (defType.RangeStart > defType.RangeEnd)
-					(defType.RangeStart, defType.RangeEnd) = (defType.RangeEnd, defType.RangeStart);
-
-				tokenHandler.ExpectEndOfTokens();
 
 				return defType;
 			}
