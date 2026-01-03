@@ -129,8 +129,8 @@ public partial class Program : HostedProgram
 
 			MenuBar[i].CachedX = TextLibrary.CursorX;
 
-			if (MenuBar[i].CachedX + MenuBar[i].Width + 2 >= TextLibrary.Width - 3)
-				MenuBar[i].CachedX = TextLibrary.Width - MenuBar[i].Width - 3;
+			if (MenuBar[i].CachedX + MenuBar[i].Width + 2 >= TextLibrary.Width - 5)
+				MenuBar[i].CachedX = TextLibrary.Width - MenuBar[i].Width - 5;
 
 			RenderTextWithAccessKey(" ", thisAttr, thisAccessKeyAttr);
 			RenderTextWithAccessKey(MenuBar[i].Label, thisAttr, thisAccessKeyAttr);
@@ -569,13 +569,12 @@ public partial class Program : HostedProgram
 		char separatorLeft = '├';
 		char separatorRight = '┤';
 
-		string horizontal = "────────────────────────────────────────────────────────────────────────────────";
 		char vertical = '│';
 
 		TextLibrary.MoveCursor(boxX, 1);
 		Configuration.DisplayAttributes.PullDownMenuBorder.Set(TextLibrary);
 		TextLibrary.Write(topLeft);
-		TextLibrary.Write(horizontal, 0, menu.Width);
+		TextLibrary.Write(_horizontalRule, 0, menu.Width + 2);
 		TextLibrary.Write(topRight);
 
 		for (int i = 0; i < menu.Items.Count; i++)
@@ -587,7 +586,7 @@ public partial class Program : HostedProgram
 			if (menu.Items[i].IsSeparator)
 			{
 				TextLibrary.Write(separatorLeft);
-				TextLibrary.Write(horizontal, 0, menu.Width);
+				TextLibrary.Write(_horizontalRule, 0, menu.Width + 2);
 				TextLibrary.Write(separatorRight);
 			}
 			else
@@ -613,6 +612,8 @@ public partial class Program : HostedProgram
 					accessKeyAttr = attr;
 
 				TextLibrary.Write(vertical);
+				attr.Set(TextLibrary);
+				TextLibrary.Write(' ');
 				RenderTextWithAccessKey(menu.Items[i].Label, attr, accessKeyAttr);
 
 				int labelWidth = GetTextLength(menu.Items[i].Label);
@@ -622,6 +623,8 @@ public partial class Program : HostedProgram
 				if (labelWidth > menu.Width)
 					throw new Exception("Internal error");
 
+				TextLibrary.Write(' ');
+
 				Configuration.DisplayAttributes.PullDownMenuBorder.Set(TextLibrary);
 				TextLibrary.Write(vertical);
 			}
@@ -629,17 +632,17 @@ public partial class Program : HostedProgram
 
 		TextLibrary.MoveCursor(boxX, 2 + menu.Items.Count);
 		TextLibrary.Write(bottomLeft);
-		TextLibrary.Write(horizontal, 0, menu.Width);
+		TextLibrary.Write(_horizontalRule, 0, menu.Width + 2);
 		TextLibrary.Write(bottomRight);
 
 		// Shadow
 		Configuration.DisplayAttributes.PullDownMenuandDialogBoxShadow.Set(TextLibrary);
 
-		int shadowX = boxX + 1 + menu.Width + 1;
+		int shadowX = boxX + 1 + menu.Width + 3;
 
 		for (int y = 0, yl = menu.Items.Count + 2; y < yl; y++)
 			TextLibrary.WriteAttributesAt(shadowX, y + 2, charCount: 2);
 
-		TextLibrary.WriteAttributesAt(boxX + 2, menu.Items.Count + 3, charCount: menu.Width);
+		TextLibrary.WriteAttributesAt(boxX + 2, menu.Items.Count + 3, charCount: menu.Width + 2);
 	}
 }
