@@ -356,6 +356,9 @@ public partial class Program
 
 		ClampViewportScrollToCursor();
 
+		if (newScrollY < 0)
+			newScrollY = 0;
+
 		if ((newCursorY != FocusedViewport.CursorY) && FocusedViewport.CurrentLineChanged)
 		{
 			try
@@ -396,13 +399,7 @@ public partial class Program
 
 		FocusedViewport = viewport;
 
-		viewport.CompilationUnit = element.Owner;
-		viewport.CompilationElement = element;
-
-		if (element.Name == null)
-			viewport.Heading = element.Owner.Name;
-		else
-			viewport.Heading = element.Owner.Name + ":" + element.Name;
+		FocusedViewport.SwitchTo(element);
 
 		if (lineNumber >= element.Lines.Count)
 			lineNumber = element.Lines.Count - 1;

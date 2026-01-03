@@ -6,6 +6,21 @@ public class CompilationUnit : IRenderableCode
 
 	public List<CompilationElement> Elements { get; } = new List<CompilationElement>();
 
+	public bool IsEmpty
+	{
+		get
+		{
+			if (Elements.Count == 0)
+				return true;
+			if (Elements.Count > 1)
+				return false;
+
+			return (Elements[0].Lines.Count == 0);
+		}
+	}
+
+	public bool IsPristine = true; // Used by DevelopmentEnvironment
+
 	public void Render(TextWriter writer)
 	{
 		foreach (var element in Elements)

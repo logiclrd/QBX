@@ -15,6 +15,7 @@ public partial class Program : HostedProgram
 	public Configuration Configuration = new Configuration();
 
 	public List<CompilationUnit> LoadedFiles = new List<CompilationUnit>();
+	public int MainModuleIndex;
 
 	public List<Watch> Watches = new List<Watch>();
 	public Viewport? HelpViewport = null; // new Viewport() { HelpPage = new HelpPage(), IsEditable = false };
@@ -93,54 +94,6 @@ public partial class Program : HostedProgram
 						case UIMode.MenuBar: ProcessMenuBarKey(input); break;
 						case UIMode.Dialog: CurrentDialog?.ProcessKey(input); break;
 					}
-				}
-			}
-		}
-	}
-
-	void StartNewProgram()
-	{
-		LoadedFiles.Clear();
-
-		var unit = CompilationUnit.CreateNew();
-
-		LoadedFiles.Add(unit);
-		ResetCallsMenu();
-
-		PrimaryViewport.CompilationUnit = unit;
-		PrimaryViewport.CompilationElement = unit.Elements[0];
-
-		if (SplitViewport != null)
-		{
-			SplitViewport.CompilationUnit = unit;
-			SplitViewport.CompilationElement = unit.Elements[0];
-		}
-	}
-
-	void LoadFile(string path, bool replaceExistingProgram)
-	{
-		if (replaceExistingProgram)
-			LoadedFiles.Clear();
-
-		using (var reader = new StreamReader(path))
-		{
-			var lexer = new Lexer(reader);
-
-			var unit = Parser.Parse(lexer);
-
-			unit.Name = Path.GetFileName(path).ToUpperInvariant();
-
-			LoadedFiles.Add(unit);
-
-			if (replaceExistingProgram)
-			{
-				PrimaryViewport.CompilationUnit = unit;
-				PrimaryViewport.CompilationElement = unit.Elements[0];
-
-				if (SplitViewport != null)
-				{
-					SplitViewport.CompilationUnit = unit;
-					SplitViewport.CompilationElement = unit.Elements[0];
 				}
 			}
 		}

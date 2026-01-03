@@ -35,6 +35,33 @@ public class Viewport
 	public int CachedContentTopY;
 	public int CachedContentHeight;
 
+	public void SwitchTo(CompilationElement element)
+	{
+		CompilationElement?.CachedCursorLine = CursorY;
+
+		CompilationUnit = element.Owner;
+		CompilationElement = element;
+
+		if (element.Name == null)
+			Heading = element.Owner.Name;
+		else
+			Heading = element.Owner.Name + ":" + element.Name;
+
+		CursorX = 0;
+		CursorY = element.CachedCursorLine;
+
+		if (CursorY >= element.Lines.Count)
+			CursorY = element.Lines.Count - 1;
+		if (CursorY < 0)
+			CursorY = 0;
+
+		ScrollX = 0;
+		ScrollY = CursorY - CachedContentHeight + 1;
+
+		if (ScrollY < 0)
+			ScrollY = 0;
+	}
+
 	public int GetContentLineCount()
 	{
 		if (HelpPage != null)
@@ -86,7 +113,10 @@ public class Viewport
 		if ((CompilationElement != null) && IsEditable)
 		{
 			if (y < CompilationElement.Lines.Count)
+			{
 				CompilationElement.Lines.RemoveAt(y);
+				CompilationElement.Dirty();
+			}
 		}
 	}
 
@@ -98,6 +128,8 @@ public class Viewport
 				CompilationElement.Lines.Insert(y, newLine);
 			else
 				CompilationElement.Lines.Add(newLine);
+
+			CompilationElement.Dirty();
 		}
 	}
 
@@ -109,6 +141,8 @@ public class Viewport
 				CompilationElement.Lines[CursorY] = newLine;
 			else
 				CompilationElement.Lines.Add(newLine);
+
+			CompilationElement.Dirty();
 
 			CurrentLineChanged = false;
 			CurrentLineBuffer = null;

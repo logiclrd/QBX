@@ -9,6 +9,13 @@ public class CompilationElement(CompilationUnit owner) : IRenderableCode
 	public CompilationElementType Type { get; set; }
 	public List<CodeLine> Lines { get; } = new List<CodeLine>();
 
+	public int CachedCursorLine; // Used by DevelopmentEnvironment
+
+	public void Dirty()
+	{
+		owner.IsPristine = false;
+	}
+
 	public void AddLine(CodeLine line)
 	{
 		Lines.Add(line);
