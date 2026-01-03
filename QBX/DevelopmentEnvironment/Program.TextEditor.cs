@@ -208,6 +208,7 @@ public partial class Program
 				if (FocusedViewport.CursorX < buffer.Length)
 				{
 					buffer.Remove(FocusedViewport.CursorX, 1);
+					FocusedViewport.CurrentLineBuffer = buffer;
 					FocusedViewport.CurrentLineChanged = true;
 				}
 				else

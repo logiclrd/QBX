@@ -346,4 +346,26 @@ public class LexerTests
 		result[2].Value.Should().Be("   ");
 		result[3].Type.Should().Be(TokenType.NewLine);
 	}
+
+	[TestCase("1")]
+	[TestCase(".2")]
+	[TestCase("0.7")]
+	[TestCase("&H35")]
+	[TestCase("&O35")]
+	public void NumberFollowedImmediatelyByLetter(string number)
+	{
+		// Arrange
+		string input = number + "TO";
+
+		var sut = new Lexer(input);
+
+		// Act
+		var result = sut.ToList();
+
+		// Assert
+		result.Should().HaveCount(2);
+		result[0].Type.Should().Be(TokenType.Number);
+		result[0].Value.Should().Be(number);
+		result[1].Type.Should().Be(TokenType.TO);
+	}
 }
