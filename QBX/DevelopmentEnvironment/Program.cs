@@ -36,7 +36,7 @@ public partial class Program : HostedProgram
 		Machine = machine;
 		Video = video;
 
-		MenuBar = CreateMenuBar();
+		InitializeMenuBar();
 
 		video.SetMode(3);
 
