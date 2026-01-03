@@ -53,6 +53,7 @@ public enum TokenType
 	[KeywordToken] ELSE,
 	[KeywordToken] ELSEIF,
 	[KeywordToken] END,
+	[KeywordToken] ENDIF,
 	[KeywordToken] EQV,
 	[KeywordFunction]
 	[KeywordToken] EXP,

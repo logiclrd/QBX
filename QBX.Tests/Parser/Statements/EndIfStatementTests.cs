@@ -6,11 +6,12 @@ namespace QBX.Tests.Parser.Statements;
 
 public class EndIfStatementTests
 {
-	[Test]
-	public void ShouldParse()
+	[TestCase("END IF")]
+	[TestCase("ENDIF")]
+	public void ShouldParse(string statement)
 	{
 		// Arrange
-		var tokens = new Lexer("END IF").ToList();
+		var tokens = new Lexer(statement).ToList();
 
 		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
 

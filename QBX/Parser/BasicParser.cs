@@ -870,6 +870,12 @@ public class BasicParser
 				return endBlock;
 			}
 
+			case TokenType.ENDIF:
+			{
+				tokenHandler.ExpectEndOfTokens();
+				return new EndIfStatement();
+			}
+
 			case TokenType.FIELD:
 			{
 				var field = new FieldStatement();
