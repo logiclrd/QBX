@@ -63,6 +63,16 @@ public partial class Program
 
 		switch (input.ScanCode)
 		{
+			case ScanCode.F5:
+			{
+				if (input.Modifiers.ShiftKey)
+					Run();
+				else
+					Continue();
+
+				break;
+			}
+
 			case ScanCode.Up:
 			case ScanCode.Down:
 			case ScanCode.Left:

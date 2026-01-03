@@ -1,4 +1,4 @@
-﻿namespace QBX.ExecutionEngine.Execution;
+﻿namespace QBX.ExecutionEngine.Compiled;
 
 public interface IEvaluable<T>
 {
