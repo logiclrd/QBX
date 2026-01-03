@@ -343,6 +343,57 @@ public partial class Program
 		}
 	}
 
+	void ResetCallsMenu()
+	{
+		mnuCalls.Items.Clear();
+
+		if (LoadedFiles.Any())
+		{
+			PushCall(
+				LoadedFiles[0].Name,
+				LoadedFiles[0].Elements[0],
+				lineNumber: 0,
+				column: 0);
+		}
+	}
+
+	void PushCall(string routineName, CodeModel.CompilationElement element, int lineNumber, int column)
+	{
+		int availableChars = mnuCalls.Width;
+
+		if (routineName.Length > availableChars)
+		{
+			string diaresis = "...";
+
+			availableChars -= diaresis.Length;
+
+			int left = availableChars / 2;
+			int right = availableChars - left;
+
+			routineName =
+				routineName.Substring(0, left) +
+				diaresis +
+				routineName.Substring(routineName.Length - right);
+		}
+
+		mnuCalls.Insert(
+			0,
+			new MenuItem("&" + routineName) // TODO: handling for duplicate access keys
+			{
+				Clicked =
+					() =>
+					{
+						NavigateTo(element, lineNumber, column);
+					}
+			});
+	}
+
+	void PopCall()
+	{
+		if (mnuCalls.Count > 1)
+			mnuCalls.RemoveAt(0);
+	}
+
 	void mnuFileExit_Clicked()
 	{
 		Machine.KeepRunning = false;

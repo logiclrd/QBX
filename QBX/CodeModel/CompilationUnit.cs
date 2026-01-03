@@ -2,6 +2,8 @@
 
 public class CompilationUnit : IRenderableCode
 {
+	public string Name { get; set; } = "Untitled";
+
 	public List<CompilationElement> Elements { get; } = new List<CompilationElement>();
 
 	public void Render(TextWriter writer)
@@ -18,7 +20,7 @@ public class CompilationUnit : IRenderableCode
 		var unit = new CompilationUnit();
 
 		unit.Elements.Add(
-			new CompilationElement()
+			new CompilationElement(unit)
 			{
 				Type = CompilationElementType.Main
 			});

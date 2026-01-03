@@ -1,8 +1,11 @@
-﻿
-namespace QBX.CodeModel;
+﻿namespace QBX.CodeModel;
 
-public class CompilationElement : IRenderableCode
+public class CompilationElement(CompilationUnit owner) : IRenderableCode
 {
+	public CompilationUnit Owner => owner;
+
+	public string? Name { get; set; }
+
 	public CompilationElementType Type { get; set; }
 	public List<CodeLine> Lines { get; } = new List<CodeLine>();
 

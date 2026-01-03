@@ -13,6 +13,8 @@ public partial class Program : HostedProgram
 
 	public Configuration Configuration = new Configuration();
 
+	public List<CompilationUnit> LoadedFiles = new List<CompilationUnit>();
+
 	public List<Watch> Watches = new List<Watch>();
 	public Viewport? HelpViewport = null; // new Viewport() { HelpPage = new HelpPage(), IsEditable = false };
 	public Viewport PrimaryViewport;
@@ -66,7 +68,7 @@ public partial class Program : HostedProgram
 
 		Mode = UIMode.TextEditor;
 
-		StartNewCompilationUnit();
+		StartNewProgram();
 	}
 
 	public override bool EnableMainLoop => true;
@@ -95,11 +97,22 @@ public partial class Program : HostedProgram
 		}
 	}
 
-	void StartNewCompilationUnit()
+	void StartNewProgram()
 	{
+		LoadedFiles.Clear();
+
 		var unit = CompilationUnit.CreateNew();
+
+		LoadedFiles.Add(unit);
+		ResetCallsMenu();
 
 		PrimaryViewport.CompilationUnit = unit;
 		PrimaryViewport.CompilationElement = unit.Elements[0];
+
+		if (SplitViewport != null)
+		{
+			SplitViewport.CompilationUnit = unit;
+			SplitViewport.CompilationElement = unit.Elements[0];
+		}
 	}
 }

@@ -11,7 +11,7 @@ public class BasicParser
 	{
 		var unit = new CompilationUnit();
 
-		var mainElement = new CompilationElement();
+		var mainElement = new CompilationElement(unit);
 
 		mainElement.Type = CompilationElementType.Main;
 
@@ -34,16 +34,22 @@ public class BasicParser
 
 					if ((firstStatement.Type == StatementType.Sub) || (firstStatement.Type == StatementType.Function))
 					{
-						element = new CompilationElement();
+						element = new CompilationElement(unit);
 						unit.Elements.Add(element);
 
 						element.AddLines(comments);
 						comments.Clear();
 
-						switch (firstStatement.Type)
+						switch (firstStatement)
 						{
-							case StatementType.Sub: element.Type = CompilationElementType.Sub; break;
-							case StatementType.Function: element.Type = CompilationElementType.Function; break;
+							case SubStatement sub:
+								element.Type = CompilationElementType.Sub;
+								element.Name = sub.Name;
+								break;
+							case FunctionStatement function:
+								element.Type = CompilationElementType.Function;
+								element.Name = function.Name; // TODO: strip type character
+								break;
 						}
 
 						element.AddLine(line);

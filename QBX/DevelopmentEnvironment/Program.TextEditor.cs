@@ -381,4 +381,34 @@ public partial class Program
 		FocusedViewport.ScrollX = newScrollX;
 		FocusedViewport.ScrollY = newScrollY;
 	}
+
+	public void NavigateTo(CompilationElement element, int lineNumber, int column)
+	{
+		Viewport viewport;
+
+		if (PrimaryViewport.CompilationElement == element)
+			viewport = PrimaryViewport;
+		else if (SplitViewport?.CompilationElement == element)
+			viewport = SplitViewport;
+		else
+			viewport = PrimaryViewport;
+
+		FocusedViewport = viewport;
+
+		viewport.CompilationUnit = element.Owner;
+		viewport.CompilationElement = element;
+
+		if (element.Name == null)
+			viewport.Heading = element.Owner.Name;
+		else
+			viewport.Heading = element.Owner.Name + ":" + element.Name;
+
+		if (lineNumber >= element.Lines.Count)
+			lineNumber = element.Lines.Count - 1;
+		if (lineNumber < 0)
+			lineNumber = 0;
+
+		viewport.CursorX = column;
+		viewport.CursorY = lineNumber;
+	}
 }

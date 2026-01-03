@@ -21,7 +21,9 @@ public class MenuList<TItem>(string label) : MenuItem(label), IList<TItem>, IEnu
 	public IEnumerator<TItem> GetEnumerator() => Items.GetEnumerator();
 	IEnumerator IEnumerable.GetEnumerator() => Items.GetEnumerator();
 	public void Add(TItem menuItem) => Items.Add(menuItem);
+	public void Insert(int index, TItem menuItem) => Items.Insert(index, menuItem);
 	public int IndexOf(TItem item) => Items.IndexOf(item);
+	public void RemoveAt(int index) => Items.RemoveAt(index);
 
 	public void EnsureAcceleratorLookUp()
 	{
