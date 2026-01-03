@@ -1,4 +1,6 @@
-﻿namespace QBX.CodeModel;
+﻿using QBX.CodeModel.Statements;
+
+namespace QBX.CodeModel;
 
 public class CompilationElement(CompilationUnit owner) : IRenderableCode
 {
@@ -10,6 +12,8 @@ public class CompilationElement(CompilationUnit owner) : IRenderableCode
 	public List<CodeLine> Lines { get; } = new List<CodeLine>();
 
 	public int CachedCursorLine; // Used by DevelopmentEnvironment
+
+	public IEnumerable<Statement> AllStatements => Lines.SelectMany(line => line.Statements);
 
 	public void Dirty()
 	{

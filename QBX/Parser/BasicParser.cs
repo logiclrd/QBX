@@ -323,6 +323,10 @@ public class BasicParser
 				return new EndTypeStatement();
 			}
 
+			// TODO: support parsing these anywhere, because QB does
+			// (you can type "a AS INTEGER" on a bare line before framing it with TYPE/END TYPE)
+			// - ultimately, the "inType" concept needs to go away
+
 			var typeElement = new TypeElementStatement();
 
 			typeElement.Name = tokenHandler.ExpectIdentifier(allowTypeCharacter: false);
@@ -854,7 +858,7 @@ public class BasicParser
 					case TokenType.SUB: endBlock = new EndScopeStatement() { ScopeType = ScopeType.Sub }; break;
 					case TokenType.FUNCTION: endBlock = new EndScopeStatement() { ScopeType = ScopeType.Function }; break;
 
-					case TokenType.TYPE: throw new Exception("END TYPE without TYPE");
+					case TokenType.TYPE: throw new SyntaxErrorException(token, "END TYPE without TYPE");
 
 					default:
 					{
