@@ -277,24 +277,30 @@ public partial class Program
 				{
 					select = false;
 
+					if (FocusedViewport.Clipboard.HasSelection)
+					{
+						FocusedViewport.Clipboard.Delete();
+						newCursorX = FocusedViewport.CursorX;
+					}
+
 					string inputText = input.TextCharacter.ToString();
 
 					var buffer = currentLine.Value;
 
-					while (buffer.Length < FocusedViewport.CursorX)
+					while (buffer.Length < newCursorX)
 						buffer.Append(' ');
 
 					if (EnableOvertype)
 					{
 						int replaceCount = inputText.Length;
 
-						if (FocusedViewport.CursorX + replaceCount > buffer.Length)
-							replaceCount = buffer.Length - FocusedViewport.CursorX;
+						if (newCursorX + replaceCount > buffer.Length)
+							replaceCount = buffer.Length - newCursorX;
 
-						buffer.Remove(FocusedViewport.CursorX, replaceCount);
+						buffer.Remove(newCursorX, replaceCount);
 					}
 
-					buffer.Insert(FocusedViewport.CursorX, inputText);
+					buffer.Insert(newCursorX, inputText);
 					newCursorX += inputText.Length;
 
 					FocusedViewport.CurrentLineChanged = true;
