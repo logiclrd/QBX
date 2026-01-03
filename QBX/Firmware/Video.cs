@@ -58,7 +58,7 @@ public class Video(Machine machine)
 			CharacterHeight = 16,
 			MemoryAddressSize = 1,
 			ScanDoubling = false,
-			OddEvenAddressing = false,
+			OddEvenAddressing = true,
 			ShiftRegisterInterleave = false,
 			Use256Colours = false,
 			PlaneMask = 0b0011,
@@ -79,7 +79,7 @@ public class Video(Machine machine)
 			CharacterHeight = 16,
 			MemoryAddressSize = 1,
 			ScanDoubling = false,
-			OddEvenAddressing = false,
+			OddEvenAddressing = true,
 			ShiftRegisterInterleave = false,
 			Use256Colours = false,
 			PlaneMask = 0b0011,
@@ -431,7 +431,7 @@ public class Video(Machine machine)
 				SequencerRegisters.SequencerMemoryMode,
 				unchecked((byte)(
 				SequencerRegisters.SequencerMemoryMode_ExtendedMemory |
-				SequencerRegisters.SequencerMemoryMode_OddEvenDisable |
+				(mode.OddEvenAddressing ? 0 : SequencerRegisters.SequencerMemoryMode_OddEvenDisable) |
 				(mode.Chain4Mode ? SequencerRegisters.SequencerMemoryMode_Chain4 : 0))));
 
 			array.InPort(0x3DA);
