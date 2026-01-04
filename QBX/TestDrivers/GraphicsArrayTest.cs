@@ -7,7 +7,7 @@ public class GraphicsArrayTest(Machine machine, Video video) : HostedProgram
 {
 	public override bool EnableMainLoop => true;
 
-	public int TestSCREEN = 0;
+	public int TestSCREEN = 12;
 
 	public int TextColumns = 80;
 	public int TextRows = 25;
@@ -85,10 +85,16 @@ public class GraphicsArrayTest(Machine machine, Video video) : HostedProgram
 				else
 				{
 					int ModeNumber =
-						(TestSCREEN == 1) ? 5 :
-						(TestSCREEN == 2) ? 6 :
-						(TestSCREEN == 12) ? 0x12 :
-						(TestSCREEN == 13) ? 0x13 : -1;
+						TestSCREEN switch
+						{
+							1 => 5,
+							2 => 6,
+							7 => 0xD,
+							12 => 0x12,
+							13 => 0x13,
+
+							_ => -1
+						};
 
 					video.SetMode(ModeNumber);
 
@@ -99,6 +105,8 @@ public class GraphicsArrayTest(Machine machine, Video video) : HostedProgram
 						TestSCREEN switch
 						{
 							1 => new GraphicsLibrary_2bppInterleaved(machine.GraphicsArray),
+							2 => new GraphicsLibrary_1bppPacked(machine.GraphicsArray),
+							7 => new GraphicsLibrary_4bppPlanar(machine.GraphicsArray),
 							12 => new GraphicsLibrary_4bppPlanar(machine.GraphicsArray),
 							13 => new GraphicsLibrary_8bppFlat(machine.GraphicsArray),
 

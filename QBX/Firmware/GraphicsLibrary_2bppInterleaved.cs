@@ -21,6 +21,8 @@ public class GraphicsLibrary_2bppInterleaved : GraphicsLibrary
 
 	public override void RefreshParameters()
 	{
+		base.RefreshParameters();
+
 		int planeSize =
 			Array.CRTController.InterleaveOnBit0 ? 8192
 			: Array.CRTController.InterleaveOnBit1 ? 16384

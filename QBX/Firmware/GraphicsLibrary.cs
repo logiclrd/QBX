@@ -16,6 +16,7 @@ public abstract class GraphicsLibrary
 	}
 
 	public int Width, Height;
+	public int Aspect;
 
 	public Point LastPoint;
 
@@ -23,6 +24,11 @@ public abstract class GraphicsLibrary
 	{
 		Width = _array.MiscellaneousOutput.BasePixelWidth >> (_array.Sequencer.DotDoubling ? 1 : 0);
 		Height = _array.CRTController.NumScanLines;
+
+		if ((Width >= 640) && (Height <= 240))
+			Aspect = 2;
+		else
+			Aspect = 1;
 	}
 
 	public abstract void Clear();
@@ -157,6 +163,8 @@ public abstract class GraphicsLibrary
 
 			return ((int)Math.Round(x), (int)Math.Round(y));
 		}
+
+		radiusY = (radiusY + Aspect - 1) / Aspect;
 
 		Point startPoint, endPoint;
 		int startOctant, endOctant;

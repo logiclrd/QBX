@@ -21,6 +21,8 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 
 	public override void RefreshParameters()
 	{
+		base.RefreshParameters();
+
 		const int PlaneSize = 65536;
 
 		_plane0Offset = Array.CRTController.StartAddress;
@@ -47,8 +49,6 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 		if ((x >= 0) && (x < Width)
 		 && (y >= 0) && (y < Height))
 		{
-			attribute &= 15;
-
 			int offset = y * _stride + (x >> 3);
 			int shift = 7 - (x & 7);
 			int bitMask = 1 << shift;
@@ -81,16 +81,12 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 		if (x1 > x2)
 			return;
 
-		attribute &= 15;
-
 		if (x1 < 0)
 			x1 = 0;
 		if (x2 >= Width)
 			x2 = Width - 1;
 
 		int scanOffset = y * _stride;
-
-		byte completeByteValue = unchecked((byte)(attribute * 0x55));
 
 		int x1Byte = x1 >> 3;
 		int x2Byte = x2 >> 3;

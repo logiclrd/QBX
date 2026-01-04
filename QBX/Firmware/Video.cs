@@ -127,7 +127,7 @@ public class Video(Machine machine)
 			MemoryAddressSize = 2,
 			ScanDoubling = true,
 			OddEvenAddressing = false,
-			ShiftRegisterInterleave = true,
+			ShiftRegisterInterleave = false,
 			Use256Colours = false,
 			PlaneMask = 0b1111,
 			HalfDotClockRate = false,

@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 using SDL3;
 
@@ -78,7 +79,6 @@ public class Adapter
 			bool promoteBit1ToBit14 = _array.CRTController.InterleaveOnBit1;
 
 			bool enableText = !_array.Graphics.DisableText;
-			bool oddEvenMode = _array.Sequencer.HostOddEvenWrite;
 
 			var palette = MemoryMarshal.Cast<byte, int>(_array.DAC.PaletteBGRA);
 			int fontStartA = 0x20000 + _array.Sequencer.CharacterSetAOffset;
@@ -87,6 +87,7 @@ public class Adapter
 			bool graphicsMode = _array.Graphics.DisableText;
 			bool lineGraphics = _array.AttributeController.LineGraphics;
 			bool use256Colours = _array.AttributeController.Use256Colours;
+			bool shift256 = _array.Graphics.Shift256;
 
 			long tick = ElapsedTicks;
 
@@ -104,9 +105,7 @@ public class Adapter
 				blinkState = ((tick / TicksPerBlinkSwitch) & 1) != 0;
 
 			// How many columns between each change in offset?
-			int characterWidth = graphicsMode
-				? (use256Colours ? 1 : 8)
-				: _array.Sequencer.CharacterWidth;
+			int characterWidth = _array.Sequencer.CharacterWidth;
 			int characterHeight = _array.CRTController.ScanRepeatCount + 1;
 
 			if (shiftInterleave)
@@ -265,6 +264,9 @@ public class Adapter
 
 					columnBit >>= 1;
 
+					if (shift256)
+						offset++;
+
 					if (characterX >= characterWidth)
 					{
 						characterX = 0;
@@ -282,7 +284,8 @@ public class Adapter
 							break;
 						}
 
-						offset++;
+						if (!shift256)
+							offset++;
 					}
 				}
 
