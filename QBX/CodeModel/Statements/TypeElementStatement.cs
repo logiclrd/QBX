@@ -1,4 +1,6 @@
-﻿namespace QBX.CodeModel.Statements;
+﻿using QBX.LexicalAnalysis;
+
+namespace QBX.CodeModel.Statements;
 
 public class TypeElementStatement : Statement
 {
@@ -8,6 +10,8 @@ public class TypeElementStatement : Statement
 	public DataType ElementType { get; set; }
 	public string? ElementUserType { get; set; }
 	public string? AlignmentWhitespace { get; set; }
+
+	public Token? TypeToken { get; set; }
 
 	protected override void RenderImplementation(TextWriter writer)
 	{

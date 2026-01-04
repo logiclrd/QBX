@@ -1,4 +1,5 @@
 ﻿using QBX.CodeModel.Expressions;
+using QBX.LexicalAnalysis;
 
 namespace QBX.CodeModel.Statements;
 
@@ -9,6 +10,8 @@ public class CallStatement : Statement
 	public CallStatementType CallStatementType { get; set; }
 	public string TargetName { get; set; }
 	public ExpressionList? Arguments { get; set; }
+
+	public Token? TargetNameToken { get; set; }
 
 	public CallStatement(CallStatementType type, string targetName, ExpressionList? arguments)
 	{

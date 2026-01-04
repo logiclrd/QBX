@@ -1,4 +1,6 @@
-﻿namespace QBX.CodeModel;
+﻿using QBX.LexicalAnalysis;
+
+namespace QBX.CodeModel;
 
 public class ParameterDefinition : IRenderableCode
 {
@@ -6,9 +8,11 @@ public class ParameterDefinition : IRenderableCode
 	public string Name { get; set; } = "";
 	public string ActualName { get; set; } = "";
 	public bool IsArray { get; set; }
-	public DataType? Type { get; set; }
+	public DataType Type { get; set; } = DataType.Unspecified;
 	public string? UserType { get; set; }
 	public bool AnyType { get; set; }
+
+	public Token? TypeToken { get; set; }
 
 	public void Render(TextWriter writer)
 	{
@@ -24,7 +28,7 @@ public class ParameterDefinition : IRenderableCode
 			writer.Write(" AS ANY");
 		else if (UserType != null)
 			writer.Write(" AS {0}", UserType);
-		else if (Type != null)
+		else if (Type != DataType.Unspecified)
 			writer.Write(" AS {0}", Type);
 	}
 }

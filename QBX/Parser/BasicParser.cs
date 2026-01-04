@@ -103,6 +103,7 @@ public class BasicParser
 		Token? precedingWhitespaceToken = null;
 		bool startsWithDATA = false;
 		bool lineConsumed = false;
+		Token? lastToken = null;
 
 		while (tokenPeeked || enumerator.MoveNext())
 		{
@@ -121,7 +122,7 @@ public class BasicParser
 				if ((line.EndOfLineComment == null) && !lineConsumed)
 				{
 					line.Statements.Add(
-						ParseStatementWithIndentation(buffer, isNested: false, ref inType));
+						ParseStatementWithIndentation(buffer, isNested: false, ref inType, token));
 				}
 
 				buffer.Clear();
@@ -201,7 +202,7 @@ public class BasicParser
 						}
 
 						line.Statements.Add(
-							ParseStatementWithIndentation(buffer, ConsumeTokensToEndOfLine, isNested: false, inType: ref inType));
+							ParseStatementWithIndentation(buffer, ConsumeTokensToEndOfLine, isNested: false, inType: ref inType, precedingWhitespaceToken ?? token));
 						buffer.Clear();
 					}
 
@@ -213,7 +214,7 @@ public class BasicParser
 				{
 					if (buffer.Any() || line.Statements.Any())
 					{
-						line.Statements.Add(ParseStatementWithIndentation(buffer, ref inType));
+						line.Statements.Add(ParseStatementWithIndentation(buffer, ref inType, precedingWhitespaceToken ?? token));
 						buffer.Clear();
 					}
 
@@ -247,10 +248,23 @@ public class BasicParser
 					buffer.Add(token);
 				}
 			}
+
+			lastToken = token;
 		}
 
 		if (buffer.Any() || haveContent)
-			line.Statements.Add(ParseStatementWithIndentation(buffer, isNested: false, ref inType));
+		{
+			if (lastToken == null)
+				throw new Exception("Internal error: Arrived at tail with non-empty buffer and/or haveContent but without seeing any tokens");
+
+			var endToken = new Token(
+				lastToken.Line,
+				lastToken.Column + lastToken.Length,
+				TokenType.Empty,
+				"");
+
+			line.Statements.Add(ParseStatementWithIndentation(buffer, isNested: false, ref inType, endToken));
+		}
 
 		if (!line.IsEmpty)
 			yield return line;
@@ -263,17 +277,17 @@ public class BasicParser
 		}
 	}
 
-	internal Statement ParseStatementWithIndentation(ListRange<Token> tokens, ref bool inType)
+	internal Statement ParseStatementWithIndentation(ListRange<Token> tokens, ref bool inType, Token endToken)
 	{
-		return ParseStatementWithIndentation(tokens, consumeTokensToEndOfLine: () => Array.Empty<Token>(), isNested: false, ref inType);
+		return ParseStatementWithIndentation(tokens, consumeTokensToEndOfLine: () => Array.Empty<Token>(), isNested: false, ref inType, endToken);
 	}
 
-	internal Statement ParseStatementWithIndentation(ListRange<Token> tokens, bool isNested, ref bool inType)
+	internal Statement ParseStatementWithIndentation(ListRange<Token> tokens, bool isNested, ref bool inType, Token endToken)
 	{
-		return ParseStatementWithIndentation(tokens, consumeTokensToEndOfLine: () => Array.Empty<Token>(), isNested: false, ref inType);
+		return ParseStatementWithIndentation(tokens, consumeTokensToEndOfLine: () => Array.Empty<Token>(), isNested: false, ref inType, endToken);
 	}
 
-	internal Statement ParseStatementWithIndentation(ListRange<Token> tokens, Func<IEnumerable<Token>> consumeTokensToEndOfLine, bool isNested, ref bool inType)
+	internal Statement ParseStatementWithIndentation(ListRange<Token> tokens, Func<IEnumerable<Token>> consumeTokensToEndOfLine, bool isNested, ref bool inType, Token endToken)
 	{
 		var indentation = "";
 
@@ -286,6 +300,14 @@ public class BasicParser
 		var statement = ParseStatement(tokens, consumeTokensToEndOfLine, isNested: false, ref inType);
 
 		statement.Indentation = indentation;
+
+		int lastTokenIndex = tokens.Count - 1;
+
+		while ((lastTokenIndex >= 0) && tokens[lastTokenIndex].Type == TokenType.Whitespace)
+			lastTokenIndex--;
+
+		statement.FirstToken = tokens.Any() ? tokens[0] : endToken;
+		statement.SourceLength = tokens.Take(lastTokenIndex).Sum(token => token.Length);
 
 		return statement;
 	}
@@ -1114,12 +1136,14 @@ public class BasicParser
 				{
 					statement.ThenBody = new List<Statement>();
 
-					void DoParseStatement(List<Statement> list, ListRange<Token> tokens, bool isNested, ref bool inType)
+					void DoParseStatement(List<Statement> list, ListRange<Token> tokens, bool isNested, ref bool inType, Token endToken)
 					{
+						var statement = ParseStatementWithIndentation(tokens, isNested, ref inType, endToken);
+
 						if (list.Count == 0)
-							list.Add(ParseStatement(tokens, isNested, ref inType));
-						else
-							list.Add(ParseStatementWithIndentation(tokens, isNested, ref inType));
+							statement.Indentation = "";
+
+						list.Add(statement);
 					}
 
 					while (true)
@@ -1128,11 +1152,13 @@ public class BasicParser
 
 						if ((separator < 0) || tokenHandler.NextTokenIs(TokenType.IF))
 						{
-							DoParseStatement(statement.ThenBody, tokenHandler.RemainingTokens, isNested: true, ref inType);
+							var endToken = tokenHandler.HasMoreTokens ? tokenHandler.NextToken : tokenHandler.EndToken;
+
+							DoParseStatement(statement.ThenBody, tokenHandler.RemainingTokens, isNested: true, ref inType, endToken);
 							break;
 						}
 
-						DoParseStatement(statement.ThenBody, tokenHandler.RemainingTokens.Slice(0, separator), isNested: true, ref inType);
+						DoParseStatement(statement.ThenBody, tokenHandler.RemainingTokens.Slice(0, separator), isNested: true, ref inType, tokenHandler[separator]);
 
 						tokenHandler.Advance(separator);
 
@@ -1151,11 +1177,13 @@ public class BasicParser
 
 								if ((separator < 0) || tokenHandler.NextTokenIs(TokenType.IF))
 								{
-									DoParseStatement(statement.ElseBody, tokenHandler.RemainingTokens, isNested: true, ref inType);
+									var endToken = tokenHandler.HasMoreTokens ? tokenHandler.NextToken : tokenHandler.EndToken;
+
+									DoParseStatement(statement.ElseBody, tokenHandler.RemainingTokens, isNested: true, ref inType, endToken);
 									break;
 								}
 
-								DoParseStatement(statement.ElseBody, tokenHandler.RemainingTokens.Slice(0, separator), isNested: true, ref inType);
+								DoParseStatement(statement.ElseBody, tokenHandler.RemainingTokens.Slice(0, separator), isNested: true, ref inType, tokenHandler[separator]);
 
 								tokenHandler.Advance(separator);
 								tokenHandler.Expect(TokenType.Colon);
@@ -2934,17 +2962,22 @@ public class BasicParser
 				tokenIndex++;
 			}
 
-			if (tokens[tokenIndex].Type != TokenType.Identifier)
-				throw new SyntaxErrorException(tokens[tokenIndex], "Expected identifier");
+			var nameToken = tokens[tokenIndex];
 
-			param.Name = tokens[tokenIndex].Value ?? throw new Exception("Internal error: identifier token with no value");
+			if (nameToken.Type != TokenType.Identifier)
+				throw new SyntaxErrorException(nameToken, "Expected identifier");
+
+			param.Name = nameToken.Value ?? throw new Exception("Internal error: identifier token with no value");
 
 			tokenIndex++;
 
 			char lastChar = param.Name.Last();
 
 			if (TypeCharacter.TryParse(lastChar, out var typeCharacter))
+			{
 				param.ActualName = param.Name;
+				param.TypeToken = nameToken;
+			}
 			else if (tokenIndex < tokens.Count)
 			{
 				if (tokens[tokenIndex].Type == TokenType.OpenParenthesis)
@@ -2962,23 +2995,27 @@ public class BasicParser
 
 				tokenIndex++;
 
-				if (tokens[tokenIndex].Type == TokenType.ANY)
+				var typeToken = tokens[tokenIndex];
+
+				if (typeToken.Type == TokenType.ANY)
 					param.AnyType = true;
-				else if (tokens[tokenIndex].Type == TokenType.Identifier)
+				else if (typeToken.Type == TokenType.Identifier)
 				{
-					param.UserType = tokens[tokenIndex].Value;
+					param.UserType = typeToken.Value;
 
 					if (!char.IsAsciiLetterOrDigit(param.UserType!.Last()))
-						throw new SyntaxErrorException(tokens[tokenIndex], "Type name may only contain letters and digits");
+						throw new SyntaxErrorException(typeToken, "Type name may only contain letters and digits");
 				}
 				else
 				{
-					if (!tokens[tokenIndex].IsDataType)
+					if (!typeToken.IsDataType)
 						throw new SyntaxErrorException(tokens[tokenIndex], "Expected data type");
 
-					param.Type = DataTypeConverter.FromToken(tokens[tokenIndex]);
-					param.ActualName = param.Name + new TypeCharacter(param.Type.Value).Character;
+					param.Type = DataTypeConverter.FromToken(typeToken);
+					param.ActualName = param.Name + new TypeCharacter(param.Type).Character;
 				}
+
+				param.TypeToken = typeToken;
 
 				tokenIndex++;
 			}
