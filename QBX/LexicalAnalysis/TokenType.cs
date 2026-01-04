@@ -8,6 +8,7 @@ public enum TokenType
 	[KeywordToken] ABS,
 	[KeywordToken] ACCESS,
 	[KeywordToken] AND,
+	[KeywordToken] ALIAS,
 	[KeywordToken] ANY,
 	[KeywordToken] APPEND,
 	[KeywordToken] AS,
@@ -21,6 +22,7 @@ public enum TokenType
 	[KeywordToken] CCUR,
 	[KeywordFunction]
 	[KeywordToken] CDBL,
+	[KeywordToken] CDECL,
 	[KeywordFunction]
 	[KeywordToken("CHR$")] CHR,
 	[KeywordFunction]

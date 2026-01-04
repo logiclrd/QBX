@@ -42,6 +42,23 @@ public class Token(int line, int column, TokenType type, string value, DataType 
 	// and tokens inside DATA statements.
 	public string? PrecedingWhitespace { get; set; }
 
+	public string StringLiteralValue
+	{
+		get
+		{
+			if (Type != TokenType.String)
+				throw new Exception("Internal error: Cannot retrieve StringLiteralValue for TokenType." + Type);
+
+			if (value == null)
+				throw new Exception("Internal error: String token with no Value");
+
+			if (!value.StartsWith("\"") || !value.EndsWith("\""))
+				throw new Exception("Internal error: String token that doesn't start and end with double quote character.");
+
+			return value.Substring(1, value.Length - 2);
+		}
+	}
+
 	Token Emplace(int newLine, int newColumn) => new Token(newLine, newColumn, type, value, dataType);
 
 	public override string ToString()

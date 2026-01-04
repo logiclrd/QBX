@@ -639,13 +639,34 @@ public class BasicParser
 			case TokenType.DECLARE:
 			{
 				if (isNested)
-					throw new SyntaxErrorException(token, "Syntax error: DECLARE may not be nested");
+					throw new SyntaxErrorException(token, "COMMON and DECLARE must precede executable statements");
 
 				var declarationType = tokenHandler.ExpectOneOf(TokenType.SUB, TokenType.FUNCTION);
 
 				var name = tokenHandler.ExpectIdentifier(allowTypeCharacter: true);
 
 				ParameterList? parameters = null;
+
+				bool isCDecl = false;
+				string? alias = null;
+
+				if (tokenHandler.NextTokenIs(TokenType.CDECL))
+				{
+					isCDecl = true;
+					tokenHandler.Advance();
+				}
+
+				if (tokenHandler.NextTokenIs(TokenType.ALIAS))
+				{
+					tokenHandler.Advance();
+
+					if (!tokenHandler.NextTokenIs(TokenType.String))
+						throw new SyntaxErrorException(tokenHandler.NextToken, "Expected: string constant");
+
+					alias = tokenHandler.NextToken.StringLiteralValue;
+
+					tokenHandler.Advance();
+				}
 
 				if (tokenHandler.HasMoreTokens)
 				{
@@ -656,7 +677,12 @@ public class BasicParser
 
 				tokenHandler.ExpectEndOfTokens();
 
-				return new DeclareStatement(declarationType, name, parameters);
+				var declare = new DeclareStatement(declarationType, name, parameters);
+
+				declare.IsCDecl = isCDecl;
+				declare.Alias = alias;
+
+				return declare;
 			}
 
 			case TokenType.DEF:

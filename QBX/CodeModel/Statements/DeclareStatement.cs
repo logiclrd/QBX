@@ -8,6 +8,8 @@ public class DeclareStatement : Statement
 
 	public Token DeclarationType { get; set; }
 	public string Name { get; set; }
+	public bool IsCDecl { get; set; }
+	public string? Alias { get; set; }
 	public TypeCharacter? TypeCharacter { get; set; }
 	public ParameterList? Parameters;
 
@@ -31,6 +33,17 @@ public class DeclareStatement : Statement
 		writer.Write("DECLARE {0} ", DeclarationType.Type);
 		writer.Write(Name);
 		TypeCharacter?.Render(writer);
+
+		if (IsCDecl)
+			writer.Write(" CDECL");
+
+		if (Alias != null)
+		{
+			writer.Write(" ALIAS \"");
+			writer.Write(Alias);
+			writer.Write('"');
+		}
+
 		Parameters?.Render(writer);
 	}
 }
