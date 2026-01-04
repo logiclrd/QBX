@@ -12,15 +12,23 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 		RefreshParameters();
 	}
 
+	const int PlaneSize = 65536;
+
 	int _planeBytesUsed;
 	int _stride;
 	int _plane0Offset;
+	int _plane1Offset;
+	int _plane2Offset;
+	int _plane3Offset;
 
 	public override void RefreshParameters()
 	{
 		base.RefreshParameters();
 
 		_plane0Offset = Array.CRTController.StartAddress;
+		_plane1Offset = _plane0Offset + PlaneSize;
+		_plane2Offset = _plane1Offset + PlaneSize;
+		_plane3Offset = _plane2Offset + PlaneSize;
 
 		_stride = Width / 8;
 		_planeBytesUsed = Height * _stride;
@@ -30,7 +38,16 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 	{
 		var vramSpan = Array.VRAM.AsSpan();
 
-		vramSpan.Slice(_plane0Offset, _planeBytesUsed).Clear();
+		int planeMask = Array.Graphics.Registers.BitMask;
+
+		if ((planeMask & 1) != 0)
+			vramSpan.Slice(_plane0Offset, _planeBytesUsed).Clear();
+		if ((planeMask & 2) != 0)
+			vramSpan.Slice(_plane1Offset, _planeBytesUsed).Clear();
+		if ((planeMask & 4) != 0)
+			vramSpan.Slice(_plane2Offset, _planeBytesUsed).Clear();
+		if ((planeMask & 8) != 0)
+			vramSpan.Slice(_plane3Offset, _planeBytesUsed).Clear();
 	}
 
 	public override void PixelSet(int x, int y, int attribute)
@@ -42,9 +59,35 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 			int shift = 7 - (x & 7);
 			int bitMask = 1 << shift;
 
-			Array.VRAM[_plane0Offset + offset] = unchecked((byte)(
-				(Array.VRAM[_plane0Offset + offset] & ~bitMask) |
-				((attribute & 1) << shift)));
+			int planeMask = Array.Graphics.Registers.BitMask;
+
+			if ((planeMask & 1) != 0)
+			{
+				Array.VRAM[_plane0Offset + offset] = unchecked((byte)(
+					(Array.VRAM[_plane0Offset + offset] & ~bitMask) |
+					((attribute & 1) << shift)));
+			}
+
+			if ((planeMask & 2) != 0)
+			{
+				Array.VRAM[_plane1Offset + offset] = unchecked((byte)(
+					(Array.VRAM[_plane1Offset + offset] & ~bitMask) |
+					((attribute & 1) << shift)));
+			}
+
+			if ((planeMask & 4) != 0)
+			{
+				Array.VRAM[_plane2Offset + offset] = unchecked((byte)(
+					(Array.VRAM[_plane2Offset + offset] & ~bitMask) |
+					((attribute & 1) << shift)));
+			}
+
+			if ((planeMask & 8) != 0)
+			{
+				Array.VRAM[_plane3Offset + offset] = unchecked((byte)(
+					(Array.VRAM[_plane3Offset + offset] & ~bitMask) |
+					((attribute & 1) << shift)));
+			}
 		}
 	}
 
@@ -57,6 +100,8 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 
 		if (x1 > x2)
 			return;
+
+		int planeMask = Array.Graphics.Registers.BitMask;
 
 		if (x1 < 0)
 			x1 = 0;
@@ -88,10 +133,43 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 			{
 				int address = _plane0Offset + scanOffset + x1Byte;
 
-				if (attributeValue)
-					Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] | mask));
-				else
-					Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] & ~mask));
+				if ((planeMask & 1) != 0)
+				{
+					if (attributeValue)
+						Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] | mask));
+					else
+						Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] & ~mask));
+				}
+
+				address += PlaneSize;
+
+				if ((planeMask & 2) != 0)
+				{
+					if (attributeValue)
+						Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] | mask));
+					else
+						Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] & ~mask));
+				}
+
+				address += PlaneSize;
+
+				if ((planeMask & 4) != 0)
+				{
+					if (attributeValue)
+						Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] | mask));
+					else
+						Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] & ~mask));
+				}
+
+				address += PlaneSize;
+
+				if ((planeMask & 8) != 0)
+				{
+					if (attributeValue)
+						Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] | mask));
+					else
+						Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] & ~mask));
+				}
 			}
 		}
 		else
@@ -119,10 +197,43 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 
 				int address = _plane0Offset + scanOffset + firstCompleteByte - 1;
 
-				if (attributeValue)
-					Array.VRAM[address] = unchecked((byte)((Array.VRAM[address] | mask)));
-				else
-					Array.VRAM[address] = unchecked((byte)((Array.VRAM[address] & ~mask)));
+				if ((planeMask & 1) != 0)
+				{
+					if (attributeValue)
+						Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] | mask));
+					else
+						Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] & ~mask));
+				}
+
+				address += PlaneSize;
+
+				if ((planeMask & 2) != 0)
+				{
+					if (attributeValue)
+						Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] | mask));
+					else
+						Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] & ~mask));
+				}
+
+				address += PlaneSize;
+
+				if ((planeMask & 4) != 0)
+				{
+					if (attributeValue)
+						Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] | mask));
+					else
+						Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] & ~mask));
+				}
+
+				address += PlaneSize;
+
+				if ((planeMask & 8) != 0)
+				{
+					if (attributeValue)
+						Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] | mask));
+					else
+						Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] & ~mask));
+				}
 			}
 
 			if (rightPixels != 0)
@@ -131,10 +242,43 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 
 				int address = _plane0Offset + scanOffset + lastCompleteByte + 1;
 
-				if (attributeValue)
-					Array.VRAM[address] = unchecked((byte)((Array.VRAM[address] | mask)));
-				else
-					Array.VRAM[address] = unchecked((byte)((Array.VRAM[address] & ~mask)));
+				if ((planeMask & 1) != 0)
+				{
+					if (attributeValue)
+						Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] | mask));
+					else
+						Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] & ~mask));
+				}
+
+				address += PlaneSize;
+
+				if ((planeMask & 2) != 0)
+				{
+					if (attributeValue)
+						Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] | mask));
+					else
+						Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] & ~mask));
+				}
+
+				address += PlaneSize;
+
+				if ((planeMask & 4) != 0)
+				{
+					if (attributeValue)
+						Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] | mask));
+					else
+						Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] & ~mask));
+				}
+
+				address += PlaneSize;
+
+				if ((planeMask & 8) != 0)
+				{
+					if (attributeValue)
+						Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] | mask));
+					else
+						Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] & ~mask));
+				}
 			}
 		}
 	}

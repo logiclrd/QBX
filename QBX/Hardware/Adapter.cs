@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
 using SDL3;
 
@@ -46,7 +45,20 @@ public class Adapter
 
 		try
 		{
-			var textureBuffer = new Span<byte>((void *)pixelsPtr, _height * pitch);
+			var textureBuffer = new Span<byte>((void*)pixelsPtr, _height * pitch);
+
+			Render(textureBuffer, pitch);
+		}
+		finally
+		{
+			SDL.UnlockTexture(texture);
+		}
+	}
+
+	public void Render(Span<byte> target, int targetPitch)
+	{
+		try
+		{
 			int rowWidthOut = _width * 4;
 
 			int bitsPerPixelPerPlane =
@@ -142,7 +154,7 @@ public class Adapter
 				var scanIn1 = plane1.Slice(planeOffset, stride);
 				var scanIn2 = plane2.Slice(planeOffset, stride);
 				var scanIn3 = plane3.Slice(planeOffset, stride);
-				var scanOut = MemoryMarshal.Cast<byte, int>(textureBuffer.Slice(y * pitch, rowWidthOut));
+				var scanOut = MemoryMarshal.Cast<byte, int>(target.Slice(y * targetPitch, rowWidthOut));
 
 				int offset = 0;
 				int characterX = 0;
@@ -194,10 +206,10 @@ public class Adapter
 						else
 						{
 							attribute =
-								(((scanIn0[offset] & columnBit) != 0) ? 8 : 0) |
-								(((scanIn1[offset] & columnBit) != 0) ? 4 : 0) |
-								(((scanIn2[offset] & columnBit) != 0) ? 2 : 0) |
-								(((scanIn3[offset] & columnBit) != 0) ? 1 : 0);
+								(((scanIn0[offset] & columnBit) != 0) ? 1 : 0) |
+								(((scanIn1[offset] & columnBit) != 0) ? 2 : 0) |
+								(((scanIn2[offset] & columnBit) != 0) ? 4 : 0) |
+								(((scanIn3[offset] & columnBit) != 0) ? 8 : 0);
 						}
 
 						if (shiftInterleave && ((x & 1) == 1))
@@ -302,9 +314,5 @@ public class Adapter
 			}
 		}
 		catch { }
-		finally
-		{
-			SDL.UnlockTexture(texture);
-		}
 	}
 }
