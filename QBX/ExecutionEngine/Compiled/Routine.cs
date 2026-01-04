@@ -2,7 +2,7 @@
 
 namespace QBX.ExecutionEngine.Compiled;
 
-public class Routine
+public class Routine : ISequence
 {
 	public string Name;
 	public List<DataType> ParameterTypes = new List<DataType>();
@@ -10,9 +10,13 @@ public class Routine
 	public DataType? ReturnType;
 	public List<IExecutable> Statements = new List<IExecutable>();
 
+	void ISequence.Append(IExecutable statement) => Statements.Add(statement);
+	int ISequence.Count => Statements.Count;
+	IExecutable ISequence.this[int index] => Statements[index];
+
 	public CodeModel.CompilationElement Source;
 
-	public Routine(CodeModel.CompilationElement source)
+	public Routine(CodeModel.CompilationElement source, TypeRepository typeRepository)
 	{
 		Source = source;
 
@@ -27,36 +31,13 @@ public class Routine
 				if (subOrFunction.Parameters != null)
 				{
 					ParameterTypes.AddRange(subOrFunction.Parameters.Parameters.Select(
-						param => DataType.FromParameterDefinition(param)));
+						param => typeRepository.ResolveType(param)));
 				}
 
 				// TODO: can't have a variable (incl. parameter) with the same name as a function
 
 				break;
 			}
-		}
-	}
-
-	public Execution.Variable Execute(Execution.ExecutionContext context, Execution.Variable[] arguments)
-	{
-		context.PushFrame(ReturnType, arguments, VariableTypes);
-
-		try
-		{
-			foreach (var statement in Statements)
-			{
-				// TODO:
-				// if (statement is ExitRoutineStatement)
-				//	break;
-
-				statement.Execute(context);
-			}
-
-			return context.Variables[0];
-		}
-		finally
-		{
-			context.PopFrame();
 		}
 	}
 }

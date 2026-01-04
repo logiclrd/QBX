@@ -2,6 +2,6 @@
 
 public class Module
 {
-	public Routine? MainElement;
-	public Dictionary<string, Routine> Elements = new Dictionary<string, Routine>();
+	public Routine? MainRoutine;
+	public Dictionary<string, Routine> Routines = new Dictionary<string, Routine>();
 }

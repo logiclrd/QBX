@@ -1,14 +1,30 @@
-﻿
+﻿using QBX.LexicalAnalysis;
+
 namespace QBX.ExecutionEngine;
 
 [Serializable]
 public class RuntimeException : Exception
 {
-	CodeModel.Statements.Statement Statement;
+	public Token? Context { get; }
+	public int ContextLength { get; }
 
 	public RuntimeException(CodeModel.Statements.Statement statement, string message)
+		: this(
+				statement.FirstToken,
+				statement.SourceLength,
+				message)
+	{
+	}
+
+	public RuntimeException(Token? context, string message)
+		: this(context, context?.Length ?? 0, message)
+	{
+	}
+
+	public RuntimeException(Token? context, int contextLength, string message)
 		: base(message)
 	{
-		Statement = statement;
+		Context = context;
+		ContextLength = contextLength;
 	}
 }

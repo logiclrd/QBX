@@ -4,35 +4,57 @@ namespace QBX.ExecutionEngine;
 
 public class Compiler
 {
-	public Compiled.Module Compile(CodeModel.CompilationUnit unit)
+	public Compiled.Module Compile(CodeModel.CompilationUnit unit, TypeRepository typeRepository)
 	{
 		var module = new Compiled.Module();
 
 		var routineByName = new Dictionary<string, Compiled.Routine>();
-
-		// TODO: gather user types, stash them in a place where they can be looked up later on in compilation
+		var unresolvedCallStatements = new List<Compiled.Statements.CallStatement>();
 
 		foreach (var element in unit.Elements)
 		{
-			var routine = new Routine(element);
+			foreach (var userDataType in CollectUserDataTypes(element, typeRepository))
+				typeRepository.RegisterType(userDataType);
+
+			var routine = new Routine(element, typeRepository);
 
 			routineByName[routine.Name] = routine;
-			// TODO: search element for SubStatement or FunctionStatement
-			// TODO: if not found, default to @Main and no args
+
+			int lineIndex = 0;
+			int statementIndex = 0;
+
+			while (lineIndex < element.Lines.Count)
+				ParseStatement(element, ref lineIndex, ref statementIndex, routine);
 		}
 
 		throw new NotImplementedException();
 	}
 
-	DataType ResolveType(CodeModel.DataType primitiveType, string? userType)
+	void ParseStatement(CodeModel.CompilationElement element, ref int lineIndex, ref int statementIndex, ISequence container)
 	{
-		// TODO: implement
-		// TODO: actually define the types as they're yielded by CollectUserDataTypes so that
-		//       they can be used by the elements of subsequent types
-		throw new NotImplementedException();
+		if (lineIndex >= element.Lines.Count)
+			return;
+
+		var line = element.Lines[lineIndex];
+
+		if (statementIndex >= line.Statements.Count)
+		{
+			lineIndex++;
+			statementIndex = 0;
+			return;
+		}
+
+		var statement = line.Statements[statementIndex];
+
+		/*
+		switch (statement.Type)
+		{
+
+		}
+		*/
 	}
 
-	IEnumerable<UserDataType> CollectUserDataTypes(CodeModel.CompilationElement element)
+	IEnumerable<UserDataType> CollectUserDataTypes(CodeModel.CompilationElement element, TypeRepository typeRepository)
 	{
 		UserDataType? udt = null;
 
@@ -46,7 +68,7 @@ public class Compiler
 					if (element.Type != CodeModel.CompilationElementType.Main)
 						throw new RuntimeException(statement, "Illegal in SUB, FUNCTION or DEF FN");
 
-					udt = new UserDataType(typeStatement.Name);
+					udt = new UserDataType(typeStatement);
 				}
 
 				if (statement is CodeModel.Statements.EndTypeStatement)
@@ -56,10 +78,15 @@ public class Compiler
 			{
 				if (statement is CodeModel.Statements.TypeElementStatement typeElementStatement)
 				{
+					var type = typeRepository.ResolveType(
+						typeElementStatement.ElementType,
+						typeElementStatement.ElementUserType,
+						typeElementStatement.TypeToken);
+
 					udt.Members.Add(
 						new UserDataTypeMember(
 							typeElementStatement.Name,
-							ResolveType(typeElementStatement.ElementType, typeElementStatement.ElementUserType)));
+							type));
 				}
 
 				if (statement is CodeModel.Statements.EndTypeStatement)

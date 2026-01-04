@@ -1,5 +1,4 @@
 ﻿using QBX.ExecutionEngine.Execution;
-using System.Numerics;
 
 namespace QBX.ExecutionEngine.Compiled;
 
@@ -44,11 +43,5 @@ public class DataType
 
 			default: throw new Exception("Cannot construct ExecutionEngine.Compiled.DataType from unknown CodeModel.DataType");
 		}
-	}
-
-	public static DataType FromParameterDefinition(CodeModel.ParameterDefinition param)
-	{
-		// TODO: mechanism to resolve user types, as param only has the name but we need the object
-		throw new NotImplementedException();
 	}
 }

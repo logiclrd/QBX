@@ -1,9 +1,11 @@
-﻿namespace QBX.ExecutionEngine.Compiled;
+﻿using QBX.ExecutionEngine.Execution;
 
-public interface IEvaluable<T>
+namespace QBX.ExecutionEngine.Compiled;
+
+public interface IEvaluable
 {
 	CodeModel.Statements.Statement? SourceStatement { get; }
 	CodeModel.Expressions.Expression? SourceExpression { get; }
 
-	T Evaluate();
+	Variable Evaluate();
 }
