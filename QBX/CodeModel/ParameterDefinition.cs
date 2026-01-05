@@ -1,4 +1,5 @@
-﻿using QBX.LexicalAnalysis;
+﻿using QBX.CodeModel.Statements;
+using QBX.LexicalAnalysis;
 
 namespace QBX.CodeModel;
 
@@ -12,6 +13,7 @@ public class ParameterDefinition : IRenderableCode
 	public string? UserType { get; set; }
 	public bool AnyType { get; set; }
 
+	public Token? NameToken { get; set; }
 	public Token? TypeToken { get; set; }
 
 	public void Render(TextWriter writer)

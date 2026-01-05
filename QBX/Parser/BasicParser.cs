@@ -1,4 +1,6 @@
-﻿using QBX.CodeModel;
+﻿using System.Collections.Generic;
+
+using QBX.CodeModel;
 using QBX.CodeModel.Expressions;
 using QBX.CodeModel.Statements;
 using QBX.LexicalAnalysis;
@@ -2967,6 +2969,7 @@ public class BasicParser
 				throw new SyntaxErrorException(nameToken, "Expected identifier");
 
 			param.Name = nameToken.Value ?? throw new Exception("Internal error: identifier token with no value");
+			param.NameToken = nameToken;
 
 			tokenIndex++;
 

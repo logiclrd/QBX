@@ -1,37 +1,69 @@
-﻿using QBX.ExecutionEngine.Compiled;
+﻿using System;
+using System.Collections.Generic;
+
+using QBX.CodeModel.Expressions;
+using QBX.ExecutionEngine.Compiled;
+using QBX.ExecutionEngine.Compiled.Statements;
 
 namespace QBX.ExecutionEngine;
 
 public class Compiler
 {
-	public Compiled.Module Compile(CodeModel.CompilationUnit unit, TypeRepository typeRepository)
+	public Module Compile(CodeModel.CompilationUnit unit, TypeRepository typeRepository)
 	{
-		var module = new Compiled.Module();
+		var module = new Module();
 
-		var routineByName = new Dictionary<string, Compiled.Routine>();
-		var unresolvedCallStatements = new List<Compiled.Statements.CallStatement>();
+		var unresolvedCallStatements = new List<CallStatement>();
+
+		var rootMapper = new Mapper();
+
+		var routineByName = module.Routines;
+
+		// First pass: collect all routines
+		foreach (var element in unit.Elements)
+		{
+			var routine = new Routine(element, typeRepository);
+
+			if (rootMapper.IsRegistered(routine.Name))
+				throw new RuntimeException(element.AllStatements.FirstOrDefault(), "Duplicate definition");
+
+			if (routine.Name == Routine.MainRoutineName)
+				module.MainRoutine = routine;
+			else
+				routine.Register(rootMapper);
+
+			routineByName[routine.Name] = routine;
+		}
+
+		// Second pass: process parameters, which requires that we know all the FUNCTIONs
+		foreach (var routine in rootMapper.AllRegisteredRoutines)
+			routine.TranslateParameters(rootMapper, typeRepository);
 
 		foreach (var element in unit.Elements)
 		{
-			foreach (var userDataType in CollectUserDataTypes(element, typeRepository))
-				typeRepository.RegisterType(userDataType);
+			var mapper = (element.Type == CodeModel.CompilationElementType.Main)
+				? rootMapper
+				: rootMapper.CreateScope();
 
-			var routine = new Routine(element, typeRepository);
+			string routineName = Routine.GetName(element);
 
-			routineByName[routine.Name] = routine;
+			var routine = routineByName[routineName];
 
 			int lineIndex = 0;
 			int statementIndex = 0;
 
 			while (lineIndex < element.Lines.Count)
-				ParseStatement(element, ref lineIndex, ref statementIndex, routine);
+				TranslateStatement(element, ref lineIndex, ref statementIndex, routine, mapper, typeRepository);
 		}
 
-		throw new NotImplementedException();
+		return module;
 	}
 
-	void ParseStatement(CodeModel.CompilationElement element, ref int lineIndex, ref int statementIndex, ISequence container)
+	void TranslateStatement(CodeModel.CompilationElement element, ref int lineIndexRef, ref int statementIndexRef, ISequence container, Mapper mapper, TypeRepository typeRepository)
 	{
+		int lineIndex = lineIndexRef;
+		int statementIndex = statementIndexRef;
+
 		if (lineIndex >= element.Lines.Count)
 			return;
 
@@ -46,62 +78,96 @@ public class Compiler
 
 		var statement = line.Statements[statementIndex];
 
-		/*
-		switch (statement.Type)
+		bool Advance()
 		{
+			statementIndex++;
 
-		}
-		*/
-	}
-
-	IEnumerable<UserDataType> CollectUserDataTypes(CodeModel.CompilationElement element, TypeRepository typeRepository)
-	{
-		UserDataType? udt = null;
-
-		foreach (var statement in element.AllStatements)
-		{
-			if (udt == null)
+			while (statementIndex >= line.Statements.Count)
 			{
-				if (statement is CodeModel.Statements.TypeStatement typeStatement)
+				lineIndex++;
+				statementIndex = 0;
+
+				if (lineIndex >= element.Lines.Count)
+					return false;
+
+				line = element.Lines[lineIndex];
+			}
+
+			statement = line.Statements[statementIndex];
+
+			return true;
+		}
+
+		try
+		{
+			switch (statement)
+			{
+				case CodeModel.Statements.ScreenStatement screenStatement:
+				{
+					var translatedScreenStatement = new ScreenStatement();
+
+					translatedScreenStatement.ModeExpression = TranslateExpression(screenStatement.ModeExpression);
+					translatedScreenStatement.ColourSwitchExpression = TranslateExpression(screenStatement.ColourSwitchExpression);
+					translatedScreenStatement.ActivePageExpression = TranslateExpression(screenStatement.ActivePageExpression);
+					translatedScreenStatement.VisiblePageExpression = TranslateExpression(screenStatement.VisiblePageExpression);
+
+					container.Append(translatedScreenStatement);
+
+					break;
+				}
+				case CodeModel.Statements.TypeStatement typeStatement:
 				{
 					// TODO: track whether we are in a DEF FN
 					if (element.Type != CodeModel.CompilationElementType.Main)
 						throw new RuntimeException(statement, "Illegal in SUB, FUNCTION or DEF FN");
 
-					udt = new UserDataType(typeStatement);
-				}
+					var udt = new UserDataType(typeStatement);
 
-				if (statement is CodeModel.Statements.EndTypeStatement)
-					throw new Exception("Internal error: CompilationElement contains END TYPE statement with no matching previous TYPE statement");
+					while (Advance())
+					{
+						if ((statement is CodeModel.Statements.EmptyStatement) || (statement is CodeModel.Statements.CommentStatement))
+							continue;
+						if (statement is CodeModel.Statements.EndTypeStatement)
+							break;
+
+						if (statement is CodeModel.Statements.TypeElementStatement typeElementStatement)
+						{
+							var type = typeRepository.ResolveType(
+								typeElementStatement.ElementType,
+								typeElementStatement.ElementUserType,
+								isArray: false,
+								typeElementStatement.TypeToken);
+
+							udt.Members.Add(
+								new UserDataTypeMember(
+									typeElementStatement.Name,
+									type));
+						}
+					}
+
+					if (statement is not CodeModel.Statements.EndTypeStatement)
+						throw new RuntimeException(typeStatement, "Unterminated TYPE definition");
+
+					typeRepository.RegisterType(udt);
+
+					break;
+				}
 			}
-			else
-			{
-				if (statement is CodeModel.Statements.TypeElementStatement typeElementStatement)
-				{
-					var type = typeRepository.ResolveType(
-						typeElementStatement.ElementType,
-						typeElementStatement.ElementUserType,
-						typeElementStatement.TypeToken);
 
-					udt.Members.Add(
-						new UserDataTypeMember(
-							typeElementStatement.Name,
-							type));
-				}
-
-				if (statement is CodeModel.Statements.EndTypeStatement)
-				{
-					yield return udt;
-					udt = null;
-				}
-
-				if ((statement is not CodeModel.Statements.EmptyStatement)
-				 && (statement is not CodeModel.Statements.CommentStatement))
-					throw new Exception("Internal error: CompilationElement has statements inside of a TYPE definition");
-			}
+			Advance();
 		}
+		finally
+		{
+			lineIndexRef = lineIndex;
+			statementIndexRef = statementIndex;
+		}
+	}
 
-		if (udt != null)
-			throw new Exception("Internal error: CompilationElement ended in the middle of a TYPE definition");
+	private IEvaluable? TranslateExpression(Expression? expression)
+	{
+		if (expression == null)
+			return null;
+
+		throw new NotImplementedException("TODO");
 	}
 }

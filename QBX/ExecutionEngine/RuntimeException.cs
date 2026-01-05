@@ -8,10 +8,10 @@ public class RuntimeException : Exception
 	public Token? Context { get; }
 	public int ContextLength { get; }
 
-	public RuntimeException(CodeModel.Statements.Statement statement, string message)
+	public RuntimeException(CodeModel.Statements.Statement? statement, string message)
 		: this(
-				statement.FirstToken,
-				statement.SourceLength,
+				statement?.FirstToken,
+				statement?.SourceLength ?? 0,
 				message)
 	{
 	}

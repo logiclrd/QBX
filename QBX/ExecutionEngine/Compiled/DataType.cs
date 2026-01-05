@@ -23,6 +23,14 @@ public class DataType
 		IsArray = isArray;
 	}
 
+	public DataType MakeArrayType()
+	{
+		if (UserType != null)
+			return new DataType(UserType, isArray: true);
+		else
+			return new DataType(PrimitiveType, isArray: true);
+	}
+
 	public static readonly DataType Integer = new DataType(PrimitiveDataType.Integer);
 	public static readonly DataType Long = new DataType(PrimitiveDataType.Long);
 	public static readonly DataType Single = new DataType(PrimitiveDataType.Single);
@@ -43,5 +51,21 @@ public class DataType
 
 			default: throw new Exception("Cannot construct ExecutionEngine.Compiled.DataType from unknown CodeModel.DataType");
 		}
+	}
+
+	public bool Equals(DataType? otherType)
+	{
+		if (otherType == null)
+			return false;
+
+		if (IsArray != otherType.IsArray)
+			return false;
+
+		if ((UserType == null) && (otherType.UserType == null))
+			return PrimitiveType == otherType.PrimitiveType;
+		if ((UserType != null) && (otherType.UserType != null))
+			return UserType == otherType.UserType;
+
+		return false;
 	}
 }

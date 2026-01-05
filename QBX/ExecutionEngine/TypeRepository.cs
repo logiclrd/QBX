@@ -19,8 +19,15 @@ public class TypeRepository
 		_typeByName[userType.Name] = new DataType(userType);
 	}
 
-	public DataType ResolveType(CodeModel.DataType primitiveType, string? userTypeName, Token? context)
+	public DataType ResolveType(CodeModel.DataType primitiveType, string? userTypeName, bool isArray, Token? context)
 	{
+		if (isArray)
+		{
+			var scalarType = ResolveType(primitiveType, userTypeName, isArray: false, context);
+
+			return scalarType.MakeArrayType();
+		}
+
 		if (userTypeName == null)
 			return DataType.FromCodeModelDataType(primitiveType);
 
@@ -35,6 +42,9 @@ public class TypeRepository
 		if (param.AnyType)
 			throw new Exception("Internal error: Cannot resolve ANY to a DataType");
 
-		return ResolveType(param.Type, param.UserType, param.TypeToken);
+		if (CodeModel.TypeCharacter.TryParse(param.Name.Last(), out var typeCharacter))
+			return ResolveType(typeCharacter.Type, null, param.IsArray, param.NameToken);
+		else
+			return ResolveType(param.Type, param.UserType, param.IsArray, param.TypeToken);
 	}
 }
