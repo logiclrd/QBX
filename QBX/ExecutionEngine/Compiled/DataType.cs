@@ -11,6 +11,13 @@ public class DataType
 	public bool IsPrimitiveType => (UserType == null);
 	public bool IsUserType => (UserType != null);
 
+	public bool IsInteger => PrimitiveType == PrimitiveDataType.Integer;
+	public bool IsLong => PrimitiveType == PrimitiveDataType.Long;
+	public bool IsSingle => PrimitiveType == PrimitiveDataType.Single;
+	public bool IsDouble => PrimitiveType == PrimitiveDataType.Double;
+	public bool IsCurrency => PrimitiveType == PrimitiveDataType.Currency;
+	public bool IsString => PrimitiveType == PrimitiveDataType.String;
+
 	private DataType(PrimitiveDataType primitiveType, bool isArray = false)
 	{
 		PrimitiveType = primitiveType;

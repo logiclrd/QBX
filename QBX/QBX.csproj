@@ -36,8 +36,4 @@
 		<None Include="C:\code\QBX\.editorconfig" />
 	</ItemGroup>
 
-	<ItemGroup>
-	  <Folder Include="ExecutionEngine\Compiled\Functions\" />
-	</ItemGroup>
-
 </Project>

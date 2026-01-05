@@ -1,5 +1,5 @@
 ﻿using QBX.ExecutionEngine.Compiled;
-
+using QBX.ExecutionEngine.Execution.Variables;
 using System.Diagnostics.CodeAnalysis;
 
 namespace QBX.ExecutionEngine.Execution;
@@ -58,7 +58,7 @@ public class ExecutionContext
 			throw new Exception("Module does not have a MainRoutine");
 
 		GlobalVariables = globalVariableTypes
-			.Select(type => new Variable(type))
+			.Select(type => Variable.Construct(type))
 			.ToArray();
 
 		CreateFrame(
@@ -74,7 +74,7 @@ public class ExecutionContext
 	public int ExitCode
 	{
 		get => RootFrame.Variables[0].CoerceToInt();
-		set => RootFrame.Variables[0].Data = value;
+		set => RootFrame.Variables[0].SetData(value);
 	}
 
 	public void PushFrame(Module module, Routine routine, DataType? returnType, Variable[] arguments, List<DataType> variableTypes)
@@ -93,14 +93,14 @@ public class ExecutionContext
 
 		var variables = new Variable[totalSlots];
 
-		variables[0] = new Variable(returnType ?? DataType.Integer);
+		variables[0] = Variable.Construct(returnType ?? DataType.Integer);
 
 		arguments.CopyTo(variables, 1);
 
 		int index = variables.Length + 1;
 
 		foreach (var type in variableTypesList)
-			variables[index++] = new Variable(type);
+			variables[index++] = Variable.Construct(type);
 
 		CurrentFrame = new StackFrame(
 			module,

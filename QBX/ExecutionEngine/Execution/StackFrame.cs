@@ -1,4 +1,5 @@
 ﻿using QBX.ExecutionEngine.Compiled;
+using QBX.ExecutionEngine.Execution.Variables;
 
 namespace QBX.ExecutionEngine.Execution;
 

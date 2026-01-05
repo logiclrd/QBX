@@ -1,9 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-
-using QBX.CodeModel.Expressions;
-using QBX.ExecutionEngine.Compiled;
+﻿using QBX.ExecutionEngine.Compiled;
+using QBX.ExecutionEngine.Compiled.Expressions;
+using QBX.ExecutionEngine.Compiled.Functions;
+using QBX.ExecutionEngine.Compiled.Operations;
 using QBX.ExecutionEngine.Compiled.Statements;
+
+using QBX.LexicalAnalysis;
 
 namespace QBX.ExecutionEngine;
 
@@ -163,11 +164,63 @@ public class Compiler
 		}
 	}
 
-	private IEvaluable? TranslateExpression(Expression? expression)
+	private IEvaluable? TranslateExpression(CodeModel.Expressions.Expression? expression)
 	{
 		if (expression == null)
 			return null;
 
-		throw new NotImplementedException("TODO");
+		switch (expression)
+		{
+			case CodeModel.Expressions.LiteralExpression literal:
+				return LiteralValue.ConstructFromCodeModel(literal);
+
+			case CodeModel.Expressions.KeywordFunctionExpression keywordFunction:
+			{
+				switch (keywordFunction.Function)
+				{
+					case TokenType.RND: return RndFunction.NoParameterInstance;
+
+					default: throw new NotImplementedException("Keyword function: " + keywordFunction.Function);
+				}
+			}
+
+			case CodeModel.Expressions.BinaryExpression binaryExpression:
+			{
+				var left = TranslateExpression(binaryExpression.Left);
+				var right = TranslateExpression(binaryExpression.Right);
+
+				if ((left == null) || (right == null))
+					throw new Exception("Internal error: Binary expression operand translated to null");
+
+				switch (binaryExpression.Operator)
+				{
+					case CodeModel.Expressions.Operator.Add: return Addition.Construct(left, right);
+					case CodeModel.Expressions.Operator.Subtract: return Subtraction.Construct(left, right);
+					case CodeModel.Expressions.Operator.Multiply: return Multiplication.Construct(left, right);
+					case CodeModel.Expressions.Operator.Divide: return Division.Construct(left, right);
+					case CodeModel.Expressions.Operator.Exponentiate: return Exponentiation.Construct(left, right);
+					case CodeModel.Expressions.Operator.IntegerDivide: return IntegerDivision.Construct(left, right);
+					case CodeModel.Expressions.Operator.Modulo: return Modulo.Construct(left, right);
+
+					case CodeModel.Expressions.Operator.Equals:
+					case CodeModel.Expressions.Operator.NotEquals:
+					case CodeModel.Expressions.Operator.LessThan:
+					case CodeModel.Expressions.Operator.LessThanOrEquals:
+					case CodeModel.Expressions.Operator.GreaterThan:
+					case CodeModel.Expressions.Operator.GreaterThanOrEquals:
+
+					case CodeModel.Expressions.Operator.Not:
+					case CodeModel.Expressions.Operator.And:
+					case CodeModel.Expressions.Operator.Or:
+					case CodeModel.Expressions.Operator.ExclusiveOr:
+					case CodeModel.Expressions.Operator.Equivalent:
+					case CodeModel.Expressions.Operator.Implies:
+
+					default: throw new Exception("Internal error: Unrecognized binary expression operator " + binaryExpression.Operator);
+				}
+			}
+		}
+
+		throw new Exception("Internal error: Can't translate expression");
 	}
 }

@@ -72,6 +72,9 @@ public class LiteralExpression : Expression
 		return NumberParser.TryAsCurrency(str, out value);
 	}
 
+	public bool IsStringLiteral => (Token != null) && (Token.Type == TokenType.String);
+	public string StringLiteralValue => Token!.StringLiteralValue;
+
 	public override void Render(TextWriter writer)
 	{
 		string? str = Token?.Value;

@@ -1,4 +1,5 @@
 ﻿using QBX.ExecutionEngine.Compiled;
+using QBX.ExecutionEngine.Execution.Variables;
 
 namespace QBX.ExecutionEngine.Execution;
 
@@ -18,7 +19,7 @@ public class Array
 
 	public Variable GetElement(int index)
 	{
-		return Elements[index] ??= new Variable(ElementType);
+		return Elements[index] ??= Variable.Construct(ElementType);
 	}
 
 	public Variable GetElement(int[] subscripts) => GetElement(Subscripts.GetElementIndex(subscripts));
