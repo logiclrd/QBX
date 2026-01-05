@@ -7,6 +7,7 @@ public class TypeElementStatement : Statement
 	public override StatementType Type => StatementType.TypeElement;
 
 	public string Name { get; set; } = "";
+	public VariableDeclarationSubscriptList? Subscripts { get; set; }
 	public DataType ElementType { get; set; }
 	public string? ElementUserType { get; set; }
 	public string? AlignmentWhitespace { get; set; }
@@ -16,6 +17,14 @@ public class TypeElementStatement : Statement
 	protected override void RenderImplementation(TextWriter writer)
 	{
 		writer.Write(Name);
+
+		if (Subscripts != null)
+		{
+			if (Subscripts.Subscripts.Count == 0)
+				throw new Exception("Internal error: TypeElementStatement with an empty (non-null) Subscripts collection");
+
+			Subscripts.Render(writer);
+		}
 
 		if (AlignmentWhitespace != null)
 			writer.Write(AlignmentWhitespace);

@@ -98,7 +98,6 @@ public class BasicParser
 		var line = new CodeLine();
 		var buffer = new List<Token>();
 		bool haveContent = false;
-		bool inType = false;
 		int sourceLineNumber = 1;
 		Token? precedingWhitespaceToken = null;
 		bool startsWithDATA = false;
@@ -122,7 +121,7 @@ public class BasicParser
 				if ((line.EndOfLineComment == null) && !lineConsumed)
 				{
 					line.Statements.Add(
-						ParseStatementWithIndentation(buffer, isNested: false, ref inType, token));
+						ParseStatementWithIndentation(buffer, isNested: false, token));
 				}
 
 				buffer.Clear();
@@ -202,7 +201,7 @@ public class BasicParser
 						}
 
 						line.Statements.Add(
-							ParseStatementWithIndentation(buffer, ConsumeTokensToEndOfLine, isNested: false, inType: ref inType, precedingWhitespaceToken ?? token));
+							ParseStatementWithIndentation(buffer, ConsumeTokensToEndOfLine, isNested: false, precedingWhitespaceToken ?? token));
 						buffer.Clear();
 					}
 
@@ -214,7 +213,7 @@ public class BasicParser
 				{
 					if (buffer.Any() || line.Statements.Any())
 					{
-						line.Statements.Add(ParseStatementWithIndentation(buffer, ref inType, precedingWhitespaceToken ?? token));
+						line.Statements.Add(ParseStatementWithIndentation(buffer, precedingWhitespaceToken ?? token));
 						buffer.Clear();
 					}
 
@@ -233,9 +232,7 @@ public class BasicParser
 
 					if (precedingWhitespaceToken != null)
 					{
-						if (inType && (token.Type == TokenType.AS))
-							token.PrecedingWhitespace = precedingWhitespaceToken.Value!;
-						else if (startsWithDATA)
+						if (startsWithDATA || (token.Type == TokenType.AS))
 							token.PrecedingWhitespace = precedingWhitespaceToken.Value!;
 						else
 							buffer.Add(precedingWhitespaceToken);
@@ -263,31 +260,24 @@ public class BasicParser
 				TokenType.Empty,
 				"");
 
-			line.Statements.Add(ParseStatementWithIndentation(buffer, isNested: false, ref inType, endToken));
+			line.Statements.Add(ParseStatementWithIndentation(buffer, isNested: false, endToken));
 		}
 
 		if (!line.IsEmpty)
 			yield return line;
-
-		if (inType)
-		{
-			var errorLocation = new Token(sourceLineNumber + 1, 1, TokenType.Empty, "");
-
-			throw new SyntaxErrorException(errorLocation, "Expected: END TYPE");
-		}
 	}
 
-	internal Statement ParseStatementWithIndentation(ListRange<Token> tokens, ref bool inType, Token endToken)
+	internal Statement ParseStatementWithIndentation(ListRange<Token> tokens, Token endToken)
 	{
-		return ParseStatementWithIndentation(tokens, consumeTokensToEndOfLine: () => Array.Empty<Token>(), isNested: false, ref inType, endToken);
+		return ParseStatementWithIndentation(tokens, consumeTokensToEndOfLine: () => Array.Empty<Token>(), isNested: false, endToken);
 	}
 
-	internal Statement ParseStatementWithIndentation(ListRange<Token> tokens, bool isNested, ref bool inType, Token endToken)
+	internal Statement ParseStatementWithIndentation(ListRange<Token> tokens, bool isNested, Token endToken)
 	{
-		return ParseStatementWithIndentation(tokens, consumeTokensToEndOfLine: () => Array.Empty<Token>(), isNested: false, ref inType, endToken);
+		return ParseStatementWithIndentation(tokens, consumeTokensToEndOfLine: () => Array.Empty<Token>(), isNested: false, endToken);
 	}
 
-	internal Statement ParseStatementWithIndentation(ListRange<Token> tokens, Func<IEnumerable<Token>> consumeTokensToEndOfLine, bool isNested, ref bool inType, Token endToken)
+	internal Statement ParseStatementWithIndentation(ListRange<Token> tokens, Func<IEnumerable<Token>> consumeTokensToEndOfLine, bool isNested, Token endToken)
 	{
 		var indentation = "";
 
@@ -297,7 +287,7 @@ public class BasicParser
 			tokens = tokens.Slice(1);
 		}
 
-		var statement = ParseStatement(tokens, consumeTokensToEndOfLine, isNested: false, ref inType);
+		var statement = ParseStatement(tokens, consumeTokensToEndOfLine, isNested: false);
 
 		statement.Indentation = indentation;
 
@@ -312,17 +302,17 @@ public class BasicParser
 		return statement;
 	}
 
-	internal Statement ParseStatement(ListRange<Token> tokens, ref bool inType)
+	internal Statement ParseStatement(ListRange<Token> tokens)
 	{
-		return ParseStatement(tokens, consumeTokensToEndOfLine: () => Array.Empty<Token>(), isNested: false, ref inType);
+		return ParseStatement(tokens, consumeTokensToEndOfLine: () => Array.Empty<Token>(), isNested: false);
 	}
 
-	internal Statement ParseStatement(ListRange<Token> tokens, bool isNested, ref bool inType)
+	internal Statement ParseStatement(ListRange<Token> tokens, bool isNested)
 	{
-		return ParseStatement(tokens, consumeTokensToEndOfLine: () => Array.Empty<Token>(), isNested, ref inType);
+		return ParseStatement(tokens, consumeTokensToEndOfLine: () => Array.Empty<Token>(), isNested);
 	}
 
-	internal Statement ParseStatement(ListRange<Token> tokens, Func<IEnumerable<Token>> consumeTokensToEndOfLine, bool isNested, ref bool inType)
+	internal Statement ParseStatement(ListRange<Token> tokens, Func<IEnumerable<Token>> consumeTokensToEndOfLine, bool isNested)
 	{
 		if (!tokens.Any(token => token.Type != TokenType.Whitespace))
 			return new EmptyStatement();
@@ -331,65 +321,6 @@ public class BasicParser
 			tokens = tokens.Where(token => token.Type != TokenType.Whitespace).ToList();
 
 		var tokenHandler = new TokenHandler(tokens);
-
-		if (inType)
-		{
-			if (tokenHandler.NextTokenIs(TokenType.END))
-			{
-				tokenHandler.Expect(TokenType.END);
-				tokenHandler.Expect(TokenType.TYPE);
-				tokenHandler.ExpectEndOfTokens();
-
-				inType = false;
-
-				return new EndTypeStatement();
-			}
-
-			// TODO: support parsing these anywhere, because QB does
-			// (you can type "a AS INTEGER" on a bare line before framing it with TYPE/END TYPE)
-			// - ultimately, the "inType" concept needs to go away
-
-			var typeElement = new TypeElementStatement();
-
-			typeElement.Name = tokenHandler.ExpectIdentifier(allowTypeCharacter: false);
-
-			var asToken = tokenHandler.Expect(TokenType.AS);
-
-			typeElement.AlignmentWhitespace = asToken.PrecedingWhitespace;
-
-			switch (tokenHandler.NextToken.Type)
-			{
-				case TokenType.INTEGER:
-				case TokenType.LONG:
-				case TokenType.SINGLE:
-				case TokenType.DOUBLE:
-				case TokenType.STRING:
-				case TokenType.CURRENCY:
-				{
-					switch (tokenHandler.NextToken.Type)
-					{
-						case TokenType.INTEGER: typeElement.ElementType = DataType.INTEGER; break;
-						case TokenType.LONG: typeElement.ElementType = DataType.LONG; break;
-						case TokenType.SINGLE: typeElement.ElementType = DataType.SINGLE; break;
-						case TokenType.DOUBLE: typeElement.ElementType = DataType.DOUBLE; break;
-						case TokenType.STRING: typeElement.ElementType = DataType.STRING; break;
-						case TokenType.CURRENCY: typeElement.ElementType = DataType.CURRENCY; break;
-					}
-
-					tokenHandler.Advance();
-
-					break;
-				}
-
-				default:
-					typeElement.ElementUserType = tokenHandler.ExpectIdentifier(allowTypeCharacter: false);
-					break;
-			}
-
-			tokenHandler.ExpectEndOfTokens();
-
-			return typeElement;
-		}
 
 		var token = tokenHandler.NextToken;
 
@@ -906,7 +837,7 @@ public class BasicParser
 					case TokenType.SUB: endBlock = new EndScopeStatement() { ScopeType = ScopeType.Sub }; break;
 					case TokenType.FUNCTION: endBlock = new EndScopeStatement() { ScopeType = ScopeType.Function }; break;
 
-					case TokenType.TYPE: throw new SyntaxErrorException(token, "END TYPE without TYPE");
+					case TokenType.TYPE: endBlock = new EndTypeStatement(); break;
 
 					default:
 					{
@@ -1136,9 +1067,9 @@ public class BasicParser
 				{
 					statement.ThenBody = new List<Statement>();
 
-					void DoParseStatement(List<Statement> list, ListRange<Token> tokens, bool isNested, ref bool inType, Token endToken)
+					void DoParseStatement(List<Statement> list, ListRange<Token> tokens, bool isNested, Token endToken)
 					{
-						var statement = ParseStatementWithIndentation(tokens, isNested, ref inType, endToken);
+						var statement = ParseStatementWithIndentation(tokens, isNested, endToken);
 
 						if (list.Count == 0)
 							statement.Indentation = "";
@@ -1154,11 +1085,11 @@ public class BasicParser
 						{
 							var endToken = tokenHandler.HasMoreTokens ? tokenHandler.NextToken : tokenHandler.EndToken;
 
-							DoParseStatement(statement.ThenBody, tokenHandler.RemainingTokens, isNested: true, ref inType, endToken);
+							DoParseStatement(statement.ThenBody, tokenHandler.RemainingTokens, isNested: true, endToken);
 							break;
 						}
 
-						DoParseStatement(statement.ThenBody, tokenHandler.RemainingTokens.Slice(0, separator), isNested: true, ref inType, tokenHandler[separator]);
+						DoParseStatement(statement.ThenBody, tokenHandler.RemainingTokens.Slice(0, separator), isNested: true, tokenHandler[separator]);
 
 						tokenHandler.Advance(separator);
 
@@ -1179,11 +1110,11 @@ public class BasicParser
 								{
 									var endToken = tokenHandler.HasMoreTokens ? tokenHandler.NextToken : tokenHandler.EndToken;
 
-									DoParseStatement(statement.ElseBody, tokenHandler.RemainingTokens, isNested: true, ref inType, endToken);
+									DoParseStatement(statement.ElseBody, tokenHandler.RemainingTokens, isNested: true, endToken);
 									break;
 								}
 
-								DoParseStatement(statement.ElseBody, tokenHandler.RemainingTokens.Slice(0, separator), isNested: true, ref inType, tokenHandler[separator]);
+								DoParseStatement(statement.ElseBody, tokenHandler.RemainingTokens.Slice(0, separator), isNested: true, tokenHandler[separator]);
 
 								tokenHandler.Advance(separator);
 								tokenHandler.Expect(TokenType.Colon);
@@ -1694,7 +1625,7 @@ public class BasicParser
 
 				tokenHandler.Advance();
 
-				var action = ParseStatement(tokenHandler.RemainingTokens, ref inType);
+				var action = ParseStatement(tokenHandler.RemainingTokens);
 
 				if (action is GoSubStatement goSubAction)
 					on.Action = goSubAction;
@@ -2521,8 +2452,6 @@ public class BasicParser
 
 				tokenHandler.ExpectEndOfTokens();
 
-				inType = true; // switch modes for subsequent statements
-
 				return type;
 			}
 
@@ -2739,6 +2668,8 @@ public class BasicParser
 
 		// If not one of the above, then one of:
 		//   subname argumentlist
+		//   identifier AS type
+		//   array(subscripts) AS type
 		//   assignmenttarget = value
 
 		tokenHandler.Reset();
@@ -2773,14 +2704,82 @@ public class BasicParser
 		{
 			tokenHandler.Reset();
 
-			var targetName = tokenHandler.ExpectIdentifier(allowTypeCharacter: false);
+			int asTokenIndex = tokenHandler.FindNextUnparenthesizedOf(TokenType.AS);
 
-			ExpressionList? arguments = null;
+			if (asTokenIndex >= 0)
+			{
+				var typeElement = new TypeElementStatement();
 
-			if (tokenHandler.HasMoreTokens)
-				arguments = ParseExpressionList(tokenHandler.RemainingTokens, tokenHandler.EndToken);
+				typeElement.Name = tokenHandler.ExpectIdentifier(allowTypeCharacter: false);
 
-			return new CallStatement(CallStatementType.Implicit, targetName, arguments);
+				if (tokenHandler.NextTokenIs(TokenType.OpenParenthesis))
+				{
+					typeElement.Subscripts = new VariableDeclarationSubscriptList();
+
+					var subscriptTokens = tokenHandler.ExpectParenthesizedTokens();
+
+					var endTokenRef = new TokenRef();
+
+					foreach (var subscript in SplitCommaDelimitedList(subscriptTokens, endTokenRef))
+					{
+						typeElement.Subscripts.Add(ParseVariableDeclarationSubscript(
+							subscript,
+							endTokenRef.Token ??
+							(tokenHandler.HasMoreTokens ? tokenHandler.NextToken : tokenHandler.EndToken)));
+					}
+
+					if (!typeElement.Subscripts.Any())
+						throw new SyntaxErrorException(tokenHandler.PreviousToken, "Expected: expression");
+				}
+
+				var asToken = tokenHandler.Expect(TokenType.AS);
+
+				typeElement.AlignmentWhitespace = asToken.PrecedingWhitespace;
+
+				switch (tokenHandler.NextToken.Type)
+				{
+					case TokenType.INTEGER:
+					case TokenType.LONG:
+					case TokenType.SINGLE:
+					case TokenType.DOUBLE:
+					case TokenType.STRING:
+					case TokenType.CURRENCY:
+					{
+						switch (tokenHandler.NextToken.Type)
+						{
+							case TokenType.INTEGER: typeElement.ElementType = DataType.INTEGER; break;
+							case TokenType.LONG: typeElement.ElementType = DataType.LONG; break;
+							case TokenType.SINGLE: typeElement.ElementType = DataType.SINGLE; break;
+							case TokenType.DOUBLE: typeElement.ElementType = DataType.DOUBLE; break;
+							case TokenType.STRING: typeElement.ElementType = DataType.STRING; break;
+							case TokenType.CURRENCY: typeElement.ElementType = DataType.CURRENCY; break;
+						}
+
+						tokenHandler.Advance();
+
+						break;
+					}
+
+					default:
+						typeElement.ElementUserType = tokenHandler.ExpectIdentifier(allowTypeCharacter: false);
+						break;
+				}
+
+				tokenHandler.ExpectEndOfTokens();
+
+				return typeElement;
+			}
+			else
+			{
+				var targetName = tokenHandler.ExpectIdentifier(allowTypeCharacter: false);
+
+				ExpressionList? arguments = null;
+
+				if (tokenHandler.HasMoreTokens)
+					arguments = ParseExpressionList(tokenHandler.RemainingTokens, tokenHandler.EndToken);
+
+				return new CallStatement(CallStatementType.Implicit, targetName, arguments);
+			}
 		}
 
 		throw new SyntaxErrorException(tokens[0], "Syntax error");

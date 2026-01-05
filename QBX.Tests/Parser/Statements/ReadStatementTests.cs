@@ -20,12 +20,10 @@ public class ReadStatementTests
 
 		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
 
-		bool inType = false;
-
 		var sut = new BasicParser();
 
 		// Act
-		var result = sut.ParseStatement(tokens, ref inType);
+		var result = sut.ParseStatement(tokens);
 
 		// Assert
 		result.Should().BeOfType<ReadStatement>();

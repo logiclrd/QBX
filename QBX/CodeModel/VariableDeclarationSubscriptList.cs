@@ -5,6 +5,8 @@ public class VariableDeclarationSubscriptList : IRenderableCode
 {
 	public List<VariableDeclarationSubscript> Subscripts { get; } = new List<VariableDeclarationSubscript>();
 
+	public bool Any() => Subscripts.Any();
+
 	public void Add(VariableDeclarationSubscript subscript)
 	{
 		Subscripts.Add(subscript);
