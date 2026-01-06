@@ -1,4 +1,7 @@
-﻿namespace QBX.CodeModel.Expressions;
+﻿using System.Collections.Generic;
+using System.IO;
+
+namespace QBX.CodeModel.Expressions;
 
 public class ExpressionList : IRenderableCode
 {

@@ -1,4 +1,6 @@
-﻿using QBX.LexicalAnalysis;
+﻿using System.IO;
+
+using QBX.LexicalAnalysis;
 
 namespace QBX.CodeModel.Expressions;
 

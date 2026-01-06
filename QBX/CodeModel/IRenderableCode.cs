@@ -1,4 +1,6 @@
-﻿namespace QBX.CodeModel;
+﻿using System.IO;
+
+namespace QBX.CodeModel;
 
 public interface IRenderableCode
 {

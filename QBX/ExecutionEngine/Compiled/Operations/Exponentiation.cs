@@ -1,4 +1,6 @@
-﻿using QBX.ExecutionEngine.Execution.Variables;
+﻿using System;
+
+using QBX.ExecutionEngine.Execution.Variables;
 using QBX.Numbers;
 
 namespace QBX.ExecutionEngine.Compiled.Operations;

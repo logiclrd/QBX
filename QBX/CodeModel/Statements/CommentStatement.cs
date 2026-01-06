@@ -1,4 +1,6 @@
-﻿namespace QBX.CodeModel.Statements;
+﻿using System.IO;
+
+namespace QBX.CodeModel.Statements;
 
 public class CommentStatement(CommentStatementType type, string comment) : Statement
 {

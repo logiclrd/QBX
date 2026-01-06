@@ -1,4 +1,6 @@
-﻿using QBX.Hardware;
+﻿using System;
+
+using QBX.Hardware;
 
 namespace QBX.Firmware;
 

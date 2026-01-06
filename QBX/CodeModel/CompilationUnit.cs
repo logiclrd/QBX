@@ -1,4 +1,7 @@
-﻿namespace QBX.CodeModel;
+﻿using System.Collections.Generic;
+using System.IO;
+
+namespace QBX.CodeModel;
 
 public class CompilationUnit : IRenderableCode
 {

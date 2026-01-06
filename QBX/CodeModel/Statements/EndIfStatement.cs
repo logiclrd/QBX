@@ -1,4 +1,6 @@
-﻿namespace QBX.CodeModel.Statements;
+﻿using System.IO;
+
+namespace QBX.CodeModel.Statements;
 
 public class EndIfStatement : Statement
 {

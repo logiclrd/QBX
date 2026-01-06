@@ -1,7 +1,8 @@
-﻿using QBX.Firmware;
-using QBX.Utility;
-
+﻿using System;
 using System.Text;
+
+using QBX.Firmware;
+using QBX.Utility;
 
 namespace QBX.DevelopmentEnvironment;
 

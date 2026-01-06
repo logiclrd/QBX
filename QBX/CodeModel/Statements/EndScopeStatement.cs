@@ -1,4 +1,7 @@
-﻿namespace QBX.CodeModel.Statements;
+﻿using System;
+using System.IO;
+
+namespace QBX.CodeModel.Statements;
 
 public class EndScopeStatement : Statement
 {

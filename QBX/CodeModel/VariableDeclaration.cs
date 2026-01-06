@@ -1,4 +1,7 @@
-﻿namespace QBX.CodeModel;
+﻿using System;
+using System.IO;
+
+namespace QBX.CodeModel;
 
 public class VariableDeclaration : IRenderableCode
 {

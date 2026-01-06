@@ -1,4 +1,6 @@
-﻿namespace QBX.ExecutionEngine.Compiled;
+﻿using System.Collections.Generic;
+
+namespace QBX.ExecutionEngine.Compiled;
 
 public class Module
 {

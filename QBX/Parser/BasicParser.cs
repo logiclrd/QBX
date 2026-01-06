@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 using QBX.CodeModel;
 using QBX.CodeModel.Expressions;

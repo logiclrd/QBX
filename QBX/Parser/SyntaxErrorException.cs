@@ -1,4 +1,6 @@
-﻿using QBX.LexicalAnalysis;
+﻿using System;
+
+using QBX.LexicalAnalysis;
 
 namespace QBX.Parser;
 

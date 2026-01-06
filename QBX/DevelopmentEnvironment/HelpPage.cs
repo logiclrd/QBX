@@ -1,4 +1,6 @@
-﻿namespace QBX.DevelopmentEnvironment;
+﻿using System.Collections.Generic;
+
+namespace QBX.DevelopmentEnvironment;
 
 public class HelpPage
 {

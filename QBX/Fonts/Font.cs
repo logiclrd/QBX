@@ -1,4 +1,7 @@
-﻿namespace QBX.Fonts;
+﻿using System;
+using System.IO;
+
+namespace QBX.Fonts;
 
 public class Font
 {

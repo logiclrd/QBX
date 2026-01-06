@@ -1,4 +1,6 @@
-﻿namespace QBX;
+﻿using System.Threading;
+
+namespace QBX;
 
 public abstract class HostedProgram
 {

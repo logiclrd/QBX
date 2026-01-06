@@ -1,5 +1,5 @@
-﻿using System.Runtime.CompilerServices;
-using System.Xml.Serialization;
+﻿using System;
+
 using QBX.Hardware;
 
 namespace QBX.Firmware;

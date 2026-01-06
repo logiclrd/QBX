@@ -1,9 +1,13 @@
-﻿namespace QBX;
+﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
+
+using SDL3;
 
 using QBX.Firmware;
 using QBX.Hardware;
 
-using SDL3;
+namespace QBX;
 
 class Program
 {

@@ -1,4 +1,6 @@
-﻿namespace QBX.LexicalAnalysis;
+﻿using System;
+
+namespace QBX.LexicalAnalysis;
 
 [AttributeUsage(AttributeTargets.Field)]
 public class TokenCharacterAttribute(char ch) : Attribute

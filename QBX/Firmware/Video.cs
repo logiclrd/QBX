@@ -1,4 +1,7 @@
-﻿using QBX.Hardware;
+﻿using System;
+
+using QBX.Hardware;
+
 using static QBX.Hardware.GraphicsArray;
 
 namespace QBX.Firmware;

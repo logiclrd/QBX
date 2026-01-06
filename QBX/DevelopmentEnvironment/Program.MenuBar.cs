@@ -1,5 +1,7 @@
-﻿using QBX.Hardware;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+
+using QBX.Hardware;
 
 namespace QBX.DevelopmentEnvironment;
 

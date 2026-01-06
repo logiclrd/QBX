@@ -1,4 +1,6 @@
-﻿namespace QBX.LexicalAnalysis;
+﻿using System;
+
+namespace QBX.LexicalAnalysis;
 
 public class KeywordTokenAttribute : Attribute
 {

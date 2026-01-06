@@ -1,4 +1,6 @@
-﻿namespace QBX.DevelopmentEnvironment;
+﻿using System;
+
+namespace QBX.DevelopmentEnvironment;
 
 public class ReferenceBarAction
 {
