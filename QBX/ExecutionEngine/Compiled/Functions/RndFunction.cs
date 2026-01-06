@@ -1,4 +1,5 @@
-﻿using QBX.ExecutionEngine.Execution.Variables;
+﻿using QBX.ExecutionEngine.Execution;
+using QBX.ExecutionEngine.Execution.Variables;
 using QBX.Numbers;
 
 namespace QBX.ExecutionEngine.Compiled.Functions;
@@ -54,13 +55,13 @@ public class RndFunction : IEvaluable
 
 	public DataType Type => DataType.Single;
 
-	public Variable Evaluate()
+	public Variable Evaluate(ExecutionContext context)
 	{
 		if (Argument == null)
 			RandomNumberGenerator.Advance();
 		else
 		{
-			var argumentValue = Argument.Evaluate();
+			var argumentValue = Argument.Evaluate(context);
 
 			if (argumentValue.IsNegative)
 				Reseed(argumentValue);

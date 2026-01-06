@@ -1,5 +1,6 @@
 ﻿using System;
 
+using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
 using QBX.Numbers;
 
@@ -51,10 +52,10 @@ public class CurrencyExponentiation(IEvaluable left, IEvaluable right) : IEvalua
 
 	public DataType Type => DataType.Integer;
 
-	public Variable Evaluate()
+	public Variable Evaluate(ExecutionContext context)
 	{
-		var leftValue = (CurrencyVariable)left.Evaluate();
-		var rightValue = (LongVariable)right.Evaluate();
+		var leftValue = (CurrencyVariable)left.Evaluate(context);
+		var rightValue = (LongVariable)right.Evaluate(context);
 
 		try
 		{
@@ -94,10 +95,10 @@ public class DoubleExponentiation(IEvaluable left, IEvaluable right) : IEvaluabl
 
 	public DataType Type => DataType.Integer;
 
-	public Variable Evaluate()
+	public Variable Evaluate(ExecutionContext context)
 	{
-		var leftValue = (DoubleVariable)left.Evaluate();
-		var rightValue = (DoubleVariable)right.Evaluate();
+		var leftValue = (DoubleVariable)left.Evaluate(context);
+		var rightValue = (DoubleVariable)right.Evaluate(context);
 
 		try
 		{

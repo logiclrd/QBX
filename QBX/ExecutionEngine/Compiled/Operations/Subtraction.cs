@@ -1,5 +1,6 @@
 ﻿using System;
 
+using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
 
 namespace QBX.ExecutionEngine.Compiled.Operations;
@@ -95,10 +96,10 @@ public class IntegerSubtraction(IEvaluable left, IEvaluable right) : IEvaluable
 
 	public DataType Type => DataType.Integer;
 
-	public Variable Evaluate()
+	public Variable Evaluate(ExecutionContext context)
 	{
-		var leftValue = (IntegerVariable)left.Evaluate();
-		var rightValue = (IntegerVariable)right.Evaluate();
+		var leftValue = (IntegerVariable)left.Evaluate(context);
+		var rightValue = (IntegerVariable)right.Evaluate(context);
 
 		int difference = leftValue.Value - rightValue.Value;
 
@@ -119,10 +120,10 @@ public class LongSubtraction(IEvaluable left, IEvaluable right) : IEvaluable
 
 	public DataType Type => DataType.Integer;
 
-	public Variable Evaluate()
+	public Variable Evaluate(ExecutionContext context)
 	{
-		var leftValue = (LongVariable)left.Evaluate();
-		var rightValue = (LongVariable)right.Evaluate();
+		var leftValue = (LongVariable)left.Evaluate(context);
+		var rightValue = (LongVariable)right.Evaluate(context);
 
 		try
 		{
@@ -145,10 +146,10 @@ public class SingleSubtraction(IEvaluable left, IEvaluable right) : IEvaluable
 
 	public DataType Type => DataType.Integer;
 
-	public Variable Evaluate()
+	public Variable Evaluate(ExecutionContext context)
 	{
-		var leftValue = (SingleVariable)left.Evaluate();
-		var rightValue = (SingleVariable)right.Evaluate();
+		var leftValue = (SingleVariable)left.Evaluate(context);
+		var rightValue = (SingleVariable)right.Evaluate(context);
 
 		try
 		{
@@ -171,10 +172,10 @@ public class DoubleSubtraction(IEvaluable left, IEvaluable right) : IEvaluable
 
 	public DataType Type => DataType.Integer;
 
-	public Variable Evaluate()
+	public Variable Evaluate(ExecutionContext context)
 	{
-		var leftValue = (DoubleVariable)left.Evaluate();
-		var rightValue = (DoubleVariable)right.Evaluate();
+		var leftValue = (DoubleVariable)left.Evaluate(context);
+		var rightValue = (DoubleVariable)right.Evaluate(context);
 
 		try
 		{
@@ -197,10 +198,10 @@ public class CurrencySubtraction(IEvaluable left, IEvaluable right) : IEvaluable
 
 	public DataType Type => DataType.Integer;
 
-	public Variable Evaluate()
+	public Variable Evaluate(ExecutionContext context)
 	{
-		var leftValue = (CurrencyVariable)left.Evaluate();
-		var rightValue = (CurrencyVariable)right.Evaluate();
+		var leftValue = (CurrencyVariable)left.Evaluate(context);
+		var rightValue = (CurrencyVariable)right.Evaluate(context);
 
 		try
 		{

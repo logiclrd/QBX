@@ -1,5 +1,6 @@
 ﻿using System;
 
+using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
 
 namespace QBX.ExecutionEngine.Compiled.Operations;
@@ -34,10 +35,10 @@ public class IntegerModulo(IEvaluable left, IEvaluable right) : IEvaluable
 
 	public DataType Type => DataType.Integer;
 
-	public Variable Evaluate()
+	public Variable Evaluate(ExecutionContext context)
 	{
-		var leftValue = (IntegerVariable)left.Evaluate();
-		var rightValue = (IntegerVariable)right.Evaluate();
+		var leftValue = (IntegerVariable)left.Evaluate(context);
+		var rightValue = (IntegerVariable)right.Evaluate(context);
 
 		if (rightValue.Value == 0)
 			throw new RuntimeException(SourceExpression?.Token ?? SourceStatement?.FirstToken, "Division by zero");
@@ -58,10 +59,10 @@ public class LongModulo(IEvaluable left, IEvaluable right) : IEvaluable
 
 	public DataType Type => DataType.Integer;
 
-	public Variable Evaluate()
+	public Variable Evaluate(ExecutionContext context)
 	{
-		var leftValue = (LongVariable)left.Evaluate();
-		var rightValue = (LongVariable)right.Evaluate();
+		var leftValue = (LongVariable)left.Evaluate(context);
+		var rightValue = (LongVariable)right.Evaluate(context);
 
 		if (rightValue.Value == 0)
 			throw new RuntimeException(SourceExpression?.Token ?? SourceStatement?.FirstToken, "Division by zero");

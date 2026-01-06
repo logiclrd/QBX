@@ -1,4 +1,5 @@
-﻿using QBX.ExecutionEngine.Execution.Variables;
+﻿using QBX.ExecutionEngine.Execution;
+using QBX.ExecutionEngine.Execution.Variables;
 using QBX.Numbers;
 
 namespace QBX.ExecutionEngine.Compiled.Operations;
@@ -12,7 +13,7 @@ public class ConvertToInteger(IEvaluable value) : IEvaluable
 
 	public DataType Type => DataType.Integer;
 
-	public Variable Evaluate() => new IntegerVariable(NumberConverter.ToInteger(Value.Evaluate()));
+	public Variable Evaluate(ExecutionContext context) => new IntegerVariable(NumberConverter.ToInteger(Value.Evaluate(context)));
 }
 
 public class ConvertToLong(IEvaluable value) : IEvaluable
@@ -24,7 +25,7 @@ public class ConvertToLong(IEvaluable value) : IEvaluable
 
 	public DataType Type => DataType.Long;
 
-	public Variable Evaluate() => new LongVariable(NumberConverter.ToLong(Value.Evaluate()));
+	public Variable Evaluate(ExecutionContext context) => new LongVariable(NumberConverter.ToLong(Value.Evaluate(context)));
 }
 
 public class ConvertToSingle(IEvaluable value) : IEvaluable
@@ -36,7 +37,7 @@ public class ConvertToSingle(IEvaluable value) : IEvaluable
 
 	public DataType Type => DataType.Single;
 
-	public Variable Evaluate() => new SingleVariable(NumberConverter.ToSingle(Value.Evaluate()));
+	public Variable Evaluate(ExecutionContext context) => new SingleVariable(NumberConverter.ToSingle(Value.Evaluate(context)));
 }
 
 public class ConvertToDouble(IEvaluable value) : IEvaluable
@@ -48,7 +49,7 @@ public class ConvertToDouble(IEvaluable value) : IEvaluable
 
 	public DataType Type => DataType.Double;
 
-	public Variable Evaluate() => new DoubleVariable(NumberConverter.ToDouble(Value.Evaluate()));
+	public Variable Evaluate(ExecutionContext context) => new DoubleVariable(NumberConverter.ToDouble(Value.Evaluate(context)));
 }
 
 public class ConvertToCurrency(IEvaluable value) : IEvaluable
@@ -60,7 +61,7 @@ public class ConvertToCurrency(IEvaluable value) : IEvaluable
 
 	public DataType Type => DataType.Currency;
 
-	public Variable Evaluate() => new CurrencyVariable(NumberConverter.ToCurrency(Value.Evaluate()));
+	public Variable Evaluate(ExecutionContext context) => new CurrencyVariable(NumberConverter.ToCurrency(Value.Evaluate(context)));
 }
 
 public class ConvertToString(IEvaluable value) : IEvaluable
@@ -72,6 +73,6 @@ public class ConvertToString(IEvaluable value) : IEvaluable
 
 	public DataType Type => DataType.String;
 
-	public Variable Evaluate() => new StringVariable(Value.Evaluate().ToString() ?? "");
+	public Variable Evaluate(ExecutionContext context) => new StringVariable(Value.Evaluate(context).ToString() ?? "");
 }
 

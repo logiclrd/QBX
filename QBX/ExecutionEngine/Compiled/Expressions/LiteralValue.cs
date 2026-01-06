@@ -1,5 +1,6 @@
 ﻿using System;
 
+using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
 
 namespace QBX.ExecutionEngine.Compiled.Expressions;
@@ -33,41 +34,41 @@ public abstract class LiteralValue<T>(T value) : IEvaluable
 	public T Value = value;
 
 	public abstract DataType Type { get; }
-	public abstract Variable Evaluate();
+	public abstract Variable Evaluate(ExecutionContext context);
 }
 
 public class IntegerLiteralValue(short value) : LiteralValue<short>(value)
 {
 	public override DataType Type => DataType.Integer;
-	public override Variable Evaluate() => new IntegerVariable(Value);
+	public override Variable Evaluate(ExecutionContext context) => new IntegerVariable(Value);
 }
 
 public class LongLiteralValue(int value) : LiteralValue<int>(value)
 {
 	public override DataType Type => DataType.Long;
-	public override Variable Evaluate() => new LongVariable(Value);
+	public override Variable Evaluate(ExecutionContext context) => new LongVariable(Value);
 }
 
 public class SingleLiteralValue(float value) : LiteralValue<float>(value)
 {
 	public override DataType Type => DataType.Single;
-	public override Variable Evaluate() => new SingleVariable(Value);
+	public override Variable Evaluate(ExecutionContext context) => new SingleVariable(Value);
 }
 
 public class DoubleLiteralValue(double value) : LiteralValue<double>(value)
 {
 	public override DataType Type => DataType.Double;
-	public override Variable Evaluate() => new DoubleVariable(Value);
+	public override Variable Evaluate(ExecutionContext context) => new DoubleVariable(Value);
 }
 
 public class CurrencyLiteralValue(decimal value) : LiteralValue<decimal>(value)
 {
 	public override DataType Type => DataType.Currency;
-	public override Variable Evaluate() => new CurrencyVariable(Value);
+	public override Variable Evaluate(ExecutionContext context) => new CurrencyVariable(Value);
 }
 
 public class StringLiteralValue(string value) : LiteralValue<string>(value)
 {
 	public override DataType Type => DataType.String;
-	public override Variable Evaluate() => new StringVariable(Value);
+	public override Variable Evaluate(ExecutionContext context) => new StringVariable(Value);
 }
