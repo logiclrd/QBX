@@ -1,15 +1,12 @@
 ﻿using QBX.Hardware;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace QBX.Firmware;
 
-public abstract class LibraryBase
+public abstract class VisualLibrary
 {
 	public readonly GraphicsArray Array;
 
-	public LibraryBase(GraphicsArray array)
+	public VisualLibrary(GraphicsArray array)
 	{
 		Array = array;
 
@@ -26,7 +23,7 @@ public abstract class LibraryBase
 
 	public abstract void RefreshParameters();
 
-	public void SetActivePage(int pageNumber)
+	public bool SetActivePage(int pageNumber)
 	{
 		int pageSize = Video.ComputePageSize(Array);
 		int pageCount = 16384 / pageSize;
@@ -35,6 +32,10 @@ public abstract class LibraryBase
 		{
 			StartAddress = pageNumber * pageSize;
 			RefreshParameters();
+
+			return true;
 		}
+
+		return false;
 	}
 }

@@ -5,11 +5,18 @@ using System.Linq;
 
 using QBX.ExecutionEngine.Compiled;
 using QBX.ExecutionEngine.Execution.Variables;
+using QBX.Firmware;
+using QBX.Hardware;
 
 namespace QBX.ExecutionEngine.Execution;
 
 public class ExecutionContext
 {
+	public Machine Machine;
+	public VisualLibrary VisualLibrary;
+
+	public bool EnablePaletteRemapping = true;
+
 	public Variable[] GlobalVariables;
 	public StackFrame RootFrame;
 
@@ -56,10 +63,13 @@ public class ExecutionContext
 		}
 	}
 
-	public ExecutionContext(Module mainModule, IEnumerable<DataType> variableTypes, IEnumerable<DataType> globalVariableTypes)
+	public ExecutionContext(Machine machine, Module mainModule, IEnumerable<DataType> variableTypes, IEnumerable<DataType> globalVariableTypes)
 	{
 		if (mainModule.MainRoutine == null)
 			throw new Exception("Module does not have a MainRoutine");
+
+		Machine = machine;
+		VisualLibrary = new TextLibrary(machine.GraphicsArray);
 
 		GlobalVariables = globalVariableTypes
 			.Select(type => Variable.Construct(type))

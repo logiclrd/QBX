@@ -7,7 +7,7 @@ using QBX.Hardware;
 
 namespace QBX.Firmware;
 
-public class TextLibrary : LibraryBase
+public class TextLibrary : VisualLibrary
 {
 	public TextLibrary(GraphicsArray array)
 		: base(array)
@@ -37,6 +37,16 @@ public class TextLibrary : LibraryBase
 	public void SetAttributes(int foreground, int background)
 	{
 		Attributes = unchecked((byte)((foreground & 15) | ((background & 15) << 4)));
+	}
+
+	public void SetForegroundAttribute(int foreground)
+	{
+		Attributes = unchecked((byte)((foreground & 15) | ((Attributes & 15) << 4)));
+	}
+
+	public void SetBackgroundAttribute(int background)
+	{
+		Attributes = unchecked((byte)((Attributes & 15) | ((background & 15) << 4)));
 	}
 
 	public void ShowCursor()

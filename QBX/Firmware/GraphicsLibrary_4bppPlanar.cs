@@ -10,6 +10,7 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 	public GraphicsLibrary_4bppPlanar(GraphicsArray array)
 		: base(array)
 	{
+		DrawingAttribute = 15;
 		RefreshParameters();
 	}
 

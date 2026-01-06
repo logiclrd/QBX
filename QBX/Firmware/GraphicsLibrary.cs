@@ -4,7 +4,7 @@ using QBX.Hardware;
 
 namespace QBX.Firmware;
 
-public abstract class GraphicsLibrary : LibraryBase
+public abstract class GraphicsLibrary : VisualLibrary
 {
 	protected GraphicsLibrary(GraphicsArray array)
 		: base(array)
@@ -13,6 +13,7 @@ public abstract class GraphicsLibrary : LibraryBase
 
 	public int Aspect;
 
+	public int DrawingAttribute;
 	public Point LastPoint;
 
 	public override void RefreshParameters()
@@ -26,9 +27,20 @@ public abstract class GraphicsLibrary : LibraryBase
 			Aspect = 1;
 	}
 
+	public void SetDrawingAttribute(int attribute)
+	{
+		DrawingAttribute = attribute;
+	}
+
 	public abstract void Clear();
 
+	public virtual void PixelSet(int x, int y)
+		=> PixelSet(x, y, DrawingAttribute);
+
 	public abstract void PixelSet(int x, int y, int attribute);
+
+	public virtual void HorizontalLine(int x1, int x2, int y)
+		=> HorizontalLine(x1, x2, y, DrawingAttribute);
 
 	public virtual void HorizontalLine(int x1, int x2, int y, int attribute)
 	{
@@ -36,14 +48,26 @@ public abstract class GraphicsLibrary : LibraryBase
 			PixelSet(x, y, attribute);
 	}
 
+	public void Line(Point pt1, Point pt2)
+		=> Line(pt1, pt2, DrawingAttribute);
+
 	public void Line(Point pt1, Point pt2, int attribute)
 		=> Line(pt1.X, pt1.Y, pt2.X, pt2.Y, attribute);
+
+	public void LineTo(Point pt2)
+		=> LineTo(pt2, DrawingAttribute);
 
 	public void LineTo(Point pt2, int attribute)
 		=> Line(LastPoint.X, LastPoint.Y, pt2.X, pt2.Y, attribute);
 
+	public void LineTo(int x2, int y2)
+		=> LineTo(x2, y2, DrawingAttribute);
+
 	public void LineTo(int x2, int y2, int attribute)
 		=> Line(LastPoint.X, LastPoint.Y, x2, y2, attribute);
+
+	public void Line(int x1, int y1, int x2, int y2)
+		=> Line(x1, y1, x2, y2, DrawingAttribute);
 
 	public void Line(int x1, int y1, int x2, int y2, int attribute)
 	{
@@ -102,6 +126,123 @@ public abstract class GraphicsLibrary : LibraryBase
 		}
 	}
 
+	public void Box(Point pt1, Point pt2)
+		=> Box(pt1, pt2, DrawingAttribute);
+
+	public void Box(Point pt1, Point pt2, int attribute)
+		=> Box(pt1.X, pt1.Y, pt2.X, pt2.Y, attribute);
+
+	public void BoxTo(Point pt2)
+		=> BoxTo(pt2, DrawingAttribute);
+
+	public void BoxTo(Point pt2, int attribute)
+		=> Box(LastPoint.X, LastPoint.Y, pt2.X, pt2.Y, attribute);
+
+	public void BoxTo(int x2, int y2)
+		=> BoxTo(x2, y2, DrawingAttribute);
+
+	public void BoxTo(int x2, int y2, int attribute)
+		=> Box(LastPoint.X, LastPoint.Y, x2, y2, attribute);
+
+	public void Box(int x1, int y1, int x2, int y2)
+		=> Box(x1, y1, x2, y2, DrawingAttribute);
+
+	public void Box(int x1, int y1, int x2, int y2, int attribute)
+	{
+		LastPoint = (x2, y2);
+
+		if (y1 > y2)
+			(y1, y2) = (y2, y1);
+		if (x1 > x2)
+			(x1, x2) = (x2, x1);
+
+		bool drawLeft = true;
+		bool drawRight = true;
+
+		if (x1 < 0)
+		{
+			x1 = 0;
+			drawLeft = false;
+		}
+
+		if (x2 >= Width)
+		{
+			x2 = Width - 1;
+			drawRight = false;
+		}
+
+		if (x1 > x2) // box is entirely off the screen
+			return;
+
+		if (y1 >= 0)
+			HorizontalLine(x1, x2, y1++, attribute);
+		else
+			y1 = 0;
+
+		if (y2 < Height)
+			HorizontalLine(x1, x2, y2--, attribute);
+		else
+			y2 = Height - 1;
+
+		if (drawLeft || drawRight)
+		{
+			for (int y = y1; y <= y2; y++)
+			{
+				if (drawLeft)
+					PixelSet(x1, y, attribute);
+				if (drawRight)
+					PixelSet(x2, y, attribute);
+			}
+		}
+	}
+
+	public void FillBox(Point pt1, Point pt2)
+		=> FillBox(pt1, pt2, DrawingAttribute);
+
+	public void FillBox(Point pt1, Point pt2, int attribute)
+		=> FillBox(pt1.X, pt1.Y, pt2.X, pt2.Y, attribute);
+
+	public void FillBoxTo(Point pt2)
+		=> FillBoxTo(pt2, DrawingAttribute);
+
+	public void FillBoxTo(Point pt2, int attribute)
+		=> FillBox(LastPoint.X, LastPoint.Y, pt2.X, pt2.Y, attribute);
+
+	public void FillBoxTo(int x2, int y2)
+		=> FillBoxTo(x2, y2, DrawingAttribute);
+
+	public void FillBoxTo(int x2, int y2, int attribute)
+		=> FillBox(LastPoint.X, LastPoint.Y, x2, y2, attribute);
+
+	public void FillBox(int x1, int y1, int x2, int y2)
+		=> FillBox(x1, y1, x2, y2, DrawingAttribute);
+
+	public void FillBox(int x1, int y1, int x2, int y2, int attribute)
+	{
+		LastPoint = (x2, y2);
+
+		if (y1 > y2)
+			(y1, y2) = (y2, y1);
+		if (x1 > x2)
+			(x1, x2) = (x2, x1);
+
+		if (y1 < 0)
+			y1 = 0;
+		if (y2 >= Height)
+			y2 = Height - 1;
+
+		if (x1 < 0)
+			x1 = 0;
+		if (x2 >= Width)
+			x2 = Width - 1;
+
+		if (x1 > x2) // box is entirely off the screen
+			return;
+
+		for (int y = y1; y <= y2; y++)
+			HorizontalLine(x1, x2, y, attribute);
+	}
+
 	struct PixelSpan
 	{
 		public int X1, X2;
@@ -146,7 +287,10 @@ public abstract class GraphicsLibrary : LibraryBase
 		}
 	}
 
-	public void Ellipse(int x, int y, int radiusX, int radiusY, double startAngle, double endAngle, int attribute, bool drawStartRadius, bool drawEndRadius)
+	public void Ellipse(int x, int y, int radiusX, int radiusY, double startAngle, double endAngle, bool drawStartRadius, bool drawEndRadius)
+		=> Ellipse(x, y, radiusX, radiusY, startAngle, endAngle, drawStartRadius, drawEndRadius, DrawingAttribute);
+
+	public void Ellipse(int x, int y, int radiusX, int radiusY, double startAngle, double endAngle, bool drawStartRadius, bool drawEndRadius, int attribute)
 	{
 		(int X, int Y) PointAtAngle(double angle)
 		{

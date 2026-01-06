@@ -10,6 +10,7 @@ public class GraphicsLibrary_2bppInterleaved : GraphicsLibrary
 	public GraphicsLibrary_2bppInterleaved(GraphicsArray array)
 		: base(array)
 	{
+		DrawingAttribute = 3;
 		RefreshParameters();
 	}
 

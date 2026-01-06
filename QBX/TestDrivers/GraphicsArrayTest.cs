@@ -145,7 +145,7 @@ public class GraphicsArrayTest(Machine machine, Video video) : HostedProgram
 							double start = rnd.NextDouble() * (2 * Math.PI);
 							double end = rnd.NextDouble() * (2 * Math.PI);
 
-							library.Ellipse(x, y, rx, ry, start, end, c, true, true);
+							library.Ellipse(x, y, rx, ry, start, end, true, true, c);
 
 							c = (c % MaxC) + 1;
 						}

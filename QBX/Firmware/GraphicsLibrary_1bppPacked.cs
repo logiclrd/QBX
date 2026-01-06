@@ -9,6 +9,7 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 	public GraphicsLibrary_1bppPacked(GraphicsArray array)
 		: base(array)
 	{
+		DrawingAttribute = 1;
 		RefreshParameters();
 	}
 

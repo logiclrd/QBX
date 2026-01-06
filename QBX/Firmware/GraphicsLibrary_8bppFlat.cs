@@ -4,11 +4,18 @@ using QBX.Hardware;
 
 namespace QBX.Firmware;
 
-public class GraphicsLibrary_8bppFlat(GraphicsArray array) : GraphicsLibrary(array)
+public class GraphicsLibrary_8bppFlat : GraphicsLibrary
 {
+	public GraphicsLibrary_8bppFlat(GraphicsArray array)
+		: base(array)
+	{
+		DrawingAttribute = 15;
+		RefreshParameters();
+	}
+
 	public override void Clear()
 	{
-		Array.VRAM.AsSpan().Slice(StartAddress, 320 * 200).Clear();
+		Array.VRAM.AsSpan().Slice(StartAddress, Width * Height).Clear();
 	}
 
 	public override void PixelSet(int x, int y, int attribute)
