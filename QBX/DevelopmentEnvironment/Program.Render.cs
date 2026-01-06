@@ -115,7 +115,7 @@ public partial class Program : HostedProgram
 		}
 
 		menuAttr.Set(TextLibrary);
-		TextLibrary.Write("  ");
+		TextLibrary.WriteText("  ");
 
 		for (int i = 0; i < MenuBar.Count; i++)
 		{
@@ -125,7 +125,7 @@ public partial class Program : HostedProgram
 			if (i + 1 >= MenuBar.Count)
 			{
 				menuAttr.Set(TextLibrary);
-				TextLibrary.Write(_spaces, 0, TextLibrary.Width - TextLibrary.CursorX - GetTextLength(MenuBar[i].Label) - 3);
+				TextLibrary.WriteText(_spaces, 0, TextLibrary.Width - TextLibrary.CursorX - GetTextLength(MenuBar[i].Label) - 3);
 			}
 
 			MenuBar[i].CachedX = TextLibrary.CursorX;
@@ -139,7 +139,7 @@ public partial class Program : HostedProgram
 		}
 
 		menuAttr.Set(TextLibrary);
-		TextLibrary.Write(' ');
+		TextLibrary.WriteText(' ');
 
 		return 1;
 	}
@@ -175,7 +175,7 @@ public partial class Program : HostedProgram
 			if (accessKeyIndex < 0)
 			{
 				regularAttr.Set(TextLibrary);
-				TextLibrary.Write(label, offset, label.Length - offset);
+				TextLibrary.WriteText(label, offset, label.Length - offset);
 				break;
 			}
 
@@ -184,7 +184,7 @@ public partial class Program : HostedProgram
 				if (accessKeyIndex > offset)
 				{
 					regularAttr.Set(TextLibrary);
-					TextLibrary.Write(label, offset, accessKeyIndex - offset);
+					TextLibrary.WriteText(label, offset, accessKeyIndex - offset);
 				}
 
 				if (label[accessKeyIndex + 1] == '&') // "&&" escaped
@@ -192,7 +192,7 @@ public partial class Program : HostedProgram
 				else
 					accessKeyAttr.Set(TextLibrary);
 
-				TextLibrary.Write(label[accessKeyIndex + 1]);
+				TextLibrary.WriteText(label[accessKeyIndex + 1]);
 
 				offset = accessKeyIndex + 2;
 			}
@@ -257,33 +257,33 @@ public partial class Program : HostedProgram
 		TextLibrary.MoveCursor(0, row);
 
 		attr.Set(TextLibrary);
-		TextLibrary.Write(topLeft);
-		TextLibrary.Write(_horizontalRule, 0, headingLeft);
+		TextLibrary.WriteText(topLeft);
+		TextLibrary.WriteText(_horizontalRule, 0, headingLeft);
 		if (viewport.IsFocused)
 			attr.SetInverted(TextLibrary);
-		TextLibrary.Write(' ');
-		TextLibrary.Write(viewport.Heading);
-		TextLibrary.Write(' ');
+		TextLibrary.WriteText(' ');
+		TextLibrary.WriteText(viewport.Heading);
+		TextLibrary.WriteText(' ');
 		attr.Set(TextLibrary);
-		TextLibrary.Write(_horizontalRule, 0, headingRight);
+		TextLibrary.WriteText(_horizontalRule, 0, headingRight);
 
 		if (viewport.ShowMaximize)
 		{
-			TextLibrary.Write('┤');
+			TextLibrary.WriteText('┤');
 			attr.SetInverted(TextLibrary);
-			TextLibrary.Write('↑');
+			TextLibrary.WriteText('↑');
 			attr.Set(TextLibrary);
-			TextLibrary.Write("├─");
+			TextLibrary.WriteText("├─");
 		}
 
-		TextLibrary.Write(topRight);
+		TextLibrary.WriteText(topRight);
 
 		viewport.CachedContentTopY = row + 1;
 		viewport.CachedContentHeight = viewportContentHeight;
 
 		for (int y = 0; y < viewportContentHeight; y++)
 		{
-			TextLibrary.Write(leftRight);
+			TextLibrary.WriteText(leftRight);
 
 			// TODO: current statement
 			// TODO: show included lines
@@ -316,14 +316,14 @@ public partial class Program : HostedProgram
 			if (unselectedLeft != 0)
 			{
 				if (chars >= unselectedLeft)
-					TextLibrary.Write(buffer, viewport.ScrollX, unselectedLeft);
+					TextLibrary.WriteText(buffer, viewport.ScrollX, unselectedLeft);
 				else
 				{
 					int virtualChars = unselectedLeft - chars;
 					int realChars = unselectedLeft - virtualChars;
 
-					TextLibrary.Write(buffer, viewport.ScrollX, realChars);
-					TextLibrary.Write(_spaces, 0, virtualChars);
+					TextLibrary.WriteText(buffer, viewport.ScrollX, realChars);
+					TextLibrary.WriteText(_spaces, 0, virtualChars);
 				}
 			}
 
@@ -336,14 +336,14 @@ public partial class Program : HostedProgram
 				attr.SetInverted(TextLibrary);
 
 				if (chars >= selected)
-					TextLibrary.Write(buffer, viewport.ScrollX + unselectedLeft, selected);
+					TextLibrary.WriteText(buffer, viewport.ScrollX + unselectedLeft, selected);
 				else
 				{
 					int virtualChars = selected - chars;
 					int realChars = selected - virtualChars;
 
-					TextLibrary.Write(buffer, viewport.ScrollX + unselectedLeft, realChars);
-					TextLibrary.Write(_spaces, 0, virtualChars);
+					TextLibrary.WriteText(buffer, viewport.ScrollX + unselectedLeft, realChars);
+					TextLibrary.WriteText(_spaces, 0, virtualChars);
 				}
 
 				attr.Set(TextLibrary);
@@ -356,21 +356,21 @@ public partial class Program : HostedProgram
 			if (unselectedRight != 0)
 			{
 				if (chars >= unselectedRight)
-					TextLibrary.Write(buffer, viewport.ScrollX + unselectedLeft + selected, unselectedLeft);
+					TextLibrary.WriteText(buffer, viewport.ScrollX + unselectedLeft + selected, unselectedLeft);
 				else
 				{
 					int virtualChars = unselectedRight - chars;
 					int realChars = unselectedRight - virtualChars;
 
-					TextLibrary.Write(buffer, viewport.ScrollX + unselectedLeft + selected, realChars);
-					TextLibrary.Write(_spaces, 0, virtualChars);
+					TextLibrary.WriteText(buffer, viewport.ScrollX + unselectedLeft + selected, realChars);
+					TextLibrary.WriteText(_spaces, 0, virtualChars);
 				}
 			}
 
 			if (!verticalScrollBar)
 			{
 				attr.Set(TextLibrary);
-				TextLibrary.Write(leftRight);
+				TextLibrary.WriteText(leftRight);
 			}
 			else
 			{
@@ -379,19 +379,19 @@ public partial class Program : HostedProgram
 					Configuration.DisplayAttributes.ScrollBarsandScrollArrows.Set(TextLibrary);
 
 					if (y == 0)
-						TextLibrary.Write('↑');
+						TextLibrary.WriteText('↑');
 					else
-						TextLibrary.Write('↓');
+						TextLibrary.WriteText('↓');
 				}
 				else if (y - 1 == verticalScrollBarPosition)
 				{
 					Configuration.DisplayAttributes.ScrollBarPositionIndicatorBox.Set(TextLibrary);
-					TextLibrary.Write(' ');
+					TextLibrary.WriteText(' ');
 				}
 				else
 				{
 					Configuration.DisplayAttributes.ScrollBarsandScrollArrows.Set(TextLibrary);
-					TextLibrary.Write('░');
+					TextLibrary.WriteText('░');
 				}
 
 				attr.Set(TextLibrary);
@@ -402,25 +402,25 @@ public partial class Program : HostedProgram
 			return viewportContentHeight + 1;
 		else
 		{
-			TextLibrary.Write(leftRight);
+			TextLibrary.WriteText(leftRight);
 			Configuration.DisplayAttributes.ScrollBarsandScrollArrows.Set(TextLibrary);
-			TextLibrary.Write('←');
+			TextLibrary.WriteText('←');
 
 			for (int x = 0; x < horizontalScrollBarPosition; x++)
-				TextLibrary.Write('░');
+				TextLibrary.WriteText('░');
 
 			Configuration.DisplayAttributes.ScrollBarPositionIndicatorBox.Set(TextLibrary);
-			TextLibrary.Write(' ');
+			TextLibrary.WriteText(' ');
 			Configuration.DisplayAttributes.ScrollBarsandScrollArrows.Set(TextLibrary);
 
 			for (int x = horizontalScrollBarPosition + 1; x < horizontalScrollBarWidth; x++)
-				TextLibrary.Write('░');
+				TextLibrary.WriteText('░');
 
-			TextLibrary.Write('→');
+			TextLibrary.WriteText('→');
 
 			attr.Set(TextLibrary);
 
-			TextLibrary.Write(leftRight);
+			TextLibrary.WriteText(leftRight);
 
 			return viewportContentHeight + 2;
 		}
@@ -487,7 +487,7 @@ public partial class Program : HostedProgram
 			- 8; // status indicators
 
 		Configuration.DisplayAttributes.ReferenceBarNormalText.Set(TextLibrary);
-		TextLibrary.Write(' ');
+		TextLibrary.WriteText(' ');
 		referenceBarRemainingChars--;
 
 		if (ReferenceBarActions != null)
@@ -497,9 +497,9 @@ public partial class Program : HostedProgram
 				if (i == SelectedReferenceBarAction)
 					Configuration.DisplayAttributes.ReferenceBarNormalText.SetInverted(TextLibrary);
 
-				TextLibrary.Write('<');
-				TextLibrary.Write(ReferenceBarActions[i].Label);
-				TextLibrary.Write('>');
+				TextLibrary.WriteText('<');
+				TextLibrary.WriteText(ReferenceBarActions[i].Label);
+				TextLibrary.WriteText('>');
 
 				referenceBarRemainingChars -= 2 + ReferenceBarActions[i].Label.Length;
 
@@ -507,7 +507,7 @@ public partial class Program : HostedProgram
 					Configuration.DisplayAttributes.ReferenceBarNormalText.Set(TextLibrary);
 			}
 
-			TextLibrary.Write(' ');
+			TextLibrary.WriteText(' ');
 			referenceBarRemainingChars--;
 		}
 
@@ -518,14 +518,14 @@ public partial class Program : HostedProgram
 			if (textChars > referenceBarRemainingChars)
 				textChars = referenceBarRemainingChars;
 
-			TextLibrary.Write(ReferenceBarText, 0, textChars);
+			TextLibrary.WriteText(ReferenceBarText, 0, textChars);
 
 			referenceBarRemainingChars -= textChars;
 		}
 
 		if (referenceBarRemainingChars > 0)
 		{
-			TextLibrary.Write(_spaces, 0, referenceBarRemainingChars);
+			TextLibrary.WriteText(_spaces, 0, referenceBarRemainingChars);
 		}
 
 
@@ -539,7 +539,7 @@ public partial class Program : HostedProgram
 		_statusCharBuffer[6] = Machine.Keyboard.Modifiers.NumLock ? (byte)'N' : (byte)' ';
 
 		Configuration.DisplayAttributes.ReferenceBarStatusIndicators.Set(TextLibrary);
-		TextLibrary.Write(_statusCharBuffer, 0, 8);
+		TextLibrary.WriteText(_statusCharBuffer, 0, 8);
 
 		if (cursorX > 99999)
 			cursorX = 99999;
@@ -548,9 +548,9 @@ public partial class Program : HostedProgram
 
 		Configuration.DisplayAttributes.ReferenceBarNormalText.Set(TextLibrary);
 		TextLibrary.WriteNumber(cursorY, 5);
-		TextLibrary.Write(':');
+		TextLibrary.WriteText(':');
 		TextLibrary.WriteNumber(cursorX, 3);
-		TextLibrary.Write(' ');
+		TextLibrary.WriteText(' ');
 	}
 
 	void RenderOpenMenu()
@@ -574,9 +574,9 @@ public partial class Program : HostedProgram
 
 		TextLibrary.MoveCursor(boxX, 1);
 		Configuration.DisplayAttributes.PullDownMenuBorder.Set(TextLibrary);
-		TextLibrary.Write(topLeft);
-		TextLibrary.Write(_horizontalRule, 0, menu.Width + 2);
-		TextLibrary.Write(topRight);
+		TextLibrary.WriteText(topLeft);
+		TextLibrary.WriteText(_horizontalRule, 0, menu.Width + 2);
+		TextLibrary.WriteText(topRight);
 
 		for (int i = 0; i < menu.Items.Count; i++)
 		{
@@ -586,9 +586,9 @@ public partial class Program : HostedProgram
 
 			if (menu.Items[i].IsSeparator)
 			{
-				TextLibrary.Write(separatorLeft);
-				TextLibrary.Write(_horizontalRule, 0, menu.Width + 2);
-				TextLibrary.Write(separatorRight);
+				TextLibrary.WriteText(separatorLeft);
+				TextLibrary.WriteText(_horizontalRule, 0, menu.Width + 2);
+				TextLibrary.WriteText(separatorRight);
 			}
 			else
 			{
@@ -612,29 +612,29 @@ public partial class Program : HostedProgram
 				if (!menu.Items[i].IsEnabled)
 					accessKeyAttr = attr;
 
-				TextLibrary.Write(vertical);
+				TextLibrary.WriteText(vertical);
 				attr.Set(TextLibrary);
-				TextLibrary.Write(' ');
+				TextLibrary.WriteText(' ');
 				RenderTextWithAccessKey(menu.Items[i].Label, attr, accessKeyAttr);
 
 				int labelWidth = GetTextLength(menu.Items[i].Label);
 
 				if (labelWidth < menu.Width)
-					TextLibrary.Write(_spaces, 0, menu.Width - labelWidth);
+					TextLibrary.WriteText(_spaces, 0, menu.Width - labelWidth);
 				if (labelWidth > menu.Width)
 					throw new Exception("Internal error");
 
-				TextLibrary.Write(' ');
+				TextLibrary.WriteText(' ');
 
 				Configuration.DisplayAttributes.PullDownMenuBorder.Set(TextLibrary);
-				TextLibrary.Write(vertical);
+				TextLibrary.WriteText(vertical);
 			}
 		}
 
 		TextLibrary.MoveCursor(boxX, 2 + menu.Items.Count);
-		TextLibrary.Write(bottomLeft);
-		TextLibrary.Write(_horizontalRule, 0, menu.Width + 2);
-		TextLibrary.Write(bottomRight);
+		TextLibrary.WriteText(bottomLeft);
+		TextLibrary.WriteText(_horizontalRule, 0, menu.Width + 2);
+		TextLibrary.WriteText(bottomRight);
 
 		// Shadow
 		Configuration.DisplayAttributes.PullDownMenuandDialogBoxShadow.Set(TextLibrary);

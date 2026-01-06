@@ -11,7 +11,7 @@ public class GraphicsArrayTest(Machine machine) : HostedProgram
 {
 	public override bool EnableMainLoop => true;
 
-	public int TestSCREEN = 12;
+	public int TestSCREEN = 13;
 
 	public int TextColumns = 80;
 	public int TextRows = 25;
@@ -56,9 +56,9 @@ public class GraphicsArrayTest(Machine machine) : HostedProgram
 					if (Test40ColumnsWithoutHalfDotClock || !Test40ColumnsWithoutHalfDotClock)
 						return;
 
-					var library = new TextLibrary(machine.GraphicsArray);
+					var library = new TextLibrary(machine);
 
-					library.WriteAt(0, 0, "This is a ");
+					library.WriteTextAt(0, 0, "This is a ");
 
 					int xx = library.CursorX;
 
@@ -76,7 +76,7 @@ public class GraphicsArrayTest(Machine machine) : HostedProgram
 							for (int x = 0; x < 4; x++)
 							{
 								library.SetAttributes(15 - (y * 4 + x), bg);
-								library.WriteAt(xx + x * 5, y, "test");
+								library.WriteTextAt(xx + x * 5, y, "test");
 							}
 
 						await Task.Delay(350);
@@ -106,11 +106,11 @@ public class GraphicsArrayTest(Machine machine) : HostedProgram
 					var library =
 						TestSCREEN switch
 						{
-							1 => new GraphicsLibrary_2bppInterleaved(machine.GraphicsArray),
-							2 => new GraphicsLibrary_1bppPacked(machine.GraphicsArray),
-							7 => new GraphicsLibrary_4bppPlanar(machine.GraphicsArray),
-							12 => new GraphicsLibrary_4bppPlanar(machine.GraphicsArray),
-							13 => new GraphicsLibrary_8bppFlat(machine.GraphicsArray),
+							1 => new GraphicsLibrary_2bppInterleaved(machine),
+							2 => new GraphicsLibrary_1bppPacked(machine),
+							7 => new GraphicsLibrary_4bppPlanar(machine),
+							12 => new GraphicsLibrary_4bppPlanar(machine),
+							13 => new GraphicsLibrary_8bppFlat(machine),
 
 							_ => default(GraphicsLibrary) ?? throw new NotImplementedException()
 						};
@@ -126,12 +126,6 @@ public class GraphicsArrayTest(Machine machine) : HostedProgram
 
 					while (true)
 					{
-						if (c == 1)
-						{
-							await Task.Delay(350);
-							library.Clear();
-						}
-
 						for (int i = 0; i < Math.Max(1, 15 / MaxC); i++)
 						{
 							int x = rnd.Next(-100, library.Width + 100);
@@ -146,6 +140,23 @@ public class GraphicsArrayTest(Machine machine) : HostedProgram
 							library.Ellipse(x, y, rx, ry, start, end, true, true, c);
 
 							c = (c % MaxC) + 1;
+						}
+
+						if (c == MaxC)
+						{
+							await Task.Delay(350);
+
+							for (int i = 1; i <= 10; i++)
+							{
+								for (int j = 0; j < 6; j++)
+								{
+									library.ScrollUp(i);
+
+									await Task.Delay(100);
+								}
+							}
+
+							library.Clear();
 						}
 					}
 				}

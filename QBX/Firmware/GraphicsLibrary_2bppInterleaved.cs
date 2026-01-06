@@ -7,8 +7,8 @@ namespace QBX.Firmware;
 
 public class GraphicsLibrary_2bppInterleaved : GraphicsLibrary
 {
-	public GraphicsLibrary_2bppInterleaved(GraphicsArray array)
-		: base(array)
+	public GraphicsLibrary_2bppInterleaved(Machine machine)
+		: base(machine)
 	{
 		DrawingAttribute = 3;
 		RefreshParameters();
@@ -214,6 +214,89 @@ public class GraphicsLibrary_2bppInterleaved : GraphicsLibrary
 
 			SetLeftPixels(secondPlaneOffset, secondPlaneFirstCompleteByte, secondPlaneLeftPixels);
 			SetRightPixels(secondPlaneOffset, secondPlaneLastCompleteByte, secondPlaneRightPixels);
+		}
+	}
+
+	public override void ScrollUp(int scanCount)
+	{
+		if (scanCount == 0)
+			return;
+
+		if ((scanCount & 1) == 0)
+		{
+			// Even number of scans: planes do not swap.
+			var vramSpan = Array.VRAM.AsSpan();
+
+			var plane0 = vramSpan.Slice(_plane0Offset, _planeBytesUsed);
+			var plane1 = vramSpan.Slice(_plane1Offset, _planeBytesUsed);
+			var plane2 = vramSpan.Slice(_plane2Offset, _planeBytesUsed);
+			var plane3 = vramSpan.Slice(_plane3Offset, _planeBytesUsed);
+
+			int copyOffset = (scanCount >> 1) * _stride;
+
+			plane0.Slice(copyOffset).CopyTo(plane0);
+			plane2.Slice(copyOffset).CopyTo(plane2);
+			plane1.Slice(copyOffset).CopyTo(plane1);
+			plane3.Slice(copyOffset).CopyTo(plane3);
+
+			plane0.Slice(_planeBytesUsed - copyOffset).Fill(0);
+			plane1.Slice(_planeBytesUsed - copyOffset).Fill(0);
+			plane2.Slice(_planeBytesUsed - copyOffset).Fill(0);
+			plane3.Slice(_planeBytesUsed - copyOffset).Fill(0);
+		}
+		else
+		{
+			// Odd number of scans: planes do swap.
+			var vramSpan = Array.VRAM.AsSpan();
+
+			var plane0 = vramSpan.Slice(_plane0Offset, _planeBytesUsed);
+			var plane1 = vramSpan.Slice(_plane1Offset, _planeBytesUsed);
+			var plane2 = vramSpan.Slice(_plane2Offset, _planeBytesUsed);
+			var plane3 = vramSpan.Slice(_plane3Offset, _planeBytesUsed);
+
+			int copyCount = Height - scanCount;
+			int copyOffset = (scanCount >> 1) * _stride;
+
+			var copy0 = plane0;
+			var copy1 = plane1;
+			var copy2 = plane2;
+			var copy3 = plane3;
+
+			for (int i = 0; i < copyCount; i++)
+			{
+				copy1.Slice(copyOffset, _stride).CopyTo(copy0);
+				copy3.Slice(copyOffset, _stride).CopyTo(copy2);
+
+				Span<byte> tmp;
+
+				tmp = copy0;
+				copy0 = copy1;
+				copy1 = tmp.Slice(_stride);
+
+				tmp = copy2;
+				copy2 = copy3;
+				copy3 = tmp.Slice(_stride);
+			}
+
+			int oddFillScanCount = (scanCount + 1) >> 1;
+			int evenFillScanCount = scanCount >> 1;
+
+			int halfHeight = Height >> 1;
+
+			int oddFillOffset = (halfHeight - oddFillScanCount) * _stride;
+			int evenFillOffset = (halfHeight - evenFillScanCount) * _stride;
+
+			if (oddFillScanCount > 0)
+			{
+				plane1.Slice(oddFillOffset).Fill(0);
+				plane3.Slice(oddFillOffset).Fill(0);
+			}
+
+			if (evenFillScanCount > 0)
+			{
+				plane0.Slice(evenFillOffset).Fill(0);
+				plane2.Slice(evenFillOffset).Fill(0);
+			}
 		}
 	}
 }

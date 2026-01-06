@@ -6,8 +6,8 @@ namespace QBX.Firmware;
 
 public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 {
-	public GraphicsLibrary_1bppPacked(GraphicsArray array)
-		: base(array)
+	public GraphicsLibrary_1bppPacked(Machine machine)
+		: base(machine)
 	{
 		DrawingAttribute = 1;
 		RefreshParameters();
@@ -190,7 +190,16 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 			int completeBytes = lastCompleteByte - firstCompleteByte + 1;
 
 			if (completeBytes > 0)
-				vramSpan.Slice(_plane0Offset + scanOffset + firstCompleteByte, completeBytes).Fill(completeByteValue);
+			{
+				if ((planeMask & 1) != 0)
+					vramSpan.Slice(_plane0Offset + scanOffset + firstCompleteByte, completeBytes).Fill(completeByteValue);
+				if ((planeMask & 2) != 0)
+					vramSpan.Slice(_plane1Offset + scanOffset + firstCompleteByte, completeBytes).Fill(completeByteValue);
+				if ((planeMask & 4) != 0)
+					vramSpan.Slice(_plane2Offset + scanOffset + firstCompleteByte, completeBytes).Fill(completeByteValue);
+				if ((planeMask & 8) != 0)
+					vramSpan.Slice(_plane3Offset + scanOffset + firstCompleteByte, completeBytes).Fill(completeByteValue);
+			}
 
 			if (leftPixels != 0)
 			{
@@ -280,6 +289,73 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 					else
 						Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] & ~mask));
 				}
+			}
+		}
+	}
+
+	public override void ScrollUp(int scanCount)
+	{
+		var vramSpan = Array.VRAM.AsSpan();
+
+		int planeMask = Array.Graphics.Registers.BitMask;
+
+		int copyOffset = scanCount * _stride;
+
+		if ((planeMask & 1) != 0)
+		{
+			var plane = vramSpan.Slice(_plane0Offset, _planeBytesUsed);
+
+			plane.Slice(copyOffset).CopyTo(plane);
+			plane.Slice(_planeBytesUsed - copyOffset).Fill(0);
+		}
+
+		if ((planeMask & 2) != 0)
+		{
+			var plane = vramSpan.Slice(_plane1Offset, _planeBytesUsed);
+
+			plane.Slice(copyOffset).CopyTo(plane);
+			plane.Slice(_planeBytesUsed - copyOffset).Fill(0);
+		}
+
+		if ((planeMask & 4) != 0)
+		{
+			var plane = vramSpan.Slice(_plane2Offset, _planeBytesUsed);
+
+			plane.Slice(copyOffset).CopyTo(plane);
+			plane.Slice(_planeBytesUsed - copyOffset).Fill(0);
+		}
+
+		if ((planeMask & 8) != 0)
+		{
+			var plane = vramSpan.Slice(_plane3Offset, _planeBytesUsed);
+
+			plane.Slice(copyOffset).CopyTo(plane);
+			plane.Slice(_planeBytesUsed - copyOffset).Fill(0);
+		}
+	}
+
+	protected override void DrawCharacterScan(int x, int y, int characterWidth, byte glyphScan)
+	{
+		if ((x & 7) != 0)
+			base.DrawCharacterScan(x, y, characterWidth, glyphScan);
+		else
+		{
+			int o = y * _stride + x >> 3;
+
+			if ((o >= 0) && (o < _planeBytesUsed))
+			{
+				var vramSpan = Array.VRAM.AsSpan();
+
+				int planeMask = Array.Graphics.Registers.BitMask;
+
+				if ((planeMask & 1) != 0)
+					vramSpan.Slice(_plane0Offset, _planeBytesUsed)[o] = glyphScan;
+				if ((planeMask & 2) != 0)
+					vramSpan.Slice(_plane1Offset, _planeBytesUsed)[o] = glyphScan;
+				if ((planeMask & 4) != 0)
+					vramSpan.Slice(_plane2Offset, _planeBytesUsed)[o] = glyphScan;
+				if ((planeMask & 8) != 0)
+					vramSpan.Slice(_plane3Offset, _planeBytesUsed)[o] = glyphScan;
 			}
 		}
 	}

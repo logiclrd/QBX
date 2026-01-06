@@ -1,4 +1,8 @@
-﻿using QBX.Firmware;
+﻿using System.Runtime.InteropServices;
+
+using NUnit.Framework.Internal;
+
+using QBX.Firmware;
 using QBX.Hardware;
 
 namespace QBX.Tests.Firmware;
@@ -520,7 +524,7 @@ public class GraphicsLibraryTests
 
 		machine.VideoFirmware.SetMode(mode);
 
-		var sut = (GraphicsLibrary)Activator.CreateInstance(libraryImplementationType, array)!;
+		var sut = (GraphicsLibrary)Activator.CreateInstance(libraryImplementationType, machine)!;
 
 		for (int i = 0; i + 1 < setup.Length; i += 2)
 		{
@@ -548,5 +552,71 @@ public class GraphicsLibraryTests
 
 			array.VRAM[offset].Should().Be(expectedByteValue);
 		}
+	}
+
+	[Test]
+	public void HorizontalSpanCompleteBytes(
+		[Values(5, 6, 0xD, 0x12)]
+		int mode,
+		[Values(8, 16, 24, 32)]
+		int pixelCount,
+		[Values(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)]
+		int attribute)
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var array = machine.GraphicsArray;
+
+		machine.VideoFirmware.SetMode(mode);
+
+		var sut =
+			mode switch
+			{
+				5 => new GraphicsLibrary_2bppInterleaved(machine),
+				6 => new GraphicsLibrary_1bppPacked(machine),
+				0xD => new GraphicsLibrary_4bppPlanar(machine),
+				0x12 => new GraphicsLibrary_4bppPlanar(machine),
+
+				_ => default(GraphicsLibrary) ?? throw new Exception("Unrecognized mode")
+			};
+
+		sut.PixelSet(0, 0, attribute);
+
+		var adapter = new Adapter(array);
+
+		int targetWidth = 0, targetHeight = 0;
+		int targetWidthScale = 0, targetHeightScale = 0;
+
+		adapter.UpdateResolution(ref targetWidth, ref targetHeight, ref targetWidthScale, ref targetHeightScale);
+
+		var target = new int[targetWidth * targetHeight];
+
+		var targetBuffer = MemoryMarshal.AsBytes(target.AsSpan());
+
+		int targetPitch = sut.Width * 4;
+
+		adapter.Render(targetBuffer, targetPitch);
+
+		int expectedBGRA = target[0];
+
+		sut.Clear();
+
+		adapter.Render(targetBuffer, targetPitch);
+
+		const int Black = 0x000000FF;
+
+		Assume.That(target[0] == Black);
+
+		// Act
+		sut.HorizontalLine(0, pixelCount - 1, 0, attribute);
+
+		// Assert
+		adapter.Render(targetBuffer, targetPitch);
+
+		for (int i = 0; i < pixelCount; i++)
+			target[i].Should().Be(expectedBGRA);
+		for (int i = pixelCount; i < sut.Width; i++)
+			target[i].Should().Be(Black);
 	}
 }

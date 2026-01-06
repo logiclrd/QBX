@@ -65,7 +65,7 @@ public class AdapterTests
 
 		video.SetMode(modeNumber);
 
-		var library = (GraphicsLibrary)Activator.CreateInstance(libraryImplementationType, array)!;
+		var library = (GraphicsLibrary)Activator.CreateInstance(libraryImplementationType, machine)!;
 
 		for (int y = 0; y < library.Height; y++)
 			for (int x = 0; x < library.Width; x++)
@@ -144,7 +144,7 @@ public class AdapterTests
 
 		video.SetMode(5);
 
-		var library = new GraphicsLibrary_2bppInterleaved(array);
+		var library = new GraphicsLibrary_2bppInterleaved(machine);
 
 		for (int x = 0; x < 4; x++)
 			library.PixelSet(x, 0, x);

@@ -48,7 +48,7 @@ public partial class Program : HostedProgram
 		if (machine.GraphicsArray.Sequencer.CharacterWidth == 9)
 			machine.VideoFirmware.SetCharacterWidth(8);
 
-		TextLibrary = new TextLibrary(machine.GraphicsArray);
+		TextLibrary = new TextLibrary(machine);
 		TextLibrary.MovePhysicalCursor = false;
 
 		Parser = new BasicParser();

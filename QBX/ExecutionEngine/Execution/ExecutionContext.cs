@@ -69,7 +69,7 @@ public class ExecutionContext
 			throw new Exception("Module does not have a MainRoutine");
 
 		Machine = machine;
-		VisualLibrary = new TextLibrary(machine.GraphicsArray);
+		VisualLibrary = new TextLibrary(machine);
 
 		GlobalVariables = globalVariableTypes
 			.Select(type => Variable.Construct(type))

@@ -6,8 +6,8 @@ namespace QBX.Firmware;
 
 public class GraphicsLibrary_8bppFlat : GraphicsLibrary
 {
-	public GraphicsLibrary_8bppFlat(GraphicsArray array)
-		: base(array)
+	public GraphicsLibrary_8bppFlat(Machine machine)
+		: base(machine)
 	{
 		DrawingAttribute = 15;
 		RefreshParameters();
@@ -40,5 +40,43 @@ public class GraphicsLibrary_8bppFlat : GraphicsLibrary
 		int o = StartAddress + y * Width + x1;
 
 		Array.VRAM.AsSpan().Slice(o, x2 - x1 + 1).Fill(unchecked((byte)attribute));
+	}
+
+	public override void ScrollUp(int scanCount)
+	{
+		int frameSize = Width * Height;
+
+		int copyOffset = scanCount * Width;
+		int copySize = frameSize - copyOffset;
+
+		var vram = Array.VRAM.AsSpan().Slice(StartAddress, frameSize);
+
+		vram.Slice(copyOffset).CopyTo(vram);
+		vram.Slice(copySize).Fill(0);
+	}
+
+	protected override void DrawCharacterScan(int x, int y, int characterWidth, byte glyphScan)
+	{
+		int o = y * Width + x;
+
+		int characterBit = 128;
+
+		var vram = Array.VRAM.AsSpan().Slice(StartAddress);
+
+		if (x + characterWidth > Width)
+			characterWidth = Width - x;
+
+		byte colour = unchecked((byte)DrawingAttribute);
+
+		for (int xx = 0; xx < characterWidth; xx++)
+		{
+			if ((glyphScan & characterBit) != 0)
+				vram[o] = colour;
+			else
+				vram[o] = 0;
+
+			o++;
+			characterBit >>= 1;
+		}
 	}
 }

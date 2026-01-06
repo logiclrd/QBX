@@ -26,15 +26,15 @@ public class ScreenStatement : IExecutable
 			if (Video.Modes[hardwareMode] is ModeParameters modeParams)
 			{
 				if (!modeParams.IsGraphicsMode)
-					context.VisualLibrary = new TextLibrary(context.Machine.GraphicsArray);
+					context.VisualLibrary = new TextLibrary(context.Machine);
 				else if (modeParams.ShiftRegisterInterleave)
-					context.VisualLibrary = new GraphicsLibrary_2bppInterleaved(context.Machine.GraphicsArray);
+					context.VisualLibrary = new GraphicsLibrary_2bppInterleaved(context.Machine);
 				else if (modeParams.IsMonochrome)
-					context.VisualLibrary = new GraphicsLibrary_1bppPacked(context.Machine.GraphicsArray);
+					context.VisualLibrary = new GraphicsLibrary_1bppPacked(context.Machine);
 				else if (modeParams.Use256Colours)
-					context.VisualLibrary = new GraphicsLibrary_8bppFlat(context.Machine.GraphicsArray);
+					context.VisualLibrary = new GraphicsLibrary_8bppFlat(context.Machine);
 				else
-					context.VisualLibrary = new GraphicsLibrary_4bppPlanar(context.Machine.GraphicsArray);
+					context.VisualLibrary = new GraphicsLibrary_4bppPlanar(context.Machine);
 
 				context.EnablePaletteRemapping = (hardwareMode < 0x12);
 			}

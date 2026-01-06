@@ -1,17 +1,28 @@
-﻿using System;
-
-using QBX.Hardware;
+﻿using QBX.Hardware;
+using System;
+using System.Reflection.PortableExecutable;
 
 namespace QBX.Firmware;
 
 public abstract class GraphicsLibrary : VisualLibrary
 {
-	protected GraphicsLibrary(GraphicsArray array)
-		: base(array)
+	protected GraphicsLibrary(Machine machine)
+		: base(machine)
 	{
 	}
 
 	public int Aspect;
+
+	public byte[][] Font = CreateBlankFont();
+
+	static byte[][] CreateBlankFont()
+	{
+		byte[][] ret = new byte[256][];
+
+		ret.AsSpan().Fill(new byte[16]);
+
+		return ret;
+	}
 
 	public int DrawingAttribute;
 	public Point LastPoint;
@@ -21,10 +32,15 @@ public abstract class GraphicsLibrary : VisualLibrary
 		Width = Array.MiscellaneousOutput.BasePixelWidth >> (Array.Sequencer.DotDoubling ? 1 : 0);
 		Height = Array.CRTController.NumScanLines;
 
+		CharacterWidth = Width / Array.Sequencer.CharacterWidth;
+		CharacterHeight = Height / Array.CRTController.CharacterHeight;
+
 		if ((Width >= 640) && (Height <= 240))
 			Aspect = 2;
 		else
 			Aspect = 1;
+
+		Font = Machine.VideoFirmware.GetFontForCurrentMode();
 	}
 
 	public void SetDrawingAttribute(int attribute)
@@ -603,5 +619,60 @@ public abstract class GraphicsLibrary : VisualLibrary
 			HorizontalLine(x + spans[6].X1, x + spans[6].X2, y - spans[6].Y, attribute);
 
 		LastPoint = (x, y);
+	}
+
+	public override void WriteText(ReadOnlySpan<byte> buffer)
+	{
+		int characterWidth = Array.Sequencer.CharacterWidth;
+		int characterHeight = Array.CRTController.CharacterHeight;
+
+		while (!buffer.IsEmpty)
+		{
+			byte character = buffer[0];
+
+			WriteCharacterAt(CursorX * characterWidth, CursorY * characterHeight, character);
+
+			AdvanceCursor();
+
+			buffer = buffer.Slice(1);
+		}
+	}
+
+	public void WriteCharacterAt(int x, int y, byte character)
+	{
+		int characterWidth = Array.Sequencer.CharacterWidth;
+		int characterHeight = Array.CRTController.CharacterHeight;
+
+		byte[] glyph = Font[character];
+
+		for (int yy = 0; yy < characterHeight; yy++)
+		{
+			byte glyphScan = (yy < glyph.Length) ? glyph[yy] : (byte)0;
+
+			DrawCharacterScan(x, y + yy, characterWidth, glyphScan);
+		}
+	}
+
+	public override void ScrollText()
+	{
+		ScrollUp(Array.CRTController.CharacterHeight);
+	}
+
+	public abstract void ScrollUp(int scanCount);
+
+	protected virtual void DrawCharacterScan(int x, int y, int characterWidth, byte glyphScan)
+	{
+		int columnBit = 128;
+
+		for (int xx = 0; xx < characterWidth; xx++)
+		{
+			int attribute = (glyphScan & columnBit) != 0
+				? DrawingAttribute
+				: 0;
+
+			PixelSet(x + xx, y, attribute);
+
+			columnBit >>= 1;
+		}
 	}
 }

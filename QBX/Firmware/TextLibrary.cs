@@ -1,16 +1,13 @@
 ﻿using System;
-using System.Buffers;
-using System.Text;
 
-using QBX.Firmware.Fonts;
 using QBX.Hardware;
 
 namespace QBX.Firmware;
 
 public class TextLibrary : VisualLibrary
 {
-	public TextLibrary(GraphicsArray array)
-		: base(array)
+	public TextLibrary(Machine machine)
+		: base(machine)
 	{
 	}
 
@@ -19,6 +16,7 @@ public class TextLibrary : VisualLibrary
 	public bool MovePhysicalCursor = true;
 
 	public byte Attributes = 7;
+	public bool EnableWriteAttributes = true;
 
 	public override void RefreshParameters()
 	{
@@ -28,6 +26,14 @@ public class TextLibrary : VisualLibrary
 		Width = Array.CRTController.Registers.EndHorizontalDisplay + 1;
 		Height = Array.CRTController.NumScanLines / Array.CRTController.CharacterHeight;
 
+		CharacterWidth = Width;
+		CharacterHeight = Height;
+
+		ReloadCursorAddress();
+	}
+
+	public void ReloadCursorAddress()
+	{
 		int cursorAddress = Array.CRTController.CursorAddress;
 
 		CursorY = cursorAddress / Width;
@@ -74,11 +80,8 @@ public class TextLibrary : VisualLibrary
 			end));
 	}
 
-	public void MoveCursor(int x, int y)
+	protected override void MoveCursorHandlePhysicalCursor()
 	{
-		CursorX = x;
-		CursorY = y;
-
 		if (MovePhysicalCursor)
 			UpdatePhysicalCursor();
 	}
@@ -88,147 +91,13 @@ public class TextLibrary : VisualLibrary
 		Array.CRTController.CursorAddress = CursorY * Width + CursorX;
 	}
 
-	public void WriteAt(int x, int y, string text)
-	{
-		MoveCursor(x, y);
-		Write(text);
-	}
-
 	public void WriteAttributesAt(int x, int y, int charCount)
 	{
 		MoveCursor(x, y);
 		WriteAttributes(charCount);
 	}
 
-	Encoding _cp437 = new CP437Encoding();
-
-	[ThreadStatic]
-	static ArrayBufferWriter<byte>? s_buffer;
-
-	static ArrayBufferWriter<byte> PrepareBuffer()
-	{
-		if (s_buffer == null)
-			s_buffer = new ArrayBufferWriter<byte>();
-
-		s_buffer.ResetWrittenCount();
-
-		return s_buffer;
-	}
-
-	public void WriteNumber(int value, int numDigits)
-	{
-		// I exist to avoid string.Format allocations during frame render.
-
-		var buffer = PrepareBuffer();
-
-		var span = buffer.GetSpan(numDigits).Slice(0, numDigits);
-
-		for (int i = 0, o = numDigits - 1; i < numDigits; i++, o--)
-		{
-			span[o] = unchecked((byte)('0' + (value % 10)));
-			value /= 10;
-		}
-
-		Write(span);
-	}
-
-	public void Write(string text)
-	{
-		var buffer = PrepareBuffer();
-
-		_cp437.GetBytes(text.AsSpan(), buffer);
-
-		Write(buffer.WrittenSpan);
-	}
-
-	public void Write(ReadOnlyMemory<char> text)
-	{
-		var buffer = PrepareBuffer();
-
-		_cp437.GetBytes(text.Span, buffer);
-
-		Write(buffer.WrittenSpan);
-	}
-
-	public void Write(ReadOnlySpan<char> text)
-	{
-		var buffer = PrepareBuffer();
-
-		_cp437.GetBytes(text, buffer);
-
-		Write(buffer.WrittenSpan);
-	}
-
-	public void Write(string text, int offset, int count)
-	{
-		var buffer = PrepareBuffer();
-
-		_cp437.GetBytes(text.AsSpan().Slice(offset, count), buffer);
-
-		Write(buffer.WrittenSpan);
-	}
-
-	public void Write(StringBuilder builder, int offset, int count)
-	{
-		foreach (var chunk in builder.GetChunks())
-		{
-			if (offset >= chunk.Length)
-				offset -= chunk.Length;
-			else
-			{
-				int thisChunkLength = chunk.Length - offset;
-
-				if (thisChunkLength > count)
-					thisChunkLength = count;
-
-				var thisChunk = chunk.Slice(offset, thisChunkLength);
-
-				Write(thisChunk);
-
-				offset = 0;
-				count -= thisChunk.Length;
-
-				if (count == 0)
-					break;
-			}
-		}
-	}
-
-	public void Write(char ch)
-	{
-		int byteCount = _cp437.GetMaxByteCount(1);
-
-		var buffer = PrepareBuffer();
-
-		Span<char> chars = stackalloc char[] { ch };
-
-		_cp437.GetBytes(chars, buffer);
-
-		Write(buffer.WrittenSpan);
-	}
-
-	public void Write(byte b)
-	{
-		var buffer = PrepareBuffer();
-
-		var span = buffer.GetSpan(1);
-
-		span[0] = b;
-
-		Write(span.Slice(0, 1));
-	}
-
-	public void Write(byte[] buffer)
-	{
-		Write(buffer, 0, buffer.Length);
-	}
-
-	public void Write(byte[] buffer, int offset, int count)
-	{
-		Write(buffer.AsSpan().Slice(offset, count));
-	}
-
-	public void Write(ReadOnlySpan<byte> buffer)
+	public override void WriteText(ReadOnlySpan<byte> buffer)
 	{
 		int o = CursorAddress;
 
@@ -253,7 +122,8 @@ public class TextLibrary : VisualLibrary
 			for (int i = 0; i < spanLength; i++)
 			{
 				plane0[o] = buffer[i];
-				plane1[o] = attributes;
+				if (EnableWriteAttributes)
+					plane1[o] = attributes;
 
 				o++;
 				cursorX++;
@@ -269,15 +139,31 @@ public class TextLibrary : VisualLibrary
 					cursorY++;
 				else
 				{
-					plane0.Slice(Width).CopyTo(plane0);
-					plane1.Slice(Width).CopyTo(plane1);
-
+					ScrollText(plane0, plane1);
 					o -= Width;
 				}
 			}
 		}
 
 		MoveCursor(cursorX, cursorY);
+	}
+
+	public override void ScrollText()
+	{
+		Span<byte> vramSpan = Array.VRAM;
+
+		vramSpan = vramSpan.Slice(StartAddress);
+
+		var plane0 = vramSpan.Slice(0x00000, 0x10000);
+		var plane1 = vramSpan.Slice(0x10000, 0x10000);
+
+		ScrollText(plane0, plane1);
+	}
+
+	void ScrollText(Span<byte> plane0, Span<byte> plane1)
+	{
+		plane0.Slice(Width).CopyTo(plane0);
+		plane1.Slice(Width).CopyTo(plane1);
 	}
 
 	public void WriteAttributes(int charCount)

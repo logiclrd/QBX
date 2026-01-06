@@ -7,8 +7,8 @@ namespace QBX.Firmware;
 
 public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 {
-	public GraphicsLibrary_4bppPlanar(GraphicsArray array)
-		: base(array)
+	public GraphicsLibrary_4bppPlanar(Machine machine)
+		: base(machine)
 	{
 		DrawingAttribute = 15;
 		RefreshParameters();
@@ -192,6 +192,67 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 			SetRightPixels(_plane1Offset, lastCompleteByte, rightPixels, 2);
 			SetRightPixels(_plane2Offset, lastCompleteByte, rightPixels, 4);
 			SetRightPixels(_plane3Offset, lastCompleteByte, rightPixels, 8);
+		}
+	}
+
+	public override void ScrollUp(int scanCount)
+	{
+		var vramSpan = Array.VRAM.AsSpan();
+
+		int copyOffset = scanCount * _stride;
+
+		{
+			var plane = vramSpan.Slice(_plane0Offset, _planeBytesUsed);
+
+			plane.Slice(copyOffset).CopyTo(plane);
+			plane.Slice(_planeBytesUsed - copyOffset).Fill(0);
+		}
+
+		{
+			var plane = vramSpan.Slice(_plane1Offset, _planeBytesUsed);
+
+			plane.Slice(copyOffset).CopyTo(plane);
+			plane.Slice(_planeBytesUsed - copyOffset).Fill(0);
+		}
+
+		{
+			var plane = vramSpan.Slice(_plane2Offset, _planeBytesUsed);
+
+			plane.Slice(copyOffset).CopyTo(plane);
+			plane.Slice(_planeBytesUsed - copyOffset).Fill(0);
+		}
+
+		{
+			var plane = vramSpan.Slice(_plane3Offset, _planeBytesUsed);
+
+			plane.Slice(copyOffset).CopyTo(plane);
+			plane.Slice(_planeBytesUsed - copyOffset).Fill(0);
+		}
+	}
+
+	protected override void DrawCharacterScan(int x, int y, int characterWidth, byte glyphScan)
+	{
+		if ((x & 7) != 0)
+			base.DrawCharacterScan(x, y, characterWidth, glyphScan);
+		else
+		{
+			int o = y * _stride + x >> 3;
+
+			if ((o >= 0) && (o < _planeBytesUsed))
+			{
+				var vramSpan = Array.VRAM.AsSpan();
+
+				int planeMask = Array.Graphics.Registers.BitMask;
+
+				if ((planeMask & 1) != 0)
+					vramSpan.Slice(_plane0Offset, _planeBytesUsed)[o] = ((DrawingAttribute & 1) != 0) ? glyphScan : (byte)0;
+				if ((planeMask & 2) != 0)
+					vramSpan.Slice(_plane1Offset, _planeBytesUsed)[o] = ((DrawingAttribute & 2) != 0) ? glyphScan : (byte)0;
+				if ((planeMask & 4) != 0)
+					vramSpan.Slice(_plane2Offset, _planeBytesUsed)[o] = ((DrawingAttribute & 4) != 0) ? glyphScan : (byte)0;
+				if ((planeMask & 8) != 0)
+					vramSpan.Slice(_plane3Offset, _planeBytesUsed)[o] = ((DrawingAttribute & 8) != 0) ? glyphScan : (byte)0;
+			}
 		}
 	}
 }
