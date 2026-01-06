@@ -15,7 +15,7 @@ class Program
 	{
 		var machine = new Machine();
 
-		var video = new Video(machine);
+		var video = machine.VideoFirmware;
 
 		HostedProgram program = new DevelopmentEnvironment.Program(machine, video);
 		//HostedProgram program = new TestDrivers.GraphicsArrayTest(machine, video);

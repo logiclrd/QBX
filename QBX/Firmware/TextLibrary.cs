@@ -2,7 +2,7 @@
 using System.Buffers;
 using System.Text;
 
-using QBX.Fonts;
+using QBX.Firmware.Fonts;
 using QBX.Hardware;
 
 namespace QBX.Firmware;

@@ -74,7 +74,7 @@ public class ColorStatement : IExecutable
 
 				newCGAPalette &= 1;
 
-				context.Machine.GraphicsArray.LoadCGAPalette(newCGAPalette, intensity: false);
+				context.Machine.VideoFirmware.LoadCGAPalette(newCGAPalette, intensity: false);
 			}
 
 			// argument 3 is ignored

@@ -518,7 +518,7 @@ public class GraphicsLibraryTests
 
 		var array = machine.GraphicsArray;
 
-		new Video(machine).SetMode(mode);
+		machine.VideoFirmware.SetMode(mode);
 
 		var sut = (GraphicsLibrary)Activator.CreateInstance(libraryImplementationType, array)!;
 

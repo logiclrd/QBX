@@ -61,7 +61,7 @@ public class AdapterTests
 
 		var array = machine.GraphicsArray;
 
-		var video = new Video(machine);
+		var video = machine.VideoFirmware;
 
 		video.SetMode(modeNumber);
 
@@ -80,7 +80,7 @@ public class AdapterTests
 		else
 		{
 			if (cgaPalette != null)
-				array.LoadCGAPalette(cgaPalette.Value, cgaPaletteIntensity);
+				machine.VideoFirmware.LoadCGAPalette(cgaPalette.Value, cgaPaletteIntensity);
 
 			if (maxColour == 1)
 			{
@@ -125,5 +125,53 @@ public class AdapterTests
 
 				target[o].Should().Be(paletteBGRA[expectedPaletteIndex]);
 			}
+	}
+
+	[TestCase(0, false, new uint[] { 0x000000FF, 0x00AA00FF, 0x0000AAFF, 0x0055AAFF })]
+	[TestCase(0, true, new uint[] { 0x000000FF, 0x55FF55FF, 0x5555FFFF, 0x55FFFFFF })]
+	[TestCase(1, false, new uint[] { 0x000000FF, 0xAAAA00FF, 0xAA00AAFF, 0xAAAAAAFF })]
+	[TestCase(1, true, new uint[] { 0x000000FF, 0xFFFF55FF, 0xFF55FFFF, 0xFFFFFFFF })]
+	[TestCase(2, false, new uint[] { 0x000000FF, 0xAAAA00FF, 0x0000AAFF, 0xAAAAAAFF })]
+	[TestCase(2, true, new uint[] { 0x000000FF, 0xFFFF55FF, 0x5555FFFF, 0xFFFFFFFF })]
+	public void TestCGAPalette(int cgaPalette, bool cgaPaletteIntensity, uint[] expectedPaletteBGRA)
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var array = machine.GraphicsArray;
+
+		var video = machine.VideoFirmware;
+
+		video.SetMode(5);
+
+		var library = new GraphicsLibrary_2bppInterleaved(array);
+
+		for (int x = 0; x < 4; x++)
+			library.PixelSet(x, 0, x);
+
+		machine.VideoFirmware.LoadCGAPalette(cgaPalette, cgaPaletteIntensity);
+
+		var sut = new Adapter(array);
+
+		int targetWidth = 0, targetHeight = 0;
+		int targetWidthScale = 0, targetHeightScale = 0;
+
+		sut.UpdateResolution(ref targetWidth, ref targetHeight, ref targetWidthScale, ref targetHeightScale);
+
+		var target = new uint[targetWidth * targetHeight];
+
+		var targetBuffer = MemoryMarshal.AsBytes(target.AsSpan());
+
+		int targetPitch = library.Width * 4;
+
+		// Act
+		sut.Render(targetBuffer, targetPitch);
+
+		// Assert
+		targetWidth.Should().Be(library.Width);
+		targetHeight.Should().Be(library.Height);
+
+		for (int x = 0; x < 4; x++)
+			target[x].Should().Be(expectedPaletteBGRA[x]);
 	}
 }

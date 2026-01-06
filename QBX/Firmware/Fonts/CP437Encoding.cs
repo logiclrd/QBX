@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Text;
 
-namespace QBX.Fonts;
+namespace QBX.Firmware.Fonts;
 
 class CP437Encoding : Encoding
 {

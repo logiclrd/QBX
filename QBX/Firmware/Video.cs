@@ -541,13 +541,15 @@ public class Video(Machine machine)
 			for (int i = 0, o = mode.Characters.Width * mode.Characters.Height; i < o; i++)
 				array.VRAM[0x10000 + i] = 7;
 
-			array.ResetFont();
+			var font = GetFontForCurrentMode();
+
+			LoadFontIntoCharacterGenerator(font);
 		}
 
 		switch (mode.PaletteType)
 		{
-			case PaletteType.CGA: array.LoadCGAPalette(); break;
-			case PaletteType.VGA: array.LoadVGAPalette(); break;
+			case PaletteType.CGA: LoadCGAPalette(); break;
+			case PaletteType.VGA: LoadVGAPalette(); break;
 		}
 
 		array.OutPort2(
@@ -643,7 +645,9 @@ public class Video(Machine machine)
 			CRTControllerRegisters.CursorEnd,
 			maximumScanLine);
 
-		array.ResetFont();
+		var font = GetFont(maximumScanLineValue + 1);
+
+		LoadFontIntoCharacterGenerator(font);
 	}
 
 	public void SetCharacterWidth(int width)
@@ -720,5 +724,144 @@ public class Video(Machine machine)
 		}
 
 		return false;
+	}
+
+	public void LoadCGAPalette(int cgaPalette = 1, bool intensity = false)
+	{
+		LoadVGAPalette();
+
+		switch (cgaPalette)
+		{
+			case 0:
+				machine.GraphicsArray.AttributeController.Registers[0] = 0;
+				machine.GraphicsArray.AttributeController.Registers[1] = unchecked((byte)(intensity ? 10 : 2));
+				machine.GraphicsArray.AttributeController.Registers[2] = unchecked((byte)(intensity ? 12 : 4));
+				machine.GraphicsArray.AttributeController.Registers[3] = unchecked((byte)(intensity ? 14 : 6));
+				break;
+			case 1:
+				machine.GraphicsArray.AttributeController.Registers[0] = 0;
+				machine.GraphicsArray.AttributeController.Registers[1] = unchecked((byte)(intensity ? 11 : 3));
+				machine.GraphicsArray.AttributeController.Registers[2] = unchecked((byte)(intensity ? 13 : 5));
+				machine.GraphicsArray.AttributeController.Registers[3] = unchecked((byte)(intensity ? 15 : 7));
+				break;
+			// Secret CGA palette 2 -- as I understand it, this is what happens if you
+			// plug an actual CGA into a colour composite monitor but disable the Color
+			// Burst signal. Trivial to emulate on VGA with attribute mapping.
+			case 2:
+				machine.GraphicsArray.AttributeController.Registers[0] = 0;
+				machine.GraphicsArray.AttributeController.Registers[1] = unchecked((byte)(intensity ? 11 : 3));
+				machine.GraphicsArray.AttributeController.Registers[2] = unchecked((byte)(intensity ? 12 : 4));
+				machine.GraphicsArray.AttributeController.Registers[3] = unchecked((byte)(intensity ? 15 : 7));
+				break;
+
+			default: goto case 1;
+		}
+	}
+
+	public void LoadEGAPalette()
+	{
+		var paletteBytes = machine.GraphicsArray.DAC.Palette.AsSpan();
+
+		for (int i = 0; i < 64; i++)
+		{
+			int r = (i >> 0) & 0b11;
+			int g = (i >> 2) & 0b11;
+			int b = (i >> 4) & 0b11;
+
+			r *= 0b10101;
+			g *= 0b10101;
+			b *= 0b10101;
+
+			paletteBytes[0] = (byte)((b << 2) | (b >> 4));
+			paletteBytes[1] = (byte)((g << 2) | (g >> 4));
+			paletteBytes[2] = (byte)((r << 2) | (r >> 4));
+
+			paletteBytes = paletteBytes.Slice(3);
+		}
+
+		machine.GraphicsArray.DAC.RebuildBGRA();
+
+		machine.GraphicsArray.AttributeController.Registers[0x0] = 0x00;
+		machine.GraphicsArray.AttributeController.Registers[0x1] = 0x01;
+		machine.GraphicsArray.AttributeController.Registers[0x2] = 0x02;
+		machine.GraphicsArray.AttributeController.Registers[0x3] = 0x03;
+		machine.GraphicsArray.AttributeController.Registers[0x4] = 0x04;
+		machine.GraphicsArray.AttributeController.Registers[0x5] = 0x05;
+		machine.GraphicsArray.AttributeController.Registers[0x6] = 0x14; // Hello!
+		machine.GraphicsArray.AttributeController.Registers[0x7] = 0x07;
+		machine.GraphicsArray.AttributeController.Registers[0x8] = 0x38;
+		machine.GraphicsArray.AttributeController.Registers[0x9] = 0x39;
+		machine.GraphicsArray.AttributeController.Registers[0xA] = 0x3A;
+		machine.GraphicsArray.AttributeController.Registers[0xB] = 0x3B;
+		machine.GraphicsArray.AttributeController.Registers[0xC] = 0x3C;
+		machine.GraphicsArray.AttributeController.Registers[0xD] = 0x3D;
+		machine.GraphicsArray.AttributeController.Registers[0xE] = 0x3E;
+		machine.GraphicsArray.AttributeController.Registers[0xF] = 0x3F;
+	}
+
+	public void LoadVGAPalette()
+	{
+		using (var stream = typeof(Video).Assembly.GetManifestResourceStream("QBX.Firmware.DefaultPalette.bin"))
+		{
+			if (stream == null)
+				return; // ?
+
+			stream.ReadExactly(machine.GraphicsArray.DAC.Palette);
+
+			machine.GraphicsArray.DAC.RebuildBGRA();
+
+			for (int i = 0; i < 16; i++)
+				machine.GraphicsArray.AttributeController.Registers[i] = (byte)i;
+		}
+	}
+
+	public byte[][] GetFontForCurrentMode()
+		=> GetFont(machine.GraphicsArray.CRTController.CharacterHeight);
+
+	public byte[][] GetFont(int characterScans)
+	{
+
+		string fontFileName = $"8x{characterScans}.bin";
+
+		byte[][] fontData = new byte[256][];
+
+		for (int i = 0; i < 256; i++)
+			fontData[i] = new byte[characterScans];
+
+		using (var stream = typeof(GraphicsArray).Assembly.GetManifestResourceStream("QBX.Firmware.Fonts." + fontFileName))
+		{
+			if (stream != null)
+			{
+				for (int ch = 0; ch < 256; ch++)
+				{
+					int baseOffset = ch * 32;
+
+					byte[] glyph = fontData[ch];
+
+					for (int y = 0; y < characterScans; y++)
+						glyph[y] = unchecked((byte)stream.ReadByte());
+				}
+			}
+		}
+
+		return fontData;
+	}
+
+	public void LoadFontIntoCharacterGenerator(byte[][] font)
+	{
+		const int FontPlane = 0x20000;
+
+		for (int ch = 0; ch < 256; ch++)
+		{
+			int baseOffset = ch * 32;
+
+			Span<byte> glyph = font[ch];
+
+			if (glyph.Length > 32)
+				glyph = glyph.Slice(0, 32);
+
+			for (int y = 0; y < glyph.Length; y++)
+				machine.GraphicsArray.VRAM[FontPlane + baseOffset + y] = glyph[y];
+		}
 	}
 }

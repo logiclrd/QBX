@@ -103,7 +103,7 @@ public class GraphicsArrayTest(Machine machine, Video video) : HostedProgram
 					video.SetMode(ModeNumber);
 
 					if ((TestSCREEN == 1) || suppressDeadCodeWarning)
-						machine.GraphicsArray.LoadCGAPalette(CGAPalette, CGAPaletteHighIntensity);
+						machine.VideoFirmware.LoadCGAPalette(CGAPalette, CGAPaletteHighIntensity);
 
 					var library =
 						TestSCREEN switch

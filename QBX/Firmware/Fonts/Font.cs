@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace QBX.Fonts;
+namespace QBX.Firmware.Fonts;
 
 public class Font
 {

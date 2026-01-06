@@ -20,7 +20,7 @@ public class ScreenStatement : IExecutable
 				Video.Modes,
 				mode => mode?.ScreenNumber == qbMode);
 
-			if (!new Video(context.Machine).SetMode(hardwareMode))
+			if (!context.Machine.VideoFirmware.SetMode(hardwareMode))
 				throw RuntimeException.IllegalFunctionCall(ModeExpression.SourceStatement);
 
 			if (Video.Modes[hardwareMode] is ModeParameters modeParams)
@@ -52,7 +52,7 @@ public class ScreenStatement : IExecutable
 		{
 			int visiblePage = VisiblePageExpression.Evaluate(context).CoerceToInt();
 
-			if (!new Video(context.Machine).SetVisiblePage(visiblePage))
+			if (!context.Machine.VideoFirmware.SetVisiblePage(visiblePage))
 				throw RuntimeException.IllegalFunctionCall(VisiblePageExpression.SourceStatement);
 		}
 	}

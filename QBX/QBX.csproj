@@ -18,17 +18,17 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Remove="Fonts\8x14.bin" />
-		<None Remove="Fonts\8x16.bin" />
-		<None Remove="Fonts\8x8.bin" />
+		<None Remove="Firmware\Fonts\8x14.bin" />
+		<None Remove="Firmware\Fonts\8x16.bin" />
+		<None Remove="Firmware\Fonts\8x8.bin" />
 		<None Remove="Hardware\DefaultPalette.bin" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<EmbeddedResource Include="Fonts\8x14.bin" />
-		<EmbeddedResource Include="Fonts\8x16.bin" />
-		<EmbeddedResource Include="Fonts\8x8.bin" />
-		<EmbeddedResource Include="Hardware\DefaultPalette.bin" />
+		<EmbeddedResource Include="Firmware\Fonts\8x14.bin" />
+		<EmbeddedResource Include="Firmware\Fonts\8x16.bin" />
+		<EmbeddedResource Include="Firmware\Fonts\8x8.bin" />
+		<EmbeddedResource Include="Firmware\DefaultPalette.bin" />
 	</ItemGroup>
 
 	<ItemGroup>
