@@ -12,7 +12,7 @@ public static class NumberConverter
 	public static short ToInteger(int value, Token? context = null)
 	{
 		if ((value < short.MinValue) || (value > short.MaxValue))
-			throw new RuntimeException(context, "Overflow");
+			throw RuntimeException.Overflow(context);
 
 		return (short)value;
 	}
@@ -22,7 +22,7 @@ public static class NumberConverter
 		value = float.Round(value);
 
 		if ((value < short.MinValue) || (value > short.MaxValue))
-			throw new RuntimeException(context, "Overflow");
+			throw RuntimeException.Overflow(context);
 
 		return (short)value;
 	}
@@ -32,7 +32,7 @@ public static class NumberConverter
 		value = double.Round(value);
 
 		if ((value < short.MinValue) || (value > short.MaxValue))
-			throw new RuntimeException(context, "Overflow");
+			throw RuntimeException.Overflow(context);
 
 		return (short)value;
 	}
@@ -42,7 +42,7 @@ public static class NumberConverter
 		value = decimal.Round(value);
 
 		if ((value < short.MinValue) || (value > short.MaxValue))
-			throw new RuntimeException(context, "Overflow");
+			throw RuntimeException.Overflow(context);
 
 		return (short)value;
 	}
@@ -56,7 +56,7 @@ public static class NumberConverter
 		value = float.Round(value);
 
 		if ((value < int.MinValue) || (value > int.MaxValue))
-			throw new RuntimeException(context, "Overflow");
+			throw RuntimeException.Overflow(context);
 
 		return (int)value;
 	}
@@ -66,7 +66,7 @@ public static class NumberConverter
 		value = double.Round(value);
 
 		if ((value < int.MinValue) || (value > int.MaxValue))
-			throw new RuntimeException(context, "Overflow");
+			throw RuntimeException.Overflow(context);
 
 		return (int)value;
 	}
@@ -76,7 +76,7 @@ public static class NumberConverter
 		value = decimal.Round(value);
 
 		if ((value < int.MinValue) || (value > int.MaxValue))
-			throw new RuntimeException(context, "Overflow");
+			throw RuntimeException.Overflow(context);
 
 		return (int)value;
 	}
@@ -95,7 +95,7 @@ public static class NumberConverter
 		}
 		catch (OverflowException)
 		{
-			throw new RuntimeException(context, "Overflow");
+			throw RuntimeException.Overflow(context);
 		}
 	}
 
@@ -107,7 +107,7 @@ public static class NumberConverter
 		}
 		catch (OverflowException)
 		{
-			throw new RuntimeException(context, "Overflow");
+			throw RuntimeException.Overflow(context);
 		}
 	}
 
@@ -127,7 +127,7 @@ public static class NumberConverter
 		}
 		catch (OverflowException)
 		{
-			throw new RuntimeException(context, "Overflow");
+			throw RuntimeException.Overflow(context);
 		}
 	}
 
@@ -142,13 +142,13 @@ public static class NumberConverter
 			var decimalValue = (decimal)value;
 
 			if (!decimalValue.IsInCurrencyRange())
-				throw new RuntimeException(context, "Overflow");
+				throw RuntimeException.Overflow(context);
 
 			return decimalValue;
 		}
 		catch (OverflowException)
 		{
-			throw new RuntimeException(context, "Overflow");
+			throw RuntimeException.Overflow(context);
 		}
 	}
 
@@ -159,13 +159,13 @@ public static class NumberConverter
 			var decimalValue = (decimal)value;
 
 			if (!decimalValue.IsInCurrencyRange())
-				throw new RuntimeException(context, "Overflow");
+				throw RuntimeException.Overflow(context);
 
 			return decimalValue;
 		}
 		catch (OverflowException)
 		{
-			throw new RuntimeException(context, "Overflow");
+			throw RuntimeException.Overflow(context);
 		}
 	}
 
@@ -182,7 +182,7 @@ public static class NumberConverter
 			case decimal decimalValue: return ToInteger(decimalValue, context);
 		}
 
-		throw new RuntimeException(context, "Type mismatch");
+		throw RuntimeException.TypeMismatch(context);
 	}
 
 	public static int ToLong(object value, Token? context = null)
@@ -196,7 +196,7 @@ public static class NumberConverter
 			case decimal decimalValue: return ToLong(decimalValue, context);
 		}
 
-		throw new RuntimeException(context, "Type mismatch");
+		throw RuntimeException.TypeMismatch(context);
 	}
 
 	public static float ToSingle(object value, Token? context = null)
@@ -210,7 +210,7 @@ public static class NumberConverter
 			case decimal decimalValue: return ToSingle(decimalValue, context);
 		}
 
-		throw new RuntimeException(context, "Type mismatch");
+		throw RuntimeException.TypeMismatch(context);
 	}
 
 	public static double ToDouble(object value, Token? context = null)
@@ -224,7 +224,7 @@ public static class NumberConverter
 			case decimal decimalValue: return ToDouble(decimalValue, context);
 		}
 
-		throw new RuntimeException(context, "Type mismatch");
+		throw RuntimeException.TypeMismatch(context);
 	}
 
 	public static decimal ToCurrency(object value, Token? context = null)
@@ -238,6 +238,6 @@ public static class NumberConverter
 			case decimal decimalValue: return ToCurrency(decimalValue, context);
 		}
 
-		throw new RuntimeException(context, "Type mismatch");
+		throw RuntimeException.TypeMismatch(context);
 	}
 }

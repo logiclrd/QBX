@@ -57,7 +57,7 @@ public class ColorStatement : IExecutable
 				int newBackgroundAttribute = Argument1Expression.Evaluate(context).CoerceToInt();
 
 				if ((newBackgroundAttribute < 0) || (newBackgroundAttribute > 255))
-					throw new RuntimeException(Argument1Expression.SourceStatement, "Illegal function call");
+					throw RuntimeException.IllegalFunctionCall(Argument1Expression.SourceStatement);
 
 				newBackgroundAttribute &= 15;
 
@@ -70,7 +70,7 @@ public class ColorStatement : IExecutable
 				int newCGAPalette = Argument2Expression.Evaluate(context).CoerceToInt();
 
 				if ((newCGAPalette < 0) || (newCGAPalette > 255))
-					throw new RuntimeException(Argument2Expression.SourceStatement, "Illegal function call");
+					throw RuntimeException.IllegalFunctionCall(Argument2Expression.SourceStatement);
 
 				newCGAPalette &= 1;
 
@@ -84,10 +84,10 @@ public class ColorStatement : IExecutable
 			if (context.VisualLibrary is GraphicsLibrary graphicsLibrary)
 			{
 				if (Argument3Expression != null)
-					throw new RuntimeException(Argument3Expression.SourceStatement, "Illegal function call");
+					throw RuntimeException.IllegalFunctionCall(Argument3Expression.SourceStatement);
 
 				if ((Argument2Expression != null) && !context.EnablePaletteRemapping)
-					throw new RuntimeException(Argument2Expression.SourceStatement, "Illegal function call");
+					throw RuntimeException.IllegalFunctionCall(Argument2Expression.SourceStatement);
 
 				if (Argument1Expression != null)
 				{

@@ -16,7 +16,7 @@ public static class Division
 				? right.SourceExpression?.Token
 				: left.SourceExpression?.Token;
 
-			throw new RuntimeException(blame, "Type mismatch");
+			throw RuntimeException.TypeMismatch(blame);
 		}
 
 		// Dividing two CURRENCY values produces a CURRENCY value.
@@ -84,7 +84,7 @@ public class IntegerDivision(IEvaluable left, IEvaluable right) : IEvaluable
 		var rightValue = (IntegerVariable)right.Evaluate(context);
 
 		if (rightValue.Value == 0)
-			throw new RuntimeException(SourceExpression?.Token ?? SourceStatement?.FirstToken, "Division by zero");
+			throw RuntimeException.DivisionByZero(SourceExpression?.Token ?? SourceStatement?.FirstToken);
 
 		int quotient = leftValue.Value / rightValue.Value;
 
@@ -108,7 +108,7 @@ public class LongDivision(IEvaluable left, IEvaluable right) : IEvaluable
 		var rightValue = (LongVariable)right.Evaluate(context);
 
 		if (rightValue.Value == 0)
-			throw new RuntimeException(SourceExpression?.Token ?? SourceStatement?.FirstToken, "Division by zero");
+			throw RuntimeException.DivisionByZero(SourceExpression?.Token ?? SourceStatement?.FirstToken);
 
 		try
 		{
@@ -116,7 +116,7 @@ public class LongDivision(IEvaluable left, IEvaluable right) : IEvaluable
 		}
 		catch (OverflowException)
 		{
-			throw new RuntimeException(SourceExpression?.Token ?? SourceStatement?.FirstToken, "Overflow");
+			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
 		}
 	}
 }
@@ -142,7 +142,7 @@ public class SingleDivision(IEvaluable left, IEvaluable right) : IEvaluable
 		}
 		catch (OverflowException)
 		{
-			throw new RuntimeException(SourceExpression?.Token ?? SourceStatement?.FirstToken, "Overflow");
+			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
 		}
 	}
 }
@@ -168,7 +168,7 @@ public class DoubleDivision(IEvaluable left, IEvaluable right) : IEvaluable
 		}
 		catch (OverflowException)
 		{
-			throw new RuntimeException(SourceExpression?.Token ?? SourceStatement?.FirstToken, "Overflow");
+			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
 		}
 	}
 }
@@ -193,13 +193,13 @@ public class CurrencyDivision(IEvaluable left, IEvaluable right) : IEvaluable
 			decimal value = leftValue.Value / rightValue.Value;
 
 			if (!value.IsInCurrencyRange())
-				throw new RuntimeException(SourceExpression?.Token ?? SourceStatement?.FirstToken, "Overflow");
+				throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
 
 			return new CurrencyVariable(value);
 		}
 		catch (OverflowException)
 		{
-			throw new RuntimeException(SourceExpression?.Token ?? SourceStatement?.FirstToken, "Overflow");
+			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
 		}
 	}
 }

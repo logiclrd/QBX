@@ -41,7 +41,7 @@ public class IntegerModulo(IEvaluable left, IEvaluable right) : IEvaluable
 		var rightValue = (IntegerVariable)right.Evaluate(context);
 
 		if (rightValue.Value == 0)
-			throw new RuntimeException(SourceExpression?.Token ?? SourceStatement?.FirstToken, "Division by zero");
+			throw RuntimeException.DivisionByZero(SourceExpression?.Token ?? SourceStatement?.FirstToken);
 
 		int remainder = leftValue.Value % rightValue.Value;
 
@@ -65,7 +65,7 @@ public class LongModulo(IEvaluable left, IEvaluable right) : IEvaluable
 		var rightValue = (LongVariable)right.Evaluate(context);
 
 		if (rightValue.Value == 0)
-			throw new RuntimeException(SourceExpression?.Token ?? SourceStatement?.FirstToken, "Division by zero");
+			throw RuntimeException.DivisionByZero(SourceExpression?.Token ?? SourceStatement?.FirstToken);
 
 		try
 		{
@@ -73,7 +73,7 @@ public class LongModulo(IEvaluable left, IEvaluable right) : IEvaluable
 		}
 		catch (OverflowException)
 		{
-			throw new RuntimeException(SourceExpression?.Token ?? SourceStatement?.FirstToken, "Overflow");
+			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
 		}
 	}
 }

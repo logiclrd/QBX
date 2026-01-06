@@ -17,7 +17,7 @@ public static class Multiplication
 				? right.SourceExpression?.Token
 				: left.SourceExpression?.Token;
 
-			throw new RuntimeException(blame, "Type mismatch");
+			throw RuntimeException.TypeMismatch(blame);
 		}
 
 		// Remaining possibilities: Currency, Double, Single, Long, Integer
@@ -104,7 +104,7 @@ public class IntegerMultiplication(IEvaluable left, IEvaluable right) : IEvaluab
 		int product = leftValue.Value * rightValue.Value;
 
 		if ((product < short.MinValue) || (product > short.MaxValue))
-			throw new RuntimeException(SourceExpression?.Token ?? SourceStatement?.FirstToken, "Overflow");
+			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
 
 		return new IntegerVariable(unchecked((short)product));
 	}
@@ -131,7 +131,7 @@ public class LongMultiplication(IEvaluable left, IEvaluable right) : IEvaluable
 		}
 		catch (OverflowException)
 		{
-			throw new RuntimeException(SourceExpression?.Token ?? SourceStatement?.FirstToken, "Overflow");
+			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
 		}
 	}
 }
@@ -157,7 +157,7 @@ public class SingleMultiplication(IEvaluable left, IEvaluable right) : IEvaluabl
 		}
 		catch (OverflowException)
 		{
-			throw new RuntimeException(SourceExpression?.Token ?? SourceStatement?.FirstToken, "Overflow");
+			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
 		}
 	}
 }
@@ -183,7 +183,7 @@ public class DoubleMultiplication(IEvaluable left, IEvaluable right) : IEvaluabl
 		}
 		catch (OverflowException)
 		{
-			throw new RuntimeException(SourceExpression?.Token ?? SourceStatement?.FirstToken, "Overflow");
+			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
 		}
 	}
 }
@@ -209,7 +209,7 @@ public class CurrencyMultiplication(IEvaluable left, IEvaluable right) : IEvalua
 		}
 		catch (OverflowException)
 		{
-			throw new RuntimeException(SourceExpression?.Token ?? SourceStatement?.FirstToken, "Overflow");
+			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
 		}
 	}
 }

@@ -16,7 +16,7 @@ public static class Exponentiation
 				? right.SourceExpression?.Token
 				: left.SourceExpression?.Token;
 
-			throw new RuntimeException(blame, "Type mismatch");
+			throw RuntimeException.TypeMismatch(blame);
 		}
 
 		// Exponentiating a CURRENCY with an INTEGER or a LONG
@@ -74,13 +74,13 @@ public class CurrencyExponentiation(IEvaluable left, IEvaluable right) : IEvalua
 			}
 
 			if (!result.IsInCurrencyRange())
-				throw new RuntimeException(SourceExpression?.Token ?? SourceStatement?.FirstToken, "Overflow");
+				throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
 
 			return new CurrencyVariable(result);
 		}
 		catch (OverflowException)
 		{
-			throw new RuntimeException(SourceExpression?.Token ?? SourceStatement?.FirstToken, "Overflow");
+			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
 		}
 	}
 }
@@ -106,7 +106,7 @@ public class DoubleExponentiation(IEvaluable left, IEvaluable right) : IEvaluabl
 		}
 		catch (OverflowException)
 		{
-			throw new RuntimeException(SourceExpression?.Token ?? SourceStatement?.FirstToken, "Overflow");
+			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
 		}
 	}
 }

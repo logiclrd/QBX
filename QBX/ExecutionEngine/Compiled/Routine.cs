@@ -103,13 +103,13 @@ public class Routine : ISequence
 				if (mapper.TryGetFunction(nameWithoutTypeCharacter, out var function))
 				{
 					if (typeCharacterPresent || param.IsArray)
-						throw new RuntimeException(param.NameToken, "Duplicate definition");
+						throw RuntimeException.DuplicateDefinition(param.NameToken);
 
 					var paramType = typeRepository.ResolveType(param);
 					var functionType = function.ReturnType;
 
 					if (paramType.Equals(functionType))
-						throw new RuntimeException(param.NameToken, "Duplicate definition");
+						throw RuntimeException.DuplicateDefinition(param.NameToken);
 				}
 			}
 		}

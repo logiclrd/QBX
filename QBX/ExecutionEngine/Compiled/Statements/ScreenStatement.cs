@@ -21,7 +21,7 @@ public class ScreenStatement : IExecutable
 				mode => mode?.ScreenNumber == qbMode);
 
 			if (!new Video(context.Machine).SetMode(hardwareMode))
-				throw new RuntimeException(ModeExpression.SourceStatement, "Illegal function call");
+				throw RuntimeException.IllegalFunctionCall(ModeExpression.SourceStatement);
 
 			if (Video.Modes[hardwareMode] is ModeParameters modeParams)
 			{
@@ -45,7 +45,7 @@ public class ScreenStatement : IExecutable
 			int activePage = ActivePageExpression.Evaluate(context).CoerceToInt();
 
 			if (!context.VisualLibrary.SetActivePage(activePage))
-				throw new RuntimeException(ActivePageExpression.SourceStatement, "Illegal function call");
+				throw RuntimeException.IllegalFunctionCall(ActivePageExpression.SourceStatement);
 		}
 
 		if (VisiblePageExpression != null)
@@ -53,7 +53,7 @@ public class ScreenStatement : IExecutable
 			int visiblePage = VisiblePageExpression.Evaluate(context).CoerceToInt();
 
 			if (!new Video(context.Machine).SetVisiblePage(visiblePage))
-				throw new RuntimeException(VisiblePageExpression.SourceStatement, "Illegal function call");
+				throw RuntimeException.IllegalFunctionCall(VisiblePageExpression.SourceStatement);
 		}
 	}
 }

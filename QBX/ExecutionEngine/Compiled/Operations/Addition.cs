@@ -105,7 +105,7 @@ public class IntegerAddition(IEvaluable left, IEvaluable right) : IEvaluable
 		int sum = leftValue.Value + rightValue.Value;
 
 		if ((sum < short.MinValue) || (sum > short.MaxValue))
-			throw new RuntimeException(SourceExpression?.Token ?? SourceStatement?.FirstToken, "Overflow");
+			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
 
 		return new IntegerVariable(unchecked((short)sum));
 	}
@@ -132,7 +132,7 @@ public class LongAddition(IEvaluable left, IEvaluable right) : IEvaluable
 		}
 		catch (OverflowException)
 		{
-			throw new RuntimeException(SourceExpression?.Token ?? SourceStatement?.FirstToken, "Overflow");
+			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
 		}
 	}
 }
@@ -158,7 +158,7 @@ public class SingleAddition(IEvaluable left, IEvaluable right) : IEvaluable
 		}
 		catch (OverflowException)
 		{
-			throw new RuntimeException(SourceExpression?.Token ?? SourceStatement?.FirstToken, "Overflow");
+			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
 		}
 	}
 }
@@ -184,7 +184,7 @@ public class DoubleAddition(IEvaluable left, IEvaluable right) : IEvaluable
 		}
 		catch (OverflowException)
 		{
-			throw new RuntimeException(SourceExpression?.Token ?? SourceStatement?.FirstToken, "Overflow");
+			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
 		}
 	}
 }
@@ -210,7 +210,7 @@ public class CurrencyAddition(IEvaluable left, IEvaluable right) : IEvaluable
 		}
 		catch (OverflowException)
 		{
-			throw new RuntimeException(SourceExpression?.Token ?? SourceStatement?.FirstToken, "Overflow");
+			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
 		}
 	}
 }
@@ -236,7 +236,7 @@ public class StringAddition(IEvaluable left, IEvaluable right) : IEvaluable
 		}
 		catch (OverflowException)
 		{
-			throw new RuntimeException(SourceExpression?.Token ?? SourceStatement?.FirstToken, "Overflow");
+			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
 		}
 	}
 }

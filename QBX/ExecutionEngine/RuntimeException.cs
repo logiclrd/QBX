@@ -34,4 +34,19 @@ public class RuntimeException : Exception
 		Context = context;
 		ContextLength = contextLength;
 	}
+
+	public static RuntimeException IllegalFunctionCall(CodeModel.Statements.Statement? statement)
+		=> new RuntimeException(statement, "Illegal function call");
+	public static RuntimeException Overflow(Token? context)
+		=> new RuntimeException(context, "Overflow");
+	public static RuntimeException TypeMismatch(Token? context)
+		=> new RuntimeException(context, "Type mismatch");
+	public static RuntimeException DivisionByZero(Token? context)
+		=> new RuntimeException(context, "Division by zero");
+	public static RuntimeException DuplicateDefinition(CodeModel.Statements.Statement? statement)
+		=> new RuntimeException(statement, "Duplicate definition");
+	public static RuntimeException DuplicateDefinition(Token? context)
+		=> new RuntimeException(context, "Duplicate definition");
+	public static RuntimeException SubprogramNotDefined(Token? context)
+		=> new RuntimeException(context, "Subprogram not defined");
 }

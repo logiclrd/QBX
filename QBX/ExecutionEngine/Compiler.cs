@@ -30,7 +30,7 @@ public class Compiler
 			var routine = new Routine(element, typeRepository);
 
 			if (rootMapper.IsRegistered(routine.Name))
-				throw new RuntimeException(element.AllStatements.FirstOrDefault(), "Duplicate definition");
+				throw RuntimeException.DuplicateDefinition(element.AllStatements.FirstOrDefault());
 
 			if (routine.Name == Routine.MainRoutineName)
 				module.MainRoutine = routine;
