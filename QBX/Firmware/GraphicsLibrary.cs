@@ -4,28 +4,21 @@ using QBX.Hardware;
 
 namespace QBX.Firmware;
 
-public abstract class GraphicsLibrary
+public abstract class GraphicsLibrary : LibraryBase
 {
-	GraphicsArray _array;
-
-	public GraphicsArray Array => _array;
-
 	protected GraphicsLibrary(GraphicsArray array)
+		: base(array)
 	{
-		_array = array;
-
-		RefreshParameters();
 	}
 
-	public int Width, Height;
 	public int Aspect;
 
 	public Point LastPoint;
 
-	public virtual void RefreshParameters()
+	public override void RefreshParameters()
 	{
-		Width = _array.MiscellaneousOutput.BasePixelWidth >> (_array.Sequencer.DotDoubling ? 1 : 0);
-		Height = _array.CRTController.NumScanLines;
+		Width = Array.MiscellaneousOutput.BasePixelWidth >> (Array.Sequencer.DotDoubling ? 1 : 0);
+		Height = Array.CRTController.NumScanLines;
 
 		if ((Width >= 640) && (Height <= 240))
 			Aspect = 2;

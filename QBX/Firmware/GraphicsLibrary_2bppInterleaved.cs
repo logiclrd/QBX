@@ -29,7 +29,7 @@ public class GraphicsLibrary_2bppInterleaved : GraphicsLibrary
 			: Array.CRTController.InterleaveOnBit1 ? 16384
 			: 65536;
 
-		_plane0Offset = Array.CRTController.StartAddress;
+		_plane0Offset = StartAddress;
 		_plane1Offset = _plane0Offset + planeSize;
 		_plane2Offset = _plane1Offset + planeSize;
 		_plane3Offset = _plane2Offset + planeSize;

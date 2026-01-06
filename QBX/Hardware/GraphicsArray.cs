@@ -561,7 +561,7 @@ public class GraphicsArray
 					owner.CursorScanStart = CursorStart & CursorStart_Mask;
 					owner.CursorScanEnd = CursorEnd & CursorEnd_Mask;
 					owner.CursorAddress = CursorLocationLow | (CursorLocationHigh << 8);
-					owner.Stride = Offset * 4; // TODO
+					owner.Stride = Offset * 4;
 					owner.UnderlineCharacterRow = UnderlineLocation & UnderlineLocation;
 					owner.InterleaveOnBit0 = ((ModeControl & ModeControl_MapDisplayAddress13Mask) == ModeControl_MapDisplayAddress13_RowScan0);
 					owner.InterleaveOnBit1 = ((ModeControl & ModeControl_MapDisplayAddress14Mask) == ModeControl_MapDisplayAddress14_RowScan1);

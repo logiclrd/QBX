@@ -8,14 +8,14 @@ public class GraphicsLibrary_8bppFlat(GraphicsArray array) : GraphicsLibrary(arr
 {
 	public override void Clear()
 	{
-		Array.VRAM.AsSpan().Slice(0, 320 * 200).Clear();
+		Array.VRAM.AsSpan().Slice(StartAddress, 320 * 200).Clear();
 	}
 
 	public override void PixelSet(int x, int y, int attribute)
 	{
 		if ((x >= 0) && (x < Width)
 		 && (y >= 0) && (y < Height))
-			Array.VRAM[Array.CRTController.StartAddress + y * Width + x] = unchecked((byte)attribute);
+			Array.VRAM[StartAddress + y * Width + x] = unchecked((byte)attribute);
 	}
 
 	public override void HorizontalLine(int x1, int x2, int y, int attribute)
@@ -30,7 +30,7 @@ public class GraphicsLibrary_8bppFlat(GraphicsArray array) : GraphicsLibrary(arr
 		if (x2 >= Width)
 			x2 = Width - 1;
 
-		int o = Array.CRTController.StartAddress + y * Width + x1;
+		int o = StartAddress + y * Width + x1;
 
 		Array.VRAM.AsSpan().Slice(o, x2 - x1 + 1).Fill(unchecked((byte)attribute));
 	}

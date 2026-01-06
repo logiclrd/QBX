@@ -25,7 +25,7 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 	{
 		base.RefreshParameters();
 
-		_plane0Offset = Array.CRTController.StartAddress;
+		_plane0Offset = StartAddress;
 		_plane1Offset = _plane0Offset + PlaneSize;
 		_plane2Offset = _plane1Offset + PlaneSize;
 		_plane3Offset = _plane2Offset + PlaneSize;

@@ -7,24 +7,12 @@ using QBX.Hardware;
 
 namespace QBX.Firmware;
 
-public class TextLibrary
+public class TextLibrary : LibraryBase
 {
-	GraphicsArray _array;
-
-	public GraphicsArray Array => _array;
-
 	public TextLibrary(GraphicsArray array)
+		: base(array)
 	{
-		_array = array;
-
-		RefreshParameters();
 	}
-
-	public int Width;
-	public int Height;
-
-	public int CursorX = 0;
-	public int CursorY = 0;
 
 	public int CursorAddress => CursorY * Width + CursorX;
 
@@ -32,15 +20,15 @@ public class TextLibrary
 
 	public byte Attributes = 7;
 
-	public void RefreshParameters()
+	public override void RefreshParameters()
 	{
-		if (_array.CRTController.CharacterHeight == 0)
+		if (Array.CRTController.CharacterHeight == 0)
 			return;
 
-		Width = _array.CRTController.Registers.EndHorizontalDisplay + 1;
-		Height = _array.CRTController.NumScanLines / _array.CRTController.CharacterHeight;
+		Width = Array.CRTController.Registers.EndHorizontalDisplay + 1;
+		Height = Array.CRTController.NumScanLines / Array.CRTController.CharacterHeight;
 
-		int cursorAddress = _array.CRTController.CursorAddress;
+		int cursorAddress = Array.CRTController.CursorAddress;
 
 		CursorY = cursorAddress / Width;
 		CursorX = cursorAddress % Width;
@@ -53,25 +41,25 @@ public class TextLibrary
 
 	public void ShowCursor()
 	{
-		_array.CRTController.Registers[GraphicsArray.CRTControllerRegisters.CursorStart]
+		Array.CRTController.Registers[GraphicsArray.CRTControllerRegisters.CursorStart]
 			&= unchecked((byte)~GraphicsArray.CRTControllerRegisters.CursorStart_Disable);
 	}
 
 	public void HideCursor()
 	{
-		_array.CRTController.Registers[GraphicsArray.CRTControllerRegisters.CursorStart]
+		Array.CRTController.Registers[GraphicsArray.CRTControllerRegisters.CursorStart]
 			|= GraphicsArray.CRTControllerRegisters.CursorStart_Disable;
 	}
 
 	public void SetCursorScans(int start, int end)
 	{
-		_array.CRTController.Registers[GraphicsArray.CRTControllerRegisters.CursorStart] = unchecked((byte)(
-			(_array.CRTController.Registers[GraphicsArray.CRTControllerRegisters.CursorStart]
+		Array.CRTController.Registers[GraphicsArray.CRTControllerRegisters.CursorStart] = unchecked((byte)(
+			(Array.CRTController.Registers[GraphicsArray.CRTControllerRegisters.CursorStart]
 				& ~GraphicsArray.CRTControllerRegisters.CursorStart_Mask) |
 			start));
 
-		_array.CRTController.Registers[GraphicsArray.CRTControllerRegisters.CursorEnd] = unchecked((byte)(
-			(_array.CRTController.Registers[GraphicsArray.CRTControllerRegisters.CursorEnd]
+		Array.CRTController.Registers[GraphicsArray.CRTControllerRegisters.CursorEnd] = unchecked((byte)(
+			(Array.CRTController.Registers[GraphicsArray.CRTControllerRegisters.CursorEnd]
 				& ~GraphicsArray.CRTControllerRegisters.CursorEnd_Mask) |
 			end));
 	}
@@ -87,7 +75,7 @@ public class TextLibrary
 
 	public void UpdatePhysicalCursor()
 	{
-		_array.CRTController.CursorAddress = CursorY * Width + CursorX;
+		Array.CRTController.CursorAddress = CursorY * Width + CursorX;
 	}
 
 	public void WriteAt(int x, int y, string text)
@@ -234,7 +222,9 @@ public class TextLibrary
 	{
 		int o = CursorAddress;
 
-		Span<byte> vramSpan = _array.VRAM;
+		Span<byte> vramSpan = Array.VRAM;
+
+		vramSpan = vramSpan.Slice(StartAddress);
 
 		var plane0 = vramSpan.Slice(0x00000, 0x10000);
 		var plane1 = vramSpan.Slice(0x10000, 0x10000);
@@ -284,7 +274,9 @@ public class TextLibrary
 	{
 		int o = CursorAddress;
 
-		Span<byte> vramSpan = _array.VRAM;
+		Span<byte> vramSpan = Array.VRAM;
+
+		vramSpan = vramSpan.Slice(StartAddress);
 
 		var plane1 = vramSpan.Slice(0x10000, 0x10000);
 

@@ -694,12 +694,12 @@ public class Video(Machine machine)
 		switch (width)
 		{
 			case 8:
-				clock = GraphicsArray.MiscellaneousOutputRegisters.Clock_25MHz;
-				characterWidth = GraphicsArray.SequencerRegisters.ClockingMode_CharacterWidth_8;
+				clock = MiscellaneousOutputRegisters.Clock_25MHz;
+				characterWidth = SequencerRegisters.ClockingMode_CharacterWidth_8;
 				break;
 			case 9:
-				clock = GraphicsArray.MiscellaneousOutputRegisters.Clock_28MHz;
-				characterWidth = GraphicsArray.SequencerRegisters.ClockingMode_CharacterWidth_9;
+				clock = MiscellaneousOutputRegisters.Clock_28MHz;
+				characterWidth = SequencerRegisters.ClockingMode_CharacterWidth_9;
 				break;
 
 			default:
@@ -709,12 +709,52 @@ public class Video(Machine machine)
 		var array = machine.GraphicsArray;
 
 		array.MiscellaneousOutput.Register = unchecked((byte)(
-			(array.MiscellaneousOutput.Register & ~GraphicsArray.MiscellaneousOutputRegisters.ClockMask) |
+			(array.MiscellaneousOutput.Register & ~MiscellaneousOutputRegisters.ClockMask) |
 			clock));
 
-		array.Sequencer.Registers[GraphicsArray.SequencerRegisters.ClockingMode] = unchecked((byte)(
-			(array.Sequencer.Registers[GraphicsArray.SequencerRegisters.ClockingMode]
-				& ~GraphicsArray.SequencerRegisters.ClockingMode_CharacterWidthMask) |
+		array.Sequencer.Registers[SequencerRegisters.ClockingMode] = unchecked((byte)(
+			(array.Sequencer.Registers[SequencerRegisters.ClockingMode]
+				& ~SequencerRegisters.ClockingMode_CharacterWidthMask) |
 			characterWidth));
+	}
+
+	public int ComputePageSize() => ComputePageSize(machine.GraphicsArray);
+
+	public static int ComputePageSize(GraphicsArray array)
+	{
+		if (array.Graphics.DisableText == false)
+		{
+			int width = array.CRTController.Registers.EndHorizontalDisplay + 1;
+			int height = array.CRTController.NumScanLines / array.CRTController.CharacterHeight;
+
+			return width * height;
+		}
+		else
+		{
+			int scans = array.CRTController.NumScanLines;
+
+			if (array.Graphics.ShiftInterleave)
+				scans /= 2;
+
+			int stride = array.CRTController.Stride;
+
+			return stride * scans;
+		}
+	}
+
+	public void SetVisiblePage(int pageNumber)
+	{
+		int pageSize = ComputePageSize();
+		int pageCount = 16384 / pageSize;
+
+		if ((pageNumber >= 0) && (pageNumber < pageCount))
+		{
+			int startAddress = pageNumber * pageSize / 4;
+
+			machine.GraphicsArray.CRTController.Registers[CRTControllerRegisters.StartAddressHigh] =
+				unchecked((byte)(startAddress >> 8));
+			machine.GraphicsArray.CRTController.Registers[CRTControllerRegisters.StartAddressLow] =
+				unchecked((byte)(startAddress & 255));
+		}
 	}
 }
