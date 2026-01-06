@@ -7,7 +7,7 @@ using QBX.Hardware;
 
 namespace QBX.TestDrivers;
 
-public class GraphicsArrayTest(Machine machine, Video video) : HostedProgram
+public class GraphicsArrayTest(Machine machine) : HostedProgram
 {
 	public override bool EnableMainLoop => true;
 
@@ -33,15 +33,15 @@ public class GraphicsArrayTest(Machine machine, Video video) : HostedProgram
 				{
 					int ModeNumber = (TextColumns == 40) ? 1 : 3;
 
-					video.SetMode(ModeNumber);
+					machine.VideoFirmware.SetMode(ModeNumber);
 
 					if (Use8x14Font)
 					{
-						video.SetCharacterRows(43);
-						video.SetCharacterRows(25);
+						machine.VideoFirmware.SetCharacterRows(43);
+						machine.VideoFirmware.SetCharacterRows(25);
 					}
 					else if (TextRows != 25)
-						video.SetCharacterRows(TextRows);
+						machine.VideoFirmware.SetCharacterRows(TextRows);
 
 					if (Test40ColumnsWithoutHalfDotClock)
 					{
@@ -52,8 +52,6 @@ public class GraphicsArrayTest(Machine machine, Video video) : HostedProgram
 
 						machine.GraphicsArray.AttributeController.Registers.OverscanPaletteIndex = 13;
 					}
-
-					new DevelopmentEnvironment.Program(machine, video);
 
 					if (Test40ColumnsWithoutHalfDotClock || !Test40ColumnsWithoutHalfDotClock)
 						return;
@@ -100,7 +98,7 @@ public class GraphicsArrayTest(Machine machine, Video video) : HostedProgram
 							_ => -1
 						};
 
-					video.SetMode(ModeNumber);
+					machine.VideoFirmware.SetMode(ModeNumber);
 
 					if ((TestSCREEN == 1) || suppressDeadCodeWarning)
 						machine.VideoFirmware.LoadCGAPalette(CGAPalette, CGAPaletteHighIntensity);

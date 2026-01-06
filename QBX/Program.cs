@@ -17,8 +17,8 @@ class Program
 
 		var video = machine.VideoFirmware;
 
-		HostedProgram program = new DevelopmentEnvironment.Program(machine, video);
-		//HostedProgram program = new TestDrivers.GraphicsArrayTest(machine, video);
+		HostedProgram program = new DevelopmentEnvironment.Program(machine);
+		//HostedProgram program = new TestDrivers.GraphicsArrayTest(machine);
 
 		if (!program.EnableMainLoop)
 			program.Run(CancellationToken.None);

@@ -12,7 +12,6 @@ namespace QBX.DevelopmentEnvironment;
 public partial class Program : HostedProgram
 {
 	public Machine Machine;
-	public Video Video;
 	public TextLibrary TextLibrary;
 
 	public Configuration Configuration = new Configuration();
@@ -38,17 +37,16 @@ public partial class Program : HostedProgram
 
 	public BasicParser Parser;
 
-	public Program(Machine machine, Video video)
+	public Program(Machine machine)
 	{
 		Machine = machine;
-		Video = video;
 
 		InitializeMenuBar();
 
-		video.SetMode(3);
+		machine.VideoFirmware.SetMode(3);
 
 		if (machine.GraphicsArray.Sequencer.CharacterWidth == 9)
-			video.SetCharacterWidth(8);
+			machine.VideoFirmware.SetCharacterWidth(8);
 
 		TextLibrary = new TextLibrary(machine.GraphicsArray);
 		TextLibrary.MovePhysicalCursor = false;
