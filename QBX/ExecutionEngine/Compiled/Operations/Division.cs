@@ -94,7 +94,7 @@ public class LongDivision(IEvaluable left, IEvaluable right) : IEvaluable
 	public CodeModel.Statements.Statement? SourceStatement { get; set; }
 	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
 
-	public DataType Type => DataType.Integer;
+	public DataType Type => DataType.Long;
 
 	public Variable Evaluate(ExecutionContext context)
 	{
@@ -123,7 +123,7 @@ public class SingleDivision(IEvaluable left, IEvaluable right) : IEvaluable
 	public CodeModel.Statements.Statement? SourceStatement { get; set; }
 	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
 
-	public DataType Type => DataType.Integer;
+	public DataType Type => DataType.Single;
 
 	public Variable Evaluate(ExecutionContext context)
 	{
@@ -149,7 +149,7 @@ public class DoubleDivision(IEvaluable left, IEvaluable right) : IEvaluable
 	public CodeModel.Statements.Statement? SourceStatement { get; set; }
 	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
 
-	public DataType Type => DataType.Integer;
+	public DataType Type => DataType.Double;
 
 	public Variable Evaluate(ExecutionContext context)
 	{
@@ -175,7 +175,7 @@ public class CurrencyDivision(IEvaluable left, IEvaluable right) : IEvaluable
 	public CodeModel.Statements.Statement? SourceStatement { get; set; }
 	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
 
-	public DataType Type => DataType.Integer;
+	public DataType Type => DataType.Currency;
 
 	public Variable Evaluate(ExecutionContext context)
 	{

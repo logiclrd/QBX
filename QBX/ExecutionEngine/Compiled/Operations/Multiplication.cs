@@ -110,7 +110,7 @@ public class LongMultiplication(IEvaluable left, IEvaluable right) : IEvaluable
 	public CodeModel.Statements.Statement? SourceStatement { get; set; }
 	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
 
-	public DataType Type => DataType.Integer;
+	public DataType Type => DataType.Long;
 
 	public Variable Evaluate(ExecutionContext context)
 	{
@@ -136,7 +136,7 @@ public class SingleMultiplication(IEvaluable left, IEvaluable right) : IEvaluabl
 	public CodeModel.Statements.Statement? SourceStatement { get; set; }
 	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
 
-	public DataType Type => DataType.Integer;
+	public DataType Type => DataType.Single;
 
 	public Variable Evaluate(ExecutionContext context)
 	{
@@ -162,7 +162,7 @@ public class DoubleMultiplication(IEvaluable left, IEvaluable right) : IEvaluabl
 	public CodeModel.Statements.Statement? SourceStatement { get; set; }
 	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
 
-	public DataType Type => DataType.Integer;
+	public DataType Type => DataType.Double;
 
 	public Variable Evaluate(ExecutionContext context)
 	{
@@ -188,7 +188,7 @@ public class CurrencyMultiplication(IEvaluable left, IEvaluable right) : IEvalua
 	public CodeModel.Statements.Statement? SourceStatement { get; set; }
 	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
 
-	public DataType Type => DataType.Integer;
+	public DataType Type => DataType.Currency;
 
 	public Variable Evaluate(ExecutionContext context)
 	{

@@ -497,6 +497,22 @@ public class Compiler
 				}
 			}
 
+			case CodeModel.Expressions.UnaryExpression unaryExpression:
+			{
+				var right = TranslateExpression(unaryExpression.Child, mapper);
+
+				if (right == null)
+					throw new Exception("Internal error: Unary expression operand translated to null");
+
+				switch (unaryExpression.Operator)
+				{
+					case CodeModel.Expressions.Operator.Negate: return Negation.Construct(right);
+					case CodeModel.Expressions.Operator.Not:
+
+					default: throw new Exception("Internal error: Unrecognized unary expression operator " + unaryExpression.Operator);
+				}
+			}
+
 			case CodeModel.Expressions.BinaryExpression binaryExpression:
 			{
 				var left = TranslateExpression(binaryExpression.Left, mapper);
@@ -522,7 +538,6 @@ public class Compiler
 					case CodeModel.Expressions.Operator.GreaterThan: return GreaterThan.Construct(left, right);
 					case CodeModel.Expressions.Operator.GreaterThanOrEquals: return GreaterThanOrEquals.Construct(left, right);
 
-					case CodeModel.Expressions.Operator.Not:
 					case CodeModel.Expressions.Operator.And:
 					case CodeModel.Expressions.Operator.Or:
 					case CodeModel.Expressions.Operator.ExclusiveOr:
