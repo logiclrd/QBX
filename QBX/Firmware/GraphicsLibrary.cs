@@ -27,28 +27,51 @@ public abstract class GraphicsLibrary : VisualLibrary
 	public int DrawingAttribute;
 	public Point LastPoint;
 
+	public int CharacterScans; // doesn't exist on the VGA chip in graphics modes
+
 	public override void RefreshParameters()
 	{
 		Width = Array.MiscellaneousOutput.BasePixelWidth >> (Array.Sequencer.DotDoubling ? 1 : 0);
 		Height = Array.CRTController.NumScanLines;
 
+		if (CharacterScans == 0)
+		{
+			if (Height >= 400)
+				CharacterScans = 16;
+			else if (Height >= 340)
+				CharacterScans = 14;
+			else
+				CharacterScans = 8;
+		}
+
 		CharacterWidth = Width / Array.Sequencer.CharacterWidth;
-		CharacterHeight = Height / Array.CRTController.CharacterHeight;
+		CharacterHeight = Height / CharacterScans;
 
 		if ((Width >= 640) && (Height <= 240))
 			Aspect = 2;
 		else
 			Aspect = 1;
 
-		Font = Machine.VideoFirmware.GetFontForCurrentMode();
+		Font = Machine.VideoFirmware.GetFont(CharacterScans);
+	}
+
+	public void SetCharacterScans(int newScans)
+	{
+		var font = Machine.VideoFirmware.GetFont(newScans);
+
+		if (font == null)
+			return;
+
+		Font = font;
+
+		CharacterScans = newScans;
+		CharacterHeight = Height / CharacterScans;
 	}
 
 	public void SetDrawingAttribute(int attribute)
 	{
 		DrawingAttribute = attribute;
 	}
-
-	public abstract void Clear();
 
 	public virtual void PixelSet(int x, int y)
 		=> PixelSet(x, y, DrawingAttribute);
@@ -624,7 +647,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 	public override void WriteText(ReadOnlySpan<byte> buffer)
 	{
 		int characterWidth = Array.Sequencer.CharacterWidth;
-		int characterHeight = Array.CRTController.CharacterHeight;
+		int characterHeight = CharacterScans;
 
 		while (!buffer.IsEmpty)
 		{
@@ -641,7 +664,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 	public void WriteCharacterAt(int x, int y, byte character)
 	{
 		int characterWidth = Array.Sequencer.CharacterWidth;
-		int characterHeight = Array.CRTController.CharacterHeight;
+		int characterHeight = CharacterScans;
 
 		byte[] glyph = Font[character];
 
@@ -655,7 +678,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	public override void ScrollText()
 	{
-		ScrollUp(Array.CRTController.CharacterHeight);
+		ScrollUp(CharacterScans);
 	}
 
 	public abstract void ScrollUp(int scanCount);

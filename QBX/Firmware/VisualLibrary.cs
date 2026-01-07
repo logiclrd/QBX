@@ -34,6 +34,14 @@ public abstract class VisualLibrary
 
 	public abstract void RefreshParameters();
 
+	public void Clear()
+	{
+		ClearImplementation();
+		MoveCursor(0, 0);
+	}
+
+	protected abstract void ClearImplementation();
+
 	public bool SetActivePage(int pageNumber)
 	{
 		int pageSize = Video.ComputePageSize(Array);

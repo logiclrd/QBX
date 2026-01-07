@@ -317,6 +317,8 @@ public class Video(Machine machine)
 
 		var array = machine.GraphicsArray;
 
+		array.VRAM.AsSpan().Clear();
+
 		array.OutPort2(
 			SequencerRegisters.IndexPort,
 			SequencerRegisters.Reset,

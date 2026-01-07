@@ -834,18 +834,21 @@ public class GraphicsArray
 				return Graphics.Registers[_graphicsIndex];
 			case SequencerRegisters.DataPort:
 				return Sequencer.Registers[_sequencerIndex];
-
+			case CRTControllerRegisters.DataPort:
+				return CRTController.Registers[_crtControllerIndex];
+			case AttributeControllerRegisters.DataReadPort:
+				return AttributeController.Registers[_attributeControllerIndex];
 			case InputStatusRegisters.InputStatus1Port:
 				_attributeControllerPortMode = AddressAndDataPortMode.Address;
 				break;
+			case MiscellaneousOutputRegisters.ReadPort:
+				return MiscellaneousOutput.Register;
 
 			case DACRegisters.DataPort:
 			{
 				byte data = DAC.Palette[_dacReadIndex];
 
 				_dacReadIndex++;
-				if ((_dacReadIndex & 3) == 3)
-					_dacReadIndex++;
 
 				if (_dacReadIndex >= DAC.Palette.Length)
 					_dacReadIndex = 0;

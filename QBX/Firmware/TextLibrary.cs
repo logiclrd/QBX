@@ -91,6 +91,21 @@ public class TextLibrary : VisualLibrary
 		Array.CRTController.CursorAddress = CursorY * Width + CursorX;
 	}
 
+	protected override void ClearImplementation()
+	{
+		int planeBytesUsed = Width * Height;
+
+		Span<byte> vramSpan = Array.VRAM;
+
+		vramSpan = vramSpan.Slice(StartAddress);
+
+		var plane0 = vramSpan.Slice(0x00000, planeBytesUsed);
+		var plane1 = vramSpan.Slice(0x10000, planeBytesUsed);
+
+		plane0.Clear();
+		plane1.Fill(Attributes);
+	}
+
 	public void WriteAttributesAt(int x, int y, int charCount)
 	{
 		MoveCursor(x, y);

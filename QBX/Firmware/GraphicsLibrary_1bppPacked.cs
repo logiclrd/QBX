@@ -35,7 +35,7 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 		_planeBytesUsed = Height * _stride;
 	}
 
-	public override void Clear()
+	protected override void ClearImplementation()
 	{
 		var vramSpan = Array.VRAM.AsSpan();
 

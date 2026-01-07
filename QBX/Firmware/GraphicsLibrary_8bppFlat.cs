@@ -13,7 +13,7 @@ public class GraphicsLibrary_8bppFlat : GraphicsLibrary
 		RefreshParameters();
 	}
 
-	public override void Clear()
+	protected override void ClearImplementation()
 	{
 		Array.VRAM.AsSpan().Slice(StartAddress, Width * Height).Clear();
 	}

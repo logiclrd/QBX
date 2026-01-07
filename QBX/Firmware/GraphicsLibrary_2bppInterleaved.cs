@@ -42,7 +42,7 @@ public class GraphicsLibrary_2bppInterleaved : GraphicsLibrary
 		_planeBytesUsed = scansInEachPlane * _stride;
 	}
 
-	public override void Clear()
+	protected override void ClearImplementation()
 	{
 		var vramSpan = Array.VRAM.AsSpan();
 
