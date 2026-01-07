@@ -69,6 +69,16 @@ public class NumberFormatter
 
 	public static string Format(float value)
 	{
+		string FormatBaseDigits(float adjustedValue)
+		{
+			string ret = adjustedValue.ToString("#.#######");
+
+			if (ret.Length > 0)
+				return ret;
+			else
+				return "0";
+		}
+
 		if (value > 9999999f)
 		{
 			int exponent = 0;
@@ -79,7 +89,7 @@ public class NumberFormatter
 				exponent++;
 			}
 
-			return value.ToString("#.#") + "E+" + exponent.ToString("00");
+			return FormatBaseDigits(value) + "E+" + exponent.ToString("00");
 		}
 
 		if (value < -9999999f)
@@ -92,7 +102,7 @@ public class NumberFormatter
 				exponent++;
 			}
 
-			return value.ToString("#.#") + "E+" + exponent.ToString("00");
+			return FormatBaseDigits(value) + "E+" + exponent.ToString("00");
 		}
 
 		if ((value > 0) && (value < 0.0000001))
@@ -105,7 +115,7 @@ public class NumberFormatter
 				exponent--;
 			}
 
-			return value.ToString("#.#") + "E-" + exponent.ToString("00");
+			return FormatBaseDigits(value) + "E-" + exponent.ToString("00");
 		}
 
 		if ((value < 0) && (value > -0.0000001))
@@ -118,10 +128,10 @@ public class NumberFormatter
 				exponent--;
 			}
 
-			return value.ToString("#.#") + "E-" + exponent.ToString("00");
+			return FormatBaseDigits(value) + "E-" + exponent.ToString("00");
 		}
 
-		string str = value.ToString("#.#");
+		string str = FormatBaseDigits(value);
 
 		if (int.TryParse(str, out _))
 			str += '!';
@@ -131,6 +141,16 @@ public class NumberFormatter
 
 	public static string Format(double value)
 	{
+		string FormatBaseDigits(double adjustedValue)
+		{
+			string ret = adjustedValue.ToString("#.###############");
+
+			if (ret.Length > 0)
+				return ret;
+			else
+				return "0";
+		}
+
 		if (value > 999999999999999d)
 		{
 			int exponent = 0;
@@ -141,7 +161,7 @@ public class NumberFormatter
 				exponent++;
 			}
 
-			return value.ToString("#.#") + "D+" + exponent.ToString("00");
+			return FormatBaseDigits(value) + "D+" + exponent.ToString("00");
 		}
 
 		if (value < -999999999999999d)
@@ -154,7 +174,7 @@ public class NumberFormatter
 				exponent++;
 			}
 
-			return value.ToString("#.#") + "D+" + exponent.ToString("00");
+			return FormatBaseDigits(value) + "D+" + exponent.ToString("00");
 		}
 
 		if ((value > 0) && (value < 0.000000000000001))
@@ -167,7 +187,7 @@ public class NumberFormatter
 				exponent--;
 			}
 
-			return value.ToString("#.#") + "D-" + exponent.ToString("00");
+			return FormatBaseDigits(value) + "D-" + exponent.ToString("00");
 		}
 
 		if ((value < 0) && (value > -0.000000000000001))
@@ -180,10 +200,10 @@ public class NumberFormatter
 				exponent--;
 			}
 
-			return value.ToString("#.#") + "D-" + exponent.ToString("00");
+			return FormatBaseDigits(value) + "D-" + exponent.ToString("00");
 		}
 
-		string str = value.ToString("#.#");
+		string str = FormatBaseDigits(value);
 
 		if (((float)value).ToString() == str)
 			str += '#';
