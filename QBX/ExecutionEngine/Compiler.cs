@@ -6,6 +6,7 @@ using QBX.ExecutionEngine.Compiled;
 using QBX.ExecutionEngine.Compiled.Expressions;
 using QBX.ExecutionEngine.Compiled.Functions;
 using QBX.ExecutionEngine.Compiled.Operations;
+using QBX.ExecutionEngine.Compiled.RelationalOperators;
 using QBX.ExecutionEngine.Compiled.Statements;
 
 using QBX.LexicalAnalysis;
@@ -514,12 +515,12 @@ public class Compiler
 					case CodeModel.Expressions.Operator.IntegerDivide: return IntegerDivision.Construct(left, right);
 					case CodeModel.Expressions.Operator.Modulo: return Modulo.Construct(left, right);
 
-					case CodeModel.Expressions.Operator.Equals:
-					case CodeModel.Expressions.Operator.NotEquals:
-					case CodeModel.Expressions.Operator.LessThan:
-					case CodeModel.Expressions.Operator.LessThanOrEquals:
-					case CodeModel.Expressions.Operator.GreaterThan:
-					case CodeModel.Expressions.Operator.GreaterThanOrEquals:
+					case CodeModel.Expressions.Operator.Equals: return Compiled.RelationalOperators.Equals.Construct(left, right);
+					case CodeModel.Expressions.Operator.NotEquals: return NotEquals.Construct(left, right);
+					case CodeModel.Expressions.Operator.LessThan: return LessThan.Construct(left, right);
+					case CodeModel.Expressions.Operator.LessThanOrEquals: return LessThanOrEquals.Construct(left, right);
+					case CodeModel.Expressions.Operator.GreaterThan: return GreaterThan.Construct(left, right);
+					case CodeModel.Expressions.Operator.GreaterThanOrEquals: return GreaterThanOrEquals.Construct(left, right);
 
 					case CodeModel.Expressions.Operator.Not:
 					case CodeModel.Expressions.Operator.And:
