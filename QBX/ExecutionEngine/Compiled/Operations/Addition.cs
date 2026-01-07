@@ -13,10 +13,8 @@ public static class Addition
 
 		if (left.Type.IsString || right.Type.IsString)
 		{
-			if (!left.Type.IsString)
-				left = new ConvertToString(left);
-			if (!right.Type.IsString)
-				right = new ConvertToString(right);
+			left = Conversion.Construct(left, PrimitiveDataType.String);
+			right = Conversion.Construct(right, PrimitiveDataType.String);
 
 			return new StringAddition(left, right);
 		}
@@ -25,10 +23,8 @@ public static class Addition
 
 		if (left.Type.IsDouble || right.Type.IsDouble)
 		{
-			if (!left.Type.IsDouble)
-				left = new ConvertToDouble(left);
-			if (!right.Type.IsDouble)
-				right = new ConvertToDouble(right);
+			left = Conversion.Construct(left, PrimitiveDataType.Double);
+			right = Conversion.Construct(right, PrimitiveDataType.Double);
 
 			return new DoubleAddition(left, right);
 		}
@@ -46,10 +42,8 @@ public static class Addition
 
 		if (left.Type.IsCurrency || right.Type.IsCurrency)
 		{
-			if (!left.Type.IsCurrency)
-				left = new ConvertToCurrency(left);
-			if (!right.Type.IsCurrency)
-				right = new ConvertToCurrency(right);
+			left = Conversion.Construct(left, PrimitiveDataType.Currency);
+			right = Conversion.Construct(right, PrimitiveDataType.Currency);
 
 			return new CurrencyAddition(left, right);
 		}
@@ -58,10 +52,8 @@ public static class Addition
 
 		if (left.Type.IsSingle || right.Type.IsSingle)
 		{
-			if (!left.Type.IsSingle)
-				left = new ConvertToSingle(left);
-			if (!right.Type.IsSingle)
-				right = new ConvertToSingle(right);
+			left = Conversion.Construct(left, PrimitiveDataType.Single);
+			right = Conversion.Construct(right, PrimitiveDataType.Single);
 
 			return new SingleAddition(left, right);
 		}
@@ -70,10 +62,8 @@ public static class Addition
 
 		if (left.Type.IsLong || right.Type.IsLong)
 		{
-			if (!left.Type.IsLong)
-				left = new ConvertToLong(left);
-			if (!right.Type.IsLong)
-				right = new ConvertToLong(right);
+			left = Conversion.Construct(left, PrimitiveDataType.Long);
+			right = Conversion.Construct(right, PrimitiveDataType.Long);
 
 			return new LongAddition(left, right);
 		}

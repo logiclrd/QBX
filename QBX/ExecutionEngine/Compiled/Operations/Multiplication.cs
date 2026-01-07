@@ -24,10 +24,8 @@ public static class Multiplication
 
 		if (left.Type.IsDouble || right.Type.IsDouble)
 		{
-			if (!left.Type.IsDouble)
-				left = new ConvertToDouble(left);
-			if (!right.Type.IsDouble)
-				right = new ConvertToDouble(right);
+			left = Conversion.Construct(left, PrimitiveDataType.Double);
+			right = Conversion.Construct(right, PrimitiveDataType.Double);
 
 			return new DoubleMultiplication(left, right);
 		}
@@ -37,18 +35,16 @@ public static class Multiplication
 		if ((left.Type.IsCurrency && right.Type.IsSingle)
 		 || (right.Type.IsCurrency && left.Type.IsSingle))
 		{
-			left = new ConvertToDouble(left);
-			right = new ConvertToDouble(right);
+			left = Conversion.Construct(left, PrimitiveDataType.Double);
+			right = Conversion.Construct(right, PrimitiveDataType.Double);
 
 			return new DoubleMultiplication(left, right);
 		}
 
 		if (left.Type.IsCurrency || right.Type.IsCurrency)
 		{
-			if (!left.Type.IsCurrency)
-				left = new ConvertToCurrency(left);
-			if (!right.Type.IsCurrency)
-				right = new ConvertToCurrency(right);
+			left = Conversion.Construct(left, PrimitiveDataType.Currency);
+			right = Conversion.Construct(right, PrimitiveDataType.Currency);
 
 			return new CurrencyMultiplication(left, right);
 		}
@@ -57,10 +53,8 @@ public static class Multiplication
 
 		if (left.Type.IsSingle || right.Type.IsSingle)
 		{
-			if (!left.Type.IsSingle)
-				left = new ConvertToSingle(left);
-			if (!right.Type.IsSingle)
-				right = new ConvertToSingle(right);
+			left = Conversion.Construct(left, PrimitiveDataType.Single);
+			right = Conversion.Construct(right, PrimitiveDataType.Single);
 
 			return new SingleMultiplication(left, right);
 		}
@@ -69,10 +63,8 @@ public static class Multiplication
 
 		if (left.Type.IsLong || right.Type.IsLong)
 		{
-			if (!left.Type.IsLong)
-				left = new ConvertToLong(left);
-			if (!right.Type.IsLong)
-				right = new ConvertToLong(right);
+			left = Conversion.Construct(left, PrimitiveDataType.Long);
+			right = Conversion.Construct(right, PrimitiveDataType.Long);
 
 			return new LongMultiplication(left, right);
 		}

@@ -27,12 +27,9 @@ public class ForStatement
 		{
 			case PrimitiveDataType.Integer:
 			{
-				if (!fromExpression.Type.IsInteger)
-					fromExpression = new ConvertToInteger(fromExpression);
-				if (!toExpression.Type.IsInteger)
-					toExpression = new ConvertToInteger(toExpression);
-				if ((stepExpression != null) && !stepExpression.Type.IsInteger)
-					stepExpression = new ConvertToInteger(stepExpression);
+				fromExpression = Conversion.Construct(fromExpression, PrimitiveDataType.Integer);
+				toExpression = Conversion.Construct(toExpression, PrimitiveDataType.Integer);
+				stepExpression = Conversion.Construct(stepExpression, PrimitiveDataType.Integer);
 
 				return
 					new IntegerForStatement()
@@ -46,12 +43,9 @@ public class ForStatement
 			}
 			case PrimitiveDataType.Long:
 			{
-				if (!fromExpression.Type.IsLong)
-					fromExpression = new ConvertToLong(fromExpression);
-				if (!toExpression.Type.IsLong)
-					toExpression = new ConvertToLong(toExpression);
-				if ((stepExpression != null) && !stepExpression.Type.IsLong)
-					stepExpression = new ConvertToLong(stepExpression);
+				fromExpression = Conversion.Construct(fromExpression, PrimitiveDataType.Long);
+				toExpression = Conversion.Construct(toExpression, PrimitiveDataType.Long);
+				stepExpression = Conversion.Construct(stepExpression, PrimitiveDataType.Long);
 
 				return
 					new LongForStatement()
@@ -65,12 +59,9 @@ public class ForStatement
 			}
 			case PrimitiveDataType.Single:
 			{
-				if (!fromExpression.Type.IsSingle)
-					fromExpression = new ConvertToSingle(fromExpression);
-				if (!toExpression.Type.IsSingle)
-					toExpression = new ConvertToSingle(toExpression);
-				if ((stepExpression != null) && !stepExpression.Type.IsSingle)
-					stepExpression = new ConvertToSingle(stepExpression);
+				fromExpression = Conversion.Construct(fromExpression, PrimitiveDataType.Single);
+				toExpression = Conversion.Construct(toExpression, PrimitiveDataType.Single);
+				stepExpression = Conversion.Construct(stepExpression, PrimitiveDataType.Single);
 
 				return
 					new SingleForStatement()
@@ -84,12 +75,9 @@ public class ForStatement
 			}
 			case PrimitiveDataType.Double:
 			{
-				if (!fromExpression.Type.IsDouble)
-					fromExpression = new ConvertToDouble(fromExpression);
-				if (!toExpression.Type.IsDouble)
-					toExpression = new ConvertToDouble(toExpression);
-				if ((stepExpression != null) && !stepExpression.Type.IsDouble)
-					stepExpression = new ConvertToDouble(stepExpression);
+				fromExpression = Conversion.Construct(fromExpression, PrimitiveDataType.Double);
+				toExpression = Conversion.Construct(toExpression, PrimitiveDataType.Double);
+				stepExpression = Conversion.Construct(stepExpression, PrimitiveDataType.Double);
 
 				return
 					new DoubleForStatement()
@@ -103,12 +91,9 @@ public class ForStatement
 			}
 			case PrimitiveDataType.Currency:
 			{
-				if (!fromExpression.Type.IsCurrency)
-					fromExpression = new ConvertToCurrency(fromExpression);
-				if (!toExpression.Type.IsCurrency)
-					toExpression = new ConvertToCurrency(toExpression);
-				if ((stepExpression != null) && !stepExpression.Type.IsCurrency)
-					stepExpression = new ConvertToCurrency(stepExpression);
+				fromExpression = Conversion.Construct(fromExpression, PrimitiveDataType.Currency);
+				toExpression = Conversion.Construct(toExpression, PrimitiveDataType.Currency);
+				stepExpression = Conversion.Construct(stepExpression, PrimitiveDataType.Currency);
 
 				return
 					new CurrencyForStatement()

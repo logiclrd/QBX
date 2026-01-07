@@ -25,18 +25,15 @@ public static class Exponentiation
 		if (left.Type.IsCurrency
 		 && (right.Type.IsInteger || right.Type.IsLong))
 		{
-			if (!right.Type.IsLong)
-				right = new ConvertToLong(right);
+			right = Conversion.Construct(right, PrimitiveDataType.Long);
 
 			return new CurrencyExponentiation(left, right);
 		}
 
 		// Otherwise, exponentiation always evaluates to DOUBLE.
 
-		if (!left.Type.IsDouble)
-			left = new ConvertToDouble(left);
-		if (!right.Type.IsDouble)
-			right = new ConvertToDouble(right);
+		left = Conversion.Construct(left, PrimitiveDataType.Double);
+		right = Conversion.Construct(right, PrimitiveDataType.Double);
 
 		return new DoubleExponentiation(left, right);
 	}

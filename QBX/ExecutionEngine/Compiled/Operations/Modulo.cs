@@ -15,10 +15,8 @@ public static class Modulo
 			return new IntegerModulo(left, right);
 		else
 		{
-			if (!left.Type.IsLong)
-				left = new ConvertToLong(left);
-			if (!right.Type.IsLong)
-				right = new ConvertToLong(right);
+			left = Conversion.Construct(left, PrimitiveDataType.Long);
+			right = Conversion.Construct(right, PrimitiveDataType.Long);
 
 			return new LongModulo(left, right);
 		}

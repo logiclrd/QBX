@@ -32,19 +32,15 @@ public static class Division
 		if ((left.Type.IsInteger || left.Type.IsSingle)
 		 && (right.Type.IsInteger || right.Type.IsSingle))
 		{
-			if (!left.Type.IsSingle)
-				left = new ConvertToSingle(left);
-			if (!right.Type.IsSingle)
-				right = new ConvertToSingle(right);
+			left = Conversion.Construct(left, PrimitiveDataType.Single);
+			right = Conversion.Construct(right, PrimitiveDataType.Single);
 
 			return new SingleDivision(left, right);
 		}
 		else
 		{
-			if (!left.Type.IsDouble)
-				left = new ConvertToDouble(left);
-			if (!right.Type.IsDouble)
-				right = new ConvertToDouble(right);
+			left = Conversion.Construct(left, PrimitiveDataType.Double);
+			right = Conversion.Construct(right, PrimitiveDataType.Double);
 
 			return new DoubleDivision(left, right);
 		}
@@ -61,10 +57,8 @@ public class IntegerDivision(IEvaluable left, IEvaluable right) : IEvaluable
 			return new IntegerDivision(left, right);
 		else
 		{
-			if (!left.Type.IsLong)
-				left = new ConvertToLong(left);
-			if (!right.Type.IsLong)
-				right = new ConvertToLong(right);
+			left = Conversion.Construct(left, PrimitiveDataType.Long);
+			right = Conversion.Construct(right, PrimitiveDataType.Long);
 
 			return new LongDivision(left, right);
 		}

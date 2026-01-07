@@ -188,24 +188,7 @@ public class Compiler
 					 || !valueExpression.Type.IsPrimitiveType)
 						throw CompilerException.TypeMismatch(assignmentStatement.ValueExpression?.Token);
 
-					switch (targetExpression.Type.PrimitiveType)
-					{
-						case Execution.PrimitiveDataType.Integer:
-							valueExpression = new ConvertToInteger(valueExpression);
-							break;
-						case Execution.PrimitiveDataType.Long:
-							valueExpression = new ConvertToLong(valueExpression);
-							break;
-						case Execution.PrimitiveDataType.Single:
-							valueExpression = new ConvertToSingle(valueExpression);
-							break;
-						case Execution.PrimitiveDataType.Double:
-							valueExpression = new ConvertToDouble(valueExpression);
-							break;
-						case Execution.PrimitiveDataType.Currency:
-							valueExpression = new ConvertToCurrency(valueExpression);
-							break;
-					}
+					valueExpression = Conversion.Construct(valueExpression, targetExpression.Type.PrimitiveType);
 				}
 
 				var translatedAssignmentStatement = new AssignmentStatement();
