@@ -62,6 +62,21 @@ public class DataType
 		}
 	}
 
+	public static DataType ForPrimitiveDataType(PrimitiveDataType variableType)
+	{
+		switch (variableType)
+		{
+			case PrimitiveDataType.Integer: return DataType.Integer;
+			case PrimitiveDataType.Long: return DataType.Long;
+			case PrimitiveDataType.Single: return DataType.Single;
+			case PrimitiveDataType.Double: return DataType.Double;
+			case PrimitiveDataType.String: return DataType.String;
+			case PrimitiveDataType.Currency: return DataType.Currency;
+
+			default: throw new Exception("Cannot construct ExecutionEngine.Compiled.DataType from unknown PrimitiveDataType");
+		}
+	}
+
 	public bool Equals(DataType? otherType)
 	{
 		if (otherType == null)

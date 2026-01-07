@@ -170,6 +170,69 @@ public class Compiler
 
 		switch (statement)
 		{
+			case CodeModel.Statements.AssignmentStatement assignmentStatement:
+			{
+				var targetExpression = TranslateExpression(assignmentStatement.TargetExpression, mapper);
+				var valueExpression = TranslateExpression(assignmentStatement.ValueExpression, mapper);
+
+				if (targetExpression == null)
+					throw new BadModelException("AssignmentStatement with no TargetExpression");
+				if (valueExpression == null)
+					throw new BadModelException("AssignmentStatement with no ValueExpression");
+
+				if (targetExpression.Type != valueExpression.Type)
+				{
+					if (targetExpression.Type.IsString != valueExpression.Type.IsString)
+						throw CompilerException.TypeMismatch(assignmentStatement.ValueExpression?.Token);
+					if (!targetExpression.Type.IsPrimitiveType
+					 || !valueExpression.Type.IsPrimitiveType)
+						throw CompilerException.TypeMismatch(assignmentStatement.ValueExpression?.Token);
+
+					switch (targetExpression.Type.PrimitiveType)
+					{
+						case Execution.PrimitiveDataType.Integer:
+							valueExpression = new ConvertToInteger(valueExpression);
+							break;
+						case Execution.PrimitiveDataType.Long:
+							valueExpression = new ConvertToLong(valueExpression);
+							break;
+						case Execution.PrimitiveDataType.Single:
+							valueExpression = new ConvertToSingle(valueExpression);
+							break;
+						case Execution.PrimitiveDataType.Double:
+							valueExpression = new ConvertToDouble(valueExpression);
+							break;
+						case Execution.PrimitiveDataType.Currency:
+							valueExpression = new ConvertToCurrency(valueExpression);
+							break;
+					}
+				}
+
+				var translatedAssignmentStatement = new AssignmentStatement();
+
+				translatedAssignmentStatement.TargetExpression = targetExpression;
+				translatedAssignmentStatement.ValueExpression = valueExpression;
+
+				container.Append(translatedAssignmentStatement);
+
+				break;
+			}
+			case CodeModel.Statements.ColorStatement colorStatement:
+			{
+				var translatedColorStatement = new ColorStatement();
+
+				var argument1 = colorStatement.Arguments.Count > 0 ? colorStatement.Arguments[0] : null;
+				var argument2 = colorStatement.Arguments.Count > 1 ? colorStatement.Arguments[1] : null;
+				var argument3 = colorStatement.Arguments.Count > 2 ? colorStatement.Arguments[2] : null;
+
+				translatedColorStatement.Argument1Expression = TranslateExpression(argument1, mapper);
+				translatedColorStatement.Argument2Expression = TranslateExpression(argument2, mapper);
+				translatedColorStatement.Argument3Expression = TranslateExpression(argument3, mapper);
+
+				container.Append(translatedColorStatement);
+
+				break;
+			}
 			case CodeModel.Statements.DefTypeStatement defTypeStatement:
 			{
 				var dataType = DataType.FromCodeModelDataType(defTypeStatement.DataType);
@@ -182,22 +245,6 @@ public class Compiler
 
 				break;
 			}
-			case CodeModel.Statements.ColorStatement colorStatement:
-			{
-				var translatedColorStatement = new ColorStatement();
-
-				var argument1 = colorStatement.Arguments.Count > 0 ? colorStatement.Arguments[0] : null;
-				var argument2 = colorStatement.Arguments.Count > 1 ? colorStatement.Arguments[1] : null;
-				var argument3 = colorStatement.Arguments.Count > 2 ? colorStatement.Arguments[2] : null;
-
-				translatedColorStatement.Argument1Expression = TranslateExpression(argument1);
-				translatedColorStatement.Argument2Expression = TranslateExpression(argument2);
-				translatedColorStatement.Argument3Expression = TranslateExpression(argument3);
-
-				container.Append(translatedColorStatement);
-
-				break;
-			}
 			case CodeModel.Statements.ElseStatement: // these are normally subsumed by IfStatement parsing
 			case CodeModel.Statements.ElseIfStatement:
 				throw new RuntimeException(statement, "ELSE without IF");
@@ -205,7 +252,7 @@ public class Compiler
 			{
 				var translatedIfStatement = new IfStatement();
 
-				translatedIfStatement.Condition = TranslateExpression(ifStatement.ConditionExpression);
+				translatedIfStatement.Condition = TranslateExpression(ifStatement.ConditionExpression, mapper);
 
 				if (ifStatement.ThenBody == null)
 				{
@@ -247,7 +294,7 @@ public class Compiler
 								block.ElseBody = elseBody;
 
 								block = new IfStatement();
-								block.Condition = TranslateExpression(ifStatement.ConditionExpression);
+								block.Condition = TranslateExpression(ifStatement.ConditionExpression, mapper);
 
 								elseBody.Append(block);
 
@@ -282,8 +329,6 @@ public class Compiler
 							}
 						}
 					}
-
-					container.Append(translatedIfStatement);
 				}
 				else
 				{
@@ -311,15 +356,17 @@ public class Compiler
 					}
 				}
 
+				container.Append(translatedIfStatement);
+
 				break;
 			}
 			case CodeModel.Statements.ForStatement forStatement:
 			{
 				var iteratorVariableIndex = mapper.ResolveVariable(forStatement.CounterVariable);
 
-				var fromExpression = TranslateExpression(forStatement.StartExpression);
-				var toExpression = TranslateExpression(forStatement.EndExpression);
-				var stepExpression = TranslateExpression(forStatement.StepExpression);
+				var fromExpression = TranslateExpression(forStatement.StartExpression, mapper);
+				var toExpression = TranslateExpression(forStatement.EndExpression, mapper);
+				var stepExpression = TranslateExpression(forStatement.StepExpression, mapper);
 
 				if (fromExpression == null)
 					throw new Exception("ForStatement with no StartExpression");
@@ -387,10 +434,10 @@ public class Compiler
 			{
 				var translatedScreenStatement = new ScreenStatement();
 
-				translatedScreenStatement.ModeExpression = TranslateExpression(screenStatement.ModeExpression);
-				translatedScreenStatement.ColourSwitchExpression = TranslateExpression(screenStatement.ColourSwitchExpression);
-				translatedScreenStatement.ActivePageExpression = TranslateExpression(screenStatement.ActivePageExpression);
-				translatedScreenStatement.VisiblePageExpression = TranslateExpression(screenStatement.VisiblePageExpression);
+				translatedScreenStatement.ModeExpression = TranslateExpression(screenStatement.ModeExpression, mapper);
+				translatedScreenStatement.ColourSwitchExpression = TranslateExpression(screenStatement.ColourSwitchExpression, mapper);
+				translatedScreenStatement.ActivePageExpression = TranslateExpression(screenStatement.ActivePageExpression, mapper);
+				translatedScreenStatement.VisiblePageExpression = TranslateExpression(screenStatement.VisiblePageExpression, mapper);
 
 				container.Append(translatedScreenStatement);
 
@@ -438,7 +485,7 @@ public class Compiler
 		advance();
 	}
 
-	private IEvaluable? TranslateExpression(CodeModel.Expressions.Expression? expression)
+	private IEvaluable? TranslateExpression(CodeModel.Expressions.Expression? expression, Mapper mapper)
 	{
 		if (expression == null)
 			return null;
@@ -447,6 +494,14 @@ public class Compiler
 		{
 			case CodeModel.Expressions.LiteralExpression literal:
 				return LiteralValue.ConstructFromCodeModel(literal);
+
+			case CodeModel.Expressions.IdentifierExpression identifier:
+			{
+				int variableIndex = mapper.ResolveVariable(identifier.Identifier);
+				var variableType = mapper.GetTypeForIdentifier(identifier.Identifier);
+
+				return new IdentifierExpression(variableIndex, DataType.ForPrimitiveDataType(variableType));
+			}
 
 			case CodeModel.Expressions.KeywordFunctionExpression keywordFunction:
 			{
@@ -460,8 +515,8 @@ public class Compiler
 
 			case CodeModel.Expressions.BinaryExpression binaryExpression:
 			{
-				var left = TranslateExpression(binaryExpression.Left);
-				var right = TranslateExpression(binaryExpression.Right);
+				var left = TranslateExpression(binaryExpression.Left, mapper);
+				var right = TranslateExpression(binaryExpression.Right, mapper);
 
 				if ((left == null) || (right == null))
 					throw new Exception("Internal error: Binary expression operand translated to null");
