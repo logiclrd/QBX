@@ -138,7 +138,14 @@ public class Compiler
 				return true;
 			}
 
-			TranslateStatement(element.Type, ref statement, Advance, container, mapper, typeRepository, out var nextStatementInfo);
+			bool HaveCurrentStatement()
+			{
+				return
+					(lineIndex < element.Lines.Count) &&
+					(statementIndex < line.Statements.Count);
+			}
+
+			TranslateStatement(element.Type, ref statement, Advance, HaveCurrentStatement, container, mapper, typeRepository, out var nextStatementInfo);
 
 			if (nextStatementInfo != null)
 			{
@@ -177,7 +184,12 @@ public class Compiler
 					return false;
 			}
 
-			TranslateStatement(elementType, ref statement, Advance, container, mapper, typeRepository, out var nextStatementInfo);
+			bool HaveCurrentStatement()
+			{
+				return (statementIndex < statements.Count);
+			}
+
+			TranslateStatement(elementType, ref statement, Advance, HaveCurrentStatement, container, mapper, typeRepository, out var nextStatementInfo);
 
 			if (nextStatementInfo != null)
 			{
@@ -197,7 +209,7 @@ public class Compiler
 		public int LoopsMatched = 0;
 	}
 
-	void TranslateStatement(CodeModel.CompilationElementType elementType, ref CodeModel.Statements.Statement statement, Func<bool> advance, ISequence container, Mapper mapper, TypeRepository typeRepository, out NextStatementInfo? nextStatementInfo)
+	void TranslateStatement(CodeModel.CompilationElementType elementType, ref CodeModel.Statements.Statement statement, Func<bool> advance, Func<bool> haveCurrentStatement, ISequence container, Mapper mapper, TypeRepository typeRepository, out NextStatementInfo? nextStatementInfo)
 	{
 		nextStatementInfo = null;
 
@@ -264,6 +276,8 @@ public class Compiler
 			case CodeModel.Statements.ElseStatement: // these are normally subsumed by IfStatement parsing
 			case CodeModel.Statements.ElseIfStatement:
 				throw new RuntimeException(statement, "ELSE without IF");
+			case CodeModel.Statements.EmptyStatement:
+				break;
 			case CodeModel.Statements.IfStatement ifStatement:
 			{
 				var translatedIfStatement = new IfStatement();
@@ -279,21 +293,33 @@ public class Compiler
 
 					translatedIfStatement.ThenBody = subsequence;
 
-					while (advance())
+					var blame = statement;
+
+					advance();
+
+					while (haveCurrentStatement())
 					{
 						if (statement is CodeModel.Statements.EndIfStatement)
+						{
+							blame = null;
 							break;
+						}
 
 						switch (statement)
 						{
 							case CodeModel.Statements.ElseStatement:
 							{
-								if (translatedIfStatement.ElseBody != null)
+								if (block.ElseBody != null)
 									throw new RuntimeException(statement, "ELSE without IF");
+
+								blame = statement;
 
 								subsequence = new Sequence();
 
-								translatedIfStatement.ElseBody = subsequence;
+								block.ElseBody = subsequence;
+
+								if (!advance())
+									throw CompilerException.BlockIfWithoutEndIf(blame);
 
 								break;
 							}
@@ -305,12 +331,14 @@ public class Compiler
 								// current ThenBody. With this transform, block switches to
 								// pointing at the nested IfStatement.
 
+								blame = statement;
+
 								var elseBody = new Sequence();
 
 								block.ElseBody = elseBody;
 
 								block = new IfStatement();
-								block.Condition = TranslateExpression(ifStatement.ConditionExpression, mapper);
+								block.Condition = TranslateExpression(elseIfStatement.ConditionExpression, mapper);
 
 								elseBody.Append(block);
 
@@ -328,12 +356,15 @@ public class Compiler
 										TranslateStatement(elementType, elseIfStatement.ThenBody, ref idx, subsequence, mapper, typeRepository);
 								}
 
+								if (!advance())
+									throw CompilerException.BlockIfWithoutEndIf(blame);
+
 								break;
 							}
 
 							default:
 							{
-								TranslateStatement(elementType, ref statement, advance, container, mapper, typeRepository, out nextStatementInfo);
+								TranslateStatement(elementType, ref statement, advance, haveCurrentStatement, subsequence, mapper, typeRepository, out nextStatementInfo);
 
 								if (nextStatementInfo != null)
 								{
@@ -345,6 +376,9 @@ public class Compiler
 							}
 						}
 					}
+
+					if (blame != null)
+						throw CompilerException.BlockIfWithoutEndIf(blame);
 				}
 				else
 				{
@@ -391,7 +425,9 @@ public class Compiler
 
 				var body = new Sequence();
 
-				while (advance())
+				advance();
+
+				while (haveCurrentStatement())
 				{
 					if (statement is CodeModel.Statements.NextStatement nextStatement)
 					{
@@ -413,7 +449,7 @@ public class Compiler
 						break;
 					}
 
-					TranslateStatement(elementType, ref statement, advance, container, mapper, typeRepository, out nextStatementInfo);
+					TranslateStatement(elementType, ref statement, advance, haveCurrentStatement, body, mapper, typeRepository, out nextStatementInfo);
 
 					if (nextStatementInfo != null)
 					{
@@ -496,6 +532,8 @@ public class Compiler
 
 				break;
 			}
+
+			default: throw new NotImplementedException("Statement not implemented: " + statement.Type);
 		}
 
 		advance();

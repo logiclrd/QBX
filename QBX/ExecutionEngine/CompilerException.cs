@@ -47,4 +47,6 @@ public class CompilerException : Exception
 		=> new CompilerException(context, "Subprogram not defined");
 	public static CompilerException NextWithoutFor(Token? context)
 		=> new CompilerException(context, "NEXT without FOR");
+	public static CompilerException BlockIfWithoutEndIf(CodeModel.Statements.Statement? statement)
+		=> new CompilerException(statement, "Block IF without END IF");
 }
