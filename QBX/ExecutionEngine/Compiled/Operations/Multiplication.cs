@@ -17,7 +17,7 @@ public static class Multiplication
 				? right.SourceExpression?.Token
 				: left.SourceExpression?.Token;
 
-			throw RuntimeException.TypeMismatch(blame);
+			throw CompilerException.TypeMismatch(blame);
 		}
 
 		// Remaining possibilities: Currency, Double, Single, Long, Integer

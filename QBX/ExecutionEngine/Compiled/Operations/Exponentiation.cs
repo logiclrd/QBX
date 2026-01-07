@@ -16,7 +16,7 @@ public static class Exponentiation
 				? right.SourceExpression?.Token
 				: left.SourceExpression?.Token;
 
-			throw RuntimeException.TypeMismatch(blame);
+			throw CompilerException.TypeMismatch(blame);
 		}
 
 		// Exponentiating a CURRENCY with an INTEGER or a LONG

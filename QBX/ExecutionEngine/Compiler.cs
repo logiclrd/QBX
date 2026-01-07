@@ -30,7 +30,7 @@ public class Compiler
 			var routine = new Routine(element, typeRepository);
 
 			if (rootMapper.IsRegistered(routine.Name))
-				throw RuntimeException.DuplicateDefinition(element.AllStatements.FirstOrDefault());
+				throw CompilerException.DuplicateDefinition(element.AllStatements.FirstOrDefault());
 
 			if (routine.Name == Routine.MainRoutineName)
 				module.MainRoutine = routine;
@@ -105,7 +105,13 @@ public class Compiler
 				return true;
 			}
 
-			TranslateStatement(element.Type, ref statement, Advance, container, mapper, typeRepository);
+			TranslateStatement(element.Type, ref statement, Advance, container, mapper, typeRepository, out var nextStatementInfo);
+
+			if (nextStatementInfo != null)
+			{
+				throw CompilerException.NextWithoutFor(
+					nextStatementInfo.Statement.CounterExpressions[nextStatementInfo.LoopsMatched].Token);
+			}
 		}
 		finally
 		{
@@ -138,7 +144,13 @@ public class Compiler
 					return false;
 			}
 
-			TranslateStatement(elementType, ref statement, Advance, container, mapper, typeRepository);
+			TranslateStatement(elementType, ref statement, Advance, container, mapper, typeRepository, out var nextStatementInfo);
+
+			if (nextStatementInfo != null)
+			{
+				throw CompilerException.NextWithoutFor(
+					nextStatementInfo.Statement.CounterExpressions[nextStatementInfo.LoopsMatched].Token);
+			}
 		}
 		finally
 		{
@@ -146,8 +158,16 @@ public class Compiler
 		}
 	}
 
-	void TranslateStatement(CodeModel.CompilationElementType elementType, ref CodeModel.Statements.Statement statement, Func<bool> advance, ISequence container, Mapper mapper, TypeRepository typeRepository)
+	class NextStatementInfo(CodeModel.Statements.NextStatement statement)
 	{
+		public CodeModel.Statements.NextStatement Statement = statement;
+		public int LoopsMatched = 0;
+	}
+
+	void TranslateStatement(CodeModel.CompilationElementType elementType, ref CodeModel.Statements.Statement statement, Func<bool> advance, ISequence container, Mapper mapper, TypeRepository typeRepository, out NextStatementInfo? nextStatementInfo)
+	{
+		nextStatementInfo = null;
+
 		switch (statement)
 		{
 			case CodeModel.Statements.DefTypeStatement defTypeStatement:
@@ -247,6 +267,19 @@ public class Compiler
 
 								break;
 							}
+
+							default:
+							{
+								TranslateStatement(elementType, ref statement, advance, container, mapper, typeRepository, out nextStatementInfo);
+
+								if (nextStatementInfo != null)
+								{
+									throw CompilerException.NextWithoutFor(
+										nextStatementInfo.Statement.CounterExpressions[nextStatementInfo.LoopsMatched].Token);
+								}
+
+								break;
+							}
 						}
 					}
 
@@ -277,6 +310,76 @@ public class Compiler
 						translatedIfStatement.ElseBody = elseBody;
 					}
 				}
+
+				break;
+			}
+			case CodeModel.Statements.ForStatement forStatement:
+			{
+				var iteratorVariableIndex = mapper.ResolveVariable(forStatement.CounterVariable);
+
+				var fromExpression = TranslateExpression(forStatement.StartExpression);
+				var toExpression = TranslateExpression(forStatement.EndExpression);
+				var stepExpression = TranslateExpression(forStatement.StepExpression);
+
+				if (fromExpression == null)
+					throw new Exception("ForStatement with no StartExpression");
+				if (toExpression == null)
+					throw new Exception("ForStatement with no EndExpression");
+
+				var body = new Sequence();
+
+				while (advance())
+				{
+					if (statement is CodeModel.Statements.NextStatement nextStatement)
+					{
+						if (nextStatement.CounterExpressions.Count > 0)
+						{
+							if (nextStatement.CounterExpressions[0] is not CodeModel.Expressions.IdentifierExpression identifierExpression)
+								throw new BadModelException("NextStatement has a CounterExpression that is not an IdentifierExpression");
+
+							if (mapper.ResolveVariable(identifierExpression.Identifier) != iteratorVariableIndex)
+								throw CompilerException.NextWithoutFor(identifierExpression.Token);
+
+							if (nextStatement.CounterExpressions.Count > 1)
+							{
+								nextStatementInfo = new NextStatementInfo(nextStatement);
+								nextStatementInfo.LoopsMatched = 1;
+							}
+						}
+
+						break;
+					}
+
+					TranslateStatement(elementType, ref statement, advance, container, mapper, typeRepository, out nextStatementInfo);
+
+					if (nextStatementInfo != null)
+					{
+						nextStatement = nextStatementInfo.Statement;
+
+						int idx = nextStatementInfo.LoopsMatched;
+
+						if (nextStatement.CounterExpressions[idx] is not CodeModel.Expressions.IdentifierExpression identifierExpression)
+							throw new BadModelException("NextStatement has a CounterExpression that is not an IdentifierExpression");
+
+						if (mapper.ResolveVariable(identifierExpression.Identifier) != iteratorVariableIndex)
+							throw CompilerException.NextWithoutFor(identifierExpression.Token);
+
+						if (idx + 1 < nextStatement.CounterExpressions.Count)
+							nextStatementInfo.LoopsMatched++;
+						else
+							nextStatementInfo = null;
+					}
+				}
+
+				var translatedForStatement = ForStatement.Construct(
+					iteratorVariableIndex,
+					mapper.GetTypeForIdentifier(forStatement.CounterVariable),
+					fromExpression,
+					toExpression,
+					stepExpression,
+					body);
+
+				container.Append(translatedForStatement);
 
 				break;
 			}

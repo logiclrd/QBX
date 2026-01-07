@@ -18,7 +18,7 @@ public class IfStatement : IExecutable
 		var value = Condition.Evaluate(context);
 
 		if (value.DataType.IsString || !value.DataType.IsPrimitiveType)
-			throw RuntimeException.TypeMismatch(Condition.SourceStatement);
+			throw CompilerException.TypeMismatch(Condition.SourceStatement);
 
 		if (!value.IsZero)
 			context.Execute(ThenBody, stepInto);

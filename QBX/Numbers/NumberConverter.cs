@@ -182,7 +182,7 @@ public static class NumberConverter
 			case decimal decimalValue: return ToInteger(decimalValue, context);
 		}
 
-		throw RuntimeException.TypeMismatch(context);
+		throw CompilerException.TypeMismatch(context);
 	}
 
 	public static int ToLong(object value, Token? context = null)
@@ -196,7 +196,7 @@ public static class NumberConverter
 			case decimal decimalValue: return ToLong(decimalValue, context);
 		}
 
-		throw RuntimeException.TypeMismatch(context);
+		throw CompilerException.TypeMismatch(context);
 	}
 
 	public static float ToSingle(object value, Token? context = null)
@@ -210,7 +210,7 @@ public static class NumberConverter
 			case decimal decimalValue: return ToSingle(decimalValue, context);
 		}
 
-		throw RuntimeException.TypeMismatch(context);
+		throw CompilerException.TypeMismatch(context);
 	}
 
 	public static double ToDouble(object value, Token? context = null)
@@ -224,7 +224,7 @@ public static class NumberConverter
 			case decimal decimalValue: return ToDouble(decimalValue, context);
 		}
 
-		throw RuntimeException.TypeMismatch(context);
+		throw CompilerException.TypeMismatch(context);
 	}
 
 	public static decimal ToCurrency(object value, Token? context = null)
@@ -238,6 +238,6 @@ public static class NumberConverter
 			case decimal decimalValue: return ToCurrency(decimalValue, context);
 		}
 
-		throw RuntimeException.TypeMismatch(context);
+		throw CompilerException.TypeMismatch(context);
 	}
 }

@@ -48,9 +48,9 @@ public class ExecutionContext
 		{
 			while (CurrentFrame.NextStatement == null)
 			{
-				CurrentFrame.NextStatementIndex++;
+				int statementIndex = CurrentFrame.NextStatementIndex++;
 
-				if (CurrentFrame.NextStatementIndex >= CurrentFrame.CurrentSequence!.Count)
+				if (statementIndex >= CurrentFrame.CurrentSequence!.Count)
 				{
 					// TODO: return values
 					if (CallStack.Count == 0)
@@ -79,7 +79,7 @@ public class ExecutionContext
 	public ExecutionContext(Machine machine, Module mainModule, IEnumerable<DataType> variableTypes, IEnumerable<DataType> globalVariableTypes)
 	{
 		if (mainModule.MainRoutine == null)
-			throw new Exception("Module does not have a MainRoutine");
+			throw new BadModelException("Module does not have a MainRoutine");
 
 		Machine = machine;
 		VisualLibrary = new TextLibrary(machine);
@@ -143,6 +143,9 @@ public class ExecutionContext
 		CallStack.Push(CurrentFrame);
 
 		CurrentFrame = CurrentFrame.Clone();
+		CurrentFrame.CurrentSequence = null;
+		CurrentFrame.NextStatement = null;
+		CurrentFrame.NextStatementIndex = 0;
 	}
 
 	public void PopFrame()

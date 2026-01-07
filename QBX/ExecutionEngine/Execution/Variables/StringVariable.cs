@@ -18,9 +18,9 @@ public class StringVariable : Variable
 	}
 
 	public override object GetData() => Value;
-	public override void SetData(object value) => Value = value as string ?? throw RuntimeException.TypeMismatch(context: null);
+	public override void SetData(object value) => Value = value as string ?? throw CompilerException.TypeMismatch(context: null);
 
-	public override int CoerceToInt() => throw RuntimeException.TypeMismatch(context: null);
+	public override int CoerceToInt() => throw CompilerException.TypeMismatch(context: null);
 	public override string ToString() => Value;
 
 	public override bool IsZero => false;

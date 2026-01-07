@@ -16,7 +16,7 @@ public static class Division
 				? right.SourceExpression?.Token
 				: left.SourceExpression?.Token;
 
-			throw RuntimeException.TypeMismatch(blame);
+			throw CompilerException.TypeMismatch(blame);
 		}
 
 		// Dividing two CURRENCY values produces a CURRENCY value.

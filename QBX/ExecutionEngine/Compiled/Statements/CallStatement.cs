@@ -17,7 +17,7 @@ public class CallStatement : IExecutable
 	public void Execute(Execution.ExecutionContext context, bool stepInto)
 	{
 		if (UnresolvedTargetName != null)
-			throw RuntimeException.SubprogramNotDefined(Source?.TargetNameToken);
+			throw CompilerException.SubprogramNotDefined(Source?.TargetNameToken);
 
 		if (Target == null)
 			throw new Exception("CallStatement has no Target");
