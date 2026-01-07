@@ -49,13 +49,17 @@ namespace QBX.DevelopmentEnvironment
 
 				if (replaceExistingProgram)
 				{
+					string fileName = Path.GetFileName(path);
+
 					PrimaryViewport.CompilationUnit = unit;
 					PrimaryViewport.CompilationElement = unit.Elements[0];
+					PrimaryViewport.Heading = fileName;
 
 					if (SplitViewport != null)
 					{
 						SplitViewport.CompilationUnit = unit;
 						SplitViewport.CompilationElement = unit.Elements[0];
+						SplitViewport.Heading = fileName;
 					}
 				}
 			}

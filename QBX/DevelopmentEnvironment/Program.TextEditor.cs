@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 
 using QBX.CodeModel;
+using QBX.CodeModel.Statements;
 using QBX.Hardware;
 
 namespace QBX.DevelopmentEnvironment;
@@ -65,12 +66,31 @@ public partial class Program
 
 		switch (input.ScanCode)
 		{
+			case ScanCode.F4:
+			{
+				RestoreOutput();
+
+				WaitForKey();
+
+				SetIDEVideoMode();
+
+				break;
+			}
 			case ScanCode.F5:
 			{
-				if (input.Modifiers.ShiftKey)
-					Run();
-				else
-					Continue();
+				try
+				{
+					FocusedViewport.CommitCurrentLine();
+
+					if (input.Modifiers.ShiftKey)
+						Run();
+					else
+						Continue();
+				}
+				catch
+				{
+					// TODO: present error
+				}
 
 				break;
 			}
@@ -145,6 +165,9 @@ public partial class Program
 						newLine.Append(buffer, FocusedViewport.CursorX, buffer.Length - FocusedViewport.CursorX);
 
 						buffer.Remove(FocusedViewport.CursorX, buffer.Length - FocusedViewport.CursorX);
+
+						FocusedViewport.CurrentLineBuffer = buffer;
+						FocusedViewport.CurrentLineChanged = true;
 					}
 
 					// Step 1: Try to commit left part
@@ -155,6 +178,7 @@ public partial class Program
 					catch
 					{
 						// No syntax checking applied in this case
+						FocusedViewport.ReplaceCurrentLine(CodeLine.CreateUnparsed(buffer));
 					}
 
 					// Step 2: Insert right part as new line being edited
@@ -235,6 +259,9 @@ public partial class Program
 						buffer.Append(nextLine.ToString());
 
 						FocusedViewport.DeleteLine(FocusedViewport.CursorY + 1);
+
+						FocusedViewport.CurrentLineBuffer = buffer;
+						FocusedViewport.CurrentLineChanged = true;
 					}
 				}
 

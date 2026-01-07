@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using QBX.CodeModel;
 using QBX.Firmware;
 using QBX.Hardware;
-using QBX.LexicalAnalysis;
 using QBX.Parser;
 
 namespace QBX.DevelopmentEnvironment;
@@ -43,13 +42,14 @@ public partial class Program : HostedProgram
 
 		InitializeMenuBar();
 
-		machine.VideoFirmware.SetMode(3);
-
-		if (machine.GraphicsArray.Sequencer.CharacterWidth == 9)
-			machine.VideoFirmware.SetCharacterWidth(8);
+		SetIDEVideoMode();
 
 		TextLibrary = new TextLibrary(machine);
 		TextLibrary.MovePhysicalCursor = false;
+
+		TextLibrary.Clear();
+
+		SaveOutput();
 
 		Parser = new BasicParser();
 
@@ -97,6 +97,24 @@ public partial class Program : HostedProgram
 					}
 				}
 			}
+		}
+	}
+
+	void WaitForKey()
+	{
+		while (Machine.Keyboard.GetNextEvent() != null)
+			;
+
+		while (true)
+		{
+			Machine.Keyboard.WaitForInput();
+
+			var keyEvent = Machine.Keyboard.GetNextEvent();
+
+			if ((keyEvent != null)
+			 && !keyEvent.IsRelease
+			 && !keyEvent.IsEphemeral)
+				break;
 		}
 	}
 }

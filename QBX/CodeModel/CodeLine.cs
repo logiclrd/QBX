@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 using QBX.CodeModel.Statements;
 
@@ -25,6 +26,9 @@ public class CodeLine : IRenderableCode
 	public bool IsDefTypeLine => (Statements.Count == 1) && (Statements[0].Type == StatementType.DefType);
 
 	public static CodeLine CreateEmpty() => new CodeLine();
+
+	public static CodeLine CreateUnparsed(StringBuilder builder)
+		=> CreateUnparsed(builder.ToString());
 
 	public static CodeLine CreateUnparsed(string text)
 	{
