@@ -482,6 +482,21 @@ public class Compiler
 
 				break;
 			}
+			case CodeModel.Statements.PixelSetStatement pixelSetStatement:
+			{
+				var translatedPixelSetStatement = new PixelSetStatement();
+
+				translatedPixelSetStatement.StepCoordinates = pixelSetStatement.StepCoordinates;
+				translatedPixelSetStatement.XExpression = TranslateExpression(pixelSetStatement.XExpression, mapper);
+				translatedPixelSetStatement.YExpression = TranslateExpression(pixelSetStatement.YExpression, mapper);
+				translatedPixelSetStatement.ColourExpression = TranslateExpression(pixelSetStatement.ColourExpression, mapper);
+				translatedPixelSetStatement.UseForegroundColour =
+					(pixelSetStatement.DefaultColour == CodeModel.Statements.PixelSetDefaultColour.Foreground);
+
+				container.Append(translatedPixelSetStatement);
+
+				break;
+			}
 			case CodeModel.Statements.ScreenStatement screenStatement:
 			{
 				var translatedScreenStatement = new ScreenStatement();
