@@ -17,15 +17,9 @@ public class ExecutionContext
 
 	public bool EnablePaletteRemapping = true;
 
-	public Variable[] GlobalVariables;
 	public StackFrame RootFrame;
 
 	public StackFrame CurrentFrame;
-
-	// TODO: SHARED
-	// [x] variables DIM SHARED get pushed down into every frame
-	//     => consuming code must track this and supply appropriate GlobalVariables information
-	// [ ] the creation of a frame needs to be able to pull shared variables down
 
 	public readonly Stack<StackFrame> CallStack = new Stack<StackFrame>();
 
@@ -60,9 +54,11 @@ public class ExecutionContext
 
 					if (mode == RunMode.StepOut)
 						return;
+
+					continue;
 				}
 
-				CurrentFrame.NextStatement = CurrentFrame.CurrentSequence[CurrentFrame.NextStatementIndex];
+				CurrentFrame.NextStatement = CurrentFrame.CurrentSequence[statementIndex];
 			}
 
 			var statement = CurrentFrame.NextStatement;
@@ -76,7 +72,7 @@ public class ExecutionContext
 		}
 	}
 
-	public ExecutionContext(Machine machine, Module mainModule, IEnumerable<DataType> variableTypes, IEnumerable<DataType> globalVariableTypes)
+	public ExecutionContext(Machine machine, Module mainModule)
 	{
 		if (mainModule.MainRoutine == null)
 			throw new BadModelException("Module does not have a MainRoutine");
@@ -84,16 +80,10 @@ public class ExecutionContext
 		Machine = machine;
 		VisualLibrary = new TextLibrary(machine);
 
-		GlobalVariables = globalVariableTypes
-			.Select(type => Variable.Construct(type))
-			.ToArray();
-
 		CreateFrame(
 			mainModule,
 			mainModule.MainRoutine,
-			DataType.Long,
-			System.Array.Empty<Variable>(),
-			variableTypes);
+			System.Array.Empty<Variable>());
 
 		RootFrame = CurrentFrame;
 	}
@@ -108,26 +98,33 @@ public class ExecutionContext
 	{
 		CallStack.Push(CurrentFrame);
 
-		CreateFrame(module, routine, returnType, arguments, variableTypes);
+		CreateFrame(module, routine, arguments);
 	}
 
 	[MemberNotNull(nameof(CurrentFrame))]
-	void CreateFrame(Module module, Routine routine, DataType? returnType, Variable[] arguments, IEnumerable<DataType> variableTypes)
+	void CreateFrame(Module module, Routine routine, Variable[] arguments)
 	{
-		var variableTypesList = variableTypes.ToList();
+		var variableTypes = routine.VariableTypes;
+		var linkedVariables = routine.LinkedVariables;
 
-		int totalSlots = 1 + arguments.Length + variableTypesList.Count;
+		int totalSlots = arguments.Length + variableTypes.Count;
 
 		var variables = new Variable[totalSlots];
 
-		variables[0] = Variable.Construct(returnType ?? DataType.Integer);
+		arguments.CopyTo(variables);
 
-		arguments.CopyTo(variables, 1);
+		int index = arguments.Length;
 
-		int index = variables.Length + 1;
+		foreach (var link in linkedVariables)
+			variables[link.LocalIndex] = RootFrame.Variables[link.RootIndex];
 
-		foreach (var type in variableTypesList)
-			variables[index++] = Variable.Construct(type);
+		foreach (var type in variableTypes)
+		{
+			if (variables[index] == null)
+				variables[index] = Variable.Construct(type);
+
+			index++;
+		}
 
 		CurrentFrame = new StackFrame(
 			module,
@@ -135,7 +132,7 @@ public class ExecutionContext
 			variables);
 
 		CurrentFrame.NextStatement = routine.Statements.First();
-		CurrentFrame.NextStatementIndex = 0;
+		CurrentFrame.NextStatementIndex = 1;
 	}
 
 	public void PushScope()

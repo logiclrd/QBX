@@ -16,6 +16,13 @@ public abstract class Variable
 		{
 			switch (type.PrimitiveType)
 			{
+				case PrimitiveDataType.Integer: return new IntegerVariable();
+				case PrimitiveDataType.Long: return new LongVariable();
+				case PrimitiveDataType.Single: return new SingleVariable();
+				case PrimitiveDataType.Double: return new DoubleVariable();
+				case PrimitiveDataType.Currency: return new CurrencyVariable();
+				case PrimitiveDataType.String: return new StringVariable();
+
 				default: throw new Exception("Internal error: Unrecognized data type in Variable.Construct " + type);
 			}
 		}

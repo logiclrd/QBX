@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
@@ -12,10 +13,19 @@ public class Mapper
 	Mapper? _root;
 	Dictionary<string, Routine> _subs;
 	Dictionary<string, Routine> _functions;
-	Dictionary<string, int> _variables = new Dictionary<string, int>();
-	Dictionary<string, int> _linkedVariables = new Dictionary<string, int>();
-	HashSet<string> _globalVariables = new HashSet<string>();
+	Dictionary<string, int> _variableIndexByName = new Dictionary<string, int>();
+	int _nextVariableIndex;
+	Dictionary<int, VariableInfo> _variables = new Dictionary<int, VariableInfo>();
+	HashSet<string> _globalVariableNames = new HashSet<string>();
 	PrimitiveDataType[] _identifierTypes = new PrimitiveDataType[26];
+
+	class VariableInfo(string name, int index)
+	{
+		public string Name => name;
+		public int Index => index;
+		public DataType Type = DataType.Integer;
+		public int LinkedToRootVariableIndex = -1;
+	}
 
 	public IEnumerable<Routine> AllRegisteredRoutines => _subs.Values.Concat(_functions.Values);
 
@@ -24,6 +34,9 @@ public class Mapper
 		_subs = new Dictionary<string, Routine>();
 		_functions = new Dictionary<string, Routine>();
 		_identifierTypes.AsSpan().Fill(PrimitiveDataType.Single);
+		_nextVariableIndex = 0;
+
+		DeclareVariable("@ExitCode", DataType.Long);
 	}
 
 	Mapper(Mapper root)
@@ -32,10 +45,22 @@ public class Mapper
 		_subs = root._subs;
 		_functions = root._functions;
 		_identifierTypes.AsSpan().Fill(PrimitiveDataType.Single);
+	}
 
-		// Ensure that the global variables occupy the same slots in every non-root scope.
-		foreach (string variable in root._globalVariables)
-			ResolveVariable(variable);
+	public void LinkGlobalVariables()
+	{
+		if (_root == null)
+			throw new InvalidOperationException("Cannot call LinkGlobalVariable on the root Mapper");
+
+		foreach (string name in _root._globalVariableNames)
+		{
+			int localIndex = ResolveVariable(name);
+			int rootIndex = _root.ResolveVariable(name);
+
+			var info = _variables[localIndex];
+
+			info.LinkedToRootVariableIndex = rootIndex;
+		}
 	}
 
 	public void SetIdentifierTypes(char from, char to, PrimitiveDataType type)
@@ -144,22 +169,53 @@ public class Mapper
 
 		name = QualifyIdentifier(name);
 
-		// Ensure a local index is assigned
-		ResolveVariable(name);
-
+		int localIndex = ResolveVariable(name);
 		int rootIndex = _root.ResolveVariable(name);
 
-		_linkedVariables[name] = rootIndex;
+		var variableInfo = _variables[localIndex];
+
+		variableInfo.LinkedToRootVariableIndex = rootIndex;
+	}
+
+	public int DeclareVariable(string name, DataType dataType)
+	{
+		if (_variableIndexByName.TryGetValue(name, out var index))
+			throw new Exception("Variable is already declared: " + name);
+
+		index = _nextVariableIndex++;
+
+		var info = new VariableInfo(name, index);
+
+		info.Type = dataType;
+
+		_variables[index] = info;
+
+		return _variableIndexByName[name] = index;
 	}
 
 	public int ResolveVariable(string name)
 	{
 		name = QualifyIdentifier(name);
 
-		if (_variables.TryGetValue(name, out var index))
+		if (_variableIndexByName.TryGetValue(name, out var index))
 			return index;
-
-		// Assign the next variable index
-		return _variables[name] = _variables.Count;
+		else
+			return DeclareVariable(name, DataType.ForPrimitiveDataType(GetTypeForIdentifier(name)));
 	}
+
+	public List<DataType> GetVariableTypes() =>
+		Enumerable.Range(0, _variables.Count)
+		.Select(idx => _variables[idx].Type)
+		.ToList();
+
+	public List<VariableLink> GetLinkedVariables() =>
+		_variables.Values
+		.Where(info => info.LinkedToRootVariableIndex >= 0)
+		.Select(info =>
+			new VariableLink()
+			{
+				LocalIndex = info.Index,
+				RootIndex = info.LinkedToRootVariableIndex,
+			})
+		.ToList();
 }

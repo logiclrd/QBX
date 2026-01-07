@@ -16,6 +16,18 @@ namespace QBX.ExecutionEngine;
 
 public class Compiler
 {
+	class TranslationInfo(CodeModel.CompilationElement element, Mapper rootMapper, Routine routine)
+	{
+		public CodeModel.CompilationElement Element = element;
+
+		public Routine Routine = routine;
+
+		public Mapper Mapper =
+			(element.Type == CodeModel.CompilationElementType.Main)
+			? rootMapper
+			: rootMapper.CreateScope();
+	}
+
 	public Module Compile(CodeModel.CompilationUnit unit, TypeRepository typeRepository)
 	{
 		var module = new Module();
@@ -25,6 +37,8 @@ public class Compiler
 		var rootMapper = new Mapper();
 
 		var routineByName = module.Routines;
+
+		var translationInfo = new List<TranslationInfo>();
 
 		// First pass: collect all routines
 		foreach (var element in unit.Elements)
@@ -39,15 +53,29 @@ public class Compiler
 			else
 				routine.Register(rootMapper);
 
+			var info = new TranslationInfo(element, rootMapper, routine);
+
+			translationInfo.Add(info);
 			routineByName[routine.Name] = routine;
 		}
 
 		// Second pass: process parameters, which requires that we know all the FUNCTIONs
-		foreach (var routine in rootMapper.AllRegisteredRoutines)
-			routine.TranslateParameters(rootMapper, typeRepository);
-
-		foreach (var element in unit.Elements)
+		foreach (var info in translationInfo)
 		{
+			if (info.Element.Type != CodeModel.CompilationElementType.Main)
+			{
+				info.Routine.TranslateParameters(rootMapper, typeRepository);
+				info.Mapper.LinkGlobalVariables();
+			}
+
+			if (info.Routine.ReturnType != null)
+				info.Routine.ReturnValueVariableIndex = info.Mapper.DeclareVariable(info.Routine.Name, info.Routine.ReturnType);
+		}
+
+		foreach (var info in translationInfo)
+		{
+			var element = info.Element;
+
 			var mapper = (element.Type == CodeModel.CompilationElementType.Main)
 				? rootMapper
 				: rootMapper.CreateScope();
@@ -61,6 +89,9 @@ public class Compiler
 
 			while (lineIndex < element.Lines.Count)
 				TranslateStatement(element, ref lineIndex, ref statementIndex, routine, mapper, typeRepository);
+
+			routine.VariableTypes = mapper.GetVariableTypes();
+			routine.LinkedVariables = mapper.GetLinkedVariables();
 		}
 
 		return module;

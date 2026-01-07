@@ -12,7 +12,9 @@ public class Routine : ISequence
 	public SubroutineOpeningStatement? OpeningStatement;
 	public List<DataType> ParameterTypes = new List<DataType>();
 	public List<DataType> VariableTypes = new List<DataType>();
+	public List<VariableLink> LinkedVariables = new List<VariableLink>();
 	public DataType? ReturnType;
+	public int ReturnValueVariableIndex = -1;
 	public List<IExecutable> Statements = new List<IExecutable>();
 
 	void ISequence.Append(IExecutable statement) => Statements.Add(statement);
@@ -90,7 +92,9 @@ public class Routine : ISequence
 		{
 			foreach (var param in OpeningStatement.Parameters.Parameters)
 			{
-				ParameterTypes.Add(typeRepository.ResolveType(param));
+				var paramType = typeRepository.ResolveType(param);
+
+				ParameterTypes.Add(paramType);
 
 				string name = param.Name;
 				string nameWithoutTypeCharacter = name;
@@ -105,12 +109,13 @@ public class Routine : ISequence
 					if (typeCharacterPresent || param.IsArray)
 						throw CompilerException.DuplicateDefinition(param.NameToken);
 
-					var paramType = typeRepository.ResolveType(param);
 					var functionType = function.ReturnType;
 
 					if (paramType.Equals(functionType))
 						throw CompilerException.DuplicateDefinition(param.NameToken);
 				}
+
+				mapper.DeclareVariable(name, paramType);
 			}
 		}
 	}
