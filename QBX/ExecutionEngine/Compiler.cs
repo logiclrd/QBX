@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using QBX.ExecutionEngine.Compiled;
+using QBX.ExecutionEngine.Compiled.BitwiseOperators;
 using QBX.ExecutionEngine.Compiled.Expressions;
 using QBX.ExecutionEngine.Compiled.Functions;
 using QBX.ExecutionEngine.Compiled.Operations;
@@ -507,7 +508,7 @@ public class Compiler
 				switch (unaryExpression.Operator)
 				{
 					case CodeModel.Expressions.Operator.Negate: return Negation.Construct(right);
-					case CodeModel.Expressions.Operator.Not:
+					case CodeModel.Expressions.Operator.Not: return Not.Construct(right);
 
 					default: throw new Exception("Internal error: Unrecognized unary expression operator " + unaryExpression.Operator);
 				}
@@ -538,11 +539,11 @@ public class Compiler
 					case CodeModel.Expressions.Operator.GreaterThan: return GreaterThan.Construct(left, right);
 					case CodeModel.Expressions.Operator.GreaterThanOrEquals: return GreaterThanOrEquals.Construct(left, right);
 
-					case CodeModel.Expressions.Operator.And:
-					case CodeModel.Expressions.Operator.Or:
-					case CodeModel.Expressions.Operator.ExclusiveOr:
-					case CodeModel.Expressions.Operator.Equivalent:
-					case CodeModel.Expressions.Operator.Implies:
+					case CodeModel.Expressions.Operator.And: return And.Construct(left, right);
+					case CodeModel.Expressions.Operator.Or: return Or.Construct(left, right);
+					case CodeModel.Expressions.Operator.ExclusiveOr: return ExclusiveOr.Construct(left, right);
+					case CodeModel.Expressions.Operator.Equivalent: return Equivalent.Construct(left, right);
+					case CodeModel.Expressions.Operator.Implies: return Implies.Construct(left, right);
 
 					default: throw new Exception("Internal error: Unrecognized binary expression operator " + binaryExpression.Operator);
 				}
