@@ -232,13 +232,13 @@ public class LongForStatement : IExecutable
 			iterator.SetData(_nextValue);
 
 			try
-					{
-			_nextValue += step;
-					}
+			{
+				_nextValue += step;
+			}
 			catch (OverflowException)
 			{
 				throw RuntimeException.Overflow(blame);
-					}
+			}
 
 			bool finishLoop = false;
 
