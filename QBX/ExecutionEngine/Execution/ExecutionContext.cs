@@ -29,15 +29,28 @@ public class ExecutionContext
 
 	public readonly Stack<StackFrame> CallStack = new Stack<StackFrame>();
 
+	public void Execute(IExecutable? executable, bool stepInto)
+	{
+		if (!stepInto)
+			executable?.Execute(this, false);
+		else
+		{
+			PushScope();
+
+			CurrentFrame.NextStatement = executable;
+			CurrentFrame.CurrentSequence = null;
+		}
+	}
+
 	public void Run(RunMode mode)
 	{
-		while (true)
+		while ((CurrentFrame.NextStatement != null) || (CurrentFrame.CurrentSequence != null))
 		{
 			while (CurrentFrame.NextStatement == null)
 			{
 				CurrentFrame.NextStatementIndex++;
 
-				if (CurrentFrame.NextStatementIndex >= CurrentFrame.CurrentSequence.Count)
+				if (CurrentFrame.NextStatementIndex >= CurrentFrame.CurrentSequence!.Count)
 				{
 					// TODO: return values
 					if (CallStack.Count == 0)
@@ -123,6 +136,13 @@ public class ExecutionContext
 
 		CurrentFrame.NextStatement = routine.Statements.First();
 		CurrentFrame.NextStatementIndex = 0;
+	}
+
+	public void PushScope()
+	{
+		CallStack.Push(CurrentFrame);
+
+		CurrentFrame = CurrentFrame.Clone();
 	}
 
 	public void PopFrame()

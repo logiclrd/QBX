@@ -176,4 +176,56 @@ public class IfStatementTests
 		nestedIfResult.ThenBody.Should().HaveCount(2);
 		nestedIfResult.ElseBody.Should().BeNull();
 	}
+
+	public void ShouldParseEmptyThenBody()
+	{
+		// Arrange
+		string statement = "IF a = b THEN  ELSE PRINT \"spoon\"";
+
+		var tokens = new Lexer(statement).ToList();
+
+		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
+
+		var sut = new BasicParser();
+
+		// Act
+		var result = sut.ParseStatement(tokens);
+
+		// Assert
+		result.Should().BeOfType<IfStatement>();
+
+		var ifResult = (IfStatement)result;
+
+		ifResult.ConditionExpression.Should().BeOfType<BinaryExpression>()
+			.Which.Operator.Should().Be(Operator.Equals);
+		ifResult.ThenBody.Should().HaveCount(0);
+		ifResult.ElseBody.Should().HaveCount(1);
+
+		ifResult.ElseBody[0].Should().BeOfType<PrintStatement>();
+	}
+
+	public void ShouldParseEmptyThenBodyAndEmptyElseBody()
+	{
+		// Arrange
+		string statement = "IF a = b THEN  ELSE";
+
+		var tokens = new Lexer(statement).ToList();
+
+		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
+
+		var sut = new BasicParser();
+
+		// Act
+		var result = sut.ParseStatement(tokens);
+
+		// Assert
+		result.Should().BeOfType<IfStatement>();
+
+		var ifResult = (IfStatement)result;
+
+		ifResult.ConditionExpression.Should().BeOfType<BinaryExpression>()
+			.Which.Operator.Should().Be(Operator.Equals);
+		ifResult.ThenBody.Should().HaveCount(0);
+		ifResult.ElseBody.Should().HaveCount(0);
+	}
 }

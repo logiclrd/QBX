@@ -1,6 +1,6 @@
-﻿using QBX.Hardware;
-using System;
-using System.Reflection.PortableExecutable;
+﻿using System;
+
+using QBX.Hardware;
 
 namespace QBX.Firmware;
 

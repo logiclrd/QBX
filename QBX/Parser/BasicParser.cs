@@ -278,7 +278,7 @@ public class BasicParser
 
 	internal Statement ParseStatementWithIndentation(ListRange<Token> tokens, bool isNested, Token endToken)
 	{
-		return ParseStatementWithIndentation(tokens, consumeTokensToEndOfLine: () => Array.Empty<Token>(), isNested: false, endToken);
+		return ParseStatementWithIndentation(tokens, consumeTokensToEndOfLine: () => Array.Empty<Token>(), isNested, endToken);
 	}
 
 	internal Statement ParseStatementWithIndentation(ListRange<Token> tokens, Func<IEnumerable<Token>> consumeTokensToEndOfLine, bool isNested, Token endToken)
@@ -291,7 +291,7 @@ public class BasicParser
 			tokens = tokens.Slice(1);
 		}
 
-		var statement = ParseStatement(tokens, consumeTokensToEndOfLine, isNested: false);
+		var statement = ParseStatement(tokens, consumeTokensToEndOfLine, isNested);
 
 		statement.Indentation = indentation;
 
@@ -1067,6 +1067,9 @@ public class BasicParser
 				tokenHandler.Advance(thenIndex);
 				tokenHandler.Expect(TokenType.THEN);
 
+				if (isNested && !tokenHandler.HasMoreTokens)
+					throw new SyntaxErrorException(token, "Syntax error: Block IF/ELSEIF must be first statement in line");
+
 				if (tokenHandler.HasMoreTokens)
 				{
 					statement.ThenBody = new List<Statement>();
@@ -1099,29 +1102,32 @@ public class BasicParser
 
 						if (tokenHandler.NextTokenIs(TokenType.ELSE))
 						{
-							tokenHandler.Advance();
+							if (statement is ElseIfStatement)
+								throw new SyntaxErrorException(tokenHandler.NextToken, "Syntax error: ELSE after ELSEIF must be first statement on line");
 
-							if (!tokenHandler.HasMoreTokens)
-								throw new SyntaxErrorException(tokenHandler.EndToken, "Expected: statement");
+							tokenHandler.Advance();
 
 							statement.ElseBody = new List<Statement>();
 
-							while (true)
+							if (tokenHandler.HasMoreTokens)
 							{
-								separator = tokenHandler.FindNextUnparenthesizedOf(TokenType.Colon);
-
-								if ((separator < 0) || tokenHandler.NextTokenIs(TokenType.IF))
+								while (true)
 								{
-									var endToken = tokenHandler.HasMoreTokens ? tokenHandler.NextToken : tokenHandler.EndToken;
+									separator = tokenHandler.FindNextUnparenthesizedOf(TokenType.Colon);
 
-									DoParseStatement(statement.ElseBody, tokenHandler.RemainingTokens, isNested: true, endToken);
-									break;
+									if ((separator < 0) || tokenHandler.NextTokenIs(TokenType.IF))
+									{
+										var endToken = tokenHandler.HasMoreTokens ? tokenHandler.NextToken : tokenHandler.EndToken;
+
+										DoParseStatement(statement.ElseBody, tokenHandler.RemainingTokens, isNested: true, endToken);
+										break;
+									}
+
+									DoParseStatement(statement.ElseBody, tokenHandler.RemainingTokens.Slice(0, separator), isNested: true, tokenHandler[separator]);
+
+									tokenHandler.Advance(separator);
+									tokenHandler.Expect(TokenType.Colon);
 								}
-
-								DoParseStatement(statement.ElseBody, tokenHandler.RemainingTokens.Slice(0, separator), isNested: true, tokenHandler[separator]);
-
-								tokenHandler.Advance(separator);
-								tokenHandler.Expect(TokenType.Colon);
 							}
 
 							break;

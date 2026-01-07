@@ -39,6 +39,8 @@ public class RuntimeException : Exception
 		=> new RuntimeException(statement, "Illegal function call");
 	public static RuntimeException Overflow(Token? context)
 		=> new RuntimeException(context, "Overflow");
+	public static RuntimeException TypeMismatch(CodeModel.Statements.Statement? statement)
+		=> new RuntimeException(statement, "Type mismatch");
 	public static RuntimeException TypeMismatch(Token? context)
 		=> new RuntimeException(context, "Type mismatch");
 	public static RuntimeException DivisionByZero(Token? context)

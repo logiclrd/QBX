@@ -56,23 +56,28 @@ public class IfStatement : Statement
 
 				ThenBody[i].Render(writer);
 			}
-		}
 
-		if (ElseBody != null)
-		{
-			writer.Write(" ELSE ");
-
-			for (int i = 0; i < ElseBody.Count; i++)
+			if (ElseBody != null)
 			{
-				if (i > 0)
+				if (ElseBody.Count == 0)
+					writer.Write(" ELSE");
+				else
 				{
-					writer.Write(':');
+					writer.Write(" ELSE ");
 
-					if (ElseBody[i].Indentation == "")
-						writer.Write(':');
+					for (int i = 0; i < ElseBody.Count; i++)
+					{
+						if (i > 0)
+						{
+							writer.Write(':');
+
+							if (ElseBody[i].Indentation == "")
+								writer.Write(' ');
+						}
+
+						ElseBody[i].Render(writer);
+					}
 				}
-
-				ElseBody[i].Render(writer);
 			}
 		}
 	}
