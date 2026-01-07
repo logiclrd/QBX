@@ -168,7 +168,10 @@ public class Viewport
 	public void CommitCurrentLine(StringBuilder? buffer = null)
 	{
 		if (!CurrentLineChanged)
+		{
+			CurrentLineBuffer = null;
 			return;
+		}
 
 		buffer ??= CurrentLineBuffer;
 

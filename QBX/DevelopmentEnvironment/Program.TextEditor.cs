@@ -3,7 +3,7 @@ using System.IO;
 using System.Text;
 
 using QBX.CodeModel;
-using QBX.CodeModel.Statements;
+
 using QBX.Hardware;
 
 namespace QBX.DevelopmentEnvironment;
@@ -49,20 +49,152 @@ public partial class Program
 		if (viewportHeight == 0)
 			viewportHeight = FocusedViewport.Height - 2;
 
-		var currentLine = new Lazy<StringBuilder>(
-			() =>
-			{
-				if (FocusedViewport.CurrentLineBuffer != null)
-					return FocusedViewport.CurrentLineBuffer;
-				else
+		Lazy<StringBuilder> ResetCurrentLine() =>
+			new Lazy<StringBuilder>(
+				() =>
 				{
-					var writer = new StringWriter();
+					if (FocusedViewport == null)
+						throw new Exception("Internal error: No focused viewport");
 
-					FocusedViewport.RenderLine(FocusedViewport.CursorY, writer);
+					if (FocusedViewport.CurrentLineBuffer == null)
+					{
+						var writer = new StringWriter();
 
-					return writer.GetStringBuilder();
+						FocusedViewport.RenderLine(newCursorY, writer);
+						FocusedViewport.CurrentLineBuffer = writer.GetStringBuilder();
+					}
+
+					return FocusedViewport.CurrentLineBuffer;
+				});
+
+		var currentLine = ResetCurrentLine();
+
+		bool CursorLeftWithWrap()
+		{
+			newCursorX--;
+
+			if (newCursorX < 0)
+			{
+				if (newCursorY == 0)
+				{
+					newCursorX = 0;
+					return false;
 				}
-			});
+
+				newCursorY--;
+
+				try
+				{
+					FocusedViewport.CommitCurrentLine();
+				}
+				catch
+				{
+					if (Configuration.EnableSyntaxChecking)
+					{
+						// TODO: raise error
+						newCursorY++;
+						throw;
+					}
+				}
+
+				currentLine = ResetCurrentLine();
+				newCursorX = currentLine.Value.Length;
+			}
+
+			return true;
+		}
+
+		bool CursorRightWithWrap()
+		{
+			newCursorX++;
+
+			if (newCursorX > currentLine.Value.Length)
+			{
+				if (newCursorY >= contentLineCount)
+				{
+					newCursorX--;
+					return false;
+				}
+
+				newCursorY++;
+
+				try
+				{
+					FocusedViewport.CommitCurrentLine();
+				}
+				catch
+				{
+					if (Configuration.EnableSyntaxChecking)
+					{
+						// TODO: raise error
+						newCursorY--;
+						throw;
+					}
+				}
+
+				currentLine = ResetCurrentLine();
+				newCursorX = 0;
+			}
+
+			return true;
+		}
+
+		bool NewCharacterIsWordCharacter()
+		{
+			var buffer = currentLine.Value;
+
+			return
+				(newCursorX >= 0) && (newCursorX < buffer.Length) &&
+				(char.IsLetterOrDigit(buffer[newCursorX]) || buffer[newCursorX] == '.');
+		}
+
+		void FindPreviousWord()
+		{
+			FocusedViewport.CurrentLineBuffer = currentLine.Value;
+
+			try
+			{
+				CursorLeftWithWrap();
+
+				while (!NewCharacterIsWordCharacter())
+				{
+					if (!CursorLeftWithWrap())
+						return;
+				}
+
+				while (NewCharacterIsWordCharacter())
+				{
+					if (!CursorLeftWithWrap())
+						return;
+				}
+
+				FindNextWord();
+			}
+			catch { }
+		}
+
+		void FindNextWord()
+		{
+			FocusedViewport.CurrentLineBuffer = currentLine.Value;
+
+			try
+			{
+				while (NewCharacterIsWordCharacter())
+				{
+					if (!CursorRightWithWrap())
+						return;
+				}
+
+				while (!NewCharacterIsWordCharacter())
+				{
+					if (!CursorRightWithWrap())
+						return;
+				}
+			}
+			catch { }
+		}
+
+		input = input.NormalizeModifierCombinationKey();
 
 		switch (input.ScanCode)
 		{
@@ -112,8 +244,8 @@ public partial class Program
 						case ScanCode.Up: newScrollY--; priority = Priority.Scroll; break;
 						case ScanCode.Down: newScrollY++; priority = Priority.Scroll; break;
 						// Ctrl-Left, Ctrl-Right: previous/next word
-						case ScanCode.Left: break; // TODO: stash rendered buffer but keep Changed=false
-						case ScanCode.Right: break; // TODO: cross multiple lines if necessary
+						case ScanCode.Left: FindPreviousWord(); break;
+						case ScanCode.Right: FindNextWord(); break;
 						// Ctrl-PageUp, Ctrl-PageDown: page left/right
 						case ScanCode.PageUp: newScrollX -= viewportWidth - 1; newCursorX -= viewportWidth - 1; break;
 						case ScanCode.PageDown: newScrollX += viewportWidth - 1; newCursorX += viewportWidth - 1; break;
@@ -398,7 +530,7 @@ public partial class Program
 		if (newScrollY < 0)
 			newScrollY = 0;
 
-		if ((newCursorY != FocusedViewport.CursorY) && FocusedViewport.CurrentLineChanged)
+		if (newCursorY != FocusedViewport.CursorY)
 		{
 			try
 			{
