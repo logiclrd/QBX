@@ -3116,6 +3116,9 @@ public class BasicParser
 
 	internal Expression ParseExpression(ListRange<Token> tokens, Token endToken)
 	{
+		if (tokens.Count == 0)
+			throw new SyntaxErrorException(endToken, "Expected: expression");
+
 		int level = 0;
 
 		bool tailParenthesized = (tokens.Count > 0) && (tokens.Last().Type == TokenType.CloseParenthesis);
