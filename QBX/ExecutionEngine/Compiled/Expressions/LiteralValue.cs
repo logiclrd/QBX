@@ -5,7 +5,7 @@ using QBX.ExecutionEngine.Execution.Variables;
 
 namespace QBX.ExecutionEngine.Compiled.Expressions;
 
-public static class LiteralValue
+public abstract class LiteralValue : IEvaluable
 {
 	public static IEvaluable ConstructFromCodeModel(CodeModel.Expressions.LiteralExpression literal)
 	{
@@ -24,17 +24,18 @@ public static class LiteralValue
 		else
 			throw new Exception("Internal error: Couldn't figure out how to interpret a LiteralExpression");
 	}
-}
 
-public abstract class LiteralValue<T>(T value) : IEvaluable
-{
 	public CodeModel.Statements.Statement? SourceStatement { get; set; }
 	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
 
-	public T Value = value;
-
 	public abstract DataType Type { get; }
+
 	public abstract Variable Evaluate(ExecutionContext context);
+}
+
+public abstract class LiteralValue<T>(T value) : LiteralValue
+{
+	public T Value = value;
 }
 
 public class IntegerLiteralValue(short value) : LiteralValue<short>(value)

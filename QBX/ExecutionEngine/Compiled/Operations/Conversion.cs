@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
-
+using QBX.ExecutionEngine.Compiled.Expressions;
 using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
 using QBX.Numbers;
@@ -14,6 +14,35 @@ public static class Conversion
 	{
 		if (expression == null)
 			return null;
+
+		if (expression.Type.IsPrimitiveType && (expression.Type.PrimitiveType == targetType))
+			return expression;
+
+		if (expression is LiteralValue)
+		{
+			if (expression.Type.IsString)
+				throw CompilerException.TypeMismatch(expression.SourceExpression?.Token);
+
+			var value = expression.Evaluate(default!);
+
+			try
+			{
+				switch (targetType)
+				{
+					case PrimitiveDataType.Integer: return new IntegerLiteralValue(NumberConverter.ToInteger(value.GetData()));
+					case PrimitiveDataType.Long: return new LongLiteralValue(NumberConverter.ToLong(value.GetData()));
+					case PrimitiveDataType.Single: return new SingleLiteralValue(NumberConverter.ToSingle(value.GetData()));
+					case PrimitiveDataType.Double: return new DoubleLiteralValue(NumberConverter.ToDouble(value.GetData()));
+					case PrimitiveDataType.Currency: return new CurrencyLiteralValue(NumberConverter.ToCurrency(value.GetData()));
+
+					default: throw new Exception("Internal error: Failed to match PrimitiveDataType");
+				}
+			}
+			catch (RuntimeException)
+			{
+				throw CompilerException.IllegalNumber(expression.SourceExpression?.Token);
+			}
+		}
 
 		if (expression.Type.IsPrimitiveType && (expression.Type.PrimitiveType == targetType))
 			return expression;

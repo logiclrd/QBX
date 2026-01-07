@@ -74,7 +74,7 @@ public class SingleNegation(IEvaluable right) : IEvaluable
 	public CodeModel.Statements.Statement? SourceStatement { get; set; }
 	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
 
-	public DataType Type => DataType.Integer;
+	public DataType Type => DataType.Single;
 
 	public Variable Evaluate(ExecutionContext context)
 	{
@@ -91,7 +91,7 @@ public class DoubleNegation(IEvaluable right) : IEvaluable
 	public CodeModel.Statements.Statement? SourceStatement { get; set; }
 	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
 
-	public DataType Type => DataType.Integer;
+	public DataType Type => DataType.Double;
 
 	public Variable Evaluate(ExecutionContext context)
 	{
@@ -108,7 +108,7 @@ public class CurrencyNegation(IEvaluable right) : IEvaluable
 	public CodeModel.Statements.Statement? SourceStatement { get; set; }
 	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
 
-	public DataType Type => DataType.Integer;
+	public DataType Type => DataType.Currency;
 
 	public Variable Evaluate(ExecutionContext context)
 	{
