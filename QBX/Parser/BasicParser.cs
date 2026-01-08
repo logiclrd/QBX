@@ -558,7 +558,7 @@ public class BasicParser
 			{
 				var declarationSyntax = ParseExpressionList(tokenHandler.RemainingTokens, tokenHandler.EndToken);
 
-				var declarations = new List<ConstDeclaration>();
+				var definitions = new List<ConstDefinition>();
 
 				for (int i = 0; i < declarationSyntax.Expressions.Count; i++)
 				{
@@ -569,10 +569,10 @@ public class BasicParser
 					 || (binarySyntax.Left is not IdentifierExpression identifierSyntax))
 						throw new SyntaxErrorException(syntax.Token ?? tokenHandler.NextToken, "Expected: name = value");
 
-					declarations.Add(new ConstDeclaration(identifierSyntax.Identifier, binarySyntax.Right));
+					definitions.Add(new ConstDefinition(identifierSyntax.Identifier, binarySyntax.Right));
 				}
 
-				return new ConstStatement(declarations);
+				return new ConstStatement(definitions);
 			}
 
 			case TokenType.DATA:

@@ -1,5 +1,5 @@
 ﻿using System;
-
+using QBX.ExecutionEngine.Compiled.Expressions;
 using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
 
@@ -38,6 +38,13 @@ public class IntegerNot(IEvaluable right) : IEvaluable
 
 		return new IntegerVariable(unchecked((short)~rightValue.Value));
 	}
+
+	public LiteralValue EvaluateConstant()
+	{
+		var rightValue = (IntegerLiteralValue)right.EvaluateConstant();
+
+		return new IntegerLiteralValue(unchecked((short)~rightValue.Value));
+	}
 }
 
 public class LongNot(IEvaluable right) : IEvaluable
@@ -54,5 +61,12 @@ public class LongNot(IEvaluable right) : IEvaluable
 		var rightValue = (LongVariable)right.Evaluate(context);
 
 		return new LongVariable(~rightValue.Value);
+	}
+
+	public LiteralValue EvaluateConstant()
+	{
+		var rightValue = (LongLiteralValue)right.EvaluateConstant();
+
+		return new LongLiteralValue(~rightValue.Value);
 	}
 }

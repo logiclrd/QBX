@@ -41,14 +41,16 @@ public class TypeRepository
 		throw new RuntimeException(context, "Type not defined");
 	}
 
-	public DataType ResolveType(CodeModel.ParameterDefinition param)
+	public DataType ResolveType(CodeModel.ParameterDefinition param, Mapper mapper)
 	{
 		if (param.AnyType)
 			throw new Exception("Internal error: Cannot resolve ANY to a DataType");
 
 		if (CodeModel.TypeCharacter.TryParse(param.Name.Last(), out var typeCharacter))
 			return ResolveType(typeCharacter.Type, null, param.IsArray, param.NameToken);
-		else
+		else if ((param.Type != CodeModel.DataType.Unspecified) || (param.UserType != null))
 			return ResolveType(param.Type, param.UserType, param.IsArray, param.TypeToken);
+		else
+			return DataType.ForPrimitiveDataType(mapper.GetTypeForIdentifier(param.Name));
 	}
 }

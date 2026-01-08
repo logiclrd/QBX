@@ -4,12 +4,12 @@ using QBX.CodeModel.Expressions;
 
 namespace QBX.CodeModel.Statements;
 
-public class ConstDeclaration : IRenderableCode
+public class ConstDefinition : IRenderableCode
 {
 	public string Identifier { get; set; }
 	public Expression Value { get; set; }
 
-	public ConstDeclaration(string identifier, Expression value)
+	public ConstDefinition(string identifier, Expression value)
 	{
 		Identifier = identifier;
 		Value = value;

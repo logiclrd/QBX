@@ -9,7 +9,6 @@ using QBX.ExecutionEngine.Compiled.Functions;
 using QBX.ExecutionEngine.Compiled.Operations;
 using QBX.ExecutionEngine.Compiled.RelationalOperators;
 using QBX.ExecutionEngine.Compiled.Statements;
-
 using QBX.LexicalAnalysis;
 
 namespace QBX.ExecutionEngine;
@@ -28,11 +27,9 @@ public class Compiler
 			: rootMapper.CreateScope();
 	}
 
-	public Module Compile(CodeModel.CompilationUnit unit, TypeRepository typeRepository)
+	public Module Compile(CodeModel.CompilationUnit unit, Compilation compilation)
 	{
 		var module = new Module();
-
-		var unresolvedCallStatements = new List<CallStatement>();
 
 		var rootMapper = new Mapper();
 
@@ -43,15 +40,15 @@ public class Compiler
 		// First pass: collect all routines
 		foreach (var element in unit.Elements)
 		{
-			var routine = new Routine(element, typeRepository);
+			var routine = new Routine(element, compilation.TypeRepository);
 
-			if (rootMapper.IsRegistered(routine.Name))
+			if (compilation.IsRegistered(routine.Name))
 				throw CompilerException.DuplicateDefinition(element.AllStatements.FirstOrDefault());
 
 			if (routine.Name == Routine.MainRoutineName)
 				module.MainRoutine = routine;
 			else
-				routine.Register(rootMapper);
+				routine.Register(compilation);
 
 			var info = new TranslationInfo(element, rootMapper, routine);
 
@@ -59,12 +56,45 @@ public class Compiler
 			routineByName[routine.Name] = routine;
 		}
 
-		// Second pass: process parameters, which requires that we know all the FUNCTIONs
+		// Second pass: process all TYPE definitions
+		CodeModel.Statements.TypeStatement? typeStatement = null;
+		var typeElementStatements = new List<CodeModel.Statements.TypeElementStatement>();
+
+		foreach (var statement in unit.Elements[0].AllStatements)
+		{
+			if (typeStatement == null)
+				typeStatement = statement as CodeModel.Statements.TypeStatement;
+			else
+			{
+				switch (statement)
+				{
+					case CodeModel.Statements.TypeStatement:
+						throw CompilerException.TypeWithoutEndType(typeStatement);
+
+					case CodeModel.Statements.TypeElementStatement typeElementStatement:
+						typeElementStatements.Add(typeElementStatement);
+						break;
+
+					case CodeModel.Statements.EndTypeStatement:
+						TranslateTypeDefinition(typeStatement, typeElementStatements, compilation);
+
+						typeStatement = null;
+						typeElementStatements.Clear();
+
+						break;
+				}
+			}
+		}
+
+		if (typeStatement != null)
+			throw CompilerException.TypeWithoutEndType(typeStatement);
+
+		// Third pass: process parameters, which requires that we know all the FUNCTIONs and UDTs
 		foreach (var info in translationInfo)
 		{
 			if (info.Element.Type != CodeModel.CompilationElementType.Main)
 			{
-				info.Routine.TranslateParameters(rootMapper, typeRepository);
+				info.Routine.TranslateParameters(info.Mapper, compilation);
 				info.Mapper.LinkGlobalVariables();
 			}
 
@@ -88,16 +118,41 @@ public class Compiler
 			int statementIndex = 0;
 
 			while (lineIndex < element.Lines.Count)
-				TranslateStatement(element, ref lineIndex, ref statementIndex, routine, mapper, typeRepository);
+				TranslateStatement(element, ref lineIndex, ref statementIndex, routine, mapper, compilation);
 
 			routine.VariableTypes = mapper.GetVariableTypes();
 			routine.LinkedVariables = mapper.GetLinkedVariables();
 		}
 
+		compilation.Modules.Add(module);
+
 		return module;
 	}
 
-	void TranslateStatement(CodeModel.CompilationElement element, ref int lineIndexRef, ref int statementIndexRef, ISequence container, Mapper mapper, TypeRepository typeRepository)
+	void TranslateTypeDefinition(CodeModel.Statements.TypeStatement typeStatement, List<CodeModel.Statements.TypeElementStatement> elements, Compilation compilation)
+	{
+		var typeRepository = compilation.TypeRepository;
+
+		var udt = new UserDataType(typeStatement);
+
+		foreach (var typeElementStatement in elements)
+		{
+			var type = typeRepository.ResolveType(
+				typeElementStatement.ElementType,
+				typeElementStatement.ElementUserType,
+				isArray: false,
+				typeElementStatement.TypeToken);
+
+			udt.Members.Add(
+				new UserDataTypeMember(
+					typeElementStatement.Name,
+					type));
+		}
+
+		typeRepository.RegisterType(udt);
+	}
+
+	void TranslateStatement(CodeModel.CompilationElement element, ref int lineIndexRef, ref int statementIndexRef, ISequence container, Mapper mapper, Compilation compilation)
 	{
 		int lineIndex = lineIndexRef;
 		int statementIndex = statementIndexRef;
@@ -109,8 +164,8 @@ public class Compiler
 
 		if (statementIndex >= line.Statements.Count)
 		{
-			lineIndex++;
-			statementIndex = 0;
+			lineIndexRef = lineIndex + 1;
+			statementIndexRef = 0;
 			return;
 		}
 
@@ -145,7 +200,7 @@ public class Compiler
 					(statementIndex < line.Statements.Count);
 			}
 
-			TranslateStatement(element.Type, ref statement, Advance, HaveCurrentStatement, container, mapper, typeRepository, out var nextStatementInfo);
+			TranslateStatement(element.Type, ref statement, Advance, HaveCurrentStatement, container, mapper, compilation, out var nextStatementInfo);
 
 			if (nextStatementInfo != null)
 			{
@@ -160,7 +215,7 @@ public class Compiler
 		}
 	}
 
-	void TranslateStatement(CodeModel.CompilationElementType elementType, IList<CodeModel.Statements.Statement> statements, ref int statementIndexRef, ISequence container, Mapper mapper, TypeRepository typeRepository)
+	void TranslateStatement(CodeModel.CompilationElementType elementType, IList<CodeModel.Statements.Statement> statements, ref int statementIndexRef, ISequence container, Mapper mapper, Compilation compilation)
 	{
 		int statementIndex = statementIndexRef;
 
@@ -189,7 +244,7 @@ public class Compiler
 				return (statementIndex < statements.Count);
 			}
 
-			TranslateStatement(elementType, ref statement, Advance, HaveCurrentStatement, container, mapper, typeRepository, out var nextStatementInfo);
+			TranslateStatement(elementType, ref statement, Advance, HaveCurrentStatement, container, mapper, compilation, out var nextStatementInfo);
 
 			if (nextStatementInfo != null)
 			{
@@ -209,8 +264,10 @@ public class Compiler
 		public int LoopsMatched = 0;
 	}
 
-	void TranslateStatement(CodeModel.CompilationElementType elementType, ref CodeModel.Statements.Statement statement, Func<bool> advance, Func<bool> haveCurrentStatement, ISequence container, Mapper mapper, TypeRepository typeRepository, out NextStatementInfo? nextStatementInfo)
+	void TranslateStatement(CodeModel.CompilationElementType elementType, ref CodeModel.Statements.Statement statement, Func<bool> advance, Func<bool> haveCurrentStatement, ISequence container, Mapper mapper, Compilation compilation, out NextStatementInfo? nextStatementInfo)
 	{
+		var typeRepository = compilation.TypeRepository;
+
 		nextStatementInfo = null;
 
 		switch (statement)
@@ -258,6 +315,36 @@ public class Compiler
 				translatedColorStatement.Argument3Expression = TranslateExpression(argument3, mapper);
 
 				container.Append(translatedColorStatement);
+
+				break;
+			}
+			case CodeModel.Statements.ConstStatement constStatement:
+			{
+				foreach (var definition in constStatement.Definitions)
+				{
+					var translatedValue = TranslateExpression(definition.Value, mapper);
+
+					if (translatedValue == null)
+						throw new Exception("ConstStatement has no Value");
+
+					mapper.DefineConstant(
+						definition.Identifier,
+						translatedValue.EvaluateConstant());
+				}
+
+				break;
+			}
+			case CodeModel.Statements.DeclareStatement declareStatement:
+			{
+				// If the declared routine is already known, verify that the parameters
+				// and type match.
+				//
+				// If the declared routine is not known, then record the fact that the
+				// routine should exist so that we know we can generate
+				// UnresolvedCallStatements and UnresolvedFunctionCalls to be linked
+				// up later.
+
+				// TODO
 
 				break;
 			}
@@ -353,7 +440,7 @@ public class Compiler
 									int idx = 0;
 
 									while (idx < elseIfStatement.ThenBody.Count)
-										TranslateStatement(elementType, elseIfStatement.ThenBody, ref idx, subsequence, mapper, typeRepository);
+										TranslateStatement(elementType, elseIfStatement.ThenBody, ref idx, subsequence, mapper, compilation);
 								}
 
 								if (!advance())
@@ -364,7 +451,7 @@ public class Compiler
 
 							default:
 							{
-								TranslateStatement(elementType, ref statement, advance, haveCurrentStatement, subsequence, mapper, typeRepository, out nextStatementInfo);
+								TranslateStatement(elementType, ref statement, advance, haveCurrentStatement, subsequence, mapper, compilation, out nextStatementInfo);
 
 								if (nextStatementInfo != null)
 								{
@@ -389,7 +476,7 @@ public class Compiler
 					int idx = 0;
 
 					while (idx < ifStatement.ThenBody.Count)
-						TranslateStatement(elementType, ifStatement.ThenBody, ref idx, thenBody, mapper, typeRepository);
+						TranslateStatement(elementType, ifStatement.ThenBody, ref idx, thenBody, mapper, compilation);
 
 					translatedIfStatement.ThenBody = thenBody;
 
@@ -400,7 +487,7 @@ public class Compiler
 						idx = 0;
 
 						while (idx < ifStatement.ThenBody.Count)
-							TranslateStatement(elementType, ifStatement.ElseBody, ref idx, elseBody, mapper, typeRepository);
+							TranslateStatement(elementType, ifStatement.ElseBody, ref idx, elseBody, mapper, compilation);
 
 						translatedIfStatement.ElseBody = elseBody;
 					}
@@ -449,7 +536,7 @@ public class Compiler
 						break;
 					}
 
-					TranslateStatement(elementType, ref statement, advance, haveCurrentStatement, body, mapper, typeRepository, out nextStatementInfo);
+					TranslateStatement(elementType, ref statement, advance, haveCurrentStatement, body, mapper, compilation, out nextStatementInfo);
 
 					if (nextStatementInfo != null)
 					{
@@ -516,7 +603,8 @@ public class Compiler
 				if (elementType != CodeModel.CompilationElementType.Main)
 					throw new RuntimeException(statement, "Illegal in SUB, FUNCTION or DEF FN");
 
-				var udt = new UserDataType(typeStatement);
+				// Types are gathered in a separate pass, since they need to be known before
+				// SUB and FUNCTION parameters are processed. Here, we just skip over them.
 
 				while (advance())
 				{
@@ -525,25 +613,12 @@ public class Compiler
 					if (statement is CodeModel.Statements.EndTypeStatement)
 						break;
 
-					if (statement is CodeModel.Statements.TypeElementStatement typeElementStatement)
-					{
-						var type = typeRepository.ResolveType(
-							typeElementStatement.ElementType,
-							typeElementStatement.ElementUserType,
-							isArray: false,
-							typeElementStatement.TypeToken);
-
-						udt.Members.Add(
-							new UserDataTypeMember(
-								typeElementStatement.Name,
-								type));
-					}
+					if (statement is not CodeModel.Statements.TypeElementStatement typeElementStatement)
+						throw CompilerException.StatementIllegalInTypeBlock(statement);
 				}
 
 				if (statement is not CodeModel.Statements.EndTypeStatement)
 					throw new RuntimeException(typeStatement, "Unterminated TYPE definition");
-
-				typeRepository.RegisterType(udt);
 
 				break;
 			}
@@ -566,6 +641,9 @@ public class Compiler
 
 			case CodeModel.Expressions.IdentifierExpression identifier:
 			{
+				if (mapper.TryResolveConstant(identifier.Identifier, out var literal))
+					return literal;
+
 				int variableIndex = mapper.ResolveVariable(identifier.Identifier);
 				var variableType = mapper.GetTypeForIdentifier(identifier.Identifier);
 

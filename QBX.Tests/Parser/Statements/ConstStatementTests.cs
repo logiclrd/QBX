@@ -26,7 +26,7 @@ public class ConstStatementTests
 
 		var constResult = (ConstStatement)result;
 
-		constResult.Declarations.Count.Should().Be(1);
-		constResult.Declarations[0].Identifier.Should().Be(constantName);
+		constResult.Definitions.Count.Should().Be(1);
+		constResult.Definitions[0].Identifier.Should().Be(constantName);
 	}
 }

@@ -1,4 +1,5 @@
-﻿using QBX.ExecutionEngine.Execution;
+﻿using QBX.ExecutionEngine.Compiled.Expressions;
+using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
 
 namespace QBX.ExecutionEngine.Compiled;
@@ -11,4 +12,5 @@ public interface IEvaluable
 	DataType Type { get; }
 
 	Variable Evaluate(ExecutionContext context);
+	LiteralValue EvaluateConstant();
 }

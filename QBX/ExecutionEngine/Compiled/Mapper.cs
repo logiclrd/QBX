@@ -1,18 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-
+using QBX.ExecutionEngine.Compiled.Expressions;
 using QBX.ExecutionEngine.Execution;
+using QBX.LexicalAnalysis;
 
 namespace QBX.ExecutionEngine.Compiled;
 
 public class Mapper
 {
 	Mapper? _root;
-	Dictionary<string, Routine> _subs;
-	Dictionary<string, Routine> _functions;
+	Dictionary<string, LiteralValue> _constantValueByName = new Dictionary<string, LiteralValue>();
 	Dictionary<string, int> _variableIndexByName = new Dictionary<string, int>();
 	int _nextVariableIndex;
 	Dictionary<int, VariableInfo> _variables = new Dictionary<int, VariableInfo>();
@@ -27,12 +26,8 @@ public class Mapper
 		public int LinkedToRootVariableIndex = -1;
 	}
 
-	public IEnumerable<Routine> AllRegisteredRoutines => _subs.Values.Concat(_functions.Values);
-
 	public Mapper()
 	{
-		_subs = new Dictionary<string, Routine>();
-		_functions = new Dictionary<string, Routine>();
 		_identifierTypes.AsSpan().Fill(PrimitiveDataType.Single);
 		_nextVariableIndex = 0;
 
@@ -42,9 +37,8 @@ public class Mapper
 	Mapper(Mapper root)
 	{
 		_root = root;
-		_subs = root._subs;
-		_functions = root._functions;
 		_identifierTypes.AsSpan().Fill(PrimitiveDataType.Single);
+		_constantValueByName = new Dictionary<string, LiteralValue>(root._constantValueByName);
 	}
 
 	public void LinkGlobalVariables()
@@ -105,9 +99,14 @@ public class Mapper
 
 		char first = char.ToUpperInvariant(name.First());
 
-		int index = (first - 'A');
+		if (first == '@') // special case for @ExitCode
+			return PrimitiveDataType.Long;
+		else
+		{
+			int index = (first - 'A');
 
-		return _identifierTypes[index];
+			return _identifierTypes[index];
+		}
 	}
 
 	public string QualifyIdentifier(string name)
@@ -136,32 +135,6 @@ public class Mapper
 		return new Mapper(this);
 	}
 
-	public bool IsRegistered(string name)
-	{
-		return _subs.ContainsKey(name) || _functions.ContainsKey(name);
-	}
-
-	public void RegisterSub(Routine routine)
-	{
-		_subs[routine.Name] = routine;
-	}
-
-	public void RegisterFunction(Routine routine)
-	{
-		_functions[routine.Name] = routine;
-	}
-
-	public bool TryGetRoutine(string routineName, [NotNullWhen(true)] out Routine? routine)
-	{
-		throw new NotImplementedException();
-	}
-
-	public bool TryGetSub(string name, [NotNullWhen(true)] out Routine? sub)
-		=> _subs.TryGetValue(name, out sub);
-
-	public bool TryGetFunction(string name, [NotNullWhen(true)] out Routine? function)
-		=> _functions.TryGetValue(name, out function);
-
 	public void LinkRootVariable(string name)
 	{
 		if (_root == null)
@@ -177,10 +150,29 @@ public class Mapper
 		variableInfo.LinkedToRootVariableIndex = rootIndex;
 	}
 
+	public void DefineConstant(string name, LiteralValue literalValue)
+	{
+		name = QualifyIdentifier(name);
+
+		if (_constantValueByName.TryGetValue(name, out _))
+			throw CompilerException.DuplicateDefinition(default(Token));
+		if (_variableIndexByName.TryGetValue(name, out var index))
+			throw CompilerException.DuplicateDefinition(default(Token));
+
+		_constantValueByName[name] = literalValue;
+	}
+
+	public bool TryResolveConstant(string name, [NotNullWhen(true)] out LiteralValue? literalValue)
+		=> _constantValueByName.TryGetValue(QualifyIdentifier(name), out literalValue);
+
 	public int DeclareVariable(string name, DataType dataType)
 	{
+		name = QualifyIdentifier(name);
+
+		if (_constantValueByName.TryGetValue(name, out _))
+			throw CompilerException.DuplicateDefinition(default(Token));
 		if (_variableIndexByName.TryGetValue(name, out var index))
-			throw new Exception("Variable is already declared: " + name);
+			throw CompilerException.DuplicateDefinition(default(Token));
 
 		index = _nextVariableIndex++;
 

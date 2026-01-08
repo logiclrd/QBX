@@ -1,5 +1,5 @@
 ﻿using System;
-
+using QBX.ExecutionEngine.Compiled.Expressions;
 using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
 using QBX.Numbers;
@@ -49,6 +49,24 @@ public class CurrencyExponentiation(IEvaluable left, IEvaluable right) : IEvalua
 
 	public DataType Type => DataType.Currency;
 
+	static decimal CalculateResult(decimal baseValue, int exponentValue)
+	{
+		decimal result = 1;
+
+		int bits = exponentValue;
+
+		while (bits != 0)
+		{
+			if ((bits & 1) != 0)
+				result *= baseValue;
+
+			bits >>= 1;
+			baseValue *= baseValue;
+		}
+
+		return result;
+	}
+
 	public Variable Evaluate(ExecutionContext context)
 	{
 		var leftValue = (CurrencyVariable)left.Evaluate(context);
@@ -56,19 +74,7 @@ public class CurrencyExponentiation(IEvaluable left, IEvaluable right) : IEvalua
 
 		try
 		{
-			decimal result = 1;
-
-			decimal baseValue = leftValue.Value;
-			int bits = rightValue.Value;
-
-			while (bits != 0)
-			{
-				if ((bits & 1) != 0)
-					result *= baseValue;
-
-				bits >>= 1;
-				baseValue *= baseValue;
-			}
+			decimal result = CalculateResult(leftValue.Value, rightValue.Value);
 
 			if (!result.IsInCurrencyRange())
 				throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
@@ -78,6 +84,26 @@ public class CurrencyExponentiation(IEvaluable left, IEvaluable right) : IEvalua
 		catch (OverflowException)
 		{
 			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+		}
+	}
+
+	public LiteralValue EvaluateConstant()
+	{
+		var leftValue = (CurrencyLiteralValue)left.EvaluateConstant();
+		var rightValue = (LongLiteralValue)right.EvaluateConstant();
+
+		try
+		{
+			decimal result = CalculateResult(leftValue.Value, rightValue.Value);
+
+			if (!result.IsInCurrencyRange())
+				throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+
+			return new CurrencyLiteralValue(result);
+		}
+		catch (OverflowException)
+		{
+			throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
 		}
 	}
 }
@@ -104,6 +130,21 @@ public class DoubleExponentiation(IEvaluable left, IEvaluable right) : IEvaluabl
 		catch (OverflowException)
 		{
 			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+		}
+	}
+
+	public LiteralValue EvaluateConstant()
+	{
+		var leftValue = (DoubleLiteralValue)left.EvaluateConstant();
+		var rightValue = (DoubleLiteralValue)right.EvaluateConstant();
+
+		try
+		{
+			return new DoubleLiteralValue(Math.Pow(leftValue.Value, rightValue.Value));
+		}
+		catch (OverflowException)
+		{
+			throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
 		}
 	}
 }

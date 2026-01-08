@@ -31,6 +31,7 @@ public abstract class LiteralValue : IEvaluable
 	public abstract DataType Type { get; }
 
 	public abstract Variable Evaluate(ExecutionContext context);
+	public LiteralValue EvaluateConstant() => this;
 }
 
 public abstract class LiteralValue<T>(T value) : LiteralValue

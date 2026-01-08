@@ -1,5 +1,6 @@
 ﻿using System;
 
+using QBX.ExecutionEngine.Compiled.Expressions;
 using QBX.ExecutionEngine.Compiled.Operations;
 using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
@@ -55,6 +56,37 @@ public static class Equals
 	}
 }
 
+public class IntegerEquals(IEvaluable left, IEvaluable right) : IEvaluable
+{
+	public IEvaluable Left => left;
+	public IEvaluable Right => right;
+
+	public CodeModel.Statements.Statement? SourceStatement { get; set; }
+	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
+
+	public DataType Type => DataType.Integer;
+
+	public Variable Evaluate(ExecutionContext context)
+	{
+		var leftValue = (IntegerVariable)left.Evaluate(context);
+		var rightValue = (IntegerVariable)right.Evaluate(context);
+
+		bool result = leftValue.Value == rightValue.Value;
+
+		return new IntegerVariable(result ? (short)-1 : (short)0);
+	}
+
+	public LiteralValue EvaluateConstant()
+	{
+		var leftValue = (IntegerLiteralValue)left.EvaluateConstant();
+		var rightValue = (IntegerLiteralValue)right.EvaluateConstant();
+
+		bool result = leftValue.Value == rightValue.Value;
+
+		return new IntegerLiteralValue(result ? (short)-1 : (short)0);
+	}
+}
+
 public class LongEquals(IEvaluable left, IEvaluable right) : IEvaluable
 {
 	public IEvaluable Left => left;
@@ -73,6 +105,16 @@ public class LongEquals(IEvaluable left, IEvaluable right) : IEvaluable
 		bool result = leftValue.Value == rightValue.Value;
 
 		return new IntegerVariable(result ? (short)-1 : (short)0);
+	}
+
+	public LiteralValue EvaluateConstant()
+	{
+		var leftValue = (LongLiteralValue)left.EvaluateConstant();
+		var rightValue = (LongLiteralValue)right.EvaluateConstant();
+
+		bool result = leftValue.Value == rightValue.Value;
+
+		return new IntegerLiteralValue(result ? (short)-1 : (short)0);
 	}
 }
 
@@ -95,6 +137,16 @@ public class SingleEquals(IEvaluable left, IEvaluable right) : IEvaluable
 
 		return new IntegerVariable(result ? (short)-1 : (short)0);
 	}
+
+	public LiteralValue EvaluateConstant()
+	{
+		var leftValue = (SingleLiteralValue)left.EvaluateConstant();
+		var rightValue = (SingleLiteralValue)right.EvaluateConstant();
+
+		bool result = leftValue.Value == rightValue.Value;
+
+		return new IntegerLiteralValue(result ? (short)-1 : (short)0);
+	}
 }
 
 public class DoubleEquals(IEvaluable left, IEvaluable right) : IEvaluable
@@ -115,6 +167,16 @@ public class DoubleEquals(IEvaluable left, IEvaluable right) : IEvaluable
 		bool result = leftValue.Value == rightValue.Value;
 
 		return new IntegerVariable(result ? (short)-1 : (short)0);
+	}
+
+	public LiteralValue EvaluateConstant()
+	{
+		var leftValue = (DoubleLiteralValue)left.EvaluateConstant();
+		var rightValue = (DoubleLiteralValue)right.EvaluateConstant();
+
+		bool result = leftValue.Value == rightValue.Value;
+
+		return new IntegerLiteralValue(result ? (short)-1 : (short)0);
 	}
 }
 
@@ -137,6 +199,16 @@ public class CurrencyEquals(IEvaluable left, IEvaluable right) : IEvaluable
 
 		return new IntegerVariable(result ? (short)-1 : (short)0);
 	}
+
+	public LiteralValue EvaluateConstant()
+	{
+		var leftValue = (CurrencyLiteralValue)left.EvaluateConstant();
+		var rightValue = (CurrencyLiteralValue)right.EvaluateConstant();
+
+		bool result = leftValue.Value == rightValue.Value;
+
+		return new IntegerLiteralValue(result ? (short)-1 : (short)0);
+	}
 }
 
 public class StringEquals(IEvaluable left, IEvaluable right) : IEvaluable
@@ -158,25 +230,14 @@ public class StringEquals(IEvaluable left, IEvaluable right) : IEvaluable
 
 		return new IntegerVariable(result ? (short)-1 : (short)0);
 	}
-}
 
-public class IntegerEquals(IEvaluable left, IEvaluable right) : IEvaluable
-{
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
-
-	public CodeModel.Statements.Statement? SourceStatement { get; set; }
-	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
-
-	public DataType Type => DataType.Integer;
-
-	public Variable Evaluate(ExecutionContext context)
+	public LiteralValue EvaluateConstant()
 	{
-		var leftValue = (IntegerVariable)left.Evaluate(context);
-		var rightValue = (IntegerVariable)right.Evaluate(context);
+		var leftValue = (StringLiteralValue)left.EvaluateConstant();
+		var rightValue = (StringLiteralValue)right.EvaluateConstant();
 
 		bool result = leftValue.Value == rightValue.Value;
 
-		return new IntegerVariable(result ? (short)-1 : (short)0);
+		return new IntegerLiteralValue(result ? (short)-1 : (short)0);
 	}
 }

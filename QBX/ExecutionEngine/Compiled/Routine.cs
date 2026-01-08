@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using QBX.CodeModel.Statements;
+using QBX.ExecutionEngine.Execution;
 
 namespace QBX.ExecutionEngine.Compiled;
 
@@ -65,17 +66,17 @@ public class Routine : ISequence
 		return MainRoutineName;
 	}
 
-	public void Register(Mapper rootMapper)
+	public void Register(Compilation compilation)
 	{
 		if (OpeningStatement is SubStatement)
-			rootMapper.RegisterSub(this);
+			compilation.RegisterSub(this);
 		else if (OpeningStatement is FunctionStatement)
-			rootMapper.RegisterFunction(this);
+			compilation.RegisterFunction(this);
 		else
 			throw new Exception("Register called on a non-callable Routine");
 	}
 
-	public void TranslateParameters(Mapper mapper, TypeRepository typeRepository)
+	public void TranslateParameters(Mapper mapper, Compilation compilation)
 	{
 		if (OpeningStatement == null)
 			throw new Exception("TranslateParameters called on a Routine with no OpeningStatement");
@@ -92,7 +93,7 @@ public class Routine : ISequence
 		{
 			foreach (var param in OpeningStatement.Parameters.Parameters)
 			{
-				var paramType = typeRepository.ResolveType(param);
+				var paramType = compilation.TypeRepository.ResolveType(param, mapper);
 
 				ParameterTypes.Add(paramType);
 
@@ -104,7 +105,7 @@ public class Routine : ISequence
 				if (typeCharacterPresent)
 					nameWithoutTypeCharacter = name.Remove(name.Length - 1);
 
-				if (mapper.TryGetFunction(nameWithoutTypeCharacter, out var function))
+				if (compilation.TryGetFunction(nameWithoutTypeCharacter, out var function))
 				{
 					if (typeCharacterPresent || param.IsArray)
 						throw CompilerException.DuplicateDefinition(param.NameToken);

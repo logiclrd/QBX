@@ -1,5 +1,6 @@
 ﻿using System;
 
+using QBX.ExecutionEngine.Compiled.Expressions;
 using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
 
@@ -45,6 +46,16 @@ public class IntegerNegation(IEvaluable right) : IEvaluable
 
 		return new IntegerVariable(unchecked((short)-rightValue.Value));
 	}
+
+	public LiteralValue EvaluateConstant()
+	{
+		var rightValue = (IntegerLiteralValue)right.EvaluateConstant();
+
+		if (rightValue.Value == short.MinValue) // -MinValue is larger than MaxValue
+			throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+
+		return new IntegerLiteralValue(unchecked((short)-rightValue.Value));
+	}
 }
 
 public class LongNegation(IEvaluable right) : IEvaluable
@@ -60,10 +71,20 @@ public class LongNegation(IEvaluable right) : IEvaluable
 	{
 		var rightValue = (LongVariable)right.Evaluate(context);
 
-		if (rightValue.Value == short.MinValue) // -MinValue is larger than MaxValue
+		if (rightValue.Value == int.MinValue) // -MinValue is larger than MaxValue
 			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
 
 		return new LongVariable(-rightValue.Value);
+	}
+
+	public LiteralValue EvaluateConstant()
+	{
+		var rightValue = (LongLiteralValue)right.EvaluateConstant();
+
+		if (rightValue.Value == int.MinValue) // -MinValue is larger than MaxValue
+			throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+
+		return new LongLiteralValue(-rightValue.Value);
 	}
 }
 
@@ -82,6 +103,13 @@ public class SingleNegation(IEvaluable right) : IEvaluable
 
 		return new SingleVariable(-rightValue.Value);
 	}
+
+	public LiteralValue EvaluateConstant()
+	{
+		var rightValue = (SingleLiteralValue)right.EvaluateConstant();
+
+		return new SingleLiteralValue(-rightValue.Value);
+	}
 }
 
 public class DoubleNegation(IEvaluable right) : IEvaluable
@@ -99,6 +127,13 @@ public class DoubleNegation(IEvaluable right) : IEvaluable
 
 		return new DoubleVariable(-rightValue.Value);
 	}
+
+	public LiteralValue EvaluateConstant()
+	{
+		var rightValue = (DoubleLiteralValue)right.EvaluateConstant();
+
+		return new DoubleLiteralValue(-rightValue.Value);
+	}
 }
 
 public class CurrencyNegation(IEvaluable right) : IEvaluable
@@ -115,5 +150,12 @@ public class CurrencyNegation(IEvaluable right) : IEvaluable
 		var rightValue = (CurrencyVariable)right.Evaluate(context);
 
 		return new CurrencyVariable(-rightValue.Value);
+	}
+
+	public LiteralValue EvaluateConstant()
+	{
+		var rightValue = (CurrencyLiteralValue)right.EvaluateConstant();
+
+		return new CurrencyLiteralValue(-rightValue.Value);
 	}
 }

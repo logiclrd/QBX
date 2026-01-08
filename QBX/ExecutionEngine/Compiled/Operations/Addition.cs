@@ -1,5 +1,5 @@
 ﻿using System;
-
+using QBX.ExecutionEngine.Compiled.Expressions;
 using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
 
@@ -99,6 +99,19 @@ public class IntegerAddition(IEvaluable left, IEvaluable right) : IEvaluable
 
 		return new IntegerVariable(unchecked((short)sum));
 	}
+
+	public LiteralValue EvaluateConstant()
+	{
+		var leftValue = (IntegerLiteralValue)left.EvaluateConstant();
+		var rightValue = (IntegerLiteralValue)right.EvaluateConstant();
+
+		int sum = leftValue.Value + rightValue.Value;
+
+		if ((sum < short.MinValue) || (sum > short.MaxValue))
+			throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+
+		return new IntegerLiteralValue(unchecked((short)sum));
+	}
 }
 
 public class LongAddition(IEvaluable left, IEvaluable right) : IEvaluable
@@ -123,6 +136,21 @@ public class LongAddition(IEvaluable left, IEvaluable right) : IEvaluable
 		catch (OverflowException)
 		{
 			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+		}
+	}
+
+	public LiteralValue EvaluateConstant()
+	{
+		var leftValue = (LongLiteralValue)left.EvaluateConstant();
+		var rightValue = (LongLiteralValue)right.EvaluateConstant();
+
+		try
+		{
+			return new LongLiteralValue(leftValue.Value + rightValue.Value);
+		}
+		catch (OverflowException)
+		{
+			throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
 		}
 	}
 }
@@ -151,6 +179,21 @@ public class SingleAddition(IEvaluable left, IEvaluable right) : IEvaluable
 			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
 		}
 	}
+
+	public LiteralValue EvaluateConstant()
+	{
+		var leftValue = (SingleLiteralValue)left.EvaluateConstant();
+		var rightValue = (SingleLiteralValue)right.EvaluateConstant();
+
+		try
+		{
+			return new SingleLiteralValue(leftValue.Value + rightValue.Value);
+		}
+		catch (OverflowException)
+		{
+			throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+		}
+	}
 }
 
 public class DoubleAddition(IEvaluable left, IEvaluable right) : IEvaluable
@@ -175,6 +218,21 @@ public class DoubleAddition(IEvaluable left, IEvaluable right) : IEvaluable
 		catch (OverflowException)
 		{
 			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+		}
+	}
+
+	public LiteralValue EvaluateConstant()
+	{
+		var leftValue = (DoubleLiteralValue)left.EvaluateConstant();
+		var rightValue = (DoubleLiteralValue)right.EvaluateConstant();
+
+		try
+		{
+			return new DoubleLiteralValue(leftValue.Value + rightValue.Value);
+		}
+		catch (OverflowException)
+		{
+			throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
 		}
 	}
 }
@@ -203,6 +261,21 @@ public class CurrencyAddition(IEvaluable left, IEvaluable right) : IEvaluable
 			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
 		}
 	}
+
+	public LiteralValue EvaluateConstant()
+	{
+		var leftValue = (CurrencyLiteralValue)left.EvaluateConstant();
+		var rightValue = (CurrencyLiteralValue)right.EvaluateConstant();
+
+		try
+		{
+			return new CurrencyLiteralValue(leftValue.Value + rightValue.Value);
+		}
+		catch (OverflowException)
+		{
+			throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+		}
+	}
 }
 
 public class StringAddition(IEvaluable left, IEvaluable right) : IEvaluable
@@ -227,6 +300,21 @@ public class StringAddition(IEvaluable left, IEvaluable right) : IEvaluable
 		catch (OverflowException)
 		{
 			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+		}
+	}
+
+	public LiteralValue EvaluateConstant()
+	{
+		var leftValue = (StringLiteralValue)left.EvaluateConstant();
+		var rightValue = (StringLiteralValue)right.EvaluateConstant();
+
+		try
+		{
+			return new StringLiteralValue(leftValue.Value + rightValue.Value);
+		}
+		catch (OverflowException)
+		{
+			throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
 		}
 	}
 }

@@ -1,4 +1,5 @@
-﻿using QBX.ExecutionEngine.Execution;
+﻿using QBX.ExecutionEngine.Compiled.Expressions;
+using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
 using QBX.Numbers;
 
@@ -71,5 +72,10 @@ public class RndFunction : IEvaluable
 		}
 
 		return new SingleVariable(RandomNumberGenerator.CurrentValue);
+	}
+
+	public LiteralValue EvaluateConstant()
+	{
+		throw CompilerException.ValueIsNotConstant(SourceExpression?.Token);
 	}
 }

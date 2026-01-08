@@ -1,4 +1,5 @@
-﻿using QBX.ExecutionEngine.Compiled.Operations;
+﻿using QBX.ExecutionEngine.Compiled.Expressions;
+using QBX.ExecutionEngine.Compiled.Operations;
 using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
 
@@ -44,6 +45,16 @@ public class IntegerAnd(IEvaluable left, IEvaluable right) : IEvaluable
 
 		return new IntegerVariable(unchecked((short)result));
 	}
+
+	public LiteralValue EvaluateConstant()
+	{
+		var leftValue = (IntegerLiteralValue)left.EvaluateConstant();
+		var rightValue = (IntegerLiteralValue)right.EvaluateConstant();
+
+		int result = leftValue.Value & rightValue.Value;
+
+		return new IntegerLiteralValue(unchecked((short)result));
+	}
 }
 
 public class LongAnd(IEvaluable left, IEvaluable right) : IEvaluable
@@ -61,9 +72,14 @@ public class LongAnd(IEvaluable left, IEvaluable right) : IEvaluable
 		var leftValue = (LongVariable)left.Evaluate(context);
 		var rightValue = (LongVariable)right.Evaluate(context);
 
-		if (rightValue.Value == 0)
-			throw RuntimeException.DivisionByZero(SourceExpression?.Token ?? SourceStatement?.FirstToken);
-
 		return new LongVariable(leftValue.Value & rightValue.Value);
+	}
+
+	public LiteralValue EvaluateConstant()
+	{
+		var leftValue = (LongLiteralValue)left.EvaluateConstant();
+		var rightValue = (LongLiteralValue)right.EvaluateConstant();
+
+		return new LongLiteralValue(leftValue.Value & rightValue.Value);
 	}
 }

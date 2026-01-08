@@ -20,13 +20,16 @@ public partial class Program
 	[MemberNotNull(nameof(_executionContext))]
 	public void Restart()
 	{
-		var typeRepository = new ExecutionEngine.TypeRepository();
+		var compilation = new Compilation();
 
-		var module = new Compiler().Compile(LoadedFiles[0], typeRepository);
+		var compiler = new Compiler();
+
+		foreach (var file in LoadedFiles)
+			compiler.Compile(file, compilation);
 
 		_executionContext = new ExecutionContext(
 			Machine,
-			module);
+			compilation.Modules[0]);
 
 		Machine.VideoFirmware.SetMode(3);
 

@@ -7,23 +7,23 @@ public class ConstStatement : Statement
 {
 	public override StatementType Type => StatementType.Const;
 
-	public List<ConstDeclaration> Declarations { get; set; }
+	public List<ConstDefinition> Definitions { get; set; }
 
-	public ConstStatement(List<ConstDeclaration> declarations)
+	public ConstStatement(List<ConstDefinition> definitions)
 	{
-		Declarations = declarations;
+		Definitions = definitions;
 	}
 
 	protected override void RenderImplementation(TextWriter writer)
 	{
 		writer.Write("CONST ");
 
-		for (int i = 0; i < Declarations.Count; i++)
+		for (int i = 0; i < Definitions.Count; i++)
 		{
 			if (i > 0)
 				writer.Write(", ");
 
-			Declarations[i].Render(writer);
+			Definitions[i].Render(writer);
 		}
 	}
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 
+using QBX.ExecutionEngine.Compiled.Expressions;
 using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
 using QBX.Numbers;
@@ -84,6 +85,19 @@ public class IntegerDivision(IEvaluable left, IEvaluable right) : IEvaluable
 
 		return new IntegerVariable(unchecked((short)quotient));
 	}
+
+	public LiteralValue EvaluateConstant()
+	{
+		var leftValue = (IntegerLiteralValue)left.EvaluateConstant();
+		var rightValue = (IntegerLiteralValue)right.EvaluateConstant();
+
+		if (rightValue.Value == 0)
+			throw CompilerException.DivisionByZero(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+
+		int quotient = leftValue.Value / rightValue.Value;
+
+		return new IntegerLiteralValue(unchecked((short)quotient));
+	}
 }
 
 public class LongDivision(IEvaluable left, IEvaluable right) : IEvaluable
@@ -113,6 +127,24 @@ public class LongDivision(IEvaluable left, IEvaluable right) : IEvaluable
 			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
 		}
 	}
+
+	public LiteralValue EvaluateConstant()
+	{
+		var leftValue = (LongLiteralValue)left.EvaluateConstant();
+		var rightValue = (LongLiteralValue)right.EvaluateConstant();
+
+		if (rightValue.Value == 0)
+			throw CompilerException.DivisionByZero(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+
+		try
+		{
+			return new LongLiteralValue(leftValue.Value / rightValue.Value);
+		}
+		catch (OverflowException)
+		{
+			throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+		}
+	}
 }
 
 public class SingleDivision(IEvaluable left, IEvaluable right) : IEvaluable
@@ -139,6 +171,21 @@ public class SingleDivision(IEvaluable left, IEvaluable right) : IEvaluable
 			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
 		}
 	}
+
+	public LiteralValue EvaluateConstant()
+	{
+		var leftValue = (SingleLiteralValue)left.EvaluateConstant();
+		var rightValue = (SingleLiteralValue)right.EvaluateConstant();
+
+		try
+		{
+			return new SingleLiteralValue(leftValue.Value / rightValue.Value);
+		}
+		catch (OverflowException)
+		{
+			throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+		}
+	}
 }
 
 public class DoubleDivision(IEvaluable left, IEvaluable right) : IEvaluable
@@ -163,6 +210,21 @@ public class DoubleDivision(IEvaluable left, IEvaluable right) : IEvaluable
 		catch (OverflowException)
 		{
 			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+		}
+	}
+
+	public LiteralValue EvaluateConstant()
+	{
+		var leftValue = (DoubleLiteralValue)left.EvaluateConstant();
+		var rightValue = (DoubleLiteralValue)right.EvaluateConstant();
+
+		try
+		{
+			return new DoubleLiteralValue(leftValue.Value / rightValue.Value);
+		}
+		catch (OverflowException)
+		{
+			throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
 		}
 	}
 }
@@ -194,6 +256,26 @@ public class CurrencyDivision(IEvaluable left, IEvaluable right) : IEvaluable
 		catch (OverflowException)
 		{
 			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+		}
+	}
+
+	public LiteralValue EvaluateConstant()
+	{
+		var leftValue = (CurrencyLiteralValue)left.EvaluateConstant();
+		var rightValue = (CurrencyLiteralValue)right.EvaluateConstant();
+
+		try
+		{
+			decimal value = leftValue.Value / rightValue.Value;
+
+			if (!value.IsInCurrencyRange())
+				throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+
+			return new CurrencyLiteralValue(value);
+		}
+		catch (OverflowException)
+		{
+			throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
 		}
 	}
 }

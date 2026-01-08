@@ -51,4 +51,14 @@ public class CompilerException : Exception
 		=> new CompilerException(context, "Illegal number");
 	public static CompilerException BlockIfWithoutEndIf(CodeModel.Statements.Statement? statement)
 		=> new CompilerException(statement, "Block IF without END IF");
+	public static CompilerException TypeWithoutEndType(CodeModel.Statements.Statement statement)
+		=> new CompilerException(statement, "TYPE without END TYPE");
+	public static CompilerException StatementIllegalInTypeBlock(CodeModel.Statements.Statement statement)
+		=> new CompilerException(statement, "Statement illegal in TYPE block");
+	public static CompilerException ValueIsNotConstant(Token? context)
+		=> new CompilerException(context, "Value is not constant");
+	public static CompilerException Overflow(Token? context)
+		=> new CompilerException(context, "Overflow");
+	public static CompilerException DivisionByZero(Token? context)
+		=> new CompilerException(context, "Division by zero");
 }
