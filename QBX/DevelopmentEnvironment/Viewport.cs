@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -58,7 +59,7 @@ public class Viewport
 			CursorY = 0;
 
 		ScrollX = 0;
-		ScrollY = CursorY - CachedContentHeight + 1;
+		ScrollY = CursorY - Math.Max(1, CachedContentHeight) + 1;
 
 		if (ScrollY < 0)
 			ScrollY = 0;
