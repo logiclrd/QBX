@@ -61,6 +61,7 @@ public enum StatementType
 	Randomize,
 	Sub,
 	Read,
+	Redim,
 	Reset,
 	Restore,
 	Return,

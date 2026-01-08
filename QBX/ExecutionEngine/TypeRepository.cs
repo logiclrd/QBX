@@ -23,6 +23,9 @@ public class TypeRepository
 		_typeByName[userType.Name] = new DataType(userType);
 	}
 
+	public DataType ResolveType(string userType, Token? context = null)
+		=> ResolveType(CodeModel.DataType.UserDataType, userType, isArray: false, context);
+
 	public DataType ResolveType(CodeModel.DataType primitiveType, string? userTypeName, bool isArray, Token? context)
 	{
 		if (isArray)

@@ -61,4 +61,8 @@ public class CompilerException : Exception
 		=> new CompilerException(context, "Overflow");
 	public static CompilerException DivisionByZero(Token? context)
 		=> new CompilerException(context, "Division by zero");
+	public static CompilerException IllegalInSubFunctionOrDefFn(CodeModel.Statements.Statement statement)
+		=> new CompilerException(statement, "Illegal in SUB, FUNCTION or DEF FN");
+	public static CompilerException ElementNotDefined(Token? context)
+		=> new CompilerException(context, "Element not defined");
 }

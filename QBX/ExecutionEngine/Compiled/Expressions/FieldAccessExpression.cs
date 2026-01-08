@@ -1,0 +1,52 @@
+﻿using System;
+
+using QBX.ExecutionEngine.Execution;
+using QBX.ExecutionEngine.Execution.Variables;
+
+namespace QBX.ExecutionEngine.Compiled.Expressions;
+
+public class FieldAccessExpression(IEvaluable? expression, int fieldIndex, DataType fieldType) : IEvaluable
+{
+	public static IEvaluable Construct(IEvaluable? expression, string fieldName)
+	{
+		if (expression == null)
+			throw new Exception("FieldAccessExpression.Construct requires expression");
+
+		var dataType = expression.Type;
+
+		if (!dataType.IsUserType)
+			throw new CompilerException(expression.SourceExpression?.Token, "Left expression of a FieldAccessExpression must evaluate to a user-defined type");
+
+		var userType = dataType.UserType;
+
+		for (int fieldIndex = 0; fieldIndex < userType.Fields.Count; fieldIndex++)
+		{
+			var field = userType.Fields[fieldIndex];
+
+			if (field.Name.Equals(fieldName, StringComparison.Ordinal))
+				return new FieldAccessExpression(expression, fieldIndex, field.Type);
+		}
+
+		throw CompilerException.ElementNotDefined(expression.SourceExpression?.Token);
+	}
+
+	public CodeModel.Statements.Statement? SourceStatement { get; set; }
+	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
+
+	public DataType Type => fieldType;
+
+	public IEvaluable? Expression => expression;
+	public int FieldIndex => fieldIndex;
+
+	public Variable Evaluate(ExecutionContext context)
+	{
+		if (expression == null)
+			throw new Exception("FieldAccessExpression has no expression");
+
+		var structure = (UserDataTypeVariable)expression.Evaluate(context);
+
+		return structure.Fields[FieldIndex];
+	}
+
+	public LiteralValue EvaluateConstant() => throw CompilerException.ValueIsNotConstant(expression?.SourceExpression?.Token);
+}

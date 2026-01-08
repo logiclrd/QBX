@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 
 using QBX.ExecutionEngine.Execution;
 
@@ -11,6 +12,7 @@ public class DataType
 	public readonly bool IsArray;
 
 	public bool IsPrimitiveType => (UserType == null);
+	[MemberNotNullWhen(true, nameof(UserType))]
 	public bool IsUserType => (UserType != null);
 
 	public bool IsInteger => PrimitiveType == PrimitiveDataType.Integer;
@@ -38,6 +40,14 @@ public class DataType
 			return new DataType(UserType, isArray: true);
 		else
 			return new DataType(PrimitiveType, isArray: true);
+	}
+
+	internal DataType MakeElementType()
+	{
+		if (UserType != null)
+			return new DataType(UserType, isArray: false);
+		else
+			return new DataType(PrimitiveType, isArray: false);
 	}
 
 	public static readonly DataType Integer = new DataType(PrimitiveDataType.Integer);

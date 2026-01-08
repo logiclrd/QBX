@@ -11,7 +11,7 @@ public class IdentifierExpression : Expression
 
 	public override bool IsValidAssignmentTarget() => true;
 	public override bool IsValidIndexSubject() => true;
-	public override bool IsValidMemberSubject() => true;
+	public override bool IsValidFieldSubject() => true;
 
 	public IdentifierExpression(Token token)
 	{

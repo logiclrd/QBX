@@ -11,7 +11,7 @@ public abstract class Variable
 		if (type.IsArray)
 			throw new Exception("Internal error: Construct called instead of ConstructArray for array type");
 		else if (type.IsUserType)
-			throw new NotImplementedException("TODO: return new UserDataTypeVariable(type.UserType);");
+			return new UserDataTypeVariable(type.UserType);
 		else
 		{
 			switch (type.PrimitiveType)
@@ -28,10 +28,8 @@ public abstract class Variable
 		}
 	}
 
-	public static Variable ConstructArray(DataType type, ArraySubscripts subscripts)
-	{
-		throw new NotImplementedException("TODO");
-	}
+	public static Variable ConstructArray(DataType type)
+		=> new ArrayVariable(type);
 
 	public DataType DataType { get; }
 	

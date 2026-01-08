@@ -89,7 +89,7 @@ public class AssignmentStatementTests
 
 		var binaryResult = (BinaryExpression)assignmentResult.TargetExpression;
 
-		binaryResult.Operator.Should().Be(Operator.Member);
+		binaryResult.Operator.Should().Be(Operator.Field);
 
 		binaryResult.Left.Should().BeOfType<CallOrIndexExpression>();
 

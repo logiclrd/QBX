@@ -10,7 +10,7 @@ public class CallOrIndexExpression : Expression
 	public ExpressionList Arguments { get; set; }
 
 	public override bool IsValidAssignmentTarget() => true;
-	public override bool IsValidMemberSubject() => true;
+	public override bool IsValidFieldSubject() => true;
 
 	public CallOrIndexExpression(Token token, Expression subject, ExpressionList arguments)
 	{

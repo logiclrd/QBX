@@ -9,6 +9,10 @@ public class Array
 	public ArraySubscripts Subscripts;
 	public Variable[] Elements;
 
+	public static readonly Array Uninitialized = new Array(DataType.Integer, new ArraySubscripts());
+
+	public bool IsUninitialized => ReferenceEquals(this, Uninitialized);
+
 	public Array(DataType elementType, ArraySubscripts subscripts)
 	{
 		ElementType = elementType;

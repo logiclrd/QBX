@@ -10,7 +10,7 @@ public abstract class Expression : IRenderableCode
 
 	public virtual bool IsValidAssignmentTarget() => false;
 	public virtual bool IsValidIndexSubject() => false;
-	public virtual bool IsValidMemberSubject() => false;
+	public virtual bool IsValidFieldSubject() => false;
 
 	public abstract void Render(TextWriter writer);
 }

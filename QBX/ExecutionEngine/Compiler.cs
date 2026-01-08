@@ -143,8 +143,8 @@ public class Compiler
 				isArray: false,
 				typeElementStatement.TypeToken);
 
-			udt.Members.Add(
-				new UserDataTypeMember(
+			udt.Fields.Add(
+				new UserDataTypeField(
 					typeElementStatement.Name,
 					type));
 		}
@@ -357,6 +357,74 @@ public class Compiler
 
 				foreach (var range in defTypeStatement.Ranges)
 					mapper.SetIdentifierTypes(range.Start, range.End ?? range.Start, dataType.PrimitiveType);
+
+				break;
+			}
+			case CodeModel.Statements.DimStatement dimStatement: // also matches RedimStatement
+			{
+				if (dimStatement.Shared && (elementType != CodeModel.CompilationElementType.Main))
+					throw CompilerException.IllegalInSubFunctionOrDefFn(statement);
+
+				foreach (var declaration in dimStatement.Declarations)
+				{
+					DataType dataType;
+
+					if (declaration.UserType != null)
+						dataType = compilation.TypeRepository.ResolveType(declaration.UserType);
+					else
+						dataType = DataType.ForPrimitiveDataType(mapper.GetTypeForIdentifier(declaration.Name));
+
+					if (declaration.Subscripts != null)
+						dataType = dataType.MakeArrayType();
+
+					int variableIndex = mapper.DeclareVariable(declaration.Name, dataType);
+
+					if (dimStatement.Shared)
+						mapper.MakeGlobalVariable(declaration.Name);
+
+					if (declaration.Subscripts != null)
+					{
+						var translatedDimStatement = new DimensionArrayStatement();
+
+						translatedDimStatement.VariableIndex = variableIndex;
+
+						// TODO: '$STATIC and '$DYNAMIC (can also be used with REM)
+						// => when the following conditions are met, arrays are configured prior to execution commenting:
+						//    - '$STATIC
+						//    - the DIM statement is not in any sort of conditional compilation clause (IF, FOR, etc.)
+						//    - the DIM statement is not inside a SUB, FUNCTION or DEF FN
+						//    - all of the bounds expressions are evaluable at compile time
+						//    - there is no preceding DIM statement for the same identifier
+						// in this instance, we set up the array right here and now
+
+						// TODO: if the array has already been initialized, then:
+						// - if DimStatement then runtime error "Duplicate definition"
+						// - if RedimStatement then dynamically resize
+						// - RedimStatements fail on arrays set up statically (see preceding TODO)
+
+						if (dimStatement is CodeModel.Statements.RedimStatement redimStatement)
+						{
+							translatedDimStatement.IsRedimension = true;
+							translatedDimStatement.PreserveData = redimStatement.Preserve;
+						}
+
+						foreach (var subscript in declaration.Subscripts.Subscripts)
+						{
+							var bound1 = TranslateExpression(subscript.Bound1, mapper);
+							var bound2 = TranslateExpression(subscript.Bound2, mapper);
+
+							if (bound1 == null)
+								throw new Exception("Must specify the first bound for an array subscript");
+
+							if (bound2 == null)
+								translatedDimStatement.Subscripts.Add(new IntegerLiteralValue(0), bound1);
+							else
+								translatedDimStatement.Subscripts.Add(bound1, bound2);
+						}
+
+						container.Append(translatedDimStatement);
+					}
+				}
 
 				break;
 			}
@@ -601,7 +669,7 @@ public class Compiler
 			{
 				// TODO: track whether we are in a DEF FN
 				if (elementType != CodeModel.CompilationElementType.Main)
-					throw new RuntimeException(statement, "Illegal in SUB, FUNCTION or DEF FN");
+					throw CompilerException.IllegalInSubFunctionOrDefFn(statement);
 
 				// Types are gathered in a separate pass, since they need to be known before
 				// SUB and FUNCTION parameters are processed. Here, we just skip over them.
@@ -645,9 +713,9 @@ public class Compiler
 					return literal;
 
 				int variableIndex = mapper.ResolveVariable(identifier.Identifier);
-				var variableType = mapper.GetTypeForIdentifier(identifier.Identifier);
+				var variableType = mapper.GetVariableType(variableIndex);
 
-				return new IdentifierExpression(variableIndex, DataType.ForPrimitiveDataType(variableType));
+				return new IdentifierExpression(variableIndex, variableType);
 			}
 
 			case CodeModel.Expressions.KeywordFunctionExpression keywordFunction:
@@ -678,6 +746,23 @@ public class Compiler
 
 			case CodeModel.Expressions.BinaryExpression binaryExpression:
 			{
+				if (binaryExpression.Operator == CodeModel.Expressions.Operator.Field)
+				{
+					// TODO: collapse "a.b" to a reference to a variable named "a.b" if there is no
+					//       variable named "a" already
+					// TODO: when adding variable "a" of UDT type, make sure there aren't any "a.__"
+					//       variables already
+
+					var subjectExpression = TranslateExpression(binaryExpression.Left, mapper);
+
+					if (binaryExpression.Right is not CodeModel.Expressions.IdentifierExpression identifierExpression)
+						throw new Exception("Member access expressions require the right-hand operand to be an identifier");
+
+					string identifier = identifierExpression.Identifier;
+
+					return FieldAccessExpression.Construct(subjectExpression, identifier);
+				}
+
 				var left = TranslateExpression(binaryExpression.Left, mapper);
 				var right = TranslateExpression(binaryExpression.Right, mapper);
 

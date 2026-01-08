@@ -5,7 +5,7 @@ namespace QBX.ExecutionEngine.Compiled;
 public class UserDataType(string name)
 {
 	public string Name { get; } = name;
-	public List<UserDataTypeMember> Members { get; } = new List<UserDataTypeMember>();
+	public List<UserDataTypeField> Fields { get; } = new List<UserDataTypeField>();
 
 	public CodeModel.Statements.TypeStatement? Statement { get; }
 
@@ -14,4 +14,6 @@ public class UserDataType(string name)
 	{
 		Statement = typeStatement;
 	}
+
+	public override string ToString() => "TYPE " + Name;
 }

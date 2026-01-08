@@ -2,8 +2,8 @@
 
 public class ArraySubscript
 {
-	public int LowerBound;
-	public int UpperBound;
+	public short LowerBound;
+	public short UpperBound;
 
 	public int ElementCount => UpperBound - LowerBound + 1;
 }

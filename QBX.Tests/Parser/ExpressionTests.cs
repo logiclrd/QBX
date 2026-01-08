@@ -381,7 +381,7 @@ public class ExpressionTests
 
 		var binaryResult = (BinaryExpression)result;
 
-		binaryResult.Operator.Should().Be(Operator.Member);
+		binaryResult.Operator.Should().Be(Operator.Field);
 
 		binaryResult.Left.Should().BeOfType<IdentifierExpression>()
 			.Which.Identifier.Should().Be("struct");
@@ -412,13 +412,13 @@ public class ExpressionTests
 
 		var binaryResult = (BinaryExpression)result;
 
-		binaryResult.Operator.Should().Be(Operator.Member);
+		binaryResult.Operator.Should().Be(Operator.Field);
 
 		binaryResult.Left.Should().BeOfType<BinaryExpression>();
 
 		var subBinaryResult = (BinaryExpression)binaryResult.Left;
 
-		subBinaryResult.Operator.Should().Be(Operator.Member);
+		subBinaryResult.Operator.Should().Be(Operator.Field);
 
 		subBinaryResult.Left.Should().BeOfType<IdentifierExpression>()
 			.Which.Identifier.Should().Be("struct");
@@ -457,7 +457,7 @@ public class ExpressionTests
 
 		var binaryResult = (BinaryExpression)indexResult.Subject;
 
-		binaryResult.Operator.Should().Be(Operator.Member);
+		binaryResult.Operator.Should().Be(Operator.Field);
 	}
 
 	[Test]
@@ -484,7 +484,7 @@ public class ExpressionTests
 
 		var binaryResult = (BinaryExpression)result;
 
-		binaryResult.Operator.Should().Be(Operator.Member);
+		binaryResult.Operator.Should().Be(Operator.Field);
 
 		binaryResult.Left.Should().BeOfType<CallOrIndexExpression>();
 
@@ -527,7 +527,7 @@ public class ExpressionTests
 
 		var subBinaryResult = (BinaryExpression)binaryResult.Left;
 
-		subBinaryResult.Operator.Should().Be(Operator.Member);
+		subBinaryResult.Operator.Should().Be(Operator.Field);
 
 		subBinaryResult.Left.Should().BeOfType<IdentifierExpression>()
 			.Which.Identifier.Should().Be("struct");

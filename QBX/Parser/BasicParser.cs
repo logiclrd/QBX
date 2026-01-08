@@ -771,12 +771,38 @@ public class BasicParser
 			}
 
 			case TokenType.DIM:
+			case TokenType.REDIM:
 			{
-				var dim = new DimStatement();
+				DimStatement dim;
 
 				tokenHandler.ExpectMoreTokens();
 
-				if (tokenHandler.NextToken.Type == TokenType.SHARED)
+				bool requireSubscripts = false;
+
+				switch (token.Type)
+				{
+					case TokenType.DIM: dim = new DimStatement(); break;
+					case TokenType.REDIM:
+					{
+						requireSubscripts = true;
+
+						var redim = new RedimStatement();
+
+						if (tokenHandler.NextTokenIs(TokenType.PRESERVE))
+						{
+							redim.Preserve = true;
+							tokenHandler.Advance();
+						}
+
+						dim = redim;
+
+						break;
+					}
+
+					default: throw new Exception("Internal error");
+				}
+
+				if (tokenHandler.NextTokenIs(TokenType.SHARED))
 				{
 					dim.Shared = true;
 					tokenHandler.Advance();
@@ -785,7 +811,7 @@ public class BasicParser
 				var endTokenRef = new TokenRef();
 
 				foreach (var range in SplitCommaDelimitedList(tokenHandler.RemainingTokens, endTokenRef))
-					dim.Declarations.Add(ParseVariableDeclaration(range, endTokenRef.Token ?? tokenHandler.EndToken));
+					dim.Declarations.Add(ParseVariableDeclaration(range, endTokenRef.Token ?? tokenHandler.EndToken, requireSubscripts));
 
 				return dim;
 			}
@@ -2870,7 +2896,7 @@ public class BasicParser
 		yield return tokens.Slice(itemStart);
 	}
 
-	VariableDeclaration ParseVariableDeclaration(ListRange<Token> tokens, Token endToken)
+	VariableDeclaration ParseVariableDeclaration(ListRange<Token> tokens, Token endToken, bool requireSubscripts)
 	{
 		var tokenHandler = new TokenHandler(tokens);
 
@@ -2890,6 +2916,12 @@ public class BasicParser
 
 			foreach (var subscript in SplitCommaDelimitedList(subscriptTokens, endTokenRef))
 				declaration.Subscripts.Add(ParseVariableDeclarationSubscript(subscript, endTokenRef.Token ?? endToken));
+		}
+		else if (requireSubscripts)
+		{
+			throw new SyntaxErrorException(
+				tokenHandler.HasMoreTokens ? tokenHandler.NextToken : tokenHandler.EndToken,
+				"Expected: (");
 		}
 
 		if (tokenHandler.NextTokenIs(TokenType.AS))
@@ -3209,7 +3241,7 @@ public class BasicParser
 			var rightExpression = ParseExpression(tokens.Slice(lastOperatorIndex + 1), endToken);
 
 			if ((tokens[lastOperatorIndex].Type == TokenType.Period)
-			 && !leftExpression.IsValidMemberSubject())
+			 && !leftExpression.IsValidFieldSubject())
 				throw new SyntaxErrorException(tokens[lastOperatorIndex + 1], "Expected: identifier");
 
 			return new BinaryExpression(
@@ -3271,7 +3303,7 @@ public class BasicParser
 	{
 		switch (token.Type)
 		{
-			case TokenType.Period: op = Operator.Member; return true;
+			case TokenType.Period: op = Operator.Field; return true;
 
 			case TokenType.Plus: op = Operator.Add; return true;
 			case TokenType.Minus: op = Operator.Subtract; return true;

@@ -12,11 +12,11 @@ public class BinaryExpression : Expression
 	public Expression Right { get; set; }
 
 	public override bool IsValidAssignmentTarget()
-		=> Operator == Operator.Member;
+		=> Operator == Operator.Field;
 	public override bool IsValidIndexSubject()
-		=> Operator == Operator.Member;
-	public override bool IsValidMemberSubject()
-		=> Operator == Operator.Member;
+		=> Operator == Operator.Field;
+	public override bool IsValidFieldSubject()
+		=> Operator == Operator.Field;
 
 	public BinaryExpression(Expression left, Token operatorToken, Expression right)
 	{
@@ -27,7 +27,7 @@ public class BinaryExpression : Expression
 		Operator =
 			operatorToken.Type switch
 			{
-				TokenType.Period => Operator.Member,
+				TokenType.Period => Operator.Field,
 
 				TokenType.Plus => Operator.Add,
 				TokenType.Minus => Operator.Subtract,
@@ -58,7 +58,7 @@ public class BinaryExpression : Expression
 	{
 		Left.Render(writer);
 
-		if (Operator == Operator.Member)
+		if (Operator == Operator.Field)
 			writer.Write('.');
 		else
 		{

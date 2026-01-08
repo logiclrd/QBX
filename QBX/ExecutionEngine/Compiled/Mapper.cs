@@ -41,6 +41,16 @@ public class Mapper
 		_constantValueByName = new Dictionary<string, LiteralValue>(root._constantValueByName);
 	}
 
+	public void MakeGlobalVariable(string identifier)
+	{
+		if (_root != null)
+			throw new Exception("Can only make global variables working with the root Mapper");
+
+		identifier = QualifyIdentifier(identifier);
+
+		_globalVariableNames.Add(identifier);
+	}
+
 	public void LinkGlobalVariables()
 	{
 		if (_root == null)
@@ -109,12 +119,12 @@ public class Mapper
 		}
 	}
 
-	public string QualifyIdentifier(string name)
-	{
-		if (CodeModel.TypeCharacter.TryParse(name.Last(), out var typeCharacter))
-			return name;
+	public DataType GetVariableType(int variableIndex)
+		=> _variables[variableIndex].Type;
 
-		switch (GetTypeForIdentifier(name))
+	public string QualifyIdentifier(string name, PrimitiveDataType type)
+	{
+		switch (type)
 		{
 			case PrimitiveDataType.Integer: return name + '%';
 			case PrimitiveDataType.Long: return name + '&';
@@ -125,6 +135,22 @@ public class Mapper
 		}
 
 		throw new Exception("Internal error");
+	}
+
+	public string QualifyIdentifier(string name, DataType type)
+	{
+		if (type.IsUserType)
+			return name;
+
+		return QualifyIdentifier(name, type.PrimitiveType);
+	}
+
+	public string QualifyIdentifier(string name)
+	{
+		if (CodeModel.TypeCharacter.TryParse(name.Last(), out var typeCharacter))
+			return name;
+
+		return QualifyIdentifier(name, GetTypeForIdentifier(name));
 	}
 
 	public Mapper CreateScope()
@@ -167,7 +193,7 @@ public class Mapper
 
 	public int DeclareVariable(string name, DataType dataType)
 	{
-		name = QualifyIdentifier(name);
+		name = QualifyIdentifier(name, dataType);
 
 		if (_constantValueByName.TryGetValue(name, out _))
 			throw CompilerException.DuplicateDefinition(default(Token));
@@ -187,12 +213,17 @@ public class Mapper
 
 	public int ResolveVariable(string name)
 	{
+		int index;
+
+		if (_variableIndexByName.TryGetValue(name, out index))
+			return index;
+
 		name = QualifyIdentifier(name);
 
-		if (_variableIndexByName.TryGetValue(name, out var index))
+		if (_variableIndexByName.TryGetValue(name, out index))
 			return index;
-		else
-			return DeclareVariable(name, DataType.ForPrimitiveDataType(GetTypeForIdentifier(name)));
+
+		return DeclareVariable(name, DataType.ForPrimitiveDataType(GetTypeForIdentifier(name)));
 	}
 
 	public List<DataType> GetVariableTypes() =>

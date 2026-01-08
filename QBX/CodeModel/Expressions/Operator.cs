@@ -2,7 +2,7 @@
 
 public enum Operator
 {
-	[Precedence(0)] Member,
+	[Precedence(0)] Field,
 
 	[Precedence(1)] Negate, // unary
 
