@@ -20,7 +20,7 @@ public class ElseIfStatementTests
 		var sut = new BasicParser();
 
 		// Act
-		var result = sut.ParseStatement(tokens);
+		var result = sut.ParseStatement(tokens, ignoreErrors: false);
 
 		// Assert
 		result.Should().BeOfType<ElseIfStatement>();

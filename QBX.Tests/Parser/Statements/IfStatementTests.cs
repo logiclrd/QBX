@@ -20,7 +20,7 @@ public class IfStatementTests
 		var sut = new BasicParser();
 
 		// Act
-		var result = sut.ParseStatement(tokens);
+		var result = sut.ParseStatement(tokens, ignoreErrors: false);
 
 		// Assert
 		result.Should().BeOfType<IfStatement>();
@@ -46,7 +46,7 @@ public class IfStatementTests
 		var sut = new BasicParser();
 
 		// Act
-		var result = sut.ParseStatement(tokens);
+		var result = sut.ParseStatement(tokens, ignoreErrors: false);
 
 		// Assert
 		result.Should().BeOfType<IfStatement>();
@@ -72,7 +72,7 @@ public class IfStatementTests
 		var sut = new BasicParser();
 
 		// Act
-		var result = sut.ParseStatement(tokens);
+		var result = sut.ParseStatement(tokens, ignoreErrors: false);
 
 		// Assert
 		result.Should().BeOfType<IfStatement>();
@@ -98,7 +98,7 @@ public class IfStatementTests
 		var sut = new BasicParser();
 
 		// Act
-		var result = sut.ParseStatement(tokens);
+		var result = sut.ParseStatement(tokens, ignoreErrors: false);
 
 		// Assert
 		result.Should().BeOfType<IfStatement>();
@@ -124,7 +124,7 @@ public class IfStatementTests
 		var sut = new BasicParser();
 
 		// Act
-		var result = sut.ParseStatement(tokens);
+		var result = sut.ParseStatement(tokens, ignoreErrors: false);
 
 		// Assert
 		result.Should().BeOfType<IfStatement>();
@@ -157,7 +157,7 @@ public class IfStatementTests
 		var sut = new BasicParser();
 
 		// Act
-		var result = sut.ParseStatement(tokens);
+		var result = sut.ParseStatement(tokens, ignoreErrors: false);
 
 		// Assert
 		result.Should().BeOfType<IfStatement>();
@@ -189,7 +189,7 @@ public class IfStatementTests
 		var sut = new BasicParser();
 
 		// Act
-		var result = sut.ParseStatement(tokens);
+		var result = sut.ParseStatement(tokens, ignoreErrors: false);
 
 		// Assert
 		result.Should().BeOfType<IfStatement>();
@@ -216,7 +216,7 @@ public class IfStatementTests
 		var sut = new BasicParser();
 
 		// Act
-		var result = sut.ParseStatement(tokens);
+		var result = sut.ParseStatement(tokens, ignoreErrors: false);
 
 		// Assert
 		result.Should().BeOfType<IfStatement>();

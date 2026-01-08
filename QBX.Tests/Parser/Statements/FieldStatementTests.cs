@@ -16,10 +16,10 @@ public class FieldStatementTests
 		2, // count
 		typeof(IdentifierExpression), "fn%", // file number
 		typeof(IdentifierExpression), "f1len%", // field 1 width
-		typeof(BinaryExpression), "")] // field 1 target
+		typeof(BinaryExpression), ".")] // field 1 target
 	[TestCase("FIELD #a% + b%, 12 AS filename$, 7 AS filetime$, 10 AS filedate$, 1 AS filereadonly$",
 		4, // count
-		typeof(BinaryExpression), "", // file number
+		typeof(BinaryExpression), "+", // file number
 		typeof(LiteralExpression), "12", // field 1 width
 		typeof(IdentifierExpression), "filename$")] // field 1 target
 	public void ShouldParse(string statement,
@@ -36,7 +36,7 @@ public class FieldStatementTests
 		var sut = new BasicParser();
 
 		// Act
-		var result = sut.ParseStatement(tokens);
+		var result = sut.ParseStatement(tokens, ignoreErrors: false);
 
 		// Assert
 		result.Should().BeOfType<FieldStatement>();

@@ -18,13 +18,13 @@ public class GraphicsViewportStatementTests
 		typeof(LiteralExpression), "3",
 		typeof(LiteralExpression), "4",
 		null, "", null, "")]
-	[TestCase("VIEW SCREEN (a, b)-(c + d, e(f)), g(h) + i, 3",
+	[TestCase("VIEW SCREEN (a, b)-(c * d, e(f)), g(h) + i, 3",
 		true,
 		typeof(IdentifierExpression), "a",
 		typeof(IdentifierExpression), "b",
-		typeof(BinaryExpression), "",
-		typeof(CallOrIndexExpression), "",
-		typeof(BinaryExpression), "",
+		typeof(BinaryExpression), "*",
+		typeof(CallOrIndexExpression), "(",
+		typeof(BinaryExpression), "+",
 		typeof(LiteralExpression), "3")]
 	public void ShouldParse(
 		string statement,
@@ -44,7 +44,7 @@ public class GraphicsViewportStatementTests
 		var sut = new BasicParser();
 
 		// Act
-		var result = sut.ParseStatement(tokens);
+		var result = sut.ParseStatement(tokens, ignoreErrors: false);
 
 		// Assert
 		result.Should().BeOfType<GraphicsViewportStatement>();

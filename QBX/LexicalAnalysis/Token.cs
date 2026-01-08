@@ -12,31 +12,13 @@ namespace QBX.LexicalAnalysis;
 public class Token(int line, int column, TokenType type, string value, DataType dataType = default)
 {
 	public TokenType Type => type;
-	public string? Value => value;
+	public string Value => value;
 	public DataType DataType => dataType;
 
 	public int Line => line;
 	public int Column => column;
 
-	public int Length
-	{
-		get
-		{
-			if (Value != null)
-				return Value.Length;
-
-			if (s_characterTokenTypes.Contains(Type))
-				return 1;
-
-			if (Type == TokenType.Empty)
-				return 0;
-
-			if (s_tokenValues.TryGetValue(Type, out var value))
-				return value.Length;
-
-			throw new Exception("Internal error");
-		}
-	}
+	public int Length => value.Length;
 
 	public bool IsDataType => DataTypeConverter.TryFromToken(this, out var _);
 
@@ -64,7 +46,7 @@ public class Token(int line, int column, TokenType type, string value, DataType 
 		}
 	}
 
-	Token Emplace(int newLine, int newColumn) => new Token(newLine, newColumn, type, value, dataType);
+	Token Emplace(int newLine, int newColumn, string? newValue = null) => new Token(newLine, newColumn, type, newValue ?? value, dataType);
 
 	public override string ToString()
 	{
@@ -84,7 +66,8 @@ public class Token(int line, int column, TokenType type, string value, DataType 
 		typeof(TokenType).GetFields(BindingFlags.Public | BindingFlags.Static)
 		.Select(f => (TokenType: (TokenType)f.GetValue(null)!, Keyword: f.GetCustomAttribute<KeywordTokenAttribute>()))
 		.Where(f => f.Keyword != null)
-		.ToDictionary(key => key.Keyword!.Keyword ?? key.TokenType.ToString(), value => new Token(0, 0, value.TokenType, value.Keyword?.Keyword ?? value.TokenType.ToString()), StringComparer.OrdinalIgnoreCase);
+		.Select(f => (Keyword: f.Keyword!.Keyword ?? f.TokenType.ToString(), Field: f))
+		.ToDictionary(key => key.Keyword, value => new Token(0, 0, value.Field.TokenType, value.Keyword), StringComparer.OrdinalIgnoreCase);
 
 	static Dictionary<TokenType, string> s_keywordByTokenType =
 		typeof(TokenType).GetFields(BindingFlags.Public | BindingFlags.Static)
@@ -106,34 +89,16 @@ public class Token(int line, int column, TokenType type, string value, DataType 
 		.Select(f => f.TokenType)
 		.ToHashSet();
 
-	static Dictionary<TokenType, string> s_tokenValues =
-		typeof(TokenType).GetFields(BindingFlags.Public | BindingFlags.Static)
-		.Select(f => (TokenType: (TokenType)f.GetValue(null)!, Keyword: f.GetCustomAttribute<KeywordTokenAttribute>()))
-		.Where(f => f.Keyword != null)
-		.Select(f => (TokenType: f.TokenType, Value: f.Keyword!.Keyword ?? f.TokenType.ToString()))
-		.Concat(
-			typeof(TokenType).GetFields(BindingFlags.Public | BindingFlags.Static)
-			.Select(f => (TokenType: (TokenType)f.GetValue(null)!, ValueAttribute: f.GetCustomAttribute<TokenValueAttribute>()))
-			.Where(f => f.ValueAttribute != null)
-			.Select(f => (TokenType: f.TokenType, Value: f.ValueAttribute!.Value)))
-		.ToDictionary(key => key.TokenType, value => value.Value);
-
 	static Dictionary<char, Token> s_characterTokens =
 		typeof(TokenType).GetFields(BindingFlags.Public | BindingFlags.Static)
 		.Select(f => (TokenType: (TokenType)f.GetValue(null)!, TokenCharacter: f.GetCustomAttribute<TokenCharacterAttribute>()))
 		.Where(f => f.TokenCharacter != null)
-		.ToDictionary(key => key.TokenCharacter!.Character, value => new Token(0, 0, value.TokenType, ""));
+		.Select(f => (TokenCharacter: f.TokenCharacter!.Character, Field: f))
+		.ToDictionary(key => key.TokenCharacter, value => new Token(0, 0, value.Field.TokenType, value.TokenCharacter.ToString()));
 
-	static HashSet<TokenType> s_characterTokenTypes =
-		typeof(TokenType).GetFields(BindingFlags.Public | BindingFlags.Static)
-		.Select(f => (TokenType: (TokenType)f.GetValue(null)!, TokenCharacter: f.GetCustomAttribute<TokenCharacterAttribute>()))
-		.Where(f => f.TokenCharacter != null)
-		.Select(value => value.TokenType)
-		.ToHashSet();
+	public static Token GetStatic(int line, int column, string sourceText, TokenType type) => new Token(line, column, type, value: sourceText);
 
-	public static Token GetStatic(int line, int column, TokenType type) => new Token(line, column, type, "");
-
-	public static Token ForKeyword(int line, int column, string keyword) => s_keywordTokens[keyword].Emplace(line, column);
+	public static Token ForKeyword(int line, int column, string keyword) => s_keywordTokens[keyword].Emplace(line, column, keyword);
 
 	public static bool TryForKeyword(int line, int column, string keyword, [NotNullWhen(true)] out Token? token)
 	{

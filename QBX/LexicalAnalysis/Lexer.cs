@@ -106,6 +106,9 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 						else
 							throw new Exception("Couldn't parse file: Unexpected character '" + ch + "'");
 
+						// TODO: some sort of "ignore errors" mode to allow a .BAS file with
+						//       an invalid token stream to be loaded
+
 						buffer.Append(ch);
 
 						break;
@@ -361,12 +364,12 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 						{
 							switch (buffer[0])
 							{
-								case '<': yield return Token.GetStatic(line, tokenStartColumn, TokenType.LessThanOrEquals); break;
-								case '>': yield return Token.GetStatic(line, tokenStartColumn, TokenType.GreaterThanOrEquals); break;
+								case '<': yield return Token.GetStatic(line, tokenStartColumn, "<=", TokenType.LessThanOrEquals); break;
+								case '>': yield return Token.GetStatic(line, tokenStartColumn, ">=", TokenType.GreaterThanOrEquals); break;
 							}
 						}
 						else if (ch == '>')
-							yield return Token.GetStatic(line, tokenStartColumn, TokenType.NotEquals);
+							yield return Token.GetStatic(line, tokenStartColumn, "<>", TokenType.NotEquals);
 						else
 						{
 							yield return Token.ForCharacter(line, tokenStartColumn, buffer[0]);

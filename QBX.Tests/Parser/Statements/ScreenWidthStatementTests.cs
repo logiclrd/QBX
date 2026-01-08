@@ -20,7 +20,7 @@ public class WidthStatementTests
 		var sut = new BasicParser();
 
 		// Act
-		var result = sut.ParseStatement(tokens);
+		var result = sut.ParseStatement(tokens, ignoreErrors: false);
 
 		// Assert
 		if (result is UnresolvedWidthStatement unresolved)

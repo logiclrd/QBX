@@ -24,7 +24,7 @@ public class LineStatementTests
 		false, // to step
 		typeof(LiteralExpression), "3", // x
 		typeof(LiteralExpression), "4", // y
-		typeof(CallOrIndexExpression), "", // colour
+		typeof(CallOrIndexExpression), "(", // colour
 		LineDrawStyle.Line,
 		null, "")] // style
 	[TestCase("LINE (1, 2)-STEP(x%, y%), , B",
@@ -39,8 +39,8 @@ public class LineStatementTests
 		null, "")] // style
 	[TestCase("LINE STEP(a% + b%, -d%)-STEP(x%, y%), , BF, 13",
 		true, // from step
-		typeof(BinaryExpression), "", // x
-		typeof(UnaryExpression), "", // y
+		typeof(BinaryExpression), "+", // x
+		typeof(UnaryExpression), "-", // y
 		true, // to step
 		typeof(IdentifierExpression), "x%", // x
 		typeof(IdentifierExpression), "y%", // y
@@ -66,7 +66,7 @@ public class LineStatementTests
 		var sut = new BasicParser();
 
 		// Act
-		var result = sut.ParseStatement(tokens);
+		var result = sut.ParseStatement(tokens, ignoreErrors: false);
 
 		// Assert
 		result.Should().BeOfType<LineStatement>();

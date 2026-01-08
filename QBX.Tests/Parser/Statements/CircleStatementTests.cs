@@ -65,9 +65,9 @@ public class CircleStatementTests
 		true, // step
 		typeof(IdentifierExpression), "x%", // x
 		typeof(IdentifierExpression), "y%", // y
-		typeof(BinaryExpression), "", // radius
+		typeof(BinaryExpression), "+", // radius
 		typeof(IdentifierExpression), "c%", // colour
-		typeof(CallOrIndexExpression), "", // start
+		typeof(CallOrIndexExpression), "(", // start
 		typeof(LiteralExpression), "6.2831", // end
 		typeof(IdentifierExpression), "aspect!")] // aspect
 	public void ShouldParse(string statement,
@@ -88,7 +88,7 @@ public class CircleStatementTests
 		var sut = new BasicParser();
 
 		// Act
-		var result = sut.ParseStatement(tokens);
+		var result = sut.ParseStatement(tokens, ignoreErrors: false);
 
 		// Assert
 		result.Should().BeOfType<CircleStatement>();

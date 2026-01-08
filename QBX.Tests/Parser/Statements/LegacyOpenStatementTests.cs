@@ -23,13 +23,13 @@ public class LegacyOpenStatementTests
 		"OPEN mode$, #fn%, basename$ + \".TXT\"",
 		typeof(IdentifierExpression), "mode$",
 		typeof(IdentifierExpression), "fn%",
-		typeof(BinaryExpression), "",
+		typeof(BinaryExpression), "+",
 		null, "")]
 	[TestCase(
 		"OPEN mode$, #fn%, basename$ + \".TXT\", 128",
 		typeof(IdentifierExpression), "mode$",
 		typeof(IdentifierExpression), "fn%",
-		typeof(BinaryExpression), "",
+		typeof(BinaryExpression), "+",
 		typeof(LiteralExpression), "128")]
 	public void ShouldParse(
 		string statement,
@@ -46,7 +46,7 @@ public class LegacyOpenStatementTests
 		var sut = new BasicParser();
 
 		// Act
-		var result = sut.ParseStatement(tokens);
+		var result = sut.ParseStatement(tokens, ignoreErrors: false);
 
 		// Assert
 		result.Should().BeOfType<LegacyOpenStatement>();

@@ -11,7 +11,7 @@ namespace QBX.Parser;
 
 public class BasicParser
 {
-	public CompilationUnit Parse(IEnumerable<Token> tokenStream)
+	public CompilationUnit Parse(IEnumerable<Token> tokenStream, bool ignoreErrors = false)
 	{
 		var unit = new CompilationUnit();
 
@@ -26,7 +26,7 @@ public class BasicParser
 
 		var prelude = new List<CodeLine>();
 
-		foreach (var line in ParseCodeLines(tokenStream))
+		foreach (var line in ParseCodeLines(tokenStream, ignoreErrors))
 		{
 			if (((element == mainElement) || betweenElements)
 			 && (line.IsCommentLine || line.IsDefTypeLine))
@@ -98,7 +98,7 @@ public class BasicParser
 		return unit;
 	}
 
-	internal IEnumerable<CodeLine> ParseCodeLines(IEnumerable<Token> tokenStream)
+	internal IEnumerable<CodeLine> ParseCodeLines(IEnumerable<Token> tokenStream, bool ignoreErrors = false)
 	{
 		var enumerator = tokenStream.GetEnumerator();
 		bool tokenPeeked = false;
@@ -129,7 +129,7 @@ public class BasicParser
 				if ((line.EndOfLineComment == null) && !lineConsumed)
 				{
 					line.Statements.Add(
-						ParseStatementWithIndentation(buffer, isNested: false, token));
+						ParseStatementWithIndentation(buffer, isNested: false, token, ignoreErrors));
 				}
 
 				buffer.Clear();
@@ -209,7 +209,7 @@ public class BasicParser
 						}
 
 						line.Statements.Add(
-							ParseStatementWithIndentation(buffer, ConsumeTokensToEndOfLine, isNested: false, precedingWhitespaceToken ?? token));
+							ParseStatementWithIndentation(buffer, ConsumeTokensToEndOfLine, isNested: false, precedingWhitespaceToken ?? token, ignoreErrors));
 						buffer.Clear();
 					}
 
@@ -221,7 +221,7 @@ public class BasicParser
 				{
 					if (buffer.Any() || line.Statements.Any())
 					{
-						line.Statements.Add(ParseStatementWithIndentation(buffer, precedingWhitespaceToken ?? token));
+						line.Statements.Add(ParseStatementWithIndentation(buffer, precedingWhitespaceToken ?? token, ignoreErrors));
 						buffer.Clear();
 					}
 
@@ -268,24 +268,24 @@ public class BasicParser
 				TokenType.Empty,
 				"");
 
-			line.Statements.Add(ParseStatementWithIndentation(buffer, isNested: false, endToken));
+			line.Statements.Add(ParseStatementWithIndentation(buffer, isNested: false, endToken, ignoreErrors));
 		}
 
 		if (!line.IsEmpty)
 			yield return line;
 	}
 
-	internal Statement ParseStatementWithIndentation(ListRange<Token> tokens, Token endToken)
+	internal Statement ParseStatementWithIndentation(ListRange<Token> tokens, Token endToken, bool ignoreErrors = false)
 	{
-		return ParseStatementWithIndentation(tokens, consumeTokensToEndOfLine: () => Array.Empty<Token>(), isNested: false, endToken);
+		return ParseStatementWithIndentation(tokens, consumeTokensToEndOfLine: () => Array.Empty<Token>(), isNested: false, endToken, ignoreErrors);
 	}
 
-	internal Statement ParseStatementWithIndentation(ListRange<Token> tokens, bool isNested, Token endToken)
+	internal Statement ParseStatementWithIndentation(ListRange<Token> tokens, bool isNested, Token endToken, bool ignoreErrors)
 	{
-		return ParseStatementWithIndentation(tokens, consumeTokensToEndOfLine: () => Array.Empty<Token>(), isNested, endToken);
+		return ParseStatementWithIndentation(tokens, consumeTokensToEndOfLine: () => Array.Empty<Token>(), isNested, endToken, ignoreErrors);
 	}
 
-	internal Statement ParseStatementWithIndentation(ListRange<Token> tokens, Func<IEnumerable<Token>> consumeTokensToEndOfLine, bool isNested, Token endToken)
+	internal Statement ParseStatementWithIndentation(ListRange<Token> tokens, Func<IEnumerable<Token>> consumeTokensToEndOfLine, bool isNested, Token endToken, bool ignoreErrors)
 	{
 		var indentation = "";
 
@@ -295,32 +295,39 @@ public class BasicParser
 			tokens = tokens.Slice(1);
 		}
 
-		var statement = ParseStatement(tokens, consumeTokensToEndOfLine, isNested);
+		try
+		{
+			var statement = ParseStatement(tokens, consumeTokensToEndOfLine, isNested, ignoreErrors);
 
-		statement.Indentation = indentation;
+			statement.Indentation = indentation;
 
-		int lastTokenIndex = tokens.Count - 1;
+			int lastTokenIndex = tokens.Count - 1;
 
-		while ((lastTokenIndex >= 0) && tokens[lastTokenIndex].Type == TokenType.Whitespace)
-			lastTokenIndex--;
+			while ((lastTokenIndex >= 0) && tokens[lastTokenIndex].Type == TokenType.Whitespace)
+				lastTokenIndex--;
 
-		statement.FirstToken = tokens.Any() ? tokens[0] : endToken;
-		statement.SourceLength = tokens.Take(lastTokenIndex).Sum(token => token.Length);
+			statement.FirstToken = tokens.Any() ? tokens[0] : endToken;
+			statement.SourceLength = tokens.Take(lastTokenIndex).Sum(token => token.Length);
 
-		return statement;
+			return statement;
+		}
+		catch when (ignoreErrors)
+		{
+			return new UnparsedStatement(indentation, tokens);
+		}
 	}
 
-	internal Statement ParseStatement(ListRange<Token> tokens)
+	internal Statement ParseStatement(ListRange<Token> tokens, bool ignoreErrors)
 	{
-		return ParseStatement(tokens, consumeTokensToEndOfLine: () => Array.Empty<Token>(), isNested: false);
+		return ParseStatement(tokens, consumeTokensToEndOfLine: () => Array.Empty<Token>(), isNested: false, ignoreErrors);
 	}
 
-	internal Statement ParseStatement(ListRange<Token> tokens, bool isNested)
+	internal Statement ParseStatement(ListRange<Token> tokens, bool isNested, bool ignoreErrors)
 	{
-		return ParseStatement(tokens, consumeTokensToEndOfLine: () => Array.Empty<Token>(), isNested);
+		return ParseStatement(tokens, consumeTokensToEndOfLine: () => Array.Empty<Token>(), isNested, ignoreErrors);
 	}
 
-	internal Statement ParseStatement(ListRange<Token> tokens, Func<IEnumerable<Token>> consumeTokensToEndOfLine, bool isNested)
+	internal Statement ParseStatement(ListRange<Token> tokens, Func<IEnumerable<Token>> consumeTokensToEndOfLine, bool isNested, bool ignoreErrors)
 	{
 		if (!tokens.Any(token => token.Type != TokenType.Whitespace))
 			return new EmptyStatement();
@@ -1080,7 +1087,7 @@ public class BasicParser
 
 					void DoParseStatement(List<Statement> list, ListRange<Token> tokens, bool isNested, Token endToken)
 					{
-						var statement = ParseStatementWithIndentation(tokens, isNested, endToken);
+						var statement = ParseStatementWithIndentation(tokens, isNested, endToken, ignoreErrors);
 
 						if (list.Count == 0)
 							statement.Indentation = "";
@@ -1639,7 +1646,7 @@ public class BasicParser
 
 				tokenHandler.Advance();
 
-				var action = ParseStatement(tokenHandler.RemainingTokens);
+				var action = ParseStatement(tokenHandler.RemainingTokens, ignoreErrors);
 
 				if (action is GoSubStatement goSubAction)
 					on.Action = goSubAction;
@@ -3222,7 +3229,7 @@ public class BasicParser
 						tokens[0].Line,
 						tokens[0].Column,
 						tokens[1].Type,
-						"-" + tokens[1].Value,
+						tokens[0].Value + tokens[1].Value,
 						tokens[1].DataType));
 			}
 

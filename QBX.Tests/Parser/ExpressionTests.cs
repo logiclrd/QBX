@@ -15,6 +15,8 @@ public class ExpressionTests
 
 		foreach (var tokenData in tokens)
 		{
+			Assume.That(tokenData.Value != "");
+
 			var token = new Token(line, column, tokenData.Type, tokenData.Value);
 
 			list.Add(token);
@@ -77,7 +79,7 @@ public class ExpressionTests
 	{
 		// Arrange
 		ListRange<Token> tokens = Tokens(
-			(TokenType.Minus, ""),
+			(TokenType.Minus, "-"),
 			(TokenType.Number, "1"));
 
 		var endToken = MakeEndToken(tokens);
@@ -101,7 +103,7 @@ public class ExpressionTests
 	{
 		// Arrange
 		var tokens = Tokens(
-			(TokenType.TIMER, ""));
+			(TokenType.TIMER, "TIMER"));
 
 		var endToken = MakeEndToken(tokens);
 
@@ -124,10 +126,10 @@ public class ExpressionTests
 	{
 		// Arrange
 		var tokens = Tokens(
-			(TokenType.SIN, ""),
-			(TokenType.OpenParenthesis, ""),
+			(TokenType.SIN, "SIN"),
+			(TokenType.OpenParenthesis, "("),
 			(TokenType.Number, "0"),
-			(TokenType.CloseParenthesis, ""));
+			(TokenType.CloseParenthesis, ")"));
 
 		var endToken = MakeEndToken(tokens);
 
@@ -156,11 +158,11 @@ public class ExpressionTests
 
 		var tokens = Tokens(
 			(TokenType.Identifier, TargetName),
-			(TokenType.OpenParenthesis, ""),
+			(TokenType.OpenParenthesis, "("),
 			(TokenType.Number, Argument1),
-			(TokenType.Comma, ""),
+			(TokenType.Comma, ","),
 			(TokenType.Number, Argument2),
-			(TokenType.CloseParenthesis, ""));
+			(TokenType.CloseParenthesis, ")"));
 
 		var endToken = MakeEndToken(tokens);
 
@@ -183,30 +185,30 @@ public class ExpressionTests
 			.Which.Token!.Value.Should().Be(Argument2);
 	}
 
-	[TestCase(TokenType.Plus, Operator.Add)]
-	[TestCase(TokenType.Minus, Operator.Subtract)]
-	[TestCase(TokenType.Asterisk, Operator.Multiply)]
-	[TestCase(TokenType.Slash, Operator.Divide)]
-	[TestCase(TokenType.Caret, Operator.Exponentiate)]
-	[TestCase(TokenType.Backslash,  Operator.IntegerDivide)]
-	[TestCase(TokenType.MOD, Operator.Modulo)]
-	[TestCase(TokenType.Equals, Operator.Equals)]
-	[TestCase(TokenType.NotEquals,  Operator.NotEquals)]
-	[TestCase(TokenType.LessThan, Operator.LessThan)]
-	[TestCase(TokenType.LessThanOrEquals, Operator.LessThanOrEquals)]
-	[TestCase(TokenType.GreaterThan, Operator.GreaterThan)]
-	[TestCase(TokenType.GreaterThanOrEquals, Operator.GreaterThanOrEquals)]
-	[TestCase(TokenType.AND, Operator.And)]
-	[TestCase(TokenType.OR, Operator.Or)]
-	[TestCase(TokenType.XOR, Operator.ExclusiveOr)]
-	[TestCase(TokenType.EQV, Operator.Equivalent)]
-	[TestCase(TokenType.IMP, Operator.Implies)]
-	public void BinaryExpressions(TokenType operatorTokenType, Operator expectedOperator)
+	[TestCase(TokenType.Plus, "+", Operator.Add)]
+	[TestCase(TokenType.Minus, "-", Operator.Subtract)]
+	[TestCase(TokenType.Asterisk, "*", Operator.Multiply)]
+	[TestCase(TokenType.Slash, "/", Operator.Divide)]
+	[TestCase(TokenType.Caret, "^", Operator.Exponentiate)]
+	[TestCase(TokenType.Backslash, "\\", Operator.IntegerDivide)]
+	[TestCase(TokenType.MOD, "MOD", Operator.Modulo)]
+	[TestCase(TokenType.Equals, "=", Operator.Equals)]
+	[TestCase(TokenType.NotEquals, "<>", Operator.NotEquals)]
+	[TestCase(TokenType.LessThan, "<", Operator.LessThan)]
+	[TestCase(TokenType.LessThanOrEquals, "<=", Operator.LessThanOrEquals)]
+	[TestCase(TokenType.GreaterThan, ">", Operator.GreaterThan)]
+	[TestCase(TokenType.GreaterThanOrEquals, ">=", Operator.GreaterThanOrEquals)]
+	[TestCase(TokenType.AND, "AND", Operator.And)]
+	[TestCase(TokenType.OR, "OR", Operator.Or)]
+	[TestCase(TokenType.XOR, "XOR", Operator.ExclusiveOr)]
+	[TestCase(TokenType.EQV, "EQV", Operator.Equivalent)]
+	[TestCase(TokenType.IMP, "IMP", Operator.Implies)]
+	public void BinaryExpressions(TokenType operatorTokenType, string operatorSourceText, Operator expectedOperator)
 	{
 		// Arrange
 		var tokens = Tokens(
 			(TokenType.Number, "0"),
-			(operatorTokenType, ""),
+			(operatorTokenType, operatorSourceText),
 			(TokenType.Number, "1"));
 
 		var endToken = MakeEndToken(tokens);
@@ -221,13 +223,13 @@ public class ExpressionTests
 			.Which.Operator.Should().Be(expectedOperator);
 	}
 
-	[TestCase(TokenType.Minus, Operator.Negate)]
-	[TestCase(TokenType.NOT, Operator.Not)]
-	public void UnaryExpressions(TokenType operatorTokenType, Operator expectedOperator)
+	[TestCase(TokenType.Minus, "-", Operator.Negate)]
+	[TestCase(TokenType.NOT, "NOT", Operator.Not)]
+	public void UnaryExpressions(TokenType operatorTokenType, string operatorSourceText, Operator expectedOperator)
 	{
 		// Arrange
 		var tokens = Tokens(
-			(operatorTokenType, ""),
+			(operatorTokenType, operatorSourceText),
 			(TokenType.Identifier, "a"));
 
 		var endToken = MakeEndToken(tokens);
@@ -247,7 +249,7 @@ public class ExpressionTests
 	{
 		// Arrange
 		var tokens = Tokens(
-			(TokenType.Plus, ""),
+			(TokenType.Plus, "+"),
 			(TokenType.Identifier, "a"));
 
 		var endToken = MakeEndToken(tokens);
@@ -267,9 +269,9 @@ public class ExpressionTests
 	{
 		// Arrange
 		var tokens = Tokens(
-			(TokenType.OpenParenthesis, ""),
+			(TokenType.OpenParenthesis, "("),
 			(TokenType.Number, "0"),
-			(TokenType.CloseParenthesis, ""));
+			(TokenType.CloseParenthesis, ")"));
 
 		var endToken = MakeEndToken(tokens);
 
@@ -289,9 +291,9 @@ public class ExpressionTests
 		// Arrange
 		var tokens = Tokens(
 			(TokenType.Number, "1"),
-			(TokenType.Minus, ""),
+			(TokenType.Minus, "-"),
 			(TokenType.Number, "2"),
-			(TokenType.Minus, ""),
+			(TokenType.Minus, "-"),
 			(TokenType.Number, "3"));
 
 		var endToken = MakeEndToken(tokens);
@@ -316,24 +318,24 @@ public class ExpressionTests
 			.Which.Token!.Value.Should().Be("3");
 	}
 
-	[TestCase(TokenType.Asterisk, TokenType.Plus, Operator.Multiply, Operator.Add)]
-	[TestCase(TokenType.Plus, TokenType.Asterisk, Operator.Multiply, Operator.Add)]
-	[TestCase(TokenType.Asterisk, TokenType.Minus, Operator.Multiply, Operator.Subtract)]
-	[TestCase(TokenType.Minus, TokenType.Asterisk, Operator.Multiply, Operator.Subtract)]
-	[TestCase(TokenType.Slash, TokenType.Minus, Operator.Divide, Operator.Subtract)]
-	[TestCase(TokenType.Minus, TokenType.Slash, Operator.Divide, Operator.Subtract)]
-	[TestCase(TokenType.Caret, TokenType.Minus, Operator.Exponentiate, Operator.Subtract)]
-	[TestCase(TokenType.Minus, TokenType.Caret, Operator.Exponentiate, Operator.Subtract)]
-	[TestCase(TokenType.Caret, TokenType.Slash, Operator.Exponentiate, Operator.Divide)]
-	[TestCase(TokenType.Slash, TokenType.Caret, Operator.Exponentiate, Operator.Divide)]
-	public void Precedence(TokenType leftOperator, TokenType rightOperator, Operator expectedFirstOperator, Operator expectedSecondOperator)
+	[TestCase(TokenType.Asterisk, "*", TokenType.Plus, "+", Operator.Multiply, Operator.Add)]
+	[TestCase(TokenType.Plus, "+", TokenType.Asterisk, "*", Operator.Multiply, Operator.Add)]
+	[TestCase(TokenType.Asterisk, "*", TokenType.Minus, "-", Operator.Multiply, Operator.Subtract)]
+	[TestCase(TokenType.Minus, "-", TokenType.Asterisk, "*", Operator.Multiply, Operator.Subtract)]
+	[TestCase(TokenType.Slash, "/", TokenType.Minus, "-", Operator.Divide, Operator.Subtract)]
+	[TestCase(TokenType.Minus, "-", TokenType.Slash, "/", Operator.Divide, Operator.Subtract)]
+	[TestCase(TokenType.Caret, "^", TokenType.Minus, "-", Operator.Exponentiate, Operator.Subtract)]
+	[TestCase(TokenType.Minus, "-", TokenType.Caret, "^", Operator.Exponentiate, Operator.Subtract)]
+	[TestCase(TokenType.Caret, "^", TokenType.Slash, "/", Operator.Exponentiate, Operator.Divide)]
+	[TestCase(TokenType.Slash, "/", TokenType.Caret, "^", Operator.Exponentiate, Operator.Divide)]
+	public void Precedence(TokenType leftOperator, string leftOperatorSourceText, TokenType rightOperator, string rightOperatorSourceText,Operator expectedFirstOperator, Operator expectedSecondOperator)
 	{
 		// Arrange
 		var tokens = Tokens(
 			(TokenType.Number, "1"),
-			(leftOperator, ""),
+			(leftOperator, leftOperatorSourceText),
 			(TokenType.Number, "2"),
-			(rightOperator, ""),
+			(rightOperator, rightOperatorSourceText),
 			(TokenType.Number, "3"));
 
 		var endToken = MakeEndToken(tokens);
@@ -364,7 +366,7 @@ public class ExpressionTests
 		// Arrange
 		var tokens = Tokens(
 			(TokenType.Identifier, "struct"),
-			(TokenType.Period, ""),
+			(TokenType.Period, "."),
 			(TokenType.Identifier, "field"));
 
 		var endToken = MakeEndToken(tokens);
@@ -393,9 +395,9 @@ public class ExpressionTests
 		// Arrange
 		var tokens = Tokens(
 			(TokenType.Identifier, "struct"),
-			(TokenType.Period, ""),
+			(TokenType.Period, "."),
 			(TokenType.Identifier, "field"),
-			(TokenType.Period, ""),
+			(TokenType.Period, "."),
 			(TokenType.Identifier, "subfield"));
 
 		var endToken = MakeEndToken(tokens);
@@ -432,11 +434,11 @@ public class ExpressionTests
 		// Arrange
 		var tokens = Tokens(
 			(TokenType.Identifier, "struct"),
-			(TokenType.Period, ""),
+			(TokenType.Period, "."),
 			(TokenType.Identifier, "field"),
-			(TokenType.OpenParenthesis, ""),
+			(TokenType.OpenParenthesis, "("),
 			(TokenType.Number, "1"),
-			(TokenType.CloseParenthesis, ""));
+			(TokenType.CloseParenthesis, ")"));
 
 		var endToken = MakeEndToken(tokens);
 
@@ -464,10 +466,10 @@ public class ExpressionTests
 		// Arrange
 		var tokens = Tokens(
 			(TokenType.Identifier, "array"),
-			(TokenType.OpenParenthesis, ""),
+			(TokenType.OpenParenthesis, "("),
 			(TokenType.Number, "1"),
-			(TokenType.CloseParenthesis, ""),
-			(TokenType.Period, ""),
+			(TokenType.CloseParenthesis, ")"),
+			(TokenType.Period, "."),
 			(TokenType.Identifier, "field"));
 
 		var endToken = MakeEndToken(tokens);
@@ -502,9 +504,9 @@ public class ExpressionTests
 		// Arrange
 		var tokens = Tokens(
 			(TokenType.Identifier, "struct"),
-			(TokenType.Period, ""),
+			(TokenType.Period, "."),
 			(TokenType.Identifier, "field"),
-			(TokenType.Caret, ""),
+			(TokenType.Caret, "^"),
 			(TokenType.Number, "2"));
 
 		var endToken = MakeEndToken(tokens);

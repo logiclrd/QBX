@@ -74,11 +74,11 @@ public class CompilationUnit : IRenderableCode
 	//
 	// These methods, Read and Write, perform these translations.
 
-	public static CompilationUnit Read(TextReader reader, string unitName, BasicParser parser)
+	public static CompilationUnit Read(TextReader reader, string unitName, BasicParser parser, bool ignoreErrors = false)
 	{
 		var lexer = new Lexer(reader);
 
-		var unit = parser.Parse(lexer);
+		var unit = parser.Parse(lexer, ignoreErrors);
 
 		unit.Name = unitName;
 

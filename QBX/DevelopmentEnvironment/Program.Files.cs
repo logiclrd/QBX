@@ -43,7 +43,7 @@ namespace QBX.DevelopmentEnvironment
 			if (replaceExistingProgram)
 				ClearProgram();
 
-			var unit = CompilationUnit.Read(reader, unitName, Parser);
+			var unit = CompilationUnit.Read(reader, unitName, Parser, ignoreErrors: true);
 
 			LoadedFiles.Add(unit);
 
