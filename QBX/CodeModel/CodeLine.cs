@@ -17,7 +17,7 @@ public class CodeLine : IRenderableCode
 	public List<Statement> Statements { get; } = new List<Statement>();
 	public string? EndOfLineComment { get; set; }
 
-	public bool IsEmpty => !Statements.Any();
+	public bool IsEmpty => Statements.All(statement => statement is EmptyStatement);
 
 	public bool IsCommentLine =>
 		((Statements.Count == 1) && (Statements[0].Type == StatementType.Comment)) ||

@@ -11,6 +11,18 @@ public class DefTypeStatement : Statement
 	public DataType DataType { get; set; }
 	public List<DefTypeRange> Ranges { get; } = new List<DefTypeRange>();
 
+	public void AddCharacter(char ch)
+	{
+		ch = char.ToUpperInvariant(ch);
+
+		var range = new DefTypeRange();
+
+		range.Start = ch;
+		range.End = ch;
+
+		AddRange(range);
+	}
+
 	public void AddRange(DefTypeRange range)
 	{
 		for (int i = 0; i < Ranges.Count; i++)

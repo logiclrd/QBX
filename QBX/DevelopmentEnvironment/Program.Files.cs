@@ -22,47 +22,55 @@ namespace QBX.DevelopmentEnvironment
 			LoadedFiles.Add(unit);
 			ResetCallsMenu();
 
-			PrimaryViewport.CompilationUnit = unit;
-			PrimaryViewport.CompilationElement = unit.Elements[0];
+			PrimaryViewport.SwitchTo(unit.Elements[0]);
 
 			if (SplitViewport != null)
-			{
-				SplitViewport.CompilationUnit = unit;
-				SplitViewport.CompilationElement = unit.Elements[0];
-			}
+				SplitViewport.SwitchTo(unit.Elements[0]);
 		}
 
 		public void LoadFile(string path, bool replaceExistingProgram)
 		{
+			using (var reader = new StreamReader(path))
+			{
+				string shortName = Path.GetFileName(path).ToUpperInvariant();
+
+				Load(reader, shortName, replaceExistingProgram);
+			}
+		}
+
+		public void Load(TextReader reader, string unitName, bool replaceExistingProgram)
+		{
 			if (replaceExistingProgram)
 				ClearProgram();
 
-			using (var reader = new StreamReader(path))
+			var unit = CompilationUnit.Read(reader, unitName, Parser);
+
+			LoadedFiles.Add(unit);
+
+			PrimaryViewport.SwitchTo(unit.Elements[0]);
+
+			if (SplitViewport != null)
+				SplitViewport.SwitchTo(unit.Elements[0]);
+		}
+
+		public void SaveFile(CompilationUnit unit, string filePath, bool saveBackup = true)
+		{
+			if (saveBackup && File.Exists(filePath))
 			{
-				var lexer = new Lexer(reader);
+				string backupFilePath = Path.ChangeExtension(filePath, ".ba~");
 
-				var unit = Parser.Parse(lexer);
-
-				unit.Name = Path.GetFileName(path).ToUpperInvariant();
-
-				LoadedFiles.Add(unit);
-
-				if (replaceExistingProgram)
-				{
-					string fileName = Path.GetFileName(path);
-
-					PrimaryViewport.CompilationUnit = unit;
-					PrimaryViewport.CompilationElement = unit.Elements[0];
-					PrimaryViewport.Heading = fileName;
-
-					if (SplitViewport != null)
-					{
-						SplitViewport.CompilationUnit = unit;
-						SplitViewport.CompilationElement = unit.Elements[0];
-						SplitViewport.Heading = fileName;
-					}
-				}
+				File.Delete(backupFilePath);
+				File.Move(filePath, backupFilePath);
 			}
+
+			using (var writer = new StreamWriter(filePath))
+				Save(unit, writer);
+		}
+
+		public void Save(CompilationUnit unit, TextWriter writer)
+		{
+			unit.Write(writer);
+			unit.IsPristine = true;
 		}
 
 		bool IsBlankProgram()
@@ -94,14 +102,10 @@ namespace QBX.DevelopmentEnvironment
 			{
 				LoadedFiles.Clear();
 
-				PrimaryViewport.CompilationUnit = unit;
-				PrimaryViewport.CompilationElement = unit.Elements[0];
+				PrimaryViewport.SwitchTo(unit.Elements[0]);
 
 				if (SplitViewport != null)
-				{
-					SplitViewport.CompilationUnit = unit;
-					SplitViewport.CompilationElement = unit.Elements[0];
-				}
+					SplitViewport.SwitchTo(unit.Elements[0]);
 			}
 		}
 

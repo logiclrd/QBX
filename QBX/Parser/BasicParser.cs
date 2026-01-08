@@ -22,15 +22,28 @@ public class BasicParser
 		unit.Elements.Add(mainElement);
 
 		var element = mainElement;
+		bool betweenElements = false;
 
-		var comments = new List<CodeLine>();
+		var prelude = new List<CodeLine>();
 
 		foreach (var line in ParseCodeLines(tokenStream))
 		{
-			if (line.IsCommentLine && (element == mainElement))
-				comments.Add(line);
+			if (((element == mainElement) || betweenElements)
+			 && (line.IsCommentLine || line.IsDefTypeLine))
+				prelude.Add(line);
 			else
 			{
+				if (betweenElements && line.IsEmpty)
+				{
+					if (prelude.Any())
+					{
+						mainElement.AddLines(prelude);
+						prelude.Clear();
+					}
+
+					continue;
+				}
+
 				if (line.Statements.Any())
 				{
 					var firstStatement = line.Statements.First();
@@ -38,11 +51,13 @@ public class BasicParser
 
 					if ((firstStatement.Type == StatementType.Sub) || (firstStatement.Type == StatementType.Function))
 					{
+						betweenElements = false;
+
 						element = new CompilationElement(unit);
 						unit.Elements.Add(element);
 
-						element.AddLines(comments);
-						comments.Clear();
+						element.AddLines(prelude);
+						prelude.Clear();
 
 						switch (firstStatement)
 						{
@@ -65,31 +80,20 @@ public class BasicParser
 						element.AddLine(line);
 						element = mainElement;
 
+						betweenElements = true;
+
 						continue;
 					}
 				}
 
-				element.AddLines(comments);
-				comments.Clear();
+				element.AddLines(prelude);
+				prelude.Clear();
 
 				element.AddLine(line);
 			}
 		}
 
-		mainElement.AddLines(comments);
-
-		// Any DefTypeStatements at the end of elements actually apply to the following elements.
-		for (int i = 1; i < unit.Elements.Count; i++)
-		{
-			var precedingElement = unit.Elements[i - 1];
-			var followingElement = unit.Elements[i];
-
-			while ((precedingElement.Lines.Count > 0) && precedingElement.Lines.Last().IsDefTypeLine)
-			{
-				followingElement.Lines.Insert(0, precedingElement.Lines.Last());
-				precedingElement.Lines.RemoveAt(precedingElement.Lines.Count - 1);
-			}
-		}
+		mainElement.AddLines(prelude);
 
 		return unit;
 	}
