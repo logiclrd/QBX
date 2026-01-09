@@ -1,5 +1,6 @@
 ﻿using QBX.CodeModel.Expressions;
 using QBX.ExecutionEngine;
+using QBX.ExecutionEngine.Compiled;
 using QBX.LexicalAnalysis;
 
 namespace QBX.Tests.ExecutionEngine;
@@ -16,6 +17,7 @@ public class CompilerTests
 		yield return
 			new object?[]
 			{
+				null,
 				new BinaryExpression(
 					Identifier("a"),
 					CharacterToken('*'),
@@ -26,6 +28,7 @@ public class CompilerTests
 		yield return
 			new object?[]
 			{
+				null,
 				new BinaryExpression(
 					Identifier("a"),
 					CharacterToken('*'),
@@ -39,6 +42,7 @@ public class CompilerTests
 		yield return
 			new object?[]
 			{
+				null,
 				new BinaryExpression(
 					Identifier("a"),
 					CharacterToken('*'),
@@ -52,6 +56,7 @@ public class CompilerTests
 		yield return
 			new object?[]
 			{
+				null,
 				new BinaryExpression(
 					Identifier("a"),
 					CharacterToken('.'),
@@ -62,6 +67,29 @@ public class CompilerTests
 		yield return
 			new object?[]
 			{
+				"b",
+				new BinaryExpression(
+					Identifier("a"),
+					CharacterToken('.'),
+					Identifier("b")),
+				"a.b"
+			};
+
+		yield return
+			new object?[]
+			{
+				"a", // disallowed
+				new BinaryExpression(
+					Identifier("a"),
+					CharacterToken('.'),
+					Identifier("b")),
+				null
+			};
+
+		yield return
+			new object?[]
+			{
+				null,
 				new BinaryExpression(
 					new BinaryExpression(
 						Identifier("a"),
@@ -75,6 +103,7 @@ public class CompilerTests
 		yield return
 			new object?[]
 			{
+				null,
 				new BinaryExpression(
 					new BinaryExpression(
 						Identifier("a"),
@@ -88,6 +117,7 @@ public class CompilerTests
 		yield return
 			new object?[]
 			{
+				null,
 				new BinaryExpression(
 					new BinaryExpression(
 						Identifier("a"),
@@ -101,6 +131,35 @@ public class CompilerTests
 		yield return
 			new object?[]
 			{
+				"b",
+				new BinaryExpression(
+					new BinaryExpression(
+						Identifier("a"),
+						CharacterToken('.'),
+						Identifier("c")),
+					CharacterToken('.'),
+					Identifier("b")),
+				"a.c.b"
+			};
+
+		yield return
+			new object?[]
+			{
+				"a", // disallowed
+				new BinaryExpression(
+					new BinaryExpression(
+						Identifier("a"),
+						CharacterToken('.'),
+						Identifier("c")),
+					CharacterToken('.'),
+					Identifier("b")),
+				null
+			};
+
+		yield return
+			new object?[]
+			{
+				null,
 				new BinaryExpression(
 					new BinaryExpression(
 						Identifier("a"),
@@ -117,6 +176,7 @@ public class CompilerTests
 		yield return
 			new object?[]
 			{
+				null,
 				new BinaryExpression(
 					new BinaryExpression(
 						new BinaryExpression(
@@ -129,16 +189,55 @@ public class CompilerTests
 					Identifier("b")),
 				"a.c.d.b"
 			};
+
+		yield return
+			new object?[]
+			{
+				"c",
+				new BinaryExpression(
+					new BinaryExpression(
+						new BinaryExpression(
+							Identifier("a"),
+							CharacterToken('.'),
+							Identifier("c")),
+						CharacterToken('.'),
+						Identifier("d")),
+					CharacterToken('.'),
+					Identifier("b")),
+				"a.c.d.b"
+			};
+
+		yield return
+			new object?[]
+			{
+				"a", // disallowed
+				new BinaryExpression(
+					new BinaryExpression(
+						new BinaryExpression(
+							Identifier("a"),
+							CharacterToken('.'),
+							Identifier("c")),
+						CharacterToken('.'),
+						Identifier("d")),
+					CharacterToken('.'),
+					Identifier("b")),
+				null
+			};
 	}
 
 	[TestCaseSource(nameof(GenerateCollapseDottedIdentifierExpressionTestCases))]
-	public void CollapseDottedIdentifierExpression(BinaryExpression expression, string? expectedIdentifier)
+	public void CollapseDottedIdentifierExpression(string? disallowedSlug, BinaryExpression expression, string? expectedIdentifier)
 	{
 		// Arrange
+		var mapper = new Mapper();
+
+		if (disallowedSlug != null)
+			mapper.AddDisallowedSlug(disallowedSlug);
+
 		var sut = new Compiler();
 
 		// Act
-		var actual = sut.CollapseDottedIdentifierExpression(expression);
+		var actual = sut.CollapseDottedIdentifierExpression(expression, mapper);
 
 		// Assert
 		actual.Should().Be(expectedIdentifier);

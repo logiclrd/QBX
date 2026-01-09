@@ -47,12 +47,12 @@ public class TextLibrary : VisualLibrary
 
 	public void SetForegroundAttribute(int foreground)
 	{
-		Attributes = unchecked((byte)((foreground & 15) | ((Attributes & 15) << 4)));
+		Attributes = unchecked((byte)((foreground & 15) | (Attributes & 0xF0)));
 	}
 
 	public void SetBackgroundAttribute(int background)
 	{
-		Attributes = unchecked((byte)((Attributes & 15) | ((background & 15) << 4)));
+		Attributes = unchecked((byte)((Attributes & 0x0F) | ((background & 15) << 4)));
 	}
 
 	public void ShowCursor()

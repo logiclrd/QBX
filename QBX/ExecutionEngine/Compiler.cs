@@ -827,7 +827,7 @@ public class Compiler
 			{
 				if (binaryExpression.Operator == CodeModel.Expressions.Operator.Field)
 				{
-					string? dottedIdentifier = CollapseDottedIdentifierExpression(binaryExpression);
+					string? dottedIdentifier = CollapseDottedIdentifierExpression(binaryExpression, mapper);
 
 					if (dottedIdentifier != null)
 					{
@@ -889,20 +889,23 @@ public class Compiler
 		throw new Exception("Internal error: Can't translate expression");
 	}
 
-	internal string? CollapseDottedIdentifierExpression(CodeModel.Expressions.BinaryExpression binaryExpression)
+	internal string? CollapseDottedIdentifierExpression(CodeModel.Expressions.BinaryExpression binaryExpression, Mapper mapper)
 	{
 		StringBuilder? builder = null;
 
-		CollapseDottedIdentifierExpression(binaryExpression, ref builder);
+		CollapseDottedIdentifierExpression(binaryExpression, mapper, ref builder);
 
 		return builder?.ToString();
 	}
 
-	void CollapseDottedIdentifierExpression(CodeModel.Expressions.BinaryExpression binaryExpression, ref StringBuilder? identifierBuilder)
+	void CollapseDottedIdentifierExpression(CodeModel.Expressions.BinaryExpression binaryExpression, Mapper mapper, ref StringBuilder? identifierBuilder)
 	{
 		// The specific pattern we're looking for is a left tree of field access expressions where
 		// every leaf is an identifier. If we identify that the tree has the correct operator and
 		// an identifier on the right, then we can just recursively process the left subtree.
+		//
+		// When we hit the leftmost node, that's the part of the dotted identifier we're calling
+		// the "slug". We can check if the current Mapper allows that slug or not.
 
 		if (binaryExpression.Operator != CodeModel.Expressions.Operator.Field)
 			return;
@@ -913,10 +916,11 @@ public class Compiler
 		switch (binaryExpression.Left)
 		{
 			case CodeModel.Expressions.IdentifierExpression leftIdentifier:
-				identifierBuilder = new StringBuilder(leftIdentifier.Identifier);
+				if (!mapper.IsDisallowedSlug(leftIdentifier.Identifier))
+					identifierBuilder = new StringBuilder(leftIdentifier.Identifier);
 				break;
 			case CodeModel.Expressions.BinaryExpression leftBinary:
-				CollapseDottedIdentifierExpression(leftBinary, ref identifierBuilder);
+				CollapseDottedIdentifierExpression(leftBinary, mapper, ref identifierBuilder);
 				break;
 		}
 

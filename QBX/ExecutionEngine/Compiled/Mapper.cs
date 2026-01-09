@@ -263,6 +263,11 @@ public class Mapper
 		_disallowedSlugs.Add(slug);
 	}
 
+	public bool IsDisallowedSlug(string identifier)
+	{
+		return _disallowedSlugs.Contains(identifier);
+	}
+
 	public void ScanForDisallowedSlugs(IEnumerable<CodeModel.Statements.Statement> statements)
 	{
 		foreach (var dimStatement in statements.OfType<CodeModel.Statements.DimStatement>())
