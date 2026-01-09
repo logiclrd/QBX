@@ -39,10 +39,13 @@ public class Token(int line, int column, TokenType type, string value, DataType 
 			if (value == null)
 				throw new Exception("Internal error: String token with no Value");
 
-			if (!value.StartsWith("\"") || !value.EndsWith("\""))
-				throw new Exception("Internal error: String token that doesn't start and end with double quote character.");
+			if (!value.StartsWith("\""))
+				throw new Exception("Internal error: String token that doesn't start with double quote character.");
 
-			return value.Substring(1, value.Length - 2);
+			if (value.EndsWith("\""))
+				return value.Substring(1, value.Length - 2);
+			else
+				return value.Substring(1, value.Length - 1);
 		}
 	}
 

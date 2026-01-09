@@ -142,6 +142,7 @@ public enum TokenType
 	[KeywordToken] SINGLE,
 	[KeywordFunction]
 	[KeywordToken("SPACE$")] SPACE,
+	[KeywordToken] SPC,
 	[KeywordFunction]
 	[KeywordToken] SQR,
 	[KeywordToken] STATIC,
@@ -152,6 +153,7 @@ public enum TokenType
 	[KeywordToken] STRIG,
 	[KeywordToken] STRING,
 	[KeywordToken] SUB,
+	[KeywordToken] TAB,
 	[KeywordFunction]
 	[KeywordToken] TAN,
 	[KeywordToken] THEN,

@@ -43,4 +43,6 @@ public class RuntimeException : Exception
 		=> new RuntimeException(context, "Overflow");
 	public static RuntimeException DivisionByZero(Token? context)
 		=> new RuntimeException(context, "Division by zero");
+	public static RuntimeException TypeMismatch(CodeModel.Statements.Statement? statement)
+		=> new RuntimeException(statement, "Type mismatch");
 }

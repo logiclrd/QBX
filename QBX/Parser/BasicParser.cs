@@ -2130,20 +2130,57 @@ public class BasicParser
 					{
 						var arg = new PrintArgument();
 
+						ListRange<Token> expressionTokens = tokenHandler.RemainingTokens.Slice(0, nextSeparatorIndex);
+
 						if (nextSeparatorIndex > 0)
-							arg.Expression = ParseExpression(tokenHandler.RemainingTokens.Slice(0, nextSeparatorIndex), tokenHandler[nextSeparatorIndex]);
-
-						tokenHandler.Advance(nextSeparatorIndex);
-
-						switch (tokenHandler.NextToken.Type)
 						{
-							case TokenType.Semicolon: arg.CursorAction = PrintCursorAction.None; break;
-							case TokenType.Comma: arg.CursorAction = PrintCursorAction.NextZone; break;
+							bool isTab = tokenHandler.NextTokenIs(TokenType.TAB);
+							bool isSpace = tokenHandler.NextTokenIs(TokenType.SPC);
+
+							if (isTab || isSpace)
+							{
+								if (isTab)
+									arg.ExpressionType = PrintExpressionType.Tab;
+								if (isSpace)
+									arg.ExpressionType = PrintExpressionType.Space;
+
+								var separatorToken = tokenHandler[nextSeparatorIndex];
+
+								tokenHandler.Advance();
+
+								expressionTokens = tokenHandler.ExpectParenthesizedTokens();
+
+								nextSeparatorIndex = 0;
+							}
+
+							arg.Expression = ParseExpression(expressionTokens, tokenHandler[nextSeparatorIndex]);
+
+							tokenHandler.Advance(nextSeparatorIndex);
+						}
+
+						if (arg.ExpressionType != PrintExpressionType.Value)
+						{
+							arg.CursorAction = PrintCursorAction.None;
+
+							if (tokenHandler.NextTokenIs(TokenType.Semicolon))
+								tokenHandler.Advance();
+						}
+						else
+						{
+							switch (tokenHandler.NextToken.Type)
+							{
+								case TokenType.Semicolon:
+									arg.CursorAction = PrintCursorAction.None;
+									tokenHandler.Advance();
+									break;
+								case TokenType.Comma:
+									arg.CursorAction = PrintCursorAction.NextZone;
+									tokenHandler.Advance();
+									break;
+							}
 						}
 
 						print.Arguments.Add(arg);
-
-						tokenHandler.Advance();
 					}
 					else
 					{

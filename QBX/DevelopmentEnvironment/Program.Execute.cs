@@ -27,21 +27,19 @@ public partial class Program
 		foreach (var file in LoadedFiles)
 			compiler.Compile(file, compilation);
 
+		RestoreOutput();
+
 		_executionContext = new ExecutionContext(
 			Machine,
 			compilation.Modules[0]);
-
-		Machine.VideoFirmware.SetMode(3);
-
-		SaveOutput();
 	}
 
 	public void Continue()
 	{
 		if (_executionContext == null)
 			Restart();
-
-		RestoreOutput();
+		else
+			RestoreOutput();
 
 		_executionContext.Run(RunMode.Continuous);
 

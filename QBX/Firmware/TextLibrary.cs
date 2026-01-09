@@ -88,7 +88,16 @@ public class TextLibrary : VisualLibrary
 
 	public void UpdatePhysicalCursor()
 	{
-		Array.CRTController.CursorAddress = CursorY * Width + CursorX;
+		int cursorAddress = CursorY * Width + CursorX;
+
+		Array.OutPort2(
+			GraphicsArray.CRTControllerRegisters.IndexPort,
+			GraphicsArray.CRTControllerRegisters.CursorLocationLow,
+			unchecked((byte)(cursorAddress & 0xFF)));
+		Array.OutPort2(
+			GraphicsArray.CRTControllerRegisters.IndexPort,
+			GraphicsArray.CRTControllerRegisters.CursorLocationHigh,
+			unchecked((byte)((cursorAddress >> 8) & 0xFF)));
 	}
 
 	protected override void ClearImplementation()

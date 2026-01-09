@@ -65,4 +65,8 @@ public class CompilerException : Exception
 		=> new CompilerException(statement, "Illegal in SUB, FUNCTION or DEF FN");
 	public static CompilerException ElementNotDefined(Token? context)
 		=> new CompilerException(context, "Element not defined");
+	public static CompilerException ArgumentCountMismatch(Token? context)
+		=> new CompilerException(context, "Argument count mismatch");
+	public static CompilerException IdentifierCannotIncludePeriod(Token? context)
+		=> new CompilerException(context, "Identifier cannot include period");
 }

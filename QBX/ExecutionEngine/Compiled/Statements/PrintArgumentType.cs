@@ -1,8 +1,8 @@
 ﻿namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public enum PrintCursorAction
+public enum PrintArgumentType
 {
-	None,
-	NextZone,
-	NextLine
+	Value,
+	Tab,
+	Space,
 }

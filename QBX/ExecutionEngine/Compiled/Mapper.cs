@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+
 using QBX.ExecutionEngine.Compiled.Expressions;
 using QBX.ExecutionEngine.Execution;
 using QBX.LexicalAnalysis;
@@ -11,12 +12,42 @@ namespace QBX.ExecutionEngine.Compiled;
 public class Mapper
 {
 	Mapper? _root;
-	Dictionary<string, LiteralValue> _constantValueByName = new Dictionary<string, LiteralValue>();
-	Dictionary<string, int> _variableIndexByName = new Dictionary<string, int>();
+	Dictionary<string, LiteralValue> _constantValueByName = new Dictionary<string, LiteralValue>(StringComparer.OrdinalIgnoreCase);
+	Dictionary<string, int> _variableIndexByName = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 	int _nextVariableIndex;
+	HashSet<string> _disallowedSlugs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 	Dictionary<int, VariableInfo> _variables = new Dictionary<int, VariableInfo>();
 	HashSet<string> _globalVariableNames = new HashSet<string>();
 	PrimitiveDataType[] _identifierTypes = new PrimitiveDataType[26];
+
+	// Slugs: avoid conflicts to do with dotted variable names.
+	//
+	// QuickBASIC allows an identifier to contain a dot in its name:
+	//
+	//    foo.bar ' means the scalar variable named "foo.bar"
+	//
+	// QuickBASIC also allows user-defined types to be defined, and dots are
+	// used to access their fields:
+	//
+	//    TYPE test
+	//      bar AS INTEGER
+	//    END TYPE
+	//
+	//    DIM foo AS test
+	//
+	//    foo.bar ' means field bar of foo
+	//
+	// I have decided to call the part of an identifier that includes a
+	// period that preceds the first period the "slug". So if "foo.bar"
+	// is an identifier then "foo" is its slug.
+	//
+	// When parsing a compilation unit, any variables specified in DIM
+	// statements with user-defined types are added to the _disallowedSlugs
+	// set. When a variable is being implicitly defined, its slug is
+	// extracted and an error is raised if that slug is disallowed.
+	//
+	// QuickBASIC applies this logic to arrays of user-defined types as
+	// well, even though there isn't a possibility of collision.
 
 	class VariableInfo(string name, int index)
 	{
@@ -122,16 +153,57 @@ public class Mapper
 	public DataType GetVariableType(int variableIndex)
 		=> _variables[variableIndex].Type;
 
+	public string StripTypeCharacter(string identifier)
+	{
+		if ((identifier.Length > 1) && CodeModel.TypeCharacter.TryParse(identifier.Last(), out _))
+			return identifier.Remove(identifier.Length - 1);
+		else
+			return identifier;
+	}
+
 	public string QualifyIdentifier(string name, PrimitiveDataType type)
 	{
-		switch (type)
+		switch (name[name.Length - 1])
 		{
-			case PrimitiveDataType.Integer: return name + '%';
-			case PrimitiveDataType.Long: return name + '&';
-			case PrimitiveDataType.Single: return name + '!';
-			case PrimitiveDataType.Double: return name + '#';
-			case PrimitiveDataType.String: return name + '$';
-			case PrimitiveDataType.Currency: return name + '@';
+			case '%':
+				if (type != PrimitiveDataType.Integer)
+					throw new Exception("Internal error: Trying to qualify " + name + " as " + type);
+				return name;
+			case '&':
+				if (type != PrimitiveDataType.Long)
+					throw new Exception("Internal error: Trying to qualify " + name + " as " + type);
+				return name;
+			case '!':
+				if (type != PrimitiveDataType.Single)
+					throw new Exception("Internal error: Trying to qualify " + name + " as " + type);
+				return name;
+			case '#':
+				if (type != PrimitiveDataType.Double)
+					throw new Exception("Internal error: Trying to qualify " + name + " as " + type);
+				return name;
+			case '@':
+				if (type != PrimitiveDataType.Currency)
+					throw new Exception("Internal error: Trying to qualify " + name + " as " + type);
+				return name;
+			case '$':
+				if (type != PrimitiveDataType.String)
+					throw new Exception("Internal error: Trying to qualify " + name + " as " + type);
+				return name;
+
+			default:
+			{
+				switch (type)
+				{
+					case PrimitiveDataType.Integer: return name + '%';
+					case PrimitiveDataType.Long: return name + '&';
+					case PrimitiveDataType.Single: return name + '!';
+					case PrimitiveDataType.Double: return name + '#';
+					case PrimitiveDataType.String: return name + '$';
+					case PrimitiveDataType.Currency: return name + '@';
+				}
+
+				break;
+			}
 		}
 
 		throw new Exception("Internal error");
@@ -176,8 +248,39 @@ public class Mapper
 		variableInfo.LinkedToRootVariableIndex = rootIndex;
 	}
 
+	string? GetSlug(string identifier)
+	{
+		int dotIndex = identifier.IndexOf('.');
+
+		if (dotIndex >= 0)
+			return identifier.Substring(0, dotIndex);
+		else
+			return null;
+	}
+
+	public void AddDisallowedSlug(string slug)
+	{
+		_disallowedSlugs.Add(slug);
+	}
+
+	public void ScanForDisallowedSlugs(IEnumerable<CodeModel.Statements.Statement> statements)
+	{
+		foreach (var dimStatement in statements.OfType<CodeModel.Statements.DimStatement>())
+		{
+			foreach (var declaration in dimStatement.Declarations)
+			{
+				if (declaration.UserType != null)
+					AddDisallowedSlug(declaration.Name);
+			}
+		}
+	}
+
 	public void DefineConstant(string name, LiteralValue literalValue)
 	{
+		if ((GetSlug(name) is string slug)
+		 && _disallowedSlugs.Contains(slug))
+			throw CompilerException.IdentifierCannotIncludePeriod(default);
+
 		name = QualifyIdentifier(name);
 
 		if (_constantValueByName.TryGetValue(name, out _))
@@ -191,14 +294,18 @@ public class Mapper
 	public bool TryResolveConstant(string name, [NotNullWhen(true)] out LiteralValue? literalValue)
 		=> _constantValueByName.TryGetValue(QualifyIdentifier(name), out literalValue);
 
-	public int DeclareVariable(string name, DataType dataType)
+	public int DeclareVariable(string name, DataType dataType, Token? token = null)
 	{
+		if ((GetSlug(name) is string slug)
+		 && _disallowedSlugs.Contains(slug))
+			throw CompilerException.IdentifierCannotIncludePeriod(token);
+
 		name = QualifyIdentifier(name, dataType);
 
 		if (_constantValueByName.TryGetValue(name, out _))
-			throw CompilerException.DuplicateDefinition(default(Token));
+			throw CompilerException.DuplicateDefinition(token);
 		if (_variableIndexByName.TryGetValue(name, out var index))
-			throw CompilerException.DuplicateDefinition(default(Token));
+			throw CompilerException.DuplicateDefinition(token);
 
 		index = _nextVariableIndex++;
 

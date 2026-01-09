@@ -212,16 +212,24 @@ public abstract class VisualLibrary
 		CursorX++;
 
 		if (CursorX == CharacterWidth)
-		{
-			CursorX = 0;
-
-			if (CursorY + 1 == CharacterHeight)
-				ScrollText();
-			else
-				CursorY++;
-		}
+			NewLine();
 
 		MoveCursorHandlePhysicalCursor();
+	}
+
+	public void NewLine()
+	{
+		int newX = CursorX;
+		int newY = CursorY;
+
+		newX = 0;
+
+		if (newY + 1 == CharacterHeight)
+			ScrollText();
+		else
+			newY++;
+
+		MoveCursor(newX, newY);
 	}
 
 	public abstract void ScrollText();

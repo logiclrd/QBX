@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 using QBX.ExecutionEngine.Compiled;
 using QBX.ExecutionEngine.Compiled.BitwiseOperators;
@@ -9,6 +10,7 @@ using QBX.ExecutionEngine.Compiled.Functions;
 using QBX.ExecutionEngine.Compiled.Operations;
 using QBX.ExecutionEngine.Compiled.RelationalOperators;
 using QBX.ExecutionEngine.Compiled.Statements;
+
 using QBX.LexicalAnalysis;
 
 namespace QBX.ExecutionEngine;
@@ -109,6 +111,8 @@ public class Compiler
 			var mapper = (element.Type == CodeModel.CompilationElementType.Main)
 				? rootMapper
 				: rootMapper.CreateScope();
+
+			mapper.ScanForDisallowedSlugs(element.AllStatements);
 
 			string routineName = Routine.GetName(element);
 
@@ -274,8 +278,8 @@ public class Compiler
 		{
 			case CodeModel.Statements.AssignmentStatement assignmentStatement:
 			{
-				var targetExpression = TranslateExpression(assignmentStatement.TargetExpression, mapper);
-				var valueExpression = TranslateExpression(assignmentStatement.ValueExpression, mapper);
+				var targetExpression = TranslateExpression(assignmentStatement.TargetExpression, mapper, compilation);
+				var valueExpression = TranslateExpression(assignmentStatement.ValueExpression, mapper, compilation);
 
 				if (targetExpression == null)
 					throw new BadModelException("AssignmentStatement with no TargetExpression");
@@ -310,9 +314,9 @@ public class Compiler
 				var argument2 = colorStatement.Arguments.Count > 1 ? colorStatement.Arguments[1] : null;
 				var argument3 = colorStatement.Arguments.Count > 2 ? colorStatement.Arguments[2] : null;
 
-				translatedColorStatement.Argument1Expression = TranslateExpression(argument1, mapper);
-				translatedColorStatement.Argument2Expression = TranslateExpression(argument2, mapper);
-				translatedColorStatement.Argument3Expression = TranslateExpression(argument3, mapper);
+				translatedColorStatement.Argument1Expression = TranslateExpression(argument1, mapper, compilation);
+				translatedColorStatement.Argument2Expression = TranslateExpression(argument2, mapper, compilation);
+				translatedColorStatement.Argument3Expression = TranslateExpression(argument3, mapper, compilation);
 
 				container.Append(translatedColorStatement);
 
@@ -322,7 +326,7 @@ public class Compiler
 			{
 				foreach (var definition in constStatement.Definitions)
 				{
-					var translatedValue = TranslateExpression(definition.Value, mapper);
+					var translatedValue = TranslateExpression(definition.Value, mapper, compilation);
 
 					if (translatedValue == null)
 						throw new Exception("ConstStatement has no Value");
@@ -410,8 +414,8 @@ public class Compiler
 
 						foreach (var subscript in declaration.Subscripts.Subscripts)
 						{
-							var bound1 = TranslateExpression(subscript.Bound1, mapper);
-							var bound2 = TranslateExpression(subscript.Bound2, mapper);
+							var bound1 = TranslateExpression(subscript.Bound1, mapper, compilation);
+							var bound2 = TranslateExpression(subscript.Bound2, mapper, compilation);
 
 							if (bound1 == null)
 								throw new Exception("Must specify the first bound for an array subscript");
@@ -437,7 +441,7 @@ public class Compiler
 			{
 				var translatedIfStatement = new IfStatement();
 
-				translatedIfStatement.Condition = TranslateExpression(ifStatement.ConditionExpression, mapper);
+				translatedIfStatement.Condition = TranslateExpression(ifStatement.ConditionExpression, mapper, compilation);
 
 				if (ifStatement.ThenBody == null)
 				{
@@ -493,7 +497,7 @@ public class Compiler
 								block.ElseBody = elseBody;
 
 								block = new IfStatement();
-								block.Condition = TranslateExpression(elseIfStatement.ConditionExpression, mapper);
+								block.Condition = TranslateExpression(elseIfStatement.ConditionExpression, mapper, compilation);
 
 								elseBody.Append(block);
 
@@ -569,9 +573,9 @@ public class Compiler
 			{
 				var iteratorVariableIndex = mapper.ResolveVariable(forStatement.CounterVariable);
 
-				var fromExpression = TranslateExpression(forStatement.StartExpression, mapper);
-				var toExpression = TranslateExpression(forStatement.EndExpression, mapper);
-				var stepExpression = TranslateExpression(forStatement.StepExpression, mapper);
+				var fromExpression = TranslateExpression(forStatement.StartExpression, mapper, compilation);
+				var toExpression = TranslateExpression(forStatement.EndExpression, mapper, compilation);
+				var stepExpression = TranslateExpression(forStatement.StepExpression, mapper, compilation);
 
 				if (fromExpression == null)
 					throw new Exception("ForStatement with no StartExpression");
@@ -642,9 +646,9 @@ public class Compiler
 				var translatedPixelSetStatement = new PixelSetStatement();
 
 				translatedPixelSetStatement.StepCoordinates = pixelSetStatement.StepCoordinates;
-				translatedPixelSetStatement.XExpression = TranslateExpression(pixelSetStatement.XExpression, mapper);
-				translatedPixelSetStatement.YExpression = TranslateExpression(pixelSetStatement.YExpression, mapper);
-				translatedPixelSetStatement.ColourExpression = TranslateExpression(pixelSetStatement.ColourExpression, mapper);
+				translatedPixelSetStatement.XExpression = TranslateExpression(pixelSetStatement.XExpression, mapper, compilation);
+				translatedPixelSetStatement.YExpression = TranslateExpression(pixelSetStatement.YExpression, mapper, compilation);
+				translatedPixelSetStatement.ColourExpression = TranslateExpression(pixelSetStatement.ColourExpression, mapper, compilation);
 				translatedPixelSetStatement.UseForegroundColour =
 					(pixelSetStatement.DefaultColour == CodeModel.Statements.PixelSetDefaultColour.Foreground);
 
@@ -652,14 +656,73 @@ public class Compiler
 
 				break;
 			}
+			case CodeModel.Statements.PrintStatement printStatement:
+			{
+				if (printStatement.FileNumberExpression != null)
+					throw new NotImplementedException("TODO");
+
+				PrintArgument TranslatePrintArgument(CodeModel.Statements.PrintArgument argument)
+				{
+					var translatedArgument = new PrintArgument();
+
+					translatedArgument.Expression = TranslateExpression(argument.Expression, mapper, compilation);
+					translatedArgument.CursorAction =
+						argument.CursorAction switch
+						{
+							CodeModel.Statements.PrintCursorAction.None => PrintCursorAction.None,
+							CodeModel.Statements.PrintCursorAction.NextZone => PrintCursorAction.NextZone,
+							CodeModel.Statements.PrintCursorAction.NextLine => PrintCursorAction.NextLine,
+
+							_ => throw new Exception("Internal error")
+						};
+
+					return translatedArgument;
+				}
+
+
+				if (printStatement.UsingExpression == null)
+				{
+					var translatedPrintStatement = new UnformattedPrintStatement();
+
+					foreach (var argument in printStatement.Arguments)
+					{
+						translatedPrintStatement.Arguments.Add(
+							TranslatePrintArgument(argument));
+					}
+
+					container.Append(translatedPrintStatement);
+				}
+				else
+				{
+					var translatedPrintStatement = new FormattedPrintStatement();
+
+					translatedPrintStatement.Format = TranslateExpression(printStatement.UsingExpression, mapper, compilation);
+
+					if (printStatement.Arguments.Count > 0)
+					{
+						translatedPrintStatement.EmitNewLine =
+							(printStatement.Arguments.Last().CursorAction == CodeModel.Statements.PrintCursorAction.NextLine);
+
+						foreach (var argument in printStatement.Arguments)
+						{
+							translatedPrintStatement.Arguments.Add(
+								TranslatePrintArgument(argument));
+						}
+					}
+
+					container.Append(translatedPrintStatement);
+				}
+
+				break;
+			}
 			case CodeModel.Statements.ScreenStatement screenStatement:
 			{
 				var translatedScreenStatement = new ScreenStatement();
 
-				translatedScreenStatement.ModeExpression = TranslateExpression(screenStatement.ModeExpression, mapper);
-				translatedScreenStatement.ColourSwitchExpression = TranslateExpression(screenStatement.ColourSwitchExpression, mapper);
-				translatedScreenStatement.ActivePageExpression = TranslateExpression(screenStatement.ActivePageExpression, mapper);
-				translatedScreenStatement.VisiblePageExpression = TranslateExpression(screenStatement.VisiblePageExpression, mapper);
+				translatedScreenStatement.ModeExpression = TranslateExpression(screenStatement.ModeExpression, mapper, compilation);
+				translatedScreenStatement.ColourSwitchExpression = TranslateExpression(screenStatement.ColourSwitchExpression, mapper, compilation);
+				translatedScreenStatement.ActivePageExpression = TranslateExpression(screenStatement.ActivePageExpression, mapper, compilation);
+				translatedScreenStatement.VisiblePageExpression = TranslateExpression(screenStatement.VisiblePageExpression, mapper, compilation);
 
 				container.Append(translatedScreenStatement);
 
@@ -697,7 +760,7 @@ public class Compiler
 		advance();
 	}
 
-	private IEvaluable? TranslateExpression(CodeModel.Expressions.Expression? expression, Mapper mapper)
+	private IEvaluable? TranslateExpression(CodeModel.Expressions.Expression? expression, Mapper mapper, Compilation compilation, bool createImplicitArray = false)
 	{
 		if (expression == null)
 			return null;
@@ -709,8 +772,24 @@ public class Compiler
 
 			case CodeModel.Expressions.IdentifierExpression identifier:
 			{
-				if (mapper.TryResolveConstant(identifier.Identifier, out var literal))
+				string qualifiedIdentifier = mapper.QualifyIdentifier(identifier.Identifier);
+				string unqualifiedIdentifier = mapper.StripTypeCharacter(identifier.Identifier);
+
+				if (mapper.TryResolveConstant(qualifiedIdentifier, out var literal))
 					return literal;
+
+				if (compilation.Functions.TryGetValue(unqualifiedIdentifier, out var function))
+				{
+					var returnType = function.ReturnType ?? throw new Exception("Internal error: function with no return type");
+
+					string qualifiedFunction = mapper.QualifyIdentifier(function.Name, function.ReturnType);
+
+					if (qualifiedIdentifier != qualifiedFunction)
+						throw CompilerException.DuplicateDefinition(expression.Token);
+
+					if (function.ParameterTypes.Count > 0)
+						throw CompilerException.ArgumentCountMismatch(expression.Token);
+				}
 
 				int variableIndex = mapper.ResolveVariable(identifier.Identifier);
 				var variableType = mapper.GetVariableType(variableIndex);
@@ -730,7 +809,7 @@ public class Compiler
 
 			case CodeModel.Expressions.UnaryExpression unaryExpression:
 			{
-				var right = TranslateExpression(unaryExpression.Child, mapper);
+				var right = TranslateExpression(unaryExpression.Child, mapper, compilation);
 
 				if (right == null)
 					throw new Exception("Internal error: Unary expression operand translated to null");
@@ -748,23 +827,33 @@ public class Compiler
 			{
 				if (binaryExpression.Operator == CodeModel.Expressions.Operator.Field)
 				{
-					// TODO: collapse "a.b" to a reference to a variable named "a.b" if there is no
-					//       variable named "a" already
-					// TODO: when adding variable "a" of UDT type, make sure there aren't any "a.__"
-					//       variables already
+					string? dottedIdentifier = CollapseDottedIdentifierExpression(binaryExpression);
 
-					var subjectExpression = TranslateExpression(binaryExpression.Left, mapper);
+					if (dottedIdentifier != null)
+					{
+						if (mapper.TryResolveConstant(dottedIdentifier, out var literal))
+							return literal;
 
-					if (binaryExpression.Right is not CodeModel.Expressions.IdentifierExpression identifierExpression)
-						throw new Exception("Member access expressions require the right-hand operand to be an identifier");
+						int variableIndex = mapper.ResolveVariable(dottedIdentifier);
+						var variableType = mapper.GetVariableType(variableIndex);
 
-					string identifier = identifierExpression.Identifier;
+						return new IdentifierExpression(variableIndex, variableType);
+					}
+					else
+					{
+						var subjectExpression = TranslateExpression(binaryExpression.Left, mapper, compilation);
 
-					return FieldAccessExpression.Construct(subjectExpression, identifier);
+						if (binaryExpression.Right is not CodeModel.Expressions.IdentifierExpression identifierExpression)
+							throw new Exception("Member access expressions require the right-hand operand to be an identifier");
+
+						string identifier = identifierExpression.Identifier;
+
+						return FieldAccessExpression.Construct(subjectExpression, identifier);
+					}
 				}
 
-				var left = TranslateExpression(binaryExpression.Left, mapper);
-				var right = TranslateExpression(binaryExpression.Right, mapper);
+				var left = TranslateExpression(binaryExpression.Left, mapper, compilation);
+				var right = TranslateExpression(binaryExpression.Right, mapper, compilation);
 
 				if ((left == null) || (right == null))
 					throw new Exception("Internal error: Binary expression operand translated to null");
@@ -798,5 +887,40 @@ public class Compiler
 		}
 
 		throw new Exception("Internal error: Can't translate expression");
+	}
+
+	internal string? CollapseDottedIdentifierExpression(CodeModel.Expressions.BinaryExpression binaryExpression)
+	{
+		StringBuilder? builder = null;
+
+		CollapseDottedIdentifierExpression(binaryExpression, ref builder);
+
+		return builder?.ToString();
+	}
+
+	void CollapseDottedIdentifierExpression(CodeModel.Expressions.BinaryExpression binaryExpression, ref StringBuilder? identifierBuilder)
+	{
+		// The specific pattern we're looking for is a left tree of field access expressions where
+		// every leaf is an identifier. If we identify that the tree has the correct operator and
+		// an identifier on the right, then we can just recursively process the left subtree.
+
+		if (binaryExpression.Operator != CodeModel.Expressions.Operator.Field)
+			return;
+
+		if (binaryExpression.Right is not CodeModel.Expressions.IdentifierExpression rightIdentifier)
+			return;
+
+		switch (binaryExpression.Left)
+		{
+			case CodeModel.Expressions.IdentifierExpression leftIdentifier:
+				identifierBuilder = new StringBuilder(leftIdentifier.Identifier);
+				break;
+			case CodeModel.Expressions.BinaryExpression leftBinary:
+				CollapseDottedIdentifierExpression(leftBinary, ref identifierBuilder);
+				break;
+		}
+
+		if (identifierBuilder != null)
+			identifierBuilder.Append('.').Append(rightIdentifier.Identifier);
 	}
 }

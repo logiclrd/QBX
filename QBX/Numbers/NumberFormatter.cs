@@ -67,7 +67,7 @@ public class NumberFormatter
 		return builder.ToString();
 	}
 
-	public static string Format(float value)
+	public static string Format(float value, bool qualify = true)
 	{
 		string FormatBaseDigits(float adjustedValue)
 		{
@@ -133,13 +133,16 @@ public class NumberFormatter
 
 		string str = FormatBaseDigits(value);
 
-		if (int.TryParse(str, out _))
-			str += '!';
+		if (qualify)
+		{
+			if (int.TryParse(str, out _))
+				str += '!';
+		}
 
 		return str;
 	}
 
-	public static string Format(double value)
+	public static string Format(double value, bool qualify = true)
 	{
 		string FormatBaseDigits(double adjustedValue)
 		{
@@ -205,8 +208,11 @@ public class NumberFormatter
 
 		string str = FormatBaseDigits(value);
 
-		if (((float)value).ToString() == str)
-			str += '#';
+		if (qualify)
+		{
+			if (((float)value).ToString() == str)
+				str += '#';
+		}
 
 		return str;
 	}

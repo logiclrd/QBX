@@ -278,16 +278,19 @@ public partial class Program
 			{
 				select = false;
 
+				var buffer = currentLine.Value;
+
+				int indentation = 0;
+				while ((indentation < buffer.Length) && (buffer[indentation] == ' '))
+					indentation++;
+
 				if (input.Modifiers.CtrlKey)
 				{
 					// Ctrl-Enter: Do not insert newline.
-					newCursorY++;
-					newCursorX = 0;
+					FocusedViewport.CursorY++;
 				}
 				else
 				{
-					var buffer = currentLine.Value;
-
 					StringBuilder newLine = new StringBuilder();
 
 					if (FocusedViewport.CursorX < buffer.Length)
@@ -315,7 +318,6 @@ public partial class Program
 
 					// Step 2: Insert right part as new line being edited
 					FocusedViewport.CursorY++;
-					FocusedViewport.CursorX = 0;
 					FocusedViewport.InsertLine(FocusedViewport.CursorY, new CodeLine());
 
 					contentLineCount++;
@@ -324,8 +326,11 @@ public partial class Program
 					FocusedViewport.CurrentLineChanged = true;
 				}
 
-				newCursorX = 0;
+				newCursorX = indentation;
 				newCursorY = FocusedViewport.CursorY;
+
+				if (newCursorX < newScrollX)
+					newScrollX = 0;
 
 				break;
 			}
@@ -414,8 +419,16 @@ public partial class Program
 
 					if (FocusedViewport.CursorX > 0)
 					{
-						newCursorX--;
-						buffer.Remove(newCursorX, 1);
+						if (buffer.Length == 0)
+							newCursorX = 0;
+						else
+						{
+							newCursorX--;
+
+							if (newCursorX < buffer.Length)
+								buffer.Remove(newCursorX, 1);
+						}
+
 						FocusedViewport.CurrentLineBuffer = buffer;
 						FocusedViewport.CurrentLineChanged = true;
 					}
