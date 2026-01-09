@@ -45,4 +45,6 @@ public class RuntimeException : Exception
 		=> new RuntimeException(context, "Division by zero");
 	public static RuntimeException TypeMismatch(CodeModel.Statements.Statement? statement)
 		=> new RuntimeException(statement, "Type mismatch");
+	public static RuntimeException SubscriptOutOfRange(Token? context)
+		=> new RuntimeException(context, "Subscript out of range");
 }

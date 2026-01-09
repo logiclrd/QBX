@@ -3,19 +3,16 @@ using QBX.ExecutionEngine.Execution.Variables;
 
 namespace QBX.ExecutionEngine.Compiled.Expressions;
 
-public class IdentifierExpression(int variableIndex, DataType type) : IEvaluable
+public class IdentifierExpression(int variableIndex, DataType type) : Expression
 {
-	public CodeModel.Statements.Statement? SourceStatement { get; set; }
-	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
+	public override DataType Type => type;
 
-	public DataType Type => type;
-
-	public Variable Evaluate(ExecutionContext context)
+	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
-		return context.CurrentFrame.Variables[variableIndex];
+		return stackFrame.Variables[variableIndex];
 	}
 
-	public LiteralValue EvaluateConstant()
+	public override LiteralValue EvaluateConstant()
 	{
 		throw CompilerException.ValueIsNotConstant(SourceExpression?.Token);
 	}

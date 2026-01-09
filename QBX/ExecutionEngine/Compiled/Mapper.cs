@@ -14,10 +14,12 @@ public class Mapper
 	Mapper? _root;
 	Dictionary<string, LiteralValue> _constantValueByName = new Dictionary<string, LiteralValue>(StringComparer.OrdinalIgnoreCase);
 	Dictionary<string, int> _variableIndexByName = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+	Dictionary<string, int> _arrayIndexByName = new Dictionary<string, int>(StringComparer.Ordinal);
 	int _nextVariableIndex;
 	HashSet<string> _disallowedSlugs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 	Dictionary<int, VariableInfo> _variables = new Dictionary<int, VariableInfo>();
 	HashSet<string> _globalVariableNames = new HashSet<string>();
+	HashSet<string> _globalArrayNames = new HashSet<string>();
 	PrimitiveDataType[] _identifierTypes = new PrimitiveDataType[26];
 
 	// Slugs: avoid conflicts to do with dotted variable names.
@@ -82,7 +84,17 @@ public class Mapper
 		_globalVariableNames.Add(identifier);
 	}
 
-	public void LinkGlobalVariables()
+	internal void MakeGlobalArray(string identifier)
+	{
+		if (_root != null)
+			throw new Exception("Can only make global variables working with the root Mapper");
+
+		identifier = QualifyIdentifier(identifier);
+
+		_globalArrayNames.Add(identifier);
+	}
+
+	public void LinkGlobalVariablesAndArrays()
 	{
 		if (_root == null)
 			throw new InvalidOperationException("Cannot call LinkGlobalVariable on the root Mapper");
@@ -91,6 +103,16 @@ public class Mapper
 		{
 			int localIndex = ResolveVariable(name);
 			int rootIndex = _root.ResolveVariable(name);
+
+			var info = _variables[localIndex];
+
+			info.LinkedToRootVariableIndex = rootIndex;
+		}
+
+		foreach (string name in _root._globalArrayNames)
+		{
+			int localIndex = ResolveArray(name, out _);
+			int rootIndex = _root.ResolveArray(name, out _);
 
 			var info = _variables[localIndex];
 
@@ -336,6 +358,47 @@ public class Mapper
 			return index;
 
 		return DeclareVariable(name, DataType.ForPrimitiveDataType(GetTypeForIdentifier(name)));
+	}
+
+	public int DeclareArray(string name, DataType dataType, Token? token = null)
+	{
+		name = QualifyIdentifier(name, dataType);
+
+		if (_arrayIndexByName.TryGetValue(name, out var index))
+			throw CompilerException.DuplicateDefinition(token);
+
+		index = _nextVariableIndex++;
+
+		var info = new VariableInfo(name, index);
+
+		info.Type = dataType;
+
+		_variables[index] = info;
+
+		return _arrayIndexByName[name] = index;
+	}
+
+	public int ResolveArray(string name, out bool implicitlyCreated)
+	{
+		implicitlyCreated = false;
+
+		int index;
+
+		if (_arrayIndexByName.TryGetValue(name, out index))
+			return index;
+
+		name = QualifyIdentifier(name);
+
+		if (_arrayIndexByName.TryGetValue(name, out index))
+			return index;
+
+		implicitlyCreated = true;
+
+		var elementType = DataType.ForPrimitiveDataType(GetTypeForIdentifier(name));
+
+		var arrayType = elementType.MakeArrayType();
+
+		return DeclareArray(name, arrayType);
 	}
 
 	public List<DataType> GetVariableTypes() =>

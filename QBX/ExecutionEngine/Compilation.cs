@@ -14,6 +14,8 @@ public class Compilation
 	public Dictionary<string, Routine> Subs = new Dictionary<string, Routine>();
 	public Dictionary<string, Routine> Functions = new Dictionary<string, Routine>();
 
+	public Routine? EntrypointRoutine;
+
 	public IEnumerable<Routine> AllRegisteredRoutines => Subs.Values.Concat(Functions.Values);
 
 	public bool IsRegistered(string name)
@@ -36,5 +38,10 @@ public class Compilation
 
 	public bool TryGetFunction(string name, [NotNullWhen(true)] out Routine? function)
 		=> Functions.TryGetValue(name, out function);
+
+	public void SetDefaultEntrypoint()
+	{
+		EntrypointRoutine = Modules[0].MainRoutine;
+	}
 }
 

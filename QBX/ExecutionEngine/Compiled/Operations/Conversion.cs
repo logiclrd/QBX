@@ -23,7 +23,7 @@ public static class Conversion
 			if (expression.Type.IsString)
 				throw CompilerException.TypeMismatch(expression.SourceExpression?.Token);
 
-			var value = expression.Evaluate(default!);
+			var value = expression.EvaluateConstant();
 
 			try
 			{
@@ -61,81 +61,63 @@ public static class Conversion
 	}
 }
 
-public class ConvertToInteger(IEvaluable value) : IEvaluable
+public class ConvertToInteger(IEvaluable value) : Expression
 {
 	public IEvaluable Value => value;
 
-	public CodeModel.Statements.Statement? SourceStatement { get; set; }
-	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
+	public override DataType Type => DataType.Integer;
 
-	public DataType Type => DataType.Integer;
-
-	public Variable Evaluate(ExecutionContext context) => new IntegerVariable(NumberConverter.ToInteger(Value.Evaluate(context)));
-	public LiteralValue EvaluateConstant() => new IntegerLiteralValue(NumberConverter.ToInteger(Value.EvaluateConstant()));
+	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame) => new IntegerVariable(NumberConverter.ToInteger(Value.Evaluate(context, stackFrame)));
+	public override LiteralValue EvaluateConstant() => new IntegerLiteralValue(NumberConverter.ToInteger(Value.EvaluateConstant()));
 }
 
-public class ConvertToLong(IEvaluable value) : IEvaluable
+public class ConvertToLong(IEvaluable value) : Expression
 {
 	public IEvaluable Value => value;
 
-	public CodeModel.Statements.Statement? SourceStatement { get; set; }
-	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
+	public override DataType Type => DataType.Long;
 
-	public DataType Type => DataType.Long;
-
-	public Variable Evaluate(ExecutionContext context) => new LongVariable(NumberConverter.ToLong(Value.Evaluate(context)));
-	public LiteralValue EvaluateConstant() => new LongLiteralValue(NumberConverter.ToLong(Value.EvaluateConstant()));
+	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame) => new LongVariable(NumberConverter.ToLong(Value.Evaluate(context, stackFrame)));
+	public override LiteralValue EvaluateConstant() => new LongLiteralValue(NumberConverter.ToLong(Value.EvaluateConstant()));
 }
 
-public class ConvertToSingle(IEvaluable value) : IEvaluable
+public class ConvertToSingle(IEvaluable value) : Expression
 {
 	public IEvaluable Value => value;
 
-	public CodeModel.Statements.Statement? SourceStatement { get; set; }
-	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
+	public override DataType Type => DataType.Single;
 
-	public DataType Type => DataType.Single;
-
-	public Variable Evaluate(ExecutionContext context) => new SingleVariable(NumberConverter.ToSingle(Value.Evaluate(context)));
-	public LiteralValue EvaluateConstant() => new SingleLiteralValue(NumberConverter.ToSingle(Value.EvaluateConstant()));
+	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame) => new SingleVariable(NumberConverter.ToSingle(Value.Evaluate(context, stackFrame)));
+	public override LiteralValue EvaluateConstant() => new SingleLiteralValue(NumberConverter.ToSingle(Value.EvaluateConstant()));
 }
 
-public class ConvertToDouble(IEvaluable value) : IEvaluable
+public class ConvertToDouble(IEvaluable value) : Expression
 {
 	public IEvaluable Value => value;
 
-	public CodeModel.Statements.Statement? SourceStatement { get; set; }
-	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
+	public override DataType Type => DataType.Double;
 
-	public DataType Type => DataType.Double;
-
-	public Variable Evaluate(ExecutionContext context) => new DoubleVariable(NumberConverter.ToDouble(Value.Evaluate(context)));
-	public LiteralValue EvaluateConstant() => new DoubleLiteralValue(NumberConverter.ToDouble(Value.EvaluateConstant()));
+	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame) => new DoubleVariable(NumberConverter.ToDouble(Value.Evaluate(context, stackFrame)));
+	public override LiteralValue EvaluateConstant() => new DoubleLiteralValue(NumberConverter.ToDouble(Value.EvaluateConstant()));
 }
 
-public class ConvertToCurrency(IEvaluable value) : IEvaluable
+public class ConvertToCurrency(IEvaluable value) : Expression
 {
 	public IEvaluable Value => value;
 
-	public CodeModel.Statements.Statement? SourceStatement { get; set; }
-	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
+	public override DataType Type => DataType.Currency;
 
-	public DataType Type => DataType.Currency;
-
-	public Variable Evaluate(ExecutionContext context) => new CurrencyVariable(NumberConverter.ToCurrency(Value.Evaluate(context)));
-	public LiteralValue EvaluateConstant() => new CurrencyLiteralValue(NumberConverter.ToCurrency(Value.EvaluateConstant()));
+	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame) => new CurrencyVariable(NumberConverter.ToCurrency(Value.Evaluate(context, stackFrame)));
+	public override LiteralValue EvaluateConstant() => new CurrencyLiteralValue(NumberConverter.ToCurrency(Value.EvaluateConstant()));
 }
 
-public class ConvertToString(IEvaluable value) : IEvaluable
+public class ConvertToString(IEvaluable value) : Expression
 {
 	public IEvaluable Value => value;
 
-	public CodeModel.Statements.Statement? SourceStatement { get; set; }
-	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
+	public override DataType Type => DataType.String;
 
-	public DataType Type => DataType.String;
-
-	public Variable Evaluate(ExecutionContext context) => new StringVariable(Value.Evaluate(context).ToString() ?? "");
-	public LiteralValue EvaluateConstant() => new StringLiteralValue(Value.EvaluateConstant().ToString() ?? "");
+	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame) => new StringVariable(Value.Evaluate(context, stackFrame).ToString() ?? "");
+	public override LiteralValue EvaluateConstant() => new StringLiteralValue(Value.EvaluateConstant().ToString() ?? "");
 }
 

@@ -5,7 +5,7 @@ using QBX.ExecutionEngine.Execution.Variables;
 
 namespace QBX.ExecutionEngine.Compiled.Expressions;
 
-public class FieldAccessExpression(IEvaluable? expression, int fieldIndex, DataType fieldType) : IEvaluable
+public class FieldAccessExpression(IEvaluable? expression, int fieldIndex, DataType fieldType) : Expression
 {
 	public static IEvaluable Construct(IEvaluable? expression, string fieldName)
 	{
@@ -30,23 +30,20 @@ public class FieldAccessExpression(IEvaluable? expression, int fieldIndex, DataT
 		throw CompilerException.ElementNotDefined(expression.SourceExpression?.Token);
 	}
 
-	public CodeModel.Statements.Statement? SourceStatement { get; set; }
-	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
-
-	public DataType Type => fieldType;
+	public override DataType Type => fieldType;
 
 	public IEvaluable? Expression => expression;
 	public int FieldIndex => fieldIndex;
 
-	public Variable Evaluate(ExecutionContext context)
+	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (expression == null)
 			throw new Exception("FieldAccessExpression has no expression");
 
-		var structure = (UserDataTypeVariable)expression.Evaluate(context);
+		var structure = (UserDataTypeVariable)expression.Evaluate(context, stackFrame);
 
 		return structure.Fields[FieldIndex];
 	}
 
-	public LiteralValue EvaluateConstant() => throw CompilerException.ValueIsNotConstant(expression?.SourceExpression?.Token);
+	public override LiteralValue EvaluateConstant() => throw CompilerException.ValueIsNotConstant(expression?.SourceExpression?.Token);
 }

@@ -8,7 +8,7 @@ using QBX.Numbers;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class FormattedPrintStatement : IExecutable
+public class FormattedPrintStatement(CodeModel.Statements.Statement? source) : Statement(source)
 {
 	public IEvaluable? Format;
 	public List<PrintArgument> Arguments = new List<PrintArgument>();
@@ -19,12 +19,12 @@ public class FormattedPrintStatement : IExecutable
 	[ThreadStatic]
 	static string? s_spaces;
 
-	public void Execute(ExecutionContext context, bool stepInto)
+	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (Format == null)
 			throw new Exception("FormattedPrintStatement does not have a Format expression");
 
-		var formatVariable = (StringVariable)Format.Evaluate(context);
+		var formatVariable = (StringVariable)Format.Evaluate(context, stackFrame);
 		string format = formatVariable.Value;
 
 		int nextArgumentIndex = 0;
@@ -53,12 +53,12 @@ public class FormattedPrintStatement : IExecutable
 
 							if (argument.ArgumentType == PrintArgumentType.Value)
 							{
-								argumentValue = argument.Expression.Evaluate(context);
+								argumentValue = argument.Expression.Evaluate(context, stackFrame);
 
 								break;
 							}
 
-							int newCursorX = argument.Expression.Evaluate(context).CoerceToInt();
+							int newCursorX = argument.Expression.Evaluate(context, stackFrame).CoerceToInt();
 
 							newCursorX = (newCursorX - 1) % context.VisualLibrary.CharacterWidth;
 

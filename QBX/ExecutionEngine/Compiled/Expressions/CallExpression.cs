@@ -1,20 +1,24 @@
-using QBX.ExecutionEngine.Execution.Variables;
-using System;
+﻿using System;
 using System.Collections.Generic;
+
+using QBX.ExecutionEngine.Compiled.Expressions;
+using QBX.ExecutionEngine.Execution.Variables;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class CallStatement(CodeModel.Statements.Statement? source) : Statement(source)
+public class CallExpression : Expression
 {
 	public Routine? Target;
 	public readonly List<IEvaluable> Arguments = new List<IEvaluable>();
 
 	public string? UnresolvedTargetName;
 
-	public override void Execute(Execution.ExecutionContext context, Execution.StackFrame stackFrame)
+	public override DataType Type => throw new NotImplementedException();
+
+	public override Variable Evaluate(Execution.ExecutionContext context, Execution.StackFrame stackFrame)
 	{
 		if (UnresolvedTargetName != null)
-			throw CompilerException.SubprogramNotDefined(Source);
+			throw CompilerException.SubprogramNotDefined(SourceStatement);
 
 		if (Target == null)
 			throw new Exception("CallStatement has no Target");
@@ -24,6 +28,6 @@ public class CallStatement(CodeModel.Statements.Statement? source) : Statement(s
 		for (int i = 0; i < arguments.Length; i++)
 			arguments[i] = Arguments[i].Evaluate(context, stackFrame);
 
-		context.Call(Target, arguments);
+		return context.Call(Target, arguments);
 	}
 }

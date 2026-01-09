@@ -33,21 +33,16 @@ public partial class Program
 		if (FocusedViewport == null)
 			FocusedViewport = PrimaryViewport;
 
-		int newCursorX = FocusedViewport.CursorX;
-		int newCursorY = FocusedViewport.CursorY;
-		int newScrollX = FocusedViewport.ScrollX;
-		int newScrollY = FocusedViewport.ScrollY;
+		int newCursorX, newCursorY;
+		int newScrollX, newScrollY;
 
 		var priority = Priority.Cursor;
 		bool select = input.Modifiers.ShiftKey;
 
-		int contentLineCount = FocusedViewport.GetContentLineCount();
+		int contentLineCount;
 
-		int viewportWidth = TextLibrary.Width - 2;
-		int viewportHeight = FocusedViewport.CachedContentHeight;
-
-		if (viewportHeight == 0)
-			viewportHeight = FocusedViewport.Height - 2;
+		int viewportWidth;
+		int viewportHeight;
 
 		Lazy<StringBuilder> ResetCurrentLine() =>
 			new Lazy<StringBuilder>(
@@ -67,7 +62,27 @@ public partial class Program
 					return FocusedViewport.CurrentLineBuffer;
 				});
 
-		var currentLine = ResetCurrentLine();
+		Lazy<StringBuilder> currentLine;
+
+		void ReloadViewportParameters()
+		{
+			newCursorX = FocusedViewport.CursorX;
+			newCursorY = FocusedViewport.CursorY;
+			newScrollX = FocusedViewport.ScrollX;
+			newScrollY = FocusedViewport.ScrollY;
+
+			contentLineCount = FocusedViewport.GetContentLineCount();
+
+			viewportWidth = TextLibrary.Width - 2;
+			viewportHeight = FocusedViewport.CachedContentHeight;
+
+			if (viewportHeight == 0)
+				viewportHeight = FocusedViewport.Height - 2;
+
+			currentLine = ResetCurrentLine();
+		}
+
+		ReloadViewportParameters();
 
 		bool CursorLeftWithWrap()
 		{
@@ -218,6 +233,23 @@ public partial class Program
 						Run();
 					else
 						Continue();
+				}
+				catch
+				{
+					// TODO: present error
+				}
+
+				break;
+			}
+			case ScanCode.F8:
+			{
+				try
+				{
+					FocusedViewport.CommitCurrentLine();
+
+					Step();
+
+					ReloadViewportParameters();
 				}
 				catch
 				{

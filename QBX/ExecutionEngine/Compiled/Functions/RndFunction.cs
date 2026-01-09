@@ -5,16 +5,13 @@ using QBX.Numbers;
 
 namespace QBX.ExecutionEngine.Compiled.Functions;
 
-public class RndFunction : IEvaluable
+public class RndFunction : Expression
 {
 	public IEvaluable? Argument;
 
 	static RndFunction s_noParameter = new RndFunction();
 
 	public static RndFunction NoParameterInstance => s_noParameter;
-
-	public CodeModel.Statements.Statement? SourceStatement { get; set; }
-	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
 
 	void Reseed(Variable seedValue)
 	{
@@ -54,15 +51,15 @@ public class RndFunction : IEvaluable
 		RandomNumberGenerator.Reseed(intPart, fracPart);
 	}
 
-	public DataType Type => DataType.Single;
+	public override DataType Type => DataType.Single;
 
-	public Variable Evaluate(ExecutionContext context)
+	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (Argument == null)
 			RandomNumberGenerator.Advance();
 		else
 		{
-			var argumentValue = Argument.Evaluate(context);
+			var argumentValue = Argument.Evaluate(context, stackFrame);
 
 			if (argumentValue.IsNegative)
 				Reseed(argumentValue);
@@ -74,7 +71,7 @@ public class RndFunction : IEvaluable
 		return new SingleVariable(RandomNumberGenerator.CurrentValue);
 	}
 
-	public LiteralValue EvaluateConstant()
+	public override LiteralValue EvaluateConstant()
 	{
 		throw CompilerException.ValueIsNotConstant(SourceExpression?.Token);
 	}

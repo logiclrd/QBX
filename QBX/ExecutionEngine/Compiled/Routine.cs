@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 
 using QBX.CodeModel.Statements;
-using QBX.ExecutionEngine.Execution;
 
 namespace QBX.ExecutionEngine.Compiled;
 
 public class Routine : ISequence
 {
+	public Module Module;
+
 	public string Name;
 	public SubroutineOpeningStatement? OpeningStatement;
 	public List<DataType> ParameterTypes = new List<DataType>();
@@ -19,6 +20,7 @@ public class Routine : ISequence
 	public List<IExecutable> Statements = new List<IExecutable>();
 
 	void ISequence.Append(IExecutable statement) => Statements.Add(statement);
+	void ISequence.Prepend(IExecutable statement) => Statements.Insert(0, statement);
 	int ISequence.Count => Statements.Count;
 	IExecutable ISequence.this[int index] => Statements[index];
 
@@ -26,11 +28,15 @@ public class Routine : ISequence
 
 	public const string MainRoutineName = "@Main";
 
-	public Routine(CodeModel.CompilationElement source, TypeRepository typeRepository)
+	public Routine(Module module, CodeModel.CompilationElement source, TypeRepository typeRepository)
 	{
+		Module = module;
+
 		Source = source;
 
 		Name = GetName(source);
+
+		module.Routines.Add(Name, this);
 
 		foreach (var line in source.Lines)
 		{

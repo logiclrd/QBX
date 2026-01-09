@@ -3,7 +3,7 @@ using QBX.Firmware;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class PixelSetStatement : IExecutable
+public class PixelSetStatement(CodeModel.Statements.Statement? source) : Statement(source)
 {
 	public bool StepCoordinates;
 	public IEvaluable? XExpression;
@@ -11,13 +11,13 @@ public class PixelSetStatement : IExecutable
 	public IEvaluable? ColourExpression;
 	public bool UseForegroundColour;
 
-	public void Execute(ExecutionContext context, bool stepInto)
+	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (context.VisualLibrary is not GraphicsLibrary graphicsLibrary)
 			throw RuntimeException.IllegalFunctionCall(XExpression?.SourceStatement);
 
-		var xValue = XExpression!.Evaluate(context);
-		var yValue = YExpression!.Evaluate(context);
+		var xValue = XExpression!.Evaluate(context, stackFrame);
+		var yValue = YExpression!.Evaluate(context, stackFrame);
 
 		int x = xValue.CoerceToInt();
 		int y = yValue.CoerceToInt();
@@ -37,7 +37,7 @@ public class PixelSetStatement : IExecutable
 		}
 		else
 		{
-			var colourValue = ColourExpression.Evaluate(context);
+			var colourValue = ColourExpression.Evaluate(context, stackFrame);
 
 			int colour = colourValue.CoerceToInt();
 

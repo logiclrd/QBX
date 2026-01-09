@@ -39,15 +39,12 @@ public static class Exponentiation
 	}
 }
 
-public class CurrencyExponentiation(IEvaluable left, IEvaluable right) : IEvaluable
+public class CurrencyExponentiation(IEvaluable left, IEvaluable right) : Expression
 {
 	public IEvaluable Left => left;
 	public IEvaluable Right => right;
 
-	public CodeModel.Statements.Statement? SourceStatement { get; set; }
-	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
-
-	public DataType Type => DataType.Currency;
+	public override DataType Type => DataType.Currency;
 
 	static decimal CalculateResult(decimal baseValue, int exponentValue)
 	{
@@ -67,10 +64,10 @@ public class CurrencyExponentiation(IEvaluable left, IEvaluable right) : IEvalua
 		return result;
 	}
 
-	public Variable Evaluate(ExecutionContext context)
+	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
-		var leftValue = (CurrencyVariable)left.Evaluate(context);
-		var rightValue = (LongVariable)right.Evaluate(context);
+		var leftValue = (CurrencyVariable)left.Evaluate(context, stackFrame);
+		var rightValue = (LongVariable)right.Evaluate(context, stackFrame);
 
 		try
 		{
@@ -87,7 +84,7 @@ public class CurrencyExponentiation(IEvaluable left, IEvaluable right) : IEvalua
 		}
 	}
 
-	public LiteralValue EvaluateConstant()
+	public override LiteralValue EvaluateConstant()
 	{
 		var leftValue = (CurrencyLiteralValue)left.EvaluateConstant();
 		var rightValue = (LongLiteralValue)right.EvaluateConstant();
@@ -108,20 +105,17 @@ public class CurrencyExponentiation(IEvaluable left, IEvaluable right) : IEvalua
 	}
 }
 
-public class DoubleExponentiation(IEvaluable left, IEvaluable right) : IEvaluable
+public class DoubleExponentiation(IEvaluable left, IEvaluable right) : Expression
 {
 	public IEvaluable Left => left;
 	public IEvaluable Right => right;
 
-	public CodeModel.Statements.Statement? SourceStatement { get; set; }
-	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
+	public override DataType Type => DataType.Double;
 
-	public DataType Type => DataType.Double;
-
-	public Variable Evaluate(ExecutionContext context)
+	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
-		var leftValue = (DoubleVariable)left.Evaluate(context);
-		var rightValue = (DoubleVariable)right.Evaluate(context);
+		var leftValue = (DoubleVariable)left.Evaluate(context, stackFrame);
+		var rightValue = (DoubleVariable)right.Evaluate(context, stackFrame);
 
 		try
 		{
@@ -133,7 +127,7 @@ public class DoubleExponentiation(IEvaluable left, IEvaluable right) : IEvaluabl
 		}
 	}
 
-	public LiteralValue EvaluateConstant()
+	public override LiteralValue EvaluateConstant()
 	{
 		var leftValue = (DoubleLiteralValue)left.EvaluateConstant();
 		var rightValue = (DoubleLiteralValue)right.EvaluateConstant();

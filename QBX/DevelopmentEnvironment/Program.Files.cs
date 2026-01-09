@@ -1,7 +1,6 @@
 ﻿using System.IO;
 
 using QBX.CodeModel;
-using QBX.LexicalAnalysis;
 
 namespace QBX.DevelopmentEnvironment
 {

@@ -23,23 +23,20 @@ public static class Not
 	}
 }
 
-public class IntegerNot(IEvaluable right) : IEvaluable
+public class IntegerNot(IEvaluable right) : Expression
 {
 	public IEvaluable Right => right;
 
-	public CodeModel.Statements.Statement? SourceStatement { get; set; }
-	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
+	public override DataType Type => DataType.Integer;
 
-	public DataType Type => DataType.Integer;
-
-	public Variable Evaluate(ExecutionContext context)
+	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
-		var rightValue = (IntegerVariable)right.Evaluate(context);
+		var rightValue = (IntegerVariable)right.Evaluate(context, stackFrame);
 
 		return new IntegerVariable(unchecked((short)~rightValue.Value));
 	}
 
-	public LiteralValue EvaluateConstant()
+	public override LiteralValue EvaluateConstant()
 	{
 		var rightValue = (IntegerLiteralValue)right.EvaluateConstant();
 
@@ -47,23 +44,20 @@ public class IntegerNot(IEvaluable right) : IEvaluable
 	}
 }
 
-public class LongNot(IEvaluable right) : IEvaluable
+public class LongNot(IEvaluable right) : Expression
 {
 	public IEvaluable Right => right;
 
-	public CodeModel.Statements.Statement? SourceStatement { get; set; }
-	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
+	public override DataType Type => DataType.Long;
 
-	public DataType Type => DataType.Long;
-
-	public Variable Evaluate(ExecutionContext context)
+	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
-		var rightValue = (LongVariable)right.Evaluate(context);
+		var rightValue = (LongVariable)right.Evaluate(context, stackFrame);
 
 		return new LongVariable(~rightValue.Value);
 	}
 
-	public LiteralValue EvaluateConstant()
+	public override LiteralValue EvaluateConstant()
 	{
 		var rightValue = (LongLiteralValue)right.EvaluateConstant();
 

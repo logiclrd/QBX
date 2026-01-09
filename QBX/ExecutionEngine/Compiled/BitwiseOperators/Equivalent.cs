@@ -26,27 +26,24 @@ public static class Equivalent
 	}
 }
 
-public class IntegerEquivalent(IEvaluable left, IEvaluable right) : IEvaluable
+public class IntegerEquivalent(IEvaluable left, IEvaluable right) : Expression
 {
 	public IEvaluable Left => left;
 	public IEvaluable Right => right;
 
-	public CodeModel.Statements.Statement? SourceStatement { get; set; }
-	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
+	public override DataType Type => DataType.Integer;
 
-	public DataType Type => DataType.Integer;
-
-	public Variable Evaluate(ExecutionContext context)
+	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
-		var leftValue = (IntegerVariable)left.Evaluate(context);
-		var rightValue = (IntegerVariable)right.Evaluate(context);
+		var leftValue = (IntegerVariable)left.Evaluate(context, stackFrame);
+		var rightValue = (IntegerVariable)right.Evaluate(context, stackFrame);
 
 		int result = ~(leftValue.Value ^ rightValue.Value);
 
 		return new IntegerVariable(unchecked((short)result));
 	}
 
-	public LiteralValue EvaluateConstant()
+	public override LiteralValue EvaluateConstant()
 	{
 		var leftValue = (IntegerLiteralValue)left.EvaluateConstant();
 		var rightValue = (IntegerLiteralValue)right.EvaluateConstant();
@@ -57,25 +54,22 @@ public class IntegerEquivalent(IEvaluable left, IEvaluable right) : IEvaluable
 	}
 }
 
-public class LongEquivalent(IEvaluable left, IEvaluable right) : IEvaluable
+public class LongEquivalent(IEvaluable left, IEvaluable right) : Expression
 {
 	public IEvaluable Left => left;
 	public IEvaluable Right => right;
 
-	public CodeModel.Statements.Statement? SourceStatement { get; set; }
-	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
+	public override DataType Type => DataType.Long;
 
-	public DataType Type => DataType.Long;
-
-	public Variable Evaluate(ExecutionContext context)
+	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
-		var leftValue = (LongVariable)left.Evaluate(context);
-		var rightValue = (LongVariable)right.Evaluate(context);
+		var leftValue = (LongVariable)left.Evaluate(context, stackFrame);
+		var rightValue = (LongVariable)right.Evaluate(context, stackFrame);
 
 		return new LongVariable(~(leftValue.Value ^ rightValue.Value));
 	}
 
-	public LiteralValue EvaluateConstant()
+	public override LiteralValue EvaluateConstant()
 	{
 		var leftValue = (LongLiteralValue)left.EvaluateConstant();
 		var rightValue = (LongLiteralValue)right.EvaluateConstant();

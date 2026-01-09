@@ -21,7 +21,9 @@ public class ForStatement
 		IEvaluable fromExpression,
 		IEvaluable toExpression,
 		IEvaluable? stepExpression,
-		ISequence body)
+		ISequence body,
+		CodeModel.Statements.ForStatement? sourceForStatement,
+		CodeModel.Statements.NextStatement? sourceNextStatement)
 	{
 		switch (iteratorVariableType)
 		{
@@ -32,13 +34,14 @@ public class ForStatement
 				stepExpression = Conversion.Construct(stepExpression, PrimitiveDataType.Integer);
 
 				return
-					new IntegerForStatement()
+					new IntegerForStatement(sourceForStatement)
 					{
 						IteratorVariableIndex = iteratorVariableIndex,
 						FromExpression = fromExpression,
 						ToExpression = toExpression,
 						StepExpression = stepExpression,
 						Body = body,
+						SourceNextStatement = sourceNextStatement,
 					};
 			}
 			case PrimitiveDataType.Long:
@@ -48,13 +51,14 @@ public class ForStatement
 				stepExpression = Conversion.Construct(stepExpression, PrimitiveDataType.Long);
 
 				return
-					new LongForStatement()
+					new LongForStatement(sourceForStatement)
 					{
 						IteratorVariableIndex = iteratorVariableIndex,
 						FromExpression = fromExpression,
 						ToExpression = toExpression,
 						StepExpression = stepExpression,
 						Body = body,
+						SourceNextStatement = sourceNextStatement,
 					};
 			}
 			case PrimitiveDataType.Single:
@@ -64,13 +68,14 @@ public class ForStatement
 				stepExpression = Conversion.Construct(stepExpression, PrimitiveDataType.Single);
 
 				return
-					new SingleForStatement()
+					new SingleForStatement(sourceForStatement)
 					{
 						IteratorVariableIndex = iteratorVariableIndex,
 						FromExpression = fromExpression,
 						ToExpression = toExpression,
 						StepExpression = stepExpression,
 						Body = body,
+						SourceNextStatement = sourceNextStatement,
 					};
 			}
 			case PrimitiveDataType.Double:
@@ -80,13 +85,14 @@ public class ForStatement
 				stepExpression = Conversion.Construct(stepExpression, PrimitiveDataType.Double);
 
 				return
-					new DoubleForStatement()
+					new DoubleForStatement(sourceForStatement)
 					{
 						IteratorVariableIndex = iteratorVariableIndex,
 						FromExpression = fromExpression,
 						ToExpression = toExpression,
 						StepExpression = stepExpression,
 						Body = body,
+						SourceNextStatement = sourceNextStatement,
 					};
 			}
 			case PrimitiveDataType.Currency:
@@ -96,13 +102,14 @@ public class ForStatement
 				stepExpression = Conversion.Construct(stepExpression, PrimitiveDataType.Currency);
 
 				return
-					new CurrencyForStatement()
+					new CurrencyForStatement(sourceForStatement)
 					{
 						IteratorVariableIndex = iteratorVariableIndex,
 						FromExpression = fromExpression,
 						ToExpression = toExpression,
 						StepExpression = stepExpression,
 						Body = body,
+						SourceNextStatement = sourceNextStatement,
 					};
 			}
 
@@ -111,370 +118,380 @@ public class ForStatement
 	}
 }
 
-public class IntegerForStatement : IExecutable
+public class IntegerForStatement(CodeModel.Statements.Statement? source) : Statement(source)
 {
 	public int IteratorVariableIndex;
 	public IEvaluable? FromExpression;
 	public IEvaluable? ToExpression;
 	public IEvaluable? StepExpression;
 	public ISequence? Body;
+	public CodeModel.Statements.NextStatement? SourceNextStatement;
 
-	public void Execute(ExecutionContext context, bool stepInto)
+	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
-		var iteratorVariable = context.CurrentFrame.Variables[IteratorVariableIndex];
+		var iteratorVariable = stackFrame.Variables[IteratorVariableIndex];
 
 		if (iteratorVariable == null)
 			throw new Exception("IntegerForStatement with no IteratorVariable");
 		if (Body == null)
 			throw new Exception("IntegerForStatement with no Body");
 
-		var fromVariable = FromExpression?.Evaluate(context) ?? throw new Exception("IntegerForStatement with no FromExpression");
-		var toVariable = ToExpression?.Evaluate(context) ?? throw new Exception("IntegerForStatement with no ToExpression");
-		var stepVariable = StepExpression?.Evaluate(context);
+		var fromVariable = FromExpression?.Evaluate(context, stackFrame) ?? throw new Exception("IntegerForStatement with no FromExpression");
+		var toVariable = ToExpression?.Evaluate(context, stackFrame) ?? throw new Exception("IntegerForStatement with no ToExpression");
+		var stepVariable = StepExpression?.Evaluate(context, stackFrame);
 
-		short fromValue = ((IntegerVariable)fromVariable).Value;
-		short toValue = ((IntegerVariable)toVariable).Value;
-		short stepValue = (stepVariable as IntegerVariable)?.Value ?? 1;
+		short from = ((IntegerVariable)fromVariable).Value;
+		short to = ((IntegerVariable)toVariable).Value;
+		short step = (stepVariable as IntegerVariable)?.Value ?? 1;
 
-		bool proceed = (fromValue == toValue);
+		bool proceed = (from == to);
 
 		if (!proceed)
 		{
-			if (fromValue < toValue)
-				proceed = (stepValue > 0);
+			if (from < to)
+				proceed = (step > 0);
 			else
-				proceed = (stepValue < 0);
+				proceed = (step < 0);
 		}
 
 		if (proceed)
-			context.Execute(new ForLoop(FromExpression?.SourceStatement, fromValue, toValue, stepValue, iteratorVariable, Body), stepInto);
+		{
+			var nextStatement = new NextStatement(from, to, step, SourceNextStatement);
+
+			while (!nextStatement.FinishLoop)
+			{
+				iteratorVariable.SetData(nextStatement.NextValue);
+
+				context.Dispatch(Body, stackFrame);
+				context.Dispatch(nextStatement, stackFrame);
+			}
+		}
 	}
 
-	class ForLoop(CodeModel.Statements.Statement? blame, short from, short to, short step, Variable iterator, ISequence body) : IExecutable
+	class NextStatement(short from, short to, short step, CodeModel.Statements.NextStatement? sourceNextStatement)
+		: Statement(sourceNextStatement)
 	{
-		short _nextValue = from;
+		public bool FinishLoop = false;
+		public short NextValue = from;
 
-		public void Execute(ExecutionContext context, bool stepInto)
+		public override void Execute(ExecutionContext context, StackFrame stackFrame)
 		{
-			iterator.SetData(_nextValue);
-
 			try
 			{
-				_nextValue += step;
+				NextValue += step;
 			}
 			catch (OverflowException)
 			{
-				throw RuntimeException.Overflow(blame);
+				throw RuntimeException.Overflow(Source);
 			}
 
-			bool finishLoop = false;
-
 			if (step > 0)
-				finishLoop = (_nextValue > to);
+				FinishLoop = (NextValue > to);
 			else if (step < 0)
-				finishLoop = (_nextValue < to);
-
-			if (!finishLoop)
-				context.CurrentFrame.NextStatement = this;
-
-			context.PushScope();
-
-			context.CurrentFrame.CurrentSequence = body;
+				FinishLoop = (NextValue < to);
 		}
 	}
 }
 
-public class LongForStatement : IExecutable
+public class LongForStatement(CodeModel.Statements.Statement? source) : Statement(source)
 {
 	public int IteratorVariableIndex;
 	public IEvaluable? FromExpression;
 	public IEvaluable? ToExpression;
 	public IEvaluable? StepExpression;
 	public ISequence? Body;
+	public CodeModel.Statements.NextStatement? SourceNextStatement;
 
-	public void Execute(ExecutionContext context, bool stepInto)
+	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
-		var iteratorVariable = context.CurrentFrame.Variables[IteratorVariableIndex];
+		var iteratorVariable = stackFrame.Variables[IteratorVariableIndex];
 
 		if (iteratorVariable == null)
 			throw new Exception("LongForStatement with no IteratorVariable");
 		if (Body == null)
 			throw new Exception("LongForStatement with no Body");
 
-		var fromVariable = FromExpression?.Evaluate(context) ?? throw new Exception("LongForStatement with no FromExpression");
-		var toVariable = ToExpression?.Evaluate(context) ?? throw new Exception("LongForStatement with no ToExpression");
-		var stepVariable = StepExpression?.Evaluate(context);
+		var fromVariable = FromExpression?.Evaluate(context, stackFrame) ?? throw new Exception("LongForStatement with no FromExpression");
+		var toVariable = ToExpression?.Evaluate(context, stackFrame) ?? throw new Exception("LongForStatement with no ToExpression");
+		var stepVariable = StepExpression?.Evaluate(context, stackFrame);
 
-		int fromValue = ((LongVariable)fromVariable).Value;
-		int toValue = ((LongVariable)toVariable).Value;
-		int stepValue = (stepVariable as LongVariable)?.Value ?? 1;
+		int from = ((LongVariable)fromVariable).Value;
+		int to = ((LongVariable)toVariable).Value;
+		int step = (stepVariable as LongVariable)?.Value ?? 1;
 
-		bool proceed = (fromValue == toValue);
+		bool proceed = (from == to);
 
 		if (!proceed)
 		{
-			if (fromValue < toValue)
-				proceed = (stepValue > 0);
+			if (from < to)
+				proceed = (step > 0);
 			else
-				proceed = (stepValue < 0);
+				proceed = (step < 0);
 		}
 
 		if (proceed)
-			context.Execute(new ForLoop(FromExpression?.SourceStatement, fromValue, toValue, stepValue, iteratorVariable, Body), stepInto);
+		{
+			var nextStatement = new NextStatement(from, to, step, SourceNextStatement);
+
+			while (!nextStatement.FinishLoop)
+			{
+				iteratorVariable.SetData(nextStatement.NextValue);
+
+				context.Dispatch(Body, stackFrame);
+				context.Dispatch(nextStatement, stackFrame);
+			}
+		}
 	}
 
-	class ForLoop(CodeModel.Statements.Statement? blame, int from, int to, int step, Variable iterator, ISequence body) : IExecutable
+	class NextStatement(int from, int to, int step, CodeModel.Statements.NextStatement? sourceNextStatement)
+		: Statement(sourceNextStatement)
 	{
-		int _nextValue = from;
+		public bool FinishLoop = false;
+		public int NextValue = from;
 
-		public void Execute(ExecutionContext context, bool stepInto)
+		public override void Execute(ExecutionContext context, StackFrame stackFrame)
 		{
-			iterator.SetData(_nextValue);
-
 			try
 			{
-				_nextValue += step;
+				NextValue += step;
 			}
 			catch (OverflowException)
 			{
-				throw RuntimeException.Overflow(blame);
+				throw RuntimeException.Overflow(Source);
 			}
 
-			bool finishLoop = false;
-
 			if (step > 0)
-				finishLoop = (_nextValue > to);
+				FinishLoop = (NextValue > to);
 			else if (step < 0)
-				finishLoop = (_nextValue < to);
-
-			if (!finishLoop)
-				context.CurrentFrame.NextStatement = this;
-
-			context.PushScope();
-
-			context.CurrentFrame.CurrentSequence = body;
+				FinishLoop = (NextValue < to);
 		}
 	}
 }
 
-public class SingleForStatement : IExecutable
+public class SingleForStatement(CodeModel.Statements.Statement? source) : Statement(source)
 {
 	public int IteratorVariableIndex;
 	public IEvaluable? FromExpression;
 	public IEvaluable? ToExpression;
 	public IEvaluable? StepExpression;
 	public ISequence? Body;
+	public CodeModel.Statements.NextStatement? SourceNextStatement;
 
-	public void Execute(ExecutionContext context, bool stepInto)
+	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
-		var iteratorVariable = context.CurrentFrame.Variables[IteratorVariableIndex];
+		var iteratorVariable = stackFrame.Variables[IteratorVariableIndex];
 
 		if (iteratorVariable == null)
 			throw new Exception("SingleForStatement with no IteratorVariable");
 		if (Body == null)
 			throw new Exception("SingleForStatement with no Body");
 
-		var fromVariable = FromExpression?.Evaluate(context) ?? throw new Exception("SingleForStatement with no FromExpression");
-		var toVariable = ToExpression?.Evaluate(context) ?? throw new Exception("SingleForStatement with no ToExpression");
-		var stepVariable = StepExpression?.Evaluate(context);
+		var fromVariable = FromExpression?.Evaluate(context, stackFrame) ?? throw new Exception("SingleForStatement with no FromExpression");
+		var toVariable = ToExpression?.Evaluate(context, stackFrame) ?? throw new Exception("SingleForStatement with no ToExpression");
+		var stepVariable = StepExpression?.Evaluate(context, stackFrame);
 
-		float fromValue = ((SingleVariable)fromVariable).Value;
-		float toValue = ((SingleVariable)toVariable).Value;
-		float stepValue = (stepVariable as SingleVariable)?.Value ?? 1;
+		float from = ((SingleVariable)fromVariable).Value;
+		float to = ((SingleVariable)toVariable).Value;
+		float step = (stepVariable as SingleVariable)?.Value ?? 1;
 
-		bool proceed = (fromValue == toValue);
+		bool proceed = (from == to);
 
 		if (!proceed)
 		{
-			if (fromValue < toValue)
-				proceed = (stepValue > 0);
+			if (from < to)
+				proceed = (step > 0);
 			else
-				proceed = (stepValue < 0);
+				proceed = (step < 0);
 		}
 
 		if (proceed)
-			context.Execute(new ForLoop(FromExpression?.SourceStatement, fromValue, toValue, stepValue, iteratorVariable, Body), stepInto);
+		{
+			var nextStatement = new NextStatement(from, to, step, SourceNextStatement);
+
+			while (!nextStatement.FinishLoop)
+			{
+				iteratorVariable.SetData(nextStatement.NextValue);
+
+				context.Dispatch(Body, stackFrame);
+				context.Dispatch(nextStatement, stackFrame);
+			}
+		}
 	}
 
-	class ForLoop(CodeModel.Statements.Statement? blame, float from, float to, float step, Variable iterator, ISequence body) : IExecutable
+	class NextStatement(float from, float to, float step, CodeModel.Statements.NextStatement? sourceNextStatement)
+		: Statement(sourceNextStatement)
 	{
-		float _nextValue = from;
+		public bool FinishLoop = false;
+		public float NextValue = from;
 
-		public void Execute(ExecutionContext context, bool stepInto)
+		public override void Execute(ExecutionContext context, StackFrame stackFrame)
 		{
-			iterator.SetData(_nextValue);
-
 			try
-						{
-			_nextValue += step;
-						}
+			{
+				NextValue += step;
+			}
 			catch (OverflowException)
 			{
-				throw RuntimeException.Overflow(blame);
-						}
-
-			bool finishLoop = false;
+				throw RuntimeException.Overflow(Source);
+			}
 
 			if (step > 0)
-				finishLoop = (_nextValue > to);
+				FinishLoop = (NextValue > to);
 			else if (step < 0)
-				finishLoop = (_nextValue < to);
-
-			if (!finishLoop)
-				context.CurrentFrame.NextStatement = this;
-
-			context.PushScope();
-
-			context.CurrentFrame.CurrentSequence = body;
+				FinishLoop = (NextValue < to);
 		}
 	}
 }
 
-public class DoubleForStatement : IExecutable
+public class DoubleForStatement(CodeModel.Statements.Statement? source) : Statement(source)
 {
 	public int IteratorVariableIndex;
 	public IEvaluable? FromExpression;
 	public IEvaluable? ToExpression;
 	public IEvaluable? StepExpression;
 	public ISequence? Body;
+	public CodeModel.Statements.NextStatement? SourceNextStatement;
 
-	public void Execute(ExecutionContext context, bool stepInto)
+	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
-		var iteratorVariable = context.CurrentFrame.Variables[IteratorVariableIndex];
+		var iteratorVariable = stackFrame.Variables[IteratorVariableIndex];
 
 		if (iteratorVariable == null)
 			throw new Exception("DoubleForStatement with no IteratorVariable");
 		if (Body == null)
 			throw new Exception("DoubleForStatement with no Body");
 
-		var fromVariable = FromExpression?.Evaluate(context) ?? throw new Exception("DoubleForStatement with no FromExpression");
-		var toVariable = ToExpression?.Evaluate(context) ?? throw new Exception("DoubleForStatement with no ToExpression");
-		var stepVariable = StepExpression?.Evaluate(context);
+		var fromVariable = FromExpression?.Evaluate(context, stackFrame) ?? throw new Exception("DoubleForStatement with no FromExpression");
+		var toVariable = ToExpression?.Evaluate(context, stackFrame) ?? throw new Exception("DoubleForStatement with no ToExpression");
+		var stepVariable = StepExpression?.Evaluate(context, stackFrame);
 
-		double fromValue = ((DoubleVariable)fromVariable).Value;
-		double toValue = ((DoubleVariable)toVariable).Value;
-		double stepValue = (stepVariable as DoubleVariable)?.Value ?? 1;
+		double from = ((DoubleVariable)fromVariable).Value;
+		double to = ((DoubleVariable)toVariable).Value;
+		double step = (stepVariable as DoubleVariable)?.Value ?? 1;
 
-		bool proceed = (fromValue == toValue);
+		bool proceed = (from == to);
 
 		if (!proceed)
 		{
-			if (fromValue < toValue)
-				proceed = (stepValue > 0);
+			if (from < to)
+				proceed = (step > 0);
 			else
-				proceed = (stepValue < 0);
+				proceed = (step < 0);
 		}
 
 		if (proceed)
-			context.Execute(new ForLoop(FromExpression?.SourceStatement, fromValue, toValue, stepValue, iteratorVariable, Body), stepInto);
+		{
+			var nextStatement = new NextStatement(from, to, step, SourceNextStatement);
+
+			while (!nextStatement.FinishLoop)
+			{
+				iteratorVariable.SetData(nextStatement.NextValue);
+
+				context.Dispatch(Body, stackFrame);
+				context.Dispatch(nextStatement, stackFrame);
+			}
+		}
 	}
 
-	class ForLoop(CodeModel.Statements.Statement? blame, double from, double to, double step, Variable iterator, ISequence body) : IExecutable
+	class NextStatement(double from, double to, double step, CodeModel.Statements.NextStatement? sourceNextStatement)
+		: Statement(sourceNextStatement)
 	{
-		double _nextValue = from;
+		public bool FinishLoop = false;
+		public double NextValue = from;
 
-		public void Execute(ExecutionContext context, bool stepInto)
+		public override void Execute(ExecutionContext context, StackFrame stackFrame)
 		{
-			iterator.SetData(_nextValue);
-
 			try
-							{
-			_nextValue += step;
-							}
+			{
+				NextValue += step;
+			}
 			catch (OverflowException)
 			{
-				throw RuntimeException.Overflow(blame);
-							}
-
-			bool finishLoop = false;
+				throw RuntimeException.Overflow(Source);
+			}
 
 			if (step > 0)
-				finishLoop = (_nextValue > to);
+				FinishLoop = (NextValue > to);
 			else if (step < 0)
-				finishLoop = (_nextValue < to);
-
-			if (!finishLoop)
-				context.CurrentFrame.NextStatement = this;
-
-			context.PushScope();
-
-			context.CurrentFrame.CurrentSequence = body;
+				FinishLoop = (NextValue < to);
 		}
 	}
 }
 
-public class CurrencyForStatement : IExecutable
+public class CurrencyForStatement(CodeModel.Statements.Statement? source) : Statement(source)
 {
 	public int IteratorVariableIndex;
 	public IEvaluable? FromExpression;
 	public IEvaluable? ToExpression;
 	public IEvaluable? StepExpression;
 	public ISequence? Body;
+	public CodeModel.Statements.NextStatement? SourceNextStatement;
 
-	public void Execute(ExecutionContext context, bool stepInto)
+	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
-		var iteratorVariable = context.CurrentFrame.Variables[IteratorVariableIndex];
+		var iteratorVariable = stackFrame.Variables[IteratorVariableIndex];
 
 		if (iteratorVariable == null)
 			throw new Exception("CurrencyForStatement with no IteratorVariable");
 		if (Body == null)
 			throw new Exception("CurrencyForStatement with no Body");
 
-		var fromVariable = FromExpression?.Evaluate(context) ?? throw new Exception("CurrencyForStatement with no FromExpression");
-		var toVariable = ToExpression?.Evaluate(context) ?? throw new Exception("CurrencyForStatement with no ToExpression");
-		var stepVariable = StepExpression?.Evaluate(context);
+		var fromVariable = FromExpression?.Evaluate(context, stackFrame) ?? throw new Exception("CurrencyForStatement with no FromExpression");
+		var toVariable = ToExpression?.Evaluate(context, stackFrame) ?? throw new Exception("CurrencyForStatement with no ToExpression");
+		var stepVariable = StepExpression?.Evaluate(context, stackFrame);
 
-		decimal fromValue = ((CurrencyVariable)fromVariable).Value;
-		decimal toValue = ((CurrencyVariable)toVariable).Value;
-		decimal stepValue = (stepVariable as CurrencyVariable)?.Value ?? 1;
+		decimal from = ((CurrencyVariable)fromVariable).Value;
+		decimal to = ((CurrencyVariable)toVariable).Value;
+		decimal step = (stepVariable as CurrencyVariable)?.Value ?? 1;
 
-		bool proceed = (fromValue == toValue);
+		bool proceed = (from == to);
 
 		if (!proceed)
 		{
-			if (fromValue < toValue)
-				proceed = (stepValue > 0);
+			if (from < to)
+				proceed = (step > 0);
 			else
-				proceed = (stepValue < 0);
+				proceed = (step < 0);
 		}
 
 		if (proceed)
-			context.Execute(new ForLoop(FromExpression?.SourceStatement, fromValue, toValue, stepValue, iteratorVariable, Body), stepInto);
+		{
+			var nextStatement = new NextStatement(from, to, step, SourceNextStatement);
+
+			while (!nextStatement.FinishLoop)
+			{
+				iteratorVariable.SetData(nextStatement.NextValue);
+
+				context.Dispatch(Body, stackFrame);
+				context.Dispatch(nextStatement, stackFrame);
+			}
+		}
 	}
 
-	class ForLoop(CodeModel.Statements.Statement? blame, decimal from, decimal to, decimal step, Variable iterator, ISequence body) : IExecutable
+	class NextStatement(decimal from, decimal to, decimal step, CodeModel.Statements.NextStatement? sourceNextStatement)
+		: Statement(sourceNextStatement)
 	{
-		decimal _nextValue = from;
+		public bool FinishLoop = false;
+		public decimal NextValue = from;
 
-		public void Execute(ExecutionContext context, bool stepInto)
+		public override void Execute(ExecutionContext context, StackFrame stackFrame)
 		{
-			iterator.SetData(_nextValue);
-
 			try
 			{
-				_nextValue += step;
+				NextValue += step;
 			}
 			catch (OverflowException)
 			{
-				throw RuntimeException.Overflow(blame);
+				throw RuntimeException.Overflow(Source);
 			}
 
-			if (!_nextValue.IsInCurrencyRange())
-				throw RuntimeException.Overflow(blame);
-
-			bool finishLoop = false;
+			if (!NextValue.IsInCurrencyRange())
+				throw RuntimeException.Overflow(Source);
 
 			if (step > 0)
-				finishLoop = (_nextValue > to);
+				FinishLoop = (NextValue > to);
 			else if (step < 0)
-				finishLoop = (_nextValue < to);
-
-			if (!finishLoop)
-				context.CurrentFrame.NextStatement = this;
-
-			context.PushScope();
-
-			context.CurrentFrame.CurrentSequence = body;
+				FinishLoop = (NextValue < to);
 		}
 	}
 }

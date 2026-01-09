@@ -4,5 +4,9 @@ namespace QBX.ExecutionEngine.Compiled;
 
 public interface IExecutable
 {
-	void Execute(Execution.ExecutionContext context, bool stepInto);
+	CodeModel.Statements.Statement? Source { get; }
+
+	bool CanBreak { get; }
+
+	void Execute(ExecutionContext context, StackFrame stackFrame);
 }

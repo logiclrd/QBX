@@ -189,6 +189,8 @@ public class Viewport
 
 			// TODO: the user alters the capitalization of an identifier, alter all others
 			// in the program to match
+
+			// TODO: fancy code to rip out the statements for a modified line and replace them
 		}
 		catch
 		{

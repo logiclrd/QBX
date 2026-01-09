@@ -11,6 +11,6 @@ public interface IEvaluable
 
 	DataType Type { get; }
 
-	Variable Evaluate(ExecutionContext context);
+	Variable Evaluate(ExecutionContext context, StackFrame stackFrame);
 	LiteralValue EvaluateConstant();
 }

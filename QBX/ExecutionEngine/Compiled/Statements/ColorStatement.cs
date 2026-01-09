@@ -1,15 +1,16 @@
+using QBX.ExecutionEngine.Execution;
 using QBX.Firmware;
 using QBX.Hardware;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class ColorStatement : IExecutable
+public class ColorStatement(CodeModel.Statements.Statement? source) : Statement(source)
 {
 	public IEvaluable? Argument1Expression;
 	public IEvaluable? Argument2Expression;
 	public IEvaluable? Argument3Expression;
 
-	public void Execute(Execution.ExecutionContext context, bool stepInto)
+	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
 		// COLOR modes:
 		//
@@ -36,13 +37,13 @@ public class ColorStatement : IExecutable
 			if (context.VisualLibrary is TextLibrary library)
 			{
 				if (Argument1Expression != null)
-					library.SetForegroundAttribute(Argument1Expression.Evaluate(context).CoerceToInt());
+					library.SetForegroundAttribute(Argument1Expression.Evaluate(context, stackFrame).CoerceToInt());
 				if (Argument2Expression != null)
-					library.SetBackgroundAttribute(Argument2Expression.Evaluate(context).CoerceToInt());
+					library.SetBackgroundAttribute(Argument2Expression.Evaluate(context, stackFrame).CoerceToInt());
 
 				if (Argument3Expression != null)
 				{
-					int newOverscanAttribute = Argument3Expression.Evaluate(context).CoerceToInt() & 15;
+					int newOverscanAttribute = Argument3Expression.Evaluate(context, stackFrame).CoerceToInt() & 15;
 
 					context.Machine.GraphicsArray.AttributeController.Registers[GraphicsArray.AttributeControllerRegisters.OverscanPaletteIndex]
 						= unchecked((byte)newOverscanAttribute);
@@ -54,7 +55,7 @@ public class ColorStatement : IExecutable
 			// CGA modes
 			if (Argument1Expression != null)
 			{
-				int newBackgroundAttribute = Argument1Expression.Evaluate(context).CoerceToInt();
+				int newBackgroundAttribute = Argument1Expression.Evaluate(context, stackFrame).CoerceToInt();
 
 				if ((newBackgroundAttribute < 0) || (newBackgroundAttribute > 255))
 					throw RuntimeException.IllegalFunctionCall(Argument1Expression.SourceStatement);
@@ -67,7 +68,7 @@ public class ColorStatement : IExecutable
 
 			if (Argument2Expression != null)
 			{
-				int newCGAPalette = Argument2Expression.Evaluate(context).CoerceToInt();
+				int newCGAPalette = Argument2Expression.Evaluate(context, stackFrame).CoerceToInt();
 
 				if ((newCGAPalette < 0) || (newCGAPalette > 255))
 					throw RuntimeException.IllegalFunctionCall(Argument2Expression.SourceStatement);
@@ -91,7 +92,7 @@ public class ColorStatement : IExecutable
 
 				if (Argument1Expression != null)
 				{
-					int newAttribute = Argument1Expression.Evaluate(context).CoerceToInt();
+					int newAttribute = Argument1Expression.Evaluate(context, stackFrame).CoerceToInt();
 
 					graphicsLibrary.SetDrawingAttribute(newAttribute);
 				}

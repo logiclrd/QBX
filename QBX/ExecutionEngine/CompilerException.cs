@@ -43,8 +43,8 @@ public class CompilerException : Exception
 		=> new CompilerException(statement, "Duplicate definition");
 	public static CompilerException DuplicateDefinition(Token? context)
 		=> new CompilerException(context, "Duplicate definition");
-	public static CompilerException SubprogramNotDefined(Token? context)
-		=> new CompilerException(context, "Subprogram not defined");
+	public static CompilerException SubprogramNotDefined(CodeModel.Statements.Statement? statement)
+		=> new CompilerException(statement, "Subprogram not defined");
 	public static CompilerException NextWithoutFor(Token? context)
 		=> new CompilerException(context, "NEXT without FOR");
 	public static CompilerException IllegalNumber(Token? context)

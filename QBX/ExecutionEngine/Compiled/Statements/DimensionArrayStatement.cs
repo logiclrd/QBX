@@ -3,18 +3,18 @@ using QBX.ExecutionEngine.Execution.Variables;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class DimensionArrayStatement : IExecutable
+public class DimensionArrayStatement(CodeModel.Statements.Statement? source) : Statement(source)
 {
 	public int VariableIndex;
 	public ArraySubscriptsExpressions Subscripts = new ArraySubscriptsExpressions();
 	public bool IsRedimension;
 	public bool PreserveData;
 
-	public void Execute(ExecutionContext context, bool stepInto)
+	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
-		var subscripts = Subscripts.Evaluate(context);
+		var subscripts = Subscripts.Evaluate(context, stackFrame);
 
-		var variable = (ArrayVariable)context.CurrentFrame.Variables[VariableIndex];
+		var variable = (ArrayVariable)stackFrame.Variables[VariableIndex];
 
 		variable.InitializeArray(subscripts);
 	}

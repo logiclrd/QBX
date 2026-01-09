@@ -79,20 +79,17 @@ public static class Subtraction
 	}
 }
 
-public class IntegerSubtraction(IEvaluable left, IEvaluable right) : IEvaluable
+public class IntegerSubtraction(IEvaluable left, IEvaluable right) : Expression
 {
 	public IEvaluable Left => left;
 	public IEvaluable Right => right;
 
-	public CodeModel.Statements.Statement? SourceStatement { get; set; }
-	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
+	public override DataType Type => DataType.Integer;
 
-	public DataType Type => DataType.Integer;
-
-	public Variable Evaluate(ExecutionContext context)
+	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
-		var leftValue = (IntegerVariable)left.Evaluate(context);
-		var rightValue = (IntegerVariable)right.Evaluate(context);
+		var leftValue = (IntegerVariable)left.Evaluate(context, stackFrame);
+		var rightValue = (IntegerVariable)right.Evaluate(context, stackFrame);
 
 		int difference = leftValue.Value - rightValue.Value;
 
@@ -102,7 +99,7 @@ public class IntegerSubtraction(IEvaluable left, IEvaluable right) : IEvaluable
 		return new IntegerVariable(unchecked((short)difference));
 	}
 
-	public LiteralValue EvaluateConstant()
+	public override LiteralValue EvaluateConstant()
 	{
 		var leftValue = (IntegerLiteralValue)left.EvaluateConstant();
 		var rightValue = (IntegerLiteralValue)right.EvaluateConstant();
@@ -116,20 +113,17 @@ public class IntegerSubtraction(IEvaluable left, IEvaluable right) : IEvaluable
 	}
 }
 
-public class LongSubtraction(IEvaluable left, IEvaluable right) : IEvaluable
+public class LongSubtraction(IEvaluable left, IEvaluable right) : Expression
 {
 	public IEvaluable Left => left;
 	public IEvaluable Right => right;
 
-	public CodeModel.Statements.Statement? SourceStatement { get; set; }
-	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
+	public override DataType Type => DataType.Long;
 
-	public DataType Type => DataType.Long;
-
-	public Variable Evaluate(ExecutionContext context)
+	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
-		var leftValue = (LongVariable)left.Evaluate(context);
-		var rightValue = (LongVariable)right.Evaluate(context);
+		var leftValue = (LongVariable)left.Evaluate(context, stackFrame);
+		var rightValue = (LongVariable)right.Evaluate(context, stackFrame);
 
 		try
 		{
@@ -141,7 +135,7 @@ public class LongSubtraction(IEvaluable left, IEvaluable right) : IEvaluable
 		}
 	}
 
-	public LiteralValue EvaluateConstant()
+	public override LiteralValue EvaluateConstant()
 	{
 		var leftValue = (LongLiteralValue)left.EvaluateConstant();
 		var rightValue = (LongLiteralValue)right.EvaluateConstant();
@@ -157,20 +151,17 @@ public class LongSubtraction(IEvaluable left, IEvaluable right) : IEvaluable
 	}
 }
 
-public class SingleSubtraction(IEvaluable left, IEvaluable right) : IEvaluable
+public class SingleSubtraction(IEvaluable left, IEvaluable right) : Expression
 {
 	public IEvaluable Left => left;
 	public IEvaluable Right => right;
 
-	public CodeModel.Statements.Statement? SourceStatement { get; set; }
-	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
+	public override DataType Type => DataType.Single;
 
-	public DataType Type => DataType.Single;
-
-	public Variable Evaluate(ExecutionContext context)
+	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
-		var leftValue = (SingleVariable)left.Evaluate(context);
-		var rightValue = (SingleVariable)right.Evaluate(context);
+		var leftValue = (SingleVariable)left.Evaluate(context, stackFrame);
+		var rightValue = (SingleVariable)right.Evaluate(context, stackFrame);
 
 		try
 		{
@@ -182,7 +173,7 @@ public class SingleSubtraction(IEvaluable left, IEvaluable right) : IEvaluable
 		}
 	}
 
-	public LiteralValue EvaluateConstant()
+	public override LiteralValue EvaluateConstant()
 	{
 		var leftValue = (SingleLiteralValue)left.EvaluateConstant();
 		var rightValue = (SingleLiteralValue)right.EvaluateConstant();
@@ -198,20 +189,17 @@ public class SingleSubtraction(IEvaluable left, IEvaluable right) : IEvaluable
 	}
 }
 
-public class DoubleSubtraction(IEvaluable left, IEvaluable right) : IEvaluable
+public class DoubleSubtraction(IEvaluable left, IEvaluable right) : Expression
 {
 	public IEvaluable Left => left;
 	public IEvaluable Right => right;
 
-	public CodeModel.Statements.Statement? SourceStatement { get; set; }
-	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
+	public override DataType Type => DataType.Double;
 
-	public DataType Type => DataType.Double;
-
-	public Variable Evaluate(ExecutionContext context)
+	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
-		var leftValue = (DoubleVariable)left.Evaluate(context);
-		var rightValue = (DoubleVariable)right.Evaluate(context);
+		var leftValue = (DoubleVariable)left.Evaluate(context, stackFrame);
+		var rightValue = (DoubleVariable)right.Evaluate(context, stackFrame);
 
 		try
 		{
@@ -223,7 +211,7 @@ public class DoubleSubtraction(IEvaluable left, IEvaluable right) : IEvaluable
 		}
 	}
 
-	public LiteralValue EvaluateConstant()
+	public override LiteralValue EvaluateConstant()
 	{
 		var leftValue = (DoubleLiteralValue)left.EvaluateConstant();
 		var rightValue = (DoubleLiteralValue)right.EvaluateConstant();
@@ -239,20 +227,17 @@ public class DoubleSubtraction(IEvaluable left, IEvaluable right) : IEvaluable
 	}
 }
 
-public class CurrencySubtraction(IEvaluable left, IEvaluable right) : IEvaluable
+public class CurrencySubtraction(IEvaluable left, IEvaluable right) : Expression
 {
 	public IEvaluable Left => left;
 	public IEvaluable Right => right;
 
-	public CodeModel.Statements.Statement? SourceStatement { get; set; }
-	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
+	public override DataType Type => DataType.Currency;
 
-	public DataType Type => DataType.Currency;
-
-	public Variable Evaluate(ExecutionContext context)
+	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
-		var leftValue = (CurrencyVariable)left.Evaluate(context);
-		var rightValue = (CurrencyVariable)right.Evaluate(context);
+		var leftValue = (CurrencyVariable)left.Evaluate(context, stackFrame);
+		var rightValue = (CurrencyVariable)right.Evaluate(context, stackFrame);
 
 		try
 		{
@@ -264,7 +249,7 @@ public class CurrencySubtraction(IEvaluable left, IEvaluable right) : IEvaluable
 		}
 	}
 
-	public LiteralValue EvaluateConstant()
+	public override LiteralValue EvaluateConstant()
 	{
 		var leftValue = (CurrencyLiteralValue)left.EvaluateConstant();
 		var rightValue = (CurrencyLiteralValue)right.EvaluateConstant();

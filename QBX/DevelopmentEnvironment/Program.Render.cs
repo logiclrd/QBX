@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Text;
 
 using QBX.Firmware;
@@ -203,6 +204,23 @@ public partial class Program : HostedProgram
 
 	int RenderViewport(int row, Viewport viewport, bool connectUp, bool verticalScrollBar = true, bool horizontalScrollBar = true)
 	{
+		int nextLineIndex = -1;
+
+		if (IsExecuting && (viewport.CompilationUnit != null))
+		{
+			var currentStackFrame = _executionContext.ExecutionState.Stack.FirstOrDefault();
+
+			if (currentStackFrame != null)
+			{
+				var nextStatement = currentStackFrame.CurrentStatement;
+
+				if ((nextStatement != null)
+				 && _statementLocation.TryGetValue(nextStatement, out var location)
+				 && (viewport.CompilationElement == location.Element))
+					nextLineIndex = location.LineIndex;
+			}
+		}
+
 		if (!Configuration.ShowScrollBars || !viewport.IsFocused || (viewport.Height <= 1))
 		{
 			verticalScrollBar = false;
@@ -290,6 +308,11 @@ public partial class Program : HostedProgram
 
 			int lineIndex = y + viewport.ScrollY;
 
+			var lineAttr =
+				lineIndex == nextLineIndex
+				? Configuration.DisplayAttributes.ProgramViewWindowCurrentStatement
+				: attr;
+
 			StringBuilder buffer;
 
 			if ((lineIndex == viewport.CursorY) && (viewport.CurrentLineBuffer != null))
@@ -313,8 +336,13 @@ public partial class Program : HostedProgram
 			var (unselectedLeft, selected, unselectedRight) =
 				CalculateSelectionHighlight(viewport.Clipboard, lineIndex, viewport.ScrollX, viewportContentWidth);
 
+			if (selected != 0)
+				lineAttr = attr;
+
 			if (unselectedLeft != 0)
 			{
+				lineAttr.Set(TextLibrary);
+
 				if (chars >= unselectedLeft)
 					TextLibrary.WriteText(buffer, viewport.ScrollX, unselectedLeft);
 				else
@@ -355,6 +383,8 @@ public partial class Program : HostedProgram
 
 			if (unselectedRight != 0)
 			{
+				lineAttr.Set(TextLibrary);
+
 				if (chars >= unselectedRight)
 					TextLibrary.WriteText(buffer, viewport.ScrollX + unselectedLeft + selected, unselectedLeft);
 				else

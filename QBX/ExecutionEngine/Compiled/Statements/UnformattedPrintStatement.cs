@@ -5,14 +5,14 @@ using QBX.ExecutionEngine.Execution;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class UnformattedPrintStatement : IExecutable
+public class UnformattedPrintStatement(CodeModel.Statements.Statement? source) : Statement(source)
 {
 	public List<PrintArgument> Arguments = new List<PrintArgument>();
 
 	[ThreadStatic]
 	static string? s_spaces;
 
-	public void Execute(ExecutionContext context, bool stepInto)
+	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
 		var emitter = new PrintEmitter(context);
 
@@ -25,14 +25,14 @@ public class UnformattedPrintStatement : IExecutable
 			{
 				case PrintArgumentType.Value:
 				{
-					emitter.Emit(argument.Expression.Evaluate(context));
+					emitter.Emit(argument.Expression.Evaluate(context, stackFrame));
 					break;
 				}
 
 				case PrintArgumentType.Tab:
 				case PrintArgumentType.Space:
 				{
-					int newCursorX = argument.Expression.Evaluate(context).CoerceToInt();
+					int newCursorX = argument.Expression.Evaluate(context, stackFrame).CoerceToInt();
 
 					newCursorX = (newCursorX - 1) % context.VisualLibrary.CharacterWidth;
 

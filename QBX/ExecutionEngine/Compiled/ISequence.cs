@@ -6,4 +6,5 @@ public interface ISequence
 	IExecutable this[int index] { get; }
 
 	void Append(IExecutable executable);
+	void Prepend(IExecutable executable);
 }

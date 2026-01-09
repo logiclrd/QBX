@@ -56,27 +56,24 @@ public static class GreaterThan
 	}
 }
 
-public class IntegerGreaterThan(IEvaluable left, IEvaluable right) : IEvaluable
+public class IntegerGreaterThan(IEvaluable left, IEvaluable right) : Expression
 {
 	public IEvaluable Left => left;
 	public IEvaluable Right => right;
 
-	public CodeModel.Statements.Statement? SourceStatement { get; set; }
-	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
+	public override DataType Type => DataType.Integer;
 
-	public DataType Type => DataType.Integer;
-
-	public Variable Evaluate(ExecutionContext context)
+	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
-		var leftValue = (IntegerVariable)left.Evaluate(context);
-		var rightValue = (IntegerVariable)right.Evaluate(context);
+		var leftValue = (IntegerVariable)left.Evaluate(context, stackFrame);
+		var rightValue = (IntegerVariable)right.Evaluate(context, stackFrame);
 
 		bool result = leftValue.Value > rightValue.Value;
 
 		return new IntegerVariable(result ? (short)-1 : (short)0);
 	}
 
-	public LiteralValue EvaluateConstant()
+	public override LiteralValue EvaluateConstant()
 	{
 		var leftValue = (IntegerLiteralValue)left.EvaluateConstant();
 		var rightValue = (IntegerLiteralValue)right.EvaluateConstant();
@@ -87,27 +84,24 @@ public class IntegerGreaterThan(IEvaluable left, IEvaluable right) : IEvaluable
 	}
 }
 
-public class LongGreaterThan(IEvaluable left, IEvaluable right) : IEvaluable
+public class LongGreaterThan(IEvaluable left, IEvaluable right) : Expression
 {
 	public IEvaluable Left => left;
 	public IEvaluable Right => right;
 
-	public CodeModel.Statements.Statement? SourceStatement { get; set; }
-	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
+	public override DataType Type => DataType.Integer;
 
-	public DataType Type => DataType.Integer;
-
-	public Variable Evaluate(ExecutionContext context)
+	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
-		var leftValue = (LongVariable)left.Evaluate(context);
-		var rightValue = (LongVariable)right.Evaluate(context);
+		var leftValue = (LongVariable)left.Evaluate(context, stackFrame);
+		var rightValue = (LongVariable)right.Evaluate(context, stackFrame);
 
 		bool result = leftValue.Value > rightValue.Value;
 
 		return new IntegerVariable(result ? (short)-1 : (short)0);
 	}
 
-	public LiteralValue EvaluateConstant()
+	public override LiteralValue EvaluateConstant()
 	{
 		var leftValue = (LongLiteralValue)left.EvaluateConstant();
 		var rightValue = (LongLiteralValue)right.EvaluateConstant();
@@ -118,27 +112,24 @@ public class LongGreaterThan(IEvaluable left, IEvaluable right) : IEvaluable
 	}
 }
 
-public class SingleGreaterThan(IEvaluable left, IEvaluable right) : IEvaluable
+public class SingleGreaterThan(IEvaluable left, IEvaluable right) : Expression
 {
 	public IEvaluable Left => left;
 	public IEvaluable Right => right;
 
-	public CodeModel.Statements.Statement? SourceStatement { get; set; }
-	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
+	public override DataType Type => DataType.Integer;
 
-	public DataType Type => DataType.Integer;
-
-	public Variable Evaluate(ExecutionContext context)
+	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
-		var leftValue = (SingleVariable)left.Evaluate(context);
-		var rightValue = (SingleVariable)right.Evaluate(context);
+		var leftValue = (SingleVariable)left.Evaluate(context, stackFrame);
+		var rightValue = (SingleVariable)right.Evaluate(context, stackFrame);
 
 		bool result = leftValue.Value > rightValue.Value;
 
 		return new IntegerVariable(result ? (short)-1 : (short)0);
 	}
 
-	public LiteralValue EvaluateConstant()
+	public override LiteralValue EvaluateConstant()
 	{
 		var leftValue = (SingleLiteralValue)left.EvaluateConstant();
 		var rightValue = (SingleLiteralValue)right.EvaluateConstant();
@@ -149,27 +140,24 @@ public class SingleGreaterThan(IEvaluable left, IEvaluable right) : IEvaluable
 	}
 }
 
-public class DoubleGreaterThan(IEvaluable left, IEvaluable right) : IEvaluable
+public class DoubleGreaterThan(IEvaluable left, IEvaluable right) : Expression
 {
 	public IEvaluable Left => left;
 	public IEvaluable Right => right;
 
-	public CodeModel.Statements.Statement? SourceStatement { get; set; }
-	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
+	public override DataType Type => DataType.Integer;
 
-	public DataType Type => DataType.Integer;
-
-	public Variable Evaluate(ExecutionContext context)
+	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
-		var leftValue = (DoubleVariable)left.Evaluate(context);
-		var rightValue = (DoubleVariable)right.Evaluate(context);
+		var leftValue = (DoubleVariable)left.Evaluate(context, stackFrame);
+		var rightValue = (DoubleVariable)right.Evaluate(context, stackFrame);
 
 		bool result = leftValue.Value > rightValue.Value;
 
 		return new IntegerVariable(result ? (short)-1 : (short)0);
 	}
 
-	public LiteralValue EvaluateConstant()
+	public override LiteralValue EvaluateConstant()
 	{
 		var leftValue = (DoubleLiteralValue)left.EvaluateConstant();
 		var rightValue = (DoubleLiteralValue)right.EvaluateConstant();
@@ -180,27 +168,24 @@ public class DoubleGreaterThan(IEvaluable left, IEvaluable right) : IEvaluable
 	}
 }
 
-public class CurrencyGreaterThan(IEvaluable left, IEvaluable right) : IEvaluable
+public class CurrencyGreaterThan(IEvaluable left, IEvaluable right) : Expression
 {
 	public IEvaluable Left => left;
 	public IEvaluable Right => right;
 
-	public CodeModel.Statements.Statement? SourceStatement { get; set; }
-	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
+	public override DataType Type => DataType.Integer;
 
-	public DataType Type => DataType.Integer;
-
-	public Variable Evaluate(ExecutionContext context)
+	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
-		var leftValue = (CurrencyVariable)left.Evaluate(context);
-		var rightValue = (CurrencyVariable)right.Evaluate(context);
+		var leftValue = (CurrencyVariable)left.Evaluate(context, stackFrame);
+		var rightValue = (CurrencyVariable)right.Evaluate(context, stackFrame);
 
 		bool result = leftValue.Value > rightValue.Value;
 
 		return new IntegerVariable(result ? (short)-1 : (short)0);
 	}
 
-	public LiteralValue EvaluateConstant()
+	public override LiteralValue EvaluateConstant()
 	{
 		var leftValue = (CurrencyLiteralValue)left.EvaluateConstant();
 		var rightValue = (CurrencyLiteralValue)right.EvaluateConstant();
@@ -211,27 +196,24 @@ public class CurrencyGreaterThan(IEvaluable left, IEvaluable right) : IEvaluable
 	}
 }
 
-public class StringGreaterThan(IEvaluable left, IEvaluable right) : IEvaluable
+public class StringGreaterThan(IEvaluable left, IEvaluable right) : Expression
 {
 	public IEvaluable Left => left;
 	public IEvaluable Right => right;
 
-	public CodeModel.Statements.Statement? SourceStatement { get; set; }
-	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
+	public override DataType Type => DataType.Integer;
 
-	public DataType Type => DataType.Integer;
-
-	public Variable Evaluate(ExecutionContext context)
+	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
-		var leftValue = (StringVariable)left.Evaluate(context);
-		var rightValue = (StringVariable)right.Evaluate(context);
+		var leftValue = (StringVariable)left.Evaluate(context, stackFrame);
+		var rightValue = (StringVariable)right.Evaluate(context, stackFrame);
 
 		bool result = leftValue.Value.CompareTo(rightValue.Value, StringComparison.Ordinal) > 0;
 
 		return new IntegerVariable(result ? (short)-1 : (short)0);
 	}
 
-	public LiteralValue EvaluateConstant()
+	public override LiteralValue EvaluateConstant()
 	{
 		var leftValue = (StringLiteralValue)left.EvaluateConstant();
 		var rightValue = (StringLiteralValue)right.EvaluateConstant();

@@ -28,18 +28,15 @@ public static class Negation
 	}
 }
 
-public class IntegerNegation(IEvaluable right) : IEvaluable
+public class IntegerNegation(IEvaluable right) : Expression
 {
 	public IEvaluable Right => right;
 
-	public CodeModel.Statements.Statement? SourceStatement { get; set; }
-	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
+	public override DataType Type => DataType.Integer;
 
-	public DataType Type => DataType.Integer;
-
-	public Variable Evaluate(ExecutionContext context)
+	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
-		var rightValue = (IntegerVariable)right.Evaluate(context);
+		var rightValue = (IntegerVariable)right.Evaluate(context, stackFrame);
 
 		if (rightValue.Value == short.MinValue) // -MinValue is larger than MaxValue
 			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
@@ -47,7 +44,7 @@ public class IntegerNegation(IEvaluable right) : IEvaluable
 		return new IntegerVariable(unchecked((short)-rightValue.Value));
 	}
 
-	public LiteralValue EvaluateConstant()
+	public override LiteralValue EvaluateConstant()
 	{
 		var rightValue = (IntegerLiteralValue)right.EvaluateConstant();
 
@@ -58,18 +55,15 @@ public class IntegerNegation(IEvaluable right) : IEvaluable
 	}
 }
 
-public class LongNegation(IEvaluable right) : IEvaluable
+public class LongNegation(IEvaluable right) : Expression
 {
 	public IEvaluable Right => right;
 
-	public CodeModel.Statements.Statement? SourceStatement { get; set; }
-	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
+	public override DataType Type => DataType.Long;
 
-	public DataType Type => DataType.Long;
-
-	public Variable Evaluate(ExecutionContext context)
+	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
-		var rightValue = (LongVariable)right.Evaluate(context);
+		var rightValue = (LongVariable)right.Evaluate(context, stackFrame);
 
 		if (rightValue.Value == int.MinValue) // -MinValue is larger than MaxValue
 			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
@@ -77,7 +71,7 @@ public class LongNegation(IEvaluable right) : IEvaluable
 		return new LongVariable(-rightValue.Value);
 	}
 
-	public LiteralValue EvaluateConstant()
+	public override LiteralValue EvaluateConstant()
 	{
 		var rightValue = (LongLiteralValue)right.EvaluateConstant();
 
@@ -88,23 +82,20 @@ public class LongNegation(IEvaluable right) : IEvaluable
 	}
 }
 
-public class SingleNegation(IEvaluable right) : IEvaluable
+public class SingleNegation(IEvaluable right) : Expression
 {
 	public IEvaluable Right => right;
 
-	public CodeModel.Statements.Statement? SourceStatement { get; set; }
-	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
+	public override DataType Type => DataType.Single;
 
-	public DataType Type => DataType.Single;
-
-	public Variable Evaluate(ExecutionContext context)
+	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
-		var rightValue = (SingleVariable)right.Evaluate(context);
+		var rightValue = (SingleVariable)right.Evaluate(context, stackFrame);
 
 		return new SingleVariable(-rightValue.Value);
 	}
 
-	public LiteralValue EvaluateConstant()
+	public override LiteralValue EvaluateConstant()
 	{
 		var rightValue = (SingleLiteralValue)right.EvaluateConstant();
 
@@ -112,23 +103,20 @@ public class SingleNegation(IEvaluable right) : IEvaluable
 	}
 }
 
-public class DoubleNegation(IEvaluable right) : IEvaluable
+public class DoubleNegation(IEvaluable right) : Expression
 {
 	public IEvaluable Right => right;
 
-	public CodeModel.Statements.Statement? SourceStatement { get; set; }
-	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
+	public override DataType Type => DataType.Double;
 
-	public DataType Type => DataType.Double;
-
-	public Variable Evaluate(ExecutionContext context)
+	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
-		var rightValue = (DoubleVariable)right.Evaluate(context);
+		var rightValue = (DoubleVariable)right.Evaluate(context, stackFrame);
 
 		return new DoubleVariable(-rightValue.Value);
 	}
 
-	public LiteralValue EvaluateConstant()
+	public override LiteralValue EvaluateConstant()
 	{
 		var rightValue = (DoubleLiteralValue)right.EvaluateConstant();
 
@@ -136,23 +124,20 @@ public class DoubleNegation(IEvaluable right) : IEvaluable
 	}
 }
 
-public class CurrencyNegation(IEvaluable right) : IEvaluable
+public class CurrencyNegation(IEvaluable right) : Expression
 {
 	public IEvaluable Right => right;
 
-	public CodeModel.Statements.Statement? SourceStatement { get; set; }
-	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
+	public override DataType Type => DataType.Currency;
 
-	public DataType Type => DataType.Currency;
-
-	public Variable Evaluate(ExecutionContext context)
+	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
-		var rightValue = (CurrencyVariable)right.Evaluate(context);
+		var rightValue = (CurrencyVariable)right.Evaluate(context, stackFrame);
 
 		return new CurrencyVariable(-rightValue.Value);
 	}
 
-	public LiteralValue EvaluateConstant()
+	public override LiteralValue EvaluateConstant()
 	{
 		var rightValue = (CurrencyLiteralValue)right.EvaluateConstant();
 

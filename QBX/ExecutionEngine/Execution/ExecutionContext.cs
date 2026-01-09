@@ -15,94 +15,99 @@ public class ExecutionContext
 	public Machine Machine;
 	public VisualLibrary VisualLibrary;
 
+	public IReadOnlyExecutionState ExecutionState => _state;
+	public IExecutionControls Controls => _state;
+
+	ExecutionState _state;
+
+	StackFrame? _rootFrame;
+
 	public bool EnablePaletteRemapping = true;
 
-	public StackFrame RootFrame;
-
-	public StackFrame CurrentFrame;
-
-	public readonly Stack<StackFrame> CallStack = new Stack<StackFrame>();
-
-	public void Execute(IExecutable? executable, bool stepInto)
+	public ExecutionContext(Machine machine)
 	{
-		if (!stepInto)
-			executable?.Execute(this, false);
-		else
-		{
-			PushScope();
-
-			CurrentFrame.NextStatement = executable;
-			CurrentFrame.CurrentSequence = null;
-		}
-	}
-
-	public void Run(RunMode mode)
-	{
-		while ((CurrentFrame.NextStatement != null) || (CurrentFrame.CurrentSequence != null))
-		{
-			while (CurrentFrame.NextStatement == null)
-			{
-				int statementIndex = CurrentFrame.NextStatementIndex++;
-
-				if (statementIndex >= CurrentFrame.CurrentSequence!.Count)
-				{
-					// TODO: return values
-					if (CallStack.Count == 0)
-						return;
-
-					PopFrame();
-
-					if (mode == RunMode.StepOut)
-						return;
-
-					continue;
-				}
-
-				CurrentFrame.NextStatement = CurrentFrame.CurrentSequence[statementIndex];
-			}
-
-			var statement = CurrentFrame.NextStatement;
-
-			CurrentFrame.NextStatement = null;
-
-			statement.Execute(this, mode == RunMode.StepInto);
-
-			if (mode != RunMode.Continuous)
-				break;
-		}
-	}
-
-	public ExecutionContext(Machine machine, Module mainModule)
-	{
-		if (mainModule.MainRoutine == null)
-			throw new BadModelException("Module does not have a MainRoutine");
+		_state = new ExecutionState();
 
 		Machine = machine;
 		VisualLibrary = new TextLibrary(machine);
+	}
 
-		CreateFrame(
-			mainModule,
-			mainModule.MainRoutine,
+	public int Run(Compilation compilation)
+	{
+		var entrypoint = compilation.EntrypointRoutine;
+
+		if (entrypoint == null)
+			throw new Exception("The Compilation's EntrypointRoutine is not set");
+
+		_rootFrame = CreateFrame(
+			entrypoint.Module,
+			entrypoint,
 			System.Array.Empty<Variable>());
 
-		RootFrame = CurrentFrame;
+		_state.StartExecution(_rootFrame);
+
+		try
+		{
+			Dispatch(entrypoint, _rootFrame);
+
+			int exitCode = _rootFrame.Variables[0].CoerceToInt();
+
+			return exitCode;
+		}
+		catch (TerminatedException)
+		{
+			return -1;
+		}
+		finally
+		{
+			_rootFrame = null;
+
+			_state.EndExecution();
+		}
 	}
 
-	public int ExitCode
+	public void Dispatch(IExecutable? executable, StackFrame stackFrame)
 	{
-		get => RootFrame.Variables[0].CoerceToInt();
-		set => RootFrame.Variables[0].SetData(value);
+		if (executable != null)
+		{
+			if (executable.CanBreak)
+				_state.NextStatement(executable.Source);
+
+			executable.Execute(this, stackFrame);
+		}
 	}
 
-	public void PushFrame(Module module, Routine routine, DataType? returnType, Variable[] arguments, List<DataType> variableTypes)
+	public void Dispatch(ISequence? sequence, StackFrame stackFrame)
 	{
-		CallStack.Push(CurrentFrame);
-
-		CreateFrame(module, routine, arguments);
+		if (sequence != null)
+			for (int i = 0; i < sequence.Count; i++)
+				Dispatch(sequence[i], stackFrame);
 	}
 
-	[MemberNotNull(nameof(CurrentFrame))]
-	void CreateFrame(Module module, Routine routine, Variable[] arguments)
+	static Variable s_dummyVariable = new DummyVariable();
+
+	public Variable Call(Routine routine, Variable[] arguments)
+	{
+		var frame = CreateFrame(routine.Module, routine, arguments);
+
+		_state.EnterRoutine(routine, frame);
+
+		try
+		{
+			Dispatch(routine, frame);
+
+			if (routine.ReturnType != null)
+				return frame.Variables[0];
+			else
+				return s_dummyVariable;
+		}
+		finally
+		{
+			_state.ExitRoutine();
+		}
+	}
+
+	StackFrame CreateFrame(Module module, Routine routine, Variable[] arguments)
 	{
 		var variableTypes = routine.VariableTypes;
 		var linkedVariables = routine.LinkedVariables;
@@ -115,38 +120,30 @@ public class ExecutionContext
 
 		int index = arguments.Length;
 
-		foreach (var link in linkedVariables)
-			variables[link.LocalIndex] = RootFrame.Variables[link.RootIndex];
+		if (_rootFrame != null)
+		{
+			foreach (var link in linkedVariables)
+				variables[link.LocalIndex] = _rootFrame.Variables[link.RootIndex];
+		}
+		else
+		{
+			if (linkedVariables.Count > 0)
+				throw new Exception("Internal error: Creating frame with linked variables when there is no root frame");
+		}
 
 		foreach (var type in variableTypes)
 		{
 			if (variables[index] == null)
-				variables[index] = Variable.Construct(type);
+			{
+				if (type.IsArray)
+					variables[index] = Variable.ConstructArray(type);
+				else
+					variables[index] = Variable.Construct(type);
+			}
 
 			index++;
 		}
 
-		CurrentFrame = new StackFrame(
-			module,
-			routine,
-			variables);
-
-		CurrentFrame.NextStatement = routine.Statements.First();
-		CurrentFrame.NextStatementIndex = 1;
-	}
-
-	public void PushScope()
-	{
-		CallStack.Push(CurrentFrame);
-
-		CurrentFrame = CurrentFrame.Clone();
-		CurrentFrame.CurrentSequence = null;
-		CurrentFrame.NextStatement = null;
-		CurrentFrame.NextStatementIndex = 0;
-	}
-
-	public void PopFrame()
-	{
-		CurrentFrame = CallStack.Pop();
+		return new StackFrame(variables);
 	}
 }

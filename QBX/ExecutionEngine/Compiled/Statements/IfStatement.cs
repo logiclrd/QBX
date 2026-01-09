@@ -4,25 +4,25 @@ using QBX.ExecutionEngine.Execution;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class IfStatement : IExecutable
+public class IfStatement(CodeModel.Statements.Statement? source) : Statement(source)
 {
 	public IEvaluable? Condition;
-	public IExecutable? ThenBody;
-	public IExecutable? ElseBody;
+	public ISequence? ThenBody;
+	public ISequence? ElseBody;
 
-	public void Execute(ExecutionContext context, bool stepInto)
+	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (Condition == null)
 			throw new Exception("IfStatement with no Condition");
 
-		var value = Condition.Evaluate(context);
+		var value = Condition.Evaluate(context, stackFrame);
 
 		if (value.DataType.IsString || !value.DataType.IsPrimitiveType)
 			throw CompilerException.TypeMismatch(Condition.SourceStatement);
 
 		if (!value.IsZero)
-			context.Execute(ThenBody, stepInto);
+			context.Dispatch(ThenBody, stackFrame);
 		else
-			context.Execute(ElseBody, stepInto);
+			context.Dispatch(ElseBody, stackFrame);
 	}
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using QBX.ExecutionEngine.Execution.Variables;
+using QBX.LexicalAnalysis;
 using QBX.Utility;
 
 namespace QBX.ExecutionEngine.Execution;
@@ -13,12 +14,22 @@ public class ArraySubscripts
 
 	public int ElementCount => Subscripts.Select(subscript => subscript.ElementCount).Product();
 
-	public int GetElementIndex(int[] subscriptValues)
+	public int GetElementIndex(int[] subscriptValues, Token[]? subscriptTokens = null)
 	{
 		int index = 0;
 
 		for (int i = 0; i < Subscripts.Count; i++)
+		{
+			int lowerBound = Subscripts[i].LowerBound;
+			int upperBound = Subscripts[i].UpperBound;
+
+			int subscript = subscriptValues[i];
+
+			if ((subscript < lowerBound) || (subscript > upperBound))
+				throw RuntimeException.SubscriptOutOfRange(subscriptTokens?[i]);
+
 			index = index * Subscripts[i].ElementCount + subscriptValues[i] - Subscripts[i].LowerBound;
+		}
 
 		return index;
 	}

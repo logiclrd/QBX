@@ -9,12 +9,12 @@ public class ArraySubscriptsExpressions
 {
 	public List<ArraySubscriptExpressions> Subscripts { get; } = new List<ArraySubscriptExpressions>();
 
-	public ArraySubscripts Evaluate(ExecutionContext context)
+	public ArraySubscripts Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
 		var subscripts = new ArraySubscripts();
 
 		foreach (var subscriptExpressions in Subscripts)
-			subscripts.Subscripts.Add(subscriptExpressions.Evaluate(context));
+			subscripts.Subscripts.Add(subscriptExpressions.Evaluate(context, stackFrame));
 
 		return subscripts;
 	}

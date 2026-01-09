@@ -3,18 +3,18 @@ using QBX.Firmware;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class ScreenStatement : IExecutable
+public class ScreenStatement(CodeModel.Statements.Statement? source) : Statement(source)
 {
 	public IEvaluable? ModeExpression;
 	public IEvaluable? ColourSwitchExpression;
 	public IEvaluable? ActivePageExpression;
 	public IEvaluable? VisiblePageExpression;
 
-	public void Execute(ExecutionContext context, bool stepInto)
+	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (ModeExpression != null)
 		{
-			int qbMode = ModeExpression.Evaluate(context).CoerceToInt();
+			int qbMode = ModeExpression.Evaluate(context, stackFrame).CoerceToInt();
 
 			int hardwareMode = System.Array.FindLastIndex(
 				Video.Modes,
@@ -42,7 +42,7 @@ public class ScreenStatement : IExecutable
 
 		if (ActivePageExpression != null)
 		{
-			int activePage = ActivePageExpression.Evaluate(context).CoerceToInt();
+			int activePage = ActivePageExpression.Evaluate(context, stackFrame).CoerceToInt();
 
 			if (!context.VisualLibrary.SetActivePage(activePage))
 				throw RuntimeException.IllegalFunctionCall(ActivePageExpression.SourceStatement);
@@ -50,7 +50,7 @@ public class ScreenStatement : IExecutable
 
 		if (VisiblePageExpression != null)
 		{
-			int visiblePage = VisiblePageExpression.Evaluate(context).CoerceToInt();
+			int visiblePage = VisiblePageExpression.Evaluate(context, stackFrame).CoerceToInt();
 
 			if (!context.Machine.VideoFirmware.SetVisiblePage(visiblePage))
 				throw RuntimeException.IllegalFunctionCall(VisiblePageExpression.SourceStatement);

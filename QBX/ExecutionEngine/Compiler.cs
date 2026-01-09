@@ -42,7 +42,7 @@ public class Compiler
 		// First pass: collect all routines
 		foreach (var element in unit.Elements)
 		{
-			var routine = new Routine(element, compilation.TypeRepository);
+			var routine = new Routine(module, element, compilation.TypeRepository);
 
 			if (compilation.IsRegistered(routine.Name))
 				throw CompilerException.DuplicateDefinition(element.AllStatements.FirstOrDefault());
@@ -97,7 +97,7 @@ public class Compiler
 			if (info.Element.Type != CodeModel.CompilationElementType.Main)
 			{
 				info.Routine.TranslateParameters(info.Mapper, compilation);
-				info.Mapper.LinkGlobalVariables();
+				info.Mapper.LinkGlobalVariablesAndArrays();
 			}
 
 			if (info.Routine.ReturnType != null)
@@ -278,8 +278,8 @@ public class Compiler
 		{
 			case CodeModel.Statements.AssignmentStatement assignmentStatement:
 			{
-				var targetExpression = TranslateExpression(assignmentStatement.TargetExpression, mapper, compilation);
-				var valueExpression = TranslateExpression(assignmentStatement.ValueExpression, mapper, compilation);
+				var targetExpression = TranslateExpression(assignmentStatement.TargetExpression, container, mapper, compilation);
+				var valueExpression = TranslateExpression(assignmentStatement.ValueExpression, container, mapper, compilation);
 
 				if (targetExpression == null)
 					throw new BadModelException("AssignmentStatement with no TargetExpression");
@@ -297,7 +297,7 @@ public class Compiler
 					valueExpression = Conversion.Construct(valueExpression, targetExpression.Type.PrimitiveType);
 				}
 
-				var translatedAssignmentStatement = new AssignmentStatement();
+				var translatedAssignmentStatement = new AssignmentStatement(assignmentStatement);
 
 				translatedAssignmentStatement.TargetExpression = targetExpression;
 				translatedAssignmentStatement.ValueExpression = valueExpression;
@@ -308,15 +308,15 @@ public class Compiler
 			}
 			case CodeModel.Statements.ColorStatement colorStatement:
 			{
-				var translatedColorStatement = new ColorStatement();
+				var translatedColorStatement = new ColorStatement(colorStatement);
 
 				var argument1 = colorStatement.Arguments.Count > 0 ? colorStatement.Arguments[0] : null;
 				var argument2 = colorStatement.Arguments.Count > 1 ? colorStatement.Arguments[1] : null;
 				var argument3 = colorStatement.Arguments.Count > 2 ? colorStatement.Arguments[2] : null;
 
-				translatedColorStatement.Argument1Expression = TranslateExpression(argument1, mapper, compilation);
-				translatedColorStatement.Argument2Expression = TranslateExpression(argument2, mapper, compilation);
-				translatedColorStatement.Argument3Expression = TranslateExpression(argument3, mapper, compilation);
+				translatedColorStatement.Argument1Expression = TranslateExpression(argument1, container, mapper, compilation);
+				translatedColorStatement.Argument2Expression = TranslateExpression(argument2, container, mapper, compilation);
+				translatedColorStatement.Argument3Expression = TranslateExpression(argument3, container, mapper, compilation);
 
 				container.Append(translatedColorStatement);
 
@@ -326,7 +326,7 @@ public class Compiler
 			{
 				foreach (var definition in constStatement.Definitions)
 				{
-					var translatedValue = TranslateExpression(definition.Value, mapper, compilation);
+					var translatedValue = TranslateExpression(definition.Value, container, mapper, compilation);
 
 					if (translatedValue == null)
 						throw new Exception("ConstStatement has no Value");
@@ -373,60 +373,73 @@ public class Compiler
 				{
 					DataType dataType;
 
+					// TODO: it needs to be possible to DIM dotted identifiers
+
 					if (declaration.UserType != null)
 						dataType = compilation.TypeRepository.ResolveType(declaration.UserType);
 					else
 						dataType = DataType.ForPrimitiveDataType(mapper.GetTypeForIdentifier(declaration.Name));
 
-					if (declaration.Subscripts != null)
+					int variableIndex;
+
+					if (declaration.Subscripts == null)
+					{
+						variableIndex = mapper.DeclareVariable(declaration.Name, dataType);
+
+						if (dimStatement.Shared)
+							mapper.MakeGlobalVariable(declaration.Name);
+					}
+					else
+					{
 						dataType = dataType.MakeArrayType();
 
-					int variableIndex = mapper.DeclareVariable(declaration.Name, dataType);
+						variableIndex = mapper.DeclareArray(declaration.Name, dataType);
 
-					if (dimStatement.Shared)
-						mapper.MakeGlobalVariable(declaration.Name);
+						if (dimStatement.Shared)
+							mapper.MakeGlobalArray(declaration.Name);
 
-					if (declaration.Subscripts != null)
-					{
-						var translatedDimStatement = new DimensionArrayStatement();
-
-						translatedDimStatement.VariableIndex = variableIndex;
-
-						// TODO: '$STATIC and '$DYNAMIC (can also be used with REM)
-						// => when the following conditions are met, arrays are configured prior to execution commenting:
-						//    - '$STATIC
-						//    - the DIM statement is not in any sort of conditional compilation clause (IF, FOR, etc.)
-						//    - the DIM statement is not inside a SUB, FUNCTION or DEF FN
-						//    - all of the bounds expressions are evaluable at compile time
-						//    - there is no preceding DIM statement for the same identifier
-						// in this instance, we set up the array right here and now
-
-						// TODO: if the array has already been initialized, then:
-						// - if DimStatement then runtime error "Duplicate definition"
-						// - if RedimStatement then dynamically resize
-						// - RedimStatements fail on arrays set up statically (see preceding TODO)
-
-						if (dimStatement is CodeModel.Statements.RedimStatement redimStatement)
+						if (declaration.Subscripts != null)
 						{
-							translatedDimStatement.IsRedimension = true;
-							translatedDimStatement.PreserveData = redimStatement.Preserve;
+							var translatedDimStatement = new DimensionArrayStatement(dimStatement);
+
+							translatedDimStatement.VariableIndex = variableIndex;
+
+							// TODO: '$STATIC and '$DYNAMIC (can also be used with REM)
+							// => when the following conditions are met, arrays are configured prior to execution commenting:
+							//    - '$STATIC
+							//    - the DIM statement is not in any sort of conditional compilation clause (IF, FOR, etc.)
+							//    - the DIM statement is not inside a SUB, FUNCTION or DEF FN
+							//    - all of the bounds expressions are evaluable at compile time
+							//    - there is no preceding DIM statement for the same identifier
+							// in this instance, we set up the array right here and now
+
+							// TODO: if the array has already been initialized, then:
+							// - if DimStatement then runtime error "Duplicate definition"
+							// - if RedimStatement then dynamically resize
+							// - RedimStatements fail on arrays set up statically (see preceding TODO)
+
+							if (dimStatement is CodeModel.Statements.RedimStatement redimStatement)
+							{
+								translatedDimStatement.IsRedimension = true;
+								translatedDimStatement.PreserveData = redimStatement.Preserve;
+							}
+
+							foreach (var subscript in declaration.Subscripts.Subscripts)
+							{
+								var bound1 = TranslateExpression(subscript.Bound1, container, mapper, compilation);
+								var bound2 = TranslateExpression(subscript.Bound2, container, mapper, compilation);
+
+								if (bound1 == null)
+									throw new Exception("Must specify the first bound for an array subscript");
+
+								if (bound2 == null)
+									translatedDimStatement.Subscripts.Add(new IntegerLiteralValue(0), bound1);
+								else
+									translatedDimStatement.Subscripts.Add(bound1, bound2);
+							}
+
+							container.Append(translatedDimStatement);
 						}
-
-						foreach (var subscript in declaration.Subscripts.Subscripts)
-						{
-							var bound1 = TranslateExpression(subscript.Bound1, mapper, compilation);
-							var bound2 = TranslateExpression(subscript.Bound2, mapper, compilation);
-
-							if (bound1 == null)
-								throw new Exception("Must specify the first bound for an array subscript");
-
-							if (bound2 == null)
-								translatedDimStatement.Subscripts.Add(new IntegerLiteralValue(0), bound1);
-							else
-								translatedDimStatement.Subscripts.Add(bound1, bound2);
-						}
-
-						container.Append(translatedDimStatement);
 					}
 				}
 
@@ -439,9 +452,9 @@ public class Compiler
 				break;
 			case CodeModel.Statements.IfStatement ifStatement:
 			{
-				var translatedIfStatement = new IfStatement();
+				var translatedIfStatement = new IfStatement(ifStatement);
 
-				translatedIfStatement.Condition = TranslateExpression(ifStatement.ConditionExpression, mapper, compilation);
+				translatedIfStatement.Condition = TranslateExpression(ifStatement.ConditionExpression, container, mapper, compilation);
 
 				if (ifStatement.ThenBody == null)
 				{
@@ -496,8 +509,8 @@ public class Compiler
 
 								block.ElseBody = elseBody;
 
-								block = new IfStatement();
-								block.Condition = TranslateExpression(elseIfStatement.ConditionExpression, mapper, compilation);
+								block = new IfStatement(elseIfStatement);
+								block.Condition = TranslateExpression(elseIfStatement.ConditionExpression, container, mapper, compilation);
 
 								elseBody.Append(block);
 
@@ -573,9 +586,9 @@ public class Compiler
 			{
 				var iteratorVariableIndex = mapper.ResolveVariable(forStatement.CounterVariable);
 
-				var fromExpression = TranslateExpression(forStatement.StartExpression, mapper, compilation);
-				var toExpression = TranslateExpression(forStatement.EndExpression, mapper, compilation);
-				var stepExpression = TranslateExpression(forStatement.StepExpression, mapper, compilation);
+				var fromExpression = TranslateExpression(forStatement.StartExpression, container, mapper, compilation);
+				var toExpression = TranslateExpression(forStatement.EndExpression, container, mapper, compilation);
+				var stepExpression = TranslateExpression(forStatement.StepExpression, container, mapper, compilation);
 
 				if (fromExpression == null)
 					throw new Exception("ForStatement with no StartExpression");
@@ -586,9 +599,13 @@ public class Compiler
 
 				advance();
 
+				CodeModel.Statements.NextStatement? nextStatement = null;
+
 				while (haveCurrentStatement())
 				{
-					if (statement is CodeModel.Statements.NextStatement nextStatement)
+					nextStatement = statement as CodeModel.Statements.NextStatement;
+
+					if (nextStatement != null)
 					{
 						if (nextStatement.CounterExpressions.Count > 0)
 						{
@@ -635,7 +652,9 @@ public class Compiler
 					fromExpression,
 					toExpression,
 					stepExpression,
-					body);
+					body,
+					forStatement,
+					nextStatement);
 
 				container.Append(translatedForStatement);
 
@@ -643,12 +662,12 @@ public class Compiler
 			}
 			case CodeModel.Statements.PixelSetStatement pixelSetStatement:
 			{
-				var translatedPixelSetStatement = new PixelSetStatement();
+				var translatedPixelSetStatement = new PixelSetStatement(pixelSetStatement);
 
 				translatedPixelSetStatement.StepCoordinates = pixelSetStatement.StepCoordinates;
-				translatedPixelSetStatement.XExpression = TranslateExpression(pixelSetStatement.XExpression, mapper, compilation);
-				translatedPixelSetStatement.YExpression = TranslateExpression(pixelSetStatement.YExpression, mapper, compilation);
-				translatedPixelSetStatement.ColourExpression = TranslateExpression(pixelSetStatement.ColourExpression, mapper, compilation);
+				translatedPixelSetStatement.XExpression = TranslateExpression(pixelSetStatement.XExpression, container, mapper, compilation);
+				translatedPixelSetStatement.YExpression = TranslateExpression(pixelSetStatement.YExpression, container, mapper, compilation);
+				translatedPixelSetStatement.ColourExpression = TranslateExpression(pixelSetStatement.ColourExpression, container, mapper, compilation);
 				translatedPixelSetStatement.UseForegroundColour =
 					(pixelSetStatement.DefaultColour == CodeModel.Statements.PixelSetDefaultColour.Foreground);
 
@@ -665,7 +684,7 @@ public class Compiler
 				{
 					var translatedArgument = new PrintArgument();
 
-					translatedArgument.Expression = TranslateExpression(argument.Expression, mapper, compilation);
+					translatedArgument.Expression = TranslateExpression(argument.Expression, container, mapper, compilation);
 					translatedArgument.CursorAction =
 						argument.CursorAction switch
 						{
@@ -682,7 +701,7 @@ public class Compiler
 
 				if (printStatement.UsingExpression == null)
 				{
-					var translatedPrintStatement = new UnformattedPrintStatement();
+					var translatedPrintStatement = new UnformattedPrintStatement(printStatement);
 
 					foreach (var argument in printStatement.Arguments)
 					{
@@ -694,9 +713,9 @@ public class Compiler
 				}
 				else
 				{
-					var translatedPrintStatement = new FormattedPrintStatement();
+					var translatedPrintStatement = new FormattedPrintStatement(printStatement);
 
-					translatedPrintStatement.Format = TranslateExpression(printStatement.UsingExpression, mapper, compilation);
+					translatedPrintStatement.Format = TranslateExpression(printStatement.UsingExpression, container, mapper, compilation);
 
 					if (printStatement.Arguments.Count > 0)
 					{
@@ -717,12 +736,12 @@ public class Compiler
 			}
 			case CodeModel.Statements.ScreenStatement screenStatement:
 			{
-				var translatedScreenStatement = new ScreenStatement();
+				var translatedScreenStatement = new ScreenStatement(screenStatement);
 
-				translatedScreenStatement.ModeExpression = TranslateExpression(screenStatement.ModeExpression, mapper, compilation);
-				translatedScreenStatement.ColourSwitchExpression = TranslateExpression(screenStatement.ColourSwitchExpression, mapper, compilation);
-				translatedScreenStatement.ActivePageExpression = TranslateExpression(screenStatement.ActivePageExpression, mapper, compilation);
-				translatedScreenStatement.VisiblePageExpression = TranslateExpression(screenStatement.VisiblePageExpression, mapper, compilation);
+				translatedScreenStatement.ModeExpression = TranslateExpression(screenStatement.ModeExpression, container, mapper, compilation);
+				translatedScreenStatement.ColourSwitchExpression = TranslateExpression(screenStatement.ColourSwitchExpression, container, mapper, compilation);
+				translatedScreenStatement.ActivePageExpression = TranslateExpression(screenStatement.ActivePageExpression, container, mapper, compilation);
+				translatedScreenStatement.VisiblePageExpression = TranslateExpression(screenStatement.VisiblePageExpression, container, mapper, compilation);
 
 				container.Append(translatedScreenStatement);
 
@@ -760,7 +779,7 @@ public class Compiler
 		advance();
 	}
 
-	private IEvaluable? TranslateExpression(CodeModel.Expressions.Expression? expression, Mapper mapper, Compilation compilation, bool createImplicitArray = false)
+	private IEvaluable? TranslateExpression(CodeModel.Expressions.Expression? expression, ISequence container, Mapper mapper, Compilation compilation, bool createImplicitArray = false)
 	{
 		if (expression == null)
 			return null;
@@ -797,6 +816,103 @@ public class Compiler
 				return new IdentifierExpression(variableIndex, variableType);
 			}
 
+			case CodeModel.Expressions.CallOrIndexExpression callOrIndexExpression:
+			{
+				// The identifier could be a dotted identifier. If so,
+				// collapse it.
+				//
+				// Is the identifier a defined function?
+				// -> Translate to a call to the function.
+				//
+				// Is the identifier an undefined but declared function?
+				// -> Translate to an unresolved call to the function.
+				//
+				// Else:
+				// -> If the identifier is undefined, define it as an array with a
+				//    matching number of subscripts. Each subscript is 0 TO 10.
+				// -> Translate to an array access.
+
+				string? identifier = (callOrIndexExpression.Subject as CodeModel.Expressions.IdentifierExpression)?.Identifier;
+
+				if (identifier == null)
+				{
+					identifier = CollapseDottedIdentifierExpression(callOrIndexExpression.Subject, mapper);
+
+					if (identifier == null)
+						throw new CompilerException("Can't translate Subject expression for CallOrIndexExpression");
+				}
+
+				if (compilation.IsRegistered(identifier))
+				{
+					if (compilation.Subs.ContainsKey(identifier))
+						throw new CompilerException(callOrIndexExpression.Subject.Token, "Cannot invoke a SUB as a function");
+
+					if (!compilation.Functions.TryGetValue(identifier, out var function))
+						throw new Exception("Internal error: identifier " + identifier + " is registered but is neither a SUB nor a FUNCTION?");
+
+					if (callOrIndexExpression.Arguments.Count != function.ParameterTypes.Count)
+						throw CompilerException.ArgumentCountMismatch(callOrIndexExpression.Subject.Token);
+
+					var translatedCallExpression = new CallExpression();
+
+					translatedCallExpression.Target = function;
+
+					foreach (var argument in callOrIndexExpression.Arguments.Expressions)
+					{
+						var translatedArgument = TranslateExpression(argument, container, mapper, compilation);
+
+						if (translatedArgument == null)
+							throw new Exception("Internal error: call argument translated to null");
+
+						translatedCallExpression.Arguments.Add(translatedArgument);
+					}
+
+					return translatedCallExpression;
+				}
+
+				if (compilation.UnresolvedReferences.IsDeclared(identifier))
+				{
+					throw new NotImplementedException("TODO");
+				}
+
+				// It's not a function call, so it's an array access.
+				var variableIndex = mapper.ResolveArray(identifier, out bool implicitlyCreated);
+
+				if (implicitlyCreated)
+				{
+					var implicitDimStatement = new DimensionArrayStatement(null);
+
+					implicitDimStatement.CanBreak = false;
+
+					implicitDimStatement.VariableIndex = variableIndex;
+
+					for (int i=0; i < callOrIndexExpression.Arguments.Expressions.Count; i++)
+					{
+						implicitDimStatement.Subscripts.Add(
+							new IntegerLiteralValue(0),
+							new IntegerLiteralValue(10));
+					}
+
+					container.Prepend(implicitDimStatement);
+				}
+
+				var variableType = mapper.GetVariableType(variableIndex);
+
+				var translatedArrayElementExpression = new ArrayElementExpression(variableIndex, variableType.MakeElementType());
+
+				foreach (var subscript in callOrIndexExpression.Arguments.Expressions)
+				{
+					var translatedArgument = TranslateExpression(subscript, container, mapper, compilation);
+
+					if (translatedArgument == null)
+						throw new Exception("Internal error: call argument translated to null");
+
+					translatedArrayElementExpression.SubscriptExpressions.Add(translatedArgument);
+				}
+
+				return translatedArrayElementExpression;
+			}
+
 			case CodeModel.Expressions.KeywordFunctionExpression keywordFunction:
 			{
 				switch (keywordFunction.Function)
@@ -809,7 +925,7 @@ public class Compiler
 
 			case CodeModel.Expressions.UnaryExpression unaryExpression:
 			{
-				var right = TranslateExpression(unaryExpression.Child, mapper, compilation);
+				var right = TranslateExpression(unaryExpression.Child, container, mapper, compilation);
 
 				if (right == null)
 					throw new Exception("Internal error: Unary expression operand translated to null");
@@ -841,7 +957,7 @@ public class Compiler
 					}
 					else
 					{
-						var subjectExpression = TranslateExpression(binaryExpression.Left, mapper, compilation);
+						var subjectExpression = TranslateExpression(binaryExpression.Left, container, mapper, compilation);
 
 						if (binaryExpression.Right is not CodeModel.Expressions.IdentifierExpression identifierExpression)
 							throw new Exception("Member access expressions require the right-hand operand to be an identifier");
@@ -852,8 +968,8 @@ public class Compiler
 					}
 				}
 
-				var left = TranslateExpression(binaryExpression.Left, mapper, compilation);
-				var right = TranslateExpression(binaryExpression.Right, mapper, compilation);
+				var left = TranslateExpression(binaryExpression.Left, container, mapper, compilation);
+				var right = TranslateExpression(binaryExpression.Right, container, mapper, compilation);
 
 				if ((left == null) || (right == null))
 					throw new Exception("Internal error: Binary expression operand translated to null");
@@ -887,6 +1003,14 @@ public class Compiler
 		}
 
 		throw new Exception("Internal error: Can't translate expression");
+	}
+
+	string? CollapseDottedIdentifierExpression(CodeModel.Expressions.Expression expression, Mapper mapper)
+	{
+		if (expression is CodeModel.Expressions.BinaryExpression binaryExpression)
+			return CollapseDottedIdentifierExpression(binaryExpression, mapper);
+		else
+			return null;
 	}
 
 	internal string? CollapseDottedIdentifierExpression(CodeModel.Expressions.BinaryExpression binaryExpression, Mapper mapper)
