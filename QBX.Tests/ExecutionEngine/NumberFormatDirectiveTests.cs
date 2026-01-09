@@ -39,6 +39,22 @@ public class NumberFormatDirectiveTests
 			"5",
 			"    5");
 		yield return new TestConfiguration(
+			"0", ' ', false, false, 4, false,
+			"5",
+			"5E+00");
+		yield return new TestConfiguration(
+			"00", ' ', false, false, 4, false,
+			"5",
+			" 5E+00");
+		yield return new TestConfiguration(
+			"000", ' ', false, false, 4, false,
+			"5",
+			" 50E-01");
+		yield return new TestConfiguration(
+			"0000", ' ', false, false, 4, false,
+			"5",
+			" 500E-02");
+		yield return new TestConfiguration(
 			"00", ' ', false, false, 0, false,
 			"10",
 			"10");
@@ -89,43 +105,43 @@ public class NumberFormatDirectiveTests
 		yield return new TestConfiguration(
 			"00.00", ' ', false, false, 4, false,
 			"1",
-			" 1.00D+00");
+			" 1.00E+00");
 		yield return new TestConfiguration(
 			"00.00", ' ', false, false, 4, false,
 			"10",
-			" 1.00D+01");
+			" 1.00E+01");
 		yield return new TestConfiguration(
 			"00.00", ' ', false, false, 4, false,
 			"100",
-			" 1.00D+02");
+			" 1.00E+02");
 		yield return new TestConfiguration(
 			"00.00", ' ', false, false, 4, false,
 			"1000",
-			" 1.00D+03");
+			" 1.00E+03");
 		yield return new TestConfiguration(
 			"00.00", ' ', false, false, 5, false,
 			"100",
-			" 1.00D+002");
+			" 1.00E+002");
 		yield return new TestConfiguration(
 			"00.00", ' ', false, false, 5, false,
 			"1000",
-			" 1.00D+003");
+			" 1.00E+003");
 		yield return new TestConfiguration(
 			"00.00", ' ', false, false, 5, false,
 			"1000",
-			" 1.00D+003");
+			" 1.00E+003");
 		yield return new TestConfiguration(
 			"000.00", ' ', false, false, 4, false,
 			"10",
-			" 10.00D+00");
+			" 10.00E+00");
 		yield return new TestConfiguration(
 			"00.00", ' ', false, false, 4, true,
 			"10",
-			"10.00D+00 ");
+			"10.00E+00 ");
 		yield return new TestConfiguration(
 			"00.00", ' ', false, false, 4, true,
 			"-10",
-			"10.00D+00-");
+			"10.00E+00-");
 		yield return new TestConfiguration(
 			"00.00", ' ', false, false, 0, true,
 			"-10",
@@ -133,31 +149,31 @@ public class NumberFormatDirectiveTests
 		yield return new TestConfiguration(
 			"0.00", ' ', false, false, 4, false,
 			"0.1",
-			"0.10D+00");
+			"0.10E+00");
 		yield return new TestConfiguration(
 			"00.00", ' ', false, false, 4, false,
 			"0.1",
-			" 1.00D-01");
+			" 1.00E-01");
 		yield return new TestConfiguration(
 			"000.00", ' ', false, false, 4, false,
 			"0.1",
-			" 10.00D-02");
+			" 10.00E-02");
 		yield return new TestConfiguration(
 			"000.00", ' ', false, false, 4, false,
 			"0.1234",
-			" 12.34D-02");
+			" 12.34E-02");
 		yield return new TestConfiguration(
 			"000.00", ' ', false, false, 4, false,
 			"0.12345",
-			" 12.35D-02");
+			" 12.35E-02");
 		yield return new TestConfiguration(
 			"000.00", ' ', false, false, 4, false,
 			"1.2345",
-			" 12.35D-01");
+			" 12.35E-01");
 		yield return new TestConfiguration(
 			"000.00", ' ', false, false, 4, false,
 			"9.9999",
-			" 10.00D+00");
+			" 10.00E+00");
 		yield return new TestConfiguration(
 			"000.00", ' ', false, false, 0, false,
 			"9.9999",
@@ -183,7 +199,7 @@ public class NumberFormatDirectiveTests
 					double.Parse(config.InputAsString),
 					exponentCharacter[0],
 
-					config.ExpectedOutput.Replace("D", exponentCharacter),
+					config.ExpectedOutput.Replace("E", exponentCharacter),
 				};
 
 			exponentCharacter = (exponentCharacter == "E") ? "D" : "E";

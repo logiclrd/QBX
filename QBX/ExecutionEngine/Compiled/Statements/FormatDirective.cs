@@ -344,6 +344,15 @@ public class NumericFormatDirective(string pattern, char leftPadChar, bool leadi
 			double targetRangeLow = 0.1d;
 
 			int leftOfDecimal = pattern.IndexOf('.');
+
+			if (leftOfDecimal < 0)
+			{
+				targetRangeHigh *= 10d;
+				targetRangeLow *= 10d;
+
+				leftOfDecimal = pattern.Length - 1;
+			}
+
 			int rightOfDecimal = pattern.Length - leftOfDecimal - 1;
 
 			for (int i = trailingMinusSign ? 1 : 2; i <= leftOfDecimal; i++)
@@ -368,6 +377,9 @@ public class NumericFormatDirective(string pattern, char leftPadChar, bool leadi
 			string checkForRounding = value.ToString(pattern).TrimStart('0');
 
 			int maxDigits = pattern.IndexOf('.');
+
+			if (maxDigits < 0)
+				maxDigits = pattern.Length;
 
 			if (!trailingMinusSign)
 				maxDigits--;
@@ -499,6 +511,14 @@ public class NumericFormatDirective(string pattern, char leftPadChar, bool leadi
 
 			int leftOfDecimal = pattern.IndexOf('.');
 
+			if (leftOfDecimal < 0)
+			{
+				targetRangeHigh *= 10M;
+				targetRangeLow *= 10M;
+
+				leftOfDecimal = pattern.Length - 1;
+			}
+
 			for (int i = trailingMinusSign ? 1 : 2; i <= leftOfDecimal; i++)
 			{
 				targetRangeHigh *= 10M;
@@ -612,7 +632,7 @@ public class NumericFormatDirective(string pattern, char leftPadChar, bool leadi
 
 		if (exponentCharacters > 0)
 		{
-			visual.WriteText("D");
+			visual.WriteText("E");
 
 			if (exponentValue >= 0)
 				visual.WriteText('+');
