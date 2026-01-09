@@ -13,7 +13,7 @@ namespace QBX.ExecutionEngine.Compiled.Statements;
 
 public abstract class FormatDirective
 {
-	public bool UsesArgument => false;
+	public virtual bool UsesArgument => false;
 
 	public static void SplitString(string format, Func<FormatDirective, bool> yield)
 		=> SplitString(format, null, yield);
@@ -310,6 +310,8 @@ public class LiteralFormatDirective(string literalText) : FormatDirective
 
 public class NumericFormatDirective(string pattern, char leftPadChar, bool leadingDollarSign, bool separateThousands, int exponentCharacters, bool trailingMinusSign) : FormatDirective
 {
+	public override bool UsesArgument => true;
+
 	public override void Emit(Variable argument, ExecutionContext context, PrintStatement? statement)
 	{
 		switch (argument)
@@ -541,7 +543,9 @@ public class NumericFormatDirective(string pattern, char leftPadChar, bool leadi
 
 		var rawDigitsSpan = CollectionsMarshal.AsSpan(rawDigits);
 
-		int firstTruncatedDigitPosition = decimalPosition + (pattern.Length - patternDecimalPosition) - 1;
+		var firstTruncatedDigitPosition = (patternDecimalPosition < pattern.Length)
+			? decimalPosition + (pattern.Length - patternDecimalPosition) - 1
+			: decimalPosition + 1;
 
 		if ((firstTruncatedDigitPosition < rawDigits.Count)
 		 && (rawDigits[firstTruncatedDigitPosition] >= '5'))
@@ -636,6 +640,8 @@ public class NumericFormatDirective(string pattern, char leftPadChar, bool leadi
 
 public class StringFormatDirective(int fieldWidth = -1) : FormatDirective
 {
+	public override bool UsesArgument => true;
+
 	[ThreadStatic]
 	static string? s_spaces;
 

@@ -2111,10 +2111,10 @@ public class BasicParser
 							while (commaIndex > 0)
 								tokenHandler.Advance();
 
-							throw new SyntaxErrorException(tokenHandler.NextToken, "Expected: ,");
+							throw new SyntaxErrorException(tokenHandler.NextToken, "Expected: ;");
 						}
 						else
-							throw new SyntaxErrorException(tokenHandler.EndToken, "Expected: ,");
+							throw new SyntaxErrorException(tokenHandler.EndToken, "Expected: ;");
 					}
 
 					print.UsingExpression = ParseExpression(tokenHandler.RemainingTokens.Slice(0, separatorIndex), tokenHandler[separatorIndex]);
