@@ -7,8 +7,8 @@ namespace QBX.ExecutionEngine.Compiled.Statements;
 public class IfStatement(CodeModel.Statements.Statement? source) : Executable(source)
 {
 	public Evaluable? Condition;
-	public ISequence? ThenBody;
-	public ISequence? ElseBody;
+	public Sequence? ThenBody;
+	public Sequence? ElseBody;
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{

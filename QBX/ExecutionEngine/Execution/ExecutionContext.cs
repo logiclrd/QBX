@@ -77,7 +77,7 @@ public class ExecutionContext
 		}
 	}
 
-	public void Dispatch(ISequence? sequence, StackFrame stackFrame)
+	public void Dispatch(Sequence? sequence, StackFrame stackFrame)
 	{
 		if (sequence != null)
 			for (int i = 0; i < sequence.Count; i++)

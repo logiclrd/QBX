@@ -6,7 +6,7 @@ using QBX.CodeModel.Statements;
 
 namespace QBX.ExecutionEngine.Compiled;
 
-public class Routine : ISequence
+public class Routine : Sequence
 {
 	public Module Module;
 
@@ -17,12 +17,6 @@ public class Routine : ISequence
 	public List<VariableLink> LinkedVariables = new List<VariableLink>();
 	public DataType? ReturnType;
 	public int ReturnValueVariableIndex = -1;
-	public List<Executable> Statements = new List<Executable>();
-
-	void ISequence.Append(Executable statement) => Statements.Add(statement);
-	void ISequence.Prepend(Executable statement) => Statements.Insert(0, statement);
-	int ISequence.Count => Statements.Count;
-	Executable ISequence.this[int index] => Statements[index];
 
 	public CodeModel.CompilationElement Source;
 

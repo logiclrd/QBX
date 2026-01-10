@@ -21,7 +21,7 @@ public class ForStatement
 		Evaluable fromExpression,
 		Evaluable toExpression,
 		Evaluable? stepExpression,
-		ISequence body,
+		Sequence body,
 		CodeModel.Statements.ForStatement? sourceForStatement,
 		CodeModel.Statements.NextStatement? sourceNextStatement)
 	{
@@ -124,7 +124,7 @@ public class IntegerForStatement(CodeModel.Statements.Statement? source) : Execu
 	public Evaluable? FromExpression;
 	public Evaluable? ToExpression;
 	public Evaluable? StepExpression;
-	public ISequence? Body;
+	public Sequence? Body;
 	public CodeModel.Statements.NextStatement? SourceNextStatement;
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
@@ -199,7 +199,7 @@ public class LongForStatement(CodeModel.Statements.Statement? source) : Executab
 	public Evaluable? FromExpression;
 	public Evaluable? ToExpression;
 	public Evaluable? StepExpression;
-	public ISequence? Body;
+	public Sequence? Body;
 	public CodeModel.Statements.NextStatement? SourceNextStatement;
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
@@ -274,7 +274,7 @@ public class SingleForStatement(CodeModel.Statements.Statement? source) : Execut
 	public Evaluable? FromExpression;
 	public Evaluable? ToExpression;
 	public Evaluable? StepExpression;
-	public ISequence? Body;
+	public Sequence? Body;
 	public CodeModel.Statements.NextStatement? SourceNextStatement;
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
@@ -349,7 +349,7 @@ public class DoubleForStatement(CodeModel.Statements.Statement? source) : Execut
 	public Evaluable? FromExpression;
 	public Evaluable? ToExpression;
 	public Evaluable? StepExpression;
-	public ISequence? Body;
+	public Sequence? Body;
 	public CodeModel.Statements.NextStatement? SourceNextStatement;
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
@@ -424,7 +424,7 @@ public class CurrencyForStatement(CodeModel.Statements.Statement? source) : Exec
 	public Evaluable? FromExpression;
 	public Evaluable? ToExpression;
 	public Evaluable? StepExpression;
-	public ISequence? Body;
+	public Sequence? Body;
 	public CodeModel.Statements.NextStatement? SourceNextStatement;
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)

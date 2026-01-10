@@ -2,7 +2,7 @@
 
 namespace QBX.ExecutionEngine.Compiled;
 
-public class Sequence : ISequence
+public class Sequence
 {
 	public List<Executable> Statements = new List<Executable>();
 

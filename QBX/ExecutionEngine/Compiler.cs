@@ -156,7 +156,7 @@ public class Compiler
 		typeRepository.RegisterType(udt);
 	}
 
-	void TranslateStatement(CodeModel.CompilationElement element, ref int lineIndexRef, ref int statementIndexRef, ISequence container, Mapper mapper, Compilation compilation)
+	void TranslateStatement(CodeModel.CompilationElement element, ref int lineIndexRef, ref int statementIndexRef, Sequence container, Mapper mapper, Compilation compilation)
 	{
 		int lineIndex = lineIndexRef;
 		int statementIndex = statementIndexRef;
@@ -219,7 +219,7 @@ public class Compiler
 		}
 	}
 
-	void TranslateStatement(CodeModel.CompilationElementType elementType, IList<CodeModel.Statements.Statement> statements, ref int statementIndexRef, ISequence container, Mapper mapper, Compilation compilation)
+	void TranslateStatement(CodeModel.CompilationElementType elementType, IList<CodeModel.Statements.Statement> statements, ref int statementIndexRef, Sequence container, Mapper mapper, Compilation compilation)
 	{
 		int statementIndex = statementIndexRef;
 
@@ -268,7 +268,7 @@ public class Compiler
 		public int LoopsMatched = 0;
 	}
 
-	void TranslateStatement(CodeModel.CompilationElementType elementType, ref CodeModel.Statements.Statement statement, Func<bool> advance, Func<bool> haveCurrentStatement, ISequence container, Mapper mapper, Compilation compilation, out NextStatementInfo? nextStatementInfo)
+	void TranslateStatement(CodeModel.CompilationElementType elementType, ref CodeModel.Statements.Statement statement, Func<bool> advance, Func<bool> haveCurrentStatement, Sequence container, Mapper mapper, Compilation compilation, out NextStatementInfo? nextStatementInfo)
 	{
 		var typeRepository = compilation.TypeRepository;
 
@@ -779,7 +779,7 @@ public class Compiler
 		advance();
 	}
 
-	private Evaluable? TranslateExpression(CodeModel.Expressions.Expression? expression, ISequence container, Mapper mapper, Compilation compilation, bool createImplicitArray = false)
+	private Evaluable? TranslateExpression(CodeModel.Expressions.Expression? expression, Sequence container, Mapper mapper, Compilation compilation, bool createImplicitArray = false)
 	{
 		if (expression == null)
 			return null;
