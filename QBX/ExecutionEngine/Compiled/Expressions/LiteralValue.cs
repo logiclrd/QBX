@@ -5,9 +5,9 @@ using QBX.ExecutionEngine.Execution.Variables;
 
 namespace QBX.ExecutionEngine.Compiled.Expressions;
 
-public abstract class LiteralValue : Expression
+public abstract class LiteralValue : Evaluable
 {
-	public static IEvaluable ConstructFromCodeModel(CodeModel.Expressions.LiteralExpression literal)
+	public static Evaluable ConstructFromCodeModel(CodeModel.Expressions.LiteralExpression literal)
 	{
 		if (literal.IsStringLiteral)
 			return new StringLiteralValue(literal.StringLiteralValue);

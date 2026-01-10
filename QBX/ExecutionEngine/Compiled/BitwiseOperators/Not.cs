@@ -7,7 +7,7 @@ namespace QBX.ExecutionEngine.Compiled.Operations;
 
 public static class Not
 {
-	public static IEvaluable Construct(IEvaluable right)
+	public static Evaluable Construct(Evaluable right)
 	{
 		if (right.Type.IsString)
 			throw CompilerException.TypeMismatch(right.SourceExpression?.Token);
@@ -23,9 +23,9 @@ public static class Not
 	}
 }
 
-public class IntegerNot(IEvaluable right) : Expression
+public class IntegerNot(Evaluable right) : Evaluable
 {
-	public IEvaluable Right => right;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Integer;
 
@@ -44,9 +44,9 @@ public class IntegerNot(IEvaluable right) : Expression
 	}
 }
 
-public class LongNot(IEvaluable right) : Expression
+public class LongNot(Evaluable right) : Evaluable
 {
-	public IEvaluable Right => right;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Long;
 

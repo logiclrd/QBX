@@ -4,9 +4,9 @@ using QBX.ExecutionEngine.Execution;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class IfStatement(CodeModel.Statements.Statement? source) : Statement(source)
+public class IfStatement(CodeModel.Statements.Statement? source) : Executable(source)
 {
-	public IEvaluable? Condition;
+	public Evaluable? Condition;
 	public ISequence? ThenBody;
 	public ISequence? ElseBody;
 

@@ -7,7 +7,7 @@ namespace QBX.ExecutionEngine.Compiled.Operations;
 
 public static class Addition
 {
-	public static IEvaluable Construct(IEvaluable left, IEvaluable right)
+	public static Evaluable Construct(Evaluable left, Evaluable right)
 	{
 		// Remaining possibilities: String, Currency, Double, Single, Long, Integer
 
@@ -77,10 +77,10 @@ public static class Addition
 	}
 }
 
-public class IntegerAddition(IEvaluable left, IEvaluable right) : Expression
+public class IntegerAddition(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Integer;
 
@@ -111,10 +111,10 @@ public class IntegerAddition(IEvaluable left, IEvaluable right) : Expression
 	}
 }
 
-public class LongAddition(IEvaluable left, IEvaluable right) : Expression
+public class LongAddition(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Long;
 
@@ -149,10 +149,10 @@ public class LongAddition(IEvaluable left, IEvaluable right) : Expression
 	}
 }
 
-public class SingleAddition(IEvaluable left, IEvaluable right) : Expression
+public class SingleAddition(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Single;
 
@@ -187,10 +187,10 @@ public class SingleAddition(IEvaluable left, IEvaluable right) : Expression
 	}
 }
 
-public class DoubleAddition(IEvaluable left, IEvaluable right) : Expression
+public class DoubleAddition(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Double;
 
@@ -225,10 +225,10 @@ public class DoubleAddition(IEvaluable left, IEvaluable right) : Expression
 	}
 }
 
-public class CurrencyAddition(IEvaluable left, IEvaluable right) : Expression
+public class CurrencyAddition(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Currency;
 
@@ -263,10 +263,10 @@ public class CurrencyAddition(IEvaluable left, IEvaluable right) : Expression
 	}
 }
 
-public class StringAddition(IEvaluable left, IEvaluable right) : Expression
+public class StringAddition(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.String;
 

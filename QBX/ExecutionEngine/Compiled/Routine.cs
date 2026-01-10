@@ -17,12 +17,12 @@ public class Routine : ISequence
 	public List<VariableLink> LinkedVariables = new List<VariableLink>();
 	public DataType? ReturnType;
 	public int ReturnValueVariableIndex = -1;
-	public List<IExecutable> Statements = new List<IExecutable>();
+	public List<Executable> Statements = new List<Executable>();
 
-	void ISequence.Append(IExecutable statement) => Statements.Add(statement);
-	void ISequence.Prepend(IExecutable statement) => Statements.Insert(0, statement);
+	void ISequence.Append(Executable statement) => Statements.Add(statement);
+	void ISequence.Prepend(Executable statement) => Statements.Insert(0, statement);
 	int ISequence.Count => Statements.Count;
-	IExecutable ISequence.this[int index] => Statements[index];
+	Executable ISequence.this[int index] => Statements[index];
 
 	public CodeModel.CompilationElement Source;
 

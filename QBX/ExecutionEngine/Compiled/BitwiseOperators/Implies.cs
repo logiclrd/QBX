@@ -8,7 +8,7 @@ namespace QBX.ExecutionEngine.Compiled.BitwiseOperators;
 
 public static class Implies
 {
-	public static IEvaluable Construct(IEvaluable left, IEvaluable right)
+	public static Evaluable Construct(Evaluable left, Evaluable right)
 	{
 		if (left.Type.IsString)
 			throw CompilerException.TypeMismatch(left.SourceExpression?.Token);
@@ -27,10 +27,10 @@ public static class Implies
 	}
 }
 
-public class IntegerImplies(IEvaluable left, IEvaluable right) : Expression
+public class IntegerImplies(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Integer;
 
@@ -55,10 +55,10 @@ public class IntegerImplies(IEvaluable left, IEvaluable right) : Expression
 	}
 }
 
-public class LongImplies(IEvaluable left, IEvaluable right) : Expression
+public class LongImplies(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Long;
 

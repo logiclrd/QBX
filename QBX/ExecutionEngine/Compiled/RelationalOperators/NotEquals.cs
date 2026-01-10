@@ -9,7 +9,7 @@ namespace QBX.ExecutionEngine.Compiled.RelationalOperators;
 
 public static class NotEquals
 {
-	public static IEvaluable Construct(IEvaluable left, IEvaluable right)
+	public static Evaluable Construct(Evaluable left, Evaluable right)
 	{
 		if (left.Type.IsString && right.Type.IsString)
 			return new StringNotEquals(left, right);
@@ -56,10 +56,10 @@ public static class NotEquals
 	}
 }
 
-public class IntegerNotEquals(IEvaluable left, IEvaluable right) : Expression
+public class IntegerNotEquals(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Integer;
 
@@ -84,10 +84,10 @@ public class IntegerNotEquals(IEvaluable left, IEvaluable right) : Expression
 	}
 }
 
-public class LongNotEquals(IEvaluable left, IEvaluable right) : Expression
+public class LongNotEquals(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Integer;
 
@@ -112,10 +112,10 @@ public class LongNotEquals(IEvaluable left, IEvaluable right) : Expression
 	}
 }
 
-public class SingleNotEquals(IEvaluable left, IEvaluable right) : Expression
+public class SingleNotEquals(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Integer;
 
@@ -140,10 +140,10 @@ public class SingleNotEquals(IEvaluable left, IEvaluable right) : Expression
 	}
 }
 
-public class DoubleNotEquals(IEvaluable left, IEvaluable right) : Expression
+public class DoubleNotEquals(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Integer;
 
@@ -168,10 +168,10 @@ public class DoubleNotEquals(IEvaluable left, IEvaluable right) : Expression
 	}
 }
 
-public class CurrencyNotEquals(IEvaluable left, IEvaluable right) : Expression
+public class CurrencyNotEquals(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Integer;
 
@@ -196,10 +196,10 @@ public class CurrencyNotEquals(IEvaluable left, IEvaluable right) : Expression
 	}
 }
 
-public class StringNotEquals(IEvaluable left, IEvaluable right) : Expression
+public class StringNotEquals(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Integer;
 

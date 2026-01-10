@@ -3,12 +3,12 @@ using QBX.Firmware;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class PixelSetStatement(CodeModel.Statements.Statement? source) : Statement(source)
+public class PixelSetStatement(CodeModel.Statements.Statement? source) : Executable(source)
 {
 	public bool StepCoordinates;
-	public IEvaluable? XExpression;
-	public IEvaluable? YExpression;
-	public IEvaluable? ColourExpression;
+	public Evaluable? XExpression;
+	public Evaluable? YExpression;
+	public Evaluable? ColourExpression;
 	public bool UseForegroundColour;
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)

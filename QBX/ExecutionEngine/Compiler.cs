@@ -779,7 +779,7 @@ public class Compiler
 		advance();
 	}
 
-	private IEvaluable? TranslateExpression(CodeModel.Expressions.Expression? expression, ISequence container, Mapper mapper, Compilation compilation, bool createImplicitArray = false)
+	private Evaluable? TranslateExpression(CodeModel.Expressions.Expression? expression, ISequence container, Mapper mapper, Compilation compilation, bool createImplicitArray = false)
 	{
 		if (expression == null)
 			return null;

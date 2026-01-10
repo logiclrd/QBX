@@ -7,7 +7,7 @@ namespace QBX.ExecutionEngine.Compiled.Operations;
 
 public static class Modulo
 {
-	public static IEvaluable Construct(IEvaluable left, IEvaluable right)
+	public static Evaluable Construct(Evaluable left, Evaluable right)
 	{
 		// The MOD integer division remainder operator: If both the operands
 		// are INTEGER, then the division is INTEGER, otherwise it is LONG.
@@ -23,10 +23,10 @@ public static class Modulo
 	}
 }
 
-public class IntegerModulo(IEvaluable left, IEvaluable right) : Expression
+public class IntegerModulo(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Integer;
 
@@ -57,10 +57,10 @@ public class IntegerModulo(IEvaluable left, IEvaluable right) : Expression
 	}
 }
 
-public class LongModulo(IEvaluable left, IEvaluable right) : Expression
+public class LongModulo(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Long;
 

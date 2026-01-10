@@ -4,11 +4,11 @@ using QBX.Hardware;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class ColorStatement(CodeModel.Statements.Statement? source) : Statement(source)
+public class ColorStatement(CodeModel.Statements.Statement? source) : Executable(source)
 {
-	public IEvaluable? Argument1Expression;
-	public IEvaluable? Argument2Expression;
-	public IEvaluable? Argument3Expression;
+	public Evaluable? Argument1Expression;
+	public Evaluable? Argument2Expression;
+	public Evaluable? Argument3Expression;
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{

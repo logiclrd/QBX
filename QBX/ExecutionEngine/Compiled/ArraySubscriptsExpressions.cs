@@ -19,7 +19,7 @@ public class ArraySubscriptsExpressions
 		return subscripts;
 	}
 
-	internal void Add(IEvaluable lowerBound, IEvaluable upperBound)
+	internal void Add(Evaluable lowerBound, Evaluable upperBound)
 	{
 		Subscripts.Add(
 			new ArraySubscriptExpressions()

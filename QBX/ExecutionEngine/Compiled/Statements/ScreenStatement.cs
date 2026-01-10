@@ -3,12 +3,12 @@ using QBX.Firmware;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class ScreenStatement(CodeModel.Statements.Statement? source) : Statement(source)
+public class ScreenStatement(CodeModel.Statements.Statement? source) : Executable(source)
 {
-	public IEvaluable? ModeExpression;
-	public IEvaluable? ColourSwitchExpression;
-	public IEvaluable? ActivePageExpression;
-	public IEvaluable? VisiblePageExpression;
+	public Evaluable? ModeExpression;
+	public Evaluable? ColourSwitchExpression;
+	public Evaluable? ActivePageExpression;
+	public Evaluable? VisiblePageExpression;
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{

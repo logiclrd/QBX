@@ -8,9 +8,9 @@ using QBX.Numbers;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class FormattedPrintStatement(CodeModel.Statements.Statement? source) : Statement(source)
+public class FormattedPrintStatement(CodeModel.Statements.Statement? source) : Executable(source)
 {
-	public IEvaluable? Format;
+	public Evaluable? Format;
 	public List<PrintArgument> Arguments = new List<PrintArgument>();
 	public bool EmitNewLine = true;
 

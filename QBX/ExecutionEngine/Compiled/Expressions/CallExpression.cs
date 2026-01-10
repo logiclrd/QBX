@@ -5,10 +5,10 @@ using QBX.ExecutionEngine.Execution.Variables;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class CallExpression : Expression
+public class CallExpression : Evaluable
 {
 	public Routine? Target;
-	public readonly List<IEvaluable> Arguments = new List<IEvaluable>();
+	public readonly List<Evaluable> Arguments = new List<Evaluable>();
 
 	public string? UnresolvedTargetName;
 

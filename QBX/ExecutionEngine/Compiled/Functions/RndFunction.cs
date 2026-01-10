@@ -5,9 +5,9 @@ using QBX.Numbers;
 
 namespace QBX.ExecutionEngine.Compiled.Functions;
 
-public class RndFunction : Expression
+public class RndFunction : Evaluable
 {
-	public IEvaluable? Argument;
+	public Evaluable? Argument;
 
 	static RndFunction s_noParameter = new RndFunction();
 

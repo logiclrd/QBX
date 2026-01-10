@@ -66,7 +66,7 @@ public class ExecutionContext
 		}
 	}
 
-	public void Dispatch(IExecutable? executable, StackFrame stackFrame)
+	public void Dispatch(Executable? executable, StackFrame stackFrame)
 	{
 		if (executable != null)
 		{

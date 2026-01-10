@@ -2,10 +2,10 @@ using QBX.ExecutionEngine.Execution;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class AssignmentStatement(CodeModel.Statements.Statement? source) : Statement(source)
+public class AssignmentStatement(CodeModel.Statements.Statement? source) : Executable(source)
 {
-	public IEvaluable? TargetExpression;
-	public IEvaluable? ValueExpression;
+	public Evaluable? TargetExpression;
+	public Evaluable? ValueExpression;
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{

@@ -8,7 +8,7 @@ namespace QBX.ExecutionEngine.Compiled.Operations;
 
 public static class Subtraction
 {
-	public static IEvaluable Construct(IEvaluable left, IEvaluable right)
+	public static Evaluable Construct(Evaluable left, Evaluable right)
 	{
 		// Remaining possibilities: String, Currency, Double, Single, Long, Integer
 
@@ -79,10 +79,10 @@ public static class Subtraction
 	}
 }
 
-public class IntegerSubtraction(IEvaluable left, IEvaluable right) : Expression
+public class IntegerSubtraction(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Integer;
 
@@ -113,10 +113,10 @@ public class IntegerSubtraction(IEvaluable left, IEvaluable right) : Expression
 	}
 }
 
-public class LongSubtraction(IEvaluable left, IEvaluable right) : Expression
+public class LongSubtraction(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Long;
 
@@ -151,10 +151,10 @@ public class LongSubtraction(IEvaluable left, IEvaluable right) : Expression
 	}
 }
 
-public class SingleSubtraction(IEvaluable left, IEvaluable right) : Expression
+public class SingleSubtraction(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Single;
 
@@ -189,10 +189,10 @@ public class SingleSubtraction(IEvaluable left, IEvaluable right) : Expression
 	}
 }
 
-public class DoubleSubtraction(IEvaluable left, IEvaluable right) : Expression
+public class DoubleSubtraction(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Double;
 
@@ -227,10 +227,10 @@ public class DoubleSubtraction(IEvaluable left, IEvaluable right) : Expression
 	}
 }
 
-public class CurrencySubtraction(IEvaluable left, IEvaluable right) : Expression
+public class CurrencySubtraction(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Currency;
 

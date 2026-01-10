@@ -8,7 +8,7 @@ namespace QBX.ExecutionEngine.Compiled.RelationalOperators;
 
 public static class LessThan
 {
-	public static IEvaluable Construct(IEvaluable left, IEvaluable right)
+	public static Evaluable Construct(Evaluable left, Evaluable right)
 	{
 		if (left.Type.IsString && right.Type.IsString)
 			return new StringLessThan(left, right);
@@ -55,10 +55,10 @@ public static class LessThan
 	}
 }
 
-public class IntegerLessThan(IEvaluable left, IEvaluable right) : Expression
+public class IntegerLessThan(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Integer;
 
@@ -83,10 +83,10 @@ public class IntegerLessThan(IEvaluable left, IEvaluable right) : Expression
 	}
 }
 
-public class LongLessThan(IEvaluable left, IEvaluable right) : Expression
+public class LongLessThan(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Integer;
 
@@ -111,10 +111,10 @@ public class LongLessThan(IEvaluable left, IEvaluable right) : Expression
 	}
 }
 
-public class SingleLessThan(IEvaluable left, IEvaluable right) : Expression
+public class SingleLessThan(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Integer;
 
@@ -139,10 +139,10 @@ public class SingleLessThan(IEvaluable left, IEvaluable right) : Expression
 	}
 }
 
-public class DoubleLessThan(IEvaluable left, IEvaluable right) : Expression
+public class DoubleLessThan(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Integer;
 
@@ -167,10 +167,10 @@ public class DoubleLessThan(IEvaluable left, IEvaluable right) : Expression
 	}
 }
 
-public class CurrencyLessThan(IEvaluable left, IEvaluable right) : Expression
+public class CurrencyLessThan(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Integer;
 
@@ -195,10 +195,10 @@ public class CurrencyLessThan(IEvaluable left, IEvaluable right) : Expression
 	}
 }
 
-public class StringLessThan(IEvaluable left, IEvaluable right) : Expression
+public class StringLessThan(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Integer;
 

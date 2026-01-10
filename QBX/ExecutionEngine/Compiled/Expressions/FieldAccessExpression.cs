@@ -5,9 +5,9 @@ using QBX.ExecutionEngine.Execution.Variables;
 
 namespace QBX.ExecutionEngine.Compiled.Expressions;
 
-public class FieldAccessExpression(IEvaluable? expression, int fieldIndex, DataType fieldType) : Expression
+public class FieldAccessExpression(Evaluable? expression, int fieldIndex, DataType fieldType) : Evaluable
 {
-	public static IEvaluable Construct(IEvaluable? expression, string fieldName)
+	public static Evaluable Construct(Evaluable? expression, string fieldName)
 	{
 		if (expression == null)
 			throw new Exception("FieldAccessExpression.Construct requires expression");
@@ -32,7 +32,7 @@ public class FieldAccessExpression(IEvaluable? expression, int fieldIndex, DataT
 
 	public override DataType Type => fieldType;
 
-	public IEvaluable? Expression => expression;
+	public Evaluable? Expression => expression;
 	public int FieldIndex => fieldIndex;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)

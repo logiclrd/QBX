@@ -10,7 +10,7 @@ namespace QBX.ExecutionEngine.Compiled.Operations;
 public static class Conversion
 {
 	[return: NotNullIfNotNull(nameof(expression))]
-	public static IEvaluable? Construct(IEvaluable? expression, PrimitiveDataType targetType)
+	public static Evaluable? Construct(Evaluable? expression, PrimitiveDataType targetType)
 	{
 		if (expression == null)
 			return null;
@@ -61,9 +61,9 @@ public static class Conversion
 	}
 }
 
-public class ConvertToInteger(IEvaluable value) : Expression
+public class ConvertToInteger(Evaluable value) : Evaluable
 {
-	public IEvaluable Value => value;
+	public Evaluable Value => value;
 
 	public override DataType Type => DataType.Integer;
 
@@ -71,9 +71,9 @@ public class ConvertToInteger(IEvaluable value) : Expression
 	public override LiteralValue EvaluateConstant() => new IntegerLiteralValue(NumberConverter.ToInteger(Value.EvaluateConstant()));
 }
 
-public class ConvertToLong(IEvaluable value) : Expression
+public class ConvertToLong(Evaluable value) : Evaluable
 {
-	public IEvaluable Value => value;
+	public Evaluable Value => value;
 
 	public override DataType Type => DataType.Long;
 
@@ -81,9 +81,9 @@ public class ConvertToLong(IEvaluable value) : Expression
 	public override LiteralValue EvaluateConstant() => new LongLiteralValue(NumberConverter.ToLong(Value.EvaluateConstant()));
 }
 
-public class ConvertToSingle(IEvaluable value) : Expression
+public class ConvertToSingle(Evaluable value) : Evaluable
 {
-	public IEvaluable Value => value;
+	public Evaluable Value => value;
 
 	public override DataType Type => DataType.Single;
 
@@ -91,9 +91,9 @@ public class ConvertToSingle(IEvaluable value) : Expression
 	public override LiteralValue EvaluateConstant() => new SingleLiteralValue(NumberConverter.ToSingle(Value.EvaluateConstant()));
 }
 
-public class ConvertToDouble(IEvaluable value) : Expression
+public class ConvertToDouble(Evaluable value) : Evaluable
 {
-	public IEvaluable Value => value;
+	public Evaluable Value => value;
 
 	public override DataType Type => DataType.Double;
 
@@ -101,9 +101,9 @@ public class ConvertToDouble(IEvaluable value) : Expression
 	public override LiteralValue EvaluateConstant() => new DoubleLiteralValue(NumberConverter.ToDouble(Value.EvaluateConstant()));
 }
 
-public class ConvertToCurrency(IEvaluable value) : Expression
+public class ConvertToCurrency(Evaluable value) : Evaluable
 {
-	public IEvaluable Value => value;
+	public Evaluable Value => value;
 
 	public override DataType Type => DataType.Currency;
 
@@ -111,9 +111,9 @@ public class ConvertToCurrency(IEvaluable value) : Expression
 	public override LiteralValue EvaluateConstant() => new CurrencyLiteralValue(NumberConverter.ToCurrency(Value.EvaluateConstant()));
 }
 
-public class ConvertToString(IEvaluable value) : Expression
+public class ConvertToString(Evaluable value) : Evaluable
 {
-	public IEvaluable Value => value;
+	public Evaluable Value => value;
 
 	public override DataType Type => DataType.String;
 

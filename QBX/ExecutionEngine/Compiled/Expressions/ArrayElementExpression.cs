@@ -6,11 +6,11 @@ using QBX.ExecutionEngine.Execution.Variables;
 
 namespace QBX.ExecutionEngine.Compiled.Expressions;
 
-public class ArrayElementExpression(int variableIndex, DataType type) : Expression
+public class ArrayElementExpression(int variableIndex, DataType type) : Evaluable
 {
 	public override DataType Type => type;
 
-	public List<IEvaluable> SubscriptExpressions = new List<IEvaluable>();
+	public List<Evaluable> SubscriptExpressions = new List<Evaluable>();
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{

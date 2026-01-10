@@ -8,7 +8,7 @@ namespace QBX.ExecutionEngine.Compiled.Operations;
 
 public static class Multiplication
 {
-	public static IEvaluable Construct(IEvaluable left, IEvaluable right)
+	public static Evaluable Construct(Evaluable left, Evaluable right)
 	{
 		// Remaining possibilities: String, Currency, Double, Single, Long, Integer
 
@@ -79,10 +79,10 @@ public static class Multiplication
 	}
 }
 
-public class IntegerMultiplication(IEvaluable left, IEvaluable right) : Expression
+public class IntegerMultiplication(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Integer;
 
@@ -113,10 +113,10 @@ public class IntegerMultiplication(IEvaluable left, IEvaluable right) : Expressi
 	}
 }
 
-public class LongMultiplication(IEvaluable left, IEvaluable right) : Expression
+public class LongMultiplication(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Long;
 
@@ -151,10 +151,10 @@ public class LongMultiplication(IEvaluable left, IEvaluable right) : Expression
 	}
 }
 
-public class SingleMultiplication(IEvaluable left, IEvaluable right) : Expression
+public class SingleMultiplication(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Single;
 
@@ -189,10 +189,10 @@ public class SingleMultiplication(IEvaluable left, IEvaluable right) : Expressio
 	}
 }
 
-public class DoubleMultiplication(IEvaluable left, IEvaluable right) : Expression
+public class DoubleMultiplication(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Double;
 
@@ -227,10 +227,10 @@ public class DoubleMultiplication(IEvaluable left, IEvaluable right) : Expressio
 	}
 }
 
-public class CurrencyMultiplication(IEvaluable left, IEvaluable right) : Expression
+public class CurrencyMultiplication(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Currency;
 

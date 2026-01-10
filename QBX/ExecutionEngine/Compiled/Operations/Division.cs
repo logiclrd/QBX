@@ -9,7 +9,7 @@ namespace QBX.ExecutionEngine.Compiled.Operations;
 
 public static class Division
 {
-	public static IEvaluable Construct(IEvaluable left, IEvaluable right)
+	public static Evaluable Construct(Evaluable left, Evaluable right)
 	{
 		if (left.Type.IsString || right.Type.IsString)
 		{
@@ -48,9 +48,9 @@ public static class Division
 	}
 }
 
-public class IntegerDivision(IEvaluable left, IEvaluable right) : Expression
+public class IntegerDivision(Evaluable left, Evaluable right) : Evaluable
 {
-	public static IEvaluable Construct(IEvaluable left, IEvaluable right)
+	public static Evaluable Construct(Evaluable left, Evaluable right)
 	{
 		// The backslash integer division operator: If both the operands
 		// are INTEGER, then the division is INTEGER, otherwise it is LONG.
@@ -65,8 +65,8 @@ public class IntegerDivision(IEvaluable left, IEvaluable right) : Expression
 		}
 	}
 
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Integer;
 
@@ -97,10 +97,10 @@ public class IntegerDivision(IEvaluable left, IEvaluable right) : Expression
 	}
 }
 
-public class LongDivision(IEvaluable left, IEvaluable right) : Expression
+public class LongDivision(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Long;
 
@@ -141,10 +141,10 @@ public class LongDivision(IEvaluable left, IEvaluable right) : Expression
 	}
 }
 
-public class SingleDivision(IEvaluable left, IEvaluable right) : Expression
+public class SingleDivision(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Single;
 
@@ -179,10 +179,10 @@ public class SingleDivision(IEvaluable left, IEvaluable right) : Expression
 	}
 }
 
-public class DoubleDivision(IEvaluable left, IEvaluable right) : Expression
+public class DoubleDivision(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Double;
 
@@ -217,10 +217,10 @@ public class DoubleDivision(IEvaluable left, IEvaluable right) : Expression
 	}
 }
 
-public class CurrencyDivision(IEvaluable left, IEvaluable right) : Expression
+public class CurrencyDivision(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Currency;
 

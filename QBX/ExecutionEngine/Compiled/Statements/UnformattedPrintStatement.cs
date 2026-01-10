@@ -5,7 +5,7 @@ using QBX.ExecutionEngine.Execution;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class UnformattedPrintStatement(CodeModel.Statements.Statement? source) : Statement(source)
+public class UnformattedPrintStatement(CodeModel.Statements.Statement? source) : Executable(source)
 {
 	public List<PrintArgument> Arguments = new List<PrintArgument>();
 

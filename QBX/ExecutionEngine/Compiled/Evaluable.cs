@@ -4,7 +4,7 @@ using QBX.ExecutionEngine.Execution.Variables;
 
 namespace QBX.ExecutionEngine.Compiled;
 
-public abstract class Expression : IEvaluable
+public abstract class Evaluable
 {
 	public CodeModel.Statements.Statement? SourceStatement { get; set; }
 	public CodeModel.Expressions.Expression? SourceExpression { get; set; }

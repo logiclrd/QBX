@@ -3,7 +3,7 @@ using QBX.ExecutionEngine.Execution.Variables;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class DimensionArrayStatement(CodeModel.Statements.Statement? source) : Statement(source)
+public class DimensionArrayStatement(CodeModel.Statements.Statement? source) : Executable(source)
 {
 	public int VariableIndex;
 	public ArraySubscriptsExpressions Subscripts = new ArraySubscriptsExpressions();

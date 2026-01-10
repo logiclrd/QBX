@@ -7,7 +7,7 @@ namespace QBX.ExecutionEngine.Compiled.BitwiseOperators;
 
 public static class And
 {
-	public static IEvaluable Construct(IEvaluable left, IEvaluable right)
+	public static Evaluable Construct(Evaluable left, Evaluable right)
 	{
 		if (left.Type.IsString)
 			throw CompilerException.TypeMismatch(left.SourceExpression?.Token);
@@ -26,10 +26,10 @@ public static class And
 	}
 }
 
-public class IntegerAnd(IEvaluable left, IEvaluable right) : Expression
+public class IntegerAnd(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Integer;
 
@@ -54,10 +54,10 @@ public class IntegerAnd(IEvaluable left, IEvaluable right) : Expression
 	}
 }
 
-public class LongAnd(IEvaluable left, IEvaluable right) : Expression
+public class LongAnd(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Long;
 

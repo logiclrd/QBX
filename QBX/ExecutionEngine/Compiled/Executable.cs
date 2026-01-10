@@ -2,11 +2,11 @@ using QBX.ExecutionEngine.Execution;
 
 namespace QBX.ExecutionEngine.Compiled;
 
-public abstract class Statement : IExecutable
+public abstract class Executable
 {
 	public CodeModel.Statements.Statement? Source { get; set; }
 
-	public Statement(CodeModel.Statements.Statement? source)
+	public Executable(CodeModel.Statements.Statement? source)
 	{
 		Source = source;
 	}

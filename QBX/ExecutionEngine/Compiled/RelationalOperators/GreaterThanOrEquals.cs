@@ -9,7 +9,7 @@ namespace QBX.ExecutionEngine.Compiled.RelationalOperators;
 
 public static class GreaterThanOrEquals
 {
-	public static IEvaluable Construct(IEvaluable left, IEvaluable right)
+	public static Evaluable Construct(Evaluable left, Evaluable right)
 	{
 		if (left.Type.IsString && right.Type.IsString)
 			return new StringGreaterThanOrEquals(left, right);
@@ -56,10 +56,10 @@ public static class GreaterThanOrEquals
 	}
 }
 
-public class IntegerGreaterThanOrEquals(IEvaluable left, IEvaluable right) : Expression
+public class IntegerGreaterThanOrEquals(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Integer;
 
@@ -84,10 +84,10 @@ public class IntegerGreaterThanOrEquals(IEvaluable left, IEvaluable right) : Exp
 	}
 }
 
-public class LongGreaterThanOrEquals(IEvaluable left, IEvaluable right) : Expression
+public class LongGreaterThanOrEquals(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Integer;
 
@@ -112,10 +112,10 @@ public class LongGreaterThanOrEquals(IEvaluable left, IEvaluable right) : Expres
 	}
 }
 
-public class SingleGreaterThanOrEquals(IEvaluable left, IEvaluable right) : Expression
+public class SingleGreaterThanOrEquals(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Integer;
 
@@ -140,10 +140,10 @@ public class SingleGreaterThanOrEquals(IEvaluable left, IEvaluable right) : Expr
 	}
 }
 
-public class DoubleGreaterThanOrEquals(IEvaluable left, IEvaluable right) : Expression
+public class DoubleGreaterThanOrEquals(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Integer;
 
@@ -168,10 +168,10 @@ public class DoubleGreaterThanOrEquals(IEvaluable left, IEvaluable right) : Expr
 	}
 }
 
-public class CurrencyGreaterThanOrEquals(IEvaluable left, IEvaluable right) : Expression
+public class CurrencyGreaterThanOrEquals(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Integer;
 
@@ -196,10 +196,10 @@ public class CurrencyGreaterThanOrEquals(IEvaluable left, IEvaluable right) : Ex
 	}
 }
 
-public class StringGreaterThanOrEquals(IEvaluable left, IEvaluable right) : Expression
+public class StringGreaterThanOrEquals(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Integer;
 

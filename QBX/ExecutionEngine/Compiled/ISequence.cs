@@ -3,8 +3,8 @@
 public interface ISequence
 {
 	int Count { get; }
-	IExecutable this[int index] { get; }
+	Executable this[int index] { get; }
 
-	void Append(IExecutable executable);
-	void Prepend(IExecutable executable);
+	void Append(Executable executable);
+	void Prepend(Executable executable);
 }

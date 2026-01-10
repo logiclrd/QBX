@@ -15,12 +15,12 @@ namespace QBX.ExecutionEngine.Compiled.Statements;
 
 public class ForStatement
 {
-	public static IExecutable Construct(
+	public static Executable Construct(
 		int iteratorVariableIndex,
 		PrimitiveDataType iteratorVariableType,
-		IEvaluable fromExpression,
-		IEvaluable toExpression,
-		IEvaluable? stepExpression,
+		Evaluable fromExpression,
+		Evaluable toExpression,
+		Evaluable? stepExpression,
 		ISequence body,
 		CodeModel.Statements.ForStatement? sourceForStatement,
 		CodeModel.Statements.NextStatement? sourceNextStatement)
@@ -118,12 +118,12 @@ public class ForStatement
 	}
 }
 
-public class IntegerForStatement(CodeModel.Statements.Statement? source) : Statement(source)
+public class IntegerForStatement(CodeModel.Statements.Statement? source) : Executable(source)
 {
 	public int IteratorVariableIndex;
-	public IEvaluable? FromExpression;
-	public IEvaluable? ToExpression;
-	public IEvaluable? StepExpression;
+	public Evaluable? FromExpression;
+	public Evaluable? ToExpression;
+	public Evaluable? StepExpression;
 	public ISequence? Body;
 	public CodeModel.Statements.NextStatement? SourceNextStatement;
 
@@ -169,7 +169,7 @@ public class IntegerForStatement(CodeModel.Statements.Statement? source) : State
 	}
 
 	class NextStatement(short from, short to, short step, CodeModel.Statements.NextStatement? sourceNextStatement)
-		: Statement(sourceNextStatement)
+		: Executable(sourceNextStatement)
 	{
 		public bool FinishLoop = false;
 		public short NextValue = from;
@@ -193,12 +193,12 @@ public class IntegerForStatement(CodeModel.Statements.Statement? source) : State
 	}
 }
 
-public class LongForStatement(CodeModel.Statements.Statement? source) : Statement(source)
+public class LongForStatement(CodeModel.Statements.Statement? source) : Executable(source)
 {
 	public int IteratorVariableIndex;
-	public IEvaluable? FromExpression;
-	public IEvaluable? ToExpression;
-	public IEvaluable? StepExpression;
+	public Evaluable? FromExpression;
+	public Evaluable? ToExpression;
+	public Evaluable? StepExpression;
 	public ISequence? Body;
 	public CodeModel.Statements.NextStatement? SourceNextStatement;
 
@@ -244,7 +244,7 @@ public class LongForStatement(CodeModel.Statements.Statement? source) : Statemen
 	}
 
 	class NextStatement(int from, int to, int step, CodeModel.Statements.NextStatement? sourceNextStatement)
-		: Statement(sourceNextStatement)
+		: Executable(sourceNextStatement)
 	{
 		public bool FinishLoop = false;
 		public int NextValue = from;
@@ -268,12 +268,12 @@ public class LongForStatement(CodeModel.Statements.Statement? source) : Statemen
 	}
 }
 
-public class SingleForStatement(CodeModel.Statements.Statement? source) : Statement(source)
+public class SingleForStatement(CodeModel.Statements.Statement? source) : Executable(source)
 {
 	public int IteratorVariableIndex;
-	public IEvaluable? FromExpression;
-	public IEvaluable? ToExpression;
-	public IEvaluable? StepExpression;
+	public Evaluable? FromExpression;
+	public Evaluable? ToExpression;
+	public Evaluable? StepExpression;
 	public ISequence? Body;
 	public CodeModel.Statements.NextStatement? SourceNextStatement;
 
@@ -319,7 +319,7 @@ public class SingleForStatement(CodeModel.Statements.Statement? source) : Statem
 	}
 
 	class NextStatement(float from, float to, float step, CodeModel.Statements.NextStatement? sourceNextStatement)
-		: Statement(sourceNextStatement)
+		: Executable(sourceNextStatement)
 	{
 		public bool FinishLoop = false;
 		public float NextValue = from;
@@ -343,12 +343,12 @@ public class SingleForStatement(CodeModel.Statements.Statement? source) : Statem
 	}
 }
 
-public class DoubleForStatement(CodeModel.Statements.Statement? source) : Statement(source)
+public class DoubleForStatement(CodeModel.Statements.Statement? source) : Executable(source)
 {
 	public int IteratorVariableIndex;
-	public IEvaluable? FromExpression;
-	public IEvaluable? ToExpression;
-	public IEvaluable? StepExpression;
+	public Evaluable? FromExpression;
+	public Evaluable? ToExpression;
+	public Evaluable? StepExpression;
 	public ISequence? Body;
 	public CodeModel.Statements.NextStatement? SourceNextStatement;
 
@@ -394,7 +394,7 @@ public class DoubleForStatement(CodeModel.Statements.Statement? source) : Statem
 	}
 
 	class NextStatement(double from, double to, double step, CodeModel.Statements.NextStatement? sourceNextStatement)
-		: Statement(sourceNextStatement)
+		: Executable(sourceNextStatement)
 	{
 		public bool FinishLoop = false;
 		public double NextValue = from;
@@ -418,12 +418,12 @@ public class DoubleForStatement(CodeModel.Statements.Statement? source) : Statem
 	}
 }
 
-public class CurrencyForStatement(CodeModel.Statements.Statement? source) : Statement(source)
+public class CurrencyForStatement(CodeModel.Statements.Statement? source) : Executable(source)
 {
 	public int IteratorVariableIndex;
-	public IEvaluable? FromExpression;
-	public IEvaluable? ToExpression;
-	public IEvaluable? StepExpression;
+	public Evaluable? FromExpression;
+	public Evaluable? ToExpression;
+	public Evaluable? StepExpression;
 	public ISequence? Body;
 	public CodeModel.Statements.NextStatement? SourceNextStatement;
 
@@ -469,7 +469,7 @@ public class CurrencyForStatement(CodeModel.Statements.Statement? source) : Stat
 	}
 
 	class NextStatement(decimal from, decimal to, decimal step, CodeModel.Statements.NextStatement? sourceNextStatement)
-		: Statement(sourceNextStatement)
+		: Executable(sourceNextStatement)
 	{
 		public bool FinishLoop = false;
 		public decimal NextValue = from;

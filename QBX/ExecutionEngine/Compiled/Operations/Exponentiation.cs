@@ -8,7 +8,7 @@ namespace QBX.ExecutionEngine.Compiled.Operations;
 
 public static class Exponentiation
 {
-	public static IEvaluable Construct(IEvaluable left, IEvaluable right)
+	public static Evaluable Construct(Evaluable left, Evaluable right)
 	{
 		if (left.Type.IsString || right.Type.IsString)
 		{
@@ -39,10 +39,10 @@ public static class Exponentiation
 	}
 }
 
-public class CurrencyExponentiation(IEvaluable left, IEvaluable right) : Expression
+public class CurrencyExponentiation(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Currency;
 
@@ -105,10 +105,10 @@ public class CurrencyExponentiation(IEvaluable left, IEvaluable right) : Express
 	}
 }
 
-public class DoubleExponentiation(IEvaluable left, IEvaluable right) : Expression
+public class DoubleExponentiation(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Double;
 

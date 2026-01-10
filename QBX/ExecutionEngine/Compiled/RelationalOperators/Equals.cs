@@ -9,7 +9,7 @@ namespace QBX.ExecutionEngine.Compiled.RelationalOperators;
 
 public static class Equals
 {
-	public static IEvaluable Construct(IEvaluable left, IEvaluable right)
+	public static Evaluable Construct(Evaluable left, Evaluable right)
 	{
 		if (left.Type.IsString && right.Type.IsString)
 			return new StringEquals(left, right);
@@ -56,10 +56,10 @@ public static class Equals
 	}
 }
 
-public class IntegerEquals(IEvaluable left, IEvaluable right) : Expression
+public class IntegerEquals(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Integer;
 
@@ -84,10 +84,10 @@ public class IntegerEquals(IEvaluable left, IEvaluable right) : Expression
 	}
 }
 
-public class LongEquals(IEvaluable left, IEvaluable right) : Expression
+public class LongEquals(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Integer;
 
@@ -112,10 +112,10 @@ public class LongEquals(IEvaluable left, IEvaluable right) : Expression
 	}
 }
 
-public class SingleEquals(IEvaluable left, IEvaluable right) : Expression
+public class SingleEquals(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Integer;
 
@@ -140,10 +140,10 @@ public class SingleEquals(IEvaluable left, IEvaluable right) : Expression
 	}
 }
 
-public class DoubleEquals(IEvaluable left, IEvaluable right) : Expression
+public class DoubleEquals(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Integer;
 
@@ -168,10 +168,10 @@ public class DoubleEquals(IEvaluable left, IEvaluable right) : Expression
 	}
 }
 
-public class CurrencyEquals(IEvaluable left, IEvaluable right) : Expression
+public class CurrencyEquals(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Integer;
 
@@ -196,10 +196,10 @@ public class CurrencyEquals(IEvaluable left, IEvaluable right) : Expression
 	}
 }
 
-public class StringEquals(IEvaluable left, IEvaluable right) : Expression
+public class StringEquals(Evaluable left, Evaluable right) : Evaluable
 {
-	public IEvaluable Left => left;
-	public IEvaluable Right => right;
+	public Evaluable Left => left;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Integer;
 

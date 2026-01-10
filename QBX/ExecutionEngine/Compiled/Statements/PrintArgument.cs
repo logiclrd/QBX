@@ -2,7 +2,7 @@
 
 public class PrintArgument
 {
-	public IEvaluable? Expression;
+	public Evaluable? Expression;
 	public PrintArgumentType ArgumentType = PrintArgumentType.Value;
 	public PrintCursorAction CursorAction = PrintCursorAction.NextLine;
 }

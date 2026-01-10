@@ -3,7 +3,7 @@ using QBX.ExecutionEngine.Execution.Variables;
 
 namespace QBX.ExecutionEngine.Compiled.Expressions;
 
-public class IdentifierExpression(int variableIndex, DataType type) : Expression
+public class IdentifierExpression(int variableIndex, DataType type) : Evaluable
 {
 	public override DataType Type => type;
 

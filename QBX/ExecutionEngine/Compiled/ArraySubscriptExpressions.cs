@@ -7,8 +7,8 @@ namespace QBX.ExecutionEngine.Compiled;
 
 public class ArraySubscriptExpressions
 {
-	public IEvaluable? LowerBound;
-	public IEvaluable? UpperBound;
+	public Evaluable? LowerBound;
+	public Evaluable? UpperBound;
 
 	public ArraySubscript Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{

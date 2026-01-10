@@ -8,7 +8,7 @@ namespace QBX.ExecutionEngine.Compiled.Operations;
 
 public static class Negation
 {
-	public static IEvaluable Construct(IEvaluable right)
+	public static Evaluable Construct(Evaluable right)
 	{
 		if (right.Type.IsString)
 			throw CompilerException.TypeMismatch(right.SourceExpression?.Token);
@@ -28,9 +28,9 @@ public static class Negation
 	}
 }
 
-public class IntegerNegation(IEvaluable right) : Expression
+public class IntegerNegation(Evaluable right) : Evaluable
 {
-	public IEvaluable Right => right;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Integer;
 
@@ -55,9 +55,9 @@ public class IntegerNegation(IEvaluable right) : Expression
 	}
 }
 
-public class LongNegation(IEvaluable right) : Expression
+public class LongNegation(Evaluable right) : Evaluable
 {
-	public IEvaluable Right => right;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Long;
 
@@ -82,9 +82,9 @@ public class LongNegation(IEvaluable right) : Expression
 	}
 }
 
-public class SingleNegation(IEvaluable right) : Expression
+public class SingleNegation(Evaluable right) : Evaluable
 {
-	public IEvaluable Right => right;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Single;
 
@@ -103,9 +103,9 @@ public class SingleNegation(IEvaluable right) : Expression
 	}
 }
 
-public class DoubleNegation(IEvaluable right) : Expression
+public class DoubleNegation(Evaluable right) : Evaluable
 {
-	public IEvaluable Right => right;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Double;
 
@@ -124,9 +124,9 @@ public class DoubleNegation(IEvaluable right) : Expression
 	}
 }
 
-public class CurrencyNegation(IEvaluable right) : Expression
+public class CurrencyNegation(Evaluable right) : Evaluable
 {
-	public IEvaluable Right => right;
+	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Currency;
 
