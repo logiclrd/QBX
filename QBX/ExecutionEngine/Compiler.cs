@@ -786,6 +786,9 @@ public class Compiler
 
 		switch (expression)
 		{
+			case CodeModel.Expressions.ParenthesizedExpression parenthesized:
+				return TranslateExpression(parenthesized.Child, container, mapper, compilation);
+
 			case CodeModel.Expressions.LiteralExpression literal:
 				return LiteralValue.ConstructFromCodeModel(literal);
 
