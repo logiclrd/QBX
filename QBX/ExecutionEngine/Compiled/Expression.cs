@@ -1,7 +1,8 @@
-﻿using QBX.ExecutionEngine.Execution;
+﻿using QBX.ExecutionEngine.Compiled.Expressions;
+using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
 
-namespace QBX.ExecutionEngine.Compiled.Expressions;
+namespace QBX.ExecutionEngine.Compiled;
 
 public abstract class Expression : IEvaluable
 {

@@ -1,6 +1,6 @@
 using QBX.ExecutionEngine.Execution;
 
-namespace QBX.ExecutionEngine.Compiled.Statements;
+namespace QBX.ExecutionEngine.Compiled;
 
 public abstract class Statement : IExecutable
 {
