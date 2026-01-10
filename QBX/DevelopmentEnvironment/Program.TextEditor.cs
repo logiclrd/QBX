@@ -490,6 +490,29 @@ public partial class Program
 			}
 			default:
 			{
+				if ((input.ScanCode == ScanCode.S)
+				 && input.Modifiers.CtrlKey)
+				{
+					// HAX: scan until we find the DebugCases folder off of a parent
+					//      folder. only needed until we have a save dialog.
+					string? FindDebugCasesPath()
+					{
+						string? path = Environment.CurrentDirectory;
+
+						while ((path != null) && (Path.GetFileName(path) != "DebugCases"))
+							path = Path.GetDirectoryName(path);
+
+						return path;
+					}
+
+					SaveFile(
+						LoadedFiles[0],
+						Path.Combine(
+							FindDebugCasesPath() ?? ".",
+							"NEWCASE.BAS"));
+					break;
+				}
+
 				if (input.IsNormalText && FocusedViewport.IsEditable)
 				{
 					select = false;

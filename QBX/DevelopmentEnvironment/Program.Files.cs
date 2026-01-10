@@ -56,7 +56,11 @@ namespace QBX.DevelopmentEnvironment
 		{
 			if (saveBackup && File.Exists(filePath))
 			{
-				string backupFilePath = Path.ChangeExtension(filePath, ".ba~");
+				string backupExtension = Path.GetExtension(filePath) ?? ".BAS";
+
+				backupExtension = backupExtension.Remove(backupExtension.Length - 1) + "~";
+
+				string backupFilePath = Path.ChangeExtension(filePath, backupExtension);
 
 				File.Delete(backupFilePath);
 				File.Move(filePath, backupFilePath);

@@ -1,5 +1,6 @@
 ﻿using System;
 
+using QBX.CodeModel.Statements;
 using QBX.LexicalAnalysis;
 
 namespace QBX.ExecutionEngine;
@@ -69,4 +70,8 @@ public class CompilerException : Exception
 		=> new CompilerException(context, "Argument count mismatch");
 	public static CompilerException IdentifierCannotIncludePeriod(Token? context)
 		=> new CompilerException(context, "Identifier cannot include period");
+	public static CompilerException LabelNotDefined(Token? context)
+		=> new CompilerException(context, "Label not defined");
+	public static CompilerException DuplicateLabel(Statement? statement)
+		=> new CompilerException(statement, "Duplicate label");
 }

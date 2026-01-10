@@ -8,16 +8,16 @@ public class EndStatement : Statement
 {
 	public override StatementType Type => StatementType.End;
 
-	public Expression? Expression { get; set; }
+	public Expression? ExitCodeExpression { get; set; }
 
 	protected override void RenderImplementation(TextWriter writer)
 	{
 		writer.Write("END");
 
-		if (Expression != null)
+		if (ExitCodeExpression != null)
 		{
 			writer.Write(' ');
-			Expression.Render(writer);
+			ExitCodeExpression.Render(writer);
 		}
 	}
 }

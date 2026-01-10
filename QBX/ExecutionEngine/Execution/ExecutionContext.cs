@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 
 using QBX.ExecutionEngine.Compiled;
 using QBX.ExecutionEngine.Execution.Variables;
@@ -21,6 +19,7 @@ public class ExecutionContext
 	ExecutionState _state;
 
 	StackFrame? _rootFrame;
+	StatementPath? _goTo;
 
 	public bool EnablePaletteRemapping = true;
 
@@ -48,7 +47,11 @@ public class ExecutionContext
 
 		try
 		{
-			Dispatch(entrypoint, _rootFrame);
+			try
+			{
+				Call(entrypoint, _rootFrame);
+			}
+			catch (EndProgram) { }
 
 			int exitCode = _rootFrame.Variables[0].CoerceToInt();
 
@@ -66,22 +69,62 @@ public class ExecutionContext
 		}
 	}
 
+	public void SetExitCode(int exitCode)
+	{
+		_rootFrame?.Variables[0].SetData(exitCode);
+	}
+
 	public void Dispatch(Executable? executable, StackFrame stackFrame)
 	{
 		if (executable != null)
 		{
-			if (executable.CanBreak)
-				_state.NextStatement(executable.Source);
+			if (_goTo != null)
+			{
+				int subsequenceIndex = _goTo.Pop();
 
-			executable.Execute(this, stackFrame);
+				// I don't think this should actually happen, it should always
+				// end on an index into a sequence. Better safe than sorry, though.
+				if (_goTo.Count == 0)
+					_goTo = null;
+
+				var subsequence = executable.GetSequenceByIndex(subsequenceIndex);
+
+				if (subsequence == null)
+					throw new Exception("Internal Error: ExecutionPath specified subsequence " + subsequenceIndex + " within a " + executable.GetType().Name + " and it does not exist");
+
+				Dispatch(subsequence, stackFrame);
+			}
+			else
+			{
+				if (executable.CanBreak)
+					_state.NextStatement(executable.Source);
+
+				executable.Execute(this, stackFrame);
+			}
 		}
 	}
 
 	public void Dispatch(Sequence? sequence, StackFrame stackFrame)
 	{
 		if (sequence != null)
-			for (int i = 0; i < sequence.Count; i++)
+		{
+			int startIndex = 0;
+
+			if (_goTo != null)
+			{
+				startIndex = _goTo.Pop();
+				if (_goTo.Count == 0)
+					_goTo = null;
+			}
+			else
+			{
+				foreach (var statement in sequence.InjectedStatements)
+					Dispatch(statement, stackFrame);
+			}
+
+			for (int i = startIndex; i < sequence.Count; i++)
 				Dispatch(sequence[i], stackFrame);
+		}
 	}
 
 	static Variable s_dummyVariable = new DummyVariable();
@@ -90,16 +133,30 @@ public class ExecutionContext
 	{
 		var frame = CreateFrame(routine.Module, routine, arguments);
 
+		return Call(routine, frame);
+	}
+
+	Variable Call(Routine routine, StackFrame frame)
+	{
 		_state.EnterRoutine(routine, frame);
 
 		try
 		{
-			Dispatch(routine, frame);
+		goTo_:
+			try
+			{
+				Dispatch(routine, frame);
 
-			if (routine.ReturnType != null)
-				return frame.Variables[0];
-			else
-				return s_dummyVariable;
+				if (routine.ReturnType != null)
+					return frame.Variables[0];
+				else
+					return s_dummyVariable;
+			}
+			catch (GoTo goTo)
+			{
+				_goTo = goTo.StatementPath.Clone();
+				goto goTo_;
+			}
 		}
 		finally
 		{

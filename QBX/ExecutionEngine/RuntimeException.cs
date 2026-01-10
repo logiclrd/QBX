@@ -47,4 +47,6 @@ public class RuntimeException : Exception
 		=> new RuntimeException(statement, "Type mismatch");
 	public static RuntimeException SubscriptOutOfRange(Token? context)
 		=> new RuntimeException(context, "Subscript out of range");
+	public static RuntimeException ReturnWithoutGoSub(CodeModel.Statements.Statement? statement)
+		=> new RuntimeException(statement, "RETURN without GOSUB");
 }

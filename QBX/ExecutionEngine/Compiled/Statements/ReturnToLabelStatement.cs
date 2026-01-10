@@ -2,14 +2,12 @@ using QBX.ExecutionEngine.Execution;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class GoSubStatement(string labelName, CodeModel.Statements.Statement source)
+public class ReturnToLabelStatement(string labelName, CodeModel.Statements.Statement source)
 	: JumpStatement(labelName, source)
 {
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
-		var returnPath = GetPathToStatement(offset: 1);
-
-		stackFrame.PushReturnPath(returnPath);
+		stackFrame.PopReturnPath(Source);
 
 		base.Execute(context, stackFrame);
 	}

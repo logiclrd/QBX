@@ -10,6 +10,28 @@ public class IfStatement(CodeModel.Statements.Statement? source) : Executable(so
 	public Sequence? ThenBody;
 	public Sequence? ElseBody;
 
+	public override int IndexOfSequence(Sequence sequence)
+	{
+		if (sequence == ThenBody)
+			return 0;
+		if (sequence == ElseBody)
+			return 1;
+
+		throw new Exception("Internal error: Sequence is not owned by this statement");
+	}
+
+	public override int GetSequenceCount() => 2;
+
+	public override Sequence? GetSequenceByIndex(int sequenceIndex)
+	{
+		if (sequenceIndex == 0)
+			return ThenBody;
+		if (sequenceIndex == 1)
+			return ElseBody;
+
+		throw new IndexOutOfRangeException();
+	}
+
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (Condition == null)

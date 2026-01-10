@@ -9,17 +9,70 @@ using QBX.LexicalAnalysis;
 
 namespace QBX.ExecutionEngine.Compiled;
 
+// This class is in charge of linking things up within a CompilationElement.
+//
+// - Variables:
+//
+//   The result of compilation has an array of nameless variables, and compiled
+//   statements reference them by index. Mapper is in charge of tracking the
+//   links from identifiers to variable indices during the compilation phase.
+//
+// - Arrays:
+//
+//   In QBASIC, arrays have a different namespace from variables. You can create
+//   an array foo%(1 TO 5), and also set foo% = 3, these are separate things.
+//   Mapper tracks a separate mapping of arrays to variable indices. The arrays
+//   and non-arrays live in the same array, but the names are mapped
+//   independently, so e.g. foo% can be variable 1 and foo%() can be variable 2.
+//
+// - Dotted identifiers:
+//
+//   For some legacy reason, QuickBASIC supports using identifiers that have
+//   dots in the name. For instance, "foo.bar" is a perfectly valid variable
+//   name. But, this conflicts with the existence of user data types. If
+//   there were a type that had a field "bar", and "foo" was of that type,
+//   then "foo.bar" would mean "field bar of variable foo". When such
+//   conflicts arise, the field interpretation wins.
+//
+//   Mapper resolves this by tracking the "slugs", as I call them, of dotted
+//   identifiers -- the part of the identifier up to the first dot. If a
+//   variable is declared with a user data type, or a SUB or FUNCTION is
+//   defined, with a particular name then that name becomes disallowed for
+//   slugs in dotted identifiers.
+//
+// - Identifier types:
+//
+//   QuickBASIC allows the default data type of an identifier to be set
+//   based on the first character of its name. The name can also be
+//   qualified, overriding this default. The name without qualification is
+//   an alias for the qualified name. So, e.g., if the default type is
+//   SINGLE, then "a" and "a!" reference the same variable. You can still
+//   also have "a%" as a separate variable. If the default type is INTEGER
+//   then "a" references the same variable as "a%" instead.
+//
+//   These mappings can change in an ongoing basis based on the presence
+//   of "DEFtype" statements ("DEFINT", "DEFSNG", etc.). Lines of code
+//   after such a statement work with the updated mappings, until the next
+//   "DEFtype" statement is encountered.
+//
+//   Mapper tracks these defaults and automatically qualifies unqualified
+//   identifiers when defining and resolving them.
+
 public class Mapper
 {
 	Mapper? _root;
+
 	Dictionary<string, LiteralValue> _constantValueByName = new Dictionary<string, LiteralValue>(StringComparer.OrdinalIgnoreCase);
+
+	List<VariableInfo> _variables = new List<VariableInfo>();
+
 	Dictionary<string, int> _variableIndexByName = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 	Dictionary<string, int> _arrayIndexByName = new Dictionary<string, int>(StringComparer.Ordinal);
-	int _nextVariableIndex;
 	HashSet<string> _disallowedSlugs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-	Dictionary<int, VariableInfo> _variables = new Dictionary<int, VariableInfo>();
+
 	HashSet<string> _globalVariableNames = new HashSet<string>();
 	HashSet<string> _globalArrayNames = new HashSet<string>();
+
 	PrimitiveDataType[] _identifierTypes = new PrimitiveDataType[26];
 
 	// Slugs: avoid conflicts to do with dotted variable names.
@@ -62,7 +115,6 @@ public class Mapper
 	public Mapper()
 	{
 		_identifierTypes.AsSpan().Fill(PrimitiveDataType.Single);
-		_nextVariableIndex = 0;
 
 		DeclareVariable("@ExitCode", DataType.Long);
 	}
@@ -334,13 +386,13 @@ public class Mapper
 		if (_variableIndexByName.TryGetValue(name, out var index))
 			throw CompilerException.DuplicateDefinition(token);
 
-		index = _nextVariableIndex++;
+		index = _variables.Count;
 
 		var info = new VariableInfo(name, index);
 
 		info.Type = dataType;
 
-		_variables[index] = info;
+		_variables.Add(info);
 
 		return _variableIndexByName[name] = index;
 	}
@@ -367,13 +419,13 @@ public class Mapper
 		if (_arrayIndexByName.TryGetValue(name, out var index))
 			throw CompilerException.DuplicateDefinition(token);
 
-		index = _nextVariableIndex++;
+		index = _variables.Count;
 
 		var info = new VariableInfo(name, index);
 
 		info.Type = dataType;
 
-		_variables[index] = info;
+		_variables.Add(info);
 
 		return _arrayIndexByName[name] = index;
 	}
@@ -407,7 +459,7 @@ public class Mapper
 		.ToList();
 
 	public List<VariableLink> GetLinkedVariables() =>
-		_variables.Values
+		_variables
 		.Where(info => info.LinkedToRootVariableIndex >= 0)
 		.Select(info =>
 			new VariableLink()

@@ -104,6 +104,7 @@ public class Compiler
 				info.Routine.ReturnValueVariableIndex = info.Mapper.DeclareVariable(info.Routine.Name, info.Routine.ReturnType);
 		}
 
+		// Fourth pass: Translate statements.
 		foreach (var info in translationInfo)
 		{
 			var element = info.Element;
@@ -126,6 +127,8 @@ public class Compiler
 
 			routine.VariableTypes = mapper.GetVariableTypes();
 			routine.LinkedVariables = mapper.GetLinkedVariables();
+
+			routine.ResolveJumpStatements();
 		}
 
 		compilation.Modules.Add(module);
@@ -177,34 +180,25 @@ public class Compiler
 		{
 			var statement = line.Statements[statementIndex];
 
-			bool Advance()
-			{
-				statementIndex++;
+			if ((statementIndex == 0) && (line.Label != null))
+				container.Append(new LabelStatement(line.Label.Name, statement));
 
-				while (statementIndex >= line.Statements.Count)
+			var iterator = new CompilationElementStatementIterator(
+				element,
+				line,
+				lineIndex,
+				statementIndex);
+
+			iterator.Advanced +=
+				newStatement =>
 				{
-					lineIndex++;
-					statementIndex = 0;
+					statement = newStatement;
+				};
 
-					if (lineIndex >= element.Lines.Count)
-						return false;
+			TranslateStatement(element.Type, ref statement, iterator, container, mapper, compilation, out var nextStatementInfo);
 
-					line = element.Lines[lineIndex];
-				}
-
-				statement = line.Statements[statementIndex];
-
-				return true;
-			}
-
-			bool HaveCurrentStatement()
-			{
-				return
-					(lineIndex < element.Lines.Count) &&
-					(statementIndex < line.Statements.Count);
-			}
-
-			TranslateStatement(element.Type, ref statement, Advance, HaveCurrentStatement, container, mapper, compilation, out var nextStatementInfo);
+			lineIndex = iterator.LineIndex;
+			statementIndex = iterator.StatementIndex;
 
 			if (nextStatementInfo != null)
 			{
@@ -230,25 +224,17 @@ public class Compiler
 		{
 			var statement = statements[statementIndex];
 
-			bool Advance()
-			{
-				statementIndex++;
+			var iterator = new ListStatementIterator(statements, statementIndex);
 
-				if (statementIndex < statements.Count)
+			iterator.Advanced +=
+				newStatement =>
 				{
-					statement = statements[statementIndex];
-					return true;
-				}
-				else
-					return false;
-			}
+					statement = newStatement;
+				};
 
-			bool HaveCurrentStatement()
-			{
-				return (statementIndex < statements.Count);
-			}
+			TranslateStatement(elementType, ref statement, iterator, container, mapper, compilation, out var nextStatementInfo);
 
-			TranslateStatement(elementType, ref statement, Advance, HaveCurrentStatement, container, mapper, compilation, out var nextStatementInfo);
+			statementIndex = iterator.StatementIndex;
 
 			if (nextStatementInfo != null)
 			{
@@ -268,7 +254,7 @@ public class Compiler
 		public int LoopsMatched = 0;
 	}
 
-	void TranslateStatement(CodeModel.CompilationElementType elementType, ref CodeModel.Statements.Statement statement, Func<bool> advance, Func<bool> haveCurrentStatement, Sequence container, Mapper mapper, Compilation compilation, out NextStatementInfo? nextStatementInfo)
+	void TranslateStatement(CodeModel.CompilationElementType elementType, ref CodeModel.Statements.Statement statement, StatementIterator iterator, Sequence container, Mapper mapper, Compilation compilation, out NextStatementInfo? nextStatementInfo)
 	{
 		var typeRepository = compilation.TypeRepository;
 
@@ -450,6 +436,16 @@ public class Compiler
 				throw new RuntimeException(statement, "ELSE without IF");
 			case CodeModel.Statements.EmptyStatement:
 				break;
+			case CodeModel.Statements.EndStatement endStatement:
+			{
+				var translatedEndStatement = new EndStatement(endStatement);
+
+				translatedEndStatement.ExitCodeExpression = TranslateExpression(endStatement.ExitCodeExpression, container, mapper, compilation);
+
+				container.Append(translatedEndStatement);
+
+				break;
+			}
 			case CodeModel.Statements.IfStatement ifStatement:
 			{
 				var translatedIfStatement = new IfStatement(ifStatement);
@@ -464,12 +460,15 @@ public class Compiler
 					var subsequence = new Sequence();
 
 					translatedIfStatement.ThenBody = subsequence;
+					subsequence.OwnerExecutable = translatedIfStatement;
 
 					var blame = statement;
 
-					advance();
+					iterator.Advance();
 
-					while (haveCurrentStatement())
+					subsequence.AppendIfNotNull(iterator.GetLabelStatement());
+
+					while (iterator.HaveCurrentStatement)
 					{
 						if (statement is CodeModel.Statements.EndIfStatement)
 						{
@@ -489,9 +488,12 @@ public class Compiler
 								subsequence = new Sequence();
 
 								block.ElseBody = subsequence;
+								subsequence.OwnerExecutable = block;
 
-								if (!advance())
+								if (!iterator.Advance())
 									throw CompilerException.BlockIfWithoutEndIf(blame);
+
+								subsequence.AppendIfNotNull(iterator.GetLabelStatement());
 
 								break;
 							}
@@ -508,6 +510,7 @@ public class Compiler
 								var elseBody = new Sequence();
 
 								block.ElseBody = elseBody;
+								elseBody.OwnerExecutable = block;
 
 								block = new IfStatement(elseIfStatement);
 								block.Condition = TranslateExpression(elseIfStatement.ConditionExpression, container, mapper, compilation);
@@ -517,6 +520,7 @@ public class Compiler
 								subsequence = new Sequence();
 
 								block.ThenBody = subsequence;
+								subsequence.OwnerExecutable = block;
 
 								if (elseIfStatement.ThenBody != null)
 								{
@@ -528,15 +532,17 @@ public class Compiler
 										TranslateStatement(elementType, elseIfStatement.ThenBody, ref idx, subsequence, mapper, compilation);
 								}
 
-								if (!advance())
+								if (!iterator.Advance())
 									throw CompilerException.BlockIfWithoutEndIf(blame);
+
+								subsequence.AppendIfNotNull(iterator.GetLabelStatement());
 
 								break;
 							}
 
 							default:
 							{
-								TranslateStatement(elementType, ref statement, advance, haveCurrentStatement, subsequence, mapper, compilation, out nextStatementInfo);
+								TranslateStatement(elementType, ref statement, iterator, subsequence, mapper, compilation, out nextStatementInfo);
 
 								if (nextStatementInfo != null)
 								{
@@ -564,6 +570,7 @@ public class Compiler
 						TranslateStatement(elementType, ifStatement.ThenBody, ref idx, thenBody, mapper, compilation);
 
 					translatedIfStatement.ThenBody = thenBody;
+					thenBody.OwnerExecutable = translatedIfStatement;
 
 					if (ifStatement.ElseBody != null)
 					{
@@ -575,6 +582,7 @@ public class Compiler
 							TranslateStatement(elementType, ifStatement.ElseBody, ref idx, elseBody, mapper, compilation);
 
 						translatedIfStatement.ElseBody = elseBody;
+						elseBody.OwnerExecutable = translatedIfStatement;
 					}
 				}
 
@@ -597,11 +605,13 @@ public class Compiler
 
 				var body = new Sequence();
 
-				advance();
+				iterator.Advance();
+
+				body.AppendIfNotNull(iterator.GetLabelStatement());
 
 				CodeModel.Statements.NextStatement? nextStatement = null;
 
-				while (haveCurrentStatement())
+				while (iterator.HaveCurrentStatement)
 				{
 					nextStatement = statement as CodeModel.Statements.NextStatement;
 
@@ -625,7 +635,7 @@ public class Compiler
 						break;
 					}
 
-					TranslateStatement(elementType, ref statement, advance, haveCurrentStatement, body, mapper, compilation, out nextStatementInfo);
+					TranslateStatement(elementType, ref statement, iterator, body, mapper, compilation, out nextStatementInfo);
 
 					if (nextStatementInfo != null)
 					{
@@ -656,7 +666,35 @@ public class Compiler
 					forStatement,
 					nextStatement);
 
+				body.OwnerExecutable = translatedForStatement;
+
 				container.Append(translatedForStatement);
+
+				break;
+			}
+			case CodeModel.Statements.GoToStatement goToStatement:
+			{
+				string target =
+					goToStatement.TargetLabel ??
+					goToStatement.TargetLineNumber?.ToString() ??
+					throw new Exception("CodeModel GoToStatement has no target");
+
+				var translatedGoToStatement = new GoToStatement(target, goToStatement);
+
+				container.Append(translatedGoToStatement);
+
+				break;
+			}
+			case CodeModel.Statements.GoSubStatement goSubStatement:
+			{
+				string target =
+					goSubStatement.TargetLabel ??
+					goSubStatement.TargetLineNumber?.ToString() ??
+					throw new Exception("CodeModel GoToStatement has no target");
+
+				var translatedGoSubStatement = new GoSubStatement(target, goSubStatement);
+
+				container.Append(translatedGoSubStatement);
 
 				break;
 			}
@@ -734,6 +772,23 @@ public class Compiler
 
 				break;
 			}
+			case CodeModel.Statements.ReturnStatement returnStatement:
+			{
+				string? target =
+					returnStatement.TargetLabel ??
+					returnStatement.TargetLineNumber?.ToString();
+
+				Executable translatedReturnStatement;
+
+				if (target == null)
+					translatedReturnStatement = new ReturnStatement(returnStatement);
+				else
+					translatedReturnStatement = new ReturnToLabelStatement(target, returnStatement);
+
+				container.Append(translatedReturnStatement);
+
+				break;
+			}
 			case CodeModel.Statements.ScreenStatement screenStatement:
 			{
 				var translatedScreenStatement = new ScreenStatement(screenStatement);
@@ -756,7 +811,7 @@ public class Compiler
 				// Types are gathered in a separate pass, since they need to be known before
 				// SUB and FUNCTION parameters are processed. Here, we just skip over them.
 
-				while (advance())
+				while (iterator.Advance())
 				{
 					if ((statement is CodeModel.Statements.EmptyStatement) || (statement is CodeModel.Statements.CommentStatement))
 						continue;
@@ -776,7 +831,7 @@ public class Compiler
 			default: throw new NotImplementedException("Statement not implemented: " + statement.Type);
 		}
 
-		advance();
+		iterator.Advance();
 	}
 
 	private Evaluable? TranslateExpression(CodeModel.Expressions.Expression? expression, Sequence container, Mapper mapper, Compilation compilation, bool createImplicitArray = false)
@@ -896,7 +951,7 @@ public class Compiler
 							new IntegerLiteralValue(10));
 					}
 
-					container.Prepend(implicitDimStatement);
+					container.Inject(implicitDimStatement);
 				}
 
 				var variableType = mapper.GetVariableType(variableIndex);

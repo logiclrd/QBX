@@ -13,7 +13,7 @@ namespace QBX.ExecutionEngine.Compiled.Statements;
 // a range expression fail to evaluate because the numeric value
 // is out-of-range, which is an error.)
 
-public class ForStatement
+public abstract class ForStatement : Executable
 {
 	public static Executable Construct(
 		int iteratorVariableIndex,
@@ -116,15 +116,39 @@ public class ForStatement
 			default: throw new Exception("Unrecognized iterator variable type " + iteratorVariableType);
 		}
 	}
+
+	public ForStatement(CodeModel.Statements.Statement? source)
+		: base(source)
+	{
+	}
+
+	public override int IndexOfSequence(Sequence sequence)
+	{
+		if (sequence == this.Body)
+			return 0;
+
+		throw new Exception("Internal error: Sequence is not owned by this statement");
+	}
+
+	public override int GetSequenceCount() => 1;
+
+	public override Sequence? GetSequenceByIndex(int sequenceIndex)
+	{
+		if (sequenceIndex == 0)
+			return this.Body;
+
+		throw new IndexOutOfRangeException();
+	}
+
+	public Sequence? Body;
 }
 
-public class IntegerForStatement(CodeModel.Statements.Statement? source) : Executable(source)
+public class IntegerForStatement(CodeModel.Statements.Statement? source) : ForStatement(source)
 {
 	public int IteratorVariableIndex;
 	public Evaluable? FromExpression;
 	public Evaluable? ToExpression;
 	public Evaluable? StepExpression;
-	public Sequence? Body;
 	public CodeModel.Statements.NextStatement? SourceNextStatement;
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
@@ -193,13 +217,12 @@ public class IntegerForStatement(CodeModel.Statements.Statement? source) : Execu
 	}
 }
 
-public class LongForStatement(CodeModel.Statements.Statement? source) : Executable(source)
+public class LongForStatement(CodeModel.Statements.Statement? source) : ForStatement(source)
 {
 	public int IteratorVariableIndex;
 	public Evaluable? FromExpression;
 	public Evaluable? ToExpression;
 	public Evaluable? StepExpression;
-	public Sequence? Body;
 	public CodeModel.Statements.NextStatement? SourceNextStatement;
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
@@ -268,13 +291,12 @@ public class LongForStatement(CodeModel.Statements.Statement? source) : Executab
 	}
 }
 
-public class SingleForStatement(CodeModel.Statements.Statement? source) : Executable(source)
+public class SingleForStatement(CodeModel.Statements.Statement? source) : ForStatement(source)
 {
 	public int IteratorVariableIndex;
 	public Evaluable? FromExpression;
 	public Evaluable? ToExpression;
 	public Evaluable? StepExpression;
-	public Sequence? Body;
 	public CodeModel.Statements.NextStatement? SourceNextStatement;
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
@@ -343,13 +365,12 @@ public class SingleForStatement(CodeModel.Statements.Statement? source) : Execut
 	}
 }
 
-public class DoubleForStatement(CodeModel.Statements.Statement? source) : Executable(source)
+public class DoubleForStatement(CodeModel.Statements.Statement? source) : ForStatement(source)
 {
 	public int IteratorVariableIndex;
 	public Evaluable? FromExpression;
 	public Evaluable? ToExpression;
 	public Evaluable? StepExpression;
-	public Sequence? Body;
 	public CodeModel.Statements.NextStatement? SourceNextStatement;
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
@@ -418,13 +439,12 @@ public class DoubleForStatement(CodeModel.Statements.Statement? source) : Execut
 	}
 }
 
-public class CurrencyForStatement(CodeModel.Statements.Statement? source) : Executable(source)
+public class CurrencyForStatement(CodeModel.Statements.Statement? source) : ForStatement(source)
 {
 	public int IteratorVariableIndex;
 	public Evaluable? FromExpression;
 	public Evaluable? ToExpression;
 	public Evaluable? StepExpression;
-	public Sequence? Body;
 	public CodeModel.Statements.NextStatement? SourceNextStatement;
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)

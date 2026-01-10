@@ -27,8 +27,8 @@ public class EndStatementTests
 		var endResult = (EndStatement)result;
 
 		if (expectExitCodeExpression)
-			endResult.Expression.Should().NotBeNull();
+			endResult.ExitCodeExpression.Should().NotBeNull();
 		else
-			endResult.Expression.Should().BeNull();
+			endResult.ExitCodeExpression.Should().BeNull();
 	}
 }

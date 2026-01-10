@@ -896,7 +896,7 @@ public class BasicParser
 						return
 							new EndStatement()
 							{
-								Expression = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken)
+								ExitCodeExpression = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken)
 							};
 					}
 				}

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using QBX.CodeModel.Statements;
+using QBX.ExecutionEngine.Compiled.Statements;
 
 namespace QBX.ExecutionEngine.Compiled;
 
@@ -19,6 +20,31 @@ public class Routine : Sequence
 	public int ReturnValueVariableIndex = -1;
 
 	public CodeModel.CompilationElement Source;
+
+	// Labels:
+	//   The execution model uses the native execution stack to track its own
+	//   ongoing stack. There are additional stack frames involved every time a
+	//   statement has a body, such as IF, FOR, DO, SELECT CASE, etc. This presents
+	//   a unique challenge for GOTO, GOSUB and the "Set Next Statement" debugger
+	//   action: switching to another statement involves unwinding and rewinding
+	//   the stack. This can, of course, only be done within the same logical
+	//   StackFrame shared by all the real stack frames handling the execution of
+	//   nested Sequences.
+	//
+	//   In order to support this, there is an "exception" called GoTo which takes
+	//   a StatementPath. This path tells ExecutionContext at each Sequence which
+	//   index it should jump to, and at each Executable which subsequence, if any,
+	//   it should follow.
+	//
+	//   Labels/line numbers may be as yet undefined when a GOTO or GOSUB statement
+	//   references them, so we might not immediately be able to resolve the target
+	//   of such a statement at the time it is translated. So we defer the
+	//   resolution. In addition, if changes to the code are made while it is
+	//   executing, then the path to a statement following a label, or indeed the
+	//   statement itself, may change. To simplify this, an Executable called a
+	//   LabelStatement is a no-op that can be located even if it moves, and
+	//   the ResolveJumpStatements function recomputes all the mappings following
+	//   any change to the code.
 
 	public const string MainRoutineName = "@Main";
 
@@ -118,6 +144,27 @@ public class Routine : Sequence
 
 				mapper.DeclareVariable(name, paramType);
 			}
+		}
+	}
+
+	public void ResolveJumpStatements()
+	{
+		var labels = new Dictionary<string, StatementPath>();
+
+		foreach (var label in AllStatements.OfType<LabelStatement>())
+		{
+			if (labels.ContainsKey(label.LabelName))
+				throw CompilerException.DuplicateLabel(label.Source);
+
+			labels[label.LabelName] = label.GetPathToStatement();
+		}
+
+		foreach (var jump in AllStatements.OfType<JumpStatement>())
+		{
+			if (!labels.TryGetValue(jump.TargetLabelName, out var targetPath))
+				throw CompilerException.LabelNotDefined(jump.Source?.FirstToken);
+
+			jump.TargetPath = targetPath;
 		}
 	}
 }
