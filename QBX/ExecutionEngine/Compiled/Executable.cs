@@ -44,4 +44,11 @@ public abstract class Executable
 	public virtual bool CanBreak { get; set; } = true;
 
 	public abstract void Execute(ExecutionContext context, StackFrame stackFrame);
+
+	public virtual bool SelfSequenceDispatch => false;
+
+	public virtual void Dispatch(ExecutionContext context, StackFrame stackFrame, int sequenceIndex, ref StatementPath? goTo)
+	{
+		throw new Exception("Internal error: Executable.Dispatch called with no implementation");
+	}
 }

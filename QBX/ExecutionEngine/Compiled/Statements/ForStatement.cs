@@ -34,7 +34,7 @@ public abstract class ForStatement : Executable
 				stepExpression = Conversion.Construct(stepExpression, PrimitiveDataType.Integer);
 
 				return
-					new IntegerForStatement(sourceForStatement)
+					new IntegerForStatement(sourceForStatement, sourceNextStatement)
 					{
 						IteratorVariableIndex = iteratorVariableIndex,
 						FromExpression = fromExpression,
@@ -51,7 +51,7 @@ public abstract class ForStatement : Executable
 				stepExpression = Conversion.Construct(stepExpression, PrimitiveDataType.Long);
 
 				return
-					new LongForStatement(sourceForStatement)
+					new LongForStatement(sourceForStatement, sourceNextStatement)
 					{
 						IteratorVariableIndex = iteratorVariableIndex,
 						FromExpression = fromExpression,
@@ -68,7 +68,7 @@ public abstract class ForStatement : Executable
 				stepExpression = Conversion.Construct(stepExpression, PrimitiveDataType.Single);
 
 				return
-					new SingleForStatement(sourceForStatement)
+					new SingleForStatement(sourceForStatement, sourceNextStatement)
 					{
 						IteratorVariableIndex = iteratorVariableIndex,
 						FromExpression = fromExpression,
@@ -85,7 +85,7 @@ public abstract class ForStatement : Executable
 				stepExpression = Conversion.Construct(stepExpression, PrimitiveDataType.Double);
 
 				return
-					new DoubleForStatement(sourceForStatement)
+					new DoubleForStatement(sourceForStatement, sourceNextStatement)
 					{
 						IteratorVariableIndex = iteratorVariableIndex,
 						FromExpression = fromExpression,
@@ -102,7 +102,7 @@ public abstract class ForStatement : Executable
 				stepExpression = Conversion.Construct(stepExpression, PrimitiveDataType.Currency);
 
 				return
-					new CurrencyForStatement(sourceForStatement)
+					new CurrencyForStatement(sourceForStatement, sourceNextStatement)
 					{
 						IteratorVariableIndex = iteratorVariableIndex,
 						FromExpression = fromExpression,
@@ -117,33 +117,83 @@ public abstract class ForStatement : Executable
 		}
 	}
 
-	public ForStatement(CodeModel.Statements.Statement? source)
-		: base(source)
-	{
-	}
-
 	public override int IndexOfSequence(Sequence sequence)
 	{
 		if (sequence == this.Body)
 			return 0;
+		if (sequence == _nextWrapper)
+			return 1;
 
 		throw new Exception("Internal error: Sequence is not owned by this statement");
 	}
 
-	public override int GetSequenceCount() => 1;
+	public Sequence? Body;
+	Sequence? _nextWrapper;
+
+	protected long _nextDispatcherIndex;
+
+	public ForStatement(CodeModel.Statements.Statement? sourceForStatement, CodeModel.Statements.Statement? sourceNextStatement)
+		: base(sourceForStatement)
+	{
+		var nextDispatcher = new NextDispatcherStatement(sourceNextStatement);
+
+		_nextWrapper = new Sequence();
+		_nextWrapper.OwnerExecutable = this;
+		_nextWrapper.Append(nextDispatcher);
+
+		_nextDispatcherIndex = nextDispatcher.DispatcherIndex;
+	}
+
+	public override int GetSequenceCount() => 2;
 
 	public override Sequence? GetSequenceByIndex(int sequenceIndex)
 	{
 		if (sequenceIndex == 0)
-			return this.Body;
+			return Body;
+		if (sequenceIndex == 1)
+			return _nextWrapper;
 
 		throw new IndexOutOfRangeException();
 	}
 
-	public Sequence? Body;
+	public override bool SelfSequenceDispatch => true;
+
+	public override void Dispatch(ExecutionContext context, StackFrame stackFrame, int sequenceIndex, ref StatementPath? goTo)
+	{
+		int statementIndex = 0;
+
+		if (goTo != null)
+		{
+			statementIndex = goTo.Pop();
+
+			if (goTo.Count == 0)
+				goTo = null;
+		}
+
+		if (sequenceIndex == 1)
+			statementIndex += Body!.Count;
+
+		DispatchImplementation(statementIndex, context, stackFrame);
+	}
+
+	protected abstract void DispatchImplementation(int statementIndex, ExecutionContext context, StackFrame stackFrame);
+
+	class NextDispatcherStatement(CodeModel.Statements.Statement? source) : Executable(source)
+	{
+		static long s_nextNextIndex;
+
+		long _nextIndex = s_nextNextIndex++;
+
+		public long DispatcherIndex => _nextIndex;
+
+		public override void Execute(ExecutionContext context, StackFrame stackFrame)
+		{
+			stackFrame.NextStatements[_nextIndex].Execute(context, stackFrame);
+		}
+	}
 }
 
-public class IntegerForStatement(CodeModel.Statements.Statement? source) : ForStatement(source)
+public class IntegerForStatement(CodeModel.Statements.ForStatement? sourceForStatement, CodeModel.Statements.NextStatement? sourceNextStatement) : ForStatement(sourceForStatement, sourceNextStatement)
 {
 	public int IteratorVariableIndex;
 	public Evaluable? FromExpression;
@@ -182,13 +232,28 @@ public class IntegerForStatement(CodeModel.Statements.Statement? source) : ForSt
 		{
 			var nextStatement = new NextStatement(from, to, step, SourceNextStatement);
 
-			while (!nextStatement.FinishLoop)
-			{
-				iteratorVariable.SetData(nextStatement.NextValue);
+			stackFrame.NextStatements[_nextDispatcherIndex] = nextStatement;
 
-				context.Dispatch(Body, stackFrame);
-				context.Dispatch(nextStatement, stackFrame);
-			}
+			DispatchImplementation(0, context, stackFrame);
+		}
+	}
+
+	protected override void DispatchImplementation(int statementIndex, ExecutionContext context, StackFrame stackFrame)
+	{
+		var nextStatement = (NextStatement)stackFrame.NextStatements[_nextDispatcherIndex];
+
+		var iteratorVariable = stackFrame.Variables[IteratorVariableIndex];
+
+		while (!nextStatement.FinishLoop)
+		{
+			iteratorVariable.SetData(nextStatement.NextValue);
+
+			for (int i = statementIndex; i < Body!.Count; i++)
+				context.Dispatch(Body[i], stackFrame);
+
+			statementIndex = 0;
+
+			context.Dispatch(nextStatement, stackFrame);
 		}
 	}
 
@@ -217,7 +282,7 @@ public class IntegerForStatement(CodeModel.Statements.Statement? source) : ForSt
 	}
 }
 
-public class LongForStatement(CodeModel.Statements.Statement? source) : ForStatement(source)
+public class LongForStatement(CodeModel.Statements.ForStatement? sourceForStatement, CodeModel.Statements.NextStatement? sourceNextStatement) : ForStatement(sourceForStatement, sourceNextStatement)
 {
 	public int IteratorVariableIndex;
 	public Evaluable? FromExpression;
@@ -256,13 +321,28 @@ public class LongForStatement(CodeModel.Statements.Statement? source) : ForState
 		{
 			var nextStatement = new NextStatement(from, to, step, SourceNextStatement);
 
-			while (!nextStatement.FinishLoop)
-			{
-				iteratorVariable.SetData(nextStatement.NextValue);
+			stackFrame.NextStatements[_nextDispatcherIndex] = nextStatement;
 
-				context.Dispatch(Body, stackFrame);
-				context.Dispatch(nextStatement, stackFrame);
-			}
+			DispatchImplementation(0, context, stackFrame);
+		}
+	}
+
+	protected override void DispatchImplementation(int statementIndex, ExecutionContext context, StackFrame stackFrame)
+	{
+		var nextStatement = (NextStatement)stackFrame.NextStatements[_nextDispatcherIndex];
+
+		var iteratorVariable = stackFrame.Variables[IteratorVariableIndex];
+
+		while (!nextStatement.FinishLoop)
+		{
+			iteratorVariable.SetData(nextStatement.NextValue);
+
+			for (int i = statementIndex; i < Body!.Count; i++)
+				context.Dispatch(Body[i], stackFrame);
+
+			statementIndex = 0;
+
+			context.Dispatch(nextStatement, stackFrame);
 		}
 	}
 
@@ -291,7 +371,7 @@ public class LongForStatement(CodeModel.Statements.Statement? source) : ForState
 	}
 }
 
-public class SingleForStatement(CodeModel.Statements.Statement? source) : ForStatement(source)
+public class SingleForStatement(CodeModel.Statements.ForStatement? sourceForStatement, CodeModel.Statements.NextStatement? sourceNextStatement) : ForStatement(sourceForStatement, sourceNextStatement)
 {
 	public int IteratorVariableIndex;
 	public Evaluable? FromExpression;
@@ -330,13 +410,28 @@ public class SingleForStatement(CodeModel.Statements.Statement? source) : ForSta
 		{
 			var nextStatement = new NextStatement(from, to, step, SourceNextStatement);
 
-			while (!nextStatement.FinishLoop)
-			{
-				iteratorVariable.SetData(nextStatement.NextValue);
+			stackFrame.NextStatements[_nextDispatcherIndex] = nextStatement;
 
-				context.Dispatch(Body, stackFrame);
-				context.Dispatch(nextStatement, stackFrame);
-			}
+			DispatchImplementation(0, context, stackFrame);
+		}
+	}
+
+	protected override void DispatchImplementation(int statementIndex, ExecutionContext context, StackFrame stackFrame)
+	{
+		var nextStatement = (NextStatement)stackFrame.NextStatements[_nextDispatcherIndex];
+
+		var iteratorVariable = stackFrame.Variables[IteratorVariableIndex];
+
+		while (!nextStatement.FinishLoop)
+		{
+			iteratorVariable.SetData(nextStatement.NextValue);
+
+			for (int i = statementIndex; i < Body!.Count; i++)
+				context.Dispatch(Body[i], stackFrame);
+
+			statementIndex = 0;
+
+			context.Dispatch(nextStatement, stackFrame);
 		}
 	}
 
@@ -365,7 +460,7 @@ public class SingleForStatement(CodeModel.Statements.Statement? source) : ForSta
 	}
 }
 
-public class DoubleForStatement(CodeModel.Statements.Statement? source) : ForStatement(source)
+public class DoubleForStatement(CodeModel.Statements.ForStatement? sourceForStatement, CodeModel.Statements.NextStatement? sourceNextStatement) : ForStatement(sourceForStatement, sourceNextStatement)
 {
 	public int IteratorVariableIndex;
 	public Evaluable? FromExpression;
@@ -404,13 +499,28 @@ public class DoubleForStatement(CodeModel.Statements.Statement? source) : ForSta
 		{
 			var nextStatement = new NextStatement(from, to, step, SourceNextStatement);
 
-			while (!nextStatement.FinishLoop)
-			{
-				iteratorVariable.SetData(nextStatement.NextValue);
+			stackFrame.NextStatements[_nextDispatcherIndex] = nextStatement;
 
-				context.Dispatch(Body, stackFrame);
-				context.Dispatch(nextStatement, stackFrame);
-			}
+			DispatchImplementation(0, context, stackFrame);
+		}
+	}
+
+	protected override void DispatchImplementation(int statementIndex, ExecutionContext context, StackFrame stackFrame)
+	{
+		var nextStatement = (NextStatement)stackFrame.NextStatements[_nextDispatcherIndex];
+
+		var iteratorVariable = stackFrame.Variables[IteratorVariableIndex];
+
+		while (!nextStatement.FinishLoop)
+		{
+			iteratorVariable.SetData(nextStatement.NextValue);
+
+			for (int i = statementIndex; i < Body!.Count; i++)
+				context.Dispatch(Body[i], stackFrame);
+
+			statementIndex = 0;
+
+			context.Dispatch(nextStatement, stackFrame);
 		}
 	}
 
@@ -439,7 +549,7 @@ public class DoubleForStatement(CodeModel.Statements.Statement? source) : ForSta
 	}
 }
 
-public class CurrencyForStatement(CodeModel.Statements.Statement? source) : ForStatement(source)
+public class CurrencyForStatement(CodeModel.Statements.ForStatement? sourceForStatement, CodeModel.Statements.NextStatement? sourceNextStatement) : ForStatement(sourceForStatement, sourceNextStatement)
 {
 	public int IteratorVariableIndex;
 	public Evaluable? FromExpression;
@@ -478,13 +588,28 @@ public class CurrencyForStatement(CodeModel.Statements.Statement? source) : ForS
 		{
 			var nextStatement = new NextStatement(from, to, step, SourceNextStatement);
 
-			while (!nextStatement.FinishLoop)
-			{
-				iteratorVariable.SetData(nextStatement.NextValue);
+			stackFrame.NextStatements[_nextDispatcherIndex] = nextStatement;
 
-				context.Dispatch(Body, stackFrame);
-				context.Dispatch(nextStatement, stackFrame);
-			}
+			DispatchImplementation(0, context, stackFrame);
+		}
+	}
+
+	protected override void DispatchImplementation(int statementIndex, ExecutionContext context, StackFrame stackFrame)
+	{
+		var nextStatement = (NextStatement)stackFrame.NextStatements[_nextDispatcherIndex];
+
+		var iteratorVariable = stackFrame.Variables[IteratorVariableIndex];
+
+		while (!nextStatement.FinishLoop)
+		{
+			iteratorVariable.SetData(nextStatement.NextValue);
+
+			for (int i = statementIndex; i < Body!.Count; i++)
+				context.Dispatch(Body[i], stackFrame);
+
+			statementIndex = 0;
+
+			context.Dispatch(nextStatement, stackFrame);
 		}
 	}
 

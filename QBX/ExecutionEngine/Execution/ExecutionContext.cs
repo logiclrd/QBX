@@ -87,12 +87,17 @@ public class ExecutionContext
 				if (_goTo.Count == 0)
 					_goTo = null;
 
-				var subsequence = executable.GetSequenceByIndex(subsequenceIndex);
+				if (executable.SelfSequenceDispatch)
+					executable.Dispatch(this, stackFrame, subsequenceIndex, ref _goTo);
+				else
+				{
+					var subsequence = executable.GetSequenceByIndex(subsequenceIndex);
 
-				if (subsequence == null)
-					throw new Exception("Internal Error: ExecutionPath specified subsequence " + subsequenceIndex + " within a " + executable.GetType().Name + " and it does not exist");
+					if (subsequence == null)
+						throw new Exception("Internal Error: ExecutionPath specified subsequence " + subsequenceIndex + " within a " + executable.GetType().Name + " and it does not exist");
 
-				Dispatch(subsequence, stackFrame);
+					Dispatch(subsequence, stackFrame);
+				}
 			}
 			else
 			{

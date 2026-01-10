@@ -637,6 +637,8 @@ public class Compiler
 
 					TranslateStatement(elementType, ref statement, iterator, body, mapper, compilation, out nextStatementInfo);
 
+					body.AppendIfNotNull(iterator.GetLabelStatement());
+
 					if (nextStatementInfo != null)
 					{
 						nextStatement = nextStatementInfo.Statement;
