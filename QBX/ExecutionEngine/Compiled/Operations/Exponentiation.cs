@@ -39,11 +39,8 @@ public static class Exponentiation
 	}
 }
 
-public class CurrencyExponentiation(Evaluable left, Evaluable right) : Evaluable
+public class CurrencyExponentiation(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Currency;
 
 	static decimal CalculateResult(decimal baseValue, int exponentValue)
@@ -105,11 +102,8 @@ public class CurrencyExponentiation(Evaluable left, Evaluable right) : Evaluable
 	}
 }
 
-public class DoubleExponentiation(Evaluable left, Evaluable right) : Evaluable
+public class DoubleExponentiation(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Double;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)

@@ -27,6 +27,8 @@ public abstract class LiteralValue : Evaluable
 
 	public abstract object GetData();
 
+	public override bool IsConstant => true;
+
 	public override LiteralValue EvaluateConstant() => this;
 }
 

@@ -499,10 +499,17 @@ public partial class Program
 					{
 						string? path = Environment.CurrentDirectory;
 
-						while ((path != null) && (Path.GetFileName(path) != "DebugCases"))
-							path = Path.GetDirectoryName(path);
+						while (path != null)
+						{
+							string testPath = Path.Combine(path, "DebugCases");
 
-						return path;
+							if (Directory.Exists(testPath))
+								return testPath;
+
+							path = Path.GetDirectoryName(path);
+						}
+
+						return null;
 					}
 
 					SaveFile(

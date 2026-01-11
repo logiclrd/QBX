@@ -79,11 +79,8 @@ public static class Subtraction
 	}
 }
 
-public class IntegerSubtraction(Evaluable left, Evaluable right) : Evaluable
+public class IntegerSubtraction(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Integer;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
@@ -113,11 +110,8 @@ public class IntegerSubtraction(Evaluable left, Evaluable right) : Evaluable
 	}
 }
 
-public class LongSubtraction(Evaluable left, Evaluable right) : Evaluable
+public class LongSubtraction(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Long;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
@@ -151,11 +145,8 @@ public class LongSubtraction(Evaluable left, Evaluable right) : Evaluable
 	}
 }
 
-public class SingleSubtraction(Evaluable left, Evaluable right) : Evaluable
+public class SingleSubtraction(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Single;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
@@ -189,11 +180,8 @@ public class SingleSubtraction(Evaluable left, Evaluable right) : Evaluable
 	}
 }
 
-public class DoubleSubtraction(Evaluable left, Evaluable right) : Evaluable
+public class DoubleSubtraction(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Double;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
@@ -227,11 +215,8 @@ public class DoubleSubtraction(Evaluable left, Evaluable right) : Evaluable
 	}
 }
 
-public class CurrencySubtraction(Evaluable left, Evaluable right) : Evaluable
+public class CurrencySubtraction(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Currency;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)

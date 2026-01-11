@@ -23,10 +23,8 @@ public static class Not
 	}
 }
 
-public class IntegerNot(Evaluable right) : Evaluable
+public class IntegerNot(Evaluable right) : UnaryExpression(right)
 {
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Integer;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
@@ -44,10 +42,8 @@ public class IntegerNot(Evaluable right) : Evaluable
 	}
 }
 
-public class LongNot(Evaluable right) : Evaluable
+public class LongNot(Evaluable right) : UnaryExpression(right)
 {
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Long;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)

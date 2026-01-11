@@ -28,10 +28,8 @@ public static class Negation
 	}
 }
 
-public class IntegerNegation(Evaluable right) : Evaluable
+public class IntegerNegation(Evaluable right) : UnaryExpression(right)
 {
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Integer;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
@@ -55,10 +53,8 @@ public class IntegerNegation(Evaluable right) : Evaluable
 	}
 }
 
-public class LongNegation(Evaluable right) : Evaluable
+public class LongNegation(Evaluable right) : UnaryExpression(right)
 {
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Long;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
@@ -82,10 +78,8 @@ public class LongNegation(Evaluable right) : Evaluable
 	}
 }
 
-public class SingleNegation(Evaluable right) : Evaluable
+public class SingleNegation(Evaluable right) : UnaryExpression(right)
 {
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Single;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
@@ -103,10 +97,8 @@ public class SingleNegation(Evaluable right) : Evaluable
 	}
 }
 
-public class DoubleNegation(Evaluable right) : Evaluable
+public class DoubleNegation(Evaluable right) : UnaryExpression(right)
 {
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Double;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
@@ -124,10 +116,8 @@ public class DoubleNegation(Evaluable right) : Evaluable
 	}
 }
 
-public class CurrencyNegation(Evaluable right) : Evaluable
+public class CurrencyNegation(Evaluable right) : UnaryExpression(right)
 {
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Currency;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)

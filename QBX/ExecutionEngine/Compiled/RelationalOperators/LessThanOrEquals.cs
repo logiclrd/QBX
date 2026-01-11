@@ -56,11 +56,8 @@ public static class LessThanOrEquals
 	}
 }
 
-public class IntegerLessThanOrEquals(Evaluable left, Evaluable right) : Evaluable
+public class IntegerLessThanOrEquals(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Integer;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
@@ -84,11 +81,8 @@ public class IntegerLessThanOrEquals(Evaluable left, Evaluable right) : Evaluabl
 	}
 }
 
-public class LongLessThanOrEquals(Evaluable left, Evaluable right) : Evaluable
+public class LongLessThanOrEquals(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Integer;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
@@ -112,11 +106,8 @@ public class LongLessThanOrEquals(Evaluable left, Evaluable right) : Evaluable
 	}
 }
 
-public class SingleLessThanOrEquals(Evaluable left, Evaluable right) : Evaluable
+public class SingleLessThanOrEquals(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Integer;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
@@ -140,11 +131,8 @@ public class SingleLessThanOrEquals(Evaluable left, Evaluable right) : Evaluable
 	}
 }
 
-public class DoubleLessThanOrEquals(Evaluable left, Evaluable right) : Evaluable
+public class DoubleLessThanOrEquals(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Integer;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
@@ -168,11 +156,8 @@ public class DoubleLessThanOrEquals(Evaluable left, Evaluable right) : Evaluable
 	}
 }
 
-public class CurrencyLessThanOrEquals(Evaluable left, Evaluable right) : Evaluable
+public class CurrencyLessThanOrEquals(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Integer;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
@@ -196,11 +181,8 @@ public class CurrencyLessThanOrEquals(Evaluable left, Evaluable right) : Evaluab
 	}
 }
 
-public class StringLessThanOrEquals(Evaluable left, Evaluable right) : Evaluable
+public class StringLessThanOrEquals(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Integer;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)

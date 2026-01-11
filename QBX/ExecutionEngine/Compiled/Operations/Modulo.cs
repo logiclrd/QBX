@@ -23,11 +23,8 @@ public static class Modulo
 	}
 }
 
-public class IntegerModulo(Evaluable left, Evaluable right) : Evaluable
+public class IntegerModulo(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Integer;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
@@ -57,11 +54,8 @@ public class IntegerModulo(Evaluable left, Evaluable right) : Evaluable
 	}
 }
 
-public class LongModulo(Evaluable left, Evaluable right) : Evaluable
+public class LongModulo(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Long;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)

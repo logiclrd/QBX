@@ -804,6 +804,127 @@ public class Compiler
 
 				break;
 			}
+			case CodeModel.Statements.SelectCaseStatement selectCaseStatement:
+			{
+				var translatedSelectCaseStatement = new SelectCaseStatement(selectCaseStatement);
+
+				translatedSelectCaseStatement.TestExpression = TranslateExpression(selectCaseStatement.Expression, container, mapper, compilation);
+
+				if (translatedSelectCaseStatement.TestExpression == null)
+					throw new Exception("SelectCaseStatement expression translated to null");
+
+				if (!translatedSelectCaseStatement.TestExpression.Type.IsPrimitiveType)
+					throw CompilerException.TypeMismatch(selectCaseStatement);
+
+				var testExpressionType = translatedSelectCaseStatement.TestExpression.Type.PrimitiveType;
+
+				CaseBlock? block = null;
+
+				iterator.Advance();
+
+				bool isTerminated = false;
+
+				while (iterator.HaveCurrentStatement)
+				{
+					if (iterator.GetLabelStatement() is LabelStatement labelStatement)
+					{
+						if (block == null)
+							throw CompilerException.StatementsAndLabelsIllegalBetweenSelectCaseAndCase(labelStatement.Source);
+
+						block.Append(labelStatement);
+					}
+
+					if (statement is CodeModel.Statements.EndSelectStatement)
+					{
+						isTerminated = true;
+						break;
+					}
+
+					if (statement is CodeModel.Statements.CaseStatement caseStatement)
+					{
+						block = new CaseBlock();
+						block.OwnerExecutable = translatedSelectCaseStatement;
+
+						if (caseStatement.MatchElse)
+							block.MatchAll = true;
+						else
+						{
+							if (caseStatement.Expressions is null)
+								throw new Exception("CodeModel CaseStatement with no expressions and not MatchElse");
+
+							foreach (var caseExpression in caseStatement.Expressions.Expressions)
+							{
+								var expression = Conversion.Construct(
+									TranslateExpression(caseExpression.Expression, container, mapper, compilation),
+									testExpressionType) ?? throw new Exception("Case expression translated to null");
+
+								var rangeEndExpression = Conversion.Construct(
+									TranslateExpression(caseExpression.RangeEndExpression, container, mapper, compilation),
+									testExpressionType);
+
+								if (expression.IsConstant)
+									expression = expression.EvaluateConstant();
+								if ((rangeEndExpression is not null) && rangeEndExpression.IsConstant)
+									rangeEndExpression = rangeEndExpression.EvaluateConstant();
+
+								var relationToExpression =
+									caseExpression.RelationToExpression switch
+									{
+										null => RelationalOperator.None,
+
+										CodeModel.Statements.RelationalOperator.Equals => RelationalOperator.Equals,
+										CodeModel.Statements.RelationalOperator.NotEquals => RelationalOperator.NotEquals,
+										CodeModel.Statements.RelationalOperator.LessThan => RelationalOperator.LessThan,
+										CodeModel.Statements.RelationalOperator.LessThanOrEquals => RelationalOperator.LessThanOrEquals,
+										CodeModel.Statements.RelationalOperator.GreaterThan => RelationalOperator.GreaterThan,
+										CodeModel.Statements.RelationalOperator.GreaterThanOrEquals => RelationalOperator.GreaterThanOrEquals,
+
+										_ => throw new Exception("Unrecognized relation to expression: " + caseExpression.RelationToExpression)
+									};
+
+								var translatedCaseExpression = CaseExpression.Construct(
+									expression,
+									rangeEndExpression,
+									relationToExpression);
+
+								block.Expressions.Add(translatedCaseExpression);
+							}
+						}
+
+						translatedSelectCaseStatement.Cases.Add(block);
+
+						iterator.Advance();
+					}
+					else
+					{
+						if (block == null)
+							throw CompilerException.StatementsAndLabelsIllegalBetweenSelectCaseAndCase(statement);
+
+						TranslateStatement(elementType, ref statement, iterator, block, mapper, compilation, out nextStatementInfo);
+
+						if (nextStatementInfo != null)
+						{
+							throw CompilerException.NextWithoutFor(
+								nextStatementInfo.Statement.CounterExpressions[nextStatementInfo.LoopsMatched].Token);
+						}
+					}
+				}
+
+				if (!isTerminated)
+					throw CompilerException.SelectWithoutEndSelect(selectCaseStatement);
+
+				if (iterator.GetLabelStatement() is LabelStatement finalLabelStatement)
+				{
+					if (block == null)
+						throw CompilerException.StatementsAndLabelsIllegalBetweenSelectCaseAndCase(finalLabelStatement.Source);
+
+					block.Append(finalLabelStatement);
+				}
+
+				container.Append(translatedSelectCaseStatement);
+
+				break;
+			}
 			case CodeModel.Statements.TypeStatement typeStatement:
 			{
 				// TODO: track whether we are in a DEF FN
@@ -841,10 +962,25 @@ public class Compiler
 		if (expression == null)
 			return null;
 
+		var translatedExpression = TranslateExpressionUncollapsed(expression, container, mapper, compilation, createImplicitArray);
+
+		if (translatedExpression.IsConstant)
+			translatedExpression = translatedExpression.EvaluateConstant();
+		else
+			translatedExpression.CollapseConstantSubexpressions();
+
+		return translatedExpression;
+	}
+
+	private Evaluable TranslateExpressionUncollapsed(CodeModel.Expressions.Expression expression, Sequence container, Mapper mapper, Compilation compilation, bool createImplicitArray = false)
+	{
 		switch (expression)
 		{
 			case CodeModel.Expressions.ParenthesizedExpression parenthesized:
-				return TranslateExpression(parenthesized.Child, container, mapper, compilation);
+				if (parenthesized.Child is null)
+					throw new Exception("ParenthesizedExpression with no Child");
+
+				return TranslateExpressionUncollapsed(parenthesized.Child, container, mapper, compilation);
 
 			case CodeModel.Expressions.LiteralExpression literal:
 				return LiteralValue.ConstructFromCodeModel(literal);

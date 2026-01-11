@@ -11,8 +11,14 @@ public abstract class Evaluable
 
 	public abstract DataType Type { get; }
 
+	public virtual void CollapseConstantSubexpressions()
+	{
+	}
+
 	public abstract Variable Evaluate(ExecutionContext context, StackFrame stackFrame);
 
+	public virtual bool IsConstant
+		=> false;
 	public virtual LiteralValue EvaluateConstant()
 		=> throw CompilerException.ValueIsNotConstant(SourceExpression?.Token);
 }

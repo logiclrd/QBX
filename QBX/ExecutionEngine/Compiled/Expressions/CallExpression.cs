@@ -14,6 +14,17 @@ public class CallExpression : Evaluable
 
 	public override DataType Type => throw new NotImplementedException();
 
+	public override void CollapseConstantSubexpressions()
+	{
+		for (int i = 0; i < Arguments.Count; i++)
+		{
+			if (Arguments[i].IsConstant)
+				Arguments[i] = Arguments[i].EvaluateConstant();
+			else
+				Arguments[i].CollapseConstantSubexpressions();
+		}
+	}
+
 	public override Variable Evaluate(Execution.ExecutionContext context, Execution.StackFrame stackFrame)
 	{
 		if (UnresolvedTargetName != null)

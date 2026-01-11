@@ -77,11 +77,8 @@ public static class Addition
 	}
 }
 
-public class IntegerAddition(Evaluable left, Evaluable right) : Evaluable
+public class IntegerAddition(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Integer;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
@@ -111,11 +108,8 @@ public class IntegerAddition(Evaluable left, Evaluable right) : Evaluable
 	}
 }
 
-public class LongAddition(Evaluable left, Evaluable right) : Evaluable
+public class LongAddition(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Long;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
@@ -149,11 +143,8 @@ public class LongAddition(Evaluable left, Evaluable right) : Evaluable
 	}
 }
 
-public class SingleAddition(Evaluable left, Evaluable right) : Evaluable
+public class SingleAddition(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Single;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
@@ -187,11 +178,8 @@ public class SingleAddition(Evaluable left, Evaluable right) : Evaluable
 	}
 }
 
-public class DoubleAddition(Evaluable left, Evaluable right) : Evaluable
+public class DoubleAddition(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Double;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
@@ -225,11 +213,8 @@ public class DoubleAddition(Evaluable left, Evaluable right) : Evaluable
 	}
 }
 
-public class CurrencyAddition(Evaluable left, Evaluable right) : Evaluable
+public class CurrencyAddition(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Currency;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
@@ -263,11 +248,8 @@ public class CurrencyAddition(Evaluable left, Evaluable right) : Evaluable
 	}
 }
 
-public class StringAddition(Evaluable left, Evaluable right) : Evaluable
+public class StringAddition(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.String;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)

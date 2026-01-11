@@ -5,8 +5,13 @@ using QBX.ExecutionEngine.Execution.Variables;
 
 namespace QBX.ExecutionEngine.Compiled.Expressions;
 
-public class FieldAccessExpression(Evaluable? expression, int fieldIndex, DataType fieldType) : Evaluable
+public class FieldAccessExpression(Evaluable expression, int fieldIndex, DataType fieldType) : Evaluable
 {
+	public override void CollapseConstantSubexpressions()
+	{
+		expression.CollapseConstantSubexpressions();
+	}
+
 	public static Evaluable Construct(Evaluable? expression, string fieldName)
 	{
 		if (expression == null)

@@ -10,9 +10,9 @@ public class NumberFormatter
 
 	public static string FormatOctal(short value) => FormatOctal((int)value, forceLong: false);
 
-	public static string Format(int value)
+	public static string Format(int value, bool qualify = true)
 	{
-		if ((value >= short.MinValue) && (value <= short.MaxValue))
+		if (qualify && (value >= short.MinValue) && (value <= short.MaxValue))
 			return value + "&";
 		else
 			return value.ToString();
@@ -217,10 +217,13 @@ public class NumberFormatter
 		return str;
 	}
 
-	public static string Format(decimal currencyValue)
+	public static string Format(decimal currencyValue, bool qualify = true)
 	{
 		currencyValue = currencyValue.Fix();
 
-		return currencyValue.ToString("#.#") + '@';
+		if (qualify)
+			return currencyValue.ToString("#.#") + '@';
+		else
+			return currencyValue.ToString("#.#");
 	}
 }

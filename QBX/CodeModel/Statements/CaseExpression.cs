@@ -25,12 +25,12 @@ public class CaseExpression : IRenderableCode
 
 			switch (RelationToExpression.Value)
 			{
-				case RelationalOperator.Equals: writer.Write("="); break;
-				case RelationalOperator.NotEquals: writer.Write("<>"); break;
-				case RelationalOperator.LessThan: writer.Write("<"); break;
-				case RelationalOperator.LessThanOrEquals: writer.Write(">"); break;
-				case RelationalOperator.GreaterThan: writer.Write("<="); break;
-				case RelationalOperator.GreaterThanOrEquals: writer.Write(">="); break;
+				case RelationalOperator.Equals: writer.Write("= "); break;
+				case RelationalOperator.NotEquals: writer.Write("<> "); break;
+				case RelationalOperator.LessThan: writer.Write("< "); break;
+				case RelationalOperator.LessThanOrEquals: writer.Write("<= "); break;
+				case RelationalOperator.GreaterThan: writer.Write("> "); break;
+				case RelationalOperator.GreaterThanOrEquals: writer.Write(">= "); break;
 
 				default: throw new Exception("Internal error: Unrecognized RelationalOperator value " + RelationToExpression.Value);
 			}

@@ -56,11 +56,8 @@ public static class GreaterThanOrEquals
 	}
 }
 
-public class IntegerGreaterThanOrEquals(Evaluable left, Evaluable right) : Evaluable
+public class IntegerGreaterThanOrEquals(Evaluable left, Evaluable right): BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Integer;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
@@ -84,11 +81,8 @@ public class IntegerGreaterThanOrEquals(Evaluable left, Evaluable right) : Evalu
 	}
 }
 
-public class LongGreaterThanOrEquals(Evaluable left, Evaluable right) : Evaluable
+public class LongGreaterThanOrEquals(Evaluable left, Evaluable right): BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Integer;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
@@ -112,11 +106,8 @@ public class LongGreaterThanOrEquals(Evaluable left, Evaluable right) : Evaluabl
 	}
 }
 
-public class SingleGreaterThanOrEquals(Evaluable left, Evaluable right) : Evaluable
+public class SingleGreaterThanOrEquals(Evaluable left, Evaluable right): BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Integer;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
@@ -140,11 +131,8 @@ public class SingleGreaterThanOrEquals(Evaluable left, Evaluable right) : Evalua
 	}
 }
 
-public class DoubleGreaterThanOrEquals(Evaluable left, Evaluable right) : Evaluable
+public class DoubleGreaterThanOrEquals(Evaluable left, Evaluable right): BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Integer;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
@@ -168,11 +156,8 @@ public class DoubleGreaterThanOrEquals(Evaluable left, Evaluable right) : Evalua
 	}
 }
 
-public class CurrencyGreaterThanOrEquals(Evaluable left, Evaluable right) : Evaluable
+public class CurrencyGreaterThanOrEquals(Evaluable left, Evaluable right): BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Integer;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
@@ -196,11 +181,8 @@ public class CurrencyGreaterThanOrEquals(Evaluable left, Evaluable right) : Eval
 	}
 }
 
-public class StringGreaterThanOrEquals(Evaluable left, Evaluable right) : Evaluable
+public class StringGreaterThanOrEquals(Evaluable left, Evaluable right): BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Integer;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)

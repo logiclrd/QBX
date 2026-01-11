@@ -56,11 +56,8 @@ public static class NotEquals
 	}
 }
 
-public class IntegerNotEquals(Evaluable left, Evaluable right) : Evaluable
+public class IntegerNotEquals(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Integer;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
@@ -84,11 +81,8 @@ public class IntegerNotEquals(Evaluable left, Evaluable right) : Evaluable
 	}
 }
 
-public class LongNotEquals(Evaluable left, Evaluable right) : Evaluable
+public class LongNotEquals(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Integer;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
@@ -112,11 +106,8 @@ public class LongNotEquals(Evaluable left, Evaluable right) : Evaluable
 	}
 }
 
-public class SingleNotEquals(Evaluable left, Evaluable right) : Evaluable
+public class SingleNotEquals(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Integer;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
@@ -140,11 +131,8 @@ public class SingleNotEquals(Evaluable left, Evaluable right) : Evaluable
 	}
 }
 
-public class DoubleNotEquals(Evaluable left, Evaluable right) : Evaluable
+public class DoubleNotEquals(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Integer;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
@@ -168,11 +156,8 @@ public class DoubleNotEquals(Evaluable left, Evaluable right) : Evaluable
 	}
 }
 
-public class CurrencyNotEquals(Evaluable left, Evaluable right) : Evaluable
+public class CurrencyNotEquals(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Integer;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
@@ -196,11 +181,8 @@ public class CurrencyNotEquals(Evaluable left, Evaluable right) : Evaluable
 	}
 }
 
-public class StringNotEquals(Evaluable left, Evaluable right) : Evaluable
+public class StringNotEquals(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Integer;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)

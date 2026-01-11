@@ -48,7 +48,7 @@ public static class Division
 	}
 }
 
-public class IntegerDivision(Evaluable left, Evaluable right) : Evaluable
+public class IntegerDivision(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
 	public static Evaluable Construct(Evaluable left, Evaluable right)
 	{
@@ -64,9 +64,6 @@ public class IntegerDivision(Evaluable left, Evaluable right) : Evaluable
 			return new LongDivision(left, right);
 		}
 	}
-
-	public Evaluable Left => left;
-	public Evaluable Right => right;
 
 	public override DataType Type => DataType.Integer;
 
@@ -97,11 +94,8 @@ public class IntegerDivision(Evaluable left, Evaluable right) : Evaluable
 	}
 }
 
-public class LongDivision(Evaluable left, Evaluable right) : Evaluable
+public class LongDivision(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Long;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
@@ -141,11 +135,8 @@ public class LongDivision(Evaluable left, Evaluable right) : Evaluable
 	}
 }
 
-public class SingleDivision(Evaluable left, Evaluable right) : Evaluable
+public class SingleDivision(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Single;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
@@ -179,11 +170,8 @@ public class SingleDivision(Evaluable left, Evaluable right) : Evaluable
 	}
 }
 
-public class DoubleDivision(Evaluable left, Evaluable right) : Evaluable
+public class DoubleDivision(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Double;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
@@ -217,11 +205,8 @@ public class DoubleDivision(Evaluable left, Evaluable right) : Evaluable
 	}
 }
 
-public class CurrencyDivision(Evaluable left, Evaluable right) : Evaluable
+public class CurrencyDivision(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Currency;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)

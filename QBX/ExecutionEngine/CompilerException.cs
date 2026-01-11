@@ -1,6 +1,5 @@
 ﻿using System;
 
-using QBX.CodeModel.Statements;
 using QBX.LexicalAnalysis;
 
 namespace QBX.ExecutionEngine;
@@ -72,6 +71,10 @@ public class CompilerException : Exception
 		=> new CompilerException(context, "Identifier cannot include period");
 	public static CompilerException LabelNotDefined(Token? context)
 		=> new CompilerException(context, "Label not defined");
-	public static CompilerException DuplicateLabel(Statement? statement)
+	public static CompilerException DuplicateLabel(CodeModel.Statements.Statement? statement)
 		=> new CompilerException(statement, "Duplicate label");
+	public static CompilerException SelectWithoutEndSelect(CodeModel.Statements.Statement? statement)
+		=> new CompilerException(statement, "SELECT without END SELECT");
+	public static CompilerException StatementsAndLabelsIllegalBetweenSelectCaseAndCase(CodeModel.Statements.Statement? statement)
+		=> new CompilerException(statement, "Statements/labels illegal between SELECT CASE and CASE");
 }

@@ -9,6 +9,17 @@ public class RndFunction : Evaluable
 {
 	public Evaluable? Argument;
 
+	public override void CollapseConstantSubexpressions()
+	{
+		if (Argument != null)
+		{
+			if (Argument.IsConstant)
+				Argument = Argument.EvaluateConstant();
+			else
+				Argument.CollapseConstantSubexpressions();
+		}
+	}
+
 	static RndFunction s_noParameter = new RndFunction();
 
 	public static RndFunction NoParameterInstance => s_noParameter;

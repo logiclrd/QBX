@@ -26,11 +26,8 @@ public static class Equivalent
 	}
 }
 
-public class IntegerEquivalent(Evaluable left, Evaluable right) : Evaluable
+public class IntegerEquivalent(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Integer;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
@@ -54,11 +51,8 @@ public class IntegerEquivalent(Evaluable left, Evaluable right) : Evaluable
 	}
 }
 
-public class LongEquivalent(Evaluable left, Evaluable right) : Evaluable
+public class LongEquivalent(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Long;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)

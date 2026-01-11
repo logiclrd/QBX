@@ -27,11 +27,8 @@ public static class ExclusiveOr
 	}
 }
 
-public class IntegerExclusiveOr(Evaluable left, Evaluable right) : Evaluable
+public class IntegerExclusiveOr(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Integer;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
@@ -55,11 +52,8 @@ public class IntegerExclusiveOr(Evaluable left, Evaluable right) : Evaluable
 	}
 }
 
-public class LongExclusiveOr(Evaluable left, Evaluable right) : Evaluable
+public class LongExclusiveOr(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
-	public Evaluable Left => left;
-	public Evaluable Right => right;
-
 	public override DataType Type => DataType.Long;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)

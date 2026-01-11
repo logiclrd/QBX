@@ -8,6 +8,14 @@
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 	</PropertyGroup>
 
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+	  <NoWarn>1701;1702;9107</NoWarn>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+	  <NoWarn>1701;1702;9107</NoWarn>
+	</PropertyGroup>
+
 	<ItemGroup>
 		<PackageReference Include="SDL3-CS" Version="3.*" />
 		<PackageReference Include="SDL3-CS.Native" Version="3.*" />
