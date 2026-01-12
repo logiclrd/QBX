@@ -715,6 +715,17 @@ public class Compiler
 
 				break;
 			}
+			case CodeModel.Statements.PokeStatement pokeStatement:
+			{
+				var translatedPokeStatement = new PokeStatement(pokeStatement);
+
+				translatedPokeStatement.AddressExpression = TranslateExpression(pokeStatement.AddressExpression, container, mapper, compilation);
+				translatedPokeStatement.ValueExpression = TranslateExpression(pokeStatement.ValueExpression, container, mapper, compilation);
+
+				container.Append(translatedPokeStatement);
+
+				break;
+			}
 			case CodeModel.Statements.PrintStatement printStatement:
 			{
 				if (printStatement.FileNumberExpression != null)
@@ -771,6 +782,17 @@ public class Compiler
 
 					container.Append(translatedPrintStatement);
 				}
+
+				break;
+			}
+			case CodeModel.Statements.RandomizeStatement randomizeStatement:
+			{
+				var translatedRandomizeStatement = new RandomizeStatement(randomizeStatement);
+
+				translatedRandomizeStatement.ArgumentExpression =
+					TranslateExpression(randomizeStatement.ArgumentExpression, container, mapper, compilation);
+
+				container.Append(translatedRandomizeStatement);
 
 				break;
 			}
@@ -964,10 +986,7 @@ public class Compiler
 
 		var translatedExpression = TranslateExpressionUncollapsed(expression, container, mapper, compilation, createImplicitArray);
 
-		if (translatedExpression.IsConstant)
-			translatedExpression = translatedExpression.EvaluateConstant();
-		else
-			translatedExpression.CollapseConstantSubexpressions();
+		Evaluable.CollapseConstantExpression(ref translatedExpression);
 
 		return translatedExpression;
 	}
@@ -1037,6 +1056,41 @@ public class Compiler
 					if (identifier == null)
 						throw new CompilerException("Can't translate Subject expression for CallOrIndexExpression");
 				}
+
+				// TODO: standard library functions
+				// QB:
+				// - Interrupt
+				// - InterruptX
+				// DTFMT:
+				// - Weekday&()
+				// - Day&()
+				// - Month&()
+				// - Year&){
+				// - Hour&()
+				// - Minute&()
+				// - Second&()
+				// - DateSerial#()
+				// - TimeSerial#()
+				// - DateValue#()
+				// - TimeValue#()
+				// - Now#
+				// FORMAT:
+				// - FormatI$()
+				// - FormatL$()
+				// - FormatS$()
+				// - FormatD$()
+				// - FormatC$()
+				// FINANCE:
+				// - FV#()
+				// - IPmt#()
+				// - NPer#()
+				// - Pmt#()
+				// - PPmt#()
+				// - PV#()
+				// - Rate#()
+				// - DDB#()
+				// - SLN#()
+				// - SYD#()
 
 				if (compilation.IsRegistered(identifier))
 				{
@@ -1111,12 +1165,33 @@ public class Compiler
 
 			case CodeModel.Expressions.KeywordFunctionExpression keywordFunction:
 			{
+				Function function;
+
 				switch (keywordFunction.Function)
 				{
-					case TokenType.RND: return RndFunction.NoParameterInstance;
+					case TokenType.LEFT: function = new LeftFunction(); break;
+					case TokenType.MID: function = new MidFunction(); break;
+					case TokenType.PEEK: function = new PeekFunction(); break;
+					case TokenType.RIGHT: function = new RightFunction(); break;
+					case TokenType.RND:
+						if (keywordFunction.Arguments == null)
+							return RndFunction.NoParameterInstance;
+						else
+							function = new RndFunction();
+						break;
+					case TokenType.TIMER: function = new TimerFunction(); break;
 
 					default: throw new NotImplementedException("Keyword function: " + keywordFunction.Function);
 				}
+
+				if (keywordFunction.Arguments != null)
+				{
+					function.SetArguments(
+						keywordFunction.Arguments!.Expressions.Select(
+							expr => TranslateExpression(expr, container, mapper, compilation)));
+				}
+
+				return function;
 			}
 
 			case CodeModel.Expressions.UnaryExpression unaryExpression:

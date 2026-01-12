@@ -259,7 +259,7 @@ public class StringAddition(Evaluable left, Evaluable right) : BinaryExpression(
 
 		try
 		{
-			return new StringVariable(leftValue.Value + rightValue.Value);
+			return StringVariable.Adopt(leftValue.Value + rightValue.Value);
 		}
 		catch (OverflowException)
 		{

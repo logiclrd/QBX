@@ -8,9 +8,6 @@ public abstract class UnaryExpression(Evaluable right) : Evaluable
 
 	public override void CollapseConstantSubexpressions()
 	{
-		if (right.IsConstant)
-			right = right.EvaluateConstant();
-		else
-			right.CollapseConstantSubexpressions();
+		CollapseConstantExpression(ref right);
 	}
 }

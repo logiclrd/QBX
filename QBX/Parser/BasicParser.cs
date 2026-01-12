@@ -329,11 +329,14 @@ public class BasicParser
 
 	internal Statement ParseStatement(ListRange<Token> tokens, Func<IEnumerable<Token>> consumeTokensToEndOfLine, bool isNested, bool ignoreErrors)
 	{
-		// TODO: SWAP a, b
 		// TODO: DRAW
-		// TODO: WINDOW
-		// TODO: PAINT
 		// TODO: GET, PUT (graphics)
+		// TODO: OPTION BASE
+		// TODO: PAINT
+		// TODO: SWAP a, b
+		// TODO: WINDOW
+		// TODO: NAME a AS b
+		// TODO: SOUND a, b
 		//       => make a list
 		//
 		// TODO: functions, such as: ABS, COS, INKEY$, INPUT$(n), CHR$()
@@ -2266,7 +2269,7 @@ public class BasicParser
 				var randomize = new RandomizeStatement();
 
 				if (tokenHandler.HasMoreTokens)
-					randomize.Expression = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken);
+					randomize.ArgumentExpression = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken);
 
 				return randomize;
 			}
@@ -3189,8 +3192,10 @@ public class BasicParser
 		return caseExpression;
 	}
 
-	ExpressionList ParseExpressionList(ListRange<Token> tokens, Token endToken)
+	ExpressionList ParseExpressionList(ListRange<Token> tokens, Token endToken, int minCount = 0, int maxCount = int.MaxValue)
 	{
+		// TODO: file number parameters (allow preceding '#')
+
 		var list = new ExpressionList();
 
 		if (tokens.Count > 0)
@@ -3198,7 +3203,16 @@ public class BasicParser
 			var endTokenRef = new TokenRef();
 
 			foreach (var range in SplitCommaDelimitedList(tokens, endTokenRef))
+			{
 				list.Expressions.Add(ParseExpression(range, endTokenRef.Token ?? endToken));
+
+				if ((list.Expressions.Count == maxCount)
+				 && (endTokenRef.Token != null))
+					throw new SyntaxErrorException(endTokenRef.Token, "Expected: )");
+			}
+
+			if (list.Expressions.Count < minCount)
+				throw new SyntaxErrorException(endToken, "Expected: ,");
 		}
 
 		return list;
@@ -3233,6 +3247,21 @@ public class BasicParser
 
 			if (openParenthesisIndex > 0)
 			{
+				if ((openParenthesisIndex == 1)
+				 && (tokens[0].KeywordFunctionAttribute is KeywordFunctionAttribute config))
+				{
+					var expressionList = ParseExpressionList(
+						tokens.Slice(openParenthesisIndex + 1,
+						tokens.Count - openParenthesisIndex - 2),
+						endToken,
+						config.MinimumParameterCount,
+						config.MaximumParameterCount);
+
+					// TODO: isAssignable
+
+					return new KeywordFunctionExpression(tokens[0], expressionList);
+				}
+
 				Expression? subjectExpression = null;
 
 				try
@@ -3328,8 +3357,9 @@ public class BasicParser
 				if (openParenthesisIndex == 0)
 					return new ParenthesizedExpression(tokens[0], ParseExpression(tokens.Slice(1, tokens.Count - 2), tokens.Last()));
 
-				if ((openParenthesisIndex == 1) && tokens[0].IsKeywordFunction)
-					return new KeywordFunctionExpression(tokens[0], ParseExpressionList(tokens.Slice(2, tokens.Count - 3), tokens.Last()));
+				// Function calls have already been taken care of.
+
+				throw new SyntaxErrorException(tokens[0], "Expected: identifier");
 			}
 
 			if (tokens.Count == 1)

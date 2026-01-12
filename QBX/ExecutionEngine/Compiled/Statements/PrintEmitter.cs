@@ -46,49 +46,51 @@ public class PrintEmitter(ExecutionContext context)
 		}
 	}
 
-	public void Emit(char ch) => _visual.WriteText(ch);
 	public void Emit(string str) => _visual.WriteText(str);
+
+	public void Emit(byte ch) => _visual.WriteText(ch);
+	public void Emit(StringValue str) => _visual.WriteText(str.AsSpan());
 
 	public void Emit(short integerValue)
 	{
 		if (integerValue < 0)
-			Emit('-');
+			Emit((byte)'-');
 		else
-			Emit(' ');
+			Emit((byte)' ');
 
 		Emit(integerValue.ToString());
 
-		Emit(' ');
+		Emit((byte)' ');
 	}
 
 	public void Emit(int longValue)
 	{
 		if (longValue < 0)
-			Emit('-');
+			Emit((byte)'-');
 		else
-			Emit(' ');
+			Emit((byte)' ');
 
 		Emit(longValue.ToString());
 
-		Emit(' ');
+		Emit((byte)' ');
 	}
 
 	public void Emit(float singleValue)
 	{
 		if (singleValue >= 0)
-			Emit(' ');
+			Emit((byte)' ');
 
 		Emit(NumberFormatter.Format(singleValue, qualify: false));
-		Emit(' ');
+		Emit((byte)' ');
 	}
 
 	public void Emit(double doubleValue)
 	{
 		if (doubleValue >= 0)
-			Emit(' ');
+			Emit((byte)' ');
 
 		Emit(NumberFormatter.Format(doubleValue, qualify: false));
-		Emit(' ');
+		Emit((byte)' ');
 	}
 
 	public void Emit(decimal currencyValue)
@@ -99,12 +101,16 @@ public class PrintEmitter(ExecutionContext context)
 		string formatted = currencyValue.ToString("###############.####");
 
 		if (formatted == "")
-			Emit(" 0 ");
+		{
+			Emit((byte)' ');
+			Emit((byte)'0');
+			Emit((byte)' ');
+		}
 		else
 		{
-			Emit(' ');
+			Emit((byte)' ');
 			Emit(formatted);
-			Emit(' ');
+			Emit((byte)' ');
 		}
 	}
 }

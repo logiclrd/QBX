@@ -10,7 +10,7 @@ public abstract class LiteralValue : Evaluable
 	public static Evaluable ConstructFromCodeModel(CodeModel.Expressions.LiteralExpression literal)
 	{
 		if (literal.IsStringLiteral)
-			return new StringLiteralValue(literal.StringLiteralValue);
+			return new StringLiteralValue(new StringValue(literal.StringLiteralValue));
 		else if (literal.TryAsInteger(out var integerValue))
 			return new IntegerLiteralValue(integerValue);
 		else if (literal.TryAsLong(out var longValue))
@@ -70,7 +70,7 @@ public class CurrencyLiteralValue(decimal value) : LiteralValue<decimal>(value)
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame) => new CurrencyVariable(Value);
 }
 
-public class StringLiteralValue(string value) : LiteralValue<string>(value)
+public class StringLiteralValue(StringValue value) : LiteralValue<StringValue>(value)
 {
 	public override DataType Type => DataType.String;
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame) => new StringVariable(Value);

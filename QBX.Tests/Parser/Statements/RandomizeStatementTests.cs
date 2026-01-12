@@ -27,9 +27,9 @@ public class RandomizeStatementTests
 		var randomizeResult = (RandomizeStatement)result;
 
 		if (shouldHaveExpression)
-			randomizeResult.Expression.Should().NotBeNull();
+			randomizeResult.ArgumentExpression.Should().NotBeNull();
 		else
-			randomizeResult.Expression.Should().BeNull();
+			randomizeResult.ArgumentExpression.Should().BeNull();
 	}
 }
 

@@ -1,66 +1,28 @@
 ﻿using QBX.ExecutionEngine.Compiled.Expressions;
+using QBX.ExecutionEngine.Compiled.Statements;
 using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
 using QBX.Numbers;
 
 namespace QBX.ExecutionEngine.Compiled.Functions;
 
-public class RndFunction : Evaluable
+public class RndFunction : Function
 {
 	public Evaluable? Argument;
 
+	protected override void SetArgument(int index, Evaluable value)
+	{
+		Argument = value;
+	}
+
 	public override void CollapseConstantSubexpressions()
 	{
-		if (Argument != null)
-		{
-			if (Argument.IsConstant)
-				Argument = Argument.EvaluateConstant();
-			else
-				Argument.CollapseConstantSubexpressions();
-		}
+		CollapseConstantExpression(ref Argument);
 	}
 
 	static RndFunction s_noParameter = new RndFunction();
 
 	public static RndFunction NoParameterInstance => s_noParameter;
-
-	void Reseed(Variable seedValue)
-	{
-		int intPart = 0;
-		double fracPart = 0;
-
-		if ((seedValue is IntegerVariable) || (seedValue is LongVariable))
-			intPart = seedValue.CoerceToInt();
-		else if (seedValue is SingleVariable floatValue)
-		{
-			var noFracPart = float.Truncate(floatValue.Value);
-			fracPart = floatValue.Value - noFracPart;
-
-			while ((noFracPart < int.MinValue) || (noFracPart > int.MaxValue))
-				noFracPart *= 0.5f;
-
-			intPart = (int)noFracPart;
-		}
-		else if (seedValue is DoubleVariable doubleValue)
-		{
-			var noFracPart = double.Truncate(doubleValue.Value);
-			fracPart = doubleValue.Value - noFracPart;
-
-			while ((noFracPart < int.MinValue) || (noFracPart > int.MaxValue))
-				noFracPart *= 0.5f;
-
-			intPart = (int)noFracPart;
-		}
-		else if (seedValue is CurrencyVariable decimalValue)
-		{
-			var noFracPart = decimal.Truncate(decimalValue.Value);
-			fracPart = decimal.ToDouble(decimalValue.Value - decimal.Truncate(decimalValue.Value));
-
-			intPart = decimal.GetBits(noFracPart)[0];
-		}
-
-		RandomNumberGenerator.Reseed(intPart, fracPart);
-	}
 
 	public override DataType Type => DataType.Single;
 
@@ -73,7 +35,7 @@ public class RndFunction : Evaluable
 			var argumentValue = Argument.Evaluate(context, stackFrame);
 
 			if (argumentValue.IsNegative)
-				Reseed(argumentValue);
+				RandomizeStatement.Reseed(argumentValue);
 
 			if (!argumentValue.IsZero)
 				RandomNumberGenerator.Advance();

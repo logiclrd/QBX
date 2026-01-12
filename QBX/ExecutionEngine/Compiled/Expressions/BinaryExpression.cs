@@ -9,14 +9,7 @@ public abstract class BinaryExpression(Evaluable left, Evaluable right) : Evalua
 
 	public override void CollapseConstantSubexpressions()
 	{
-		if (left.IsConstant)
-			left = left.EvaluateConstant();
-		else
-			left.CollapseConstantSubexpressions();
-
-		if (right.IsConstant)
-			right = right.EvaluateConstant();
-		else
-			right.CollapseConstantSubexpressions();
+		CollapseConstantExpression(ref left);
+		CollapseConstantExpression(ref right);
 	}
 }

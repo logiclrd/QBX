@@ -22,8 +22,21 @@ public class Token(int line, int column, TokenType type, string value, DataType 
 
 	public bool IsDataType => DataTypeConverter.TryFromToken(this, out var _);
 
-	public bool IsKeywordFunction => s_keywordFunctionsParameters.Contains(Type);
-	public bool IsParameterlessKeywordFunction => s_keywordFunctionsNoParameters.Contains(Type);
+	public bool IsParameterlessKeywordFunction => KeywordFunctionAttribute?.TakesNoParameters ?? false;
+
+	public KeywordFunctionAttribute? KeywordFunctionAttribute
+	{
+		get
+		{
+			s_keywordFunctions.TryGetValue(Type, out var attribute);
+
+			return attribute;
+		}
+	}
+
+
+	public static bool TryGetKeywordFunctionAttribute(TokenType tokenType, [NotNullWhen(true)] out KeywordFunctionAttribute? value)
+		=> s_keywordFunctions.TryGetValue(tokenType, out value);
 
 	// Captured only for AS tokens inside TYPE declarations
 	// and tokens inside DATA statements.
@@ -78,19 +91,11 @@ public class Token(int line, int column, TokenType type, string value, DataType 
 		.Where(f => f.Keyword != null)
 		.ToDictionary(key => key.TokenType, value => value.Keyword?.Keyword ?? value.TokenType.ToString());
 
-	static HashSet<TokenType> s_keywordFunctionsNoParameters =
+	static Dictionary<TokenType, KeywordFunctionAttribute> s_keywordFunctions =
 		typeof(TokenType).GetFields(BindingFlags.Public | BindingFlags.Static)
 		.Select(f => (TokenType: (TokenType)f.GetValue(null)!, Keyword: f.GetCustomAttribute<KeywordFunctionAttribute>()))
-		.Where(f => (f.Keyword != null) && f.Keyword.TakesNoParameters)
-		.Select(f => f.TokenType)
-		.ToHashSet();
-
-	static HashSet<TokenType> s_keywordFunctionsParameters =
-		typeof(TokenType).GetFields(BindingFlags.Public | BindingFlags.Static)
-		.Select(f => (TokenType: (TokenType)f.GetValue(null)!, Keyword: f.GetCustomAttribute<KeywordFunctionAttribute>()))
-		.Where(f => (f.Keyword != null) && f.Keyword.TakesParameters)
-		.Select(f => f.TokenType)
-		.ToHashSet();
+		.Where(f => f.Keyword != null)
+		.ToDictionary(key => key.TokenType, value => value.Keyword!);
 
 	static Dictionary<char, Token> s_characterTokens =
 		typeof(TokenType).GetFields(BindingFlags.Public | BindingFlags.Static)

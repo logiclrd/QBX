@@ -74,10 +74,7 @@ public abstract class Conversion(Evaluable value) : Evaluable
 
 	public override void CollapseConstantSubexpressions()
 	{
-		if (value.IsConstant)
-			value = value.EvaluateConstant();
-		else
-			value.CollapseConstantSubexpressions();
+		CollapseConstantExpression(ref value);
 	}
 }
 
@@ -125,31 +122,31 @@ public class ConvertToString(Evaluable value) : Conversion(value)
 {
 	public override DataType Type => DataType.String;
 
-	string ToString(Variable value)
+	StringValue ToString(Variable value)
 	{
 		switch (value)
 		{
-			case IntegerVariable integerValue: return NumberFormatter.Format(integerValue.Value);
-			case LongVariable longValue: return NumberFormatter.Format(longValue.Value, qualify: false);
-			case SingleVariable singleValue: return NumberFormatter.Format(singleValue.Value, qualify: false);
-			case DoubleVariable doubleValue: return NumberFormatter.Format(doubleValue.Value, qualify: false);
-			case CurrencyVariable currencyValue: return NumberFormatter.Format(currencyValue.Value, qualify: false);
+			case IntegerVariable integerValue: return NumberFormatter.Format(integerValue.Value).ToStringValue();
+			case LongVariable longValue: return NumberFormatter.Format(longValue.Value, qualify: false).ToStringValue();
+			case SingleVariable singleValue: return NumberFormatter.Format(singleValue.Value, qualify: false).ToStringValue();
+			case DoubleVariable doubleValue: return NumberFormatter.Format(doubleValue.Value, qualify: false).ToStringValue();
+			case CurrencyVariable currencyValue: return NumberFormatter.Format(currencyValue.Value, qualify: false).ToStringValue();
 			case StringVariable stringValue: return stringValue.Value;
 
 			default: throw new Exception("Internal error");
 		}
 	}
 
-	string ToString(object value, PrimitiveDataType type)
+	StringValue ToString(object value, PrimitiveDataType type)
 	{
 		switch (type)
 		{
-			case PrimitiveDataType.Integer: return NumberFormatter.Format((short)value);
-			case PrimitiveDataType.Long: return NumberFormatter.Format((int)value, qualify: false);
-			case PrimitiveDataType.Single: return NumberFormatter.Format((float)value, qualify: false);
-			case PrimitiveDataType.Double: return NumberFormatter.Format((double)value, qualify: false);
-			case PrimitiveDataType.Currency: return NumberFormatter.Format((decimal)value, qualify: false);
-			case PrimitiveDataType.String: return (string?)value ?? "";
+			case PrimitiveDataType.Integer: return NumberFormatter.Format((short)value).ToStringValue();
+			case PrimitiveDataType.Long: return NumberFormatter.Format((int)value, qualify: false).ToStringValue();
+			case PrimitiveDataType.Single: return NumberFormatter.Format((float)value, qualify: false).ToStringValue();
+			case PrimitiveDataType.Double: return NumberFormatter.Format((double)value, qualify: false).ToStringValue();
+			case PrimitiveDataType.Currency: return NumberFormatter.Format((decimal)value, qualify: false).ToStringValue();
+			case PrimitiveDataType.String: return ((StringValue?)value) ?? new StringValue();
 
 			default: throw new Exception("Internal error");
 		}

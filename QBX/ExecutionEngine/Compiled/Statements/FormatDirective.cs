@@ -670,10 +670,10 @@ public class StringFormatDirective(int fieldWidth = -1) : FormatDirective
 		if (argument is not StringVariable stringArgument)
 			throw RuntimeException.TypeMismatch(statement);
 
-		string str = stringArgument.Value;
+		var str = stringArgument.Value;
 
 		if (fieldWidth < 0)
-			context.VisualLibrary.WriteText(str);
+			context.VisualLibrary.WriteText(str.AsSpan());
 		else if (str.Length > fieldWidth)
 			context.VisualLibrary.WriteText(str.AsSpan().Slice(0, fieldWidth));
 		else
@@ -683,7 +683,7 @@ public class StringFormatDirective(int fieldWidth = -1) : FormatDirective
 			if ((s_spaces == null) || (s_spaces.Length < padding))
 				s_spaces = new string(' ', padding * 2);
 
-			context.VisualLibrary.WriteText(str);
+			context.VisualLibrary.WriteText(str.AsSpan());
 			context.VisualLibrary.WriteText(s_spaces.AsSpan().Slice(0, padding));
 		}
 	}

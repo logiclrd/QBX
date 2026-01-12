@@ -8,16 +8,16 @@ public class RandomizeStatement : Statement
 {
 	public override StatementType Type => StatementType.Randomize;
 
-	public Expression? Expression { get; set; }
+	public Expression? ArgumentExpression { get; set; }
 
 	protected override void RenderImplementation(TextWriter writer)
 	{
 		writer.Write("RANDOMIZE");
 
-		if (Expression != null)
+		if (ArgumentExpression != null)
 		{
 			writer.Write(' ');
-			Expression.Render(writer);
+			ArgumentExpression.Render(writer);
 		}
 	}
 }

@@ -1,30 +1,72 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Threading;
 
 using SDL3;
 
 namespace QBX.Hardware;
 
-public class Keyboard
+public class Keyboard(Machine machine)
 {
 	object _sync = new();
 	Queue<KeyEvent> _inputQueue = new Queue<KeyEvent>();
 
-	public KeyModifiers Modifiers => _modifiers;
-
-	MutableKeyModifiers _modifiers = new MutableKeyModifiers();
-
-	void UpdateModifiers()
+	void UpdateModifiers(SDL.KeyboardEvent evt)
 	{
 		var mods = SDL.GetModState();
 
-		_modifiers.CtrlKey = (mods & SDL.Keymod.Ctrl) != 0;
-		_modifiers.AltKey = (mods & SDL.Keymod.Alt) != 0;
-		_modifiers.ShiftKey = (mods & SDL.Keymod.Shift) != 0;
+		int keyboardStatus = machine.SystemMemory[SystemMemory.KeyboardStatusAddress];
 
-		_modifiers.CapsLock = (mods & SDL.Keymod.Caps) != 0;
-		_modifiers.NumLock = (mods & SDL.Keymod.Num) != 0;
+		if ((mods & SDL.Keymod.Ctrl) != 0)
+			keyboardStatus |= SystemMemory.KeyboardStatus_ControlBit;
+		else
+			keyboardStatus &= ~SystemMemory.KeyboardStatus_ControlBit;
+
+		if ((mods & SDL.Keymod.Alt) != 0)
+			keyboardStatus |= SystemMemory.KeyboardStatus_AltBit;
+		else
+			keyboardStatus &= ~SystemMemory.KeyboardStatus_AltBit;
+
+		if ((mods & SDL.Keymod.Shift) == 0)
+			keyboardStatus &= ~(SystemMemory.KeyboardStatus_LeftShiftBit | SystemMemory.KeyboardStatus_RightShiftBit);
+		else
+		{
+			int shiftBit =
+				evt.Scancode switch
+				{
+					SDL.Scancode.LShift => SystemMemory.KeyboardStatus_LeftShiftBit,
+					SDL.Scancode.RShift => SystemMemory.KeyboardStatus_RightShiftBit,
+
+					_ => 0
+				};
+
+			if (evt.Down)
+				keyboardStatus |= shiftBit;
+			else
+				keyboardStatus &= ~shiftBit;
+		}
+
+		if ((mods & SDL.Keymod.Scroll) != 0)
+			keyboardStatus |= SystemMemory.KeyboardStatus_ScrollLockBit;
+		else
+			keyboardStatus &= ~SystemMemory.KeyboardStatus_ScrollLockBit;
+
+		if ((mods & SDL.Keymod.Num) != 0)
+			keyboardStatus |= SystemMemory.KeyboardStatus_NumLockBit;
+		else
+			keyboardStatus &= ~SystemMemory.KeyboardStatus_NumLockBit;
+
+		if ((mods & SDL.Keymod.Caps) != 0)
+			keyboardStatus |= SystemMemory.KeyboardStatus_CapsLockBit;
+		else
+			keyboardStatus &= ~SystemMemory.KeyboardStatus_CapsLockBit;
+
+		if (evt.Down && (evt.Scancode == SDL.Scancode.Insert))
+			keyboardStatus ^= SystemMemory.KeyboardStatus_InsertBit;
+
+		machine.SystemMemory[SystemMemory.KeyboardStatusAddress] =
+			unchecked((byte)keyboardStatus);
 	}
 
 	public void HandleEvent(SDL.KeyboardEvent evt)
@@ -39,11 +81,11 @@ public class Keyboard
 			case SDL.Scancode.RAlt:
 			case SDL.Scancode.Capslock:
 			case SDL.Scancode.NumLockClear:
-				UpdateModifiers();
+				UpdateModifiers(evt);
 				break;
 		}
 
-		var keyEvent = new KeyEvent(evt.Scancode, _modifiers.Clone(), isRelease: !evt.Down);
+		var keyEvent = new KeyEvent(evt.Scancode, machine.SystemMemory.GetKeyModifiers(), isRelease: !evt.Down);
 
 		lock (_sync)
 		{
@@ -118,5 +160,43 @@ public class Keyboard
 
 			return evt;
 		}
+	}
+
+	public string ReadLine()
+	{
+		var buffer = new StringBuilder();
+
+		// TODO: arrow keys, home/end
+		while (true)
+		{
+			WaitForInput();
+
+			var evt = GetNextEvent();
+
+			if ((evt == null) || evt.IsRelease)
+				continue;
+
+			if (evt.ScanCode == ScanCode.Backspace)
+			{
+				if (buffer.Length > 0)
+					buffer.Length--;
+			}
+			else if (evt.ScanCode == ScanCode.Return)
+				break;
+			else if (evt.TextCharacter != '\0')
+				buffer.Append(evt.TextCharacter);
+		}
+
+		return buffer.ToString();
+	}
+
+	public void OutPort(int portNumber, byte data)
+	{
+		// TODO: https://wiki.osdev.org/I8042_PS/2_Controller#Data_Port
+	}
+
+	public byte InPort(int portNumber, out bool handled)
+	{
+		throw new NotImplementedException("TODO");
 	}
 }

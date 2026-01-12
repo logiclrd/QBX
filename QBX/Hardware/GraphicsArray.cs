@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 
 namespace QBX.Hardware;
@@ -827,25 +828,36 @@ public class GraphicsArray
 	}
 
 	public byte InPort(int portNumber)
+		=> InPort(portNumber, out _);
+
+	public byte InPort(int portNumber, out bool handled)
 	{
 		switch (portNumber)
 		{
 			case GraphicsRegisters.DataPort:
+				handled = true;
 				return Graphics.Registers[_graphicsIndex];
 			case SequencerRegisters.DataPort:
+				handled = true;
 				return Sequencer.Registers[_sequencerIndex];
 			case CRTControllerRegisters.DataPort:
+				handled = true;
 				return CRTController.Registers[_crtControllerIndex];
 			case AttributeControllerRegisters.DataReadPort:
+				handled = true;
 				return AttributeController.Registers[_attributeControllerIndex];
 			case InputStatusRegisters.InputStatus1Port:
+				handled = true;
 				_attributeControllerPortMode = AddressAndDataPortMode.Address;
 				break;
 			case MiscellaneousOutputRegisters.ReadPort:
+				handled = true;
 				return MiscellaneousOutput.Register;
 
 			case DACRegisters.DataPort:
 			{
+				handled = true;
+
 				byte data = DAC.Palette[_dacReadIndex];
 
 				_dacReadIndex++;
@@ -857,13 +869,14 @@ public class GraphicsArray
 			}
 		}
 
+		handled = false;
 		return 0;
 	}
 
-	public byte InPort2(int basePortNumber, byte index)
+	public byte InPort2(int basePortNumber, byte index, out bool handled)
 	{
 		OutPort(basePortNumber, index);
-		return InPort(basePortNumber + 1);
+		return InPort(basePortNumber + 1, out handled);
 	}
 
 	public byte this[int address]

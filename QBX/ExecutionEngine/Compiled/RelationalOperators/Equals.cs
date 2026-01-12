@@ -190,7 +190,7 @@ public class StringEquals(Evaluable left, Evaluable right) : BinaryExpression(le
 		var leftValue = (StringVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (StringVariable)right.Evaluate(context, stackFrame);
 
-		bool result = leftValue.Value.CompareTo(rightValue.Value, StringComparison.Ordinal) == 0;
+		bool result = leftValue.Value.CompareTo(rightValue.Value) == 0;
 
 		return new IntegerVariable(result ? (short)-1 : (short)0);
 	}

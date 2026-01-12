@@ -17,12 +17,7 @@ public class CallExpression : Evaluable
 	public override void CollapseConstantSubexpressions()
 	{
 		for (int i = 0; i < Arguments.Count; i++)
-		{
-			if (Arguments[i].IsConstant)
-				Arguments[i] = Arguments[i].EvaluateConstant();
-			else
-				Arguments[i].CollapseConstantSubexpressions();
-		}
+			CollapseConstantExpression(Arguments, i);
 	}
 
 	public override Variable Evaluate(Execution.ExecutionContext context, Execution.StackFrame stackFrame)

@@ -15,12 +15,7 @@ public class ArrayElementExpression(int variableIndex, DataType type) : Evaluabl
 	public override void CollapseConstantSubexpressions()
 	{
 		for (int i = 0; i < SubscriptExpressions.Count; i++)
-		{
-			if (SubscriptExpressions[i].IsConstant)
-				SubscriptExpressions[i] = SubscriptExpressions[i].EvaluateConstant();
-			else
-				SubscriptExpressions[i].CollapseConstantSubexpressions();
-		}
+			CollapseConstantExpression(SubscriptExpressions, i);
 	}
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)

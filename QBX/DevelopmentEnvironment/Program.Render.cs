@@ -565,8 +565,8 @@ public partial class Program : HostedProgram
 		_statusCharBuffer.AsSpan().Fill(32);
 
 		_statusCharBuffer[0] = (byte)'|';
-		_statusCharBuffer[5] = Machine.Keyboard.Modifiers.CapsLock ? (byte)'C' : (byte)' ';
-		_statusCharBuffer[6] = Machine.Keyboard.Modifiers.NumLock ? (byte)'N' : (byte)' ';
+		_statusCharBuffer[5] = Machine.SystemMemory.KeyboardStatus_CapsLock ? (byte)'C' : (byte)' ';
+		_statusCharBuffer[6] = Machine.SystemMemory.KeyboardStatus_NumLock ? (byte)'N' : (byte)' ';
 
 		Configuration.DisplayAttributes.ReferenceBarStatusIndicators.Set(TextLibrary);
 		TextLibrary.WriteText(_statusCharBuffer, 0, 8);
