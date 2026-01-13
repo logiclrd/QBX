@@ -5,7 +5,7 @@ using QBX.ExecutionEngine.Execution.Variables;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class CallExpression : Evaluable
+public class CallExpression : Evaluable, IUnresolvedCall
 {
 	public Routine? Target;
 	public readonly List<Evaluable> Arguments = new List<Evaluable>();
@@ -13,6 +13,17 @@ public class CallExpression : Evaluable
 	public string? UnresolvedTargetName;
 
 	public override DataType Type => throw new NotImplementedException();
+
+	public void Resolve(Routine routine)
+	{
+		if (UnresolvedTargetName == null)
+			throw new Exception("Internal error: Resolving a reference in a CallExpression that is not unresolved");
+		if (routine.Name != UnresolvedTargetName)
+			throw new Exception("Internal error: Resolving a reference to '" + UnresolvedTargetName + "' with a routine named '" + routine.Name + "'");
+
+		Target = routine;
+		UnresolvedTargetName = null;
+	}
 
 	public override void CollapseConstantSubexpressions()
 	{

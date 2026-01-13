@@ -292,6 +292,47 @@ public class Compiler
 
 				break;
 			}
+			case CodeModel.Statements.CallStatement callStatement:
+			{
+				var translatedCallStatement = new CallStatement(callStatement);
+
+				if (compilation.TryGetSub(callStatement.TargetName, out var sub))
+				{
+					int callArgumentCount = callStatement.Arguments?.Count ?? 0;
+
+					if (callArgumentCount != sub.ParameterTypes.Count)
+						throw CompilerException.ArgumentCountMismatch(callStatement.FirstToken);
+
+					translatedCallStatement.Target = sub;
+				}
+				else if (compilation.TryGetFunction(callStatement.TargetName, out var function))
+					throw CompilerException.DuplicateDefinition(callStatement);
+				else if (compilation.UnresolvedReferences.TryGetDeclaration(callStatement.TargetName, out var forwardReference))
+				{
+					if (forwardReference.RoutineType != RoutineType.Sub)
+						throw CompilerException.DuplicateDefinition(callStatement);
+
+					translatedCallStatement.UnresolvedTargetName = callStatement.TargetName;
+					forwardReference.UnresolvedCalls.Add(translatedCallStatement);
+				}
+
+				if (callStatement.Arguments != null)
+				{
+					foreach (var argument in callStatement.Arguments.Expressions)
+					{
+						var translatedExpression = TranslateExpression(argument, container, mapper, compilation);
+
+						if (translatedExpression == null)
+							throw new Exception("Call argument translated to null");
+
+						translatedCallStatement.Arguments.Add(translatedExpression);
+					}
+				}
+
+				container.Append(translatedCallStatement);
+
+				break;
+			}
 			case CodeModel.Statements.ColorStatement colorStatement:
 			{
 				var translatedColorStatement = new ColorStatement(colorStatement);
@@ -1092,20 +1133,36 @@ public class Compiler
 				// - SLN#()
 				// - SYD#()
 
-				if (compilation.IsRegistered(identifier))
+				bool isForwardReference = compilation.UnresolvedReferences.TryGetDeclaration(identifier, out var forwardReference);
+
+				if (compilation.IsRegistered(identifier) || isForwardReference)
 				{
 					if (compilation.Subs.ContainsKey(identifier))
 						throw new CompilerException(callOrIndexExpression.Subject.Token, "Cannot invoke a SUB as a function");
 
 					if (!compilation.Functions.TryGetValue(identifier, out var function))
-						throw new Exception("Internal error: identifier " + identifier + " is registered but is neither a SUB nor a FUNCTION?");
+					{
+						if (!isForwardReference)
+							throw new Exception("Internal error: identifier " + identifier + " is registered but is neither a SUB nor a FUNCTION?");
 
-					if (callOrIndexExpression.Arguments.Count != function.ParameterTypes.Count)
-						throw CompilerException.ArgumentCountMismatch(callOrIndexExpression.Subject.Token);
+						if (forwardReference!.RoutineType != RoutineType.Function)
+							throw CompilerException.DuplicateDefinition(expression.Token);
+					}
+					else
+					{
+						if (callOrIndexExpression.Arguments.Count != function.ParameterTypes.Count)
+							throw CompilerException.ArgumentCountMismatch(callOrIndexExpression.Subject.Token);
+					}
 
 					var translatedCallExpression = new CallExpression();
 
 					translatedCallExpression.Target = function;
+
+					if (function == null)
+					{
+						translatedCallExpression.UnresolvedTargetName = identifier;
+						forwardReference!.UnresolvedCalls.Add(translatedCallExpression);
+					}
 
 					foreach (var argument in callOrIndexExpression.Arguments.Expressions)
 					{
@@ -1118,11 +1175,6 @@ public class Compiler
 					}
 
 					return translatedCallExpression;
-				}
-
-				if (compilation.UnresolvedReferences.IsDeclared(identifier))
-				{
-					throw new NotImplementedException("TODO");
 				}
 
 				// It's not a function call, so it's an array access.

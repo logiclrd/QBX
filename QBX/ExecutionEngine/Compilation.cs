@@ -8,15 +8,24 @@ namespace QBX.ExecutionEngine;
 
 public class Compilation
 {
-	public List<Module> Modules = new List<Module>();
-	public TypeRepository TypeRepository = new TypeRepository();
-	public UnresolvedReferences UnresolvedReferences = new UnresolvedReferences();
-	public Dictionary<string, Routine> Subs = new Dictionary<string, Routine>();
-	public Dictionary<string, Routine> Functions = new Dictionary<string, Routine>();
+	public List<Module> Modules;
+	public TypeRepository TypeRepository;
+	public UnresolvedReferences UnresolvedReferences;
+	public Dictionary<string, Routine> Subs;
+	public Dictionary<string, Routine> Functions;
 
 	public Routine? EntrypointRoutine;
 
 	public IEnumerable<Routine> AllRegisteredRoutines => Subs.Values.Concat(Functions.Values);
+
+	public Compilation()
+	{
+		Modules = new List<Module>();
+		TypeRepository = new TypeRepository();
+		UnresolvedReferences = new UnresolvedReferences(this);
+		Subs = new Dictionary<string, Routine>();
+		Functions = new Dictionary<string, Routine>();
+	}
 
 	public bool IsRegistered(string name)
 	{
@@ -38,6 +47,9 @@ public class Compilation
 
 	public bool TryGetFunction(string name, [NotNullWhen(true)] out Routine? function)
 		=> Functions.TryGetValue(name, out function);
+
+	public bool TryGetRoutine(string name, [NotNullWhen(true)] out Routine? routine)
+		=> TryGetSub(name, out routine) || TryGetFunction(name, out routine);
 
 	public void SetDefaultEntrypoint()
 	{
