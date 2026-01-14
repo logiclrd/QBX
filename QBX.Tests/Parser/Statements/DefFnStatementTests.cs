@@ -36,7 +36,7 @@ public class DefFnStatementTests
 	public void ShouldParseBlockStartWithParameters()
 	{
 		// Arrange
-		string statement = "DEF FNfork(TineLengths!(), TineCount AS INTEGER)";
+		string statement = "DEF FNfork(TineLength!, TineCount AS INTEGER)";
 
 		var tokens = new Lexer(statement).ToList();
 
@@ -56,9 +56,9 @@ public class DefFnStatementTests
 
 		defFnResult.Parameters.Should().NotBeNull();
 		defFnResult.Parameters.Parameters.Should().HaveCount(2);
-		defFnResult.Parameters.Parameters[0].Name.Should().Be("TineLengths!");
+		defFnResult.Parameters.Parameters[0].Name.Should().Be("TineLength!");
 		defFnResult.Parameters.Parameters[0].Type.Should().Be(DataType.Unspecified);
-		defFnResult.Parameters.Parameters[0].IsArray.Should().BeTrue();
+		defFnResult.Parameters.Parameters[0].IsArray.Should().BeFalse();
 		defFnResult.Parameters.Parameters[1].Name.Should().Be("TineCount");
 		defFnResult.Parameters.Parameters[1].Type.Should().Be(DataType.INTEGER);
 		defFnResult.Parameters.Parameters[1].IsArray.Should().BeFalse();

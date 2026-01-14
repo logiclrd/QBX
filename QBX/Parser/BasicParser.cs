@@ -1041,56 +1041,249 @@ public class BasicParser
 			case TokenType.GET:
 			case TokenType.PUT:
 			{
-				FileBlockOperationStatement statement;
-
-				switch (token.Type)
+				if (tokenHandler.NextTokenIs(TokenType.OpenParenthesis)
+				 || tokenHandler.NextTokenIs(TokenType.STEP))
 				{
-					case TokenType.GET: statement = new GetStatement(); break;
-					case TokenType.PUT: statement = new PutStatement(); break;
-
-					default: throw new Exception("Internal error");
-				}
-
-				if (tokenHandler.NextTokenIs(TokenType.NumberSign))
-					tokenHandler.Advance();
-
-				var arguments = SplitCommaDelimitedList(tokenHandler.RemainingTokens).ToList();
-
-				if (arguments.Count == 0)
-					throw new SyntaxErrorException(tokenHandler.EndToken, "Expected: expression");
-
-				if (arguments.Count == 1)
-					statement.FileNumberExpression = ParseExpression(arguments[0], tokenHandler.EndToken);
-				else if (arguments.Count == 2)
-				{
-					var midToken = tokens[arguments[1].Unwrap().Offset - 1];
-
-					statement.FileNumberExpression = ParseExpression(arguments[0], midToken);
-					statement.RecordNumberExpression = ParseExpression(arguments[1], tokenHandler.EndToken);
-				}
-				else if (arguments.Count == 3)
-				{
-					var midToken = tokens[arguments[1].Unwrap().Offset - 1];
-
-					statement.FileNumberExpression = ParseExpression(arguments[0], midToken);
-
-					if (arguments[1].Any())
+					switch (token.Type)
 					{
-						midToken = tokens[arguments[2].Unwrap().Offset - 1];
+						case TokenType.GET:
+						{
+							var getSpriteStatement = new GetSpriteStatement();
 
-						statement.RecordNumberExpression = ParseExpression(arguments[1], midToken);
+							if (tokenHandler.NextTokenIs(TokenType.STEP))
+							{
+								getSpriteStatement.FromStep = true;
+								tokenHandler.Advance();
+
+								if (!tokenHandler.NextTokenIs(TokenType.OpenParenthesis))
+									throw new SyntaxErrorException(tokenHandler.NextToken, "Expected: (");
+							}
+
+							var fromTokens = tokenHandler.ExpectParenthesizedTokens();
+
+							if (fromTokens.Count == 0)
+							{
+								var range = fromTokens.Unwrap();
+
+								throw new SyntaxErrorException(tokens[range.Offset], "Expected: expression");
+							}
+
+							var fromExpressions = SplitCommaDelimitedList(fromTokens).ToList();
+
+							if (fromExpressions.Count == 1)
+							{
+								var range = fromTokens.Unwrap();
+
+								throw new SyntaxErrorException(tokens[range.Offset + range.Count], "Expected: ,");
+							}
+
+							if (fromExpressions.Count > 2)
+							{
+								var range = fromExpressions[1].Unwrap();
+
+								throw new SyntaxErrorException(tokens[range.Offset + range.Count], "Expected: )");
+							}
+
+							{
+								var midToken = tokens[fromExpressions[1].Unwrap().Offset - 1];
+								var endToken = tokenHandler.PreviousToken;
+
+								getSpriteStatement.FromXExpression = ParseExpression(fromExpressions[0], midToken);
+								getSpriteStatement.FromYExpression = ParseExpression(fromExpressions[1], endToken);
+							}
+
+							tokenHandler.Expect(TokenType.Hyphen);
+
+							if (tokenHandler.NextTokenIs(TokenType.STEP))
+							{
+								getSpriteStatement.ToStep = true;
+								tokenHandler.Advance();
+							}
+
+							var toTokens = tokenHandler.ExpectParenthesizedTokens();
+
+							if (toTokens.Count == 0)
+							{
+								var range = toTokens.Unwrap();
+
+								throw new SyntaxErrorException(tokens[range.Offset], "Expected: expression");
+							}
+
+							var toExpressions = SplitCommaDelimitedList(toTokens).ToList();
+
+							if (toExpressions.Count == 1)
+							{
+								var range = toTokens.Unwrap();
+
+								throw new SyntaxErrorException(tokens[range.Offset + range.Count], "Expected: ,");
+							}
+
+							if (toExpressions.Count > 2)
+							{
+								var range = toExpressions[1].Unwrap();
+
+								throw new SyntaxErrorException(tokens[range.Offset + range.Count], "Expected: )");
+							}
+
+							{
+								var midToken = tokens[toExpressions[1].Unwrap().Offset - 1];
+								var endToken = tokenHandler.PreviousToken;
+
+								getSpriteStatement.ToXExpression = ParseExpression(toExpressions[0], midToken);
+								getSpriteStatement.ToYExpression = ParseExpression(toExpressions[1], endToken);
+							}
+
+							// , array[(offset)]
+							tokenHandler.Expect(TokenType.Comma);
+
+							getSpriteStatement.TargetExpression = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken);
+
+							return getSpriteStatement;
+						}
+						case TokenType.PUT:
+						{
+							var putSpriteStatement = new PutSpriteStatement();
+
+							if (tokenHandler.NextTokenIs(TokenType.STEP))
+							{
+								putSpriteStatement.Step = true;
+								tokenHandler.Advance();
+
+								if (!tokenHandler.NextTokenIs(TokenType.OpenParenthesis))
+									throw new SyntaxErrorException(tokenHandler.NextToken, "Expected: (");
+							}
+
+							var coordinateTokens = tokenHandler.ExpectParenthesizedTokens();
+
+							if (coordinateTokens.Count == 0)
+							{
+								var range = coordinateTokens.Unwrap();
+
+								throw new SyntaxErrorException(tokens[range.Offset], "Expected: expression");
+							}
+
+							var coordinateExpressions = SplitCommaDelimitedList(coordinateTokens).ToList();
+
+							if (coordinateExpressions.Count == 1)
+							{
+								var range = coordinateTokens.Unwrap();
+
+								throw new SyntaxErrorException(tokens[range.Offset + range.Count], "Expected: ,");
+							}
+
+							if (coordinateExpressions.Count > 2)
+							{
+								var range = coordinateExpressions[1].Unwrap();
+
+								throw new SyntaxErrorException(tokens[range.Offset + range.Count], "Expected: )");
+							}
+
+							{
+								var midToken = tokens[coordinateExpressions[1].Unwrap().Offset - 1];
+								var endToken = tokenHandler.PreviousToken;
+
+								putSpriteStatement.XExpression = ParseExpression(coordinateExpressions[0], midToken);
+								putSpriteStatement.YExpression = ParseExpression(coordinateExpressions[1], endToken);
+							}
+
+							// , array[(offset)][, actionverb]
+							tokenHandler.Expect(TokenType.Comma);
+
+							int separator = tokenHandler.FindNextUnparenthesizedOf(TokenType.Comma);
+
+							if (separator < 0)
+								putSpriteStatement.SourceExpression = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken);
+							else
+							{
+								putSpriteStatement.SourceExpression = ParseExpression(
+									tokenHandler.RemainingTokens.Slice(0, separator),
+									tokenHandler[separator]);
+
+								tokenHandler.Advance(separator);
+								tokenHandler.Expect(TokenType.Comma);
+
+								var actionVerbToken = tokenHandler.NextToken ?? tokenHandler.EndToken;
+
+								Exception ThrowForActionVerb()
+									=> throw new SyntaxErrorException(actionVerbToken, "Expected: AND or OR or PRESENT or PSET or XOR");
+
+								if (!tokenHandler.HasMoreTokens)
+									ThrowForActionVerb();
+
+								switch (actionVerbToken.Type)
+								{
+									case TokenType.AND: putSpriteStatement.ActionVerb = PutSpriteAction.And; break;
+									case TokenType.OR: putSpriteStatement.ActionVerb = PutSpriteAction.Or; break;
+									case TokenType.PRESET: putSpriteStatement.ActionVerb = PutSpriteAction.PixelSetInverted; break;
+									case TokenType.PSET: putSpriteStatement.ActionVerb = PutSpriteAction.PixelSet; break;
+									case TokenType.XOR: putSpriteStatement.ActionVerb = PutSpriteAction.ExclusiveOr; break;
+
+									default: throw ThrowForActionVerb();
+								}
+
+								tokenHandler.Advance();
+								tokenHandler.ExpectEndOfTokens();
+							}
+
+							return putSpriteStatement;
+						}
 					}
-
-					statement.TargetExpression = ParseExpression(arguments[2], tokenHandler.EndToken);
 				}
 				else
 				{
-					var blame = tokens[arguments[3].Unwrap().Offset - 1];
+					FileBlockOperationStatement statement;
 
-					throw new SyntaxErrorException(blame, "Expected: end of statement");
+					switch (token.Type)
+					{
+						case TokenType.GET: statement = new GetStatement(); break;
+						case TokenType.PUT: statement = new PutStatement(); break;
+
+						default: throw new Exception("Internal error");
+					}
+
+					if (tokenHandler.NextTokenIs(TokenType.NumberSign))
+						tokenHandler.Advance();
+
+					var arguments = SplitCommaDelimitedList(tokenHandler.RemainingTokens).ToList();
+
+					if (arguments.Count == 0)
+						throw new SyntaxErrorException(tokenHandler.EndToken, "Expected: expression");
+
+					if (arguments.Count == 1)
+						statement.FileNumberExpression = ParseExpression(arguments[0], tokenHandler.EndToken);
+					else if (arguments.Count == 2)
+					{
+						var midToken = tokens[arguments[1].Unwrap().Offset - 1];
+
+						statement.FileNumberExpression = ParseExpression(arguments[0], midToken);
+						statement.RecordNumberExpression = ParseExpression(arguments[1], tokenHandler.EndToken);
+					}
+					else if (arguments.Count == 3)
+					{
+						var midToken = tokens[arguments[1].Unwrap().Offset - 1];
+
+						statement.FileNumberExpression = ParseExpression(arguments[0], midToken);
+
+						if (arguments[1].Any())
+						{
+							midToken = tokens[arguments[2].Unwrap().Offset - 1];
+
+							statement.RecordNumberExpression = ParseExpression(arguments[1], midToken);
+						}
+
+						statement.TargetExpression = ParseExpression(arguments[2], tokenHandler.EndToken);
+					}
+					else
+					{
+						var blame = tokens[arguments[3].Unwrap().Offset - 1];
+
+						throw new SyntaxErrorException(blame, "Expected: end of statement");
+					}
+
+					return statement;
 				}
 
-				return statement;
+				break;
 			}
 
 			case TokenType.GOTO:
@@ -3510,13 +3703,7 @@ public class BasicParser
 					return new KeywordFunctionExpression(tokens[0], expressionList);
 				}
 
-				Expression? subjectExpression = null;
-
-				try
-				{
-					subjectExpression = ParseExpression(tokens.Slice(0, openParenthesisIndex), tokens[openParenthesisIndex]);
-				}
-				catch (SyntaxErrorException) { }
+				Expression? subjectExpression = TestParseSubjectExpression(tokens, openParenthesisIndex);
 
 				if ((subjectExpression != null) && subjectExpression.IsValidIndexSubject())
 				{
@@ -3622,6 +3809,19 @@ public class BasicParser
 
 			throw new SyntaxErrorException(tokens[0], "Expected: expression");
 		}
+	}
+
+	private Expression? TestParseSubjectExpression(ListRange<Token> tokens, int openParenthesisIndex)
+	{
+		Expression? subjectExpression = null;
+
+		try
+		{
+			subjectExpression = ParseExpression(tokens.Slice(0, openParenthesisIndex), tokens[openParenthesisIndex]);
+		}
+		catch (SyntaxErrorException) { }
+
+		return subjectExpression;
 	}
 
 	private bool IsOperator(Token token, out Operator op)

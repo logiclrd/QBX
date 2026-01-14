@@ -47,7 +47,7 @@ public class MidFunction : Function
 		CollapseConstantExpression(ref LengthExpression);
 	}
 
-	public override DataType Type => DataType.Integer;
+	public override DataType Type => DataType.String;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
