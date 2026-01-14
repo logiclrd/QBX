@@ -20,7 +20,7 @@ public class ParserCodeModelEndToEndTests
 	{
 		string samplesPath = GetSamplesPath();
 
-		return Directory.EnumerateFiles(samplesPath, "*.bas");
+		return Directory.EnumerateFiles(samplesPath, "*.BAS");
 	}
 
 	[TestCaseSource(nameof(EnumerateSamples))]

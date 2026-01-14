@@ -36,7 +36,22 @@ public class PrintStatement : Statement
 			if (i > 0)
 				writer.Write(' ');
 
-			Arguments[i].Expression?.Render(writer);
+			switch (Arguments[i].ExpressionType)
+			{
+				case PrintExpressionType.Tab:
+					writer.Write("TAB(");
+					Arguments[i].Expression?.Render(writer);
+					writer.Write(')');
+					break;
+				case PrintExpressionType.Space:
+					writer.Write("SPC(");
+					Arguments[i].Expression?.Render(writer);
+					writer.Write(')');
+					break;
+				default:
+					Arguments[i].Expression?.Render(writer);
+					break;
+			}
 
 			switch (Arguments[i].CursorAction)
 			{

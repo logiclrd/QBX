@@ -165,6 +165,7 @@ public enum TokenType
 	[KeywordFunction]
 	[KeywordToken] LPOS,
 	[KeywordToken] LPRINT,
+	[KeywordFunction]
 	[KeywordToken("LTRIM$")] LTRIM,
 	[KeywordFunction(minimumParameterCount: 2, maximumParameterCount: 3, isAssignable: true)]
 	[KeywordToken("MID$")] MID,

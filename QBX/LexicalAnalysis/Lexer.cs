@@ -30,6 +30,7 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 		HexNumber,
 		OctalNumber,
 		MaybeNumber, // seen a '.', don't know if it's ".Member" or ".234#"
+		MaybeNegativeNumber, // seen a '-', don't know if it's "-123"/"-.123" or "-expression"
 		MaybeOrEquals, // seen a '<' or '>', don't know if it'll be a "<=" or ">="
 		MaybeCrLf, // seen a '\r', don't know if it'll be a "\r\n"
 		Word,
@@ -93,6 +94,8 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 							mode = Mode.NumberWithBase;
 						else if (ch == '.')
 							mode = Mode.MaybeNumber;
+						else if (ch == '-')
+							mode = Mode.MaybeNegativeNumber;
 						else if (char.IsAsciiLetter(ch))
 							mode = Mode.Word;
 						else if (char.IsWhiteSpace(ch))
@@ -209,6 +212,36 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 						else
 						{
 							yield return Token.ForCharacter(line, tokenStartColumn, '.');
+							buffer.Clear();
+							mode = Mode.Any;
+							reparse = true;
+							tokenStartColumn = column;
+						}
+
+						break;
+					}
+					case Mode.MaybeNegativeNumber:
+					{
+						// seen a '-', don't know whether it's a negative number or just a '-' before an unrelated expression
+
+						if (char.IsDigit(ch))
+						{
+							buffer.Append(ch);
+							mode = Mode.Number;
+						}
+						else if (ch == '.')
+						{
+							buffer.Append(ch);
+							mode = Mode.NumberAfterDecimal;
+						}
+						else if (ch == '&')
+						{
+							buffer.Append(ch);
+							mode = Mode.NumberWithBase;
+						}
+						else
+						{
+							yield return Token.ForCharacter(line, tokenStartColumn, '-');
 							buffer.Clear();
 							mode = Mode.Any;
 							reparse = true;

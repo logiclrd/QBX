@@ -66,7 +66,7 @@ namespace QBX.DevelopmentEnvironment
 				File.Move(filePath, backupFilePath);
 			}
 
-			using (var writer = new StreamWriter(filePath))
+			using (var writer = new StreamWriter(filePath) { NewLine = "\r\n" })
 				Save(unit, writer);
 		}
 

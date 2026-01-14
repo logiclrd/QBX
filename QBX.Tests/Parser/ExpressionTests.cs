@@ -536,4 +536,130 @@ public class ExpressionTests
 		binaryResult.Right.Should().BeOfType<LiteralExpression>()
 			.Which.Token!.Value.Should().Be("2");
 	}
+
+	[Test]
+	public void NegativeNumber()
+	{
+		// Arrange
+		var tokens = Tokens(
+			(TokenType.Number, "-3"));
+
+		var sut = new BasicParser();
+
+		var endToken = MakeEndToken(tokens);
+
+		// Act
+		var result = sut.ParseExpression(tokens, endToken);
+
+		// Assert
+		result.Should().BeOfType<LiteralExpression>()
+			.Which.Token!.Value.Should().Be("-3");
+	}
+
+	[Test]
+	public void NegativeNumberIsActuallyOperatorAndOperand()
+	{
+		// Arrange
+		var tokens = Tokens(
+			(TokenType.Number, "2"),
+			(TokenType.Number, "-3"));
+
+		var sut = new BasicParser();
+
+		var endToken = MakeEndToken(tokens);
+
+		// Act
+		var result = sut.ParseExpression(tokens, endToken);
+
+		// Assert
+		result.Should().BeOfType<BinaryExpression>();
+
+		var binaryResult = (BinaryExpression)result;
+
+		binaryResult.Left.Should().BeOfType<LiteralExpression>()
+			.Which.Token!.Value.Should().Be("2");
+		binaryResult.Right.Should().BeOfType<LiteralExpression>()
+			.Which.Token!.Value.Should().Be("3");
+	}
+
+	[Test]
+	public void NegativeNumberIsActuallyOperatorAndOperandMultiple()
+	{
+		// Arrange
+		var tokens = Tokens(
+			(TokenType.Number, "2"),
+			(TokenType.Number, "-3"),
+			(TokenType.Number, "-4"),
+			(TokenType.Number, "-5"));
+
+		var sut = new BasicParser();
+
+		var endToken = MakeEndToken(tokens);
+
+		// Act
+		var result = sut.ParseExpression(tokens, endToken);
+
+		// Assert
+		result.Should().BeOfType<BinaryExpression>();
+
+		var binaryResult = (BinaryExpression)result;
+
+		binaryResult.Right.Should().BeOfType<LiteralExpression>()
+			.Which.Token!.Value.Should().Be("5");
+
+		binaryResult.Left.Should().BeOfType<BinaryExpression>();
+		binaryResult = (BinaryExpression)binaryResult.Left;
+
+		binaryResult.Right.Should().BeOfType<LiteralExpression>()
+			.Which.Token!.Value.Should().Be("4");
+
+		binaryResult.Left.Should().BeOfType<BinaryExpression>();
+		binaryResult = (BinaryExpression)binaryResult.Left;
+
+		binaryResult.Left.Should().BeOfType<LiteralExpression>()
+			.Which.Token!.Value.Should().Be("2");
+		binaryResult.Right.Should().BeOfType<LiteralExpression>()
+			.Which.Token!.Value.Should().Be("3");
+	}
+
+
+	[Test]
+	public void NegativeNumberIsActuallyOperatorAndOperandNested()
+	{
+		// Arrange
+		var tokens = Tokens(
+			(TokenType.OpenParenthesis, "("),
+			(TokenType.Number, "2"),
+			(TokenType.Number, "-3"),
+			(TokenType.CloseParenthesis, ")"),
+			(TokenType.Number, "-4"));
+
+		var sut = new BasicParser();
+
+		var endToken = MakeEndToken(tokens);
+
+		// Act
+		var result = sut.ParseExpression(tokens, endToken);
+
+		// Assert
+		result.Should().BeOfType<BinaryExpression>();
+
+		var binaryResult = (BinaryExpression)result;
+
+		binaryResult.Right.Should().BeOfType<LiteralExpression>()
+			.Which.Token!.Value.Should().Be("4");
+
+		binaryResult.Left.Should().BeOfType<ParenthesizedExpression>();
+
+		var parenthesizedResult = (ParenthesizedExpression)binaryResult.Left;
+
+		parenthesizedResult.Child.Should().BeOfType<BinaryExpression>();
+
+		binaryResult = (BinaryExpression)parenthesizedResult.Child;
+
+		binaryResult.Left.Should().BeOfType<LiteralExpression>()
+			.Which.Token!.Value.Should().Be("2");
+		binaryResult.Right.Should().BeOfType<LiteralExpression>()
+			.Which.Token!.Value.Should().Be("3");
+	}
 }

@@ -368,4 +368,58 @@ public class LexerTests
 		result[0].Value.Should().Be(number);
 		result[1].Type.Should().Be(TokenType.TO);
 	}
+
+	[TestCase("-0")]
+	[TestCase("-1")]
+	[TestCase("-1.0")]
+	[TestCase("-1.1")]
+	[TestCase("-0.1")]
+	[TestCase("-.1")]
+	[TestCase("-1.123")]
+	[TestCase("-0.123")]
+	[TestCase("-.123")]
+	[TestCase("-&HD")]
+	[TestCase("-&HDD")]
+	[TestCase("-&O12")]
+	public void NegativeNumber(string input)
+	{
+		// Arrange
+		var sut = new Lexer(input);
+
+		// Act
+		var result = sut.ToList();
+
+		// Assert
+		result.Should().HaveCount(1);
+		result[0].Type.Should().Be(TokenType.Number);
+		result[0].Value.Should().Be(input);
+	}
+
+	[TestCase("-0")]
+	[TestCase("-1")]
+	[TestCase("-1.0")]
+	[TestCase("-1.1")]
+	[TestCase("-0.1")]
+	[TestCase("-.1")]
+	[TestCase("-1.123")]
+	[TestCase("-0.123")]
+	[TestCase("-.123")]
+	[TestCase("-&HD")]
+	[TestCase("-&HDD")]
+	[TestCase("-&O12")]
+	public void NegativeNumberFollowedByNegativeNumber(string input)
+	{
+		// Arrange
+		var sut = new Lexer(input + input);
+
+		// Act
+		var result = sut.ToList();
+
+		// Assert
+		result.Should().HaveCount(2);
+		result[0].Type.Should().Be(TokenType.Number);
+		result[0].Value.Should().Be(input);
+		result[1].Type.Should().Be(TokenType.Number);
+		result[1].Value.Should().Be(input);
+	}
 }

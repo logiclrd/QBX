@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 using QBX.CodeModel;
 using QBX.CodeModel.Expressions;
@@ -3805,6 +3806,45 @@ public class BasicParser
 					return new IdentifierExpression(tokens[0]);
 				if (tokens[0].IsParameterlessKeywordFunction)
 					return new KeywordFunctionExpression(tokens[0]);
+			}
+
+			// Try interpreting negative numbers as the '-' operator followed by positive numbers.
+			List<Token>? reinterpretedTokens = null;
+
+			for (int i = tokens.Count - 1; i >= 0; i--)
+			{
+				if ((tokens[i].Type == TokenType.Number) && tokens[i].Value.StartsWith("-"))
+				{
+					if (reinterpretedTokens == null)
+					{
+						reinterpretedTokens = [.. tokens, tokens[tokens.Count - 1]];
+
+						if (i + 2 < tokens.Count)
+						{
+							var span = CollectionsMarshal.AsSpan(reinterpretedTokens);
+
+							span.Slice(i + 1).CopyTo(span.Slice(i + 2));
+						}
+					}
+
+					reinterpretedTokens[i] = new Token(
+						tokens[i].Line,
+						tokens[i].Column,
+						TokenType.Minus,
+						"-");
+
+					reinterpretedTokens[i + 1] = new Token(
+						tokens[i].Line,
+						tokens[i].Column + 1,
+						TokenType.Number,
+						tokens[i].Value.Substring(1));
+
+					try
+					{
+						return ParseExpression(reinterpretedTokens, endToken);
+					}
+					catch {}
+				}
 			}
 
 			throw new SyntaxErrorException(tokens[0], "Expected: expression");

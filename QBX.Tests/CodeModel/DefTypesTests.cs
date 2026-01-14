@@ -1,10 +1,6 @@
 ﻿using QBX.CodeModel;
-using QBX.CodeModel.Statements;
 using QBX.LexicalAnalysis;
 using QBX.Parser;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace QBX.Tests.CodeModel;
 
@@ -80,7 +76,7 @@ internal class DefTypesTests
 
 			var unit = parser.Parse(new Lexer(reader));
 
-			var writer = new StringWriter();
+			var writer = new StringWriter() { NewLine = "\r\n"};
 
 			// Act
 			unit.Write(writer);
@@ -112,7 +108,7 @@ internal class DefTypesTests
 
 			var parser = new BasicParser();
 
-			var writer = new StringWriter();
+			var writer = new StringWriter() { NewLine = "\r\n" };
 
 			// Act
 			var unit = CompilationUnit.Read(reader, unitName, parser);
