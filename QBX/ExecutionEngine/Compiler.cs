@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 
@@ -104,7 +105,8 @@ public class Compiler
 				info.Routine.ReturnValueVariableIndex = info.Mapper.DeclareVariable(info.Routine.Name, info.Routine.ReturnType);
 		}
 
-		// Fourth pass: Translate statements.
+		// Fourth pass: Collect constants and then translate statements.
+		// => CONST definitions inside DEF FN are local to the DEF FN and are not processed here
 		foreach (var info in translationInfo)
 		{
 			var element = info.Element;
@@ -115,6 +117,31 @@ public class Compiler
 
 			mapper.ScanForDisallowedSlugs(element.AllStatements);
 
+			bool inDefFn = false;
+
+			foreach (var statement in element.AllStatements)
+			{
+				switch (statement)
+				{
+					case CodeModel.Statements.DefFnStatement: inDefFn = true; break;
+					case CodeModel.Statements.EndDefStatement: inDefFn = false; break;
+					case CodeModel.Statements.ConstStatement constStatement:
+						if (!inDefFn)
+						{
+							foreach (var definition in constStatement.Definitions)
+							{
+								var constValueExpression = TranslateExpression(definition.Value, container: null, mapper, compilation);
+
+								mapper.DefineConstant(
+									definition.Identifier,
+									constValueExpression.EvaluateConstant());
+							}
+						}
+
+						break;
+				}
+			}
+
 			string routineName = Routine.GetName(element);
 
 			var routine = routineByName[routineName];
@@ -123,7 +150,7 @@ public class Compiler
 			int statementIndex = 0;
 
 			while (lineIndex < element.Lines.Count)
-				TranslateStatement(element, ref lineIndex, ref statementIndex, routine, mapper, compilation);
+				TranslateStatement(element, ref lineIndex, ref statementIndex, routine, mapper, compilation, module);
 
 			routine.VariableTypes = mapper.GetVariableTypes();
 			routine.LinkedVariables = mapper.GetLinkedVariables();
@@ -159,7 +186,7 @@ public class Compiler
 		typeRepository.RegisterType(udt);
 	}
 
-	void TranslateStatement(CodeModel.CompilationElement element, ref int lineIndexRef, ref int statementIndexRef, Sequence container, Mapper mapper, Compilation compilation)
+	void TranslateStatement(CodeModel.CompilationElement element, ref int lineIndexRef, ref int statementIndexRef, Sequence container, Mapper mapper, Compilation compilation, Module module)
 	{
 		int lineIndex = lineIndexRef;
 		int statementIndex = statementIndexRef;
@@ -195,7 +222,7 @@ public class Compiler
 					statement = newStatement;
 				};
 
-			TranslateStatement(element.Type, ref statement, iterator, container, mapper, compilation, out var nextStatementInfo);
+			TranslateStatement(element, ref statement, iterator, container, mapper, compilation, module, out var nextStatementInfo);
 
 			lineIndex = iterator.LineIndex;
 			statementIndex = iterator.StatementIndex;
@@ -213,7 +240,7 @@ public class Compiler
 		}
 	}
 
-	void TranslateStatement(CodeModel.CompilationElementType elementType, IList<CodeModel.Statements.Statement> statements, ref int statementIndexRef, Sequence container, Mapper mapper, Compilation compilation)
+	void TranslateStatement(CodeModel.CompilationElement element, IList<CodeModel.Statements.Statement> statements, ref int statementIndexRef, Sequence container, Mapper mapper, Compilation compilation, Module module)
 	{
 		int statementIndex = statementIndexRef;
 
@@ -232,7 +259,7 @@ public class Compiler
 					statement = newStatement;
 				};
 
-			TranslateStatement(elementType, ref statement, iterator, container, mapper, compilation, out var nextStatementInfo);
+			TranslateStatement(element, ref statement, iterator, container, mapper, compilation, module, out var nextStatementInfo);
 
 			statementIndex = iterator.StatementIndex;
 
@@ -254,7 +281,7 @@ public class Compiler
 		public int LoopsMatched = 0;
 	}
 
-	void TranslateStatement(CodeModel.CompilationElementType elementType, ref CodeModel.Statements.Statement statement, StatementIterator iterator, Sequence container, Mapper mapper, Compilation compilation, out NextStatementInfo? nextStatementInfo)
+	void TranslateStatement(CodeModel.CompilationElement element, ref CodeModel.Statements.Statement statement, StatementIterator iterator, Sequence container, Mapper mapper, Compilation compilation, Module module, out NextStatementInfo? nextStatementInfo)
 	{
 		var typeRepository = compilation.TypeRepository;
 
@@ -351,18 +378,7 @@ public class Compiler
 			}
 			case CodeModel.Statements.ConstStatement constStatement:
 			{
-				foreach (var definition in constStatement.Definitions)
-				{
-					var translatedValue = TranslateExpression(definition.Value, container, mapper, compilation);
-
-					if (translatedValue == null)
-						throw new Exception("ConstStatement has no Value");
-
-					mapper.DefineConstant(
-						definition.Identifier,
-						translatedValue.EvaluateConstant());
-				}
-
+				// Gathered centrally before main translation begins.
 				break;
 			}
 			case CodeModel.Statements.DeclareStatement declareStatement:
@@ -376,6 +392,91 @@ public class Compiler
 				// up later.
 
 				// TODO
+
+				break;
+			}
+			case CodeModel.Statements.DefFnStatement defFnStatement:
+			{
+				// One of:
+				//
+				//   DEF FNspoon% (a%) = a% * 2
+				//
+				//   DEF FNfork (x%)
+				//     FNfork = SQR(x%)
+				//   END DEF
+
+				var routine = new Routine(module, element, defFnStatement, typeRepository);
+
+				if (routine.ReturnType == null)
+				{
+					routine.ReturnType = DataType.ForPrimitiveDataType(
+						mapper.GetTypeForIdentifier(routine.Name));
+				}
+
+				mapper.StartSemiscopeSetup();
+
+				string qualifiedName = mapper.QualifyIdentifier(
+					routine.Name,
+					routine.ReturnType);
+
+				routine.ReturnValueVariableIndex = mapper.DeclareVariable(
+					qualifiedName,
+					routine.ReturnType);
+
+				routine.TranslateParameters(mapper, compilation);
+
+				mapper.EnterSemiscope();
+
+				try
+				{
+					if (defFnStatement.ExpressionBody != null)
+					{
+						routine.Append(
+							new AssignmentStatement(defFnStatement)
+							{
+								TargetExpression =
+									new IdentifierExpression(routine.ReturnValueVariableIndex, routine.ReturnType),
+
+								ValueExpression =
+									TranslateExpression(defFnStatement.ExpressionBody, container, mapper, compilation),
+							});
+					}
+					else
+					{
+						iterator.Advance();
+
+						routine.AppendIfNotNull(iterator.GetLabelStatement());
+
+						while (iterator.HaveCurrentStatement)
+						{
+							if (statement is CodeModel.Statements.EndDefStatement)
+								break;
+
+							if (statement is CodeModel.Statements.DefFnStatement)
+								throw CompilerException.IllegalInSubFunctionOrDefFn(statement);
+
+							TranslateStatement(element, ref statement, iterator, routine, mapper, compilation, module, out nextStatementInfo);
+
+							if (nextStatementInfo != null)
+							{
+								throw CompilerException.NextWithoutFor(
+									nextStatementInfo.Statement.CounterExpressions[nextStatementInfo.LoopsMatched].Token);
+							}
+
+							iterator.Advance();
+
+							routine.AppendIfNotNull(iterator.GetLabelStatement());
+						}
+					}
+				}
+				finally
+				{
+					mapper.ExitSemiscope();
+				}
+
+				routine.UseRootFrame = true;
+
+				compilation.RegisterFunction(routine);
 
 				break;
 			}
@@ -393,7 +494,7 @@ public class Compiler
 			}
 			case CodeModel.Statements.DimStatement dimStatement: // also matches RedimStatement
 			{
-				if (dimStatement.Shared && (elementType != CodeModel.CompilationElementType.Main))
+				if (dimStatement.Shared && (element.Type != CodeModel.CompilationElementType.Main))
 					throw CompilerException.IllegalInSubFunctionOrDefFn(statement);
 
 				foreach (var declaration in dimStatement.Declarations)
@@ -472,6 +573,95 @@ public class Compiler
 
 				break;
 			}
+			case CodeModel.Statements.DoStatement doStatement:
+			{
+				if (doStatement is CodeModel.Statements.LoopStatement)
+					throw CompilerException.LoopWithoutDo(statement);
+
+				Evaluable? preCondition = null;
+				Evaluable? postCondition = null;
+
+				if (doStatement.ConditionType != CodeModel.Statements.DoConditionType.None)
+				{
+					preCondition = TranslateExpression(doStatement.Expression, container, mapper, compilation);
+
+					if (preCondition == null)
+						throw new Exception("DoStatement with no Condition but specifying a ConditionType");
+
+					if (doStatement.ConditionType == CodeModel.Statements.DoConditionType.Until)
+					{
+						preCondition = Not.Construct(preCondition);
+						Evaluable.CollapseConstantExpression(ref preCondition);
+					}
+				}
+
+				var body = new Sequence();
+
+				iterator.Advance();
+
+				body.AppendIfNotNull(iterator.GetLabelStatement());
+
+				CodeModel.Statements.LoopStatement? loopStatement = null;
+
+				while (iterator.HaveCurrentStatement)
+				{
+					loopStatement = statement as CodeModel.Statements.LoopStatement;
+
+					if (loopStatement != null)
+					{
+						if (loopStatement.ConditionType != CodeModel.Statements.DoConditionType.None)
+						{
+							postCondition = TranslateExpression(loopStatement.Expression, container, mapper, compilation);
+
+							if (postCondition == null)
+								throw new Exception("LoopStatement with no Condition but specifying a ConditionType");
+
+							if (loopStatement.ConditionType == CodeModel.Statements.DoConditionType.Until)
+							{
+								postCondition = Not.Construct(postCondition);
+								Evaluable.CollapseConstantExpression(ref postCondition);
+							}
+						}
+
+						break;
+					}
+
+					TranslateStatement(element, ref statement, iterator, body, mapper, compilation, module, out nextStatementInfo);
+
+					body.AppendIfNotNull(iterator.GetLabelStatement());
+				}
+
+				if (loopStatement == null)
+					throw CompilerException.DoWithoutLoop(doStatement);
+				if ((preCondition != null) && (postCondition != null))
+					throw CompilerException.LoopWithoutDo(loopStatement);
+
+				LoopStatement translatedLoopStatement;
+
+				if (preCondition != null)
+					translatedLoopStatement = LoopStatement.ConstructPreConditionLoop(
+						preCondition,
+						body,
+						doStatement);
+				else if (postCondition != null)
+					translatedLoopStatement = LoopStatement.ConstructPostConditionLoop(
+						body,
+						postCondition,
+						loopStatement,
+						doStatement);
+				else
+					translatedLoopStatement = LoopStatement.ConstructUnconditionalLoop(
+						body,
+						doStatement);
+
+				translatedLoopStatement.Type = LoopType.Do;
+
+				body.OwnerExecutable = translatedLoopStatement;
+
+				container.Append(translatedLoopStatement);
+
+				break;
+			}
 			case CodeModel.Statements.ElseStatement: // these are normally subsumed by IfStatement parsing
 			case CodeModel.Statements.ElseIfStatement:
 				throw new RuntimeException(statement, "ELSE without IF");
@@ -484,6 +674,143 @@ public class Compiler
 				translatedEndStatement.ExitCodeExpression = TranslateExpression(endStatement.ExitCodeExpression, container, mapper, compilation);
 
 				container.Append(translatedEndStatement);
+
+				break;
+			}
+			case CodeModel.Statements.ExitScopeStatement exitScopeStatement:
+			{
+				// TODO: validation
+				// => EXIT DEF only inside DEF FN
+				// => EXIT SUB only if the current routine is a SUB
+				// => EXIT FUNCTION only if the current routine is a FUNCTION
+				// => EXIT DO only if we are locally inside a DO loop
+				// => EXIT FOR only if we are locally inside a FOR loop
+
+				var translatedExitScopeStatement = new ExitScopeStatement(exitScopeStatement);
+
+				translatedExitScopeStatement.ScopeExitThrowable =
+					exitScopeStatement.ScopeType switch
+					{
+						CodeModel.Statements.ScopeType.Def => new ExitRoutine(),
+						CodeModel.Statements.ScopeType.Sub => new ExitRoutine(),
+						CodeModel.Statements.ScopeType.Function => new ExitRoutine(),
+						CodeModel.Statements.ScopeType.Do => new ExitDo(),
+						CodeModel.Statements.ScopeType.For => new ExitFor(),
+
+						_ => throw new Exception("Unrecognized ScopeType")
+					};
+
+				container.Append(translatedExitScopeStatement);
+
+				break;
+			}
+			case CodeModel.Statements.ForStatement forStatement:
+			{
+				var iteratorVariableIndex = mapper.ResolveVariable(forStatement.CounterVariable);
+
+				var fromExpression = TranslateExpression(forStatement.StartExpression, container, mapper, compilation);
+				var toExpression = TranslateExpression(forStatement.EndExpression, container, mapper, compilation);
+				var stepExpression = TranslateExpression(forStatement.StepExpression, container, mapper, compilation);
+
+				if (fromExpression == null)
+					throw new Exception("ForStatement with no StartExpression");
+				if (toExpression == null)
+					throw new Exception("ForStatement with no EndExpression");
+
+				var body = new Sequence();
+
+				iterator.Advance();
+
+				body.AppendIfNotNull(iterator.GetLabelStatement());
+
+				CodeModel.Statements.NextStatement? nextStatement = null;
+
+				while (iterator.HaveCurrentStatement)
+				{
+					nextStatement = statement as CodeModel.Statements.NextStatement;
+
+					if (nextStatement != null)
+					{
+						if (nextStatement.CounterExpressions.Count > 0)
+						{
+							if (nextStatement.CounterExpressions[0] is not CodeModel.Expressions.IdentifierExpression identifierExpression)
+								throw new BadModelException("NextStatement has a CounterExpression that is not an IdentifierExpression");
+
+							if (mapper.ResolveVariable(identifierExpression.Identifier) != iteratorVariableIndex)
+								throw CompilerException.NextWithoutFor(identifierExpression.Token);
+
+							if (nextStatement.CounterExpressions.Count > 1)
+							{
+								nextStatementInfo = new NextStatementInfo(nextStatement);
+								nextStatementInfo.LoopsMatched = 1;
+							}
+						}
+
+						break;
+					}
+
+					TranslateStatement(element, ref statement, iterator, body, mapper, compilation, module, out nextStatementInfo);
+
+					body.AppendIfNotNull(iterator.GetLabelStatement());
+
+					if (nextStatementInfo != null)
+					{
+						nextStatement = nextStatementInfo.Statement;
+
+						int idx = nextStatementInfo.LoopsMatched;
+
+						if (nextStatement.CounterExpressions[idx] is not CodeModel.Expressions.IdentifierExpression identifierExpression)
+							throw new BadModelException("NextStatement has a CounterExpression that is not an IdentifierExpression");
+
+						if (mapper.ResolveVariable(identifierExpression.Identifier) != iteratorVariableIndex)
+							throw CompilerException.NextWithoutFor(identifierExpression.Token);
+
+						if (idx + 1 < nextStatement.CounterExpressions.Count)
+							nextStatementInfo.LoopsMatched++;
+						else
+							nextStatementInfo = null;
+					}
+				}
+
+				var translatedForStatement = ForStatement.Construct(
+					iteratorVariableIndex,
+					mapper.GetTypeForIdentifier(forStatement.CounterVariable),
+					fromExpression,
+					toExpression,
+					stepExpression,
+					body,
+					forStatement,
+					nextStatement);
+
+				body.OwnerExecutable = translatedForStatement;
+
+				container.Append(translatedForStatement);
+
+				break;
+			}
+			case CodeModel.Statements.GoToStatement goToStatement:
+			{
+				string target =
+					goToStatement.TargetLabel ??
+					goToStatement.TargetLineNumber?.ToString() ??
+					throw new Exception("CodeModel GoToStatement has no target");
+
+				var translatedGoToStatement = new GoToStatement(target, goToStatement);
+
+				container.Append(translatedGoToStatement);
+
+				break;
+			}
+			case CodeModel.Statements.GoSubStatement goSubStatement:
+			{
+				string target =
+					goSubStatement.TargetLabel ??
+					goSubStatement.TargetLineNumber?.ToString() ??
+					throw new Exception("CodeModel GoToStatement has no target");
+
+				var translatedGoSubStatement = new GoSubStatement(target, goSubStatement);
+
+				container.Append(translatedGoSubStatement);
 
 				break;
 			}
@@ -570,7 +897,7 @@ public class Compiler
 									int idx = 0;
 
 									while (idx < elseIfStatement.ThenBody.Count)
-										TranslateStatement(elementType, elseIfStatement.ThenBody, ref idx, subsequence, mapper, compilation);
+										TranslateStatement(element, elseIfStatement.ThenBody, ref idx, subsequence, mapper, compilation, module);
 								}
 
 								if (!iterator.Advance())
@@ -583,7 +910,7 @@ public class Compiler
 
 							default:
 							{
-								TranslateStatement(elementType, ref statement, iterator, subsequence, mapper, compilation, out nextStatementInfo);
+								TranslateStatement(element, ref statement, iterator, subsequence, mapper, compilation, module, out nextStatementInfo);
 
 								if (nextStatementInfo != null)
 								{
@@ -608,7 +935,7 @@ public class Compiler
 					int idx = 0;
 
 					while (idx < ifStatement.ThenBody.Count)
-						TranslateStatement(elementType, ifStatement.ThenBody, ref idx, thenBody, mapper, compilation);
+						TranslateStatement(element, ifStatement.ThenBody, ref idx, thenBody, mapper, compilation, module);
 
 					translatedIfStatement.ThenBody = thenBody;
 					thenBody.OwnerExecutable = translatedIfStatement;
@@ -620,7 +947,7 @@ public class Compiler
 						idx = 0;
 
 						while (idx < ifStatement.ThenBody.Count)
-							TranslateStatement(elementType, ifStatement.ElseBody, ref idx, elseBody, mapper, compilation);
+							TranslateStatement(element, ifStatement.ElseBody, ref idx, elseBody, mapper, compilation, module);
 
 						translatedIfStatement.ElseBody = elseBody;
 						elseBody.OwnerExecutable = translatedIfStatement;
@@ -628,116 +955,6 @@ public class Compiler
 				}
 
 				container.Append(translatedIfStatement);
-
-				break;
-			}
-			case CodeModel.Statements.ForStatement forStatement:
-			{
-				var iteratorVariableIndex = mapper.ResolveVariable(forStatement.CounterVariable);
-
-				var fromExpression = TranslateExpression(forStatement.StartExpression, container, mapper, compilation);
-				var toExpression = TranslateExpression(forStatement.EndExpression, container, mapper, compilation);
-				var stepExpression = TranslateExpression(forStatement.StepExpression, container, mapper, compilation);
-
-				if (fromExpression == null)
-					throw new Exception("ForStatement with no StartExpression");
-				if (toExpression == null)
-					throw new Exception("ForStatement with no EndExpression");
-
-				var body = new Sequence();
-
-				iterator.Advance();
-
-				body.AppendIfNotNull(iterator.GetLabelStatement());
-
-				CodeModel.Statements.NextStatement? nextStatement = null;
-
-				while (iterator.HaveCurrentStatement)
-				{
-					nextStatement = statement as CodeModel.Statements.NextStatement;
-
-					if (nextStatement != null)
-					{
-						if (nextStatement.CounterExpressions.Count > 0)
-						{
-							if (nextStatement.CounterExpressions[0] is not CodeModel.Expressions.IdentifierExpression identifierExpression)
-								throw new BadModelException("NextStatement has a CounterExpression that is not an IdentifierExpression");
-
-							if (mapper.ResolveVariable(identifierExpression.Identifier) != iteratorVariableIndex)
-								throw CompilerException.NextWithoutFor(identifierExpression.Token);
-
-							if (nextStatement.CounterExpressions.Count > 1)
-							{
-								nextStatementInfo = new NextStatementInfo(nextStatement);
-								nextStatementInfo.LoopsMatched = 1;
-							}
-						}
-
-						break;
-					}
-
-					TranslateStatement(elementType, ref statement, iterator, body, mapper, compilation, out nextStatementInfo);
-
-					body.AppendIfNotNull(iterator.GetLabelStatement());
-
-					if (nextStatementInfo != null)
-					{
-						nextStatement = nextStatementInfo.Statement;
-
-						int idx = nextStatementInfo.LoopsMatched;
-
-						if (nextStatement.CounterExpressions[idx] is not CodeModel.Expressions.IdentifierExpression identifierExpression)
-							throw new BadModelException("NextStatement has a CounterExpression that is not an IdentifierExpression");
-
-						if (mapper.ResolveVariable(identifierExpression.Identifier) != iteratorVariableIndex)
-							throw CompilerException.NextWithoutFor(identifierExpression.Token);
-
-						if (idx + 1 < nextStatement.CounterExpressions.Count)
-							nextStatementInfo.LoopsMatched++;
-						else
-							nextStatementInfo = null;
-					}
-				}
-
-				var translatedForStatement = ForStatement.Construct(
-					iteratorVariableIndex,
-					mapper.GetTypeForIdentifier(forStatement.CounterVariable),
-					fromExpression,
-					toExpression,
-					stepExpression,
-					body,
-					forStatement,
-					nextStatement);
-
-				body.OwnerExecutable = translatedForStatement;
-
-				container.Append(translatedForStatement);
-
-				break;
-			}
-			case CodeModel.Statements.GoToStatement goToStatement:
-			{
-				string target =
-					goToStatement.TargetLabel ??
-					goToStatement.TargetLineNumber?.ToString() ??
-					throw new Exception("CodeModel GoToStatement has no target");
-
-				var translatedGoToStatement = new GoToStatement(target, goToStatement);
-
-				container.Append(translatedGoToStatement);
-
-				break;
-			}
-			case CodeModel.Statements.GoSubStatement goSubStatement:
-			{
-				string target =
-					goSubStatement.TargetLabel ??
-					goSubStatement.TargetLineNumber?.ToString() ??
-					throw new Exception("CodeModel GoToStatement has no target");
-
-				var translatedGoSubStatement = new GoSubStatement(target, goSubStatement);
-
-				container.Append(translatedGoSubStatement);
 
 				break;
 			}
@@ -963,7 +1180,7 @@ public class Compiler
 						if (block == null)
 							throw CompilerException.StatementsAndLabelsIllegalBetweenSelectCaseAndCase(statement);
 
-						TranslateStatement(elementType, ref statement, iterator, block, mapper, compilation, out nextStatementInfo);
+						TranslateStatement(element, ref statement, iterator, block, mapper, compilation, module, out nextStatementInfo);
 
 						if (nextStatementInfo != null)
 						{
@@ -991,7 +1208,7 @@ public class Compiler
 			case CodeModel.Statements.TypeStatement typeStatement:
 			{
 				// TODO: track whether we are in a DEF FN
-				if (elementType != CodeModel.CompilationElementType.Main)
+				if (element.Type != CodeModel.CompilationElementType.Main)
 					throw CompilerException.IllegalInSubFunctionOrDefFn(statement);
 
 				// Types are gathered in a separate pass, since they need to be known before
@@ -1013,6 +1230,53 @@ public class Compiler
 
 				break;
 			}
+			case CodeModel.Statements.WEndStatement:
+				throw CompilerException.WEndWithoutWhile(statement);
+			case CodeModel.Statements.WhileStatement whileStatement:
+			{
+				if (whileStatement.Condition == null)
+					throw new Exception("WhileStatement with no Condition");
+
+				Evaluable condition =
+					TranslateExpression(whileStatement.Condition, container, mapper, compilation);
+
+				var body = new Sequence();
+
+				iterator.Advance();
+
+				body.AppendIfNotNull(iterator.GetLabelStatement());
+
+				bool haveWEndStatement = false;
+
+				while (iterator.HaveCurrentStatement)
+				{
+					if (statement is CodeModel.Statements.WEndStatement)
+					{
+						haveWEndStatement = true;
+						break;
+					}
+
+					TranslateStatement(element, ref statement, iterator, body, mapper, compilation, module, out nextStatementInfo);
+
+					body.AppendIfNotNull(iterator.GetLabelStatement());
+				}
+
+				if (!haveWEndStatement)
+					throw CompilerException.WhileWithoutWEnd(whileStatement);
+
+				LoopStatement translatedLoopStatement = LoopStatement.ConstructPreConditionLoop(
+					condition,
+					body,
+					whileStatement);
+
+				translatedLoopStatement.Type = LoopType.While;
+
+				body.OwnerExecutable = translatedLoopStatement;
+
+				container.Append(translatedLoopStatement);
+
+				break;
+			}
 
 			default: throw new NotImplementedException("Statement not implemented: " + statement.Type);
 		}
@@ -1020,7 +1284,8 @@ public class Compiler
 		iterator.Advance();
 	}
 
-	private Evaluable? TranslateExpression(CodeModel.Expressions.Expression? expression, Sequence container, Mapper mapper, Compilation compilation, bool createImplicitArray = false)
+	[return: NotNullIfNotNull(nameof(expression))]
+	private Evaluable? TranslateExpression(CodeModel.Expressions.Expression? expression, Sequence? container, Mapper mapper, Compilation compilation, bool createImplicitArray = false)
 	{
 		if (expression == null)
 			return null;
@@ -1032,7 +1297,7 @@ public class Compiler
 		return translatedExpression;
 	}
 
-	private Evaluable TranslateExpressionUncollapsed(CodeModel.Expressions.Expression expression, Sequence container, Mapper mapper, Compilation compilation, bool createImplicitArray = false)
+	private Evaluable TranslateExpressionUncollapsed(CodeModel.Expressions.Expression expression, Sequence? container, Mapper mapper, Compilation compilation, bool constantValue = false, bool createImplicitArray = false)
 	{
 		switch (expression)
 		{
@@ -1040,7 +1305,7 @@ public class Compiler
 				if (parenthesized.Child is null)
 					throw new Exception("ParenthesizedExpression with no Child");
 
-				return TranslateExpressionUncollapsed(parenthesized.Child, container, mapper, compilation);
+				return TranslateExpressionUncollapsed(parenthesized.Child, container, mapper, compilation, constantValue);
 
 			case CodeModel.Expressions.LiteralExpression literal:
 				return LiteralValue.ConstructFromCodeModel(literal);
@@ -1053,6 +1318,9 @@ public class Compiler
 				if (mapper.TryResolveConstant(qualifiedIdentifier, out var literal))
 					return literal;
 
+				if (constantValue)
+					throw CompilerException.InvalidConstant(identifier.Token);
+
 				if (compilation.Functions.TryGetValue(unqualifiedIdentifier, out var function))
 				{
 					var returnType = function.ReturnType ?? throw new Exception("Internal error: function with no return type");
@@ -1064,6 +1332,12 @@ public class Compiler
 
 					if (function.ParameterTypes.Count > 0)
 						throw CompilerException.ArgumentCountMismatch(expression.Token);
+
+					var call = new CallExpression();
+
+					call.Target = function;
+
+					return call;
 				}
 
 				int variableIndex = mapper.ResolveVariable(identifier.Identifier);
@@ -1087,6 +1361,9 @@ public class Compiler
 				// -> If the identifier is undefined, define it as an array with a
 				//    matching number of subscripts. Each subscript is 0 TO 10.
 				// -> Translate to an array access.
+
+				if (constantValue)
+					throw CompilerException.InvalidConstant(callOrIndexExpression.Token);
 
 				string? identifier = (callOrIndexExpression.Subject as CodeModel.Expressions.IdentifierExpression)?.Identifier;
 
@@ -1135,15 +1412,17 @@ public class Compiler
 
 				bool isForwardReference = compilation.UnresolvedReferences.TryGetDeclaration(identifier, out var forwardReference);
 
-				if (compilation.IsRegistered(identifier) || isForwardReference)
+				string unqualifiedIdentifier = mapper.UnqualifyIdentifier(identifier);
+
+				if (compilation.IsRegistered(unqualifiedIdentifier) || isForwardReference)
 				{
-					if (compilation.Subs.ContainsKey(identifier))
+					if (compilation.Subs.ContainsKey(unqualifiedIdentifier))
 						throw new CompilerException(callOrIndexExpression.Subject.Token, "Cannot invoke a SUB as a function");
 
-					if (!compilation.Functions.TryGetValue(identifier, out var function))
+					if (!compilation.Functions.TryGetValue(unqualifiedIdentifier, out var function))
 					{
 						if (!isForwardReference)
-							throw new Exception("Internal error: identifier " + identifier + " is registered but is neither a SUB nor a FUNCTION?");
+							throw new Exception("Internal error: identifier " + unqualifiedIdentifier + " is registered but is neither a SUB nor a FUNCTION?");
 
 						if (forwardReference!.RoutineType != RoutineType.Function)
 							throw CompilerException.DuplicateDefinition(expression.Token);
@@ -1160,7 +1439,7 @@ public class Compiler
 
 					if (function == null)
 					{
-						translatedCallExpression.UnresolvedTargetName = identifier;
+						translatedCallExpression.UnresolvedTargetName = unqualifiedIdentifier;
 						forwardReference!.UnresolvedCalls.Add(translatedCallExpression);
 					}
 
@@ -1182,6 +1461,9 @@ public class Compiler
 
 				if (implicitlyCreated)
 				{
+					if (container == null)
+						throw new Exception("TranslateExpression needs to create an implicit array but no container was specified");
+
 					var implicitDimStatement = new DimensionArrayStatement(null);
 
 					implicitDimStatement.CanBreak = false;
@@ -1217,6 +1499,9 @@ public class Compiler
 
 			case CodeModel.Expressions.KeywordFunctionExpression keywordFunction:
 			{
+				if (constantValue)
+					throw CompilerException.InvalidConstant(keywordFunction.Token);
+
 				Function function;
 
 				switch (keywordFunction.Function)
@@ -1248,7 +1533,7 @@ public class Compiler
 
 			case CodeModel.Expressions.UnaryExpression unaryExpression:
 			{
-				var right = TranslateExpression(unaryExpression.Child, container, mapper, compilation);
+				var right = TranslateExpression(unaryExpression.Child, container, mapper, compilation, constantValue);
 
 				if (right == null)
 					throw new Exception("Internal error: Unary expression operand translated to null");
@@ -1273,6 +1558,22 @@ public class Compiler
 						if (mapper.TryResolveConstant(dottedIdentifier, out var literal))
 							return literal;
 
+						if (constantValue)
+						{
+							var blame = binaryExpression.Left;
+
+							while (blame is CodeModel.Expressions.BinaryExpression subBinary)
+								blame = subBinary.Left;
+
+							var blameToken = new Token(
+								blame.Token?.Line ?? 0,
+								blame.Token?.Column ?? 0,
+								TokenType.Identifier,
+								dottedIdentifier);
+
+							throw CompilerException.InvalidConstant(blameToken);
+						}
+
 						int variableIndex = mapper.ResolveVariable(dottedIdentifier);
 						var variableType = mapper.GetVariableType(variableIndex);
 
@@ -1280,7 +1581,10 @@ public class Compiler
 					}
 					else
 					{
-						var subjectExpression = TranslateExpression(binaryExpression.Left, container, mapper, compilation);
+						var subjectExpression = TranslateExpression(binaryExpression.Left, container, mapper, compilation, constantValue);
+
+						if (constantValue)
+							throw CompilerException.InvalidConstant(binaryExpression?.Token);
 
 						if (binaryExpression.Right is not CodeModel.Expressions.IdentifierExpression identifierExpression)
 							throw new Exception("Member access expressions require the right-hand operand to be an identifier");
@@ -1291,8 +1595,8 @@ public class Compiler
 					}
 				}
 
-				var left = TranslateExpression(binaryExpression.Left, container, mapper, compilation);
-				var right = TranslateExpression(binaryExpression.Right, container, mapper, compilation);
+				var left = TranslateExpression(binaryExpression.Left, container, mapper, compilation, constantValue);
+				var right = TranslateExpression(binaryExpression.Right, container, mapper, compilation, constantValue);
 
 				if ((left == null) || (right == null))
 					throw new Exception("Internal error: Binary expression operand translated to null");

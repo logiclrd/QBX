@@ -335,19 +335,23 @@ public class LongForStatement(CodeModel.Statements.ForStatement? sourceForStatem
 
 		var iteratorVariable = (LongVariable)stackFrame.Variables[IteratorVariableIndex];
 
-		while (!nextStatement.FinishLoop)
+		try
 		{
-			System.Threading.Thread.Yield();
+			while (!nextStatement.FinishLoop)
+			{
+				System.Threading.Thread.Yield();
 
-			iteratorVariable.Value = nextStatement.NextValue;
+				iteratorVariable.Value = nextStatement.NextValue;
 
-			for (int i = statementIndex; i < Body!.Count; i++)
-				context.Dispatch(Body[i], stackFrame);
+				for (int i = statementIndex; i < Body!.Count; i++)
+					context.Dispatch(Body[i], stackFrame);
 
-			statementIndex = 0;
+				statementIndex = 0;
 
-			context.Dispatch(nextStatement, stackFrame);
+				context.Dispatch(nextStatement, stackFrame);
+			}
 		}
+		catch (ExitFor) { }
 	}
 
 	class NextStatement(int from, int to, int step, CodeModel.Statements.NextStatement? sourceNextStatement)
@@ -426,19 +430,23 @@ public class SingleForStatement(CodeModel.Statements.ForStatement? sourceForStat
 
 		var iteratorVariable = (SingleVariable)stackFrame.Variables[IteratorVariableIndex];
 
-		while (!nextStatement.FinishLoop)
+		try
 		{
-			System.Threading.Thread.Yield();
+			while (!nextStatement.FinishLoop)
+			{
+				System.Threading.Thread.Yield();
 
-			iteratorVariable.Value = nextStatement.NextValue;
+				iteratorVariable.Value = nextStatement.NextValue;
 
-			for (int i = statementIndex; i < Body!.Count; i++)
-				context.Dispatch(Body[i], stackFrame);
+				for (int i = statementIndex; i < Body!.Count; i++)
+					context.Dispatch(Body[i], stackFrame);
 
-			statementIndex = 0;
+				statementIndex = 0;
 
-			context.Dispatch(nextStatement, stackFrame);
+				context.Dispatch(nextStatement, stackFrame);
+			}
 		}
+		catch (ExitFor) { }
 	}
 
 	class NextStatement(float from, float to, float step, CodeModel.Statements.NextStatement? sourceNextStatement)
@@ -517,19 +525,23 @@ public class DoubleForStatement(CodeModel.Statements.ForStatement? sourceForStat
 
 		var iteratorVariable = (DoubleVariable)stackFrame.Variables[IteratorVariableIndex];
 
-		while (!nextStatement.FinishLoop)
+		try
 		{
-			System.Threading.Thread.Yield();
+			while (!nextStatement.FinishLoop)
+			{
+				System.Threading.Thread.Yield();
 
-			iteratorVariable.Value = nextStatement.NextValue;
+				iteratorVariable.Value = nextStatement.NextValue;
 
-			for (int i = statementIndex; i < Body!.Count; i++)
-				context.Dispatch(Body[i], stackFrame);
+				for (int i = statementIndex; i < Body!.Count; i++)
+					context.Dispatch(Body[i], stackFrame);
 
-			statementIndex = 0;
+				statementIndex = 0;
 
-			context.Dispatch(nextStatement, stackFrame);
+				context.Dispatch(nextStatement, stackFrame);
+			}
 		}
+		catch (ExitFor) { }
 	}
 
 	class NextStatement(double from, double to, double step, CodeModel.Statements.NextStatement? sourceNextStatement)
@@ -608,19 +620,23 @@ public class CurrencyForStatement(CodeModel.Statements.ForStatement? sourceForSt
 
 		var iteratorVariable = (CurrencyVariable)stackFrame.Variables[IteratorVariableIndex];
 
-		while (!nextStatement.FinishLoop)
+		try
 		{
-			System.Threading.Thread.Yield();
+			while (!nextStatement.FinishLoop)
+			{
+				System.Threading.Thread.Yield();
 
-			iteratorVariable.Value = nextStatement.NextValue;
+				iteratorVariable.Value = nextStatement.NextValue;
 
-			for (int i = statementIndex; i < Body!.Count; i++)
-				context.Dispatch(Body[i], stackFrame);
+				for (int i = statementIndex; i < Body!.Count; i++)
+					context.Dispatch(Body[i], stackFrame);
 
-			statementIndex = 0;
+				statementIndex = 0;
 
-			context.Dispatch(nextStatement, stackFrame);
+				context.Dispatch(nextStatement, stackFrame);
+			}
 		}
+		catch (ExitFor) { }
 	}
 
 	class NextStatement(decimal from, decimal to, decimal step, CodeModel.Statements.NextStatement? sourceNextStatement)

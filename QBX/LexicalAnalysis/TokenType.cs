@@ -100,8 +100,10 @@ public enum TokenType
 	[KeywordToken] ERL,
 	[KeywordFunction(parameterCount: 0)]
 	[KeywordToken] ERR,
+	[KeywordToken] ERROR,
 	[KeywordFunction]
 	[KeywordToken] EQV,
+	[KeywordToken] EXIT,
 	[KeywordFunction]
 	[KeywordToken] EXP,
 	[KeywordToken] FIELD,
@@ -151,6 +153,7 @@ public enum TokenType
 	[KeywordToken] LINE,
 	[KeywordFunction]
 	[KeywordToken] LOC,
+	[KeywordToken] LOCAL,
 	[KeywordToken] LOCATE,
 	[KeywordToken] LOCK,
 	[KeywordFunction]
@@ -191,6 +194,7 @@ public enum TokenType
 	[KeywordToken] OPTION,
 	[KeywordToken] OR,
 	[KeywordToken] OUTPUT,
+	[KeywordToken] PAINT,
 	[KeywordToken] PALETTE,
 	[KeywordToken] PCOPY,
 	[KeywordFunction]
@@ -217,6 +221,7 @@ public enum TokenType
 	[KeywordToken] REDIM,
 	[KeywordToken] RESET,
 	[KeywordToken] RESTORE,
+	[KeywordToken] RESUME,
 	[KeywordToken] RETURN,
 	[KeywordFunction(parameterCount: 2)]
 	[KeywordToken("RIGHT$")] RIGHT,

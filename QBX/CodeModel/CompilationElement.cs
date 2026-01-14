@@ -38,11 +38,15 @@ public class CompilationElement(CompilationUnit owner) : IRenderableCode
 	public void AddLine(CodeLine line)
 	{
 		Lines.Add(line);
+		line.CompilationElement = this;
 	}
 
 	public void AddLines(IEnumerable<CodeLine> lines)
 	{
 		Lines.AddRange(lines);
+
+		foreach (var line in lines)
+			line.CompilationElement = this;
 	}
 
 	public static DataType[] MakeDefaultDefTypeMap()
@@ -114,7 +118,7 @@ public class CompilationElement(CompilationUnit owner) : IRenderableCode
 						return;
 
 					case DefTypeStatement:
-						line.Statements.RemoveAt(statementIndex);
+						line.RemoveStatementAt(statementIndex);
 						statementIndex--;
 						break;
 				}
@@ -142,7 +146,7 @@ public class CompilationElement(CompilationUnit owner) : IRenderableCode
 		{
 			var line = new CodeLine();
 
-			line.Statements.Add(defType);
+			line.AppendStatement(defType);
 
 			Lines.Insert(0, line);
 		}

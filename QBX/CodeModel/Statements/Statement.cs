@@ -6,6 +6,8 @@ namespace QBX.CodeModel.Statements;
 
 public abstract class Statement : IRenderableCode
 {
+	public CodeLine? CodeLine { get; set; }
+
 	public abstract StatementType Type { get; }
 	public string Indentation { get; set; } = "";
 

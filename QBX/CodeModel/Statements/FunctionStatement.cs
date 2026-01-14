@@ -1,6 +1,6 @@
 ﻿namespace QBX.CodeModel.Statements;
 
-public class FunctionStatement : SubroutineOpeningStatement
+public class FunctionStatement : ProperSubroutineOpeningStatement
 {
 	public override StatementType Type => StatementType.Function;
 

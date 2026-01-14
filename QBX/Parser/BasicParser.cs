@@ -128,7 +128,7 @@ public class BasicParser
 
 				if ((line.EndOfLineComment == null) && !lineConsumed)
 				{
-					line.Statements.Add(
+					line.AppendStatement(
 						ParseStatementWithIndentation(buffer, isNested: false, token, ignoreErrors));
 				}
 
@@ -208,7 +208,7 @@ public class BasicParser
 							lineConsumed = true;
 						}
 
-						line.Statements.Add(
+						line.AppendStatement(
 							ParseStatementWithIndentation(buffer, ConsumeTokensToEndOfLine, isNested: false, precedingWhitespaceToken ?? token, ignoreErrors));
 						buffer.Clear();
 					}
@@ -221,7 +221,7 @@ public class BasicParser
 				{
 					if (buffer.Any() || line.Statements.Any())
 					{
-						line.Statements.Add(ParseStatementWithIndentation(buffer, precedingWhitespaceToken ?? token, ignoreErrors));
+						line.AppendStatement(ParseStatementWithIndentation(buffer, precedingWhitespaceToken ?? token, ignoreErrors));
 						buffer.Clear();
 					}
 
@@ -268,7 +268,7 @@ public class BasicParser
 				TokenType.Empty,
 				"");
 
-			line.Statements.Add(ParseStatementWithIndentation(buffer, isNested: false, endToken, ignoreErrors));
+			line.AppendStatement(ParseStatementWithIndentation(buffer, isNested: false, endToken, ignoreErrors));
 		}
 
 		if (!line.IsEmpty)
@@ -601,17 +601,34 @@ public class BasicParser
 
 				for (int i = 1; i < tokens.Count; i++)
 				{
-					if ((tokens[i].Type == TokenType.Number) || (tokens[i].Type == TokenType.String))
+					var dataToken = tokens[i];
+
+					if ((i + 1 < tokens.Count)
+					 && (tokens[i].Type == TokenType.Minus)
+					 && (tokens[i + 1].Type == TokenType.Number))
 					{
-						dataItems.Add(tokens[i]);
+						// Merge minus signs into numbers for DATA sequences.
+
+						dataToken = new Token(
+							tokens[i].Line,
+							tokens[i].Column,
+							TokenType.Number,
+							tokens[i].Value + tokens[i + 1].Value);
+
+						i++;
+					}
+
+					if ((dataToken.Type == TokenType.Number) || (dataToken.Type == TokenType.String))
+					{
+						dataItems.Add(dataToken);
 
 						if ((i + 1 < tokens.Count) && (tokens[i + 1].Type == TokenType.Comma))
 							i++;
 					}
-					else if (tokens[i].Type == TokenType.Comma)
-						dataItems.Add(new Token(tokens[i].Line, tokens[i].Column, TokenType.Empty, ""));
+					else if (dataToken.Type == TokenType.Comma)
+						dataItems.Add(new Token(dataToken.Line, dataToken.Column, TokenType.Empty, ""));
 					else
-						throw new SyntaxErrorException(tokens[i], "Expected: string or numeric literal");
+						throw new SyntaxErrorException(dataToken, "Expected: string or numeric literal");
 				}
 
 				return new DataStatement(dataItems);
@@ -703,11 +720,12 @@ public class BasicParser
 					{
 						var parameterListTokens = tokenHandler.ExpectParenthesizedTokens();
 
-						defFn.Parameters = ParseParameterList(parameterListTokens, allowByVal: false);
+						defFn.Parameters = ParseParameterList(parameterListTokens, allowByVal: false, allowArray: false);
 					}
 
 					if (tokenHandler.HasMoreTokens && (tokenHandler.NextToken.Type == TokenType.Equals))
 					{
+						tokenHandler.Advance();
 						defFn.ExpressionBody = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken);
 						tokenHandler.AdvanceToEnd();
 					}
@@ -917,6 +935,41 @@ public class BasicParser
 			{
 				tokenHandler.ExpectEndOfTokens();
 				return new EndIfStatement();
+			}
+
+			case TokenType.EXIT:
+			{
+				// One of:
+				//   EXIT DEF
+				//   EXIT SUB
+				//   EXIT FUNCTION
+				//   EXIT DO
+				//   EXIT FOR
+
+				var scopeType = tokenHandler.ExpectOneOf(
+					TokenType.DEF,
+					TokenType.SUB,
+					TokenType.FUNCTION,
+					TokenType.DO,
+					TokenType.FOR);
+
+				tokenHandler.ExpectEndOfTokens();
+
+				var exitScope = new ExitScopeStatement();
+
+				exitScope.ScopeType =
+					scopeType.Type switch
+					{
+						TokenType.DEF => ScopeType.Def,
+						TokenType.SUB => ScopeType.Sub,
+						TokenType.FUNCTION => ScopeType.Function,
+						TokenType.DO => ScopeType.Do,
+						TokenType.FOR => ScopeType.For,
+
+						_ => throw new Exception("Internal error")
+					};
+
+				return exitScope;
 			}
 
 			case TokenType.FIELD:
@@ -1667,32 +1720,92 @@ public class BasicParser
 
 			case TokenType.ON:
 			{
-				var on = new OnStatement();
-
-				switch (tokenHandler.NextToken.Type)
+				if (tokenHandler.NextTokenIs(TokenType.ERROR) || tokenHandler.NextTokenIs(TokenType.LOCAL))
 				{
-					case TokenType.COM: on.EventType = EventType.Com; break;
-					case TokenType.KEY: on.EventType = EventType.Key; break;
-					case TokenType.PEN: on.EventType = EventType.Pen; break;
-					case TokenType.PLAY: on.EventType = EventType.Play; break;
-					case TokenType.SIGNAL: on.EventType = EventType.OS2Signal; break;
-					case TokenType.STRIG: on.EventType = EventType.JoystickTrigger; break;
-					case TokenType.TIMER: on.EventType = EventType.Timer; break;
-					case TokenType.UEVENT: on.EventType = EventType.UserDefinedEvent; break;
+					var onError = new OnErrorStatement();
 
-					default: throw new SyntaxErrorException(tokenHandler.NextToken, "Syntax error");
+					if (tokenHandler.NextTokenIs(TokenType.LOCAL))
+					{
+						onError.LocalErrorsOnly = true;
+						tokenHandler.Advance();
+					}
+
+					tokenHandler.Expect(TokenType.ERROR);
+
+					if (tokenHandler.NextTokenIs(TokenType.GOTO))
+					{
+						onError.Action = OnErrorAction.GoToHandler;
+
+						tokenHandler.Expect(TokenType.GOTO);
+						tokenHandler.ExpectMoreTokens();
+
+						switch (tokenHandler.NextToken.Type)
+						{
+							case TokenType.Number:
+								if (int.TryParse(tokenHandler.NextToken.Value, out var parsedLineNumber)
+								 && (parsedLineNumber == 0))
+									onError.Action = OnErrorAction.DoNotHandle;
+								else
+									onError.TargetLineNumber = tokenHandler.NextToken.Value;
+
+								break;
+
+							case TokenType.Identifier:
+								string labelName = tokenHandler.NextToken.Value ?? throw new Exception("Internal error: Identifier token with no value");
+
+								if (labelName.Length == 0)
+									throw new Exception("Internal error: Identifier token with empty string");
+
+								if (char.IsSymbol(labelName.Last()))
+									throw new SyntaxErrorException(tokenHandler.NextToken, "Expected: label");
+
+								onError.TargetLabel = labelName;
+
+								break;
+						}
+					}
+					else if (tokenHandler.NextTokenIs(TokenType.RESUME))
+					{
+						tokenHandler.Expect(TokenType.RESUME);
+						tokenHandler.Expect(TokenType.NEXT);
+						tokenHandler.ExpectEndOfTokens();
+
+						onError.Action = OnErrorAction.ResumeNext;
+					}
+					else
+						throw new SyntaxErrorException(tokenHandler.NextToken ?? tokenHandler.EndToken, "Expected: GOTO or RESUME");
+
+					return onError;
 				}
-
-				tokenHandler.Advance();
-
-				var action = ParseStatement(tokenHandler.RemainingTokens, ignoreErrors);
-
-				if (action is GoSubStatement goSubAction)
-					on.Action = goSubAction;
 				else
-					throw new SyntaxErrorException(tokens[2], "Expected: GOSUB");
+				{
+					var onEvent = new OnEventStatement();
 
-				return on;
+					switch (tokenHandler.NextToken.Type)
+					{
+						case TokenType.COM: onEvent.EventType = EventType.Com; break;
+						case TokenType.KEY: onEvent.EventType = EventType.Key; break;
+						case TokenType.PEN: onEvent.EventType = EventType.Pen; break;
+						case TokenType.PLAY: onEvent.EventType = EventType.Play; break;
+						case TokenType.SIGNAL: onEvent.EventType = EventType.OS2Signal; break;
+						case TokenType.STRIG: onEvent.EventType = EventType.JoystickTrigger; break;
+						case TokenType.TIMER: onEvent.EventType = EventType.Timer; break;
+						case TokenType.UEVENT: onEvent.EventType = EventType.UserDefinedEvent; break;
+
+						default: throw new SyntaxErrorException(tokenHandler.NextToken, "Syntax error");
+					}
+
+					tokenHandler.Advance();
+
+					var action = ParseStatement(tokenHandler.RemainingTokens, ignoreErrors);
+
+					if (action is GoSubStatement goSubAction)
+						onEvent.Action = goSubAction;
+					else
+						throw new SyntaxErrorException(tokens[2], "Expected: GOSUB");
+
+					return onEvent;
+				}
 			}
 
 			case TokenType.OPEN:
@@ -1965,6 +2078,90 @@ public class BasicParser
 
 					return open;
 				}
+			}
+
+			case TokenType.PAINT:
+			{
+				var paint = new PaintStatement();
+
+				if (tokenHandler.NextTokenIs(TokenType.STEP))
+				{
+					paint.Step = true;
+					tokenHandler.Advance();
+				}
+
+				var coordinateTokens = tokenHandler.ExpectParenthesizedTokens();
+
+				var coordinates = SplitCommaDelimitedList(coordinateTokens).ToList();
+
+				if (coordinates.Count == 1)
+					throw new SyntaxErrorException(tokenHandler.PreviousToken, "Expected: expression");
+				if (coordinates.Count > 2)
+				{
+					var blame = tokens[coordinates[2].Unwrap().Offset - 1];
+
+					throw new SyntaxErrorException(blame, "Expected: )");
+				}
+
+				var midToken = tokens[coordinates[1].Unwrap().Offset - 1];
+
+				paint.XExpression = ParseExpression(coordinates[0], midToken);
+				paint.YExpression = ParseExpression(coordinates[1], tokenHandler.PreviousToken);
+
+				if (tokenHandler.HasMoreTokens)
+				{
+					tokenHandler.Expect(TokenType.Comma);
+
+					if (!tokenHandler.HasMoreTokens)
+						throw new SyntaxErrorException(tokenHandler.EndToken, "Expected: expression");
+
+					var arguments = SplitCommaDelimitedList(tokenHandler.RemainingTokens).ToList();
+
+					if (!arguments.Last().Any())
+						throw new SyntaxErrorException(tokenHandler.EndToken, "Expected: expression");
+
+					if (arguments[0].Any())
+					{
+						midToken = arguments.Count > 1
+							? tokens[arguments[1].Unwrap().Offset - 1]
+							: tokenHandler.EndToken;
+
+						paint.PaintExpression = ParseExpression(arguments[0], midToken);
+					}
+
+					if (arguments.Count > 1)
+					{
+						if (arguments[1].Any())
+						{
+							midToken = arguments.Count > 2
+								? tokens[arguments[2].Unwrap().Offset - 1]
+								: tokenHandler.EndToken;
+
+							paint.BorderColourExpression = ParseExpression(arguments[1], midToken);
+						}
+
+						if (arguments.Count > 2)
+						{
+							if (arguments[2].Any())
+							{
+								midToken = arguments.Count > 3
+									? tokens[arguments[3].Unwrap().Offset - 1]
+									: tokenHandler.EndToken;
+
+								paint.BackgroundExpression = ParseExpression(arguments[2], midToken);
+							}
+
+							if (arguments.Count > 3)
+							{
+								var blame = tokens[arguments[3].Unwrap().Offset - 1];
+
+								throw new SyntaxErrorException(blame, "Expected: end of statement");
+							}
+						}
+					}
+				}
+
+				return paint;
 			}
 
 			case TokenType.PALETTE:
@@ -2310,6 +2507,44 @@ public class BasicParser
 				tokenHandler.ExpectEndOfTokens();
 
 				return new ResetStatement();
+			}
+
+			case TokenType.RESUME:
+			{
+				var resume = new ResumeStatement();
+
+				if (tokenHandler.HasMoreTokens)
+				{
+					switch (tokenHandler.NextToken.Type)
+					{
+						case TokenType.NEXT:
+							resume.NextStatement = true;
+							break;
+
+						case TokenType.Number:
+							resume.TargetLineNumber = tokenHandler.NextToken.Value;
+							break;
+
+						case TokenType.Identifier:
+							string labelName = tokenHandler.NextToken.Value ?? throw new Exception("Internal error: Identifier token with no value");
+
+							if (labelName.Length == 0)
+								throw new Exception("Internal error: Identifier token with empty string");
+
+							if (char.IsSymbol(labelName.Last()))
+								throw new SyntaxErrorException(tokenHandler.NextToken, "Expected: label");
+
+							resume.TargetLabel = labelName;
+
+							break;
+					}
+
+					tokenHandler.Advance();
+
+					tokenHandler.ExpectEndOfTokens();
+				}
+
+				return resume;
 			}
 
 			case TokenType.SCREEN:
@@ -3034,20 +3269,20 @@ public class BasicParser
 		return subscript;
 	}
 
-	ParameterList ParseParameterList(ListRange<Token> tokens, bool allowByVal = true)
+	ParameterList ParseParameterList(ListRange<Token> tokens, bool allowByVal = true, bool allowArray = true)
 	{
 		var list = new ParameterList();
 
 		if (tokens.Any())
 		{
 			foreach (var range in SplitCommaDelimitedList(tokens))
-				list.Parameters.Add(ParseParameterDefinition(range, allowByVal));
+				list.Parameters.Add(ParseParameterDefinition(range, allowByVal, allowArray));
 		}
 
 		return list;
 	}
 
-	ParameterDefinition ParseParameterDefinition(ListRange<Token> tokens, bool allowByVal)
+	ParameterDefinition ParseParameterDefinition(ListRange<Token> tokens, bool allowByVal, bool allowArray)
 	{
 		var param = new ParameterDefinition();
 
@@ -3081,10 +3316,14 @@ public class BasicParser
 				param.ActualName = param.Name;
 				param.TypeToken = nameToken;
 			}
-			else if (tokenIndex < tokens.Count)
+
+			if (tokenIndex < tokens.Count)
 			{
 				if (tokens[tokenIndex].Type == TokenType.OpenParenthesis)
 				{
+					if (!allowArray)
+						throw new SyntaxErrorException(tokens[tokenIndex], "Expected: , or )");
+
 					if (tokens[tokenIndex + 1].Type != TokenType.CloseParenthesis)
 						throw new SyntaxErrorException(tokens[tokenIndex + 1], "Expected: )");
 
@@ -3093,34 +3332,43 @@ public class BasicParser
 					tokenIndex += 2;
 				}
 
-				if (tokens[tokenIndex].Type != TokenType.AS)
-					throw new SyntaxErrorException(tokens[tokenIndex], "Expected AS");
-
-				tokenIndex++;
-
-				var typeToken = tokens[tokenIndex];
-
-				if (typeToken.Type == TokenType.ANY)
-					param.AnyType = true;
-				else if (typeToken.Type == TokenType.Identifier)
+				if (tokenIndex < tokens.Count)
 				{
-					param.UserType = typeToken.Value;
+					if (tokens[tokenIndex].Type != TokenType.AS)
+						throw new SyntaxErrorException(tokens[tokenIndex], "Expected AS");
 
-					if (!char.IsAsciiLetterOrDigit(param.UserType!.Last()))
-						throw new SyntaxErrorException(typeToken, "Type name may only contain letters and digits");
+					if (param.TypeToken != null)
+					{
+						// Specifying the type both with a type character and an AS clause.
+						throw new SyntaxErrorException(param.TypeToken, "Identifier cannot end with %, &, !, #, $, or @");
+					}
+
+					tokenIndex++;
+
+					var typeToken = tokens[tokenIndex];
+
+					if (typeToken.Type == TokenType.ANY)
+						param.AnyType = true;
+					else if (typeToken.Type == TokenType.Identifier)
+					{
+						param.UserType = typeToken.Value;
+
+						if (!char.IsAsciiLetterOrDigit(param.UserType!.Last()))
+							throw new SyntaxErrorException(typeToken, "Type name may only contain letters and digits");
+					}
+					else
+					{
+						if (!typeToken.IsDataType)
+							throw new SyntaxErrorException(tokens[tokenIndex], "Expected data type");
+
+						param.Type = DataTypeConverter.FromToken(typeToken);
+						param.ActualName = param.Name + new TypeCharacter(param.Type).Character;
+					}
+
+					param.TypeToken = typeToken;
+
+					tokenIndex++;
 				}
-				else
-				{
-					if (!typeToken.IsDataType)
-						throw new SyntaxErrorException(tokens[tokenIndex], "Expected data type");
-
-					param.Type = DataTypeConverter.FromToken(typeToken);
-					param.ActualName = param.Name + new TypeCharacter(param.Type).Character;
-				}
-
-				param.TypeToken = typeToken;
-
-				tokenIndex++;
 			}
 
 			if (tokenIndex < tokens.Count)

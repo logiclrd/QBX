@@ -1,36 +1,124 @@
-/*
- * TODO
- * 
 using QBX.CodeModel;
 using QBX.CodeModel.Expressions;
+using QBX.CodeModel.Statements;
+using QBX.LexicalAnalysis;
+using QBX.Parser;
 
 namespace QBX.Tests.Parser.Statements;
 
-public class DefFnStatement
+public class DefFnStatementTests
 {
-	public override StatementType Type => StatementType.DefFn;
-
-	public string Name { get; set; } = "FN";
-	public ParameterList? Parameters { get; set; }
-	public Expression? ExpressionBody { get; set; }
-
-	public override void Render(TextWriter writer)
+	[Test]
+	public void ShouldParseBlockStart()
 	{
-		writer.Write("DEF {0}", Name);
+		// Arrange
+		string statement = "DEF FNspoon";
 
-		if (Parameters != null)
-		{
-			writer.Write(" (");
-			Parameters.Render(writer);
-			writer.Write(')');
-		}
+		var tokens = new Lexer(statement).ToList();
 
-		if (ExpressionBody != null)
-		{
-			writer.Write(" = ");
-			ExpressionBody.Render(writer);
-		}
+		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
+
+		var sut = new BasicParser();
+
+		// Act
+		var result = sut.ParseStatement(tokens, ignoreErrors: false);
+
+		// Assert
+		result.Should().BeOfType<DefFnStatement>();
+
+		var defFnResult = (DefFnStatement)result;
+
+		defFnResult.Parameters.Should().BeNull();
+		defFnResult.ExpressionBody.Should().BeNull();
+	}
+
+	[Test]
+	public void ShouldParseBlockStartWithParameters()
+	{
+		// Arrange
+		string statement = "DEF FNfork(TineLengths!(), TineCount AS INTEGER)";
+
+		var tokens = new Lexer(statement).ToList();
+
+		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
+
+		var sut = new BasicParser();
+
+		// Act
+		var result = sut.ParseStatement(tokens, ignoreErrors: false);
+
+		// Assert
+		result.Should().BeOfType<DefFnStatement>();
+
+		var defFnResult = (DefFnStatement)result;
+
+		defFnResult.ExpressionBody.Should().BeNull();
+
+		defFnResult.Parameters.Should().NotBeNull();
+		defFnResult.Parameters.Parameters.Should().HaveCount(2);
+		defFnResult.Parameters.Parameters[0].Name.Should().Be("TineLengths!");
+		defFnResult.Parameters.Parameters[0].Type.Should().Be(DataType.Unspecified);
+		defFnResult.Parameters.Parameters[0].IsArray.Should().BeTrue();
+		defFnResult.Parameters.Parameters[1].Name.Should().Be("TineCount");
+		defFnResult.Parameters.Parameters[1].Type.Should().Be(DataType.INTEGER);
+		defFnResult.Parameters.Parameters[1].IsArray.Should().BeFalse();
+	}
+
+	[Test]
+	public void ShouldParseInline()
+	{
+		// Arrange
+		string statement = "DEF FnRan = INT(RND(1) * 100) + 1";
+
+		var tokens = new Lexer(statement).ToList();
+
+		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
+
+		var sut = new BasicParser();
+
+		// Act
+		var result = sut.ParseStatement(tokens, ignoreErrors: false);
+
+		// Assert
+		result.Should().BeOfType<DefFnStatement>();
+
+		var defFnResult = (DefFnStatement)result;
+
+		defFnResult.Parameters.Should().BeNull();
+
+		defFnResult.ExpressionBody.Should().BeOfType<BinaryExpression>()
+			.Which.Left.Should().BeOfType<KeywordFunctionExpression>()
+			.Which.Function.Should().Be(TokenType.INT);
+	}
+
+	[Test]
+	public void ShouldParseInlineWithParameters()
+	{
+		// Arrange
+		string statement = "DEF FnRan (x) = INT(RND(1) * x) + 1";
+
+		var tokens = new Lexer(statement).ToList();
+
+		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
+
+		var sut = new BasicParser();
+
+		// Act
+		var result = sut.ParseStatement(tokens, ignoreErrors: false);
+
+		// Assert
+		result.Should().BeOfType<DefFnStatement>();
+
+		var defFnResult = (DefFnStatement)result;
+
+		defFnResult.Parameters.Should().NotBeNull();
+		defFnResult.Parameters.Parameters.Should().HaveCount(1);
+		defFnResult.Parameters.Parameters[0].Name.Should().Be("x");
+		defFnResult.Parameters.Parameters[0].Type.Should().Be(DataType.Unspecified);
+		defFnResult.Parameters.Parameters[0].IsArray.Should().BeFalse();
+
+		defFnResult.ExpressionBody.Should().BeOfType<BinaryExpression>()
+			.Which.Left.Should().BeOfType<KeywordFunctionExpression>()
+			.Which.Function.Should().Be(TokenType.INT);
 	}
 }
-
-*/

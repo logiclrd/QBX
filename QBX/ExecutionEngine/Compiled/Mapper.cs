@@ -299,6 +299,14 @@ public class Mapper
 		return QualifyIdentifier(name, GetTypeForIdentifier(name));
 	}
 
+	public string UnqualifyIdentifier(string name)
+	{
+		if (CodeModel.TypeCharacter.TryParse(name[name.Length - 1], out _))
+			name = name.Remove(name.Length - 1);
+
+		return name;
+	}
+
 	public Mapper CreateScope()
 	{
 		if (_root != null)
@@ -373,6 +381,35 @@ public class Mapper
 	public bool TryResolveConstant(string name, [NotNullWhen(true)] out LiteralValue? literalValue)
 		=> _constantValueByName.TryGetValue(QualifyIdentifier(name), out literalValue);
 
+	enum SemiscopeMode
+	{
+		Inactive,
+		Setup,
+		Active,
+	}
+
+	SemiscopeMode _semiscopeMode;
+	Dictionary<string, int>? _semiscopeOverlay;
+
+	public void StartSemiscopeSetup()
+	{
+		_semiscopeMode = SemiscopeMode.Setup;
+		_semiscopeOverlay = new Dictionary<string, int>();
+	}
+
+	public void EnterSemiscope()
+	{
+		// TODO: switch to mode that resolves variables using the semiscope overlay
+		// preferentially and which allows semiscope-local constants to be defined
+		// but which resolves new variables into the root scope
+	}
+
+	public void ExitSemiscope()
+	{
+		_semiscopeMode = SemiscopeMode.Inactive;
+		_semiscopeOverlay = null;
+	}
+
 	public int DeclareVariable(string name, DataType dataType, Token? token = null)
 	{
 		if ((GetSlug(name) is string slug)
@@ -383,10 +420,16 @@ public class Mapper
 
 		if (_constantValueByName.TryGetValue(name, out _))
 			throw CompilerException.DuplicateDefinition(token);
-		if (_variableIndexByName.TryGetValue(name, out var index))
-			throw CompilerException.DuplicateDefinition(token);
 
-		index = _variables.Count;
+		// During semiscope setup, we allow new declarations to shadow
+		// existing ones for DEF FN parameters.
+		if (_semiscopeMode != SemiscopeMode.Setup)
+		{
+			if (_variableIndexByName.TryGetValue(name, out _))
+				throw CompilerException.DuplicateDefinition(token);
+		}
+
+		int index = _variables.Count;
 
 		var info = new VariableInfo(name, index);
 
@@ -394,7 +437,10 @@ public class Mapper
 
 		_variables.Add(info);
 
-		return _variableIndexByName[name] = index;
+		if (_semiscopeMode != SemiscopeMode.Setup)
+			return _variableIndexByName[name] = index;
+		else
+			return _semiscopeOverlay![name] = index;
 	}
 
 	public int ResolveVariable(string name)
@@ -403,10 +449,16 @@ public class Mapper
 
 		if (_variableIndexByName.TryGetValue(name, out index))
 			return index;
+		if ((_semiscopeOverlay != null)
+		 && _semiscopeOverlay.TryGetValue(name, out index))
+			return index;
 
 		name = QualifyIdentifier(name);
 
 		if (_variableIndexByName.TryGetValue(name, out index))
+			return index;
+		if ((_semiscopeOverlay != null)
+		 && _semiscopeOverlay.TryGetValue(name, out index))
 			return index;
 
 		return DeclareVariable(name, DataType.ForPrimitiveDataType(GetTypeForIdentifier(name)));

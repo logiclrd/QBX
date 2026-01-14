@@ -5,9 +5,9 @@ using QBX.CodeModel.Expressions;
 
 namespace QBX.CodeModel.Statements;
 
-public class OnStatement : Statement
+public class OnEventStatement : Statement
 {
-	public override StatementType Type => StatementType.On;
+	public override StatementType Type => StatementType.OnEvent;
 
 	public EventType EventType { get; set; }
 	public Expression? SourceExpression { get; set; }

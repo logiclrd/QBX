@@ -2,6 +2,9 @@
 
 public enum ScopeType
 {
+	Def,
 	Sub,
 	Function,
+	Do,
+	For,
 }

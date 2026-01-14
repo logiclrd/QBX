@@ -1,6 +1,4 @@
-﻿using System.IO;
-
-namespace QBX.CodeModel.Statements;
+﻿namespace QBX.CodeModel.Statements;
 
 public abstract class SubroutineOpeningStatement : Statement
 {
@@ -11,16 +9,4 @@ public abstract class SubroutineOpeningStatement : Statement
 	public override bool ExtraSpace => !IsStatic;
 
 	protected abstract string StatementName { get; }
-
-	protected override void RenderImplementation(TextWriter writer)
-	{
-		writer.Write(StatementName);
-		writer.Write(' ');
-		writer.Write(Name);
-
-		Parameters?.Render(writer);
-
-		if (IsStatic)
-			writer.Write(" STATIC");
-	}
 }

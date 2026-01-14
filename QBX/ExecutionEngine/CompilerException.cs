@@ -77,4 +77,14 @@ public class CompilerException : Exception
 		=> new CompilerException(statement, "SELECT without END SELECT");
 	public static CompilerException StatementsAndLabelsIllegalBetweenSelectCaseAndCase(CodeModel.Statements.Statement? statement)
 		=> new CompilerException(statement, "Statements/labels illegal between SELECT CASE and CASE");
+	public static CompilerException WhileWithoutWEnd(CodeModel.Statements.Statement? statement)
+		=> new CompilerException(statement, "WHILE without WEND");
+	public static CompilerException WEndWithoutWhile(CodeModel.Statements.Statement? statement)
+		=> new CompilerException(statement, "WEND without WHILE");
+	public static CompilerException DoWithoutLoop(CodeModel.Statements.Statement? statement)
+		=> new CompilerException(statement, "DO without LOOP");
+	public static CompilerException LoopWithoutDo(CodeModel.Statements.Statement? statement)
+		=> new CompilerException(statement, "LOOP without DO");
+	public static CompilerException InvalidConstant(Token? context)
+		=> new CompilerException(context, "Invalid constant");
 }

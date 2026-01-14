@@ -17,6 +17,7 @@ public class Routine : Sequence
 	public List<DataType> VariableTypes = new List<DataType>();
 	public List<VariableLink> LinkedVariables = new List<VariableLink>();
 	public DataType? ReturnType;
+	public int[] ParameterVariableIndices;
 	public int ReturnValueVariableIndex = -1;
 
 	public CodeModel.CompilationElement Source;
@@ -48,6 +49,9 @@ public class Routine : Sequence
 
 	public const string MainRoutineName = "@Main";
 
+	public bool UseRootFrame = false;
+
+	// SUB or FUNCTION
 	public Routine(Module module, CodeModel.CompilationElement source, TypeRepository typeRepository)
 	{
 		Module = module;
@@ -56,11 +60,11 @@ public class Routine : Sequence
 
 		Name = GetName(source);
 
-		module.Routines.Add(Name, this);
+		ParameterVariableIndices = Array.Empty<int>();
 
 		foreach (var line in source.Lines)
 		{
-			if (line.Statements.FirstOrDefault() is SubroutineOpeningStatement subOrFunction)
+			if (line.Statements.FirstOrDefault() is ProperSubroutineOpeningStatement subOrFunction)
 			{
 				OpeningStatement = subOrFunction;
 
@@ -81,12 +85,44 @@ public class Routine : Sequence
 				break;
 			}
 		}
+
+		module.Routines.Add(Name, this);
+	}
+
+	// DEF FN
+	public Routine(Module module, CodeModel.CompilationElement source, DefFnStatement openingStatement, TypeRepository typeRepository)
+	{
+		Module = module;
+
+		Source = source;
+
+		Name = openingStatement.Name;
+
+		OpeningStatement = openingStatement;
+
+		if (openingStatement.Parameters != null)
+			ParameterVariableIndices = new int[openingStatement.Parameters.Parameters.Count];
+		else
+			ParameterVariableIndices = Array.Empty<int>();
+
+		char lastChar = Name.Last();
+
+		if (CodeModel.TypeCharacter.TryParse(lastChar, out var typeCharacter))
+		{
+			// Can't have two functions whose names differ only by type character.
+			// In other words, the type character isn't actually part of the
+			// function's name.
+			ReturnType = typeRepository.ResolveType(typeCharacter.Type, null, isArray: false, null);
+			Name = Name.Remove(Name.Length - 1);
+		}
+
+		module.Routines.Add(Name, this);
 	}
 
 	public static string GetName(CodeModel.CompilationElement source)
 	{
 		foreach (var line in source.Lines)
-			if (line.Statements.FirstOrDefault() is SubroutineOpeningStatement subOrFunction)
+			if (line.Statements.FirstOrDefault() is ProperSubroutineOpeningStatement subOrFunction)
 				return subOrFunction.Name;
 
 		return MainRoutineName;
@@ -96,7 +132,7 @@ public class Routine : Sequence
 	{
 		if (OpeningStatement is SubStatement)
 			compilation.RegisterSub(this);
-		else if (OpeningStatement is FunctionStatement)
+		else if ((OpeningStatement is FunctionStatement) || (OpeningStatement is DefFnStatement))
 			compilation.RegisterFunction(this);
 		else
 			throw new Exception("Register called on a non-callable Routine");
@@ -117,8 +153,12 @@ public class Routine : Sequence
 
 		if (OpeningStatement.Parameters != null)
 		{
-			foreach (var param in OpeningStatement.Parameters.Parameters)
+			var parameterDefinitions = OpeningStatement.Parameters.Parameters;
+
+			for (int i=0; i < parameterDefinitions.Count; i++)
 			{
+				var param = parameterDefinitions[i];
+
 				var paramType = compilation.TypeRepository.ResolveType(param, mapper);
 
 				ParameterTypes.Add(paramType);
@@ -142,7 +182,7 @@ public class Routine : Sequence
 						throw CompilerException.DuplicateDefinition(param.NameToken);
 				}
 
-				mapper.DeclareVariable(name, paramType);
+				ParameterVariableIndices[i] = mapper.DeclareVariable(name, paramType);
 			}
 		}
 	}

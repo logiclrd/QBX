@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 
 using QBX.ExecutionEngine.Compiled;
+using QBX.ExecutionEngine.Compiled.Statements;
 using QBX.ExecutionEngine.Execution.Variables;
 using QBX.Firmware;
 using QBX.Hardware;
@@ -136,7 +137,17 @@ public class ExecutionContext
 
 	public Variable Call(Routine routine, Variable[] arguments)
 	{
-		var frame = CreateFrame(routine.Module, routine, arguments);
+		StackFrame frame;
+
+		if (routine.UseRootFrame)
+		{
+			frame = _rootFrame ?? throw new Exception("No root frame");
+
+			for (int i=0; i < arguments.Length; i++)
+				frame.Variables[routine.ParameterVariableIndices[i]] = arguments[i];
+		}
+		else
+			frame = CreateFrame(routine.Module, routine, arguments);
 
 		return Call(routine, frame);
 	}
@@ -151,17 +162,18 @@ public class ExecutionContext
 			try
 			{
 				Dispatch(routine, frame);
-
-				if (routine.ReturnType != null)
-					return frame.Variables[0];
-				else
-					return s_dummyVariable;
 			}
 			catch (GoTo goTo)
 			{
 				_goTo = goTo.StatementPath.Clone();
 				goto goTo_;
 			}
+			catch (ExitRoutine) { }
+
+			if (routine.ReturnType != null)
+				return frame.Variables[routine.ReturnValueVariableIndex];
+			else
+				return s_dummyVariable;
 		}
 		finally
 		{

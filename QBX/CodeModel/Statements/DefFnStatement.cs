@@ -4,24 +4,24 @@ using QBX.CodeModel.Expressions;
 
 namespace QBX.CodeModel.Statements;
 
-public class DefFnStatement : Statement
+public class DefFnStatement : SubroutineOpeningStatement
 {
 	public override StatementType Type => StatementType.DefFn;
 
-	public string Name { get; set; } = "FN";
-	public ParameterList? Parameters { get; set; }
+	protected override string StatementName => "DEF";
+
+	public DefFnStatement()
+	{
+		Name = "FN";
+	}
+
 	public Expression? ExpressionBody { get; set; }
 
 	protected override void RenderImplementation(TextWriter writer)
 	{
 		writer.Write("DEF {0}", Name);
 
-		if (Parameters != null)
-		{
-			writer.Write(" (");
-			Parameters.Render(writer);
-			writer.Write(')');
-		}
+		Parameters?.Render(writer);
 
 		if (ExpressionBody != null)
 		{
