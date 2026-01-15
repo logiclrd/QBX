@@ -14,19 +14,21 @@ public class ExecutionContext
 	public Machine Machine;
 	public VisualLibrary VisualLibrary;
 
-	public IReadOnlyExecutionState ExecutionState => _state;
-	public IExecutionControls Controls => _state;
+	public IReadOnlyExecutionState ExecutionState => _executionState;
+	public IExecutionControls Controls => _executionState;
 
-	ExecutionState _state;
+	public RuntimeState RuntimeState => _runtimeState;
+
+	ExecutionState _executionState;
 
 	StackFrame? _rootFrame;
 	StatementPath? _goTo;
 
-	public bool EnablePaletteRemapping = true;
+	RuntimeState _runtimeState = new RuntimeState();
 
 	public ExecutionContext(Machine machine)
 	{
-		_state = new ExecutionState();
+		_executionState = new ExecutionState();
 
 		Machine = machine;
 		VisualLibrary = new TextLibrary(machine);
@@ -44,7 +46,7 @@ public class ExecutionContext
 			entrypoint,
 			System.Array.Empty<Variable>());
 
-		_state.StartExecution(_rootFrame);
+		_executionState.StartExecution(_rootFrame);
 
 		try
 		{
@@ -66,7 +68,7 @@ public class ExecutionContext
 		{
 			_rootFrame = null;
 
-			_state.EndExecution();
+			_executionState.EndExecution();
 		}
 	}
 
@@ -103,7 +105,7 @@ public class ExecutionContext
 			else
 			{
 				if (executable.CanBreak)
-					_state.NextStatement(executable.Source);
+					_executionState.NextStatement(executable.Source);
 
 				executable.Execute(this, stackFrame);
 			}
@@ -154,7 +156,7 @@ public class ExecutionContext
 
 	Variable Call(Routine routine, StackFrame frame)
 	{
-		_state.EnterRoutine(routine, frame);
+		_executionState.EnterRoutine(routine, frame);
 
 		try
 		{
@@ -177,7 +179,7 @@ public class ExecutionContext
 		}
 		finally
 		{
-			_state.ExitRoutine();
+			_executionState.ExitRoutine();
 		}
 	}
 

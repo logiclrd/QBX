@@ -1,12 +1,13 @@
 ﻿using System;
-using System.Numerics;
 using System.Runtime.CompilerServices;
 
 namespace QBX.Hardware;
 
-public class GraphicsArray
+public class GraphicsArray : IMemory
 {
 	public byte[] VRAM = new byte[256 * 1024];
+
+	public int Length => VRAM.Length;
 
 	public class GraphicsRegisters
 	{

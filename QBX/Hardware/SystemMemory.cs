@@ -1,8 +1,10 @@
 ﻿namespace QBX.Hardware;
 
-public class SystemMemory
+public class SystemMemory : IMemory
 {
 	byte[] _ram = new byte[640 * 1024];
+
+	public int Length => _ram.Length;
 
 	public const int KeyboardStatusAddress = 1047;
 

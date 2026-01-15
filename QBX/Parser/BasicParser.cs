@@ -3839,11 +3839,10 @@ public class BasicParser
 						TokenType.Number,
 						tokens[i].Value.Substring(1));
 
-					try
-					{
-						return ParseExpression(reinterpretedTokens, endToken);
-					}
-					catch {}
+					var parsed = TestParseExpressionReinterpretNegativeNumber(reinterpretedTokens, endToken);
+
+					if (parsed != null)
+						return parsed;
 				}
 			}
 
@@ -3862,6 +3861,19 @@ public class BasicParser
 		catch (SyntaxErrorException) { }
 
 		return subjectExpression;
+	}
+
+	private Expression? TestParseExpressionReinterpretNegativeNumber(ListRange<Token> reinterpretedTokens, Token endToken)
+	{
+		Expression? parsed = null;
+
+		try
+		{
+			parsed = ParseExpression(reinterpretedTokens, endToken);
+		}
+		catch (SyntaxErrorException) { }
+
+		return parsed;
 	}
 
 	private bool IsOperator(Token token, out Operator op)

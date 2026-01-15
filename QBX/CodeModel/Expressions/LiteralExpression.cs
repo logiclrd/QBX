@@ -125,6 +125,14 @@ public class LiteralExpression : Expression
 		if (string.IsNullOrEmpty(str))
 			return;
 
+		var chars = str.AsSpan();
+
+		if (chars[0] == '-')
+		{
+			writer.Write('-');
+			chars = chars.Slice(1);
+		}
+
 		if (str.StartsWith("\""))
 		{
 			writer.Write(str);
@@ -134,21 +142,21 @@ public class LiteralExpression : Expression
 		else if (str.StartsWith("&H", StringComparison.OrdinalIgnoreCase))
 		{
 			if (NumberParser.TryAsInteger(str, out var integerValue))
-				writer.Write(NumberFormatter.FormatHex(integerValue));
+				writer.Write(NumberFormatter.FormatHex(integerValue, includePrefix: true));
 			else if (NumberParser.TryAsLong(str, out var longValue))
-				writer.Write(NumberFormatter.FormatHex(longValue));
+				writer.Write(NumberFormatter.FormatHex(longValue, includePrefix: true));
 			else
 			{
 				writer.Write(str);
 				Debugger.Break();
 			}
 		}
-		else if (str.StartsWith("&O", StringComparison.OrdinalIgnoreCase))
+		else if (str.StartsWith("&O", StringComparison.OrdinalIgnoreCase) || str.StartsWith("&O", StringComparison.OrdinalIgnoreCase))
 		{
 			if (NumberParser.TryAsInteger(str, out var integerValue))
-				writer.Write(NumberFormatter.FormatOctal(integerValue));
+				writer.Write(NumberFormatter.FormatOctal(integerValue, includePrefix: true));
 			else if (NumberParser.TryAsLong(str, out var longValue))
-				writer.Write(NumberFormatter.FormatOctal(longValue));
+				writer.Write(NumberFormatter.FormatOctal(longValue, includePrefix: true));
 			else
 			{
 				writer.Write(str);

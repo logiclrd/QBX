@@ -19,7 +19,7 @@ public class PokeStatement(CodeModel.Statements.Statement source) : Executable(s
 		var address = AddressExpression.Evaluate(context, stackFrame);
 		var value = ValueExpression.Evaluate(context, stackFrame);
 
-		context.Machine.SystemMemory[address.CoerceToInt()] =
+		context.Machine.MemoryBus[context.RuntimeState.SegmentBase + address.CoerceToInt()] =
 			unchecked((byte)value.CoerceToInt());
 	}
 }

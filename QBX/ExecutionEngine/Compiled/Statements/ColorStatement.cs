@@ -87,7 +87,7 @@ public class ColorStatement(CodeModel.Statements.Statement? source) : Executable
 				if (Argument3Expression != null)
 					throw RuntimeException.IllegalFunctionCall(Argument3Expression.SourceStatement);
 
-				if ((Argument2Expression != null) && !context.EnablePaletteRemapping)
+				if ((Argument2Expression != null) && !context.RuntimeState.EnablePaletteRemapping)
 					throw RuntimeException.IllegalFunctionCall(Argument2Expression.SourceStatement);
 
 				if (Argument1Expression != null)

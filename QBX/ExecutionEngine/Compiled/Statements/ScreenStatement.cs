@@ -36,7 +36,7 @@ public class ScreenStatement(CodeModel.Statements.Statement? source) : Executabl
 				else
 					context.VisualLibrary = new GraphicsLibrary_4bppPlanar(context.Machine);
 
-				context.EnablePaletteRemapping = (hardwareMode < 0x12);
+				context.RuntimeState.EnablePaletteRemapping = (hardwareMode < 0x12);
 			}
 		}
 

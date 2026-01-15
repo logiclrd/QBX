@@ -11,7 +11,7 @@ public abstract class Function : Evaluable
 	protected virtual void SetArgument(int index, Evaluable value)
 		=> throw new Exception("Function.SetArgument called on a function type that doesn't define it");
 
-	public virtual void SetArguments(IEnumerable<Evaluable?> arguments)
+	public virtual void SetArguments(IEnumerable<Evaluable> arguments)
 	{
 		int count = 0;
 		int minCount = MinArgumentCount;
@@ -19,9 +19,6 @@ public abstract class Function : Evaluable
 
 		foreach (var argument in arguments)
 		{
-			if (argument == null)
-				throw new Exception("Argument expression translated to null");
-
 			if (count >= maxCount)
 				throw CompilerException.ArgumentCountMismatch(SourceExpression?.Token);
 

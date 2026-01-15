@@ -11,6 +11,8 @@ public class Machine
 	public Keyboard Keyboard { get; }
 	public TimerChip Timer { get; }
 
+	public MemoryBus MemoryBus { get; }
+
 	public bool KeepRunning = true;
 	public int ExitCode = 0;
 
@@ -22,6 +24,11 @@ public class Machine
 		VideoFirmware = new Video(this);
 		Keyboard = new Keyboard(this);
 		Timer = new TimerChip();
+
+		MemoryBus = new MemoryBus();
+
+		MemoryBus.MapRange(0x0000, SystemMemory.Length, SystemMemory);
+		MemoryBus.MapRange(0xA000, GraphicsArray.VRAM.Length, GraphicsArray);
 	}
 
 	public void OutPort(int portNumber, byte data)

@@ -13,6 +13,8 @@ class Program
 {
 	static int Main()
 	{
+		DebugExceptionHelper.Install();
+
 		var machine = new Machine();
 
 		var video = machine.VideoFirmware;

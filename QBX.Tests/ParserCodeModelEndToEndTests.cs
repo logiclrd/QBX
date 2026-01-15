@@ -33,7 +33,7 @@ public class ParserCodeModelEndToEndTests
 
 		var parser = new BasicParser();
 
-		var formattedBuffer = new StringWriter();
+		var formattedBuffer = new StringWriter() { NewLine = "\r\n" };
 
 		// Act
 		var parsed = parser.Parse(lexer);

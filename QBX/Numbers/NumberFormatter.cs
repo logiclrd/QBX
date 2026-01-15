@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.ComponentModel;
+using System.Text;
 
 namespace QBX.Numbers;
 
@@ -6,9 +7,15 @@ public class NumberFormatter
 {
 	public static string Format(short value) => value.ToString();
 
-	public static string FormatHex(short value) => "&H" + value.ToString("X");
+	public static string FormatHex(short value, bool includePrefix)
+	{
+		if (includePrefix)
+			return "&H" + value.ToString("X");
+		else
+			return value.ToString("X");
+	}
 
-	public static string FormatOctal(short value) => FormatOctal((int)value, forceLong: false);
+	public static string FormatOctal(short value, bool includePrefix) => FormatOctal(value, includePrefix, bits: 0xFFFF, forceLong: false);
 
 	public static string Format(int value, bool qualify = true)
 	{
@@ -18,48 +25,63 @@ public class NumberFormatter
 			return value.ToString();
 	}
 
-	public static string FormatHex(int value)
+	public static string FormatHex(int value, bool includePrefix, bool qualify = true)
 	{
-		if ((value >= short.MinValue) && (value <= short.MaxValue))
-			return value.ToString("X") + '&';
+		qualify &= ((value >= 0) && (value <= short.MaxValue));
+
+		if (qualify)
+		{
+			if (includePrefix)
+				return "&H" + value.ToString("X") + '&';
+			else
+				return value.ToString("X") + '&';
+		}
 		else
-			return value.ToString("X");
+		{
+			if (includePrefix)
+				return "&H" + value.ToString("X");
+			else
+				return value.ToString("X");
+		}
 	}
 
-	public static string FormatOctal(int value) => FormatOctal(value, forceLong: true);
+	public static string FormatOctal(int value, bool includePrefix, bool qualify = true) => FormatOctal(value, includePrefix, bits: ~0, forceLong: qualify);
 
-	static string FormatOctal(int value, bool forceLong)
+	static string FormatOctal(int value, bool includePrefix, int bits, bool forceLong)
 	{
-		forceLong &= ((value >= short.MinValue) && (value <= short.MaxValue));
+		forceLong &= ((value >= 0) && (value <= short.MaxValue));
 
 		var builder = new StringBuilder();
 
-		builder.Append("&O");
+		if (includePrefix)
+			builder.Append("&O");
 
-		int radix = 1;
+		int placeScale;
+		int digitBits;
 
-		while (value > radix)
-			radix <<= 3;
+		int bitsForLargerPlaces = -1 << 3;
 
-		radix >>= 3;
+		placeScale = 0;
 
-		while (value > 0)
+		value &= bits;
+
+		while ((value & bitsForLargerPlaces) != 0)
 		{
-			int digit = 0;
-
-			while (value >= radix)
-			{
-				digit++;
-				value -= radix;
-			}
-
-			builder.Append('0' + digit);
-
-			radix >>= 3;
+			bitsForLargerPlaces <<= 3;
+			placeScale += 3;
 		}
 
-		if (builder.Length == 2)
-			builder.Append('0');
+		digitBits = unchecked((int)((uint)bits >> placeScale)) & 0b111;
+
+		while (placeScale >= 0)
+		{
+			int digit = (value >> placeScale) & digitBits;
+
+			builder.Append(unchecked((char)('0' + digit)));
+
+			placeScale -= 3;
+			digitBits = 0b111;
+		}
 
 		if (forceLong)
 			builder.Append('&');
@@ -69,69 +91,7 @@ public class NumberFormatter
 
 	public static string Format(float value, bool qualify = true)
 	{
-		string FormatBaseDigits(float adjustedValue)
-		{
-			string ret = adjustedValue.ToString("#.#######");
-
-			if (ret.Length > 0)
-				return ret;
-			else
-				return "0";
-		}
-
-		if (value > 9999999f)
-		{
-			int exponent = 0;
-
-			while (value >= 10)
-			{
-				value *= 0.1f;
-				exponent++;
-			}
-
-			return FormatBaseDigits(value) + "E+" + exponent.ToString("00");
-		}
-
-		if (value < -9999999f)
-		{
-			int exponent = 0;
-
-			while (value <= -10)
-			{
-				value *= 0.1f;
-				exponent++;
-			}
-
-			return FormatBaseDigits(value) + "E+" + exponent.ToString("00");
-		}
-
-		if ((value > 0) && (value < 0.0000001))
-		{
-			int exponent = 0;
-
-			while (value < 1)
-			{
-				value *= 10f;
-				exponent--;
-			}
-
-			return FormatBaseDigits(value) + "E-" + exponent.ToString("00");
-		}
-
-		if ((value < 0) && (value > -0.0000001))
-		{
-			int exponent = 0;
-
-			while (value > -1)
-			{
-				value *= 10f;
-				exponent--;
-			}
-
-			return FormatBaseDigits(value) + "E-" + exponent.ToString("00");
-		}
-
-		string str = FormatBaseDigits(value);
+		string str = value.ToString();
 
 		if (qualify)
 		{

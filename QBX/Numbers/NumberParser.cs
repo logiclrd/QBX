@@ -15,21 +15,31 @@ public static class NumberParser
 
 		int parsed;
 
-		if (str.StartsWith("&H", StringComparison.OrdinalIgnoreCase))
+		var chars = str.AsSpan();
+
+		int sign = 1;
+
+		if (chars[0] == '-')
 		{
-			if (!int.TryParse(str.Substring(2), NumberStyles.HexNumber, default, out parsed))
+			sign = -1;
+			chars = chars.Slice(1);
+		}
+
+		if (chars.StartsWith("&H", StringComparison.OrdinalIgnoreCase))
+		{
+			if (!int.TryParse(chars.Slice(2), NumberStyles.HexNumber, default, out parsed))
 				return false;
 		}
-		else if (str.StartsWith("&O", StringComparison.OrdinalIgnoreCase))
+		else if (chars.StartsWith("&O", StringComparison.OrdinalIgnoreCase))
 		{
 			parsed = 0;
 
-			for (int i = 2; i < str.Length; i++)
+			for (int i = 2; i < chars.Length; i++)
 			{
-				if (!char.IsAsciiDigit(str[i]))
+				if (!char.IsAsciiDigit(chars[i]))
 					return false;
 
-				parsed = (parsed * 8) + (str[i] - '0');
+				parsed = (parsed * 8) + (chars[i] - '0');
 
 				if (parsed > short.MaxValue)
 					return false;
@@ -37,9 +47,12 @@ public static class NumberParser
 		}
 		else
 		{
+			sign = 1;
 			if (!int.TryParse(str, out parsed))
 				return false;
 		}
+
+		parsed *= sign;
 
 		if ((parsed >= short.MinValue) && (parsed <= short.MaxValue))
 		{
@@ -62,12 +75,22 @@ public static class NumberParser
 			str = str.Remove(str.Length - 1);
 		}
 
-		if (str.StartsWith("&H", StringComparison.OrdinalIgnoreCase))
+		var chars = str.AsSpan();
+
+		bool negate = false;
+
+		if (chars[0] == '-')
 		{
-			if (!int.TryParse(str.Substring(2), NumberStyles.HexNumber, default, out value))
+			negate = true;
+			chars = chars.Slice(1);
+		}
+
+		if (chars.StartsWith("&H", StringComparison.OrdinalIgnoreCase))
+		{
+			if (!int.TryParse(chars.Slice(2), NumberStyles.HexNumber, default, out value))
 				return false;
 		}
-		else if (str.StartsWith("&O", StringComparison.OrdinalIgnoreCase))
+		else if (chars.StartsWith("&O", StringComparison.OrdinalIgnoreCase))
 		{
 			value = 0;
 
@@ -86,9 +109,13 @@ public static class NumberParser
 		}
 		else
 		{
+			negate = false;
 			if (!int.TryParse(str, out value))
 				return false;
 		}
+
+		if (negate)
+			value = unchecked(1 + ~value);
 
 		return true;
 	}

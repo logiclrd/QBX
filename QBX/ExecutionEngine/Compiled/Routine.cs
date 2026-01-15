@@ -68,6 +68,9 @@ public class Routine : Sequence
 			{
 				OpeningStatement = subOrFunction;
 
+				if (OpeningStatement.Parameters != null)
+					ParameterVariableIndices = new int[OpeningStatement.Parameters.Parameters.Count];
+
 				if (subOrFunction is FunctionStatement function)
 				{
 					char lastChar = Name.Last();

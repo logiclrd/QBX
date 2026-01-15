@@ -1,0 +1,504 @@
+using QBX.Numbers;
+
+namespace QBX.Tests.Numbers;
+
+public class NumberFormatterTests
+{
+	[TestCase(0, "0")]
+	[TestCase(10, "10")]
+	[TestCase(100, "100")]
+	[TestCase(1000, "1000")]
+	[TestCase(10000, "10000")]
+	[TestCase(32767, "32767")]
+	[TestCase(-32768, "-32768")]
+	[TestCase(-10000, "-10000")]
+	[TestCase(-1000, "-1000")]
+	[TestCase(-100, "-100")]
+	[TestCase(-10, "-10")]
+	public void FormatShort(short value, string expectedResult)
+	{
+		// Act
+		var result = NumberFormatter.Format(value);
+
+		// Assert
+		result.Should().Be(expectedResult);
+	}
+
+	[TestCase(0, false, "0")]
+	[TestCase(10, false, "A")]
+	[TestCase(100, false, "64")]
+	[TestCase(1000, false, "3E8")]
+	[TestCase(10000, false, "2710")]
+	[TestCase(32767, false, "7FFF")]
+	[TestCase(-32768, false, "8000")]
+	[TestCase(-10000, false, "D8F0")]
+	[TestCase(-1000, false, "FC18")]
+	[TestCase(-100, false, "FF9C")]
+	[TestCase(-10, false, "FFF6")]
+	[TestCase(0, true, "&H0")]
+	[TestCase(10, true, "&HA")]
+	[TestCase(100, true, "&H64")]
+	[TestCase(1000, true, "&H3E8")]
+	[TestCase(10000, true, "&H2710")]
+	[TestCase(32767, true, "&H7FFF")]
+	[TestCase(-32768, true, "&H8000")]
+	[TestCase(-10000, true, "&HD8F0")]
+	[TestCase(-1000, true, "&HFC18")]
+	[TestCase(-100, true, "&HFF9C")]
+	[TestCase(-10, true, "&HFFF6")]
+	public void FormatHexShort(short value, bool includePrefix, string expectedResult)
+	{
+		// Act
+		var result = NumberFormatter.FormatHex(value, includePrefix);
+
+		// Assert
+		result.Should().Be(expectedResult);
+	}
+
+	[TestCase(0, false, "0")]
+	[TestCase(7, false, "7")]
+	[TestCase(8, false, "10")]
+	[TestCase(10, false, "12")]
+	[TestCase(100, false, "144")]
+	[TestCase(1000, false, "1750")]
+	[TestCase(10000, false, "23420")]
+	[TestCase(32767, false, "77777")]
+	[TestCase(-32768, false, "100000")]
+	[TestCase(-10000, false, "154360")]
+	[TestCase(-1000, false, "176030")]
+	[TestCase(-100, false, "177634")]
+	[TestCase(-10, false, "177766")]
+	[TestCase(0, true, "&O0")]
+	[TestCase(10, true, "&O12")]
+	[TestCase(100, true, "&O144")]
+	[TestCase(1000, true, "&O1750")]
+	[TestCase(10000, true, "&O23420")]
+	[TestCase(32767, true, "&O77777")]
+	[TestCase(-32768, true, "&O100000")]
+	[TestCase(-10000, true, "&O154360")]
+	[TestCase(-1000, true, "&O176030")]
+	[TestCase(-100, true, "&O177634")]
+	[TestCase(-10, true, "&O177766")]
+	public void FormatOctalShort(short value, bool includePrefix, string expectedResult)
+	{
+		// Act
+		var result = NumberFormatter.FormatOctal(value, includePrefix);
+
+		// Assert
+		result.Should().Be(expectedResult);
+	}
+
+	[TestCase(0, false, "0")]
+	[TestCase(10, false, "10")]
+	[TestCase(100, false, "100")]
+	[TestCase(1000, false, "1000")]
+	[TestCase(10000, false, "10000")]
+	[TestCase(100000, false, "100000")]
+	[TestCase(1000000, false, "1000000")]
+	[TestCase(10000000, false, "10000000")]
+	[TestCase(100000000, false, "100000000")]
+	[TestCase(1000000000, false, "1000000000")]
+	[TestCase(2147483647, false, "2147483647")]
+	[TestCase(-2147483648, false, "-2147483648")]
+	[TestCase(-1000000000, false, "-1000000000")]
+	[TestCase(-100000000, false, "-100000000")]
+	[TestCase(-10000000, false, "-10000000")]
+	[TestCase(-1000000, false, "-1000000")]
+	[TestCase(-100000, false, "-100000")]
+	[TestCase(-10000, false, "-10000")]
+	[TestCase(-1000, false, "-1000")]
+	[TestCase(-100, false, "-100")]
+	[TestCase(-10, false, "-10")]
+	[TestCase(0, true, "0&")]
+	[TestCase(10, true, "10&")]
+	[TestCase(100, true, "100&")]
+	[TestCase(1000, true, "1000&")]
+	[TestCase(10000, true, "10000&")]
+	[TestCase(100000, true, "100000")]
+	[TestCase(1000000, true, "1000000")]
+	[TestCase(10000000, true, "10000000")]
+	[TestCase(100000000, true, "100000000")]
+	[TestCase(1000000000, true, "1000000000")]
+	[TestCase(2147483647, true, "2147483647")]
+	[TestCase(-2147483648, true, "-2147483648")]
+	[TestCase(-1000000000, true, "-1000000000")]
+	[TestCase(-100000000, true, "-100000000")]
+	[TestCase(-10000000, true, "-10000000")]
+	[TestCase(-1000000, true, "-1000000")]
+	[TestCase(-100000, true, "-100000")]
+	[TestCase(-10000, true, "-10000&")]
+	[TestCase(-1000, true, "-1000&")]
+	[TestCase(-100, true, "-100&")]
+	[TestCase(-10, true, "-10&")]
+	public void FormatInt(int value, bool qualify, string expectedResult)
+	{
+		// Act
+		var result = NumberFormatter.Format(value, qualify);
+
+		// Assert
+		result.Should().Be(expectedResult);
+	}
+
+	[TestCase(0, false, false, "0")]
+	[TestCase(10, false, false, "A")]
+	[TestCase(100, false, false, "64")]
+	[TestCase(1000, false, false, "3E8")]
+	[TestCase(10000, false, false, "2710")]
+	[TestCase(100000, false, false, "186A0")]
+	[TestCase(1000000, false, false, "F4240")]
+	[TestCase(10000000, false, false, "989680")]
+	[TestCase(100000000, false, false, "5F5E100")]
+	[TestCase(1000000000, false, false, "3B9ACA00")]
+	[TestCase(2147483647, false, false, "7FFFFFFF")]
+	[TestCase(-2147483648, false, false, "80000000")]
+	[TestCase(-1000000000, false, false, "C4653600")]
+	[TestCase(-100000000, false, false, "FA0A1F00")]
+	[TestCase(-10000000, false, false, "FF676980")]
+	[TestCase(-1000000, false, false, "FFF0BDC0")]
+	[TestCase(-100000, false, false, "FFFE7960")]
+	[TestCase(-10000, false, false, "FFFFD8F0")]
+	[TestCase(-1000, false, false, "FFFFFC18")]
+	[TestCase(-100, false, false, "FFFFFF9C")]
+	[TestCase(-10, false, false, "FFFFFFF6")]
+	[TestCase(0, true, false, "&H0")]
+	[TestCase(10, true, false, "&HA")]
+	[TestCase(100, true, false, "&H64")]
+	[TestCase(1000, true, false, "&H3E8")]
+	[TestCase(10000, true, false, "&H2710")]
+	[TestCase(100000, true, false, "&H186A0")]
+	[TestCase(1000000, true, false, "&HF4240")]
+	[TestCase(10000000, true, false, "&H989680")]
+	[TestCase(100000000, true, false, "&H5F5E100")]
+	[TestCase(1000000000, true, false, "&H3B9ACA00")]
+	[TestCase(2147483647, true, false, "&H7FFFFFFF")]
+	[TestCase(-2147483648, true, false, "&H80000000")]
+	[TestCase(-1000000000, true, false, "&HC4653600")]
+	[TestCase(-100000000, true, false, "&HFA0A1F00")]
+	[TestCase(-10000000, true, false, "&HFF676980")]
+	[TestCase(-1000000, true, false, "&HFFF0BDC0")]
+	[TestCase(-100000, true, false, "&HFFFE7960")]
+	[TestCase(-10000, true, false, "&HFFFFD8F0")]
+	[TestCase(-1000, true, false, "&HFFFFFC18")]
+	[TestCase(-100, true, false, "&HFFFFFF9C")]
+	[TestCase(-10, true, false, "&HFFFFFFF6")]
+	[TestCase(0, false, true, "0&")]
+	[TestCase(10, false, true, "A&")]
+	[TestCase(100, false, true, "64&")]
+	[TestCase(1000, false, true, "3E8&")]
+	[TestCase(10000, false, true, "2710&")]
+	[TestCase(100000, false, true, "186A0")]
+	[TestCase(1000000, false, true, "F4240")]
+	[TestCase(10000000, false, true, "989680")]
+	[TestCase(100000000, false, true, "5F5E100")]
+	[TestCase(1000000000, false, true, "3B9ACA00")]
+	[TestCase(2147483647, false, true, "7FFFFFFF")]
+	[TestCase(-2147483648, false, true, "80000000")]
+	[TestCase(-1000000000, false, true, "C4653600")]
+	[TestCase(-100000000, false, true, "FA0A1F00")]
+	[TestCase(-10000000, false, true, "FF676980")]
+	[TestCase(-1000000, false, true, "FFF0BDC0")]
+	[TestCase(-100000, false, true, "FFFE7960")]
+	[TestCase(-10000, false, true, "FFFFD8F0")]
+	[TestCase(-1000, false, true, "FFFFFC18")]
+	[TestCase(-100, false, true, "FFFFFF9C")]
+	[TestCase(-10, false, true, "FFFFFFF6")]
+	[TestCase(0, true, true, "&H0&")]
+	[TestCase(10, true, true, "&HA&")]
+	[TestCase(100, true, true, "&H64&")]
+	[TestCase(1000, true, true, "&H3E8&")]
+	[TestCase(10000, true, true, "&H2710&")]
+	[TestCase(100000, true, true, "&H186A0")]
+	[TestCase(1000000, true, true, "&HF4240")]
+	[TestCase(10000000, true, true, "&H989680")]
+	[TestCase(100000000, true, true, "&H5F5E100")]
+	[TestCase(1000000000, true, true, "&H3B9ACA00")]
+	[TestCase(2147483647, true, true, "&H7FFFFFFF")]
+	[TestCase(-2147483648, true, true, "&H80000000")]
+	[TestCase(-1000000000, true, true, "&HC4653600")]
+	[TestCase(-100000000, true, true, "&HFA0A1F00")]
+	[TestCase(-10000000, true, true, "&HFF676980")]
+	[TestCase(-1000000, true, true, "&HFFF0BDC0")]
+	[TestCase(-100000, true, true, "&HFFFE7960")]
+	[TestCase(-10000, true, true, "&HFFFFD8F0")]
+	[TestCase(-1000, true, true, "&HFFFFFC18")]
+	[TestCase(-100, true, true, "&HFFFFFF9C")]
+	[TestCase(-10, true, true, "&HFFFFFFF6")]
+	public void FormatHexInt(int value, bool includePrefix, bool qualify, string expectedResult)
+	{
+		// Act
+		var result = NumberFormatter.FormatHex(value, includePrefix, qualify);
+
+		// Assert
+		result.Should().Be(expectedResult);
+	}
+
+	[TestCase(0, false, false, "0")]
+	[TestCase(7, false, false, "7")]
+	[TestCase(8, false, false, "10")]
+	[TestCase(10, false, false, "12")]
+	[TestCase(100, false, false, "144")]
+	[TestCase(1000, false, false, "1750")]
+	[TestCase(10000, false, false, "23420")]
+	[TestCase(100000, false, false, "303240")]
+	[TestCase(1000000, false, false, "3641100")]
+	[TestCase(10000000, false, false, "46113200")]
+	[TestCase(100000000, false, false, "575360400")]
+	[TestCase(1000000000, false, false, "7346545000")]
+	[TestCase(2147483647, false, false, "17777777777")]
+	[TestCase(-2147483648, false, false, "20000000000")]
+	[TestCase(-1000000000, false, false, "30431233000")]
+	[TestCase(-100000000, false, false, "37202417400")]
+	[TestCase(-10000000, false, false, "37731664600")]
+	[TestCase(-1000000, false, false, "37774136700")]
+	[TestCase(-100000, false, false, "37777474540")]
+	[TestCase(-10000, false, false, "37777754360")]
+	[TestCase(-1000, false, false, "37777776030")]
+	[TestCase(-100, false, false, "37777777634")]
+	[TestCase(-10, false, false, "37777777766")]
+	[TestCase(0, true, false, "&O0")]
+	[TestCase(7, true, false, "&O7")]
+	[TestCase(8, true, false, "&O10")]
+	[TestCase(10, true, false, "&O12")]
+	[TestCase(100, true, false, "&O144")]
+	[TestCase(1000, true, false, "&O1750")]
+	[TestCase(10000, true, false, "&O23420")]
+	[TestCase(100000, true, false, "&O303240")]
+	[TestCase(1000000, true, false, "&O3641100")]
+	[TestCase(10000000, true, false, "&O46113200")]
+	[TestCase(100000000, true, false, "&O575360400")]
+	[TestCase(1000000000, true, false, "&O7346545000")]
+	[TestCase(2147483647, true, false, "&O17777777777")]
+	[TestCase(-2147483648, true, false, "&O20000000000")]
+	[TestCase(-1000000000, true, false, "&O30431233000")]
+	[TestCase(-100000000, true, false, "&O37202417400")]
+	[TestCase(-10000000, true, false, "&O37731664600")]
+	[TestCase(-1000000, true, false, "&O37774136700")]
+	[TestCase(-100000, true, false, "&O37777474540")]
+	[TestCase(-10000, true, false, "&O37777754360")]
+	[TestCase(-1000, true, false, "&O37777776030")]
+	[TestCase(-100, true, false, "&O37777777634")]
+	[TestCase(-10, true, false, "&O37777777766")]
+	[TestCase(0, false, true, "0&")]
+	[TestCase(7, false, true, "7&")]
+	[TestCase(8, false, true, "10&")]
+	[TestCase(10, false, true, "12&")]
+	[TestCase(100, false, true, "144&")]
+	[TestCase(1000, false, true, "1750&")]
+	[TestCase(10000, false, true, "23420&")]
+	[TestCase(100000, false, true, "303240")]
+	[TestCase(1000000, false, true, "3641100")]
+	[TestCase(10000000, false, true, "46113200")]
+	[TestCase(100000000, false, true, "575360400")]
+	[TestCase(1000000000, false, true, "7346545000")]
+	[TestCase(2147483647, false, true, "17777777777")]
+	[TestCase(-2147483648, false, true, "20000000000")]
+	[TestCase(-1000000000, false, true, "30431233000")]
+	[TestCase(-100000000, false, true, "37202417400")]
+	[TestCase(-10000000, false, true, "37731664600")]
+	[TestCase(-1000000, false, true, "37774136700")]
+	[TestCase(-100000, false, true, "37777474540")]
+	[TestCase(-10000, false, true, "37777754360")]
+	[TestCase(-1000, false, true, "37777776030")]
+	[TestCase(-100, false, true, "37777777634")]
+	[TestCase(-10, false, true, "37777777766")]
+	[TestCase(0, true, true, "&O0&")]
+	[TestCase(7, true, true, "&O7&")]
+	[TestCase(8, true, true, "&O10&")]
+	[TestCase(10, true, true, "&O12&")]
+	[TestCase(100, true, true, "&O144&")]
+	[TestCase(1000, true, true, "&O1750&")]
+	[TestCase(10000, true, true, "&O23420&")]
+	[TestCase(100000, true, true, "&O303240")]
+	[TestCase(1000000, true, true, "&O3641100")]
+	[TestCase(10000000, true, true, "&O46113200")]
+	[TestCase(100000000, true, true, "&O575360400")]
+	[TestCase(1000000000, true, true, "&O7346545000")]
+	[TestCase(2147483647, true, true, "&O17777777777")]
+	[TestCase(-2147483648, true, true, "&O20000000000")]
+	[TestCase(-1000000000, true, true, "&O30431233000")]
+	[TestCase(-100000000, true, true, "&O37202417400")]
+	[TestCase(-10000000, true, true, "&O37731664600")]
+	[TestCase(-1000000, true, true, "&O37774136700")]
+	[TestCase(-100000, true, true, "&O37777474540")]
+	[TestCase(-10000, true, true, "&O37777754360")]
+	[TestCase(-1000, true, true, "&O37777776030")]
+	[TestCase(-100, true, true, "&O37777777634")]
+	[TestCase(-10, true, true, "&O37777777766")]
+	public void FormatOctalInt(int value, bool includePrefix, bool qualify, string expectedResult)
+	{
+		// Act
+		var result = NumberFormatter.FormatOctal(value, includePrefix, qualify);
+
+		// Assert
+		result.Should().Be(expectedResult);
+	}
+
+	[TestCase(0.0000000000012345f, false, "1.2345E-12")]
+	[TestCase(0.00000001f, false, "1E-08")]
+	[TestCase(0.0000001f, false, ".1")]
+	[TestCase(0.000001f, false, ".1")]
+	[TestCase(0.00001f, false, ".1")]
+	[TestCase(0.0001f, false, ".1")]
+	[TestCase(0.001f, false, ".1")]
+	[TestCase(0.01f, false, ".1")]
+	[TestCase(0.1f, false, ".1")]
+	[TestCase(0f, false, "0")]
+	[TestCase(1f, false, "1")]
+	[TestCase(1.2f, false, "1.2")]
+	[TestCase(10f, false, "10")]
+	[TestCase(12.34567f, false, "12.34567")]
+	[TestCase(123.4567f, false, "123.4567")]
+	[TestCase(1234.567f, false, "1234.567")]
+	[TestCase(12345.67f, false, "12345.67")]
+	[TestCase(123456.7f, false, "123456.7")]
+	[TestCase(1234567f, false, "1234567")]
+	[TestCase(12345678f, false, "1.234568E+07")]
+	[TestCase(1234567812345f, false, "1.234568E+12")]
+	public void FormatFloat(float value, bool qualify, string expectedResult)
+	{
+		// Act
+		var result = NumberFormatter.Format(value, qualify);
+
+		// Assert
+		result.Should().Be(expectedResult);
+	}
+
+/*
+	public static string Format(float value, bool qualify = true)
+	{
+		if (value < -9999999f)
+		{
+			int exponent = 0;
+
+			while (value <= -10)
+			{
+				value *= 0.1f;
+				exponent++;
+			}
+
+			return FormatBaseDigits(value) + "E+" + exponent.ToString("00");
+		}
+
+		if ((value > 0) && (value < 0.0000001))
+		{
+			int exponent = 0;
+
+			while (value < 1)
+			{
+				value *= 10f;
+				exponent--;
+			}
+
+			return FormatBaseDigits(value) + "E-" + exponent.ToString("00");
+		}
+
+		if ((value < 0) && (value > -0.0000001))
+		{
+			int exponent = 0;
+
+			while (value > -1)
+			{
+				value *= 10f;
+				exponent--;
+			}
+
+			return FormatBaseDigits(value) + "E-" + exponent.ToString("00");
+		}
+
+		string str = FormatBaseDigits(value);
+
+		if (qualify)
+		{
+			if (int.TryParse(str, out _))
+				str += '!';
+		}
+
+		return str;
+	}
+
+	public static string Format(double value, bool qualify = true)
+	{
+		string FormatBaseDigits(double adjustedValue)
+		{
+			string ret = adjustedValue.ToString("#.###############");
+
+			if (ret.Length > 0)
+				return ret;
+			else
+				return "0";
+		}
+
+		if (value > 999999999999999d)
+		{
+			int exponent = 0;
+
+			while (value >= 10)
+			{
+				value *= 0.1d;
+				exponent++;
+			}
+
+			return FormatBaseDigits(value) + "D+" + exponent.ToString("00");
+		}
+
+		if (value < -999999999999999d)
+		{
+			int exponent = 0;
+
+			while (value <= -10)
+			{
+				value *= 0.1f;
+				exponent++;
+			}
+
+			return FormatBaseDigits(value) + "D+" + exponent.ToString("00");
+		}
+
+		if ((value > 0) && (value < 0.000000000000001))
+		{
+			int exponent = 0;
+
+			while (value < 1)
+			{
+				value *= 10d;
+				exponent--;
+			}
+
+			return FormatBaseDigits(value) + "D-" + exponent.ToString("00");
+		}
+
+		if ((value < 0) && (value > -0.000000000000001))
+		{
+			int exponent = 0;
+
+			while (value > -1)
+			{
+				value *= 10d;
+				exponent--;
+			}
+
+			return FormatBaseDigits(value) + "D-" + exponent.ToString("00");
+		}
+
+		string str = FormatBaseDigits(value);
+
+		if (qualify)
+		{
+			if (((float)value).ToString() == str)
+				str += '#';
+		}
+
+		return str;
+	}
+
+	public static string Format(decimal currencyValue, bool qualify = true)
+	{
+		currencyValue = currencyValue.Fix();
+
+		if (qualify)
+			return currencyValue.ToString("#.#") + '@';
+		else
+			return currencyValue.ToString("#.#");
+	}
+*/
+}

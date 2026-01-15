@@ -480,6 +480,17 @@ public class Compiler
 
 				break;
 			}
+			case CodeModel.Statements.DefSegStatement defSegStatement:
+			{
+				var translatedDefSegStatement = new DefSegStatement(defSegStatement);
+
+				translatedDefSegStatement.SegmentExpression =
+					TranslateExpression(defSegStatement.SegmentExpression, container, mapper, compilation);
+
+				container.Append(translatedDefSegStatement);
+
+				break;
+			}
 			case CodeModel.Statements.DefTypeStatement defTypeStatement:
 			{
 				var dataType = DataType.FromCodeModelDataType(defTypeStatement.DataType);
@@ -1502,10 +1513,21 @@ public class Compiler
 				if (constantValue)
 					throw CompilerException.InvalidConstant(keywordFunction.Token);
 
+				IEnumerable<Evaluable> arguments = Enumerable.Empty<Evaluable>();
+
+				if (keywordFunction.Arguments != null)
+				{
+					arguments =
+						keywordFunction.Arguments!.Expressions.Select(expr =>
+							TranslateExpression(expr, container, mapper, compilation)
+								?? throw new Exception("Argument expression translated to null"));
+				}
+
 				Function function;
 
 				switch (keywordFunction.Function)
 				{
+					case TokenType.INT: return IntFunction.Construct(keywordFunction.Token, arguments);
 					case TokenType.LEFT: function = new LeftFunction(); break;
 					case TokenType.MID: function = new MidFunction(); break;
 					case TokenType.PEEK: function = new PeekFunction(); break;
@@ -1521,12 +1543,8 @@ public class Compiler
 					default: throw new NotImplementedException("Keyword function: " + keywordFunction.Function);
 				}
 
-				if (keywordFunction.Arguments != null)
-				{
-					function.SetArguments(
-						keywordFunction.Arguments!.Expressions.Select(
-							expr => TranslateExpression(expr, container, mapper, compilation)));
-				}
+				if (function is not ConstructibleFunction)
+					function.SetArguments(arguments);
 
 				return function;
 			}
