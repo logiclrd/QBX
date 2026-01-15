@@ -43,9 +43,4 @@ public class RndFunction : Function
 
 		return new SingleVariable(RandomNumberGenerator.CurrentValue);
 	}
-
-	public override LiteralValue EvaluateConstant()
-	{
-		throw CompilerException.ValueIsNotConstant(SourceExpression?.Token);
-	}
 }

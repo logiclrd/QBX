@@ -35,6 +35,8 @@ public class RuntimeException : Exception
 		ContextLength = contextLength;
 	}
 
+	public static RuntimeException IllegalFunctionCall(Token? context)
+		=> new RuntimeException(context, "Illegal function call");
 	public static RuntimeException IllegalFunctionCall(CodeModel.Statements.Statement? statement)
 		=> new RuntimeException(statement, "Illegal function call");
 	public static RuntimeException Overflow(CodeModel.Statements.Statement? statement)

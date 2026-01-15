@@ -1528,8 +1528,10 @@ public class Compiler
 
 				switch (keywordFunction.Function)
 				{
+					case TokenType.ASC: function = new AscFunction(); break;
 					case TokenType.INT: return IntFunction.Construct(keywordFunction.Token, arguments);
 					case TokenType.LEFT: function = new LeftFunction(); break;
+					case TokenType.LEN: function = new LenFunction(); break;
 					case TokenType.MID: function = new MidFunction(); break;
 					case TokenType.PEEK: function = new PeekFunction(); break;
 					case TokenType.RIGHT: function = new RightFunction(); break;
