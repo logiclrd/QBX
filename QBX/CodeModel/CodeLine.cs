@@ -72,9 +72,6 @@ public class CodeLine : IRenderableCode
 
 	public void Render(TextWriter writer, bool includeCRLF = true)
 	{
-		if ((LineNumber != null) && (Label != null))
-			throw new Exception("Internal error: A line cannot have both a line number and a label");
-
 		if (LineNumber != null)
 			writer.Write(LineNumber);
 

@@ -5,6 +5,7 @@ using System.IO;
 using System.Text;
 
 using QBX.CodeModel;
+using QBX.Utility;
 
 namespace QBX.LexicalAnalysis;
 
@@ -24,6 +25,7 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 		Whitespace,
 		Comment,
 		String,
+		RawStringToEndOfLine,
 		Number,
 		NumberAfterDecimal,
 		NumberWithBase, // &H or &O
@@ -159,6 +161,21 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 								reparse = true;
 							}
 						}
+
+						break;
+					}
+					case Mode.RawStringToEndOfLine:
+					{
+						if ((ch == '\r') || (ch == '\n') || atEOF)
+						{
+							yield return new Token(line, tokenStartColumn, TokenType.RawString, buffer.ToString());
+							buffer.Clear();
+							mode = Mode.Any;
+							reparse = true;
+							tokenStartColumn = column;
+						}
+						else
+							buffer.Append(ch);
 
 						break;
 					}
@@ -422,6 +439,26 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 					{
 						if (char.IsAsciiLetterOrDigit(ch))
 							buffer.Append(ch);
+						else if (buffer.Equals("DATA", StringComparison.OrdinalIgnoreCase))
+						{
+							yield return new Token(line, tokenStartColumn, TokenType.DATA, "DATA");
+
+							tokenStartColumn = column;
+
+							buffer.Clear();
+
+							if (ch == '.')
+							{
+								yield return new Token(line, tokenStartColumn, TokenType.Period, ".");
+								tokenStartColumn++;
+								mode = Mode.Any;
+							}
+							else
+							{
+								buffer.Append(ch);
+								mode = Mode.RawStringToEndOfLine;
+							}
+						}
 						else
 						{
 							var dataType = DataType.Unspecified;

@@ -227,7 +227,8 @@ public partial class Program
 			{
 				try
 				{
-					FocusedViewport.CommitCurrentLine();
+					PrimaryViewport.CommitCurrentLine();
+					SplitViewport?.CommitCurrentLine();
 
 					if (input.Modifiers.ShiftKey)
 						Run();
@@ -245,7 +246,8 @@ public partial class Program
 			{
 				try
 				{
-					FocusedViewport.CommitCurrentLine();
+					PrimaryViewport.CommitCurrentLine();
+					SplitViewport?.CommitCurrentLine();
 
 					Step();
 
@@ -490,6 +492,14 @@ public partial class Program
 			}
 			default:
 			{
+				if ((input.ScanCode == ScanCode.N)
+				 && input.Modifiers.CtrlKey)
+				{
+					PrimaryViewport.CancelEdit();
+					SplitViewport?.CancelEdit();
+					StartNewProgram();
+				}
+
 				if ((input.ScanCode == ScanCode.S)
 				 && input.Modifiers.CtrlKey)
 				{

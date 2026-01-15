@@ -6,10 +6,12 @@ namespace QBX.Tests.Parser.Statements;
 
 public class DataStatementTests
 {
-	[TestCase("DATA", new TokenType[0])]
-	[TestCase("DATA 1, 2, 3", new TokenType[] { TokenType.Number, TokenType.Number, TokenType.Number })]
-	[TestCase("DATA \"hello\", \"donkey\", 42", new TokenType[] { TokenType.String, TokenType.String, TokenType.Number })]
-	public void ShouldParse(string definition, TokenType[] dataTokens)
+	[TestCase("DATA", new string[0])]
+	[TestCase("DATA 1, 2, 3", new string[] { "1", "2", "3" })]
+	[TestCase("DATA \"hello\", donkey, 42", new string[] { "hello", "donkey", "42" })]
+	[TestCase("DATA          \"hello\"     ,      donkey    shrek\t\t\t, 42", new string[] { "hello", "donkey    shrek", "42" })]
+	[TestCase("DATA(", new string[] { "(" })]
+	public void ShouldParse(string definition, string[] expectedDataItems)
 	{
 		// Arrange
 		var tokens = new Lexer(definition).ToList();
@@ -26,40 +28,8 @@ public class DataStatementTests
 
 		var dataResult = (DataStatement)result;
 
-		dataResult.DataItems.Should().HaveCount(dataTokens.Length);
+		var dataItems = dataResult.ParseDataItems().ToList();
 
-		for (int i = 0; i < dataTokens.Length; i++)
-			dataResult.DataItems[i].Type.Should().Be(dataTokens[i]);
+		dataItems.Should().Equal(expectedDataItems);
 	}
 }
-/*
-using QBX.LexicalAnalysis;
-
-namespace QBX.Tests.Parser.Statements;
-
-public class DataStatement
-{
-	public override StatementType Type => StatementType.Data;
-
-	public List<Token> DataItems { get; set; }
-
-	public DataStatement(List<Token> dataItems)
-	{
-		DataItems = dataItems;
-	}
-
-	public override void Render(TextWriter writer)
-	{
-		writer.Write("DATA ");
-
-		for (int i=0; i<DataItems.Count; i++)
-		{
-			if (i > 0)
-				writer.Write(',');
-
-			writer.Write(DataItems[i].Value);
-		}
-	}
-}
-
-*/

@@ -166,6 +166,12 @@ public class Viewport
 		return CurrentLineBuffer;
 	}
 
+	public void CancelEdit()
+	{
+		CurrentLineBuffer = null;
+		CurrentLineChanged = false;
+	}
+
 	public void CommitCurrentLine(StringBuilder? buffer = null)
 	{
 		if (!CurrentLineChanged)

@@ -143,7 +143,11 @@ public class BasicParser
 				startsWithDATA = false;
 				lineConsumed = false;
 			}
-			else if ((token.Type == TokenType.Number) && !line.Statements.Any() && !buffer.Any())
+			else if ((token.Type == TokenType.Number) &&
+			         (line.LineNumber == null) &&
+			         (line.Label == null) &&
+			         !line.Statements.Any() &&
+			         !buffer.Any())
 			{
 				if (precedingWhitespaceToken != null)
 				{
@@ -173,6 +177,7 @@ public class BasicParser
 					}
 
 					if (!line.Statements.Any()
+					 && (line.Label == null)
 					 && (buffer.Count == labelIndex + 1)
 					 && (buffer[labelIndex].Type == TokenType.Identifier)
 					 && (buffer[labelIndex].Value is string labelName)
@@ -599,41 +604,18 @@ public class BasicParser
 
 			case TokenType.DATA:
 			{
-				var dataItems = new List<Token>();
+				string dataString = "";
 
-				for (int i = 1; i < tokens.Count; i++)
+				if (tokenHandler.HasMoreTokens)
 				{
-					var dataToken = tokens[i];
+					var rawString = tokenHandler.Expect(TokenType.RawString);
 
-					if ((i + 1 < tokens.Count)
-					 && (tokens[i].Type == TokenType.Minus)
-					 && (tokens[i + 1].Type == TokenType.Number))
-					{
-						// Merge minus signs into numbers for DATA sequences.
-
-						dataToken = new Token(
-							tokens[i].Line,
-							tokens[i].Column,
-							TokenType.Number,
-							tokens[i].Value + tokens[i + 1].Value);
-
-						i++;
-					}
-
-					if ((dataToken.Type == TokenType.Number) || (dataToken.Type == TokenType.String))
-					{
-						dataItems.Add(dataToken);
-
-						if ((i + 1 < tokens.Count) && (tokens[i + 1].Type == TokenType.Comma))
-							i++;
-					}
-					else if (dataToken.Type == TokenType.Comma)
-						dataItems.Add(new Token(dataToken.Line, dataToken.Column, TokenType.Empty, ""));
-					else
-						throw new SyntaxErrorException(dataToken, "Expected: string or numeric literal");
+					dataString = rawString.Value;
 				}
 
-				return new DataStatement(dataItems);
+				tokenHandler.ExpectEndOfTokens();
+
+				return new DataStatement(dataString);
 			}
 
 			case TokenType.DECLARE:

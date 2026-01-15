@@ -62,7 +62,12 @@ public class StringValue : IComparable<StringValue>, IEquatable<StringValue>
 			if (data.Length > _bytes.Count)
 				data = data.Slice(0, _bytes.Count);
 
-			data.CopyTo(CollectionsMarshal.AsSpan(_bytes));
+			var byteSpan = CollectionsMarshal.AsSpan(_bytes);
+
+			data.CopyTo(byteSpan);
+
+			if (data.Length < byteSpan.Length)
+				byteSpan.Slice(data.Length).Fill((byte)' ');
 		}
 		else
 		{

@@ -334,6 +334,7 @@ public enum TokenType
 	[TokenValue(">=")] GreaterThanOrEquals,
 	[TokenValue("<>")] NotEquals,
 
+	[ValueToken] RawString,
 	[ValueToken] Comment,
 	[ValueToken] String,
 	[ValueToken] Number,

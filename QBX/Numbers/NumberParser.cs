@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 
@@ -132,10 +133,11 @@ public static class NumberParser
 			str = str.Remove(str.Length - 1);
 		}
 
-		int decimalIndex = str.IndexOf('.');
-		int afterDecimal = str.Length - decimalIndex;
+		var trimmed = str.Replace(".", "").Trim('0');
 
-		if (afterDecimal > 7)
+		int significantFigures = trimmed.Length;
+
+		if (significantFigures > 7)
 			return false;
 
 		return float.TryParse(str, out value);
@@ -177,6 +179,42 @@ public static class NumberParser
 			}
 		}
 
+		return false;
+	}
+
+	public static bool TryParse(string valueString, [NotNullWhen(true)] out object? value)
+	{
+		if (TryAsInteger(valueString, out var integerValue))
+		{
+			value = integerValue;
+			return true;
+		}
+
+		if (TryAsLong(valueString, out var longValue))
+		{
+			value = longValue;
+			return true;
+		}
+
+		if (TryAsSingle(valueString, out var singleValue))
+		{
+			value = singleValue;
+			return true;
+		}
+
+		if (TryAsDouble(valueString, out var doubleValue))
+		{
+			value = doubleValue;
+			return true;
+		}
+
+		if (TryAsCurrency(valueString, out var currencyValue))
+		{
+			value = currencyValue;
+			return true;
+		}
+
+		value = default;
 		return false;
 	}
 }

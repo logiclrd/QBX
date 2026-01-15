@@ -51,4 +51,8 @@ public class RuntimeException : Exception
 		=> new RuntimeException(context, "Subscript out of range");
 	public static RuntimeException ReturnWithoutGoSub(CodeModel.Statements.Statement? statement)
 		=> new RuntimeException(statement, "RETURN without GOSUB");
+	public static RuntimeException OutOfData(CodeModel.Statements.Statement? statement)
+		=> new RuntimeException(statement, "Out of DATA");
+	public static RuntimeException SyntaxError(Token? context)
+		=> new RuntimeException(context, "Syntax error");
 }
