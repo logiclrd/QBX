@@ -42,6 +42,9 @@ public abstract class Variable
 	public abstract void SetData(object value);
 	public abstract int CoerceToInt();
 
+	public abstract void Serialize(Span<byte> buffer);
+	public abstract void Deserialize(ReadOnlySpan<byte> buffer);
+
 	public abstract bool IsZero { get; }
 	public abstract bool IsPositive { get; }
 	public abstract bool IsNegative { get; }

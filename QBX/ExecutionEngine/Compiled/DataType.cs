@@ -42,6 +42,7 @@ public class DataType
 	{
 		UserType = userType;
 		IsArray = isArray;
+		ByteSize = userType.CalculateByteSize();
 	}
 
 	private DataType(int fixedLength)

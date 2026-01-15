@@ -44,6 +44,8 @@ public class StringValue : IComparable<StringValue>, IEquatable<StringValue>
 
 	public int Length => _bytes.Count;
 
+	public bool IsFixedLength => _isFixedLength;
+
 	public byte this[int index]
 	{
 		get => _bytes[index];

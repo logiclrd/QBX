@@ -25,4 +25,30 @@ public class UserDataTypeVariable : Variable
 
 	public override object GetData() => this;
 	public override void SetData(object value) => throw new NotSupportedException();
+
+	public override void Serialize(Span<byte> buffer)
+	{
+		foreach (var field in Fields)
+		{
+			field.Serialize(buffer);
+
+			if (buffer.Length <= field.DataType.ByteSize)
+				break;
+
+			buffer = buffer.Slice(field.DataType.ByteSize);
+		}
+	}
+
+	public override void Deserialize(ReadOnlySpan<byte> buffer)
+	{
+		foreach (var field in Fields)
+		{
+			field.Deserialize(buffer);
+
+			if (buffer.Length <= field.DataType.ByteSize)
+				break;
+
+			buffer = buffer.Slice(field.DataType.ByteSize);
+		}
+	}
 }

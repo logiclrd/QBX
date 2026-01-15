@@ -19,6 +19,9 @@ public class DummyVariable : Variable
 	public override int CoerceToInt() => throw CreateError();
 	public override string ToString() => throw CreateError();
 
+	public override void Serialize(Span<byte> buffer) => throw CreateError();
+	public override void Deserialize(ReadOnlySpan<byte> buffer) => throw CreateError();
+
 	public override bool IsZero => throw CreateError();
 	public override bool IsPositive => throw CreateError();
 	public override bool IsNegative => throw CreateError();

@@ -1,4 +1,6 @@
-﻿using QBX.ExecutionEngine.Compiled;
+﻿using System;
+
+using QBX.ExecutionEngine.Compiled;
 
 namespace QBX.ExecutionEngine.Execution.Variables;
 
@@ -43,6 +45,35 @@ public class StringVariable : Variable
 	public override int CoerceToInt() => throw CompilerException.TypeMismatch(context: null);
 	public override string ToString() => Value.ToString();
 
+	public override void Serialize(Span<byte> buffer)
+	{
+		if (!Value.IsFixedLength)
+			throw new Exception("Serialize called on a variable-length StringVariable");
+
+		var source = Value.AsSpan();
+
+		if (source.Length > buffer.Length)
+			source = source.Slice(0, buffer.Length);
+
+		source.CopyTo(buffer);
+	}
+
+	public override void Deserialize(ReadOnlySpan<byte> buffer)
+	{
+		if (!Value.IsFixedLength)
+			throw new Exception("Serialize called on a variable-length StringVariable");
+
+		var valueSpan = Value.AsSpan();
+
+		if (buffer.Length >= Value.Length)
+			buffer.Slice(0, Value.Length).CopyTo(valueSpan);
+		else
+		{
+			buffer.CopyTo(valueSpan);
+			valueSpan.Slice(buffer.Length).Clear();
+		}
+	}
+
 	public override bool IsZero => false;
 	public override bool IsPositive => false;
 	public override bool IsNegative => false;
@@ -76,6 +107,29 @@ public class Substring(StringVariable variable, int start, int length) : StringV
 			newValueSpan = newValueSpan.Slice(0, targetSpan.Length);
 
 		newValueSpan.CopyTo(targetSpan);
+	}
+
+	public override void Serialize(Span<byte> buffer)
+	{
+		var source = Value.AsSpan().Slice(start, length);
+
+		if (source.Length > buffer.Length)
+			source = source.Slice(0, buffer.Length);
+
+		source.CopyTo(buffer);
+	}
+
+	public override void Deserialize(ReadOnlySpan<byte> buffer)
+	{
+		var targetSpan = Value.AsSpan().Slice(start, length);
+
+		if (buffer.Length >= length)
+			buffer.Slice(0, length).CopyTo(targetSpan);
+		else
+		{
+			buffer.CopyTo(targetSpan);
+			targetSpan.Slice(buffer.Length).Clear();
+		}
 	}
 
 	public override bool IsZero => false;

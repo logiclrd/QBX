@@ -11,7 +11,7 @@ public class LenFunction : Function
 
 	protected override void SetArgument(int index, Evaluable value)
 	{
-		if (!value.Type.IsString)
+		if (!value.Type.IsString && !value.Type.IsUserType)
 			throw CompilerException.TypeMismatch(value.SourceExpression?.Token);
 
 		Argument = value;
@@ -29,11 +29,24 @@ public class LenFunction : Function
 		if (Argument == null)
 			throw new Exception("LenFunction with no Argument");
 
-		var argumentValue = ((StringVariable)Argument.Evaluate(context, stackFrame)).Value;
+		var type = Argument.Type;
 
-		if (argumentValue.Length > short.MaxValue)
+		int lengthValue;
+
+		if (type.IsString)
+		{
+			var argumentValue = ((StringVariable)Argument.Evaluate(context, stackFrame)).Value;
+
+			lengthValue = argumentValue.Length;
+		}
+		else if (type.IsUserType)
+			lengthValue = type.ByteSize;
+		else
+			throw new Exception("Internal error");
+
+		if (lengthValue > short.MaxValue)
 			throw RuntimeException.Overflow(Argument.SourceExpression?.Token);
 
-		return new IntegerVariable((short)argumentValue.Length);
+		return new IntegerVariable((short)lengthValue);
 	}
 }

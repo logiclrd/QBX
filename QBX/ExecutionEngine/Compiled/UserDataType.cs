@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace QBX.ExecutionEngine.Compiled;
 
@@ -14,6 +15,9 @@ public class UserDataType(string name)
 	{
 		Statement = typeStatement;
 	}
+
+	public int CalculateByteSize()
+		=> Fields.Sum(field => field.Type.ByteSize);
 
 	public override string ToString() => "TYPE " + Name;
 }
