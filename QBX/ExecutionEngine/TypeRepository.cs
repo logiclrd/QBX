@@ -24,19 +24,19 @@ public class TypeRepository
 	}
 
 	public DataType ResolveType(string userType, Token? context = null)
-		=> ResolveType(CodeModel.DataType.UserDataType, userType, isArray: false, context);
+		=> ResolveType(CodeModel.DataType.UserDataType, userType, fixedStringLength: 0, isArray: false, context);
 
-	public DataType ResolveType(CodeModel.DataType primitiveType, string? userTypeName, bool isArray, Token? context)
+	public DataType ResolveType(CodeModel.DataType primitiveType, string? userTypeName, int fixedStringLength, bool isArray, Token? context)
 	{
 		if (isArray)
 		{
-			var scalarType = ResolveType(primitiveType, userTypeName, isArray: false, context);
+			var scalarType = ResolveType(primitiveType, userTypeName, fixedStringLength, isArray: false, context);
 
 			return scalarType.MakeArrayType();
 		}
 
 		if (userTypeName == null)
-			return DataType.FromCodeModelDataType(primitiveType);
+			return DataType.FromCodeModelDataType(primitiveType, fixedStringLength);
 
 		if (_typeByName.TryGetValue(userTypeName, out var type))
 			return type;
@@ -50,9 +50,9 @@ public class TypeRepository
 			throw new Exception("Internal error: Cannot resolve ANY to a DataType");
 
 		if (CodeModel.TypeCharacter.TryParse(param.Name.Last(), out var typeCharacter))
-			return ResolveType(typeCharacter.Type, null, param.IsArray, param.NameToken);
+			return ResolveType(typeCharacter.Type, null, 0, param.IsArray, param.NameToken);
 		else if ((param.Type != CodeModel.DataType.Unspecified) || (param.UserType != null))
-			return ResolveType(param.Type, param.UserType, param.IsArray, param.TypeToken);
+			return ResolveType(param.Type, param.UserType, 0, param.IsArray, param.TypeToken);
 		else
 			return DataType.ForPrimitiveDataType(mapper.GetTypeForIdentifier(param.Name));
 	}

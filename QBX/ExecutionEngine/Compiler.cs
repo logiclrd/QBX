@@ -174,6 +174,7 @@ public class Compiler
 			var type = typeRepository.ResolveType(
 				typeElementStatement.ElementType,
 				typeElementStatement.ElementUserType,
+				typeElementStatement.FixedStringLength,
 				isArray: false,
 				typeElementStatement.TypeToken);
 

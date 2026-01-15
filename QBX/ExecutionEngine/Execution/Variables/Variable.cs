@@ -21,7 +21,7 @@ public abstract class Variable
 				case PrimitiveDataType.Single: return new SingleVariable();
 				case PrimitiveDataType.Double: return new DoubleVariable();
 				case PrimitiveDataType.Currency: return new CurrencyVariable();
-				case PrimitiveDataType.String: return new StringVariable();
+				case PrimitiveDataType.String: return new StringVariable(type.ByteSize);
 
 				default: throw new Exception("Internal error: Unrecognized data type in Variable.Construct " + type);
 			}

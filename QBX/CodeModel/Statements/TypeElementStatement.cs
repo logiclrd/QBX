@@ -12,6 +12,7 @@ public class TypeElementStatement : Statement
 	public string Name { get; set; } = "";
 	public VariableDeclarationSubscriptList? Subscripts { get; set; }
 	public DataType ElementType { get; set; }
+	public int FixedStringLength { get; set; }
 	public string? ElementUserType { get; set; }
 	public string? AlignmentWhitespace { get; set; }
 
@@ -40,7 +41,15 @@ public class TypeElementStatement : Statement
 			throw new Exception("Internal error: TypeElementStatement specifies both built-in and user-defined type");
 
 		if (ElementType != DataType.Unspecified)
+		{
 			writer.Write(ElementType);
+
+			if (ElementType == DataType.STRING)
+			{
+				writer.Write(" * ");
+				writer.Write(FixedStringLength);
+			}
+		}
 		else if (ElementUserType != null)
 			writer.Write(ElementUserType);
 		else

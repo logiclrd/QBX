@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -25,7 +26,19 @@ public class StringValue : IComparable<StringValue>, IEquatable<StringValue>
 		Append(s_cp437.GetBytes(str));
 	}
 
+	StringValue(int fixedStringLength)
+	{
+		_bytes.EnsureCapacity(fixedStringLength);
+		_bytes.AddRange(Enumerable.Repeat<byte>(0, fixedStringLength));
+
+		_isFixedLength = true;
+	}
+
+	public static StringValue CreateFixedLength(int length)
+		=> new StringValue(length);
+
 	List<byte> _bytes = new List<byte>();
+	bool _isFixedLength;
 
 	public Span<byte> AsSpan() => CollectionsMarshal.AsSpan(_bytes);
 
@@ -42,8 +55,18 @@ public class StringValue : IComparable<StringValue>, IEquatable<StringValue>
 
 	public StringValue Set(Span<byte> data)
 	{
-		_bytes.Clear();
-		_bytes.AddRange(data);
+		if (_isFixedLength)
+		{
+			if (data.Length > _bytes.Count)
+				data = data.Slice(0, _bytes.Count);
+
+			data.CopyTo(CollectionsMarshal.AsSpan(_bytes));
+		}
+		else
+		{
+			_bytes.Clear();
+			_bytes.AddRange(data);
+		}
 
 		return this;
 	}
@@ -53,7 +76,8 @@ public class StringValue : IComparable<StringValue>, IEquatable<StringValue>
 
 	public StringValue Append(Span<byte> data)
 	{
-		_bytes.AddRange(data);
+		if (!_isFixedLength)
+			_bytes.AddRange(data);
 
 		return this;
 	}

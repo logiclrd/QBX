@@ -10,6 +10,7 @@ public class DataType
 	public readonly PrimitiveDataType PrimitiveType;
 	public readonly UserDataType? UserType;
 	public readonly bool IsArray;
+	public readonly int ByteSize;
 
 	public bool IsPrimitiveType => (UserType == null);
 	[MemberNotNullWhen(true, nameof(UserType))]
@@ -26,12 +27,32 @@ public class DataType
 	{
 		PrimitiveType = primitiveType;
 		IsArray = isArray;
+
+		switch (primitiveType)
+		{
+			case PrimitiveDataType.Integer: ByteSize = 2; break;
+			case PrimitiveDataType.Long: ByteSize = 4; break;
+			case PrimitiveDataType.Single: ByteSize = 4; break;
+			case PrimitiveDataType.Double: ByteSize = 8; break;
+			case PrimitiveDataType.Currency: ByteSize = 8; break;
+		}
 	}
 
 	public DataType(UserDataType userType, bool isArray = false)
 	{
 		UserType = userType;
 		IsArray = isArray;
+	}
+
+	private DataType(int fixedLength)
+	{
+		PrimitiveType = PrimitiveDataType.String;
+		ByteSize = fixedLength;
+	}
+
+	public static DataType MakeFixedStringType(int fixedLength)
+	{
+		return new DataType(fixedLength);
 	}
 
 	public DataType MakeArrayType()
@@ -57,8 +78,12 @@ public class DataType
 	public static readonly DataType String = new DataType(PrimitiveDataType.String);
 	public static readonly DataType Currency = new DataType(PrimitiveDataType.Currency);
 
-	public static DataType FromCodeModelDataType(CodeModel.DataType dataType)
+	public static DataType FromCodeModelDataType(CodeModel.DataType dataType, int fixedStringLength = 0)
 	{
+		if ((dataType == CodeModel.DataType.STRING)
+		 && (fixedStringLength > 0))
+			return MakeFixedStringType(fixedStringLength);
+
 		switch (dataType)
 		{
 			case CodeModel.DataType.INTEGER: return DataType.Integer;

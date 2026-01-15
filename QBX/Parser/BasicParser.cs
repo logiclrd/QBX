@@ -7,6 +7,7 @@ using QBX.CodeModel;
 using QBX.CodeModel.Expressions;
 using QBX.CodeModel.Statements;
 using QBX.LexicalAnalysis;
+using QBX.Numbers;
 
 namespace QBX.Parser;
 
@@ -3282,6 +3283,29 @@ public class BasicParser
 						}
 
 						tokenHandler.Advance();
+
+						if (typeElement.ElementType == DataType.STRING)
+						{
+							tokenHandler.Expect(TokenType.Asterisk);
+
+							var fixedStringLength = tokenHandler.Expect(TokenType.Number);
+
+							if (fixedStringLength.Value.StartsWith("-"))
+							{
+								throw new SyntaxErrorException(
+									new Token(
+										fixedStringLength.Line,
+										fixedStringLength.Column,
+										TokenType.Minus,
+										"-"),
+									"Syntax error");
+							}
+
+							if (!NumberParser.TryAsInteger(fixedStringLength.Value, out var fixedStringLengthValue))
+								throw new SyntaxErrorException(fixedStringLength, "Invalid constant");
+
+							typeElement.FixedStringLength = fixedStringLengthValue;
+						}
 
 						break;
 					}

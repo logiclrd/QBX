@@ -6,10 +6,13 @@ public class StringVariable : Variable
 {
 	public readonly StringValue Value;
 
-	public StringVariable()
+	public StringVariable(int fixedStringLength = 0)
 		: base(DataType.String)
 	{
-		Value = new StringValue();
+		if (fixedStringLength == 0)
+			Value = new StringValue();
+		else
+			Value = StringValue.CreateFixedLength(fixedStringLength);
 	}
 
 	public StringVariable(StringValue value)
