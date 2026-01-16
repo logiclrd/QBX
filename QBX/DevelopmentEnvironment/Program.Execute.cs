@@ -120,9 +120,15 @@ public partial class Program
 
 		var (savedCursorX, savedCursorY) = (outputLibrary.CursorX, outputLibrary.CursorY);
 
-		if ((outputLibrary is TextLibrary)
-		 && (savedCursorY == outputLibrary.CharacterHeight - 1))
-			outputLibrary.ScrollText();
+		if (outputLibrary is TextLibrary outputTextLibrary)
+		{
+			outputTextLibrary.UpdateCharacterLineWindow(
+				0,
+				outputTextLibrary.Height - 1);
+
+			if (savedCursorY == outputLibrary.CharacterHeight - 1)
+				outputLibrary.ScrollText();
+		}
 
 		outputLibrary.MoveCursor(0, outputLibrary.CharacterHeight - 1);
 		outputLibrary.WriteText("Press any key to continue");

@@ -1,11 +1,11 @@
-using System;
-
 namespace QBX.ExecutionEngine.Execution;
 
 public class RuntimeState
 {
 	public int SegmentBase;
 	public bool EnablePaletteRemapping = true;
+
+	// TODO: soft key mapping & display on screen
 
 	public RuntimeState()
 	{

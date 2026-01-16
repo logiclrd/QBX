@@ -7,8 +7,8 @@ namespace QBX.ExecutionEngine;
 [Serializable]
 public class CompilerException : Exception
 {
-	public Token? Context { get; }
-	public int ContextLength { get; }
+	public Token? Context { get; private set; }
+	public int ContextLength { get; private set; }
 
 	public CompilerException(string message)
 		: this(default(Token), message)
@@ -33,6 +33,14 @@ public class CompilerException : Exception
 	{
 		Context = context;
 		ContextLength = contextLength;
+	}
+
+	public CompilerException AddContext(Token? context, int? contextLength = null)
+	{
+		Context = context;
+		ContextLength = contextLength ?? context?.Length ?? 0;
+
+		return this;
 	}
 
 	public static CompilerException TypeMismatch(CodeModel.Statements.Statement? statement)

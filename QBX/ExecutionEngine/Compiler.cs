@@ -1298,6 +1298,19 @@ public class Compiler
 
 				break;
 			}
+			case CodeModel.Statements.TextViewportStatement textViewportStatement:
+			{
+				var translatedTextViewportStatement = new TextViewportStatement(textViewportStatement);
+
+				translatedTextViewportStatement.WindowStartExpression =
+					TranslateExpression(textViewportStatement.TopExpression, container, mapper, compilation);
+				translatedTextViewportStatement.WindowEndExpression =
+					TranslateExpression(textViewportStatement.BottomExpression, container, mapper, compilation);
+
+				container.Append(translatedTextViewportStatement);
+
+				break;
+			}
 			case CodeModel.Statements.TypeStatement typeStatement:
 			{
 				// TODO: track whether we are in a DEF FN

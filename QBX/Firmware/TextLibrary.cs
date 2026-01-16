@@ -11,6 +11,9 @@ public class TextLibrary : VisualLibrary
 	{
 	}
 
+	public int CharacterLineWindowStart;
+	public int CharacterLineWindowEnd;
+
 	public int CursorAddress => CursorY * Width + CursorX;
 
 	public bool MovePhysicalCursor = true;
@@ -28,6 +31,9 @@ public class TextLibrary : VisualLibrary
 
 		CharacterWidth = Width;
 		CharacterHeight = Height;
+
+		CharacterLineWindowStart = 0;
+		CharacterLineWindowEnd = CharacterHeight - 1;
 
 		ReloadCursorAddress();
 	}
@@ -80,6 +86,13 @@ public class TextLibrary : VisualLibrary
 			end));
 	}
 
+	protected override int NewLineAtCursorY => CharacterLineWindowEnd + 1;
+
+	public override void MoveCursor(int x, int y)
+	{
+		base.MoveCursor(x, Math.Clamp(y, CharacterLineWindowStart, CharacterLineWindowEnd));
+	}
+
 	protected override void MoveCursorHandlePhysicalCursor()
 	{
 		if (MovePhysicalCursor)
@@ -113,6 +126,18 @@ public class TextLibrary : VisualLibrary
 
 		plane0.Clear();
 		plane1.Fill(Attributes);
+	}
+
+	public void UpdateCharacterLineWindow(int windowStart, int windowEnd)
+	{
+		if (windowStart > windowEnd)
+			(windowStart, windowEnd) = (windowEnd, windowStart);
+
+		CharacterLineWindowStart = int.Clamp(windowStart, 0, Height - 1);
+		CharacterLineWindowEnd = int.Clamp(windowEnd, 0, Height - 1);
+
+		// Clamp CursorY
+		MoveCursor(CursorX, CursorY);
 	}
 
 	public void WriteAttributesAt(int x, int y, int charCount)
@@ -159,7 +184,7 @@ public class TextLibrary : VisualLibrary
 			{
 				cursorX = 0;
 
-				if (cursorY + 1 < Height)
+				if (cursorY + 1 <= CharacterLineWindowEnd)
 					cursorY++;
 				else
 				{
@@ -170,24 +195,6 @@ public class TextLibrary : VisualLibrary
 		}
 
 		MoveCursor(cursorX, cursorY);
-	}
-
-	public override void ScrollText()
-	{
-		Span<byte> vramSpan = Array.VRAM;
-
-		vramSpan = vramSpan.Slice(StartAddress);
-
-		var plane0 = vramSpan.Slice(0x00000, 0x10000);
-		var plane1 = vramSpan.Slice(0x10000, 0x10000);
-
-		ScrollText(plane0, plane1);
-	}
-
-	void ScrollText(Span<byte> plane0, Span<byte> plane1)
-	{
-		plane0.Slice(Width).CopyTo(plane0);
-		plane1.Slice(Width).CopyTo(plane1);
 	}
 
 	public void WriteAttributes(int charCount)
@@ -223,15 +230,59 @@ public class TextLibrary : VisualLibrary
 
 			if (charCount > 0)
 			{
-				if (cursorY + 1 < Height)
+				cursorX = 0;
+
+				if (cursorY + 1 <= CharacterLineWindowEnd)
 					cursorY++;
 				else
-					break;
-
-				cursorX = 0;
+				{
+					ScrollText(Span<byte>.Empty, plane1);
+					o -= Width;
+				}
 			}
 		}
 
 		MoveCursor(cursorX, cursorY);
+	}
+
+	public override void ScrollText()
+	{
+		Span<byte> vramSpan = Array.VRAM;
+
+		vramSpan = vramSpan.Slice(StartAddress);
+
+		var plane0 = vramSpan.Slice(0x00000, 0x10000);
+		var plane1 = vramSpan.Slice(0x10000, 0x10000);
+
+		int characterLineWindowLines = CharacterLineWindowEnd - CharacterLineWindowStart + 1;
+
+		int windowOffset = CharacterLineWindowStart * Width;
+		int windowLength = characterLineWindowLines * Width;
+
+		if (windowOffset + windowLength > plane0.Length)
+			windowLength = plane0.Length - windowOffset;
+
+		if (windowLength > 0)
+		{
+			plane0 = plane0.Slice(windowOffset, windowLength);
+			plane1 = plane1.Slice(windowOffset, windowLength);
+
+			ScrollText(plane0, plane1);
+		}
+	}
+
+	void ScrollText(Span<byte> plane0, Span<byte> plane1)
+	{
+		if (plane0.Length > Width)
+		{
+			plane0.Slice(Width).CopyTo(plane0);
+			plane0.Slice(plane0.Length - Width).Fill((byte)' ');
+		}
+
+		if (plane1.Length > Width)
+		{
+			plane1.Slice(Width).CopyTo(plane1);
+			plane1.Slice(plane1.Length - Width).Fill(Attributes);
+		}
 	}
 }

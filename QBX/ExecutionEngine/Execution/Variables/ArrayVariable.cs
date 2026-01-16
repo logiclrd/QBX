@@ -8,7 +8,7 @@ public class ArrayVariable(DataType type) : Variable(type)
 	public override bool IsPositive => false;
 	public override bool IsNegative => false;
 
-	public override int CoerceToInt() => throw new System.InvalidOperationException();
+	public override int CoerceToInt() => throw CompilerException.TypeMismatch(context: null);
 
 	public DataType ElementType { get; } = type.MakeElementType();
 

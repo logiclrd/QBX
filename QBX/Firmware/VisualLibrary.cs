@@ -63,7 +63,7 @@ public abstract class VisualLibrary
 		// Overridden for text modes
 	}
 
-	public void MoveCursor(int x, int y)
+	public virtual void MoveCursor(int x, int y)
 	{
 		CursorX = x;
 		CursorY = y;
@@ -217,6 +217,8 @@ public abstract class VisualLibrary
 		MoveCursorHandlePhysicalCursor();
 	}
 
+	protected virtual int NewLineAtCursorY => CharacterHeight;
+
 	public void NewLine()
 	{
 		int newX = CursorX;
@@ -224,7 +226,7 @@ public abstract class VisualLibrary
 
 		newX = 0;
 
-		if (newY + 1 == CharacterHeight)
+		if (newY + 1 == NewLineAtCursorY)
 			ScrollText();
 		else
 			newY++;
