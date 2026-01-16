@@ -1,5 +1,6 @@
 using QBX.ExecutionEngine.Execution;
 using QBX.Firmware;
+using QBX.Numbers;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
@@ -19,8 +20,8 @@ public class PixelSetStatement(CodeModel.Statements.Statement? source) : Executa
 		var xValue = XExpression!.Evaluate(context, stackFrame);
 		var yValue = YExpression!.Evaluate(context, stackFrame);
 
-		int x = xValue.CoerceToInt();
-		int y = yValue.CoerceToInt();
+		float x = NumberConverter.ToSingle(xValue);
+		float y = NumberConverter.ToSingle(yValue);
 
 		if (StepCoordinates)
 		{

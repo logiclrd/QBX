@@ -9,9 +9,9 @@ public static class Equivalent
 {
 	public static Evaluable Construct(Evaluable left, Evaluable right)
 	{
-		if (left.Type.IsString)
+		if (!left.Type.IsNumeric)
 			throw CompilerException.TypeMismatch(left.SourceExpression?.Token);
-		if (right.Type.IsString)
+		if (!right.Type.IsNumeric)
 			throw CompilerException.TypeMismatch(right.SourceExpression?.Token);
 
 		if (left.Type.IsInteger && right.Type.IsInteger)

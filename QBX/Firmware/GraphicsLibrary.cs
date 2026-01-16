@@ -9,6 +9,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 	protected GraphicsLibrary(Machine machine)
 		: base(machine)
 	{
+		Window = Window.Dummy;
 	}
 
 	public int Aspect;
@@ -25,6 +26,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 	}
 
 	public int DrawingAttribute;
+	public Window Window;
 	public Point LastPoint;
 
 	public int CharacterScans; // doesn't exist on the VGA chip in graphics modes
@@ -33,6 +35,8 @@ public abstract class GraphicsLibrary : VisualLibrary
 	{
 		Width = Array.MiscellaneousOutput.BasePixelWidth >> (Array.Sequencer.DotDoubling ? 1 : 0);
 		Height = Array.CRTController.NumScanLines;
+
+		Window = new Window(0, 0, Width, Height, Width, Height);
 
 		if (CharacterScans == 0)
 		{
@@ -78,8 +82,15 @@ public abstract class GraphicsLibrary : VisualLibrary
 		DrawingAttribute = attribute;
 	}
 
-	public virtual void PixelSet(int x, int y)
+	public virtual void PixelSet(float x, float y)
 		=> PixelSet(x, y, DrawingAttribute);
+
+	public void PixelSet(float x, float y, int attribute)
+	{
+		var translated = Window.TranslatePoint(x, y);
+
+		PixelSet(translated.X, translated.Y);
+	}
 
 	public abstract void PixelSet(int x, int y, int attribute);
 
@@ -104,21 +115,31 @@ public abstract class GraphicsLibrary : VisualLibrary
 	public void LineTo(Point pt2, int attribute)
 		=> Line(LastPoint.X, LastPoint.Y, pt2.X, pt2.Y, attribute);
 
-	public void LineTo(int x2, int y2)
+	public void LineTo(float x2, float y2)
 		=> LineTo(x2, y2, DrawingAttribute);
 
-	public void LineTo(int x2, int y2, int attribute)
+	public void LineTo(float x2, float y2, int attribute)
 		=> Line(LastPoint.X, LastPoint.Y, x2, y2, attribute);
 
-	public void Line(int x1, int y1, int x2, int y2)
+	public void Line(float x1, float y1, float x2, float y2)
 		=> Line(x1, y1, x2, y2, DrawingAttribute);
+
+	public void Line(float x1, float y1, float x2, float y2, int attribute)
+	{
+		var translated1 = Window.TranslatePoint(x1, y1);
+		var translated2 = Window.TranslatePoint(x2, y2);
+
+		Line(translated1.X, translated1.Y, translated2.X, translated2.Y, attribute);
+
+		LastPoint = (x2, y2);
+	}
 
 	public void Line(int x1, int y1, int x2, int y2, int attribute)
 	{
 		int dx = Math.Abs(x1 - x2);
 		int dy = Math.Abs(y1 - y2);
 
-		LastPoint = (x2, y2);
+		LastPoint = Window.TranslateBack(x2, y2);
 
 		if (dx > dy)
 		{
@@ -182,18 +203,28 @@ public abstract class GraphicsLibrary : VisualLibrary
 	public void BoxTo(Point pt2, int attribute)
 		=> Box(LastPoint.X, LastPoint.Y, pt2.X, pt2.Y, attribute);
 
-	public void BoxTo(int x2, int y2)
+	public void BoxTo(float x2, float y2)
 		=> BoxTo(x2, y2, DrawingAttribute);
 
-	public void BoxTo(int x2, int y2, int attribute)
+	public void BoxTo(float x2, float y2, int attribute)
 		=> Box(LastPoint.X, LastPoint.Y, x2, y2, attribute);
 
-	public void Box(int x1, int y1, int x2, int y2)
+	public void Box(float x1, float y1, float x2, float y2)
 		=> Box(x1, y1, x2, y2, DrawingAttribute);
+
+	public void Box(float x1, float y1, float x2, float y2, int attribute)
+	{
+		var translated1 = Window.TranslatePoint(x1, y1);
+		var translated2 = Window.TranslatePoint(x2, y2);
+
+		Box(translated1.X, translated1.Y, translated2.X, translated2.Y, attribute);
+
+		LastPoint = (x2, y2);
+	}
 
 	public void Box(int x1, int y1, int x2, int y2, int attribute)
 	{
-		LastPoint = (x2, y2);
+		LastPoint = Window.TranslateBack(x2, y2);
 
 		if (y1 > y2)
 			(y1, y2) = (y2, y1);
@@ -252,18 +283,28 @@ public abstract class GraphicsLibrary : VisualLibrary
 	public void FillBoxTo(Point pt2, int attribute)
 		=> FillBox(LastPoint.X, LastPoint.Y, pt2.X, pt2.Y, attribute);
 
-	public void FillBoxTo(int x2, int y2)
+	public void FillBoxTo(float x2, float y2)
 		=> FillBoxTo(x2, y2, DrawingAttribute);
 
-	public void FillBoxTo(int x2, int y2, int attribute)
+	public void FillBoxTo(float x2, float y2, int attribute)
 		=> FillBox(LastPoint.X, LastPoint.Y, x2, y2, attribute);
 
-	public void FillBox(int x1, int y1, int x2, int y2)
+	public void FillBox(float x1, float y1, float x2, float y2)
 		=> FillBox(x1, y1, x2, y2, DrawingAttribute);
+
+	public void FillBox(float x1, float y1, float x2, float y2, int attribute)
+	{
+		var translated1 = Window.TranslatePoint(x1, y1);
+		var translated2 = Window.TranslatePoint(x2, y2);
+
+		FillBox(translated1.X, translated1.Y, translated2.X, translated2.Y, attribute);
+
+		LastPoint = (x2, y2);
+	}
 
 	public void FillBox(int x1, int y1, int x2, int y2, int attribute)
 	{
-		LastPoint = (x2, y2);
+		LastPoint = Window.TranslateBack(x2, y2);
 
 		if (y1 > y2)
 			(y1, y2) = (y2, y1);
@@ -331,8 +372,25 @@ public abstract class GraphicsLibrary : VisualLibrary
 		}
 	}
 
-	public void Ellipse(int x, int y, int radiusX, int radiusY, double startAngle, double endAngle, bool drawStartRadius, bool drawEndRadius)
+	public void Ellipse(float x, float y, float radiusX, float radiusY, double startAngle, double endAngle, bool drawStartRadius, bool drawEndRadius)
 		=> Ellipse(x, y, radiusX, radiusY, startAngle, endAngle, drawStartRadius, drawEndRadius, DrawingAttribute);
+
+	public void Ellipse(float x, float y, float radiusX, float radiusY, double startAngle, double endAngle, bool drawStartRadius, bool drawEndRadius, int attribute)
+	{
+		var translated = Window.TranslatePoint(x, y);
+
+		int translatedRadiusX = Window.TranslateWidth(radiusX);
+		int translatedRadiusY = Window.TranslateHeight(radiusY);
+
+		Ellipse(translated.X, translated.Y, translatedRadiusX, translatedRadiusY, startAngle, endAngle, drawStartRadius, drawEndRadius);
+
+		LastPoint = (x, y);
+	}
+
+	public void Ellipse(int x, int y, int radiusX, int radiusY, double startAngle, double endAngle, bool drawStartRadius, bool drawEndRadius)
+	{
+		Ellipse(x, y, radiusX, radiusY, startAngle, endAngle, drawStartRadius, drawEndRadius, DrawingAttribute);
+	}
 
 	public void Ellipse(int x, int y, int radiusX, int radiusY, double startAngle, double endAngle, bool drawStartRadius, bool drawEndRadius, int attribute)
 	{
@@ -349,14 +407,14 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 		radiusY = (radiusY + Aspect - 1) / Aspect;
 
-		Point startPoint, endPoint;
+		IntegerPoint startPoint, endPoint;
 		int startOctant, endOctant;
-		Rect startClip, endClip, startStopExclude;
+		IntegerRect startClip, endClip, startStopExclude;
 
 		startPoint = PointAtAngle(startAngle);
 		endPoint = PointAtAngle(endAngle);
 
-		startStopExclude = Rect.Empty;
+		startStopExclude = IntegerRect.Empty;
 
 		// Unless it's a perfect circle, after deformation, the angles aren't linear.
 		// The provided angles are interpreted as though we will be drawing a perfect
@@ -372,7 +430,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 			endAngle += 2 * Math.PI;
 
 		startOctant = endOctant = -1;
-		startClip = endClip = Rect.Unrestricted;
+		startClip = endClip = IntegerRect.Unrestricted;
 
 		// Octants divide where the tangent is a multiple of 45 degrees
 		//
@@ -646,7 +704,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 		if (!spans[6].IsEmpty)
 			HorizontalLine(x + spans[6].X1, x + spans[6].X2, y - spans[6].Y, attribute);
 
-		LastPoint = (x, y);
+		LastPoint = Window.TranslateBack(x, y);
 	}
 
 	public override void WriteText(ReadOnlySpan<byte> buffer)

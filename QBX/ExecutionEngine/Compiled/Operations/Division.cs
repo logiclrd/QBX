@@ -11,9 +11,9 @@ public static class Division
 {
 	public static Evaluable Construct(Evaluable left, Evaluable right)
 	{
-		if (left.Type.IsString || right.Type.IsString)
+		if (!left.Type.IsNumeric || !right.Type.IsNumeric)
 		{
-			var blame = left.Type.IsString
+			var blame = !left.Type.IsNumeric
 				? right.SourceExpression?.Token
 				: left.SourceExpression?.Token;
 

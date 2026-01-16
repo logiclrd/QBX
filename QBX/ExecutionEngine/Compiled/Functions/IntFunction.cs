@@ -35,7 +35,7 @@ public abstract class IntFunction : ConstructibleFunction
 
 		var arg = argList[0];
 
-		if (!arg.Type.IsPrimitiveType || arg.Type.IsArray || arg.Type.IsString)
+		if (!arg.Type.IsNumeric)
 			throw CompilerException.TypeMismatch(token);
 
 		switch (arg.Type.PrimitiveType)

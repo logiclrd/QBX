@@ -39,7 +39,7 @@ public class IfStatement(CodeModel.Statements.Statement? source) : Executable(so
 
 		var value = Condition.Evaluate(context, stackFrame);
 
-		if (value.DataType.IsString || !value.DataType.IsPrimitiveType)
+		if (!value.DataType.IsNumeric)
 			throw CompilerException.TypeMismatch(Condition.SourceStatement);
 
 		if (!value.IsZero)

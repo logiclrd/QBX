@@ -1,15 +1,15 @@
 ﻿namespace QBX.Firmware;
 
-public struct Rect
+public struct IntegerRect
 {
 	public int X1, Y1;
 	public int X2, Y2;
 
-	public static Rect Unrestricted
+	public static IntegerRect Unrestricted
 	{
 		get
 		{
-			var rect = new Rect();
+			var rect = new IntegerRect();
 
 			rect.X1 = rect.Y1 = int.MinValue;
 			rect.X2 = rect.Y2 = int.MaxValue;
@@ -18,11 +18,11 @@ public struct Rect
 		}
 	}
 
-	public static Rect Empty
+	public static IntegerRect Empty
 	{
 		get
 		{
-			var rect = new Rect();
+			var rect = new IntegerRect();
 
 			rect.X1 = rect.Y1 = int.MaxValue;
 			rect.X2 = rect.Y2 = int.MinValue;

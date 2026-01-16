@@ -2,7 +2,7 @@
 
 public static class PointExtensions
 {
-	public static void Deconstruct(this Point pt, out int x, out int y)
+	public static void Deconstruct(this Point pt, out float x, out float y)
 	{
 		x = pt.X;
 		y = pt.Y;

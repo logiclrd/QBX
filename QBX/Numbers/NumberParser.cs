@@ -7,40 +7,45 @@ namespace QBX.Numbers;
 
 public static class NumberParser
 {
-	public static bool TryAsInteger(string str, out short value)
+	public static bool TryAsInteger(ReadOnlySpan<char> chars, out short value)
 	{
 		value = default;
 
-		if (char.IsSymbol(str.Last()))
-			return (str.Last() == '%');
+		if (chars.Length == 0)
+			return false;
+
+		char lastChar = chars[chars.Length - 1];
+
+		if (char.IsSymbol(lastChar))
+			return (lastChar == '%');
 
 		int parsed;
 
-		var chars = str.AsSpan();
-
 		int sign = 1;
+
+		var noNegativeChars = chars;
 
 		if (chars[0] == '-')
 		{
 			sign = -1;
-			chars = chars.Slice(1);
+			noNegativeChars = chars.Slice(1);
 		}
 
-		if (chars.StartsWith("&H", StringComparison.OrdinalIgnoreCase))
+		if (noNegativeChars.StartsWith("&H", StringComparison.OrdinalIgnoreCase))
 		{
-			if (!int.TryParse(chars.Slice(2), NumberStyles.HexNumber, default, out parsed))
+			if (!int.TryParse(noNegativeChars.Slice(2), NumberStyles.HexNumber, default, out parsed))
 				return false;
 		}
-		else if (chars.StartsWith("&O", StringComparison.OrdinalIgnoreCase))
+		else if (noNegativeChars.StartsWith("&O", StringComparison.OrdinalIgnoreCase))
 		{
 			parsed = 0;
 
-			for (int i = 2; i < chars.Length; i++)
+			for (int i = 2; i < noNegativeChars.Length; i++)
 			{
-				if (!char.IsAsciiDigit(chars[i]))
+				if (!char.IsAsciiDigit(noNegativeChars[i]))
 					return false;
 
-				parsed = (parsed * 8) + (chars[i] - '0');
+				parsed = (parsed * 8) + (noNegativeChars[i] - '0');
 
 				if (parsed > short.MaxValue)
 					return false;
@@ -49,7 +54,7 @@ public static class NumberParser
 		else
 		{
 			sign = 1;
-			if (!int.TryParse(str, out parsed))
+			if (!int.TryParse(chars, out parsed))
 				return false;
 		}
 
@@ -64,43 +69,48 @@ public static class NumberParser
 		return false;
 	}
 
-	public static bool TryAsLong(string str, out int value)
+	public static bool TryAsLong(ReadOnlySpan<char> chars, out int value)
 	{
 		value = default;
 
-		if (char.IsSymbol(str.Last()))
+		if (chars.Length == 0)
+			return false;
+
+		char lastChar = chars[chars.Length - 1];
+
+		if (char.IsSymbol(lastChar))
 		{
-			if (str.Last() != '&')
+			if (lastChar != '&')
 				return false;
 
-			str = str.Remove(str.Length - 1);
+			chars = chars.Slice(0, chars.Length - 1);
 		}
 
-		var chars = str.AsSpan();
-
 		bool negate = false;
+
+		var noNegativeChars = chars;
 
 		if (chars[0] == '-')
 		{
 			negate = true;
-			chars = chars.Slice(1);
+			noNegativeChars = chars.Slice(1);
 		}
 
-		if (chars.StartsWith("&H", StringComparison.OrdinalIgnoreCase))
+		if (noNegativeChars.StartsWith("&H", StringComparison.OrdinalIgnoreCase))
 		{
-			if (!int.TryParse(chars.Slice(2), NumberStyles.HexNumber, default, out value))
+			if (!int.TryParse(noNegativeChars.Slice(2), NumberStyles.HexNumber, default, out value))
 				return false;
 		}
-		else if (chars.StartsWith("&O", StringComparison.OrdinalIgnoreCase))
+		else if (noNegativeChars.StartsWith("&O", StringComparison.OrdinalIgnoreCase))
 		{
 			value = 0;
 
-			for (int i = 2; i < str.Length; i++)
+			for (int i = 2; i < noNegativeChars.Length; i++)
 			{
-				if (!char.IsAsciiDigit(str[i]))
+				if (!char.IsAsciiDigit(noNegativeChars[i]))
 					return false;
 
-				long parsedLong = (long)(value * 8) + (str[i] - '0');
+				long parsedLong = (long)(value * 8) + (noNegativeChars[i] - '0');
 
 				if (parsedLong > int.MaxValue)
 					return false;
@@ -111,7 +121,7 @@ public static class NumberParser
 		else
 		{
 			negate = false;
-			if (!int.TryParse(str, out value))
+			if (!int.TryParse(chars, out value))
 				return false;
 		}
 
@@ -121,56 +131,71 @@ public static class NumberParser
 		return true;
 	}
 
-	public static bool TryAsSingle(string str, out float value)
+	public static bool TryAsSingle(ReadOnlySpan<char> chars, out float value)
 	{
 		value = default;
 
-		if (char.IsSymbol(str.Last()))
+		if (chars.Length == 0)
+			return false;
+
+		char lastChar = chars[chars.Length - 1];
+
+		if (char.IsSymbol(lastChar))
 		{
-			if (str.Last() != '!')
+			if (lastChar != '!')
 				return false;
 
-			str = str.Remove(str.Length - 1);
+			chars = chars.Slice(0, chars.Length - 1);
 		}
 
-		var trimmed = str.Replace(".", "").Trim('0');
+		var trimmed = new string(chars).Replace(".", "").Trim('0');
 
 		int significantFigures = trimmed.Length;
 
 		if (significantFigures > 7)
 			return false;
 
-		return float.TryParse(str, out value);
+		return float.TryParse(chars, out value);
 	}
 
-	public static bool TryAsDouble(string str, out double value)
+	public static bool TryAsDouble(ReadOnlySpan<char> chars, out double value)
 	{
 		value = default;
 
-		if (char.IsSymbol(str.Last()))
+		if (chars.Length == 0)
+			return false;
+
+		char lastChar = chars[chars.Length - 1];
+
+		if (char.IsSymbol(lastChar))
 		{
-			if (str.Last() != '#')
+			if (lastChar != '#')
 				return false;
 
-			str = str.Remove(str.Length - 1);
+			chars = chars.Slice(0, chars.Length - 1);
 		}
 
-		return double.TryParse(str, out value);
+		return double.TryParse(chars, out value);
 	}
 
-	public static bool TryAsCurrency(string str, out decimal value)
+	public static bool TryAsCurrency(ReadOnlySpan<char> chars, out decimal value)
 	{
 		value = default;
 
-		if (char.IsSymbol(str.Last()))
+		if (chars.Length == 0)
+			return false;
+
+		char lastChar = chars[chars.Length - 1];
+
+		if (char.IsSymbol(lastChar))
 		{
-			if (str.Last() != '@')
+			if (lastChar != '@')
 				return false;
 
-			str = str.Remove(str.Length - 1);
+			chars = chars.Slice(0, chars.Length - 1);
 		}
 
-		if (decimal.TryParse(str, out value))
+		if (decimal.TryParse(chars, out value))
 		{
 			if (value.IsInCurrencyRange())
 			{
@@ -182,7 +207,7 @@ public static class NumberParser
 		return false;
 	}
 
-	public static bool TryParse(string valueString, [NotNullWhen(true)] out object? value)
+	public static bool TryParse(ReadOnlySpan<char> valueString, [NotNullWhen(true)] out object? value)
 	{
 		if (TryAsInteger(valueString, out var integerValue))
 		{

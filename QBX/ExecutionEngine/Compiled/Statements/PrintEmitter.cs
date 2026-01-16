@@ -53,9 +53,7 @@ public class PrintEmitter(ExecutionContext context)
 
 	public void Emit(short integerValue)
 	{
-		if (integerValue < 0)
-			Emit((byte)'-');
-		else
+		if (integerValue >= 0)
 			Emit((byte)' ');
 
 		Emit(integerValue.ToString());
@@ -65,9 +63,7 @@ public class PrintEmitter(ExecutionContext context)
 
 	public void Emit(int longValue)
 	{
-		if (longValue < 0)
-			Emit((byte)'-');
-		else
+		if (longValue >= 0)
 			Emit((byte)' ');
 
 		Emit(longValue.ToString());

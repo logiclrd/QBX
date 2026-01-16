@@ -11,7 +11,7 @@ public class ChrFunction : Function
 
 	protected override void SetArgument(int index, Evaluable value)
 	{
-		if (value.Type.IsString)
+		if (!value.Type.IsNumeric)
 			throw CompilerException.TypeMismatch(value.SourceExpression?.Token);
 
 		Argument = value;

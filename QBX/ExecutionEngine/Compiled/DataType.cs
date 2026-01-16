@@ -23,6 +23,24 @@ public class DataType
 	public bool IsCurrency => PrimitiveType == PrimitiveDataType.Currency;
 	public bool IsString => PrimitiveType == PrimitiveDataType.String;
 
+	public bool IsNumeric
+	{
+		get
+		{
+			switch (PrimitiveType)
+			{
+				case PrimitiveDataType.Integer:
+				case PrimitiveDataType.Long:
+				case PrimitiveDataType.Single:
+				case PrimitiveDataType.Double:
+				case PrimitiveDataType.Currency:
+					return true;
+			}
+
+			return false;
+		}
+	}
+
 	private DataType(PrimitiveDataType primitiveType, bool isArray = false)
 	{
 		PrimitiveType = primitiveType;

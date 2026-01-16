@@ -12,9 +12,9 @@ public static class Multiplication
 	{
 		// Remaining possibilities: String, Currency, Double, Single, Long, Integer
 
-		if (left.Type.IsString || right.Type.IsString)
+		if (!left.Type.IsNumeric || !right.Type.IsNumeric)
 		{
-			var blame = left.Type.IsString
+			var blame = !left.Type.IsNumeric
 				? right.SourceExpression?.Token
 				: left.SourceExpression?.Token;
 

@@ -133,79 +133,84 @@ public class LiteralExpression : Expression
 			chars = chars.Slice(1);
 		}
 
-		if (str.StartsWith("\""))
+		if (chars.StartsWith("\""))
 		{
-			writer.Write(str);
-			if (!str.EndsWith("\""))
+			writer.Write(chars);
+			if (!chars.EndsWith("\""))
 				writer.Write('"');
 		}
-		else if (str.StartsWith("&H", StringComparison.OrdinalIgnoreCase))
+		else if (chars.StartsWith("&H", StringComparison.OrdinalIgnoreCase))
 		{
-			if (NumberParser.TryAsInteger(str, out var integerValue))
+			if (NumberParser.TryAsInteger(chars, out var integerValue))
 				writer.Write(NumberFormatter.FormatHex(integerValue, includePrefix: true));
-			else if (NumberParser.TryAsLong(str, out var longValue))
+			else if (NumberParser.TryAsLong(chars, out var longValue))
 				writer.Write(NumberFormatter.FormatHex(longValue, includePrefix: true));
 			else
 			{
-				writer.Write(str);
+				writer.Write(chars);
 				Debugger.Break();
 			}
 		}
-		else if (str.StartsWith("&O", StringComparison.OrdinalIgnoreCase) || str.StartsWith("&O", StringComparison.OrdinalIgnoreCase))
+		else if (chars.StartsWith("&O", StringComparison.OrdinalIgnoreCase) || chars.StartsWith("&O", StringComparison.OrdinalIgnoreCase))
 		{
-			if (NumberParser.TryAsInteger(str, out var integerValue))
+			if (NumberParser.TryAsInteger(chars, out var integerValue))
 				writer.Write(NumberFormatter.FormatOctal(integerValue, includePrefix: true));
-			else if (NumberParser.TryAsLong(str, out var longValue))
+			else if (NumberParser.TryAsLong(chars, out var longValue))
 				writer.Write(NumberFormatter.FormatOctal(longValue, includePrefix: true));
 			else
 			{
-				writer.Write(str);
+				writer.Write(chars);
 				Debugger.Break();
 			}
 		}
 		else
 		{
-			if (TypeCharacter.TryParse(str[str.Length - 1], out var typeCharacter))
+			// We previously greedily emitted the '-' to allow for negative hex and octal sequences.
+			bool skipMinus = (str[0] == '-');
+
+			int offset = skipMinus ? 1 : 0;
+
+			if (TypeCharacter.TryParse(chars[chars.Length - 1], out var typeCharacter))
 			{
-				string unqualified = str.Remove(str.Length - 1);
+				var unqualified = str.AsSpan().Slice(0, str.Length - 1);
 
 				switch (typeCharacter.Character)
 				{
 					case '%':
 						if (NumberParser.TryAsInteger(unqualified, out var integerValue))
-							writer.Write(NumberFormatter.Format(integerValue));
+							writer.Write(NumberFormatter.Format(integerValue).AsSpan().Slice(offset));
 						break;
 					case '&':
 						if (NumberParser.TryAsLong(unqualified, out var longValue))
-							writer.Write(NumberFormatter.Format(longValue));
+							writer.Write(NumberFormatter.Format(longValue).AsSpan().Slice(offset));
 						break;
 					case '!':
 						if (NumberParser.TryAsSingle(unqualified, out var singleValue))
-							writer.Write(NumberFormatter.Format(singleValue));
+							writer.Write(NumberFormatter.Format(singleValue).AsSpan().Slice(offset));
 						break;
 					case '#':
 						if (NumberParser.TryAsDouble(unqualified, out var doubleValue))
-							writer.Write(NumberFormatter.Format(doubleValue));
+							writer.Write(NumberFormatter.Format(doubleValue).AsSpan().Slice(offset));
 						break;
 					case '@':
 						if (NumberParser.TryAsCurrency(unqualified, out var currencyValue))
-							writer.Write(NumberFormatter.Format(currencyValue));
+							writer.Write(NumberFormatter.Format(currencyValue).AsSpan().Slice(offset));
 						break;
 				}
 			}
 			else if (NumberParser.TryAsInteger(str, out var integerValue))
-				writer.Write(NumberFormatter.Format(integerValue));
+				writer.Write(NumberFormatter.Format(integerValue).AsSpan().Slice(offset));
 			else if (NumberParser.TryAsLong(str, out var longValue))
-				writer.Write(NumberFormatter.Format(longValue));
+				writer.Write(NumberFormatter.Format(longValue).AsSpan().Slice(offset));
 			else if (NumberParser.TryAsSingle(str, out var singleValue))
-				writer.Write(NumberFormatter.Format(singleValue));
+				writer.Write(NumberFormatter.Format(singleValue).AsSpan().Slice(offset));
 			else if (NumberParser.TryAsDouble(str, out var doubleValue))
-				writer.Write(NumberFormatter.Format(doubleValue));
+				writer.Write(NumberFormatter.Format(doubleValue).AsSpan().Slice(offset));
 			else if (NumberParser.TryAsCurrency(str, out var currencyValue))
-				writer.Write(NumberFormatter.Format(currencyValue));
+				writer.Write(NumberFormatter.Format(currencyValue).AsSpan().Slice(offset));
 			else
 			{
-				writer.Write(str);
+				writer.Write(chars);
 				Debugger.Break();
 			}
 		}

@@ -9,7 +9,7 @@ public static class Not
 {
 	public static Evaluable Construct(Evaluable right)
 	{
-		if (right.Type.IsString)
+		if (!right.Type.IsNumeric)
 			throw CompilerException.TypeMismatch(right.SourceExpression?.Token);
 
 		if (right.Type.IsInteger)

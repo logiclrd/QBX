@@ -193,6 +193,7 @@ public class Compiler
 
 	void TranslateStatement(CodeModel.CompilationElement element, ref int lineIndexRef, ref int statementIndexRef, Sequence container, Mapper mapper, Compilation compilation, Module module)
 	{
+		// TODO: translate Circle
 		int lineIndex = lineIndexRef;
 		int statementIndex = statementIndexRef;
 
@@ -378,6 +379,48 @@ public class Compiler
 				}
 
 				container.Append(translatedCallStatement);
+
+				break;
+			}
+			case CodeModel.Statements.CircleStatement circleStatement:
+			{
+				var translatedCircleStatement = new CircleStatement(circleStatement);
+
+				if (circleStatement.XExpression == null)
+					throw new Exception("CircleStatement with no XExpression");
+				if (circleStatement.YExpression == null)
+					throw new Exception("CircleStatement with no YExpression");
+				if (circleStatement.RadiusExpression == null)
+					throw new Exception("CircleStatement with no RadiusExpression");
+
+				void TranslateNumericArgumentExpression(ref Evaluable? target, CodeModel.Expressions.Expression? expression)
+				{
+					if (expression != null)
+					{
+						target = TranslateExpression(expression, container, mapper, compilation);
+
+						if (!target.Type.IsNumeric)
+							throw CompilerException.TypeMismatch(expression?.Token);
+					}
+				}
+
+				TranslateNumericArgumentExpression(
+					ref translatedCircleStatement.XExpression, circleStatement.XExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedCircleStatement.YExpression, circleStatement.YExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedCircleStatement.RadiusExpression, circleStatement.RadiusExpression);
+
+				TranslateNumericArgumentExpression(
+					ref translatedCircleStatement.ColourExpression, circleStatement.ColourExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedCircleStatement.StartExpression, circleStatement.StartExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedCircleStatement.EndExpression, circleStatement.EndExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedCircleStatement.AspectExpression, circleStatement.AspectExpression);
+
+				container.Append(translatedCircleStatement);
 
 				break;
 			}
