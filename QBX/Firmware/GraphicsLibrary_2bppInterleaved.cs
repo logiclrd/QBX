@@ -47,8 +47,8 @@ public class GraphicsLibrary_2bppInterleaved : GraphicsLibrary
 	{
 		var vramSpan = Array.VRAM.AsSpan();
 
-		int windowStart = CharacterLineWindowStart * CharacterHeight;
-		int windowEnd = (CharacterLineWindowEnd + 1) * CharacterHeight - 1;
+		int windowStart = CharacterLineWindowStart * CharacterScans;
+		int windowEnd = (CharacterLineWindowEnd + 1) * CharacterScans - 1;
 
 		int windowOffset = windowStart * _stride;
 		int windowLength = (windowEnd - windowStart + 1) * _stride;

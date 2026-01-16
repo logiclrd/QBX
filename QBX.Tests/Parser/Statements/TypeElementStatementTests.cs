@@ -12,7 +12,7 @@ public class TypeElementStatementTests
 	[TestCase("length AS LONG", "length", null, DataType.LONG, null)]
 	[TestCase("row AS SINGLE", "row", null, DataType.SINGLE, null)]
 	[TestCase("col AS DOUBLE", "col", null, DataType.DOUBLE, null)]
-	[TestCase("direction AS STRING", "direction", null, DataType.STRING, null)]
+	[TestCase("direction AS STRING * 5", "direction", null, DataType.STRING, null)]
 	[TestCase("lives AS CURRENCY", "lives", null, DataType.CURRENCY, null)]
 	[TestCase("score AS othertypename", "score", null, DataType.Unspecified, "othertypename")]
 	[TestCase("array(2) AS INTEGER", "array", new int[] { 2, -1 }, DataType.INTEGER, null)]

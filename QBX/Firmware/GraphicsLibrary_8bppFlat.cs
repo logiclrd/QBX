@@ -15,8 +15,8 @@ public class GraphicsLibrary_8bppFlat : GraphicsLibrary
 
 	protected override void ClearImplementation()
 	{
-		int windowStart = CharacterLineWindowStart * CharacterHeight;
-		int windowEnd = (CharacterLineWindowEnd + 1) * CharacterHeight - 1;
+		int windowStart = CharacterLineWindowStart * CharacterScans;
+		int windowEnd = (CharacterLineWindowEnd + 1) * CharacterScans - 1;
 
 		int windowOffset = windowStart * Width;
 		int windowLength = (windowEnd - windowStart + 1) * Width;

@@ -41,8 +41,8 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 
 		int planeMask = Array.Graphics.Registers.BitMask;
 
-		int windowStart = CharacterLineWindowStart * CharacterHeight;
-		int windowEnd = (CharacterLineWindowEnd + 1) * CharacterHeight - 1;
+		int windowStart = CharacterLineWindowStart * CharacterScans;
+		int windowEnd = (CharacterLineWindowEnd + 1) * CharacterScans - 1;
 
 		int windowOffset = windowStart * _stride;
 		int windowLength = (windowEnd - windowStart + 1) * _stride;
