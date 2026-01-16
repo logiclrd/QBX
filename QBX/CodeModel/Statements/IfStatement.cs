@@ -24,6 +24,7 @@ public class IfStatement : Statement
 	public Expression? ConditionExpression { get; set; }
 	public List<Statement>? ThenBody { get; set; }
 	public List<Statement>? ElseBody { get; set; }
+	public bool OmitThen { get; set; }
 
 	protected virtual void Validate()
 	{
@@ -49,7 +50,9 @@ public class IfStatement : Statement
 		RenderStatementName(writer);
 		writer.Write(' ');
 		ConditionExpression?.Render(writer);
-		writer.Write(" THEN");
+
+		if (!OmitThen)
+			writer.Write(" THEN");
 
 		if (ThenBody != null)
 		{

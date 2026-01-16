@@ -1339,13 +1339,25 @@ public class BasicParser
 
 				var thenIndex = tokenHandler.FindNextUnparenthesizedOf(TokenType.THEN);
 
-				if (thenIndex < 0)
-					throw new SyntaxErrorException(tokenHandler.EndToken, "Expected: THEN");
+				if (thenIndex >= 0)
+				{
+					statement.ConditionExpression = ParseExpression(tokenHandler.RemainingTokens.Slice(0, thenIndex), tokenHandler[thenIndex]);
 
-				statement.ConditionExpression = ParseExpression(tokenHandler.RemainingTokens.Slice(0, thenIndex), tokenHandler[thenIndex]);
+					tokenHandler.Advance(thenIndex);
+					tokenHandler.Expect(TokenType.THEN);
+				}
+				else
+				{
+					var gotoIndex = tokenHandler.FindNextUnparenthesizedOf(TokenType.GOTO);
 
-				tokenHandler.Advance(thenIndex);
-				tokenHandler.Expect(TokenType.THEN);
+					if (gotoIndex < 0)
+						throw new SyntaxErrorException(tokenHandler.EndToken, "Expected: THEN");
+
+					statement.OmitThen = true;
+					statement.ConditionExpression = ParseExpression(tokenHandler.RemainingTokens.Slice(0, gotoIndex), tokenHandler[gotoIndex]);
+
+					tokenHandler.Advance(gotoIndex);
+				}
 
 				if (isNested && !tokenHandler.HasMoreTokens)
 					throw new SyntaxErrorException(token, "Syntax error: Block IF/ELSEIF must be first statement in line");
@@ -1356,12 +1368,29 @@ public class BasicParser
 
 					void DoParseStatement(List<Statement> list, ListRange<Token> tokens, bool isNested, Token endToken)
 					{
-						var statement = ParseStatementWithIndentation(tokens, isNested, endToken, ignoreErrors);
+						if ((list.Count == 0)
+						 && (tokens.Count == 1)
+						 && (tokens[0].Type == TokenType.Number))
+						{
+							// Special legacy syntax:
+							//   IF condition THEN linenumber
+							//   IF condition THEN ... ELSE linenumber
 
-						if (list.Count == 0)
-							statement.Indentation = "";
+							var statement = new BareLineNumberGoToStatement();
 
-						list.Add(statement);
+							statement.TargetLineNumber = tokens[0].Value;
+
+							list.Add(statement);
+						}
+						else
+						{
+							var statement = ParseStatementWithIndentation(tokens, isNested, endToken, ignoreErrors);
+
+							if (list.Count == 0)
+								statement.Indentation = "";
+
+							list.Add(statement);
+						}
 					}
 
 					while (true)
