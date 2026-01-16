@@ -151,6 +151,7 @@ public enum TokenType
 	[KeywordToken] LEN,
 	[KeywordToken] LET,
 	[KeywordToken] LINE,
+	[KeywordToken] LIST,
 	[KeywordFunction]
 	[KeywordToken] LOC,
 	[KeywordToken] LOCAL,

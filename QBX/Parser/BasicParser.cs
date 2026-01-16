@@ -1514,6 +1514,94 @@ public class BasicParser
 				return input;
 			}
 
+			case TokenType.KEY:
+			{
+				// One of:
+				//   KEY n%, s$ => KeyConfigStatement
+				//   KEY ON/OFF => KeyControlStatement
+				//   KEY LIST => KeyListStatement
+				//   KEY(n%) ON/OFF/STOP => EventControlStatement
+
+				tokenHandler.ExpectMoreTokens();
+
+				if (tokenHandler.NextTokenIs(TokenType.OpenParenthesis))
+				{
+					var eventControl = new EventControlStatement();
+
+					eventControl.EventType = EventType.Key;
+
+					var sourceExpressionTokens = tokenHandler.ExpectParenthesizedTokens();
+
+					eventControl.SourceExpression = ParseExpression(sourceExpressionTokens, tokenHandler.PreviousToken);
+
+					var modeToken = tokenHandler.ExpectOneOf(TokenType.ON, TokenType.OFF, TokenType.STOP);
+
+					eventControl.Action =
+						modeToken.Type switch
+						{
+							TokenType.ON => EventControlAction.Enable,
+							TokenType.OFF => EventControlAction.Disable,
+							TokenType.STOP => EventControlAction.Suspend,
+
+							_ => throw new Exception("Internal error")
+						};
+
+					return eventControl;
+				}
+				else
+				{
+					Statement statement;
+
+					switch (tokenHandler.NextToken.Type)
+					{
+						case TokenType.ON:
+							statement = new SoftKeyControlStatement() { Enable = true };
+							tokenHandler.Advance();
+							break;
+						case TokenType.OFF:
+							statement = new SoftKeyControlStatement() { Enable = false };
+							tokenHandler.Advance();
+							break;
+						case TokenType.LIST:
+							statement = new SoftKeyListStatement();
+							tokenHandler.Advance();
+							break;
+						default:
+						{
+							var argumentExpressions = SplitCommaDelimitedList(tokenHandler.RemainingTokens).ToList();
+
+							if (argumentExpressions.Count == 1)
+								throw new SyntaxErrorException(tokenHandler.EndToken, "Expected: ,");
+
+							if (argumentExpressions.Count > 2)
+							{
+								var range = argumentExpressions[1].Unwrap();
+
+								throw new SyntaxErrorException(tokens[range.Offset + range.Count], "Expected: )");
+							}
+
+							var midToken = tokens[argumentExpressions[1].Unwrap().Offset - 1];
+							var endToken = tokenHandler.PreviousToken;
+
+							var keyConfig = new SoftKeyConfigStatement();
+
+							keyConfig.KeyExpression = ParseExpression(argumentExpressions[0], midToken);
+							keyConfig.MacroExpression = ParseExpression(argumentExpressions[1], endToken);
+
+							statement = keyConfig;
+
+							tokenHandler.AdvanceToEnd();
+
+							break;
+						}
+					}
+
+					tokenHandler.ExpectEndOfTokens();
+
+					return statement;
+				}
+			}
+
 			case TokenType.LET:
 			{
 				var letStatement = new LetStatement();
@@ -2937,7 +3025,6 @@ public class BasicParser
 			}
 
 			case TokenType.COM:
-			case TokenType.KEY:
 			case TokenType.PEN:
 			case TokenType.SIGNAL:
 			case TokenType.STRIG:

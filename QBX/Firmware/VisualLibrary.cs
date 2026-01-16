@@ -29,15 +29,27 @@ public abstract class VisualLibrary
 
 	public int StartAddress;
 
+	public int CharacterLineWindowStart;
+	public int CharacterLineWindowEnd;
+
 	public int CursorX = 0;
 	public int CursorY = 0;
 
-	public abstract void RefreshParameters();
+	public virtual void RefreshParameters()
+	{
+		CharacterLineWindowStart = 0;
+		CharacterLineWindowEnd = CharacterHeight - 1;
+	}
 
 	public void Clear()
 	{
 		ClearImplementation();
 		MoveCursor(0, 0);
+	}
+
+	public void ClearCharacterLineWindow()
+	{
+		// TODO
 	}
 
 	protected abstract void ClearImplementation();
@@ -58,13 +70,27 @@ public abstract class VisualLibrary
 		return false;
 	}
 
+	public void UpdateCharacterLineWindow(int windowStart, int windowEnd)
+	{
+		if (windowStart > windowEnd)
+			(windowStart, windowEnd) = (windowEnd, windowStart);
+
+		CharacterLineWindowStart = int.Clamp(windowStart, 0, Height - 1);
+		CharacterLineWindowEnd = int.Clamp(windowEnd, 0, Height - 1);
+
+		// Clamp CursorY
+		MoveCursor(CursorX, CursorY);
+	}
+
 	protected virtual void MoveCursorHandlePhysicalCursor()
 	{
 		// Overridden for text modes
 	}
 
-	public virtual void MoveCursor(int x, int y)
+	public void MoveCursor(int x, int y)
 	{
+		y = Math.Clamp(y, CharacterLineWindowStart, CharacterLineWindowEnd);
+
 		CursorX = x;
 		CursorY = y;
 
@@ -217,8 +243,6 @@ public abstract class VisualLibrary
 		MoveCursorHandlePhysicalCursor();
 	}
 
-	protected virtual int NewLineAtCursorY => CharacterHeight;
-
 	public void NewLine()
 	{
 		int newX = CursorX;
@@ -226,7 +250,7 @@ public abstract class VisualLibrary
 
 		newX = 0;
 
-		if (newY + 1 == NewLineAtCursorY)
+		if (newY == CharacterLineWindowEnd)
 			ScrollText();
 		else
 			newY++;

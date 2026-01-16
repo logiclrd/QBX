@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -11,6 +12,9 @@ namespace QBX.ExecutionEngine.Execution;
 public class StringValue : IComparable<StringValue>, IEquatable<StringValue>
 {
 	static Encoding s_cp437 = new CP437Encoding();
+
+	public static bool IsNullOrEmpty([NotNullWhen(false)] StringValue? test)
+		=> (test == null) || (test.Length == 0);
 
 	public StringValue()
 	{

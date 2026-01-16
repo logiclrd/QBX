@@ -53,6 +53,8 @@ public abstract class GraphicsLibrary : VisualLibrary
 			Aspect = 1;
 
 		Font = Machine.VideoFirmware.GetFont(CharacterScans);
+
+		base.RefreshParameters();
 	}
 
 	public void SetCharacterScans(int newScans)
@@ -66,6 +68,9 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 		CharacterScans = newScans;
 		CharacterHeight = Height / CharacterScans;
+
+		if (CursorY >= CharacterHeight)
+			MoveCursor(CursorX, CharacterHeight - 1);
 	}
 
 	public void SetDrawingAttribute(int attribute)
@@ -678,10 +683,18 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	public override void ScrollText()
 	{
-		ScrollUp(CharacterScans);
+		ScrollUp(
+			CharacterScans,
+			CharacterScans * CharacterLineWindowStart,
+			CharacterScans * (CharacterLineWindowEnd + 1) - 1);
 	}
 
-	public abstract void ScrollUp(int scanCount);
+	public void ScrollUp(int scanCount)
+	{
+		ScrollUp(scanCount, 0, Height - 1);
+	}
+
+	public abstract void ScrollUp(int scanCount, int windowStart, int windowEnd);
 
 	protected virtual void DrawCharacterScan(int x, int y, int characterWidth, byte glyphScan)
 	{

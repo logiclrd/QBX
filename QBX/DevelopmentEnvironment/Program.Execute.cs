@@ -130,16 +130,12 @@ public partial class Program
 				outputLibrary.ScrollText();
 		}
 
+		SaveOutput();
+
 		outputLibrary.MoveCursor(0, outputLibrary.CharacterHeight - 1);
 		outputLibrary.WriteText("Press any key to continue");
 
 		WaitForKey();
-
-		outputLibrary.MoveCursor(0, outputLibrary.CharacterHeight - 1);
-		outputLibrary.WriteText("                         ");
-		outputLibrary.MoveCursor(savedCursorX, savedCursorY);
-
-		SaveOutput();
 
 		SetIDEVideoMode();
 

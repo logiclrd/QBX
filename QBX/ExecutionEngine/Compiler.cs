@@ -381,6 +381,17 @@ public class Compiler
 
 				break;
 			}
+			case CodeModel.Statements.ClsStatement clsStatement:
+			{
+				var translatedClsStatement = new ClsStatement(clsStatement);
+
+				translatedClsStatement.ArgumentExpression =
+					TranslateExpression(clsStatement.Mode, container, mapper, compilation);
+
+				container.Append(translatedClsStatement);
+
+				break;
+			}
 			case CodeModel.Statements.ColorStatement colorStatement:
 			{
 				var translatedColorStatement = new ColorStatement(colorStatement);
@@ -1298,6 +1309,37 @@ public class Compiler
 
 				break;
 			}
+			case CodeModel.Statements.SoftKeyConfigStatement softKeyConfigStatement:
+			{
+				var translatedSoftKeyConfigStatement = new SoftKeyConfigStatement(softKeyConfigStatement);
+
+				translatedSoftKeyConfigStatement.KeyExpression =
+					TranslateExpression(softKeyConfigStatement.KeyExpression, container, mapper, compilation);
+				translatedSoftKeyConfigStatement.MacroExpression =
+					TranslateExpression(softKeyConfigStatement.MacroExpression, container, mapper, compilation);
+
+				container.Append(translatedSoftKeyConfigStatement);
+
+				break;
+			}
+			case CodeModel.Statements.SoftKeyControlStatement softKeyControlStatement:
+			{
+				var translatedSoftKeyControlStatement = new SoftKeyControlStatement(softKeyControlStatement);
+
+				translatedSoftKeyControlStatement.Enable = softKeyControlStatement.Enable;
+
+				container.Append(translatedSoftKeyControlStatement);
+
+				break;
+			}
+			case CodeModel.Statements.SoftKeyListStatement softKeyListStatement:
+			{
+				var translatedSoftKeyListStatement = new SoftKeyListStatement(softKeyListStatement);
+
+				container.Append(translatedSoftKeyListStatement);
+
+				break;
+			}
 			case CodeModel.Statements.TextViewportStatement textViewportStatement:
 			{
 				var translatedTextViewportStatement = new TextViewportStatement(textViewportStatement);
@@ -1623,6 +1665,7 @@ public class Compiler
 				switch (keywordFunction.Function)
 				{
 					case TokenType.ASC: function = new AscFunction(); break;
+					case TokenType.CHR: function = new ChrFunction(); break;
 					case TokenType.INT: return IntFunction.Construct(keywordFunction.Token, arguments);
 					case TokenType.LEFT: function = new LeftFunction(); break;
 					case TokenType.LEN: function = new LenFunction(); break;

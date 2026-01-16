@@ -11,9 +11,6 @@ public class TextLibrary : VisualLibrary
 	{
 	}
 
-	public int CharacterLineWindowStart;
-	public int CharacterLineWindowEnd;
-
 	public int CursorAddress => CursorY * Width + CursorX;
 
 	public bool MovePhysicalCursor = true;
@@ -32,8 +29,7 @@ public class TextLibrary : VisualLibrary
 		CharacterWidth = Width;
 		CharacterHeight = Height;
 
-		CharacterLineWindowStart = 0;
-		CharacterLineWindowEnd = CharacterHeight - 1;
+		base.RefreshParameters();
 
 		ReloadCursorAddress();
 	}
@@ -86,13 +82,6 @@ public class TextLibrary : VisualLibrary
 			end));
 	}
 
-	protected override int NewLineAtCursorY => CharacterLineWindowEnd + 1;
-
-	public override void MoveCursor(int x, int y)
-	{
-		base.MoveCursor(x, Math.Clamp(y, CharacterLineWindowStart, CharacterLineWindowEnd));
-	}
-
 	protected override void MoveCursorHandlePhysicalCursor()
 	{
 		if (MovePhysicalCursor)
@@ -126,18 +115,6 @@ public class TextLibrary : VisualLibrary
 
 		plane0.Clear();
 		plane1.Fill(Attributes);
-	}
-
-	public void UpdateCharacterLineWindow(int windowStart, int windowEnd)
-	{
-		if (windowStart > windowEnd)
-			(windowStart, windowEnd) = (windowEnd, windowStart);
-
-		CharacterLineWindowStart = int.Clamp(windowStart, 0, Height - 1);
-		CharacterLineWindowEnd = int.Clamp(windowEnd, 0, Height - 1);
-
-		// Clamp CursorY
-		MoveCursor(CursorX, CursorY);
 	}
 
 	public void WriteAttributesAt(int x, int y, int charCount)

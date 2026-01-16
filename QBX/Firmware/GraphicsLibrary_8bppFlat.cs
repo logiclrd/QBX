@@ -15,7 +15,13 @@ public class GraphicsLibrary_8bppFlat : GraphicsLibrary
 
 	protected override void ClearImplementation()
 	{
-		Array.VRAM.AsSpan().Slice(StartAddress, Width * Height).Clear();
+		int windowStart = CharacterLineWindowStart * CharacterHeight;
+		int windowEnd = (CharacterLineWindowEnd + 1) * CharacterHeight - 1;
+
+		int windowOffset = windowStart * Width;
+		int windowLength = (windowEnd - windowStart + 1) * Width;
+
+		Array.VRAM.AsSpan().Slice(StartAddress + windowOffset, windowLength).Clear();
 	}
 
 	public override void PixelSet(int x, int y, int attribute)
@@ -42,14 +48,15 @@ public class GraphicsLibrary_8bppFlat : GraphicsLibrary
 		Array.VRAM.AsSpan().Slice(o, x2 - x1 + 1).Fill(unchecked((byte)attribute));
 	}
 
-	public override void ScrollUp(int scanCount)
+	public override void ScrollUp(int scanCount, int windowStart, int windowEnd)
 	{
-		int frameSize = Width * Height;
+		int windowOffset = windowStart * Width;
+		int windowLength = (windowEnd - windowStart + 1) * Width;
 
 		int copyOffset = scanCount * Width;
-		int copySize = frameSize - copyOffset;
+		int copySize = windowLength - copyOffset;
 
-		var vram = Array.VRAM.AsSpan().Slice(StartAddress, frameSize);
+		var vram = Array.VRAM.AsSpan().Slice(StartAddress + windowOffset, windowLength);
 
 		vram.Slice(copyOffset).CopyTo(vram);
 		vram.Slice(copySize).Fill(0);

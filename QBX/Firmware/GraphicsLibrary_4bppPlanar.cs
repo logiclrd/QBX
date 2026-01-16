@@ -40,10 +40,16 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 	{
 		var vramSpan = Array.VRAM.AsSpan();
 
-		vramSpan.Slice(_plane0Offset, _planeBytesUsed).Clear();
-		vramSpan.Slice(_plane1Offset, _planeBytesUsed).Clear();
-		vramSpan.Slice(_plane2Offset, _planeBytesUsed).Clear();
-		vramSpan.Slice(_plane3Offset, _planeBytesUsed).Clear();
+		int windowStart = CharacterLineWindowStart * CharacterHeight;
+		int windowEnd = (CharacterLineWindowEnd + 1) * CharacterHeight - 1;
+
+		int windowOffset = windowStart * _stride;
+		int windowLength = (windowEnd - windowStart + 1) * _stride;
+
+		vramSpan.Slice(_plane0Offset + windowOffset, windowLength).Clear();
+		vramSpan.Slice(_plane1Offset + windowOffset, windowLength).Clear();
+		vramSpan.Slice(_plane2Offset + windowOffset, windowLength).Clear();
+		vramSpan.Slice(_plane3Offset + windowOffset, windowLength).Clear();
 	}
 
 	public override void PixelSet(int x, int y, int attribute)
@@ -195,38 +201,49 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 		}
 	}
 
-	public override void ScrollUp(int scanCount)
+	public override void ScrollUp(int scanCount, int windowStart, int windowEnd)
 	{
 		var vramSpan = Array.VRAM.AsSpan();
 
 		int copyOffset = scanCount * _stride;
 
+		int windowOffset = windowStart * _stride;
+		int windowLength = (windowEnd - windowStart + 1) * _stride;
+
 		{
 			var plane = vramSpan.Slice(_plane0Offset, _planeBytesUsed);
 
+			plane = plane.Slice(windowOffset, windowLength);
+
 			plane.Slice(copyOffset).CopyTo(plane);
-			plane.Slice(_planeBytesUsed - copyOffset).Fill(0);
+			plane.Slice(plane.Length - copyOffset).Fill(0);
 		}
 
 		{
 			var plane = vramSpan.Slice(_plane1Offset, _planeBytesUsed);
 
+			plane = plane.Slice(windowOffset, windowLength);
+
 			plane.Slice(copyOffset).CopyTo(plane);
-			plane.Slice(_planeBytesUsed - copyOffset).Fill(0);
+			plane.Slice(plane.Length - copyOffset).Fill(0);
 		}
 
 		{
 			var plane = vramSpan.Slice(_plane2Offset, _planeBytesUsed);
 
+			plane = plane.Slice(windowOffset, windowLength);
+
 			plane.Slice(copyOffset).CopyTo(plane);
-			plane.Slice(_planeBytesUsed - copyOffset).Fill(0);
+			plane.Slice(plane.Length - copyOffset).Fill(0);
 		}
 
 		{
 			var plane = vramSpan.Slice(_plane3Offset, _planeBytesUsed);
 
+			plane = plane.Slice(windowOffset, windowLength);
+
 			plane.Slice(copyOffset).CopyTo(plane);
-			plane.Slice(_planeBytesUsed - copyOffset).Fill(0);
+			plane.Slice(plane.Length - copyOffset).Fill(0);
 		}
 	}
 

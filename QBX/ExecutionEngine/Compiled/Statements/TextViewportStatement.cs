@@ -34,9 +34,6 @@ public class TextViewportStatement(CodeModel.Statements.Statement source) : Exec
 		}
 		catch (CompilerException e) { throw e.AddContext(WindowStartExpression.SourceExpression?.Token); }
 
-		if (context.VisualLibrary is not TextLibrary textLibrary)
-			throw RuntimeException.IllegalFunctionCall(Source);
-
-		textLibrary.UpdateCharacterLineWindow(windowStart, windowEnd);
+		context.VisualLibrary.UpdateCharacterLineWindow(windowStart, windowEnd);
 	}
 }
