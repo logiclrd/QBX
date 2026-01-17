@@ -1770,6 +1770,7 @@ public class Compiler
 						else
 							function = new RndFunction();
 						break;
+					case TokenType.SPACE: function = new SpaceFunction(); break;
 					case TokenType.TIMER: function = new TimerFunction(); break;
 
 					default: throw new NotImplementedException("Keyword function: " + keywordFunction.Function);
