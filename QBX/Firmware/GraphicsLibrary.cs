@@ -82,6 +82,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 		DrawingAttribute = attribute;
 	}
 
+	#region PixelSet
 	public virtual void PixelSet(float x, float y)
 		=> PixelSet(x, y, DrawingAttribute);
 
@@ -93,7 +94,9 @@ public abstract class GraphicsLibrary : VisualLibrary
 	}
 
 	public abstract void PixelSet(int x, int y, int attribute);
+	#endregion PixelSet
 
+	#region HorizontalLine
 	public virtual void HorizontalLine(int x1, int x2, int y)
 		=> HorizontalLine(x1, x2, y, DrawingAttribute);
 
@@ -102,7 +105,9 @@ public abstract class GraphicsLibrary : VisualLibrary
 		for (int x = x1; x <= x2; x++)
 			PixelSet(x, y, attribute);
 	}
+	#endregion
 
+	#region Line
 	public void Line(Point pt1, Point pt2)
 		=> Line(pt1, pt2, DrawingAttribute);
 
@@ -190,7 +195,108 @@ public abstract class GraphicsLibrary : VisualLibrary
 			}
 		}
 	}
+	#endregion
 
+	#region LineStyle
+	public void LineStyle(Point pt1, Point pt2, int styleBits)
+		=> LineStyle(pt1, pt2, DrawingAttribute, styleBits);
+
+	public void LineStyle(Point pt1, Point pt2, int attribute, int styleBits)
+		=> LineStyle(pt1.X, pt1.Y, pt2.X, pt2.Y, attribute, styleBits);
+
+	public void LineStyleTo(Point pt2, int styleBits)
+		=> LineStyleTo(pt2, DrawingAttribute, styleBits);
+
+	public void LineStyleTo(Point pt2, int attribute, int styleBits)
+		=> LineStyle(LastPoint.X, LastPoint.Y, pt2.X, pt2.Y, attribute, styleBits);
+
+	public void LineStyleTo(float x2, float y2, int styleBits)
+		=> LineStyleTo(x2, y2, DrawingAttribute, styleBits);
+
+	public void LineStyleTo(float x2, float y2, int attribute, int styleBits)
+		=> LineStyle(LastPoint.X, LastPoint.Y, x2, y2, attribute, styleBits);
+
+	public void LineStyle(float x1, float y1, float x2, float y2, int styleBits)
+		=> LineStyle(x1, y1, x2, y2, DrawingAttribute, styleBits);
+
+	public void LineStyle(float x1, float y1, float x2, float y2, int attribute, int styleBits)
+	{
+		var translated1 = Window.TranslatePoint(x1, y1);
+		var translated2 = Window.TranslatePoint(x2, y2);
+
+		LineStyle(translated1.X, translated1.Y, translated2.X, translated2.Y, attribute, styleBits);
+
+		LastPoint = (x2, y2);
+	}
+
+	public void LineStyle(int x1, int y1, int x2, int y2, int attribute, int styleBits)
+	{
+		int dx = Math.Abs(x1 - x2);
+		int dy = Math.Abs(y1 - y2);
+
+		LastPoint = Window.TranslateBack(x2, y2);
+
+		if (dx > dy)
+		{
+			if (x1 > x2)
+				(x1, y1, x2, y2) = (x2, y2, x1, y1);
+
+			int sy = Math.Sign(y2 - y1);
+
+			int y = y1;
+			int yError = 0;
+
+			int test = 0x8000;
+
+			for (int x = x1; x <= x2; x++)
+			{
+				if ((styleBits & test) != 0)
+					PixelSet(x, y, attribute);
+
+				test >>= 1;
+				if (test == 0)
+					test = 0x8000;
+
+				yError += dy;
+
+				if (yError >= dx)
+				{
+					yError -= dx;
+					y += sy;
+				}
+			}
+		}
+		else
+		{
+			if (y1 > y2)
+				(x1, y1, x2, y2) = (x2, y2, x1, y1);
+
+			int sx = Math.Sign(x2 - x1);
+
+			int test = 0x8000;
+
+			for (int x = x1, y = y1, xError = 0; y <= y2; y++)
+			{
+				if ((styleBits & test) != 0)
+					PixelSet(x, y, attribute);
+
+				test >>= 1;
+				if (test == 0)
+					test = 0x8000;
+
+				xError += dx;
+
+				if (xError >= dy)
+				{
+					xError -= dy;
+					x += sx;
+				}
+			}
+		}
+	}
+	#endregion
+
+	#region Box
 	public void Box(Point pt1, Point pt2)
 		=> Box(pt1, pt2, DrawingAttribute);
 
@@ -270,7 +376,128 @@ public abstract class GraphicsLibrary : VisualLibrary
 			}
 		}
 	}
+	#endregion
 
+	#region BoxStyle
+	public void BoxStyle(Point pt1, Point pt2, int styleBits)
+		=> BoxStyle(pt1, pt2, DrawingAttribute);
+
+	public void BoxStyle(Point pt1, Point pt2, int attribute, int styleBits)
+		=> BoxStyle(pt1.X, pt1.Y, pt2.X, pt2.Y, attribute);
+
+	public void BoxStyleTo(Point pt2, int styleBits)
+		=> BoxStyleTo(pt2, DrawingAttribute);
+
+	public void BoxStyleTo(Point pt2, int attribute, int styleBits)
+		=> BoxStyle(LastPoint.X, LastPoint.Y, pt2.X, pt2.Y, attribute);
+
+	public void BoxStyleTo(float x2, float y2, int styleBits)
+		=> BoxStyleTo(x2, y2, DrawingAttribute);
+
+	public void BoxStyleTo(float x2, float y2, int attribute, int styleBits)
+		=> BoxStyle(LastPoint.X, LastPoint.Y, x2, y2, attribute);
+
+	public void BoxStyle(float x1, float y1, float x2, float y2, int styleBits)
+		=> BoxStyle(x1, y1, x2, y2, DrawingAttribute);
+
+	public void BoxStyle(float x1, float y1, float x2, float y2, int attribute, int styleBits)
+	{
+		var translated1 = Window.TranslatePoint(x1, y1);
+		var translated2 = Window.TranslatePoint(x2, y2);
+
+		BoxStyle(translated1.X, translated1.Y, translated2.X, translated2.Y, attribute, styleBits);
+
+		LastPoint = (x2, y2);
+	}
+
+	public void BoxStyle(int x1, int y1, int x2, int y2, int attribute, int styleBits)
+	{
+		LastPoint = Window.TranslateBack(x2, y2);
+
+		if (y1 > y2)
+			(y1, y2) = (y2, y1);
+		if (x1 > x2)
+			(x1, x2) = (x2, x1);
+
+		bool drawLeft = true;
+		bool drawRight = true;
+
+		if (x1 < 0)
+		{
+			x1 = 0;
+			drawLeft = false;
+		}
+
+		if (x2 >= Width)
+		{
+			x2 = Width - 1;
+			drawRight = false;
+		}
+
+		if (x1 > x2) // box is entirely off the screen
+			return;
+
+		int test = 0x8000;
+
+		if (y2 < Height)
+		{
+			for (int x = x1; x < x2; x++)
+			{
+				if ((styleBits & test) != 0)
+					PixelSet(x, y2, attribute);
+
+				test >>= 1;
+				if (test == 0)
+					test = 0x8000;
+			}
+		}
+		else
+			y2 = Height - 1;
+
+		if (y1 >= 0)
+		{
+			for (int x = x1; x < x2; x++)
+			{
+				if ((styleBits & test) != 0)
+					PixelSet(x, y1, attribute);
+
+				test >>= 1;
+				if (test == 0)
+					test = 0x8000;
+			}
+		}
+		else
+			y1 = 0;
+
+		if (drawRight)
+		{
+			for (int y = y1; y <= y2; y++)
+			{
+				if ((styleBits & test) != 0)
+					PixelSet(x2, y, attribute);
+
+				test >>= 1;
+				if (test == 0)
+					test = 0x8000;
+			}
+		}
+
+		if (drawLeft)
+		{
+			for (int y = y1; y <= y2; y++)
+			{
+				if ((styleBits & test) != 0)
+					PixelSet(x1, y, attribute);
+
+				test >>= 1;
+				if (test == 0)
+					test = 0x8000;
+			}
+		}
+	}
+	#endregion
+
+	#region FillBox
 	public void FillBox(Point pt1, Point pt2)
 		=> FillBox(pt1, pt2, DrawingAttribute);
 
@@ -327,6 +554,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 		for (int y = y1; y <= y2; y++)
 			HorizontalLine(x1, x2, y, attribute);
 	}
+	#endregion
 
 	struct PixelSpan
 	{
@@ -372,6 +600,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 		}
 	}
 
+	#region Ellipse
 	public void Ellipse(float x, float y, float radiusX, float radiusY, double startAngle, double endAngle, bool drawStartRadius, bool drawEndRadius)
 		=> Ellipse(x, y, radiusX, radiusY, startAngle, endAngle, drawStartRadius, drawEndRadius, DrawingAttribute);
 
@@ -706,7 +935,9 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 		LastPoint = Window.TranslateBack(x, y);
 	}
+	#endregion Ellipse
 
+	#region Text
 	public override void WriteText(ReadOnlySpan<byte> buffer)
 	{
 		int characterWidth = Array.Sequencer.CharacterWidth;
@@ -769,4 +1000,5 @@ public abstract class GraphicsLibrary : VisualLibrary
 			columnBit >>= 1;
 		}
 	}
+	#endregion Text
 }

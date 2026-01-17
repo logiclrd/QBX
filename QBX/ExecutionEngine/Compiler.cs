@@ -308,6 +308,17 @@ public class Compiler
 
 		nextStatementInfo = null;
 
+		void TranslateNumericArgumentExpression(ref Evaluable? target, CodeModel.Expressions.Expression? expression)
+		{
+			if (expression != null)
+			{
+				target = TranslateExpression(expression, container, mapper, compilation);
+
+				if (!target.Type.IsNumeric)
+					throw CompilerException.TypeMismatch(expression?.Token);
+			}
+		}
+
 		switch (statement)
 		{
 			case CodeModel.Statements.AssignmentStatement assignmentStatement:
@@ -391,17 +402,6 @@ public class Compiler
 					throw new Exception("CircleStatement with no YExpression");
 				if (circleStatement.RadiusExpression == null)
 					throw new Exception("CircleStatement with no RadiusExpression");
-
-				void TranslateNumericArgumentExpression(ref Evaluable? target, CodeModel.Expressions.Expression? expression)
-				{
-					if (expression != null)
-					{
-						target = TranslateExpression(expression, container, mapper, compilation);
-
-						if (!target.Type.IsNumeric)
-							throw CompilerException.TypeMismatch(expression?.Token);
-					}
-				}
 
 				TranslateNumericArgumentExpression(
 					ref translatedCircleStatement.XExpression, circleStatement.XExpression);
@@ -1072,6 +1072,44 @@ public class Compiler
 				}
 
 				container.Append(translatedIfStatement);
+
+				break;
+			}
+			case CodeModel.Statements.LineStatement lineStatement:
+			{
+				var translatedLineStatement = new LineStatement(lineStatement);
+
+				translatedLineStatement.FromStep = lineStatement.FromStep;
+
+				TranslateNumericArgumentExpression(
+					ref translatedLineStatement.FromXExpression, lineStatement.FromXExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedLineStatement.FromYExpression, lineStatement.FromYExpression);
+
+				translatedLineStatement.ToStep = lineStatement.ToStep;
+
+				TranslateNumericArgumentExpression(
+					ref translatedLineStatement.ToXExpression, lineStatement.ToXExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedLineStatement.ToYExpression, lineStatement.ToYExpression);
+
+				TranslateNumericArgumentExpression(
+					ref translatedLineStatement.ColourExpression, lineStatement.ColourExpression);
+
+				translatedLineStatement.DrawStyle =
+					lineStatement.DrawStyle switch
+					{
+						CodeModel.Statements.LineDrawStyle.Line => LineDrawStyle.Line,
+						CodeModel.Statements.LineDrawStyle.Box => LineDrawStyle.Box,
+						CodeModel.Statements.LineDrawStyle.FilledBox => LineDrawStyle.FilledBox,
+
+						_ => throw new Exception("Unrecognized LineDrawStyle value " + lineStatement.DrawStyle)
+					};
+
+				TranslateNumericArgumentExpression(
+					ref translatedLineStatement.StyleExpression, lineStatement.StyleExpression);
+
+				container.Append(translatedLineStatement);
 
 				break;
 			}
