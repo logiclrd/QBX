@@ -199,7 +199,10 @@ public class Routine : Sequence
 						throw CompilerException.DuplicateDefinition(param.NameToken);
 				}
 
-				ParameterVariableIndices[i] = mapper.DeclareVariable(name, paramType);
+				if (param.IsArray == false)
+					ParameterVariableIndices[i] = mapper.DeclareVariable(name, paramType);
+				else
+					ParameterVariableIndices[i] = mapper.DeclareArray(name, paramType);
 			}
 		}
 	}

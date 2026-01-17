@@ -98,25 +98,23 @@ public class Compiler
 		// Third pass: process parameters, which requires that we know all the FUNCTIONs and UDTs
 		foreach (var info in translationInfo)
 		{
-			if (info.Element.Type != CodeModel.CompilationElementType.Main)
-			{
-				info.Routine.TranslateParameters(info.Mapper, compilation);
-				info.Mapper.LinkGlobalVariablesAndArrays();
-			}
-
 			if (info.Routine.ReturnType != null)
 				info.Routine.ReturnValueVariableIndex = info.Mapper.DeclareVariable(info.Routine.Name, info.Routine.ReturnType);
+
+			if (info.Element.Type != CodeModel.CompilationElementType.Main)
+				info.Routine.TranslateParameters(info.Mapper, compilation);
 		}
 
 		// Fourth pass: Collect constants and then translate statements.
 		// => CONST definitions inside DEF FN are local to the DEF FN and are not processed here
 		foreach (var info in translationInfo)
 		{
+			if (info.Element.Type != CodeModel.CompilationElementType.Main)
+				info.Mapper.LinkGlobalVariablesAndArrays();
+
 			var element = info.Element;
 
-			var mapper = (element.Type == CodeModel.CompilationElementType.Main)
-				? rootMapper
-				: rootMapper.CreateScope();
+			var mapper = info.Mapper;
 
 			mapper.ScanForDisallowedSlugs(element.AllStatements);
 
@@ -628,7 +626,7 @@ public class Compiler
 						variableIndex = mapper.DeclareArray(declaration.Name, dataType);
 
 						if (dimStatement.Shared)
-							mapper.MakeGlobalArray(declaration.Name);
+							mapper.MakeGlobalArray(declaration.Name, dataType);
 
 						if (declaration.Subscripts != null)
 						{

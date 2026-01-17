@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using QBX.CodeModel.Statements;
+
 using QBX.ExecutionEngine.Compiled.Expressions;
 using QBX.ExecutionEngine.Execution;
 using QBX.LexicalAnalysis;
@@ -136,12 +136,12 @@ public class Mapper
 		_globalVariableNames.Add(identifier);
 	}
 
-	internal void MakeGlobalArray(string identifier)
+	public void MakeGlobalArray(string identifier, DataType type)
 	{
 		if (_root != null)
 			throw new Exception("Can only make global variables working with the root Mapper");
 
-		identifier = QualifyIdentifier(identifier);
+		identifier = QualifyIdentifier(identifier, type);
 
 		_globalArrayNames.Add(identifier);
 	}
@@ -153,8 +153,11 @@ public class Mapper
 
 		foreach (string name in _root._globalVariableNames)
 		{
-			int localIndex = ResolveVariable(name);
 			int rootIndex = _root.ResolveVariable(name);
+
+			var variableType = _root.GetVariableType(rootIndex);
+
+			int localIndex = ResolveVariable(name, variableType);
 
 			var info = _variables[localIndex];
 
@@ -163,8 +166,11 @@ public class Mapper
 
 		foreach (string name in _root._globalArrayNames)
 		{
-			int localIndex = ResolveArray(name, out _);
 			int rootIndex = _root.ResolveArray(name, out _);
+
+			var arrayType = _root.GetVariableType(rootIndex);
+
+			int localIndex = ResolveArray(name, out _, arrayType);
 
 			var info = _variables[localIndex];
 
@@ -172,7 +178,7 @@ public class Mapper
 		}
 	}
 
-	public void ApplyDefTypeStatement(DefTypeStatement defTypeStatement)
+	public void ApplyDefTypeStatement(CodeModel.Statements.DefTypeStatement defTypeStatement)
 	{
 		var dataType = DataType.FromCodeModelDataType(defTypeStatement.DataType);
 
@@ -452,7 +458,7 @@ public class Mapper
 			return _semiscopeOverlay![name] = index;
 	}
 
-	public int ResolveVariable(string name)
+	public int ResolveVariable(string name, DataType? dataType = null)
 	{
 		int index;
 
@@ -462,15 +468,18 @@ public class Mapper
 		 && _semiscopeOverlay.TryGetValue(name, out index))
 			return index;
 
-		name = QualifyIdentifier(name);
+		if (dataType == null)
+		{
+			name = QualifyIdentifier(name);
 
-		if (_variableIndexByName.TryGetValue(name, out index))
-			return index;
-		if ((_semiscopeOverlay != null)
-		 && _semiscopeOverlay.TryGetValue(name, out index))
-			return index;
+			if (_variableIndexByName.TryGetValue(name, out index))
+				return index;
+			if ((_semiscopeOverlay != null)
+			 && _semiscopeOverlay.TryGetValue(name, out index))
+				return index;
+		}
 
-		return DeclareVariable(name, DataType.ForPrimitiveDataType(GetTypeForIdentifier(name)));
+		return DeclareVariable(name, dataType ?? DataType.ForPrimitiveDataType(GetTypeForIdentifier(name)));
 	}
 
 	public int DeclareArray(string name, DataType dataType, Token? token = null)
@@ -491,7 +500,7 @@ public class Mapper
 		return _arrayIndexByName[name] = index;
 	}
 
-	public int ResolveArray(string name, out bool implicitlyCreated)
+	public int ResolveArray(string name, out bool implicitlyCreated, DataType? arrayType = null)
 	{
 		implicitlyCreated = false;
 
@@ -500,16 +509,22 @@ public class Mapper
 		if (_arrayIndexByName.TryGetValue(name, out index))
 			return index;
 
-		name = QualifyIdentifier(name);
+		if (arrayType == null)
+		{
+			name = QualifyIdentifier(name);
 
-		if (_arrayIndexByName.TryGetValue(name, out index))
-			return index;
+			if (_arrayIndexByName.TryGetValue(name, out index))
+				return index;
+		}
 
 		implicitlyCreated = true;
 
-		var elementType = DataType.ForPrimitiveDataType(GetTypeForIdentifier(name));
+		if (arrayType == null)
+		{
+			var elementType = DataType.ForPrimitiveDataType(GetTypeForIdentifier(name));
 
-		var arrayType = elementType.MakeArrayType();
+			arrayType = elementType.MakeArrayType();
+		}
 
 		return DeclareArray(name, arrayType);
 	}
