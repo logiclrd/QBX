@@ -7,6 +7,28 @@ namespace QBX.Utility;
 
 public static class StringBuilderExtensions
 {
+	public static int IndexOf(this StringBuilder self, char ch)
+		=> IndexOf(self, ch, caseSensitive: true);
+
+	public static int IndexOf(this StringBuilder self, char ch, bool caseSensitive)
+	{
+		if (!caseSensitive)
+			ch = char.ToLowerInvariant(ch);
+
+		for (int i = 0; i < self.Length; i++)
+		{
+			char testCh = self[i];
+
+			if (!caseSensitive)
+				testCh = char.ToLowerInvariant(testCh);
+
+			if (ch == testCh)
+				return i;
+		}
+
+		return -1;
+	}
+
 	static ComparisonInfo s_comparisonInfoInvariant = new CultureComparisonInfo(CultureInfo.InvariantCulture, ignoreCase: false);
 	static ComparisonInfo s_comparisonInfoInvariantIgnoreCase = new CultureComparisonInfo(CultureInfo.InvariantCulture, ignoreCase: true);
 

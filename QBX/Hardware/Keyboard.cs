@@ -162,34 +162,6 @@ public class Keyboard(Machine machine)
 		}
 	}
 
-	public string ReadLine()
-	{
-		var buffer = new StringBuilder();
-
-		// TODO: arrow keys, home/end
-		while (true)
-		{
-			WaitForInput();
-
-			var evt = GetNextEvent();
-
-			if ((evt == null) || evt.IsRelease)
-				continue;
-
-			if (evt.ScanCode == ScanCode.Backspace)
-			{
-				if (buffer.Length > 0)
-					buffer.Length--;
-			}
-			else if (evt.ScanCode == ScanCode.Return)
-				break;
-			else if (evt.TextCharacter != '\0')
-				buffer.Append(evt.TextCharacter);
-		}
-
-		return buffer.ToString();
-	}
-
 	public void OutPort(int portNumber, byte data)
 	{
 		// TODO: https://wiki.osdev.org/I8042_PS/2_Controller#Data_Port

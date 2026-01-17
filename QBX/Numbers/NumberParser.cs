@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.Linq;
+using System.Text;
+
+using QBX.Utility;
 
 namespace QBX.Numbers;
 
@@ -12,12 +15,17 @@ public static class NumberParser
 		value = default;
 
 		if (chars.Length == 0)
-			return false;
+			return true;
 
 		char lastChar = chars[chars.Length - 1];
 
-		if (char.IsSymbol(lastChar))
-			return (lastChar == '%');
+		if (!char.IsAsciiDigit(lastChar) && (lastChar != '.'))
+		{
+			if (lastChar != '%')
+				return false;
+
+			chars = chars.Slice(0, chars.Length - 1);
+		}
 
 		int parsed;
 
@@ -74,11 +82,11 @@ public static class NumberParser
 		value = default;
 
 		if (chars.Length == 0)
-			return false;
+			return true;
 
 		char lastChar = chars[chars.Length - 1];
 
-		if (char.IsSymbol(lastChar))
+		if (!char.IsAsciiDigit(lastChar) && (lastChar != '.'))
 		{
 			if (lastChar != '&')
 				return false;
@@ -136,24 +144,46 @@ public static class NumberParser
 		value = default;
 
 		if (chars.Length == 0)
-			return false;
+			return true;
 
 		char lastChar = chars[chars.Length - 1];
+		bool coerce = false;
 
-		if (char.IsSymbol(lastChar))
+		if (!char.IsAsciiDigit(lastChar) && (lastChar != '.'))
 		{
 			if (lastChar != '!')
 				return false;
 
+			coerce = true;
 			chars = chars.Slice(0, chars.Length - 1);
 		}
 
-		var trimmed = new string(chars).Replace(".", "").Trim('0');
+		if (!coerce)
+		{
+			var trimmed = new StringBuilder(new string(chars));
 
-		int significantFigures = trimmed.Length;
+			int e = trimmed.IndexOf('e', caseSensitive: false);
 
-		if (significantFigures > 7)
-			return false;
+			if (e > 0)
+				trimmed.Remove(e, trimmed.Length - e);
+
+			int dot = trimmed.IndexOf('.');
+
+			if (dot < 0)
+				trimmed.Append('.');
+
+			while (trimmed[trimmed.Length - 1] == '0')
+				trimmed.Length--;
+			while (trimmed[0] == '-')
+				trimmed.Remove(0, 1);
+			while (trimmed[0] == '0')
+				trimmed.Remove(0, 1);
+
+			int significantFigures = trimmed.Length - 1; // always contains a dot, even if it's the last character
+
+			if (significantFigures > 7)
+				return false;
+		}
 
 		return float.TryParse(chars, out value);
 	}
@@ -163,11 +193,11 @@ public static class NumberParser
 		value = default;
 
 		if (chars.Length == 0)
-			return false;
+			return true;
 
 		char lastChar = chars[chars.Length - 1];
 
-		if (char.IsSymbol(lastChar))
+		if (!char.IsAsciiDigit(lastChar) && (lastChar != '.'))
 		{
 			if (lastChar != '#')
 				return false;
@@ -183,15 +213,18 @@ public static class NumberParser
 		value = default;
 
 		if (chars.Length == 0)
-			return false;
+			return true;
 
 		char lastChar = chars[chars.Length - 1];
 
-		if (char.IsSymbol(lastChar))
+		bool strictScale = false;
+
+		if (!char.IsAsciiDigit(lastChar) && (lastChar != '.'))
 		{
 			if (lastChar != '@')
 				return false;
 
+			strictScale = true;
 			chars = chars.Slice(0, chars.Length - 1);
 		}
 
@@ -199,6 +232,9 @@ public static class NumberParser
 		{
 			if (value.IsInCurrencyRange())
 			{
+				if (strictScale && value.IsTooPrecise())
+					return false;
+
 				value = value.Fix();
 				return true;
 			}

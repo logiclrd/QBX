@@ -95,7 +95,21 @@ public abstract class VisualLibrary
 		CursorX = x;
 		CursorY = y;
 
+		_delayedNewLine = false;
+
 		MoveCursorHandlePhysicalCursor();
+	}
+
+	public void WriteTextAt(int x, int y, byte ch)
+	{
+		MoveCursor(x, y);
+		WriteText(ch);
+	}
+
+	public void WriteTextAt(int x, int y, char ch)
+	{
+		MoveCursor(x, y);
+		WriteText(ch);
 	}
 
 	public void WriteTextAt(int x, int y, string text)
@@ -233,6 +247,106 @@ public abstract class VisualLibrary
 	}
 
 	public abstract void WriteText(ReadOnlySpan<byte> buffer);
+
+	public string ReadLine(Keyboard input)
+	{
+		var graphics = this as GraphicsLibrary;
+
+		bool cursorVisible = false;
+
+		void DrawCursor(int x, int y, int on)
+		{
+			if (graphics != null)
+			{
+				int x1 = x * Array.Sequencer.CharacterWidth;
+				int y1 = y * graphics.CharacterScans;
+
+				int x2 = x1 + Array.Sequencer.CharacterWidth - 1;
+				int y2 = y1 + graphics.CharacterScans - 1;
+
+				graphics.FillBox(x1, y1, x2, y2, on * graphics.DrawingAttribute);
+			}
+		}
+
+		void ShowCursor(int x, int y)
+		{
+			HideCursor();
+
+			MoveCursor(x, y);
+
+			DrawCursor(CursorX, CursorY, 1);
+			cursorVisible = true;
+
+			// TODO: support editing the middle of the string
+			// => cursor is drawn by inverting pixels of characters for some scans
+			// => insert mode off: all scans
+			// => insert mode on: bottom half
+		}
+
+		void HideCursor()
+		{
+			if (cursorVisible)
+			{
+				DrawCursor(CursorX, CursorY, 0);
+				cursorVisible = false;
+			}
+		}
+
+		var buffer = new StringBuilder();
+
+		int x = CursorX;
+		int y = CursorY;
+
+		// TODO: arrow keys, home/end
+		while (true)
+		{
+			ShowCursor(x, y);
+
+			input.WaitForInput();
+
+			var evt = input.GetNextEvent();
+
+			HideCursor();
+
+			if ((evt == null) || evt.IsRelease)
+				continue;
+
+			if (evt.ScanCode == ScanCode.Backspace)
+			{
+				if (buffer.Length > 0)
+				{
+					buffer.Length--;
+					x--;
+					if (x < 0)
+					{
+						x += CharacterWidth;
+						y--;
+
+						if (y < 0)
+							y = 0;
+					}
+
+					WriteTextAt(x, y, ' ');
+				}
+			}
+			else if (evt.ScanCode == ScanCode.Return)
+			{
+				NewLine();
+				break;
+			}
+			else if (evt.TextCharacter != '\0')
+			{
+				buffer.Append(evt.TextCharacter);
+
+				WriteText(evt.TextCharacter);
+
+				x = CursorX;
+				y = CursorY;
+			}
+		}
+
+		return buffer.ToString();
+	}
 
 	public void AdvanceCursor()
 	{

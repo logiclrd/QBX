@@ -11,21 +11,6 @@ public class ReadStatement(Module module, CodeModel.Statements.Statement? source
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
-		foreach (var targetExpression in TargetExpressions)
-		{
-			var valueString = module.DataParser.GetNextDataItem(source);
-
-			var targetVariable = targetExpression.Evaluate(context, stackFrame);
-
-			if (targetVariable.DataType.IsString)
-				targetVariable.SetData(new StringValue(valueString));
-			else
-			{
-				if (!NumberParser.TryParse(valueString, out var value))
-					throw RuntimeException.SyntaxError(targetExpression.SourceExpression?.Token);
-
-				targetVariable.SetData(value);
-			}
-		}
+		module.DataParser.ReadDataItems(TargetExpressions, context, stackFrame, source);
 	}
 }

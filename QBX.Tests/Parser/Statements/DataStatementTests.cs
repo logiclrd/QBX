@@ -6,12 +6,12 @@ namespace QBX.Tests.Parser.Statements;
 
 public class DataStatementTests
 {
-	[TestCase("DATA", new string[0])]
-	[TestCase("DATA 1, 2, 3", new string[] { "1", "2", "3" })]
-	[TestCase("DATA \"hello\", donkey, 42", new string[] { "hello", "donkey", "42" })]
-	[TestCase("DATA          \"hello\"     ,      donkey    shrek\t\t\t, 42", new string[] { "hello", "donkey    shrek", "42" })]
-	[TestCase("DATA(", new string[] { "(" })]
-	public void ShouldParse(string definition, string[] expectedDataItems)
+	[TestCase("DATA", "")]
+	[TestCase("DATA 1, 2, 3", " 1, 2, 3")]
+	[TestCase("DATA \"hello\", donkey, 42", " \"hello\", donkey, 42")]
+	[TestCase("DATA          \"hello\"     ,      donkey    shrek\t\t\t, 42", "          \"hello\"     ,      donkey    shrek\t\t\t, 42")]
+	[TestCase("DATA(", "(")]
+	public void ShouldParse(string definition, string expectedRawString)
 	{
 		// Arrange
 		var tokens = new Lexer(definition).ToList();
@@ -28,8 +28,6 @@ public class DataStatementTests
 
 		var dataResult = (DataStatement)result;
 
-		var dataItems = dataResult.ParseDataItems().ToList();
-
-		dataItems.Should().Equal(expectedDataItems);
+		dataResult.RawString.Should().Be(expectedRawString);
 	}
 }

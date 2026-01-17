@@ -1,4 +1,6 @@
-﻿namespace QBX.Numbers;
+﻿using System;
+
+namespace QBX.Numbers;
 
 public static class DecimalExtensions
 {
@@ -9,8 +11,22 @@ public static class DecimalExtensions
 			(value <= +922337203685477.5807M);
 	}
 
+	public static bool IsTooPrecise(this decimal value)
+	{
+		value = value * 10000M;
+
+		return value != decimal.Truncate(value);
+	}
+
 	public static decimal Fix(this decimal value)
 	{
-		return decimal.Round(value * 10000M) * 0.0001M;
+		value = value * 10000M;
+
+		if (value > 0)
+			value = decimal.Round(value, MidpointRounding.AwayFromZero);
+		else
+			value = decimal.Round(value, MidpointRounding.ToZero);
+
+		return value * 0.0001M;
 	}
 }

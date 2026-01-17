@@ -11,6 +11,7 @@ using QBX.ExecutionEngine.Compiled.Functions;
 using QBX.ExecutionEngine.Compiled.Operations;
 using QBX.ExecutionEngine.Compiled.RelationalOperators;
 using QBX.ExecutionEngine.Compiled.Statements;
+using QBX.ExecutionEngine.Execution;
 
 using QBX.LexicalAnalysis;
 
@@ -478,7 +479,13 @@ public class Compiler
 			}
 			case CodeModel.Statements.DataStatement dataStatement:
 			{
-				module.DataParser.AddDataSource(dataStatement.ParseDataItems());
+				if (dataStatement.RawString is null)
+					throw new Exception("DataStatement with no RawString");
+
+				var dataSource = DataParser.ParseDataItems(dataStatement.RawString);
+
+				module.DataParser.AddDataSource(dataSource);
+
 				break;
 			}
 			case CodeModel.Statements.DeclareStatement declareStatement:
@@ -1066,6 +1073,33 @@ public class Compiler
 				}
 
 				container.Append(translatedIfStatement);
+
+				break;
+			}
+			case CodeModel.Statements.InputStatement inputStatement:
+			{
+				string promptString;
+
+				if (inputStatement.PromptString != null)
+				{
+					promptString = inputStatement.PromptString;
+
+					if (inputStatement.PromptQuestionMark)
+						promptString += "? ";
+				}
+				else
+					promptString = "? ";
+
+				var translatedInputStatement = new InputStatement(promptString, inputStatement);
+
+				foreach (var target in inputStatement.Targets)
+				{
+					var translatedTarget = TranslateExpression(target, container, mapper, compilation);
+
+					translatedInputStatement.TargetExpressions.Add(translatedTarget);
+				}
+
+				container.Append(translatedInputStatement);
 
 				break;
 			}

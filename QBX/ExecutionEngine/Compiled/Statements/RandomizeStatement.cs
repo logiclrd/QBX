@@ -18,7 +18,7 @@ public class RandomizeStatement(CodeModel.Statements.Statement source) : Executa
 
 			while (true)
 			{
-				string line = context.Machine.Keyboard.ReadLine();
+				string line = context.VisualLibrary.ReadLine(context.Machine.Keyboard);
 
 				if (short.TryParse(line, out var shortSeedValue))
 				{
