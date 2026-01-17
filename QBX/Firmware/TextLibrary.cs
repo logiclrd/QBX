@@ -125,6 +125,11 @@ public class TextLibrary : VisualLibrary
 
 	public override void WriteText(ReadOnlySpan<byte> buffer)
 	{
+		if (buffer.Length == 0)
+			return;
+
+		ResolvePassiveNewLine();
+
 		int o = CursorAddress;
 
 		Span<byte> vramSpan = Array.VRAM;
@@ -171,7 +176,10 @@ public class TextLibrary : VisualLibrary
 			}
 		}
 
-		MoveCursor(cursorX, cursorY);
+		if (cursorX < CharacterWidth)
+			MoveCursor(cursorX, cursorY);
+		else
+			PassiveNewLine();
 	}
 
 	public void WriteAttributes(int charCount)

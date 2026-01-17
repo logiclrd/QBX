@@ -1882,6 +1882,13 @@ public class BasicParser
 					throw new SyntaxErrorException(tokens[range.Offset - 1], "Expected: end of statement");
 				}
 
+				if ((locate.RowExpression == null)
+				 && (locate.ColumnExpression == null)
+				 && (locate.CursorVisibilityExpression == null)
+				 && (locate.CursorStartExpression == null)
+				 && (locate.CursorEndExpression == null))
+					throw new SyntaxErrorException(tokenHandler.EndToken, "Expected: expression");
+
 				return locate;
 			}
 

@@ -89,6 +89,7 @@ public abstract class VisualLibrary
 
 	public void MoveCursor(int x, int y)
 	{
+		x = Math.Clamp(x, 0, CharacterWidth - 1);
 		y = Math.Clamp(y, CharacterLineWindowStart, CharacterLineWindowEnd);
 
 		CursorX = x;
@@ -238,13 +239,15 @@ public abstract class VisualLibrary
 		CursorX++;
 
 		if (CursorX == CharacterWidth)
-			NewLine();
+			PassiveNewLine();
 
 		MoveCursorHandlePhysicalCursor();
 	}
 
 	public void NewLine()
 	{
+		_delayedNewLine = false;
+
 		int newX = CursorX;
 		int newY = CursorY;
 
@@ -256,6 +259,26 @@ public abstract class VisualLibrary
 			newY++;
 
 		MoveCursor(newX, newY);
+	}
+
+	bool _delayedNewLine = false;
+
+	public void PassiveNewLine()
+	{
+		if ((CursorX + 1 >= CharacterWidth)
+		 && (CursorY < CharacterLineWindowStart))
+		{
+			CursorX = CharacterWidth - 1;
+			_delayedNewLine = true;
+		}
+		else
+			NewLine();
+	}
+
+	public void ResolvePassiveNewLine()
+	{
+		if (_delayedNewLine)
+			NewLine();
 	}
 
 	public abstract void ScrollText();

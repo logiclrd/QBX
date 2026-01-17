@@ -940,6 +940,11 @@ public abstract class GraphicsLibrary : VisualLibrary
 	#region Text
 	public override void WriteText(ReadOnlySpan<byte> buffer)
 	{
+		if (buffer.Length == 0)
+			return;
+
+		ResolvePassiveNewLine();
+
 		int characterWidth = Array.Sequencer.CharacterWidth;
 		int characterHeight = CharacterScans;
 

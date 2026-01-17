@@ -1109,6 +1109,32 @@ public class Compiler
 
 				break;
 			}
+			case CodeModel.Statements.LocateStatement locateStatement:
+			{
+				var translatedLocateStatement = new LocateStatement(locateStatement);
+
+				TranslateNumericArgumentExpression(
+					ref translatedLocateStatement.RowExpression, locateStatement.RowExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedLocateStatement.ColumnExpression, locateStatement.ColumnExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedLocateStatement.CursorVisibilityExpression, locateStatement.CursorVisibilityExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedLocateStatement.CursorStartExpression, locateStatement.CursorStartExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedLocateStatement.CursorEndExpression, locateStatement.CursorEndExpression);
+
+				if ((translatedLocateStatement.RowExpression == null)
+				 && (translatedLocateStatement.ColumnExpression == null)
+				 && (translatedLocateStatement.CursorVisibilityExpression == null)
+				 && (translatedLocateStatement.CursorStartExpression == null)
+				 && (translatedLocateStatement.CursorEndExpression == null))
+					throw new Exception("LocateStatement with no argument expressions");
+
+				container.Append(translatedLocateStatement);
+
+				break;
+			}
 			case CodeModel.Statements.PixelSetStatement pixelSetStatement:
 			{
 				var translatedPixelSetStatement = new PixelSetStatement(pixelSetStatement);
