@@ -1,15 +1,15 @@
-﻿using QBX.ExecutionEngine.Compiled.Expressions;
-using QBX.ExecutionEngine.Execution;
+﻿using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
 using QBX.Hardware;
-using QBX.Numbers;
-using System;
 
 namespace QBX.ExecutionEngine.Compiled.Functions;
 
 public class TimerFunction : Function
 {
 	public override DataType Type => DataType.Single;
+
+	protected override int MinArgumentCount => 0;
+	protected override int MaxArgumentCount => 0;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
