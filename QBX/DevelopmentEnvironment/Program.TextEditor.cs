@@ -498,6 +498,11 @@ public partial class Program
 					PrimaryViewport.CancelEdit();
 					SplitViewport?.CancelEdit();
 					StartNewProgram();
+
+					newCursorX = FocusedViewport.CursorX;
+					newCursorY = FocusedViewport.CursorY;
+					newScrollX = FocusedViewport.ScrollX;
+					newScrollY = FocusedViewport.ScrollY;
 				}
 
 				if ((input.ScanCode == ScanCode.S)

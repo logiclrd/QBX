@@ -13,7 +13,7 @@ public abstract class Executable
 
 	public Executable(CodeModel.Statements.Statement? source)
 	{
-		Source = source;
+		Source = source?.TrueSource ?? source;
 	}
 
 	public StatementPath GetPathToStatement(int offset = 0)

@@ -821,32 +821,34 @@ public class Video(Machine machine)
 		=> GetFont(machine.GraphicsArray.CRTController.CharacterHeight);
 
 	public byte[][] GetFont(int characterScans)
+		=> TryGetFont(characterScans) ?? throw new ArgumentException("No font found for character scan count " + characterScans);
+
+	public byte[][]? TryGetFont(int characterScans)
 	{
-
 		string fontFileName = $"8x{characterScans}.bin";
-
-		byte[][] fontData = new byte[256][];
-
-		for (int i = 0; i < 256; i++)
-			fontData[i] = new byte[characterScans];
 
 		using (var stream = typeof(GraphicsArray).Assembly.GetManifestResourceStream("QBX.Firmware.Fonts." + fontFileName))
 		{
-			if (stream != null)
+			if (stream == null)
+				return null;
+
+			byte[][] fontData = new byte[256][];
+
+			for (int i = 0; i < 256; i++)
+				fontData[i] = new byte[characterScans];
+
+			for (int ch = 0; ch < 256; ch++)
 			{
-				for (int ch = 0; ch < 256; ch++)
-				{
-					int baseOffset = ch * 32;
+				int baseOffset = ch * 32;
 
-					byte[] glyph = fontData[ch];
+				byte[] glyph = fontData[ch];
 
-					for (int y = 0; y < characterScans; y++)
-						glyph[y] = unchecked((byte)stream.ReadByte());
-				}
+				for (int y = 0; y < characterScans; y++)
+					glyph[y] = unchecked((byte)stream.ReadByte());
 			}
-		}
 
-		return fontData;
+			return fontData;
+		}
 	}
 
 	public void LoadFontIntoCharacterGenerator(byte[][] font)

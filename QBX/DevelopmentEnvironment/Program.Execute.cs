@@ -52,10 +52,7 @@ public partial class Program
 
 		RestoreOutput();
 
-		_executionContext = new ExecutionContext(
-			Machine
-			);
-
+		_executionContext = new ExecutionContext(Machine);
 		_executionContext.Controls.Break();
 
 		Task.Run(
@@ -98,6 +95,9 @@ public partial class Program
 			Restart();
 
 			_executionContext.Controls.WaitForInterruption();
+
+			SaveOutput();
+			SetIDEVideoMode();
 
 			ShowNextStatement(_executionContext.ExecutionState.Stack);
 		}

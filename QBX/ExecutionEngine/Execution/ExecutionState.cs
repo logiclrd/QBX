@@ -9,7 +9,6 @@ namespace QBX.ExecutionEngine.Execution;
 
 public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 {
-
 	public IEnumerable<StackFrame> Stack => _stack;
 	public bool IsTerminated => _isTerminated;
 
@@ -22,7 +21,8 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 	volatile bool _break = false;
 	volatile bool _breakOnReturn = false;
 	volatile bool _step = false;
-	volatile bool _waiting = false;
+	volatile int _waiting = 0;
+	volatile int _currentWait = 1;
 
 	// Controls:
 	public void ContinueExecution()
@@ -178,7 +178,7 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 		{
 			DebugOut("PROGRAM: waiting");
 
-			_waiting = true;
+			_waiting = _currentWait;
 
 			DebugOut("PROGRAM: pulse");
 
@@ -187,7 +187,7 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 			while (_break)
 				Monitor.Wait(_sync);
 
-			_waiting = false;
+			_waiting = 0;
 
 			DebugOut("PROGRAM: resuming");
 		}
@@ -205,9 +205,12 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 		{
 			DebugOut("DEBUGGER: waiting");
 
-			_waiting = false;
+			_currentWait++;
 
-			while (!_waiting && !_isTerminated)
+			if (_currentWait == int.MaxValue) // ha ha!
+				_currentWait = 1;
+
+			while ((_waiting != _currentWait) && !_isTerminated)
 			{
 				Monitor.Wait(_sync);
 				DebugOut("DEBUGGER: woke up");

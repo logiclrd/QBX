@@ -1318,6 +1318,19 @@ public class Compiler
 
 				break;
 			}
+			case CodeModel.Statements.ScreenWidthStatement screenWidthStatement:
+			{
+				var translatedScreenWidthStatement = new ScreenWidthStatement(screenWidthStatement);
+
+				TranslateNumericArgumentExpression(
+					ref translatedScreenWidthStatement.WidthExpression, screenWidthStatement.WidthExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedScreenWidthStatement.HeightExpression, screenWidthStatement.HeightExpression);
+
+				container.Append(translatedScreenWidthStatement);
+
+				break;
+			}
 			case CodeModel.Statements.SelectCaseStatement selectCaseStatement:
 			{
 				var translatedSelectCaseStatement = new SelectCaseStatement(selectCaseStatement);
@@ -1576,6 +1589,8 @@ public class Compiler
 					resolvedWidthStatement.DeviceExpression = unresolvedWidthStatement.Expression1;
 					resolvedWidthStatement.WidthExpression = unresolvedWidthStatement.Expression2;
 
+					resolvedWidthStatement.TrueSource = unresolvedWidthStatement;
+
 					statement = resolvedWidthStatement;
 
 					TranslateStatement(element, ref statement, iterator, container, mapper, compilation, module, out nextStatementInfo);
@@ -1588,12 +1603,15 @@ public class Compiler
 					resolvedWidthStatement.WidthExpression = unresolvedWidthStatement.Expression1;
 					resolvedWidthStatement.HeightExpression = unresolvedWidthStatement.Expression2;
 
+					resolvedWidthStatement.TrueSource = unresolvedWidthStatement;
+
 					statement = resolvedWidthStatement;
 
 					TranslateStatement(element, ref statement, iterator, container, mapper, compilation, module, out nextStatementInfo);
 				}
 
-				break;
+				// The recursive TranslateStatement has already advanced the iterator.
+				return;
 			}
 
 			default: throw new NotImplementedException("Statement not implemented: " + statement.Type);

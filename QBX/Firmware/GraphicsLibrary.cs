@@ -61,12 +61,12 @@ public abstract class GraphicsLibrary : VisualLibrary
 		base.RefreshParameters();
 	}
 
-	public void SetCharacterScans(int newScans)
+	public bool SetCharacterScans(int newScans)
 	{
-		var font = Machine.VideoFirmware.GetFont(newScans);
+		var font = Machine.VideoFirmware.TryGetFont(newScans);
 
 		if (font == null)
-			return;
+			return false;
 
 		Font = font;
 
@@ -75,6 +75,8 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 		if (CursorY >= CharacterHeight)
 			MoveCursor(CursorX, CharacterHeight - 1);
+
+		return true;
 	}
 
 	public void SetDrawingAttribute(int attribute)

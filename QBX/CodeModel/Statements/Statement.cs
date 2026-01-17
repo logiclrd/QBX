@@ -16,6 +16,8 @@ public abstract class Statement : IRenderableCode
 	public Token? FirstToken { get; set; }
 	public int SourceLength { get; set; }
 
+	public Statement? TrueSource { get; set; }
+
 	public void Render(TextWriter writer)
 	{
 		writer.Write(Indentation);
