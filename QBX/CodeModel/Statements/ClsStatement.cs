@@ -21,12 +21,9 @@ public class ClsStatement : Statement
 
 	protected override void RenderImplementation(TextWriter writer)
 	{
-		writer.Write("CLS");
+		writer.Write("CLS ");
 
 		if (Mode != null)
-		{
-			writer.Write(' ');
 			Mode.Render(writer);
-		}
 	}
 }
