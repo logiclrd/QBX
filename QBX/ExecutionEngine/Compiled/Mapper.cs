@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-
+using QBX.CodeModel.Statements;
 using QBX.ExecutionEngine.Compiled.Expressions;
 using QBX.ExecutionEngine.Execution;
 using QBX.LexicalAnalysis;
@@ -170,6 +170,17 @@ public class Mapper
 
 			info.LinkedToRootVariableIndex = rootIndex;
 		}
+	}
+
+	public void ApplyDefTypeStatement(DefTypeStatement defTypeStatement)
+	{
+		var dataType = DataType.FromCodeModelDataType(defTypeStatement.DataType);
+
+		if (!dataType.IsPrimitiveType)
+			throw new Exception("DefTypeStatement's DataType is not a primitive type");
+
+		foreach (var range in defTypeStatement.Ranges)
+			SetIdentifierTypes(range.Start, range.End ?? range.Start, dataType.PrimitiveType);
 	}
 
 	public void SetIdentifierTypes(char from, char to, PrimitiveDataType type)

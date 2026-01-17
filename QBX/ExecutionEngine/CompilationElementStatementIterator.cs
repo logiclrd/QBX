@@ -1,7 +1,8 @@
-﻿using QBX.CodeModel;
+﻿using System.Linq;
+
+using QBX.CodeModel;
 using QBX.CodeModel.Statements;
 using QBX.ExecutionEngine.Compiled.Statements;
-using System.Linq;
 
 namespace QBX.ExecutionEngine;
 
@@ -24,6 +25,8 @@ public class CompilationElementStatementIterator(CompilationElement element, Cod
 
 			line = element.Lines[lineIndex];
 
+			if (line.LineNumber != null)
+				SetLineNumberStatement(new LabelStatement(line.LineNumber, line.Statements.First()));
 			if (line.Label != null)
 				SetLabelStatement(new LabelStatement(line.Label.Name, line.Statements.First()));
 		}
@@ -41,5 +44,28 @@ public class CompilationElementStatementIterator(CompilationElement element, Cod
 				(lineIndex < element.Lines.Count) &&
 				(statementIndex < line.Statements.Count);
 		}
+	}
+
+	public override bool ExpectEnd()
+	{
+		while (HaveCurrentStatement)
+		{
+			var statement = element.Lines[lineIndex].Statements[statementIndex];
+
+			if ((statement is not null) && (statement is not EmptyStatement))
+				return false;
+
+			Advance();
+
+			if (element.Lines[lineIndex].EndOfLineComment != null)
+				return false;
+
+			if (GetLineNumberStatement() is not null)
+				return false;
+			if (GetLabelStatement() is not null)
+				return false;
+		}
+
+		return true;
 	}
 }

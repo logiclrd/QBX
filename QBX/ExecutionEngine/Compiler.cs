@@ -43,7 +43,7 @@ public class Compiler
 		// First pass: collect all routines
 		foreach (var element in unit.Elements)
 		{
-			var routine = new Routine(module, element, compilation.TypeRepository);
+			var routine = new Routine(module, element);
 
 			if (compilation.IsRegistered(routine.Name))
 				throw CompilerException.DuplicateDefinition(element.AllStatements.FirstOrDefault());
@@ -54,6 +54,9 @@ public class Compiler
 				routine.Register(compilation);
 
 			var info = new TranslationInfo(element, rootMapper, routine);
+
+			if (routine.OpeningStatement is CodeModel.Statements.FunctionStatement)
+				routine.SetReturnType(info.Mapper, compilation.TypeRepository);
 
 			translationInfo.Add(info);
 			routineByName[routine.Name] = routine;
@@ -148,6 +151,26 @@ public class Compiler
 
 			int lineIndex = 0;
 			int statementIndex = 0;
+
+			if (routine.Source.Type != CodeModel.CompilationElementType.Main)
+			{
+				// Skip to the body of function.
+				while (lineIndex < element.Lines.Count)
+				{
+					var line = element.Lines[lineIndex];
+
+					if (line.Statements.FirstOrDefault() is CodeModel.Statements.ProperSubroutineOpeningStatement)
+					{
+						statementIndex++;
+						break;
+					}
+
+					foreach (var defTypeStatement in line.Statements.OfType<CodeModel.Statements.DefTypeStatement>())
+						mapper.ApplyDefTypeStatement(defTypeStatement);
+
+					lineIndex++;
+				}
+			}
 
 			while (lineIndex < element.Lines.Count)
 				TranslateStatement(element, ref lineIndex, ref statementIndex, routine, mapper, compilation, module);
@@ -523,11 +546,7 @@ public class Compiler
 					else
 					{
 						iterator.Advance();
-
-						var labelStatement = iterator.GetLabelStatement();
-
-						module.DataParser.AddLabel(labelStatement);
-						routine.AppendIfNotNull(labelStatement);
+						iterator.ProcessLabels(module.DataParser, routine);
 
 						while (iterator.HaveCurrentStatement)
 						{
@@ -546,11 +565,7 @@ public class Compiler
 							}
 
 							iterator.Advance();
-
-							labelStatement = iterator.GetLabelStatement();
-
-							module.DataParser.AddLabel(labelStatement);
-							routine.AppendIfNotNull(iterator.GetLabelStatement());
+							iterator.ProcessLabels(module.DataParser, routine);
 						}
 					}
 				}
@@ -578,14 +593,7 @@ public class Compiler
 			}
 			case CodeModel.Statements.DefTypeStatement defTypeStatement:
 			{
-				var dataType = DataType.FromCodeModelDataType(defTypeStatement.DataType);
-
-				if (!dataType.IsPrimitiveType)
-					throw new Exception("DefTypeStatement's DataType is not a primitive type");
-
-				foreach (var range in defTypeStatement.Ranges)
-					mapper.SetIdentifierTypes(range.Start, range.End ?? range.Start, dataType.PrimitiveType);
-
+				mapper.ApplyDefTypeStatement(defTypeStatement);
 				break;
 			}
 			case CodeModel.Statements.DimStatement dimStatement: // also matches RedimStatement
@@ -694,11 +702,7 @@ public class Compiler
 				var body = new Sequence();
 
 				iterator.Advance();
-
-				var labelStatement = iterator.GetLabelStatement();
-
-				module.DataParser.AddLabel(labelStatement);
-				body.AppendIfNotNull(labelStatement);
+				iterator.ProcessLabels(module.DataParser, body);
 
 				CodeModel.Statements.LoopStatement? loopStatement = null;
 
@@ -727,10 +731,7 @@ public class Compiler
 
 					TranslateStatement(element, ref statement, iterator, body, mapper, compilation, module, out nextStatementInfo);
 
-					labelStatement = iterator.GetLabelStatement();
-
-					module.DataParser.AddLabel(labelStatement);
-					body.AppendIfNotNull(labelStatement);
+					iterator.ProcessLabels(module.DataParser, body);
 				}
 
 				if (loopStatement == null)
@@ -769,6 +770,18 @@ public class Compiler
 				throw new RuntimeException(statement, "ELSE without IF");
 			case CodeModel.Statements.EmptyStatement:
 				break;
+			case CodeModel.Statements.EndScopeStatement endScopeStatement:
+			{
+				if (element.Type == CodeModel.CompilationElementType.Main)
+					throw CompilerException.IllegalOutsideOfSubOrFunction(endScopeStatement);
+
+				iterator.Advance();
+
+				if (!iterator.ExpectEnd())
+					throw CompilerException.EndSubOrEndFunctionMustBeLastLine(statement);
+
+				break;
+			}
 			case CodeModel.Statements.EndStatement endStatement:
 			{
 				var translatedEndStatement = new EndStatement(endStatement);
@@ -822,11 +835,7 @@ public class Compiler
 				var body = new Sequence();
 
 				iterator.Advance();
-
-				var labelStatement = iterator.GetLabelStatement();
-
-				module.DataParser.AddLabel(labelStatement);
-				body.AppendIfNotNull(labelStatement);
+				iterator.ProcessLabels(module.DataParser, body);
 
 				CodeModel.Statements.NextStatement? nextStatement = null;
 
@@ -856,10 +865,7 @@ public class Compiler
 
 					TranslateStatement(element, ref statement, iterator, body, mapper, compilation, module, out nextStatementInfo);
 
-					labelStatement = iterator.GetLabelStatement();
-
-					module.DataParser.AddLabel(labelStatement);
-					body.AppendIfNotNull(labelStatement);
+					iterator.ProcessLabels(module.DataParser, body);
 
 					if (nextStatementInfo != null)
 					{
@@ -941,11 +947,7 @@ public class Compiler
 					var blame = statement;
 
 					iterator.Advance();
-
-					var labelStatement = iterator.GetLabelStatement();
-
-					module.DataParser.AddLabel(labelStatement);
-					subsequence.AppendIfNotNull(labelStatement);
+					iterator.ProcessLabels(module.DataParser, subsequence);
 
 					while (iterator.HaveCurrentStatement)
 					{
@@ -972,10 +974,7 @@ public class Compiler
 								if (!iterator.Advance())
 									throw CompilerException.BlockIfWithoutEndIf(blame);
 
-								labelStatement = iterator.GetLabelStatement();
-
-								module.DataParser.AddLabel(labelStatement);
-								subsequence.AppendIfNotNull(labelStatement);
+								iterator.ProcessLabels(module.DataParser, subsequence);
 
 								break;
 							}
@@ -1017,10 +1016,7 @@ public class Compiler
 								if (!iterator.Advance())
 									throw CompilerException.BlockIfWithoutEndIf(blame);
 
-								labelStatement = iterator.GetLabelStatement();
-
-								module.DataParser.AddLabel(labelStatement);
-								subsequence.AppendIfNotNull(labelStatement);
+								iterator.ProcessLabels(module.DataParser, subsequence);
 
 								break;
 							}
@@ -1286,14 +1282,10 @@ public class Compiler
 
 				while (iterator.HaveCurrentStatement)
 				{
-					if (iterator.GetLabelStatement() is LabelStatement labelStatement)
+					if (iterator.ProcessLabels(module.DataParser, block, out var lineNumberStatement))
 					{
 						if (block == null)
-							throw CompilerException.StatementsAndLabelsIllegalBetweenSelectCaseAndCase(labelStatement.Source);
-
-						module.DataParser.AddLabel(labelStatement);
-
-						block.Append(labelStatement);
+							throw CompilerException.StatementsAndLabelsIllegalBetweenSelectCaseAndCase(lineNumberStatement?.Source);
 					}
 
 					if (statement is CodeModel.Statements.EndSelectStatement)
@@ -1375,14 +1367,10 @@ public class Compiler
 				if (!isTerminated)
 					throw CompilerException.SelectWithoutEndSelect(selectCaseStatement);
 
-				if (iterator.GetLabelStatement() is LabelStatement finalLabelStatement)
+				if (iterator.ProcessLabels(module.DataParser, block, out var finalLineNumberStatement))
 				{
 					if (block == null)
-						throw CompilerException.StatementsAndLabelsIllegalBetweenSelectCaseAndCase(finalLabelStatement.Source);
-
-					module.DataParser.AddLabel(finalLabelStatement);
-
-					block.Append(finalLabelStatement);
+						throw CompilerException.StatementsAndLabelsIllegalBetweenSelectCaseAndCase(finalLineNumberStatement?.Source);
 				}
 
 				container.Append(translatedSelectCaseStatement);
@@ -1472,7 +1460,7 @@ public class Compiler
 
 				iterator.Advance();
 
-				body.AppendIfNotNull(iterator.GetLabelStatement());
+				iterator.ProcessLabels(module.DataParser, body);
 
 				bool haveWEndStatement = false;
 
@@ -1486,7 +1474,7 @@ public class Compiler
 
 					TranslateStatement(element, ref statement, iterator, body, mapper, compilation, module, out nextStatementInfo);
 
-					body.AppendIfNotNull(iterator.GetLabelStatement());
+					iterator.ProcessLabels(module.DataParser, body);
 				}
 
 				if (!haveWEndStatement)

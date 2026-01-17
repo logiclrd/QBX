@@ -23,4 +23,17 @@ public class ListStatementIterator(IList<Statement> statements, int statementInd
 
 	public override bool HaveCurrentStatement
 		=> (statementIndex < statements.Count);
+
+	public override bool ExpectEnd()
+	{
+		while (statementIndex < statements.Count)
+		{
+			if (statements[statementIndex] is not EmptyStatement)
+				return false;
+
+			statementIndex++;
+		}
+
+		return true;
+	}
 }

@@ -52,7 +52,7 @@ public class Routine : Sequence
 	public bool UseRootFrame = false;
 
 	// SUB or FUNCTION
-	public Routine(Module module, CodeModel.CompilationElement source, TypeRepository typeRepository)
+	public Routine(Module module, CodeModel.CompilationElement source)
 	{
 		Module = module;
 
@@ -71,25 +71,39 @@ public class Routine : Sequence
 				if (OpeningStatement.Parameters != null)
 					ParameterVariableIndices = new int[OpeningStatement.Parameters.Parameters.Count];
 
-				if (subOrFunction is FunctionStatement function)
-				{
-					char lastChar = Name.Last();
-
-					if (CodeModel.TypeCharacter.TryParse(lastChar, out var typeCharacter))
-					{
-						// Can't have two functions whose names differ only by type character.
-						// In other words, the type character isn't actually part of the
-						// function's name.
-						ReturnType = typeRepository.ResolveType(typeCharacter.Type, null, fixedStringLength: 0, isArray: false, null);
-						Name = Name.Remove(Name.Length - 1);
-					}
-				}
-
 				break;
 			}
 		}
 
 		module.Routines.Add(Name, this);
+	}
+
+	public void SetReturnType(Mapper mapper, TypeRepository typeRepository)
+	{
+		char lastChar = Name.Last();
+
+		if (CodeModel.TypeCharacter.TryParse(lastChar, out var typeCharacter))
+		{
+			// Can't have two functions whose names differ only by type character.
+			// In other words, the type character isn't actually part of the
+			// function's name.
+			ReturnType = typeRepository.ResolveType(typeCharacter.Type, null, fixedStringLength: 0, isArray: false, null);
+			Name = Name.Remove(Name.Length - 1);
+		}
+		else
+		{
+			// Ensure that any DEFtype statements preceding the opening statement are in effect.
+			foreach (var line in Source.Lines)
+			{
+				if (line.Statements.FirstOrDefault() is ProperSubroutineOpeningStatement)
+					break;
+
+				foreach (var defTypeStatement in line.Statements.OfType<DefTypeStatement>())
+					mapper.ApplyDefTypeStatement(defTypeStatement);
+			}
+
+			ReturnType = DataType.ForPrimitiveDataType(mapper.GetTypeForIdentifier(Name));
+		}
 	}
 
 	// DEF FN

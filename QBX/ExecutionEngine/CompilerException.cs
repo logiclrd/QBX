@@ -95,4 +95,8 @@ public class CompilerException : Exception
 		=> new CompilerException(statement, "LOOP without DO");
 	public static CompilerException InvalidConstant(Token? context)
 		=> new CompilerException(context, "Invalid constant");
+	public static CompilerException EndSubOrEndFunctionMustBeLastLine(CodeModel.Statements.Statement? statement)
+		=> new CompilerException(statement, "END SUB or END FUNCTION must be last line");
+	public static CompilerException IllegalOutsideOfSubOrFunction(CodeModel.Statements.Statement? statement)
+		=> new CompilerException(statement, "Illegal outside of SUB/FUNCTION");
 }
