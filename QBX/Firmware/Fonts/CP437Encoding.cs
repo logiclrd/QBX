@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text;
 
 namespace QBX.Firmware.Fonts;
@@ -592,4 +593,14 @@ class CP437Encoding : Encoding
 			'\u25A0', // FE  ■
 			'\u00A0', // FF
 		];
+
+	public bool IsAsciiLetterUpper(byte v)
+		=> (v >= (byte)'A') && (v <= (byte)'Z');
+	public bool IsAsciiLetterLower(byte v)
+		=> (v >= (byte)'a') && (v <= (byte)'z');
+
+	public byte ToUpper(byte v)
+		=> IsAsciiLetterLower(v) ? unchecked((byte)(v | 0x20)) : v;
+	public byte ToLower(byte v)
+		=> IsAsciiLetterUpper(v) ? unchecked((byte)(v & ~0x20)) : v;
 }

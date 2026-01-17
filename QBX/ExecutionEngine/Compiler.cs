@@ -1552,6 +1552,50 @@ public class Compiler
 				break;
 			}
 
+			case CodeModel.Statements.UnresolvedWidthStatement unresolvedWidthStatement:
+			{
+				// WIDTH has two forms that parse the same way:
+				//
+				//   WIDTH deviceexpression, widthexpression
+				//   WIDTH screewidthexpression, screenheightexpression
+				//
+				// We need to reach this point in semantic analysis to know whether the first
+				// expression evaluates to a string or a number.
+
+				if (unresolvedWidthStatement.Expression1 == null)
+					throw new Exception("UnresolvedWidthStatement without Expression1");
+
+				var firstArgumentExpression =
+					TranslateExpression(unresolvedWidthStatement.Expression1, container, mapper, compilation);
+
+				if (firstArgumentExpression.Type.IsString)
+				{
+					// WIDTH device$, width%
+					var resolvedWidthStatement = new CodeModel.Statements.DeviceWidthStatement();
+
+					resolvedWidthStatement.DeviceExpression = unresolvedWidthStatement.Expression1;
+					resolvedWidthStatement.WidthExpression = unresolvedWidthStatement.Expression2;
+
+					statement = resolvedWidthStatement;
+
+					TranslateStatement(element, ref statement, iterator, container, mapper, compilation, module, out nextStatementInfo);
+				}
+				else if (firstArgumentExpression.Type.IsNumeric)
+				{
+					// WIDTH width%, height%
+					var resolvedWidthStatement = new CodeModel.Statements.ScreenWidthStatement();
+
+					resolvedWidthStatement.WidthExpression = unresolvedWidthStatement.Expression1;
+					resolvedWidthStatement.HeightExpression = unresolvedWidthStatement.Expression2;
+
+					statement = resolvedWidthStatement;
+
+					TranslateStatement(element, ref statement, iterator, container, mapper, compilation, module, out nextStatementInfo);
+				}
+
+				break;
+			}
+
 			default: throw new NotImplementedException("Statement not implemented: " + statement.Type);
 		}
 
@@ -1793,6 +1837,7 @@ public class Compiler
 					case TokenType.ASC: function = new AscFunction(); break;
 					case TokenType.CHR: function = new ChrFunction(); break;
 					case TokenType.INT: return IntFunction.Construct(keywordFunction.Token, arguments);
+					case TokenType.LCASE: function = new LCaseFunction(); break;
 					case TokenType.LEFT: function = new LeftFunction(); break;
 					case TokenType.LEN: function = new LenFunction(); break;
 					case TokenType.MID: function = new MidFunction(); break;
@@ -1806,6 +1851,7 @@ public class Compiler
 						break;
 					case TokenType.SPACE: function = new SpaceFunction(); break;
 					case TokenType.TIMER: function = new TimerFunction(); break;
+					case TokenType.UCASE: function = new UCaseFunction(); break;
 					case TokenType.VAL: function = new ValFunction(); break;
 
 					default: throw new NotImplementedException("Keyword function: " + keywordFunction.Function);

@@ -40,9 +40,9 @@ public class RightFunction : Function
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (StringExpression == null)
-			throw new Exception("MidFunction with no AddressExpression");
+			throw new Exception("RightFunction with no StringExpression");
 		if (LengthExpression == null)
-			throw new Exception("MidFunction with no LengthExpression");
+			throw new Exception("RightFunction with no LengthExpression");
 
 		var stringVariable = (StringVariable)StringExpression.Evaluate(context, stackFrame);
 

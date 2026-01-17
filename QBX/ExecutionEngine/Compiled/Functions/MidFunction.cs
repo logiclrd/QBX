@@ -52,7 +52,7 @@ public class MidFunction : Function
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (StringExpression == null)
-			throw new Exception("MidFunction with no AddressExpression");
+			throw new Exception("MidFunction with no StringExpression");
 		if (StartExpression == null)
 			throw new Exception("MidFunction with no StartExpression");
 
