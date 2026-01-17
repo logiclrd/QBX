@@ -266,7 +266,7 @@ public abstract class VisualLibrary
 	public void PassiveNewLine()
 	{
 		if ((CursorX + 1 >= CharacterWidth)
-		 && (CursorY < CharacterLineWindowStart))
+		 && (CursorY >= CharacterLineWindowEnd))
 		{
 			CursorX = CharacterWidth - 1;
 			_delayedNewLine = true;
