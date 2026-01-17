@@ -1806,6 +1806,7 @@ public class Compiler
 						break;
 					case TokenType.SPACE: function = new SpaceFunction(); break;
 					case TokenType.TIMER: function = new TimerFunction(); break;
+					case TokenType.VAL: function = new ValFunction(); break;
 
 					default: throw new NotImplementedException("Keyword function: " + keywordFunction.Function);
 				}
