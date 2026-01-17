@@ -354,6 +354,27 @@ public class NumberFormatterTests
 	[TestCase(1234567f, false, "1234567")]
 	[TestCase(12345678f, false, "1.234568E+07")]
 	[TestCase(1234567812345f, false, "1.234568E+12")]
+	[TestCase(0.0000000000012345f, true, "1.2345E-12")]
+	[TestCase(0.00000001f, true, "1E-08")]
+	[TestCase(0.0000001f, true, ".0000001")]
+	[TestCase(0.000001f, true, ".000001")]
+	[TestCase(0.00001f, true, ".00001")]
+	[TestCase(0.0001f, true, ".0001")]
+	[TestCase(0.001f, true, ".001")]
+	[TestCase(0.01f, true, ".01")]
+	[TestCase(0.1f, true, ".1")]
+	[TestCase(0f, true, "0!")]
+	[TestCase(1f, true, "1!")]
+	[TestCase(1.2f, true, "1.2")]
+	[TestCase(10f, true, "10!")]
+	[TestCase(12.34567f, true, "12.34567")]
+	[TestCase(123.4567f, true, "123.4567")]
+	[TestCase(1234.567f, true, "1234.567")]
+	[TestCase(12345.67f, true, "12345.67")]
+	[TestCase(123456.7f, true, "123456.7")]
+	[TestCase(1234567f, true, "1234567!")]
+	[TestCase(12345678f, true, "1.234568E+07")]
+	[TestCase(1234567812345f, true, "1.234568E+12")]
 	public void FormatFloat(float value, bool qualify, string expectedResult)
 	{
 		// Act
@@ -363,142 +384,110 @@ public class NumberFormatterTests
 		result.Should().Be(expectedResult);
 	}
 
-/*
-	public static string Format(float value, bool qualify = true)
+	[TestCase(0.000000000000000000012345d, false, "1.2345D-20")]
+	[TestCase(0.0000000000012345d, false, "1.2345D-12")]
+	[TestCase(0.000000000012345d, false, ".000000000012345")]
+	[TestCase(0.0000000000000001d, false, ".0000000000000001")]
+	[TestCase(0.000000000000001d, false, ".000000000000001")]
+	[TestCase(0.00000000000001d, false, ".00000000000001")]
+	[TestCase(0.0000000000001d, false, ".0000000000001")]
+	[TestCase(0.000000000001d, false, ".000000000001")]
+	[TestCase(0.00000000001d, false, ".00000000001")]
+	[TestCase(0.0000000001d, false, ".0000000001")]
+	[TestCase(0.000000001d, false, ".000000001")]
+	[TestCase(0.00000001d, false, ".00000001")]
+	[TestCase(0.0000001d, false, ".0000001")]
+	[TestCase(0.000001d, false, ".000001")]
+	[TestCase(0.00001d, false, ".00001")]
+	[TestCase(0.0001d, false, ".0001")]
+	[TestCase(0.001d, false, ".001")]
+	[TestCase(0.01d, false, ".01")]
+	[TestCase(0.1d, false, ".1")]
+	[TestCase(0d, false, "0")]
+	[TestCase(1d, false, "1")]
+	[TestCase(1.2d, false, "1.2")]
+	[TestCase(10d, false, "10")]
+	[TestCase(12.34567d, false, "12.34567")]
+	[TestCase(123.4567d, false, "123.4567")]
+	[TestCase(1234.567d, false, "1234.567")]
+	[TestCase(12345.67d, false, "12345.67")]
+	[TestCase(123456.7d, false, "123456.7")]
+	[TestCase(1234567d, false, "1234567")]
+	[TestCase(12345678d, false, "12345678")]
+	[TestCase(1234567812345d, false, "1234567812345")]
+	[TestCase(12345678123451d, false, "12345678123451")]
+	[TestCase(123456781234512d, false, "123456781234512")]
+	[TestCase(1234567812345123d, false, "1.23456781234512D+15")]
+	[TestCase(0.000000000000000000012345d, true, "1.2345D-20")]
+	[TestCase(0.0000000000012345d, true, "1.2345D-12")]
+	[TestCase(0.000000000012345d, true, ".000000000012345")]
+	[TestCase(0.0000000000000001d, true, ".0000000000000001")]
+	[TestCase(0.000000000000001d, true, ".000000000000001")]
+	[TestCase(0.00000000000001d, true, ".00000000000001")]
+	[TestCase(0.0000000000001d, true, ".0000000000001")]
+	[TestCase(0.000000000001d, true, ".000000000001")]
+	[TestCase(0.00000000001d, true, ".00000000001")]
+	[TestCase(0.0000000001d, true, ".0000000001")]
+	[TestCase(0.000000001d, true, ".000000001")]
+	[TestCase(0.00000001d, true, ".00000001")]
+	[TestCase(0.0000001d, true, ".0000001#")]
+	[TestCase(0.000001d, true, ".000001#")]
+	[TestCase(0.00001d, true, ".00001#")]
+	[TestCase(0.0001d, true, ".0001#")]
+	[TestCase(0.001d, true, ".001#")]
+	[TestCase(0.01d, true, ".01#")]
+	[TestCase(0.1d, true, ".1#")]
+	[TestCase(0d, true, "0#")]
+	[TestCase(1d, true, "1#")]
+	[TestCase(1.2d, true, "1.2#")]
+	[TestCase(10d, true, "10#")]
+	[TestCase(12.34567d, true, "12.34567#")]
+	[TestCase(123.4567d, true, "123.4567#")]
+	[TestCase(1234.567d, true, "1234.567#")]
+	[TestCase(12345.67d, true, "12345.67#")]
+	[TestCase(123456.7d, true, "123456.7#")]
+	[TestCase(1234567d, true, "1234567#")]
+	[TestCase(12345678d, true, "12345678")]
+	[TestCase(1234567812345d, true, "1234567812345")]
+	[TestCase(12345678123451d, true, "12345678123451")]
+	[TestCase(123456781234512d, true, "123456781234512")]
+	[TestCase(1234567812345123d, true, "1.23456781234512D+15")]
+	public void FormatDouble(double value, bool qualify, string expectedResult)
 	{
-		if (value < -9999999f)
-		{
-			int exponent = 0;
+		// Act
+		var result = NumberFormatter.Format(value, qualify);
 
-			while (value <= -10)
-			{
-				value *= 0.1f;
-				exponent++;
-			}
-
-			return FormatBaseDigits(value) + "E+" + exponent.ToString("00");
-		}
-
-		if ((value > 0) && (value < 0.0000001))
-		{
-			int exponent = 0;
-
-			while (value < 1)
-			{
-				value *= 10f;
-				exponent--;
-			}
-
-			return FormatBaseDigits(value) + "E-" + exponent.ToString("00");
-		}
-
-		if ((value < 0) && (value > -0.0000001))
-		{
-			int exponent = 0;
-
-			while (value > -1)
-			{
-				value *= 10f;
-				exponent--;
-			}
-
-			return FormatBaseDigits(value) + "E-" + exponent.ToString("00");
-		}
-
-		string str = FormatBaseDigits(value);
-
-		if (qualify)
-		{
-			if (int.TryParse(str, out _))
-				str += '!';
-		}
-
-		return str;
+		// Assert
+		result.Should().Be(expectedResult);
 	}
 
-	public static string Format(double value, bool qualify = true)
+	[TestCase("0")]
+	[TestCase(".1")]
+	[TestCase(".01")]
+	[TestCase(".001")]
+	[TestCase(".0001")]
+	[TestCase("1.0001")]
+	[TestCase("10.1234")]
+	[TestCase("10000.2345")]
+	[TestCase("922337203685477.5807")]
+	[TestCase("-.1")]
+	[TestCase("-.01")]
+	[TestCase("-.001")]
+	[TestCase("-.0001")]
+	[TestCase("-1.0001")]
+	[TestCase("-10.1234")]
+	[TestCase("-10000.2345")]
+	[TestCase("-922337203685477.5808")]
+	public void FormatDecimal(string expectedResult)
 	{
-		string FormatBaseDigits(double adjustedValue)
-		{
-			string ret = adjustedValue.ToString("#.###############");
+		decimal value = decimal.Parse(expectedResult);
 
-			if (ret.Length > 0)
-				return ret;
-			else
-				return "0";
-		}
+		Assume.That(value.IsInCurrencyRange());
 
-		if (value > 999999999999999d)
-		{
-			int exponent = 0;
+		// Act
+		var result = NumberFormatter.Format(value, qualify: false);
 
-			while (value >= 10)
-			{
-				value *= 0.1d;
-				exponent++;
-			}
-
-			return FormatBaseDigits(value) + "D+" + exponent.ToString("00");
-		}
-
-		if (value < -999999999999999d)
-		{
-			int exponent = 0;
-
-			while (value <= -10)
-			{
-				value *= 0.1f;
-				exponent++;
-			}
-
-			return FormatBaseDigits(value) + "D+" + exponent.ToString("00");
-		}
-
-		if ((value > 0) && (value < 0.000000000000001))
-		{
-			int exponent = 0;
-
-			while (value < 1)
-			{
-				value *= 10d;
-				exponent--;
-			}
-
-			return FormatBaseDigits(value) + "D-" + exponent.ToString("00");
-		}
-
-		if ((value < 0) && (value > -0.000000000000001))
-		{
-			int exponent = 0;
-
-			while (value > -1)
-			{
-				value *= 10d;
-				exponent--;
-			}
-
-			return FormatBaseDigits(value) + "D-" + exponent.ToString("00");
-		}
-
-		string str = FormatBaseDigits(value);
-
-		if (qualify)
-		{
-			if (((float)value).ToString() == str)
-				str += '#';
-		}
-
-		return str;
+		// Assert
+		result.Should().Be(expectedResult);
 	}
-
-	public static string Format(decimal currencyValue, bool qualify = true)
-	{
-		currencyValue = currencyValue.Fix();
-
-		if (qualify)
-			return currencyValue.ToString("#.#") + '@';
-		else
-			return currencyValue.ToString("#.#");
-	}
-*/
 }

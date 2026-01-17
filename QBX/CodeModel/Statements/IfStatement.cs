@@ -9,17 +9,6 @@ namespace QBX.CodeModel.Statements;
 
 public class IfStatement : Statement
 {
-	// TODO: alternative syntaxes:
-	//
-	//   IF condition THEN linenumber
-	//   IF condition THEN ... ELSE linenumber
-	//   IF condition GOTO label/linenumber
-	//
-	// - If an IF has the word "GOTO" where "THEN" would normally be, then
-	//   treat it as having an implicit "THEN" but remember not to render it
-	// - When parsing IF inline ThenBody and ElseBody parts, if the first
-	//   statement is just a number, then treat it as having an implicit "GOTO"
-	//   but remember not to render it
 	public override StatementType Type => StatementType.If;
 	public Expression? ConditionExpression { get; set; }
 	public List<Statement>? ThenBody { get; set; }

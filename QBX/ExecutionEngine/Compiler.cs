@@ -193,7 +193,6 @@ public class Compiler
 
 	void TranslateStatement(CodeModel.CompilationElement element, ref int lineIndexRef, ref int statementIndexRef, Sequence container, Mapper mapper, Compilation compilation, Module module)
 	{
-		// TODO: translate Circle
 		int lineIndex = lineIndexRef;
 		int statementIndex = statementIndexRef;
 

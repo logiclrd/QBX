@@ -43,8 +43,4 @@ public partial class Program
 			}
 		}
 	}
-
-	// TODO: come up with some fantastic scheme for reconstructing a desired
-	// stack and selecting an arbitrary next instruction to implement
-	// "Set Next Statement"
 }

@@ -1,5 +1,7 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
 using System.Text;
+using System.Transactions;
 
 namespace QBX.Numbers;
 
@@ -91,11 +93,82 @@ public class NumberFormatter
 
 	public static string Format(float value, bool qualify = true)
 	{
-		string str = value.ToString();
+		if (value == 0)
+			return qualify ? "0!" : "0";
+
+		string str;
+
+		string lead = "";
+
+		if (value < 0)
+		{
+			lead = "-";
+			value = -value;
+		}
+
+		if (value < 1)
+		{
+			int exponent = 0;
+
+			for (int i = 0; i <= 38 - 7; i++)
+			{
+				float t = MathF.Pow(10, -i);
+
+				if (value >= t)
+				{
+					value /= t;
+					exponent = i;
+					break;
+				}
+			}
+
+			string s = value.ToString("0.#######");
+
+			if (s.Length == 17)
+				s = s.Remove(s.Length - 1);
+
+			if (s.Length + exponent <= 8)
+			{
+				if (s.Length > 1)
+					s = s.Remove(1, 1);
+				str = lead + "." + new string('0', exponent - 1) + s;
+			}
+			else
+				str = lead + s + "E-" + exponent.ToString("d2");
+		}
+		else if (value > 9999999)
+		{
+			int exponent = -1;
+
+			for (int i = 7; i < 38; i++)
+			{
+				float t = MathF.Pow(10, i);
+
+				if (value < t)
+				{
+					t = MathF.Pow(10, i - 1);
+					value /= t;
+					exponent = i - 1;
+					break;
+				}
+			}
+
+			string s = value.ToString("0.#######");
+
+			if (s.Length == 9)
+				s = s.Remove(s.Length - 1);
+
+			if (exponent < 0)
+				str = lead + s;
+			else
+				str = lead + s + "E+" + exponent.ToString("d2");
+		}
+		else
+			str = lead + value.ToString("#######.#######");
 
 		if (qualify)
 		{
-			if (int.TryParse(str, out _))
+			if (long.TryParse(str, out _))
 				str += '!';
 		}
 
@@ -104,73 +177,93 @@ public class NumberFormatter
 
 	public static string Format(double value, bool qualify = true)
 	{
-		string FormatBaseDigits(double adjustedValue)
-		{
-			string ret = adjustedValue.ToString("#.###############");
+		if (value == 0)
+			return qualify ? "0#" : "0";
 
-			if (ret.Length > 0)
-				return ret;
+		string str;
+
+		string lead = "";
+
+		if (value < 0)
+		{
+			lead = "-";
+			value = -value;
+		}
+
+		if (value < 1)
+		{
+			int exponent = 0;
+
+			for (int i = 0; i <= 308 - 15; i++)
+			{
+				double t = Math.Pow(10, -i);
+
+				if (value >= t)
+				{
+					value /= t;
+					exponent = i;
+					break;
+				}
+			}
+
+			string s = value.ToString("0.###############");
+
+			if (s.Length == 17)
+				s = s.Remove(s.Length - 1);
+
+			if (s.Length + exponent <= 17)
+			{
+				if (s.Length > 1)
+					s = s.Remove(1, 1);
+				str = lead + "." + new string('0', exponent - 1) + s;
+			}
 			else
-				return "0";
-		}
-
-		if (value > 999999999999999d)
-		{
-			int exponent = 0;
-
-			while (value >= 10)
 			{
-				value *= 0.1d;
-				exponent++;
+				str = lead + s + "D-" + exponent.ToString("d2");
+				qualify = false;
+			}
+		}
+		else if (value > 999999999999999)
+		{
+			int exponent = -1;
+
+			for (int i = 15; i < 308; i++)
+			{
+				double t = Math.Pow(10, i);
+
+				if (value < t)
+				{
+					t = Math.Pow(10, i - 1);
+					value /= t;
+					exponent = i - 1;
+					break;
+				}
 			}
 
-			return FormatBaseDigits(value) + "D+" + exponent.ToString("00");
-		}
+			string s = value.ToString("0.###############");
 
-		if (value < -999999999999999d)
-		{
-			int exponent = 0;
+			if (s.Length == 17)
+				s = s.Remove(s.Length - 1);
 
-			while (value <= -10)
+			if (exponent < 0)
+				str = lead + s;
+			else
 			{
-				value *= 0.1f;
-				exponent++;
+				str = lead + s + "D+" + exponent.ToString("d2");
+				qualify = false;
 			}
-
-			return FormatBaseDigits(value) + "D+" + exponent.ToString("00");
 		}
-
-		if ((value > 0) && (value < 0.000000000000001))
-		{
-			int exponent = 0;
-
-			while (value < 1)
-			{
-				value *= 10d;
-				exponent--;
-			}
-
-			return FormatBaseDigits(value) + "D-" + exponent.ToString("00");
-		}
-
-		if ((value < 0) && (value > -0.000000000000001))
-		{
-			int exponent = 0;
-
-			while (value > -1)
-			{
-				value *= 10d;
-				exponent--;
-			}
-
-			return FormatBaseDigits(value) + "D-" + exponent.ToString("00");
-		}
-
-		string str = FormatBaseDigits(value);
+		else
+			str = lead + value.ToString("###############.###############");
 
 		if (qualify)
 		{
-			if (((float)value).ToString() == str)
+			int digits = str.Length;
+
+			if (str.IndexOf('.') >= 0)
+				digits--;
+
+			if (digits <= 7)
 				str += '#';
 		}
 
@@ -181,9 +274,16 @@ public class NumberFormatter
 	{
 		currencyValue = currencyValue.Fix();
 
-		if (qualify)
-			return currencyValue.ToString("#.#") + '@';
+		string formatString;
+
+		if (currencyValue == 0)
+			formatString = "0";
 		else
-			return currencyValue.ToString("#.#");
+			formatString = "#.####";
+
+		if (qualify)
+			return currencyValue.ToString(formatString) + '@';
+		else
+			return currencyValue.ToString(formatString);
 	}
 }

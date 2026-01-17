@@ -399,9 +399,7 @@ public class Mapper
 
 	public void EnterSemiscope()
 	{
-		// TODO: switch to mode that resolves variables using the semiscope overlay
-		// preferentially and which allows semiscope-local constants to be defined
-		// but which resolves new variables into the root scope
+		_semiscopeMode = SemiscopeMode.Active;
 	}
 
 	public void ExitSemiscope()
