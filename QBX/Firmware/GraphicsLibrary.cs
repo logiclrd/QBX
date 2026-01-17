@@ -611,7 +611,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 		int translatedRadiusX = Window.TranslateWidth(radiusX);
 		int translatedRadiusY = Window.TranslateHeight(radiusY);
 
-		Ellipse(translated.X, translated.Y, translatedRadiusX, translatedRadiusY, startAngle, endAngle, drawStartRadius, drawEndRadius);
+		Ellipse(translated.X, translated.Y, translatedRadiusX, translatedRadiusY, startAngle, endAngle, drawStartRadius, drawEndRadius, attribute);
 
 		LastPoint = (x, y);
 	}
