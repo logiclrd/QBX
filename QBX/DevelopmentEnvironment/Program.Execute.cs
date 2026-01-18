@@ -52,7 +52,7 @@ public partial class Program
 
 		RestoreOutput();
 
-		_executionContext = new ExecutionContext(Machine);
+		_executionContext = new ExecutionContext(Machine, PlayProcessor);
 		_executionContext.Controls.Break();
 
 		Task.Run(

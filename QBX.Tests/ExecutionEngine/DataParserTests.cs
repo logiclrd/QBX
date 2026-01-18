@@ -1,4 +1,5 @@
-﻿using QBX.ExecutionEngine.Compiled;
+﻿using QBX.ExecutionEngine;
+using QBX.ExecutionEngine.Compiled;
 using QBX.ExecutionEngine.Compiled.Expressions;
 using QBX.ExecutionEngine.Compiled.Statements;
 using QBX.ExecutionEngine.Execution;
@@ -395,7 +396,9 @@ public class DataParserTests
 
 		var machine = new Machine();
 
-		var executionContext = new ExecutionContext(machine);
+		var playProcessor = new PlayProcessor(machine);
+
+		var executionContext = new ExecutionContext(machine, playProcessor);
 
 		var parser = new DataParser();
 
@@ -425,7 +428,9 @@ public class DataParserTests
 
 		var machine = new Machine();
 
-		var executionContext = new ExecutionContext(machine);
+		var playProcessor = new PlayProcessor(machine);
+
+		var executionContext = new ExecutionContext(machine, playProcessor);
 
 		var parser = new DataParser();
 
@@ -455,7 +460,9 @@ public class DataParserTests
 
 		var machine = new Machine();
 
-		var executionContext = new ExecutionContext(machine);
+		var playProcessor = new PlayProcessor(machine);
+
+		var executionContext = new ExecutionContext(machine, playProcessor);
 
 		var parser = new DataParser();
 
@@ -485,7 +492,9 @@ public class DataParserTests
 
 		var machine = new Machine();
 
-		var executionContext = new ExecutionContext(machine);
+		var playProcessor = new PlayProcessor(machine);
+
+		var executionContext = new ExecutionContext(machine, playProcessor);
 
 		var parser = new DataParser();
 
@@ -515,7 +524,9 @@ public class DataParserTests
 
 		var machine = new Machine();
 
-		var executionContext = new ExecutionContext(machine);
+		var playProcessor = new PlayProcessor(machine);
+
+		var executionContext = new ExecutionContext(machine, playProcessor);
 
 		var parser = new DataParser();
 
@@ -545,7 +556,9 @@ public class DataParserTests
 
 		var machine = new Machine();
 
-		var executionContext = new ExecutionContext(machine);
+		var playProcessor = new PlayProcessor(machine);
+
+		var executionContext = new ExecutionContext(machine, playProcessor);
 
 		var parser = new DataParser();
 
@@ -583,7 +596,9 @@ public class DataParserTests
 
 		var machine = new Machine();
 
-		var executionContext = new ExecutionContext(machine);
+		var playProcessor = new PlayProcessor(machine);
+
+		var executionContext = new ExecutionContext(machine, playProcessor);
 
 		var parser = new DataParser();
 

@@ -15,11 +15,11 @@ public class TimerChip
 	public readonly Timer Timer1;
 	public readonly Timer Timer2;
 
-	public TimerChip()
+	public TimerChip(Speaker speaker)
 	{
 		Timer0 = new Timer(this, isTickCountBasis: true);
 		Timer1 = new Timer(this, isTickCountBasis: false);
-		Timer2 = new Timer(this, isTickCountBasis: false);
+		Timer2 = new Timer(this, isTickCountBasis: false, speaker);
 	}
 
 	public const double TicksPerSecond = BaseFrequency / 65536.0;

@@ -13,6 +13,7 @@ public class ExecutionContext
 {
 	public Machine Machine;
 	public VisualLibrary VisualLibrary;
+	public PlayProcessor PlayProcessor;
 
 	public IReadOnlyExecutionState ExecutionState => _executionState;
 	public IExecutionControls Controls => _executionState;
@@ -26,12 +27,13 @@ public class ExecutionContext
 
 	RuntimeState _runtimeState = new RuntimeState();
 
-	public ExecutionContext(Machine machine)
+	public ExecutionContext(Machine machine, PlayProcessor playProcessor)
 	{
 		_executionState = new ExecutionState();
 
 		Machine = machine;
 		VisualLibrary = new TextLibrary(machine);
+		PlayProcessor = playProcessor;
 	}
 
 	public int Run(Compilation compilation)

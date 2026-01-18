@@ -23,6 +23,14 @@ public class Timer(TimerChip owner, bool isTickCountBasis)
 	int _latchedCounter = -1;
 	int _latchedStatus = -1;
 
+	Speaker? _attachedSpeaker;
+
+	public Timer(TimerChip owner, bool isTickCountBasis, Speaker speaker)
+		: this(owner, isTickCountBasis)
+	{
+		_attachedSpeaker = speaker;
+	}
+
 	public void ResetCounter(int value)
 	{
 		_epoch = DateTime.UtcNow.AddSeconds(-value / Frequency);
@@ -39,6 +47,16 @@ public class Timer(TimerChip owner, bool isTickCountBasis)
 
 		if (isTickCountBasis)
 			owner.RebaseTickCount();
+
+		if (_attachedSpeaker != null)
+		{
+			_attachedSpeaker.ChangeSound(
+				_attachedSpeaker.IsEnabled,
+				invertValue: (Mode != 3),
+				Frequency,
+				immediate: true,
+				hold: TimeSpan.Zero);
+		}
 	}
 
 	public void LatchCounter()
@@ -115,6 +133,19 @@ public class Timer(TimerChip owner, bool isTickCountBasis)
 			UseBCD = newUseBCD;
 			UpdateDivisor(0);
 		}
+
+		_attachedSpeaker?.ChangeSound(
+			_attachedSpeaker.IsEnabled,
+			invertValue: (Mode != 3),
+			Frequency,
+			immediate: true,
+			hold: TimeSpan.Zero);
+	}
+
+	public void ConfigureToMatchSound(double frequency)
+	{
+		Mode = 3;
+		Divisor = (int)(TimerChip.BaseFrequency / frequency);
 	}
 
 	public void LatchStatus()

@@ -5,6 +5,7 @@ using QBX.CodeModel;
 using QBX.Firmware;
 using QBX.Hardware;
 using QBX.Parser;
+using QBX.ExecutionEngine;
 
 namespace QBX.DevelopmentEnvironment;
 
@@ -36,9 +37,14 @@ public partial class Program : HostedProgram
 
 	public BasicParser Parser;
 
+	public PlayProcessor PlayProcessor;
+
 	public Program(Machine machine)
 	{
 		Machine = machine;
+
+		PlayProcessor = new PlayProcessor(machine);
+		PlayProcessor.StartProcessingThread();
 
 		InitializeMenuBar();
 

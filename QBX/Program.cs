@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 
 using SDL3;
 
-using QBX.Firmware;
 using QBX.Hardware;
 
 namespace QBX;
@@ -30,7 +29,7 @@ class Program
 
 			var driverTask = new Task(() => program.Run(cancellationTokenSource.Token));
 
-			if (!SDL.Init(SDL.InitFlags.Video))
+			if (!SDL.Init(SDL.InitFlags.Video | SDL.InitFlags.Audio))
 			{
 				Console.WriteLine("Failed to initialize SDL: {0}", SDL.GetError());
 				return 1;
@@ -49,6 +48,42 @@ class Program
 				Console.WriteLine("Failed to create window and/or renderer: {0}", SDL.GetError());
 				return 2;
 			}
+
+			var audioSpec =
+				new SDL.AudioSpec()
+				{
+					Channels = 1,
+					Format = SDL.AudioFormat.AudioU8,
+					Freq = Speaker.SampleRate,
+				};
+
+			byte[] audioBuffer = new byte[8192];
+
+			void AudioCallback(nint userData, IntPtr stream, int additionalAmount, int totalAmount)
+			{
+				while (additionalAmount > 0)
+				{
+					Span<byte> buffer = audioBuffer;
+
+					if (buffer.Length > additionalAmount)
+						buffer = buffer.Slice(0, additionalAmount);
+
+					machine.Speaker.GetMoreSound(buffer);
+
+					SDL.PutAudioStreamData(stream, audioBuffer, buffer.Length);
+
+					additionalAmount -= buffer.Length;
+				}
+			}
+
+			var audioStream = SDL.OpenAudioDeviceStream(
+				SDL.AudioDeviceDefaultPlayback,
+				audioSpec,
+				AudioCallback,
+				default);
+
+			if (audioStream != default)
+				SDL.ResumeAudioStreamDevice(audioStream);
 
 			IntPtr texture = default;
 			int textureWidth = -1;
