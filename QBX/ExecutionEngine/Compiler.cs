@@ -1456,6 +1456,8 @@ public class Compiler
 
 						iterator.Advance();
 					}
+					else if (statement is CodeModel.Statements.EmptyStatement)
+						iterator.Advance();
 					else
 					{
 						if (block == null)
@@ -1907,6 +1909,7 @@ public class Compiler
 						break;
 					case TokenType.SIN: function = new SinFunction(); break;
 					case TokenType.SPACE: function = new SpaceFunction(); break;
+					case TokenType.STR: function = new StrFunction(); break;
 					case TokenType.TAN: function = new TanFunction(); break;
 					case TokenType.TIMER: function = new TimerFunction(); break;
 					case TokenType.UCASE: function = new UCaseFunction(); break;

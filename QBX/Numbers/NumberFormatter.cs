@@ -1,7 +1,9 @@
 ﻿using System;
-using System.ComponentModel;
 using System.Text;
-using System.Transactions;
+
+using QBX.ExecutionEngine;
+using QBX.ExecutionEngine.Execution.Variables;
+using QBX.LexicalAnalysis;
 
 namespace QBX.Numbers;
 
@@ -285,5 +287,20 @@ public class NumberFormatter
 			return currencyValue.ToString(formatString) + '@';
 		else
 			return currencyValue.ToString(formatString);
+	}
+
+	public static string Format(Variable value, bool qualify = true, Token? context = null)
+	{
+		switch (value)
+		{
+			case IntegerVariable integerValue: return Format(integerValue.Value);
+			case LongVariable longValue: return Format(longValue.Value, qualify);
+			case SingleVariable singleValue: return Format(singleValue.Value, qualify);
+			case DoubleVariable doubleValue: return Format(doubleValue.Value, qualify);
+			case CurrencyVariable currencyValue: return Format(currencyValue.Value, qualify);
+
+			default:
+				throw RuntimeException.TypeMismatch(context);
+		}
 	}
 }
