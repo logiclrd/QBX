@@ -1,6 +1,6 @@
-PLAY "mb ml t32 c5 c5 c5"
+PLAY "mb ml t32 c5 c5"
 
-FOR a# = 0 TO 30 STEP .1
+FOR a# = 0 TO 16 STEP .2
   frequency# = COS(a#) * 30 + 120
 
   divisor& = 1193181 / frequency#
@@ -9,8 +9,8 @@ FOR a# = 0 TO 30 STEP .1
   OUT &H42, divisor& AND 255
   OUT &H42, divisor& \ 256
 
-  FOR i& = 1 TO 100000: NEXT i&
   PRINT ".";
-NEXT a#
 
-SOUND 100, 1
+  t! = TIMER
+  WHILE TIMER = t!: WEND
+NEXT a#
