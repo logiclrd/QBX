@@ -11,8 +11,12 @@ public class CallExpression : Evaluable, IUnresolvedCall
 	public readonly List<Evaluable> Arguments = new List<Evaluable>();
 
 	public string? UnresolvedTargetName;
+	public DataType? UnresolvedTargetType;
 
-	public override DataType Type => throw new NotImplementedException();
+	public override DataType Type =>
+		Target?.ReturnType ??
+		UnresolvedTargetType ??
+		throw new Exception("Internal error: CallExpression has no Type");
 
 	public void Resolve(Routine routine)
 	{

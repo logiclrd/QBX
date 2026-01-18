@@ -1813,6 +1813,8 @@ public class Compiler
 					if (function == null)
 					{
 						translatedCallExpression.UnresolvedTargetName = unqualifiedIdentifier;
+						if (forwardReference != null)
+							translatedCallExpression.UnresolvedTargetType = forwardReference.ReturnType;
 						forwardReference!.UnresolvedCalls.Add(translatedCallExpression);
 					}
 
@@ -1893,6 +1895,7 @@ public class Compiler
 					case TokenType.ATN: function = new AtnFunction(); break;
 					case TokenType.CHR: function = new ChrFunction(); break;
 					case TokenType.COS: function = new CosFunction(); break;
+					case TokenType.INKEY: function = new InKeyFunction(); break;
 					case TokenType.INP: function = new InpFunction(); break;
 					case TokenType.INT: return IntFunction.Construct(keywordFunction.Token, arguments);
 					case TokenType.LCASE: function = new LCaseFunction(); break;

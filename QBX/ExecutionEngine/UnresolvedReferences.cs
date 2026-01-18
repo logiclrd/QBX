@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
+using QBX.ExecutionEngine.Compiled;
+
 namespace QBX.ExecutionEngine;
 
 public class UnresolvedReferences(Compilation compilation)
@@ -15,13 +17,19 @@ public class UnresolvedReferences(Compilation compilation)
 	public bool TryGetDeclaration(string identifier, [NotNullWhen(true)] out ForwardReferenceList? forwardReference)
 		=> ForwardReferences.TryGetValue(identifier, out forwardReference);
 
-	public void DeclareSymbol(string identifier, CodeModel.Statements.Statement? statement, RoutineType routineType)
+	public void DeclareSymbol(string identifier, Mapper mapper, CodeModel.Statements.Statement? statement, RoutineType routineType)
 	{
 		if (ForwardReferences.ContainsKey(identifier)
 		 || compilation.IsRegistered(identifier))
 			throw CompilerException.DuplicateDefinition(statement);
 
-		ForwardReferences[identifier] = new ForwardReferenceList(identifier, routineType);
+		// Will produce some meaningless value for SUBs. Shouldn't cause a problem.
+		var symbolType = mapper.GetTypeForIdentifier(identifier);
+
+		ForwardReferences[identifier] = new ForwardReferenceList(
+			identifier,
+			routineType,
+			returnType: DataType.ForPrimitiveDataType(symbolType));
 	}
 
 	public bool ResolveCalls()
