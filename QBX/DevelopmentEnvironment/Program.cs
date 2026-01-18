@@ -54,6 +54,7 @@ public partial class Program : HostedProgram
 		TextLibrary.MovePhysicalCursor = false;
 
 		TextLibrary.Clear();
+		TextLibrary.HideCursor();
 
 		SaveOutput();
 

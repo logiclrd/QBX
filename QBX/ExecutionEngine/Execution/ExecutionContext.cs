@@ -6,6 +6,7 @@ using QBX.ExecutionEngine.Compiled.Statements;
 using QBX.ExecutionEngine.Execution.Variables;
 using QBX.Firmware;
 using QBX.Hardware;
+using QBX.Parser;
 
 namespace QBX.ExecutionEngine.Execution;
 
@@ -197,7 +198,9 @@ public class ExecutionContext
 
 		var variables = new Variable[totalSlots];
 
-		arguments.CopyTo(variables);
+		int argumentOffset = routine.ReturnType != null ? 1 : 0;
+
+		arguments.CopyTo(variables, argumentOffset);
 
 		if (_rootFrame != null)
 		{

@@ -185,6 +185,24 @@ public class Mapper
 		}
 	}
 
+	Stack<PrimitiveDataType[]> _identifierTypesStack = new Stack<PrimitiveDataType[]>();
+
+	public void PushIdentifierTypes()
+	{
+		var saved = new PrimitiveDataType[_identifierTypes.Length];
+
+		_identifierTypes.CopyTo(saved);
+
+		_identifierTypesStack.Push(saved);
+	}
+
+	public void PopIdentifierTypes()
+	{
+		var saved = _identifierTypesStack.Pop();
+
+		saved.CopyTo(_identifierTypes);
+	}
+
 	public void ApplyDefTypeStatement(CodeModel.Statements.DefTypeStatement defTypeStatement)
 	{
 		var dataType = DataType.FromCodeModelDataType(defTypeStatement.DataType);
@@ -403,7 +421,17 @@ public class Mapper
 	}
 
 	public bool TryResolveConstant(string name, [NotNullWhen(true)] out LiteralValue? literalValue)
-		=> _constantValueByName.TryGetValue(QualifyIdentifier(name), out literalValue);
+	{
+		if (_constantValueByName.TryGetValue(QualifyIdentifier(name), out literalValue))
+			return true;
+		else if (_root != null)
+			return _root.TryResolveConstant(name, out literalValue);
+		else
+		{
+			literalValue = default;
+			return false;
+		}
+	}
 
 	enum SemiscopeMode
 	{
@@ -441,6 +469,9 @@ public class Mapper
 		name = QualifyIdentifier(name, dataType);
 
 		if (_constantValueByName.TryGetValue(name, out _))
+			throw CompilerException.DuplicateDefinition(token);
+		if ((_root != null)
+		 && _root._constantValueByName.TryGetValue(name, out _))
 			throw CompilerException.DuplicateDefinition(token);
 
 		// During semiscope setup, we allow new declarations to shadow

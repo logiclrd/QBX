@@ -134,12 +134,19 @@ public class Compiler
 
 			bool inDefFn = false;
 
+			mapper.PushIdentifierTypes();
+
 			foreach (var statement in element.AllStatements)
 			{
 				switch (statement)
 				{
 					case CodeModel.Statements.DefFnStatement: inDefFn = true; break;
 					case CodeModel.Statements.EndDefStatement: inDefFn = false; break;
+
+					case CodeModel.Statements.DefTypeStatement defTypeStatement:
+						mapper.ApplyDefTypeStatement(defTypeStatement);
+						break;
+
 					case CodeModel.Statements.ConstStatement constStatement:
 						if (!inDefFn)
 						{
@@ -156,6 +163,8 @@ public class Compiler
 						break;
 				}
 			}
+
+			mapper.PopIdentifierTypes();
 
 			string routineName = Routine.GetName(element);
 

@@ -637,10 +637,14 @@ public class Video(Machine machine)
 			CRTControllerRegisters.MaximumScanLine,
 			maximumScanLine);
 
+		int cursorStart = array.InPort2(CRTControllerRegisters.IndexPort, CRTControllerRegisters.CursorStart, out _);
+
+		int cursorDisableBit = (cursorStart & CRTControllerRegisters.CursorStart_Disable);
+
 		array.OutPort2(
 			CRTControllerRegisters.IndexPort,
 			CRTControllerRegisters.CursorStart,
-			(byte)(maximumScanLine - 1));
+			(byte)((maximumScanLine - 1) | cursorDisableBit));
 
 		array.OutPort2(
 			CRTControllerRegisters.IndexPort,

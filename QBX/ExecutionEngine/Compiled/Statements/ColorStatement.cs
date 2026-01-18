@@ -36,10 +36,39 @@ public class ColorStatement(CodeModel.Statements.Statement? source) : Executable
 			// Text mode
 			if (context.VisualLibrary is TextLibrary library)
 			{
-				if (Argument1Expression != null)
-					library.SetForegroundAttribute(Argument1Expression.Evaluate(context, stackFrame).CoerceToInt());
-				if (Argument2Expression != null)
-					library.SetBackgroundAttribute(Argument2Expression.Evaluate(context, stackFrame).CoerceToInt());
+				if ((Argument1Expression != null) || (Argument2Expression != null))
+				{
+					bool blink = ((library.Attributes & 0x80) != 0);
+
+					int foregroundColour = library.Attributes & 0x0F;
+					int backgroundColour = (library.Attributes & 0x70) >> 4;
+
+					if (Argument1Expression != null)
+					{
+						foregroundColour = Argument1Expression.Evaluate(context, stackFrame).CoerceToInt();
+
+						if (foregroundColour != (foregroundColour & 31))
+							throw RuntimeException.IllegalFunctionCall(Argument1Expression.SourceExpression?.Token);
+
+						blink = (foregroundColour & 16) != 0;
+
+						foregroundColour &= 15;
+					}
+
+					if (Argument2Expression != null)
+					{
+						backgroundColour = Argument2Expression.Evaluate(context, stackFrame).CoerceToInt();
+
+						if (backgroundColour != (backgroundColour & 15))
+							throw RuntimeException.IllegalFunctionCall(Argument2Expression.SourceExpression?.Token);
+
+						backgroundColour &= 7;
+					}
+
+					library.SetAttributes(
+						foregroundColour,
+						backgroundColour | (blink ? 8 : 0));
+				}
 
 				if (Argument3Expression != null)
 				{

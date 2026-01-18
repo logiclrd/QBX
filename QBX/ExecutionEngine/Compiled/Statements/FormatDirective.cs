@@ -502,6 +502,9 @@ public class NumericFormatDirective(string pattern, char leftPadChar, bool leadi
 
 		var rawDigits = decimal.Round(value * 10000M).ToString().ToList();
 
+		if (value == 0)
+			rawDigits.AddRange("000");
+
 		int decimalPosition = rawDigits.Count - 4;
 
 		if (exponentCharacters > 0)

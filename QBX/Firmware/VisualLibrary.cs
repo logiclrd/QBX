@@ -257,6 +257,7 @@ public abstract class VisualLibrary
 	public string ReadLine(Keyboard input)
 	{
 		var graphics = this as GraphicsLibrary;
+		var text = this as TextLibrary;
 
 		bool cursorVisible = false;
 
@@ -298,60 +299,69 @@ public abstract class VisualLibrary
 			}
 		}
 
-		var buffer = new StringBuilder();
+		text?.ShowCursor();
 
-		int x = CursorX;
-		int y = CursorY;
-
-		// TODO: arrow keys, home/end
-		while (true)
+		try
 		{
-			ShowCursor(x, y);
+			var buffer = new StringBuilder();
 
-			input.WaitForInput();
+			int x = CursorX;
+			int y = CursorY;
 
-			var evt = input.GetNextEvent();
-
-			HideCursor();
-
-			if ((evt == null) || evt.IsRelease)
-				continue;
-
-			if (evt.ScanCode == ScanCode.Backspace)
+			// TODO: arrow keys, home/end
+			while (true)
 			{
-				if (buffer.Length > 0)
+				ShowCursor(x, y);
+
+				input.WaitForInput();
+
+				var evt = input.GetNextEvent();
+
+				HideCursor();
+
+				if ((evt == null) || evt.IsRelease)
+					continue;
+
+				if (evt.ScanCode == ScanCode.Backspace)
 				{
-					buffer.Length--;
-					x--;
-					if (x < 0)
+					if (buffer.Length > 0)
 					{
-						x += CharacterWidth;
-						y--;
+						buffer.Length--;
+						x--;
+						if (x < 0)
+						{
+							x += CharacterWidth;
+							y--;
 
-						if (y < 0)
-							y = 0;
+							if (y < 0)
+								y = 0;
+						}
+
+						WriteTextAt(x, y, ' ');
 					}
+				}
+				else if (evt.ScanCode == ScanCode.Return)
+				{
+					NewLine();
+					break;
+				}
+				else if (evt.TextCharacter != '\0')
+				{
+					buffer.Append(evt.TextCharacter);
 
-					WriteTextAt(x, y, ' ');
+					WriteText(evt.TextCharacter);
+
+					x = CursorX;
+					y = CursorY;
 				}
 			}
-			else if (evt.ScanCode == ScanCode.Return)
-			{
-				NewLine();
-				break;
-			}
-			else if (evt.TextCharacter != '\0')
-			{
-				buffer.Append(evt.TextCharacter);
 
-				WriteText(evt.TextCharacter);
-
-				x = CursorX;
-				y = CursorY;
-			}
+			return buffer.ToString();
 		}
-
-		return buffer.ToString();
+		finally
+		{
+			text?.HideCursor();
+		}
 	}
 
 	public void AdvanceCursor()

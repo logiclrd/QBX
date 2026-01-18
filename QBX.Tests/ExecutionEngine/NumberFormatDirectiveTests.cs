@@ -35,6 +35,10 @@ public class NumberFormatDirectiveTests
 			"1",
 			" 1");
 		yield return new TestConfiguration(
+			"0000", ' ', false, false, 0, false,
+			"0",
+			"   0");
+		yield return new TestConfiguration(
 			"00000", ' ', false, false, 0, false,
 			"5",
 			"    5");

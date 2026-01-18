@@ -26,7 +26,13 @@ public class ScreenStatement(CodeModel.Statements.Statement? source) : Executabl
 			if (Video.Modes[hardwareMode] is ModeParameters modeParams)
 			{
 				if (!modeParams.IsGraphicsMode)
-					context.VisualLibrary = new TextLibrary(context.Machine);
+				{
+					var textLibrary = new TextLibrary(context.Machine);
+
+					context.VisualLibrary = textLibrary;
+
+					textLibrary.HideCursor();
+				}
 				else if (modeParams.ShiftRegisterInterleave)
 					context.VisualLibrary = new GraphicsLibrary_2bppInterleaved(context.Machine);
 				else if (modeParams.IsMonochrome)
