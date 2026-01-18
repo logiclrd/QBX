@@ -128,6 +128,8 @@ public enum TokenType
 	[KeywordToken] IMP,
 	[KeywordFunction(parameterCount: 0)]
 	[KeywordToken("INKEY$")] INKEY,
+	[KeywordFunction]
+	[KeywordToken] INP,
 	[KeywordToken] INPUT,
 	[KeywordFunction(maximumParameterCount: 2, fileNumberParameter: 1)]
 	[KeywordToken("INPUT$")] INPUT_s, // TODO: parsing must allow for a # sign before file numbers
