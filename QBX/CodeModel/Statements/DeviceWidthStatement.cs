@@ -7,7 +7,7 @@ namespace QBX.CodeModel.Statements;
 
 public class DeviceWidthStatement : Statement
 {
-	public override StatementType Type => StatementType.UnresolvedWidth;
+	public override StatementType Type => StatementType.DeviceWidth;
 
 	public Expression? DeviceExpression { get; set; }
 	public Expression? WidthExpression { get; set; }

@@ -1584,31 +1584,17 @@ public class Compiler
 				if (firstArgumentExpression.Type.IsString)
 				{
 					// WIDTH device$, width%
-					var resolvedWidthStatement = new CodeModel.Statements.DeviceWidthStatement();
-
-					resolvedWidthStatement.DeviceExpression = unresolvedWidthStatement.Expression1;
-					resolvedWidthStatement.WidthExpression = unresolvedWidthStatement.Expression2;
-
-					resolvedWidthStatement.TrueSource = unresolvedWidthStatement;
-
-					statement = resolvedWidthStatement;
-
-					TranslateStatement(element, ref statement, iterator, container, mapper, compilation, module, out nextStatementInfo);
+					statement = unresolvedWidthStatement.ResolveToDeviceWidth();
 				}
 				else if (firstArgumentExpression.Type.IsNumeric)
 				{
 					// WIDTH width%, height%
-					var resolvedWidthStatement = new CodeModel.Statements.ScreenWidthStatement();
-
-					resolvedWidthStatement.WidthExpression = unresolvedWidthStatement.Expression1;
-					resolvedWidthStatement.HeightExpression = unresolvedWidthStatement.Expression2;
-
-					resolvedWidthStatement.TrueSource = unresolvedWidthStatement;
-
-					statement = resolvedWidthStatement;
-
-					TranslateStatement(element, ref statement, iterator, container, mapper, compilation, module, out nextStatementInfo);
+					statement = unresolvedWidthStatement.ResolveToScreenWidth();
 				}
+				else
+					throw RuntimeException.TypeMismatch(firstArgumentExpression.SourceExpression?.Token);
+
+				TranslateStatement(element, ref statement, iterator, container, mapper, compilation, module, out nextStatementInfo);
 
 				// The recursive TranslateStatement has already advanced the iterator.
 				return;

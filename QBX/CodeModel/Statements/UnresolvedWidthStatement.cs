@@ -31,6 +31,7 @@ public class UnresolvedWidthStatement : Statement
 	public ScreenWidthStatement ResolveToScreenWidth() =>
 		new ScreenWidthStatement()
 		{
+			TrueSource = this,
 			WidthExpression = Expression1,
 			HeightExpression = Expression2,
 		};
@@ -38,6 +39,7 @@ public class UnresolvedWidthStatement : Statement
 	public DeviceWidthStatement ResolveToDeviceWidth() =>
 		new DeviceWidthStatement()
 		{
+			TrueSource = this,
 			DeviceExpression = Expression1,
 			WidthExpression = Expression2,
 		};

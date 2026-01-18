@@ -5,7 +5,7 @@ using QBX.Parser;
 
 namespace QBX.Tests.Parser.Statements;
 
-public class WidthStatementTests
+public class ScreenWidthStatementTests
 {
 	[TestCase("WIDTH 80", true, false)]
 	[TestCase("WIDTH , 50", false, true)]

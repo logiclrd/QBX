@@ -2996,6 +2996,29 @@ public class BasicParser
 				return scopeStatement;
 			}
 
+			case TokenType.SOUND:
+			{
+				var sound = new SoundStatement();
+
+				var arguments = SplitCommaDelimitedList(tokenHandler.RemainingTokens).ToList();
+
+				if (arguments.Count == 1)
+					throw new SyntaxErrorException(tokenHandler.PreviousToken, "Expected: expression");
+				if (arguments.Count > 2)
+				{
+					var blame = tokens[arguments[2].Unwrap().Offset - 1];
+
+					throw new SyntaxErrorException(blame, "Expected: end of statement");
+				}
+
+				var midToken = tokens[arguments[1].Unwrap().Offset - 1];
+
+				sound.FrequencyExpression = ParseExpression(arguments[0], midToken);
+				sound.DurationExpression = ParseExpression(arguments[1], tokenHandler.PreviousToken);
+
+				return sound;
+			}
+
 			case TokenType.SUB:
 			case TokenType.FUNCTION:
 			{
