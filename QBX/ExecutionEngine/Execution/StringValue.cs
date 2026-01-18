@@ -11,7 +11,7 @@ namespace QBX.ExecutionEngine.Execution;
 
 public class StringValue : IComparable<StringValue>, IEquatable<StringValue>
 {
-	static Encoding s_cp437 = new CP437Encoding();
+	static Encoding s_cp437 = new CP437Encoding(ControlCharacterInterpretation.Semantic);
 
 	public static bool IsNullOrEmpty([NotNullWhen(false)] StringValue? test)
 		=> (test == null) || (test.Length == 0);

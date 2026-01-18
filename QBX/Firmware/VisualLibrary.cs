@@ -124,7 +124,7 @@ public abstract class VisualLibrary
 		WriteText(text);
 	}
 
-	Encoding _cp437 = new CP437Encoding();
+	Encoding _cp437 = new CP437Encoding(ControlCharacterInterpretation.Graphic);
 
 	[ThreadStatic]
 	static ArrayBufferWriter<byte>? s_buffer;

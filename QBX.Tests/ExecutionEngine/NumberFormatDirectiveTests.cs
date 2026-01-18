@@ -293,11 +293,11 @@ public class NumberFormatDirectiveTests
 
 		public string GetCapturedOutput()
 		{
-			return new CP437Encoding().GetString(CollectionsMarshal.AsSpan(_buffer));
+			return new CP437Encoding(ControlCharacterInterpretation.Graphic).GetString(CollectionsMarshal.AsSpan(_buffer));
 		}
 
 		public override void RefreshParameters() { }
 		public override void ScrollText() { }
-		protected override void ClearImplementation() { }
+		protected override void ClearImplementation(int fromCharacterLine, int toCharacterLine) { }
 	}
 }

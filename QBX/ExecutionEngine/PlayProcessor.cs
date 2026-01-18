@@ -48,7 +48,7 @@ public class PlayProcessor
 
 	TimeSpan _noteOnDuration, _noteOffDuration;
 
-	static readonly CP437Encoding s_cp437 = new CP437Encoding();
+	static readonly CP437Encoding s_cp437 = new CP437Encoding(ControlCharacterInterpretation.Semantic);
 
 	public double GetZNoteFrequency(int znote)
 	{

@@ -25,7 +25,7 @@ public class UCaseFunction : Function
 
 	public override DataType Type => DataType.String;
 
-	static CP437Encoding s_cp437 = new CP437Encoding();
+	static CP437Encoding s_cp437 = new CP437Encoding(ControlCharacterInterpretation.Semantic);
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{

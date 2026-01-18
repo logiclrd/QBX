@@ -1,11 +1,32 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace QBX.Firmware.Fonts;
 
 class CP437Encoding : Encoding
 {
+	Dictionary<char, byte> _charToByte;
+	char[] _byteToChar;
+
+	public CP437Encoding(ControlCharacterInterpretation controlCharacters)
+	{
+		switch (controlCharacters)
+		{
+			case ControlCharacterInterpretation.Graphic:
+				_charToByte = s_charToByteGraphic;
+				_byteToChar = s_byteToCharGraphic;
+				break;
+			case ControlCharacterInterpretation.Semantic:
+				_charToByte = s_charToByteSemantic;
+				_byteToChar = s_byteToCharSemantic;
+				break;
+
+			default: throw new Exception("Unknown control character interpretation " + controlCharacters);
+		}
+	}
+
 	public override int GetByteCount(char[] chars, int index, int count)
 	{
 		return count;
@@ -14,7 +35,7 @@ class CP437Encoding : Encoding
 	public override int GetBytes(char[] chars, int charIndex, int charCount, byte[] bytes, int byteIndex)
 	{
 		for (int i = 0; i < charCount; i++)
-			if (!s_charToByte.TryGetValue(chars[i + charIndex], out bytes[i + byteIndex]))
+			if (!_charToByte.TryGetValue(chars[i + charIndex], out bytes[i + byteIndex]))
 				bytes[i + byteIndex] = UnknownCharacterByte;
 
 		return charCount;
@@ -28,7 +49,7 @@ class CP437Encoding : Encoding
 	public override int GetChars(byte[] bytes, int byteIndex, int byteCount, char[] chars, int charIndex)
 	{
 		for (int i = 0; i < byteCount; i++)
-			chars[i + byteIndex] = s_byteToChar[bytes[i + byteIndex]];
+			chars[i + byteIndex] = _byteToChar[bytes[i + byteIndex]];
 
 		return byteCount;
 	}
@@ -45,7 +66,7 @@ class CP437Encoding : Encoding
 
 	const byte UnknownCharacterByte = (byte)'?';
 
-	static readonly Dictionary<char, byte> s_charToByte =
+	static readonly Dictionary<char, byte> s_charToByteGraphic =
 		new Dictionary<char, byte>()
 		{
 			{ '\u263A', 0x01 }, // ☺
@@ -334,7 +355,7 @@ class CP437Encoding : Encoding
 			{ '\u00A0', 0xFF },
 		};
 
-	static readonly char[] s_byteToChar =
+	static readonly char[] s_byteToCharGraphic =
 		[
 			'\u0000', // 00
 			'\u263A', // 01  ☺
@@ -593,6 +614,24 @@ class CP437Encoding : Encoding
 			'\u25A0', // FE  ■
 			'\u00A0', // FF
 		];
+
+	static Dictionary<char, byte> s_charToByteSemantic;
+	static char[] s_byteToCharSemantic;
+
+	static CP437Encoding()
+	{
+		s_charToByteSemantic = new Dictionary<char, byte>(s_charToByteGraphic);
+		s_byteToCharSemantic = s_byteToCharGraphic.ToArray();
+
+		for (int i = 0; i < 32; i++)
+		{
+			char c = (char)i;
+			byte b = (byte)i;
+
+			s_charToByteSemantic[c] = b;
+			s_byteToCharSemantic[b] = c;
+		}
+	}
 
 	public bool IsAsciiLetterUpper(byte v)
 		=> (v >= (byte)'A') && (v <= (byte)'Z');

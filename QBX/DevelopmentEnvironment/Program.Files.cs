@@ -1,6 +1,7 @@
 ﻿using System.IO;
 
 using QBX.CodeModel;
+using QBX.Firmware.Fonts;
 
 namespace QBX.DevelopmentEnvironment
 {
@@ -29,7 +30,7 @@ namespace QBX.DevelopmentEnvironment
 
 		public void LoadFile(string path, bool replaceExistingProgram)
 		{
-			using (var reader = new StreamReader(path))
+			using (var reader = new StreamReader(path, new CP437Encoding(ControlCharacterInterpretation.Semantic)))
 			{
 				string shortName = Path.GetFileName(path).ToUpperInvariant();
 

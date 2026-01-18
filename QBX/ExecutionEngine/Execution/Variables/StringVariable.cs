@@ -16,7 +16,7 @@ public class StringVariable : Variable
 
 	public virtual StringValue CloneValue() => new StringValue(RawValue);
 
-	static Encoding s_cp437 = new CP437Encoding();
+	static Encoding s_cp437 = new CP437Encoding(ControlCharacterInterpretation.Semantic);
 
 	public StringVariable(int fixedStringLength = 0)
 		: base(DataType.String)
