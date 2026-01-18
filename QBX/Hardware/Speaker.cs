@@ -108,6 +108,7 @@ public class Speaker(Machine machine)
 			{
 				_soundChanges.Clear();
 				_holdCurrentRemainingSamples = 0;
+				_nextSoundChange = nextChange;
 			}
 			else
 			{

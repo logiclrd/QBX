@@ -602,9 +602,9 @@ class CP437Encoding : Encoding
 		=> (v >= (byte)'0') && (v <= (byte)'9');
 
 	public byte ToUpper(byte v)
-		=> IsAsciiLetterLower(v) ? unchecked((byte)(v | 0x20)) : v;
+		=> IsAsciiLetterLower(v) ? unchecked((byte)(v & ~0x20)) : v;
 	public byte ToLower(byte v)
-		=> IsAsciiLetterUpper(v) ? unchecked((byte)(v & ~0x20)) : v;
+		=> IsAsciiLetterUpper(v) ? unchecked((byte)(v | 0x20)) : v;
 
 	public int DigitValue(byte v)
 		=> (int)(v - (byte)'0');

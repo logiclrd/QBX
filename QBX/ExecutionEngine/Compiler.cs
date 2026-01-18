@@ -341,6 +341,17 @@ public class Compiler
 			}
 		}
 
+		void TranslateStringArgumentExpression(ref Evaluable? target, CodeModel.Expressions.Expression? expression)
+		{
+			if (expression != null)
+			{
+				target = TranslateExpression(expression, container, mapper, compilation);
+
+				if (!target.Type.IsString)
+					throw CompilerException.TypeMismatch(expression?.Token);
+			}
+		}
+
 		switch (statement)
 		{
 			case CodeModel.Statements.AssignmentStatement assignmentStatement:
@@ -1182,6 +1193,18 @@ public class Compiler
 
 				break;
 			}
+			case CodeModel.Statements.PlayStatement playStatement:
+			{
+				var translatedPlayStatement = new PlayStatement(playStatement);
+
+				TranslateStringArgumentExpression(
+					ref translatedPlayStatement.CommandStringExpression,
+					playStatement.CommandExpression);
+
+				container.Append(translatedPlayStatement);
+
+				break;
+			}
 			case CodeModel.Statements.PokeStatement pokeStatement:
 			{
 				var translatedPokeStatement = new PokeStatement(pokeStatement);
@@ -1476,6 +1499,19 @@ public class Compiler
 				var translatedSoftKeyListStatement = new SoftKeyListStatement(softKeyListStatement);
 
 				container.Append(translatedSoftKeyListStatement);
+
+				break;
+			}
+			case CodeModel.Statements.SoundStatement soundStatement:
+			{
+				var translatedSoundStatement = new SoundStatement(soundStatement);
+
+				TranslateNumericArgumentExpression(
+					ref translatedSoundStatement.FrequencyExpression, soundStatement.FrequencyExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedSoundStatement.DurationExpression, soundStatement.DurationExpression);
+
+				container.Append(translatedSoundStatement);
 
 				break;
 			}

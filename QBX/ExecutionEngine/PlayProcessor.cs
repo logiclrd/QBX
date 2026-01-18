@@ -1,34 +1,49 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
+
 using QBX.ExecutionEngine.Execution;
 using QBX.Firmware.Fonts;
 using QBX.Hardware;
 
 namespace QBX.ExecutionEngine;
 
-public class PlayProcessor(Machine machine)
+public class PlayProcessor
 {
+	Machine _machine;
+
 	int _octave = 4;
 	int _tempo = 120;
-	int _noteLengthDivisor;
-	int _noteStyleFractionOutOf8;
+	int _noteLengthDivisor = 4;
+	int _noteStyleFractionOutOf8 = 7;
 
 	object _noteQueueSync = new object();
 	Queue<Note> _noteQueue = new Queue<Note>();
-	int _maxNoteQueue = 0;
+	int _maxNoteQueue = 1;
 
 	class Note
 	{
 		public double Frequency;
+		public bool IsRest;
 		public TimeSpan On;
 		public TimeSpan Off;
 	}
 
+	public PlayProcessor(Machine machine)
+	{
+		_machine = machine;
+
+		UpdateNoteDurations();
+	}
+
 	public void StartProcessingThread()
 	{
-		Task.Run(ProcessNoteQueue);
+		var thread = new Thread(ProcessNoteQueue);
+
+		thread.IsBackground = true;
+		thread.Name = "PLAY Processor";
+
+		thread.Start();
 	}
 
 	TimeSpan _noteOnDuration, _noteOffDuration;
@@ -39,17 +54,25 @@ public class PlayProcessor(Machine machine)
 	{
 		const int ZNote440 = 34;
 
-		return 440.0 * Math.Pow(1.0 / 12.0, znote - ZNote440);
+		return 440.0 * Math.Pow(2.0, (znote - ZNote440) / 12.0);
 	}
 
-	public void UpdateNoteDurations()
+	public void CalculateNoteDurations(int divisor, out TimeSpan on, out TimeSpan off)
 	{
 		var wholeNoteLength = TimeSpan.FromMinutes(4) / _tempo;
 
-		var noteLength = wholeNoteLength / _noteLengthDivisor;
+		var noteLength = wholeNoteLength / divisor;
 
-		_noteOnDuration = noteLength * _noteStyleFractionOutOf8 / 8;
-		_noteOffDuration = noteLength - _noteOnDuration;
+		on = noteLength * _noteStyleFractionOutOf8 / 8;
+		off = noteLength - on;
+	}
+
+	void UpdateNoteDurations()
+	{
+		CalculateNoteDurations(
+			_noteLengthDivisor,
+			out _noteOnDuration,
+			out _noteOffDuration);
 	}
 
 	public void PlayCommandString(StringValue commandString, CodeModel.Statements.Statement? source)
@@ -97,6 +120,8 @@ public class PlayProcessor(Machine machine)
 
 				if (!s_cp437.IsDigit(ch))
 					break;
+
+				Advance(ref input);
 
 				if (numDigits == 4)
 					Fail();
@@ -157,7 +182,7 @@ public class PlayProcessor(Machine machine)
 				{
 					AdvanceAndSkipWhitespace(ref input);
 
-					_octave = _octave - 1;
+					_octave = _octave + 1;
 					if (_octave > 6)
 						_octave = 6;
 
@@ -202,9 +227,54 @@ public class PlayProcessor(Machine machine)
 						case (byte)'B': znote += 12; break;
 					}
 
+					AdvanceAndSkipWhitespace(ref input);
+
+					if (input.Length > 0)
+					{
+						switch (input[0])
+						{
+							case (byte)'+':
+							case (byte)'#':
+								znote++;
+								AdvanceAndSkipWhitespace(ref input);
+								break;
+							case (byte)'-':
+								znote--;
+								AdvanceAndSkipWhitespace(ref input);
+								break;
+						}
+					}
+
+					var on = _noteOnDuration;
+					var off = _noteOffDuration;
+
+					if (input.Length > 0)
+					{
+						if (s_cp437.IsDigit(input[0]))
+						{
+							int duration = ExpectNumberInRange(ref input, 1, 64);
+
+							CalculateNoteDurations(duration, out on, out off);
+						}
+					}
+
+					var onDot = on / 2;
+					var offDot = off / 2;
+
+					while ((input.Length > 0) && (input[0] == (byte)'.'))
+					{
+						on += onDot;
+						off += offDot;
+
+						onDot *= 0.5;
+						offDot *= 0.5;
+
+						AdvanceAndSkipWhitespace(ref input);
+					}
+
 					ExpectRange(znote, 1, 84);
 
-					PlayNote(znote, _noteOnDuration, _noteOffDuration);
+					PlayNote(znote, on, off);
 
 					break;
 				}
@@ -236,7 +306,7 @@ public class PlayProcessor(Machine machine)
 						case (byte)'L': _noteStyleFractionOutOf8 = 8; break;
 
 						case (byte)'F':
-							_maxNoteQueue = 0;
+							_maxNoteQueue = 1;
 							DrainNoteQueue();
 							break;
 						case (byte)'B':
@@ -245,6 +315,8 @@ public class PlayProcessor(Machine machine)
 
 						default: throw Fail();
 					}
+
+					AdvanceAndSkipWhitespace(ref input);
 
 					UpdateNoteDurations();
 
@@ -257,7 +329,7 @@ public class PlayProcessor(Machine machine)
 
 					int numQuarterNotes = ExpectNumberInRange(ref input, 1, 64);
 
-					var quarterNoteDuration = TimeSpan.FromMinutes(60) / _tempo;
+					var quarterNoteDuration = TimeSpan.FromMinutes(1) / _tempo;
 
 					PlayRest(quarterNoteDuration * numQuarterNotes);
 
@@ -275,7 +347,10 @@ public class PlayProcessor(Machine machine)
 					break;
 				}
 
-
+				case (byte)'X':
+					// TODO: VARPTR$() as a way to inject strings
+					AdvanceAndSkipWhitespace(ref input);
+					break;
 
 				default:
 					throw Fail();
@@ -285,7 +360,7 @@ public class PlayProcessor(Machine machine)
 
 	public void PlaySound(double frequency, int tickCount)
 	{
-		var duration = TimeSpan.FromSeconds(tickCount / machine.Timer.Timer0.Frequency);
+		var duration = TimeSpan.FromSeconds(tickCount / _machine.Timer.Timer0.Frequency);
 
 		PlaySound(frequency, duration);
 	}
@@ -303,12 +378,13 @@ public class PlayProcessor(Machine machine)
 
 	public void PlayRest(TimeSpan duration)
 	{
-		machine.Speaker.ChangeSound(
-			enabled: false,
-			invertValue: false,
-			machine.Timer.Timer2.Frequency,
-			immediate: false,
-			hold: duration);
+		QueueNote(
+			new Note()
+			{
+				IsRest = true,
+				Frequency = 100,
+				On = duration,
+			});
 	}
 
 	void PlayNote(int znote, TimeSpan on, TimeSpan off)
@@ -357,7 +433,7 @@ public class PlayProcessor(Machine machine)
 					if ((_noteQueue.Count == 0)
 					 && ((note == null) || (note.Off <= TimeSpan.Zero)))
 					{
-						machine.Speaker.ChangeSound(
+						_machine.Speaker.ChangeSound(
 							enabled: false,
 							invertValue: false,
 							note?.Frequency ?? 100,
@@ -369,10 +445,14 @@ public class PlayProcessor(Machine machine)
 						Monitor.Wait(_noteQueueSync);
 
 					note = _noteQueue.Dequeue();
+
+					Monitor.PulseAll(_noteQueueSync);
 				}
 
-				machine.Speaker.ChangeSound(
-					enabled: true,
+				_machine.Speaker.WaitWhileQueued(threshold: TimeSpan.FromSeconds(0.05));
+
+				_machine.Speaker.ChangeSound(
+					enabled: !note.IsRest,
 					invertValue: false,
 					note.Frequency,
 					immediate: false,
@@ -380,7 +460,7 @@ public class PlayProcessor(Machine machine)
 
 				if (note.Off > TimeSpan.Zero)
 				{
-					machine.Speaker.ChangeSound(
+					_machine.Speaker.ChangeSound(
 						enabled: false,
 						invertValue: false,
 						note.Frequency,
@@ -392,7 +472,7 @@ public class PlayProcessor(Machine machine)
 		finally
 		{
 			Thread.Sleep(100);
-			Task.Run(ProcessNoteQueue);
+			StartProcessingThread();
 		}
 	}
 }

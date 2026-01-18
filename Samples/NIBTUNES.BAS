@@ -1,0 +1,23 @@
+CLS 
+
+PRINT "Main theme"
+    PLAY "T160O1L8CDEDCDL4ECC"
+
+PLAY "P4"
+
+PRINT "Picked up number"
+    PLAY "O0L16>CCCE"
+    PLAY "P1"
+    PLAY "O0L16>CCCE"
+    PLAY "P1"
+    PLAY "O0L16>CCCE"
+
+PLAY "P4"
+
+PRINT "Died"
+    PLAY "O0L32EFGEFDC"
+
+PLAY "P4"
+
+PRINT "Next level"
+    PLAY "T160O1>L20CDEDCDL10ECC"

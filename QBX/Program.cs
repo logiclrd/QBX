@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading;
-using System.Threading.Tasks;
 
 using SDL3;
 
@@ -27,7 +26,10 @@ class Program
 		{
 			var cancellationTokenSource = new CancellationTokenSource();
 
-			var driverTask = new Task(() => program.Run(cancellationTokenSource.Token));
+			var driverThread = new Thread(() => program.Run(cancellationTokenSource.Token));
+
+			driverThread.IsBackground = false;
+			driverThread.Name = "Hosted Program";
 
 			if (!SDL.Init(SDL.InitFlags.Video | SDL.InitFlags.Audio))
 			{
@@ -124,13 +126,13 @@ class Program
 				SDL.RenderTexture(renderer, texture, default, default);
 				SDL.RenderPresent(renderer);
 
-				if (driverTask.Status == TaskStatus.Created)
-					driverTask.Start();
+				if (driverThread.ThreadState == ThreadState.Unstarted)
+					driverThread.Start();
 			}
 
 			cancellationTokenSource.Cancel();
 
-			driverTask.Wait(TimeSpan.FromSeconds(5));
+			driverThread.Join(TimeSpan.FromSeconds(5));
 		}
 
 		return machine.ExitCode;

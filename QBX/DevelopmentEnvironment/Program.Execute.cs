@@ -55,11 +55,16 @@ public partial class Program
 		_executionContext = new ExecutionContext(Machine, PlayProcessor);
 		_executionContext.Controls.Break();
 
-		Task.Run(
+		var thread = new System.Threading.Thread(
 			() =>
 			{
 				_executionContext.Run(compilation);
 			});
+
+		thread.IsBackground = false;
+		thread.Name = "Program Execution Thread";
+
+		thread.Start();
 	}
 
 	void UnpauseExecution()
