@@ -462,10 +462,10 @@ public abstract class StringCaseExpression(Evaluable expression, RelationalOpera
 		{
 			var conditionValue = expression.Evaluate(context, stackFrame);
 
-			StringValue leftValue = ((StringVariable)testValue).Value;
-			StringValue rightValue = ((StringVariable)conditionValue).Value;
+			var leftValueSpan = ((StringVariable)testValue).ValueSpan;
+			var rightValueSpan = ((StringVariable)conditionValue).ValueSpan;
 
-			return leftValue.CompareTo(rightValue) == 0;
+			return StringValue.Compare(leftValueSpan, rightValueSpan) == 0;
 		}
 	}
 
@@ -475,10 +475,10 @@ public abstract class StringCaseExpression(Evaluable expression, RelationalOpera
 		{
 			var conditionValue = expression.Evaluate(context, stackFrame);
 
-			StringValue leftValue = ((StringVariable)testValue).Value;
-			StringValue rightValue = ((StringVariable)conditionValue).Value;
+			var leftValueSpan = ((StringVariable)testValue).ValueSpan;
+			var rightValueSpan = ((StringVariable)conditionValue).ValueSpan;
 
-			return leftValue.CompareTo(rightValue) != 0;
+			return StringValue.Compare(leftValueSpan, rightValueSpan) != 0;
 		}
 	}
 
@@ -488,10 +488,10 @@ public abstract class StringCaseExpression(Evaluable expression, RelationalOpera
 		{
 			var conditionValue = expression.Evaluate(context, stackFrame);
 
-			StringValue leftValue = ((StringVariable)testValue).Value;
-			StringValue rightValue = ((StringVariable)conditionValue).Value;
+			var leftValueSpan = ((StringVariable)testValue).ValueSpan;
+			var rightValueSpan = ((StringVariable)conditionValue).ValueSpan;
 
-			return leftValue.CompareTo(rightValue) > 0;
+			return StringValue.Compare(leftValueSpan, rightValueSpan) > 0;
 		}
 	}
 
@@ -501,10 +501,10 @@ public abstract class StringCaseExpression(Evaluable expression, RelationalOpera
 		{
 			var conditionValue = expression.Evaluate(context, stackFrame);
 
-			StringValue leftValue = ((StringVariable)testValue).Value;
-			StringValue rightValue = ((StringVariable)conditionValue).Value;
+			var leftValueSpan = ((StringVariable)testValue).ValueSpan;
+			var rightValueSpan = ((StringVariable)conditionValue).ValueSpan;
 
-			return leftValue.CompareTo(rightValue) < 0;
+			return StringValue.Compare(leftValueSpan, rightValueSpan) < 0;
 		}
 	}
 
@@ -514,10 +514,10 @@ public abstract class StringCaseExpression(Evaluable expression, RelationalOpera
 		{
 			var conditionValue = expression.Evaluate(context, stackFrame);
 
-			StringValue leftValue = ((StringVariable)testValue).Value;
-			StringValue rightValue = ((StringVariable)conditionValue).Value;
+			var leftValueSpan = ((StringVariable)testValue).ValueSpan;
+			var rightValueSpan = ((StringVariable)conditionValue).ValueSpan;
 
-			return leftValue.CompareTo(rightValue) >= 0;
+			return StringValue.Compare(leftValueSpan, rightValueSpan) >= 0;
 		}
 	}
 
@@ -527,10 +527,10 @@ public abstract class StringCaseExpression(Evaluable expression, RelationalOpera
 		{
 			var conditionValue = expression.Evaluate(context, stackFrame);
 
-			StringValue leftValue = ((StringVariable)testValue).Value;
-			StringValue rightValue = ((StringVariable)conditionValue).Value;
+			var leftValueSpan = ((StringVariable)testValue).ValueSpan;
+			var rightValueSpan = ((StringVariable)conditionValue).ValueSpan;
 
-			return leftValue.CompareTo(rightValue) <= 0;
+			return StringValue.Compare(leftValueSpan, rightValueSpan) <= 0;
 		}
 	}
 }
@@ -646,7 +646,7 @@ public class StringRangeCaseExpression(Evaluable rangeStartExpression, Evaluable
 		var test = (StringVariable)testValue;
 
 		return
-			(rangeStart.Value.CompareTo(test.Value) <= 0) &&
-			(test.Value.CompareTo(rangeEnd.Value) <= 0);
+			(StringValue.Compare(rangeStart.ValueSpan, test.ValueSpan) <= 0) &&
+			(StringValue.Compare(test.ValueSpan, rangeEnd.ValueSpan) <= 0);
 	}
 }

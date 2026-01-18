@@ -64,8 +64,13 @@ public class Compiler
 
 			var info = new TranslationInfo(element, rootMapper, routine);
 
-			if (routine.OpeningStatement is CodeModel.Statements.FunctionStatement)
-				routine.SetReturnType(info.Mapper, compilation.TypeRepository);
+			if (routine.OpeningStatement is not null)
+			{
+				routine.ApplyOpeningDefTypeStatements(info.Mapper);
+
+				if (routine.OpeningStatement is CodeModel.Statements.FunctionStatement)
+					routine.SetReturnType(info.Mapper, compilation.TypeRepository);
+			}
 
 			translationInfo.Add(info);
 			routineByName[routine.Name] = routine;
@@ -1678,6 +1683,8 @@ public class Compiler
 			return null;
 
 		var translatedExpression = TranslateExpressionUncollapsed(expression, forAssignment, container, mapper, compilation, createImplicitArray);
+
+		translatedExpression.SourceExpression = expression;
 
 		Evaluable.CollapseConstantExpression(ref translatedExpression);
 

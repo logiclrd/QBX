@@ -35,12 +35,13 @@ public class InputStatement : Statement
 
 			if (PromptString != null)
 			{
+				writer.Write('"');
 				writer.Write(PromptString);
 
 				if (PromptQuestionMark)
-					writer.Write("; ");
+					writer.Write("\"; ");
 				else
-					writer.Write(", ");
+					writer.Write("\", ");
 			}
 		}
 

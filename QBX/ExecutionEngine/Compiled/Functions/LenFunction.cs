@@ -35,7 +35,7 @@ public class LenFunction : Function
 
 		if (type.IsString)
 		{
-			var argumentValue = ((StringVariable)Argument.Evaluate(context, stackFrame)).Value;
+			var argumentValue = ((StringVariable)Argument.Evaluate(context, stackFrame)).ValueSpan;
 
 			lengthValue = argumentValue.Length;
 		}

@@ -1,7 +1,6 @@
 ﻿using System;
-using System.CodeDom.Compiler;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
+
 using QBX.Hardware;
 
 namespace QBX.Firmware;
@@ -43,12 +42,9 @@ public class GraphicsLibrary_2bppInterleaved : GraphicsLibrary
 		_planeBytesUsed = scansInEachPlane * _stride;
 	}
 
-	protected override void ClearImplementation()
+	protected override void ClearGraphicsImplementation(int windowStart, int windowEnd)
 	{
 		var vramSpan = Array.VRAM.AsSpan();
-
-		int windowStart = CharacterLineWindowStart * CharacterScans;
-		int windowEnd = (CharacterLineWindowEnd + 1) * CharacterScans - 1;
 
 		int windowOffset = windowStart * _stride;
 		int windowLength = (windowEnd - windowStart + 1) * _stride;

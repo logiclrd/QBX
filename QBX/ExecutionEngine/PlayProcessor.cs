@@ -76,8 +76,11 @@ public class PlayProcessor
 	}
 
 	public void PlayCommandString(StringValue commandString, CodeModel.Statements.Statement? source)
+		=> PlayCommandString(commandString.AsSpan(), source);
+
+	public void PlayCommandString(Span<byte> commandString, CodeModel.Statements.Statement? source)
 	{
-		var input = commandString.AsSpan();
+		var input = commandString;
 
 		static void Advance(ref Span<byte> i)
 			=> i = i.Slice(1);

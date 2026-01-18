@@ -35,14 +35,11 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 		_planeBytesUsed = Height * _stride;
 	}
 
-	protected override void ClearImplementation()
+	protected override void ClearGraphicsImplementation(int windowStart, int windowEnd)
 	{
 		var vramSpan = Array.VRAM.AsSpan();
 
 		int planeMask = Array.Graphics.Registers.BitMask;
-
-		int windowStart = CharacterLineWindowStart * CharacterScans;
-		int windowEnd = (CharacterLineWindowEnd + 1) * CharacterScans - 1;
 
 		int windowOffset = windowStart * _stride;
 		int windowLength = (windowEnd - windowStart + 1) * _stride;

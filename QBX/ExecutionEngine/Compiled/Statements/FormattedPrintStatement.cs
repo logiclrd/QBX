@@ -25,7 +25,7 @@ public class FormattedPrintStatement(CodeModel.Statements.Statement? source) : E
 			throw new Exception("FormattedPrintStatement does not have a Format expression");
 
 		var formatVariable = (StringVariable)Format.Evaluate(context, stackFrame);
-		string format = formatVariable.Value.ToString();
+		string format = formatVariable.ValueString;
 
 		int nextArgumentIndex = 0;
 

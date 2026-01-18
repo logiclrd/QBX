@@ -29,7 +29,7 @@ public class AscFunction : Function
 		if (Argument == null)
 			throw new Exception("AscFunction with no Argument");
 
-		var argumentValue = ((StringVariable)Argument.Evaluate(context, stackFrame)).Value;
+		var argumentValue = ((StringVariable)Argument.Evaluate(context, stackFrame)).ValueSpan;
 
 		if (argumentValue.Length == 0)
 			throw RuntimeException.IllegalFunctionCall(SourceExpression?.Token);

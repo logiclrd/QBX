@@ -34,7 +34,7 @@ public class LCaseFunction : Function
 
 		var stringVariable = (StringVariable)ArgumentExpression.Evaluate(context, stackFrame);
 
-		var stringValue = stringVariable.Value;
+		var stringValue = stringVariable.ValueSpan;
 
 		StringVariable? translated = null;
 		StringValue? translatedValue = null;

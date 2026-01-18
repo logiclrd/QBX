@@ -18,6 +18,6 @@ public class PlayStatement(CodeModel.Statements.Statement source)
 
 		var commandStringValue = (StringVariable)CommandStringExpression.Evaluate(context, stackFrame);
 
-		context.PlayProcessor.PlayCommandString(commandStringValue.Value, source);
+		context.PlayProcessor.PlayCommandString(commandStringValue.ValueSpan, source);
 	}
 }

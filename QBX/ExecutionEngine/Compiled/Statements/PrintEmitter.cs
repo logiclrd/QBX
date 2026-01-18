@@ -42,7 +42,7 @@ public class PrintEmitter(ExecutionContext context)
 			case SingleVariable singleValue: Emit(singleValue.Value); break;
 			case DoubleVariable doubleValue: Emit(doubleValue.Value); break;
 			case CurrencyVariable currencyValue: Emit(currencyValue.Value); break;
-			case StringVariable stringValue: Emit(stringValue.Value); break;
+			case StringVariable stringValue: Emit(stringValue.ValueSpan); break;
 		}
 	}
 
@@ -50,6 +50,7 @@ public class PrintEmitter(ExecutionContext context)
 
 	public void Emit(byte ch) => _visual.WriteText(ch);
 	public void Emit(StringValue str) => _visual.WriteText(str.AsSpan());
+	public void Emit(Span<byte> str) => _visual.WriteText(str);
 
 	public void Emit(short integerValue)
 	{

@@ -102,7 +102,7 @@ public class TextLibrary : VisualLibrary
 			unchecked((byte)((cursorAddress >> 8) & 0xFF)));
 	}
 
-	protected override void ClearImplementation()
+	protected override void ClearImplementation(int fromCharacterLine = 0, int toCharacterLine = -1)
 	{
 		int planeBytesUsed = Width * Height;
 
@@ -110,8 +110,20 @@ public class TextLibrary : VisualLibrary
 
 		vramSpan = vramSpan.Slice(StartAddress);
 
-		var plane0 = vramSpan.Slice(0x00000, planeBytesUsed);
-		var plane1 = vramSpan.Slice(0x10000, planeBytesUsed);
+		if (fromCharacterLine < 0)
+			fromCharacterLine = CharacterHeight - 1;
+
+		int windowStart = fromCharacterLine * Width;
+		int windowLength = (toCharacterLine - fromCharacterLine + 1) * Width;
+
+		if (windowStart + windowLength > planeBytesUsed)
+			windowLength = planeBytesUsed - windowStart;
+
+		if (windowLength <= 0)
+			return;
+
+		var plane0 = vramSpan.Slice(0x00000 + windowStart, windowLength);
+		var plane1 = vramSpan.Slice(0x10000 + windowStart, windowLength);
 
 		plane0.Clear();
 		plane1.Fill(Attributes);

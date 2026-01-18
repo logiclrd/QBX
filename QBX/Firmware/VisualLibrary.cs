@@ -49,10 +49,11 @@ public abstract class VisualLibrary
 
 	public void ClearCharacterLineWindow()
 	{
-		// TODO
+		ClearImplementation(CharacterLineWindowStart, CharacterLineWindowEnd);
+		MoveCursor(0, CharacterLineWindowStart);
 	}
 
-	protected abstract void ClearImplementation();
+	protected abstract void ClearImplementation(int fromCharacterLine = 0, int toCharacterLine = -1);
 
 	public bool SetActivePage(int pageNumber)
 	{

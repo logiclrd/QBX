@@ -32,14 +32,14 @@ public class ValFunction : Function
 
 		var type = Argument.Type;
 
-		StringValue argumentValue;
+		StringVariable argumentValue;
 
 		if (type.IsString)
-			argumentValue = ((StringVariable)Argument.Evaluate(context, stackFrame)).Value;
+			argumentValue = (StringVariable)Argument.Evaluate(context, stackFrame);
 		else
 			throw new Exception("Internal error");
 
-		var parsedValue = PermissiveParse(argumentValue.ToString());
+		var parsedValue = PermissiveParse(argumentValue.ValueString);
 
 		return new DoubleVariable(parsedValue);
 	}

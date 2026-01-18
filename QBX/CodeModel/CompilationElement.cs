@@ -124,7 +124,7 @@ public class CompilationElement(CompilationUnit owner) : IRenderableCode
 				}
 			}
 
-			if (line.Statements.Count == 0)
+			if ((line.Statements.Count == 0) && (line.EndOfLineComment == null))
 			{
 				Lines.RemoveAt(lineIndex);
 				lineIndex--;

@@ -25,6 +25,11 @@ public class StringValue : IComparable<StringValue>, IEquatable<StringValue>
 		Append(other.AsSpan());
 	}
 
+	public StringValue(Span<byte> data)
+	{
+		Append(data);
+	}
+
 	public StringValue(string str)
 	{
 		Append(s_cp437.GetBytes(str));
@@ -116,22 +121,30 @@ public class StringValue : IComparable<StringValue>, IEquatable<StringValue>
 	public string ToString(int index, int length)
 		=> s_cp437.GetString(AsSpan().Slice(index, length));
 
-	internal int CompareTo(StringValue other)
-	{
-		var thisSpan = AsSpan();
-		var otherSpan = other.AsSpan();
+	public static int Compare(StringValue left, StringValue right)
+		=> Compare(left.AsSpan(), right.AsSpan());
 
-		int l = Math.Min(thisSpan.Length, otherSpan.Length);
+	public static int Compare(Span<byte> leftSpan, Span<byte> rightSpan)
+	{
+		int l = Math.Min(leftSpan.Length, rightSpan.Length);
 
 		for (int i = 0; i < l; i++)
 		{
-			int comparison = thisSpan[i] - otherSpan[i];
+			int comparison = leftSpan[i] - rightSpan[i];
 
 			if (comparison != 0)
 				return comparison;
 		}
 
-		return thisSpan.Length - otherSpan.Length;
+		return leftSpan.Length - rightSpan.Length;
+	}
+
+	public int CompareTo(StringValue other)
+	{
+		var thisSpan = AsSpan();
+		var otherSpan = other.AsSpan();
+
+		return Compare(thisSpan, otherSpan);
 	}
 
 	public bool Equals(StringValue? other)

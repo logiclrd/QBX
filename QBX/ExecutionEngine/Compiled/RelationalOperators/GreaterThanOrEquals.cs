@@ -190,7 +190,7 @@ public class StringGreaterThanOrEquals(Evaluable left, Evaluable right): BinaryE
 		var leftValue = (StringVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (StringVariable)right.Evaluate(context, stackFrame);
 
-		bool result = leftValue.Value.CompareTo(rightValue.Value) >= 0;
+		bool result = StringValue.Compare(leftValue.ValueSpan, rightValue.ValueSpan) >= 0;
 
 		return new IntegerVariable(result ? (short)-1 : (short)0);
 	}

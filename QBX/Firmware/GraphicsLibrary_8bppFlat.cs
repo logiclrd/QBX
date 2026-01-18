@@ -13,11 +13,8 @@ public class GraphicsLibrary_8bppFlat : GraphicsLibrary
 		RefreshParameters();
 	}
 
-	protected override void ClearImplementation()
+	protected override void ClearGraphicsImplementation(int windowStart, int windowEnd)
 	{
-		int windowStart = CharacterLineWindowStart * CharacterScans;
-		int windowEnd = (CharacterLineWindowEnd + 1) * CharacterScans - 1;
-
 		int windowOffset = windowStart * Width;
 		int windowLength = (windowEnd - windowStart + 1) * Width;
 

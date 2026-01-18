@@ -79,6 +79,19 @@ public abstract class GraphicsLibrary : VisualLibrary
 		return true;
 	}
 
+	protected override void ClearImplementation(int fromCharacterLine = 0, int toCharacterLine = -1)
+	{
+		int windowStart = fromCharacterLine * CharacterScans;
+		int windowEnd =
+			toCharacterLine < 0
+			? Height - 1
+			: (toCharacterLine + 1) * CharacterScans - 1;
+
+		ClearGraphicsImplementation(windowStart, windowEnd);
+	}
+
+	protected abstract void ClearGraphicsImplementation(int windowStart, int windowEnd);
+
 	public void SetDrawingAttribute(int attribute)
 	{
 		DrawingAttribute = attribute;

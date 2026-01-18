@@ -62,7 +62,7 @@ public class MidFunction : Function
 
 		var lengthValue = LengthExpression?.Evaluate(context, stackFrame);
 
-		int stringLength = stringVariable.Value.Length;
+		int stringLength = stringVariable.ValueSpan.Length;
 
 		int start = startValue.CoerceToInt() - 1;
 		int length = lengthValue?.CoerceToInt() ?? (stringLength - start);

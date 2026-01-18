@@ -78,6 +78,19 @@ public class Routine : Sequence
 		module.Routines.Add(Name, this);
 	}
 
+	public void ApplyOpeningDefTypeStatements(Mapper mapper)
+	{
+		// Ensure that any DEFtype statements preceding the opening statement are in effect.
+		foreach (var line in Source.Lines)
+		{
+			if (line.Statements.FirstOrDefault() is ProperSubroutineOpeningStatement)
+				break;
+
+			foreach (var defTypeStatement in line.Statements.OfType<DefTypeStatement>())
+				mapper.ApplyDefTypeStatement(defTypeStatement);
+		}
+	}
+
 	public void SetReturnType(Mapper mapper, TypeRepository typeRepository)
 	{
 		char lastChar = Name.Last();
@@ -91,19 +104,7 @@ public class Routine : Sequence
 			Name = Name.Remove(Name.Length - 1);
 		}
 		else
-		{
-			// Ensure that any DEFtype statements preceding the opening statement are in effect.
-			foreach (var line in Source.Lines)
-			{
-				if (line.Statements.FirstOrDefault() is ProperSubroutineOpeningStatement)
-					break;
-
-				foreach (var defTypeStatement in line.Statements.OfType<DefTypeStatement>())
-					mapper.ApplyDefTypeStatement(defTypeStatement);
-			}
-
 			ReturnType = DataType.ForPrimitiveDataType(mapper.GetTypeForIdentifier(Name));
-		}
 	}
 
 	// DEF FN

@@ -1479,7 +1479,7 @@ public class BasicParser
 
 					if (tokenHandler.NextTokenIs(TokenType.String))
 					{
-						input.PromptString = tokenHandler.NextToken.Value;
+						input.PromptString = tokenHandler.NextToken.StringLiteralValue;
 
 						tokenHandler.Advance();
 
