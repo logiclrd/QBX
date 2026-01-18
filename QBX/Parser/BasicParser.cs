@@ -2381,6 +2381,29 @@ public class BasicParser
 				}
 			}
 
+			case TokenType.OUT:
+			{
+				var @out = new OutStatement();
+
+				var arguments = SplitCommaDelimitedList(tokenHandler.RemainingTokens).ToList();
+
+				if (arguments.Count == 1)
+					throw new SyntaxErrorException(tokenHandler.PreviousToken, "Expected: expression");
+				if (arguments.Count > 2)
+				{
+					var blame = tokens[arguments[2].Unwrap().Offset - 1];
+
+					throw new SyntaxErrorException(blame, "Expected: end of statement");
+				}
+
+				var midToken = tokens[arguments[1].Unwrap().Offset - 1];
+
+				@out.PortExpression = ParseExpression(arguments[0], midToken);
+				@out.DataExpression = ParseExpression(arguments[1], tokenHandler.PreviousToken);
+
+				return @out;
+			}
+
 			case TokenType.PAINT:
 			{
 				var paint = new PaintStatement();

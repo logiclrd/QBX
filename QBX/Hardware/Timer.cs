@@ -51,7 +51,7 @@ public class Timer(TimerChip owner, bool isTickCountBasis)
 		if (_attachedSpeaker != null)
 		{
 			_attachedSpeaker.ChangeSound(
-				_attachedSpeaker.IsEnabled,
+				enabled: null, // do not change enabled state
 				invertValue: (Mode != 3),
 				Frequency,
 				immediate: true,
@@ -85,7 +85,7 @@ public class Timer(TimerChip owner, bool isTickCountBasis)
 
 			elapsed -= intervals / Frequency;
 
-			int counterValue = (int)(Counter * TimerChip.BaseFrequency);
+			int counterValue = (int)(elapsed * TimerChip.BaseFrequency);
 
 			counterValue = Divisor - counterValue - 1;
 			if (counterValue < 0)
@@ -135,7 +135,7 @@ public class Timer(TimerChip owner, bool isTickCountBasis)
 		}
 
 		_attachedSpeaker?.ChangeSound(
-			_attachedSpeaker.IsEnabled,
+			enabled: null, // do not change enabled state
 			invertValue: (Mode != 3),
 			Frequency,
 			immediate: true,

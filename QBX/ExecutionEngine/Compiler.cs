@@ -1178,6 +1178,19 @@ public class Compiler
 
 				break;
 			}
+			case CodeModel.Statements.OutStatement outStatement:
+			{
+				var translatedOutStatement = new OutStatement(outStatement);
+
+				TranslateNumericArgumentExpression(
+					ref translatedOutStatement.PortExpression, outStatement.PortExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedOutStatement.DataExpression, outStatement.DataExpression);
+
+				container.Append(translatedOutStatement);
+
+				break;
+			}
 			case CodeModel.Statements.PixelSetStatement pixelSetStatement:
 			{
 				var translatedPixelSetStatement = new PixelSetStatement(pixelSetStatement);

@@ -195,6 +195,7 @@ public enum TokenType
 	[KeywordToken] OPEN,
 	[KeywordToken] OPTION,
 	[KeywordToken] OR,
+	[KeywordToken] OUT,
 	[KeywordToken] OUTPUT,
 	[KeywordToken] PAINT,
 	[KeywordToken] PALETTE,

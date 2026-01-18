@@ -55,6 +55,7 @@ public enum StatementType
 	OnEvent,
 	Open,
 	OpenLegacy,
+	Out,
 	PageCopy,
 	Paint,
 	Palette,
