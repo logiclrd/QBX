@@ -1875,7 +1875,9 @@ public class Compiler
 				switch (keywordFunction.Function)
 				{
 					case TokenType.ASC: function = new AscFunction(); break;
+					case TokenType.ATN: function = new AtnFunction(); break;
 					case TokenType.CHR: function = new ChrFunction(); break;
+					case TokenType.COS: function = new CosFunction(); break;
 					case TokenType.INT: return IntFunction.Construct(keywordFunction.Token, arguments);
 					case TokenType.LCASE: function = new LCaseFunction(); break;
 					case TokenType.LEFT: function = new LeftFunction(); break;
@@ -1889,7 +1891,9 @@ public class Compiler
 						else
 							function = new RndFunction();
 						break;
+					case TokenType.SIN: function = new SinFunction(); break;
 					case TokenType.SPACE: function = new SpaceFunction(); break;
+					case TokenType.TAN: function = new TanFunction(); break;
 					case TokenType.TIMER: function = new TimerFunction(); break;
 					case TokenType.UCASE: function = new UCaseFunction(); break;
 					case TokenType.VAL: function = new ValFunction(); break;
