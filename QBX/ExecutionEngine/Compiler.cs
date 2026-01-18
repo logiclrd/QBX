@@ -28,14 +28,14 @@ public class Compiler
 		public Mapper Mapper =
 			(element.Type == CodeModel.CompilationElementType.Main)
 			? rootMapper
-			: rootMapper.CreateScope();
+			: rootMapper.CreateScope(routine);
 	}
 
 	public Module Compile(CodeModel.CompilationUnit unit, Compilation compilation)
 	{
 		var module = new Module();
 
-		var rootMapper = new Mapper();
+		Mapper? rootMapper = null;
 
 		var routineByName = module.Routines;
 
@@ -48,6 +48,14 @@ public class Compiler
 
 			if (compilation.IsRegistered(routine.Name))
 				throw CompilerException.DuplicateDefinition(element.AllStatements.FirstOrDefault());
+
+			if (rootMapper == null)
+			{
+				if (routine.Name != Routine.MainRoutineName)
+					throw new Exception("First routine is not the main routine");
+
+				rootMapper = new Mapper(routine);
+			}
 
 			if (routine.Name == Routine.MainRoutineName)
 				module.MainRoutine = routine;
@@ -356,7 +364,7 @@ public class Compiler
 		{
 			case CodeModel.Statements.AssignmentStatement assignmentStatement:
 			{
-				var targetExpression = TranslateExpression(assignmentStatement.TargetExpression, container, mapper, compilation);
+				var targetExpression = TranslateExpression(assignmentStatement.TargetExpression, forAssignment: true, container, mapper, compilation);
 				var valueExpression = TranslateExpression(assignmentStatement.ValueExpression, container, mapper, compilation);
 
 				if (targetExpression == null)
@@ -1660,17 +1668,23 @@ public class Compiler
 	[return: NotNullIfNotNull(nameof(expression))]
 	private Evaluable? TranslateExpression(CodeModel.Expressions.Expression? expression, Sequence? container, Mapper mapper, Compilation compilation, bool createImplicitArray = false)
 	{
+		return TranslateExpression(expression, forAssignment: false, container, mapper, compilation, createImplicitArray);
+	}
+
+	[return: NotNullIfNotNull(nameof(expression))]
+	private Evaluable? TranslateExpression(CodeModel.Expressions.Expression? expression, bool forAssignment, Sequence? container, Mapper mapper, Compilation compilation, bool createImplicitArray = false)
+	{
 		if (expression == null)
 			return null;
 
-		var translatedExpression = TranslateExpressionUncollapsed(expression, container, mapper, compilation, createImplicitArray);
+		var translatedExpression = TranslateExpressionUncollapsed(expression, forAssignment, container, mapper, compilation, createImplicitArray);
 
 		Evaluable.CollapseConstantExpression(ref translatedExpression);
 
 		return translatedExpression;
 	}
 
-	private Evaluable TranslateExpressionUncollapsed(CodeModel.Expressions.Expression expression, Sequence? container, Mapper mapper, Compilation compilation, bool constantValue = false, bool createImplicitArray = false)
+	private Evaluable TranslateExpressionUncollapsed(CodeModel.Expressions.Expression expression, bool forAssignment, Sequence? container, Mapper mapper, Compilation compilation, bool constantValue = false, bool createImplicitArray = false)
 	{
 		switch (expression)
 		{
@@ -1678,9 +1692,15 @@ public class Compiler
 				if (parenthesized.Child is null)
 					throw new Exception("ParenthesizedExpression with no Child");
 
-				return TranslateExpressionUncollapsed(parenthesized.Child, container, mapper, compilation, constantValue);
+				if (forAssignment)
+					throw CompilerException.ExpectedStatement(parenthesized.Token);
+
+				return TranslateExpressionUncollapsed(parenthesized.Child, forAssignment: false, container, mapper, compilation, constantValue);
 
 			case CodeModel.Expressions.LiteralExpression literal:
+				if (forAssignment)
+					throw CompilerException.ExpectedStatement(literal.Token);
+
 				return LiteralValue.ConstructFromCodeModel(literal);
 
 			case CodeModel.Expressions.IdentifierExpression identifier:
@@ -1696,21 +1716,31 @@ public class Compiler
 
 				if (compilation.Functions.TryGetValue(unqualifiedIdentifier, out var function))
 				{
-					var returnType = function.ReturnType ?? throw new Exception("Internal error: function with no return type");
+					if (forAssignment)
+					{
+						if (function != mapper.Routine)
+							throw CompilerException.DuplicateDefinition(identifier.Token);
 
-					string qualifiedFunction = mapper.QualifyIdentifier(function.Name, function.ReturnType);
+						// Fall through to treat function name as a variable.
+					}
+					else
+					{
+						var returnType = function.ReturnType ?? throw new Exception("Internal error: function with no return type");
 
-					if (qualifiedIdentifier != qualifiedFunction)
-						throw CompilerException.DuplicateDefinition(expression.Token);
+						string qualifiedFunction = mapper.QualifyIdentifier(function.Name, function.ReturnType);
 
-					if (function.ParameterTypes.Count > 0)
-						throw CompilerException.ArgumentCountMismatch(expression.Token);
+						if (qualifiedIdentifier != qualifiedFunction)
+							throw CompilerException.DuplicateDefinition(expression.Token);
 
-					var call = new CallExpression();
+						if (function.ParameterTypes.Count > 0)
+							throw CompilerException.ArgumentCountMismatch(expression.Token);
 
-					call.Target = function;
+						var call = new CallExpression();
 
-					return call;
+						call.Target = function;
+
+						return call;
+					}
 				}
 
 				int variableIndex = mapper.ResolveVariable(identifier.Identifier);
@@ -1789,6 +1819,9 @@ public class Compiler
 
 				if (compilation.IsRegistered(unqualifiedIdentifier) || isForwardReference)
 				{
+					if (forAssignment)
+						throw CompilerException.DuplicateDefinition(callOrIndexExpression.Subject.Token);
+
 					if (compilation.Subs.ContainsKey(unqualifiedIdentifier))
 						throw new CompilerException(callOrIndexExpression.Subject.Token, "Cannot invoke a SUB as a function");
 
@@ -1877,6 +1910,12 @@ public class Compiler
 				if (constantValue)
 					throw CompilerException.InvalidConstant(keywordFunction.Token);
 
+				if (forAssignment)
+				{
+					if (keywordFunction.Function != TokenType.MID)
+						throw CompilerException.ExpectedStatement(keywordFunction.Token);
+				}
+
 				IEnumerable<Evaluable> arguments = Enumerable.Empty<Evaluable>();
 
 				if (keywordFunction.Arguments != null)
@@ -1929,6 +1968,9 @@ public class Compiler
 
 			case CodeModel.Expressions.UnaryExpression unaryExpression:
 			{
+				if (forAssignment)
+					throw CompilerException.ExpectedStatement(unaryExpression.Token);
+
 				var right = TranslateExpression(unaryExpression.Child, container, mapper, compilation, constantValue);
 
 				if (right == null)
@@ -1989,6 +2031,30 @@ public class Compiler
 
 						return FieldAccessExpression.Construct(subjectExpression, identifier);
 					}
+				}
+
+				if (forAssignment)
+				{
+					var leftest = binaryExpression.Left;
+
+					while (true)
+					{
+						if (leftest is CodeModel.Expressions.BinaryExpression nestedBinaryExpression)
+						{
+							leftest = nestedBinaryExpression.Left;
+							continue;
+						}
+
+						if (leftest is CodeModel.Expressions.CallOrIndexExpression nestedCallOrIndexExpression)
+						{
+							leftest = nestedCallOrIndexExpression.Subject;
+							continue;
+						}
+
+						break;
+					}
+
+					throw CompilerException.ExpectedStatement(leftest.Token);
 				}
 
 				var left = TranslateExpression(binaryExpression.Left, container, mapper, compilation, constantValue);

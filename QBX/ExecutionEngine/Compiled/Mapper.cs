@@ -62,6 +62,8 @@ public class Mapper
 {
 	Mapper? _root;
 
+	public readonly Routine Routine;
+
 	Dictionary<string, LiteralValue> _constantValueByName = new Dictionary<string, LiteralValue>(StringComparer.OrdinalIgnoreCase);
 
 	List<VariableInfo> _variables = new List<VariableInfo>();
@@ -112,16 +114,21 @@ public class Mapper
 		public int LinkedToRootVariableIndex = -1;
 	}
 
-	public Mapper()
+	public Mapper(Routine mainRoutine)
 	{
+		Routine = mainRoutine;
+
 		_identifierTypes.AsSpan().Fill(PrimitiveDataType.Single);
 
 		DeclareVariable("@ExitCode", DataType.Long);
 	}
 
-	Mapper(Mapper root)
+	Mapper(Mapper root, Routine subroutine)
 	{
 		_root = root;
+
+		Routine = subroutine;
+
 		_identifierTypes.AsSpan().Fill(PrimitiveDataType.Single);
 		_constantValueByName = new Dictionary<string, LiteralValue>(root._constantValueByName);
 	}
@@ -324,12 +331,12 @@ public class Mapper
 		return name;
 	}
 
-	public Mapper CreateScope()
+	public Mapper CreateScope(Routine subroutine)
 	{
 		if (_root != null)
 			throw new InvalidOperationException("Cannot create a mapper scope off of a scope");
 
-		return new Mapper(this);
+		return new Mapper(this, subroutine);
 	}
 
 	public void LinkRootVariable(string name)

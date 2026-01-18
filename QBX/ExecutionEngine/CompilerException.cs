@@ -99,4 +99,6 @@ public class CompilerException : Exception
 		=> new CompilerException(statement, "END SUB or END FUNCTION must be last line");
 	public static CompilerException IllegalOutsideOfSubOrFunction(CodeModel.Statements.Statement? statement)
 		=> new CompilerException(statement, "Illegal outside of SUB/FUNCTION");
+	public static CompilerException ExpectedStatement(Token? context)
+		=> new CompilerException(context, "Expected: statement");
 }

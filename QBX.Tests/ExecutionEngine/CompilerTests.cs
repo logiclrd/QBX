@@ -229,7 +229,9 @@ public class CompilerTests
 	public void CollapseDottedIdentifierExpression(string? disallowedSlug, BinaryExpression expression, string? expectedIdentifier)
 	{
 		// Arrange
-		var mapper = new Mapper();
+		var dummyRoutine = new Routine(new Module(), new QBX.CodeModel.CompilationElement(new QBX.CodeModel.CompilationUnit()));
+
+		var mapper = new Mapper(dummyRoutine);
 
 		if (disallowedSlug != null)
 			mapper.AddDisallowedSlug(disallowedSlug);
