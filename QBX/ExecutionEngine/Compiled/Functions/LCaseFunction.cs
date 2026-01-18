@@ -46,7 +46,7 @@ public class LCaseFunction : Function
 				if (translatedValue == null)
 				{
 					translatedValue = new StringValue(stringValue);
-					translated = new StringVariable();
+					translated = new StringVariable(translatedValue, adopt: true);
 				}
 
 				translatedValue[i] = s_cp437.ToLower(stringValue[i]);

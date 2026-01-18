@@ -8,7 +8,22 @@ namespace QBX.ExecutionEngine.Compiled.Expressions;
 
 public class ArrayElementExpression(int variableIndex, DataType type) : Evaluable
 {
-	public override DataType Type => type;
+	DataType? _arrayType = null;
+
+	public override DataType Type
+	{
+		get
+		{
+			if (SubscriptExpressions.Count != 0)
+				return type;
+			else
+			{
+				_arrayType ??= type.MakeArrayType();
+
+				return _arrayType;
+			}
+		}
+	}
 
 	public List<Evaluable> SubscriptExpressions = new List<Evaluable>();
 
@@ -20,10 +35,10 @@ public class ArrayElementExpression(int variableIndex, DataType type) : Evaluabl
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
-		if (SubscriptExpressions.Count == 0)
-			throw new Exception("ArrayElementExpression with no SubscriptExpressions");
-
 		var arrayVariable = (ArrayVariable)stackFrame.Variables[variableIndex];
+
+		if (SubscriptExpressions.Count == 0)
+			return arrayVariable;
 
 		var array = arrayVariable.Array;
 

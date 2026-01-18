@@ -71,6 +71,11 @@ public abstract class VisualLibrary
 		return false;
 	}
 
+	public void ResetCharacterLineWindow()
+	{
+		UpdateCharacterLineWindow(0, CharacterHeight - 1);
+	}
+
 	public void UpdateCharacterLineWindow(int windowStart, int windowEnd)
 	{
 		if (windowStart > windowEnd)

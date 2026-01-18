@@ -190,13 +190,14 @@ public class ExecutionContext
 		var variableTypes = routine.VariableTypes;
 		var linkedVariables = routine.LinkedVariables;
 
-		int totalSlots = arguments.Length + variableTypes.Count;
+		if (arguments.Length > variableTypes.Count)
+			throw new Exception("Internal error: Variable slots not properly allocated for arguments");
+
+		int totalSlots = variableTypes.Count;
 
 		var variables = new Variable[totalSlots];
 
 		arguments.CopyTo(variables);
-
-		int index = arguments.Length;
 
 		if (_rootFrame != null)
 		{
@@ -209,17 +210,17 @@ public class ExecutionContext
 				throw new Exception("Internal error: Creating frame with linked variables when there is no root frame");
 		}
 
-		foreach (var type in variableTypes)
+		for (int i = 0; i < variableTypes.Count; i++)
 		{
-			if (variables[index] == null)
+			if (variables[i] == null)
 			{
-				if (type.IsArray)
-					variables[index] = Variable.ConstructArray(type);
-				else
-					variables[index] = Variable.Construct(type);
-			}
+				var type = variableTypes[i];
 
-			index++;
+				if (type.IsArray)
+					variables[i] = Variable.ConstructArray(type);
+				else
+					variables[i] = Variable.Construct(type);
+			}
 		}
 
 		return new StackFrame(variables);

@@ -79,7 +79,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 		return true;
 	}
 
-	protected override void ClearImplementation(int fromCharacterLine = 0, int toCharacterLine = -1)
+	protected sealed override void ClearImplementation(int fromCharacterLine = 0, int toCharacterLine = -1)
 	{
 		int windowStart = fromCharacterLine * CharacterScans;
 		int windowEnd =

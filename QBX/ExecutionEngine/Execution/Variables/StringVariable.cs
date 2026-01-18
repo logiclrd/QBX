@@ -33,7 +33,7 @@ public class StringVariable : Variable
 		RawValue = new StringValue(value);
 	}
 
-	protected StringVariable(StringValue orphan, bool adopt)
+	public StringVariable(StringValue orphan, bool adopt)
 		: base(DataType.String)
 	{
 		if (adopt)

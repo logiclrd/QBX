@@ -11,29 +11,34 @@ public class TextViewportStatement(CodeModel.Statements.Statement source) : Exec
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
-		if (WindowStartExpression == null)
-			throw new Exception("TextViewportStatement with no WindowStartExpression");
-		if (WindowEndExpression == null)
-			throw new Exception("TextViewportStatement with no WindowEndExpression");
-
-		var windowStartValue = WindowStartExpression.Evaluate(context, stackFrame);
-		var windowEndValue = WindowEndExpression.Evaluate(context, stackFrame);
-
-		int windowStart;
-		int windowEnd;
-
-		try
+		if ((WindowStartExpression == null) && (WindowEndExpression == null))
+			context.VisualLibrary.ResetCharacterLineWindow();
+		else
 		{
-			windowStart = windowStartValue.CoerceToInt();
-		}
-		catch (CompilerException e) { throw e.AddContext(WindowStartExpression.SourceExpression?.Token); }
+			if (WindowStartExpression == null)
+				throw new Exception("TextViewportStatement with no WindowStartExpression");
+			if (WindowEndExpression == null)
+				throw new Exception("TextViewportStatement with no WindowEndExpression");
 
-		try
-		{
-			windowEnd = windowEndValue.CoerceToInt();
-		}
-		catch (CompilerException e) { throw e.AddContext(WindowStartExpression.SourceExpression?.Token); }
+			var windowStartValue = WindowStartExpression.Evaluate(context, stackFrame);
+			var windowEndValue = WindowEndExpression.Evaluate(context, stackFrame);
 
-		context.VisualLibrary.UpdateCharacterLineWindow(windowStart, windowEnd);
+			int windowStart;
+			int windowEnd;
+
+			try
+			{
+				windowStart = windowStartValue.CoerceToInt();
+			}
+			catch (CompilerException e) { throw e.AddContext(WindowStartExpression.SourceExpression?.Token); }
+
+			try
+			{
+				windowEnd = windowEndValue.CoerceToInt();
+			}
+			catch (CompilerException e) { throw e.AddContext(WindowStartExpression.SourceExpression?.Token); }
+
+			context.VisualLibrary.UpdateCharacterLineWindow(windowStart, windowEnd);
+		}
 	}
 }

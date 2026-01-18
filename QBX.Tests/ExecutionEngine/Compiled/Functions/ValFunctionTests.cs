@@ -1,6 +1,6 @@
 ﻿using QBX.ExecutionEngine.Compiled.Functions;
 
-namespace QBX.Tests.ExecutionEngine.Compiled;
+namespace QBX.Tests.ExecutionEngine.Compiled.Functions;
 
 public class ValFunctionTests
 {

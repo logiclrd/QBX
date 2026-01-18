@@ -41,15 +41,15 @@ public class UCaseFunction : Function
 
 		for (int i = 0, l = stringValue.Length; i < l; i++)
 		{
-			if (s_cp437.IsAsciiLetterUpper(stringValue[i]))
+			if (s_cp437.IsAsciiLetterLower(stringValue[i]))
 			{
 				if (translatedValue == null)
 				{
 					translatedValue = new StringValue(stringValue);
-					translated = new StringVariable();
+					translated = new StringVariable(translatedValue, adopt: true);
 				}
 
-				translatedValue[i] = s_cp437.ToLower(stringValue[i]);
+				translatedValue[i] = s_cp437.ToUpper(stringValue[i]);
 			}
 		}
 
