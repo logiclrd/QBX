@@ -214,13 +214,26 @@ SUB GetInputs (NumPlayers, speed, iterations&, diff$, monitor$)
         monitor$ = UCASE$(monitor$)
     LOOP UNTIL monitor$ = "M" OR monitor$ = "C"
 
+    ' Count how many times we can do the inner FOR loop per TIMER tick (18.2 Hz).
     iterations& = 0
     startTime# = TIMER                          ' Calculate speed of system
     DO                                          ' and do some compensation
+        ' loop unrolled to minimize the effect of the DO loop on the performance test
         FOR i# = 1 TO 1000: NEXT i#
-        iterations& = iterations& + 1
+        FOR i# = 1 TO 1000: NEXT i#
+        FOR i# = 1 TO 1000: NEXT i#
+        FOR i# = 1 TO 1000: NEXT i#
+        FOR i# = 1 TO 1000: NEXT i#
+        FOR i# = 1 TO 1000: NEXT i#
+        FOR i# = 1 TO 1000: NEXT i#
+        FOR i# = 1 TO 1000: NEXT i#
+        FOR i# = 1 TO 1000: NEXT i#
+        FOR i# = 1 TO 1000: NEXT i#
+        iterations& = iterations& + 10
     LOOP UNTIL startTime# <> TIMER
-    iterations& = iterations& \ 10
+
+    ' Base timing unit is 1/100th of a TIMER tick.
+    iterations& = iterations& \ 100
 
 END SUB
 
