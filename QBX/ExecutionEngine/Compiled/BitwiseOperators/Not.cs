@@ -10,7 +10,7 @@ public static class Not
 	public static Evaluable Construct(Evaluable right)
 	{
 		if (!right.Type.IsNumeric)
-			throw CompilerException.TypeMismatch(right.SourceExpression?.Token);
+			throw CompilerException.TypeMismatch(right.Source);
 
 		if (right.Type.IsInteger)
 			return new IntegerNot(right);

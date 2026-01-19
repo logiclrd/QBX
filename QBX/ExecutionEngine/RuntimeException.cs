@@ -30,7 +30,16 @@ public class RuntimeException : Exception
 	{
 	}
 
-	public RuntimeException(Token? context, string message, int errorNumber = -1)
+	public RuntimeException(CodeModel.Expressions.Expression? expression, string message, int errorNumber = -1)
+		: this(
+				expression?.Token,
+				expression?.Token?.Length ?? 0,
+				message,
+				errorNumber)
+	{
+	}
+
+	RuntimeException(Token? context, string message, int errorNumber = -1)
 		: this(context, context?.Length ?? 0, message, errorNumber)
 	{
 	}
@@ -51,17 +60,22 @@ public class RuntimeException : Exception
 		LineNumber = lineNumber;
 	}
 
-	public RuntimeException AddContext(Token? context)
-		=> AddContext(context, context?.Length ?? 0);
+	public RuntimeException AddContext(CodeModel.Expressions.Expression? expression)
+		=> AddContext(expression?.Token, expression?.Token?.Length ?? 0);
 
-	public RuntimeException AddContext(Token? context, int contextLength)
+	RuntimeException AddContext(Token? context, int contextLength)
 	{
-		return new RuntimeException(
-			context,
-			contextLength,
-			Message,
-			ErrorNumber,
-			LineNumber);
+		if (this.Context != null)
+			return this;
+		else
+		{
+			return new RuntimeException(
+				context,
+				contextLength,
+				Message,
+				ErrorNumber,
+				LineNumber);
+		}
 	}
 
 	public static string GetErrorMessage(int errorNumber)
@@ -74,10 +88,14 @@ public class RuntimeException : Exception
 		return message;
 	}
 
-	public static RuntimeException ForErrorNumber(int errorNumber, Token? context)
-		=> new RuntimeException(context, GetErrorMessage(errorNumber), errorNumber);
 	public static RuntimeException ForErrorNumber(int errorNumber, CodeModel.Statements.Statement? statement)
 		=> new RuntimeException(statement, GetErrorMessage(errorNumber), errorNumber);
+
+	public static RuntimeException ForErrorNumber(int errorNumber, CodeModel.Expressions.Expression? expression)
+		=> new RuntimeException(expression, GetErrorMessage(errorNumber), errorNumber);
+
+	public static RuntimeException ForErrorNumber(int errorNumber, Token? context)
+		=> new RuntimeException(context, GetErrorMessage(errorNumber), errorNumber);
 
 	// Some of these we can't/don't generate because the associated analysis is
 	// attached to the compile phase, not runtime. But the user could still
@@ -166,28 +184,34 @@ public class RuntimeException : Exception
 			/* 89 */ "Insufficient ISAM buffers",
 		];
 
-	public static RuntimeException SyntaxError(Token? context)
-		=> ForErrorNumber(2, context);
+	public static RuntimeException SyntaxError(CodeModel.Expressions.Expression? expression)
+		=> ForErrorNumber(2, expression);
 	public static RuntimeException ReturnWithoutGoSub(CodeModel.Statements.Statement? statement)
 		=> ForErrorNumber(3, statement);
 	public static RuntimeException OutOfData(CodeModel.Statements.Statement? statement)
 		=> ForErrorNumber(4, statement);
-	public static RuntimeException IllegalFunctionCall(Token? context)
-		=> ForErrorNumber(5, context);
+	public static RuntimeException IllegalFunctionCall(CodeModel.Expressions.Expression? expression)
+		=> ForErrorNumber(5, expression);
+	public static RuntimeException IllegalFunctionCall()
+		=> ForErrorNumber(5, default(Token));
 	public static RuntimeException IllegalFunctionCall(CodeModel.Statements.Statement? statement)
 		=> ForErrorNumber(5, statement);
-	public static RuntimeException Overflow(Token? context)
-		=> ForErrorNumber(6, context);
+	public static RuntimeException Overflow(CodeModel.Expressions.Expression? expression)
+		=> ForErrorNumber(6, expression);
 	public static RuntimeException Overflow(CodeModel.Statements.Statement? statement)
 		=> ForErrorNumber(6, statement);
-	public static RuntimeException SubscriptOutOfRange(Token? context)
-		=> ForErrorNumber(9, context);
-	public static RuntimeException DivisionByZero(Token? context)
-		=> ForErrorNumber(11, context);
+	public static RuntimeException Overflow(Token? context)
+		=> ForErrorNumber(6, context);
+	public static RuntimeException SubscriptOutOfRange(CodeModel.Expressions.Expression? expression)
+		=> ForErrorNumber(9, expression);
+	public static RuntimeException DivisionByZero(CodeModel.Expressions.Expression? expression)
+		=> ForErrorNumber(11, expression);
 	public static RuntimeException TypeMismatch(CodeModel.Statements.Statement? statement)
 		=> ForErrorNumber(13, statement);
-	public static RuntimeException TypeMismatch(Token? context)
-		=> ForErrorNumber(13, context);
+	public static RuntimeException TypeMismatch(CodeModel.Expressions.Expression? expression)
+		=> ForErrorNumber(13, expression);
+	public static RuntimeException TypeMismatch()
+		=> ForErrorNumber(13, default(Token?));
 	public static RuntimeException NoResume(CodeModel.Statements.Statement? statement)
 		=> ForErrorNumber(19, statement);
 	public static RuntimeException ResumeWithoutError(CodeModel.Statements.Statement? statement)

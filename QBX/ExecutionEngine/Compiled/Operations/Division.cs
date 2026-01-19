@@ -14,8 +14,8 @@ public static class Division
 		if (!left.Type.IsNumeric || !right.Type.IsNumeric)
 		{
 			var blame = !left.Type.IsNumeric
-				? right.SourceExpression?.Token
-				: left.SourceExpression?.Token;
+				? right.Source
+				: left.Source;
 
 			throw CompilerException.TypeMismatch(blame);
 		}
@@ -73,7 +73,7 @@ public class IntegerDivision(Evaluable left, Evaluable right) : BinaryExpression
 		var rightValue = (IntegerVariable)right.Evaluate(context, stackFrame);
 
 		if (rightValue.Value == 0)
-			throw RuntimeException.DivisionByZero(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw RuntimeException.DivisionByZero(Source);
 
 		int quotient = leftValue.Value / rightValue.Value;
 
@@ -86,7 +86,7 @@ public class IntegerDivision(Evaluable left, Evaluable right) : BinaryExpression
 		var rightValue = (IntegerLiteralValue)right.EvaluateConstant();
 
 		if (rightValue.Value == 0)
-			throw CompilerException.DivisionByZero(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw CompilerException.DivisionByZero(Source?.Token);
 
 		int quotient = leftValue.Value / rightValue.Value;
 
@@ -104,7 +104,7 @@ public class LongDivision(Evaluable left, Evaluable right) : BinaryExpression(le
 		var rightValue = (LongVariable)right.Evaluate(context, stackFrame);
 
 		if (rightValue.Value == 0)
-			throw RuntimeException.DivisionByZero(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw RuntimeException.DivisionByZero(Source);
 
 		try
 		{
@@ -112,7 +112,7 @@ public class LongDivision(Evaluable left, Evaluable right) : BinaryExpression(le
 		}
 		catch (OverflowException)
 		{
-			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw RuntimeException.Overflow(Source?.Token);
 		}
 	}
 
@@ -122,7 +122,7 @@ public class LongDivision(Evaluable left, Evaluable right) : BinaryExpression(le
 		var rightValue = (LongLiteralValue)right.EvaluateConstant();
 
 		if (rightValue.Value == 0)
-			throw CompilerException.DivisionByZero(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw CompilerException.DivisionByZero(Source?.Token);
 
 		try
 		{
@@ -130,7 +130,7 @@ public class LongDivision(Evaluable left, Evaluable right) : BinaryExpression(le
 		}
 		catch (OverflowException)
 		{
-			throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw CompilerException.Overflow(Source?.Token);
 		}
 	}
 }
@@ -150,7 +150,7 @@ public class SingleDivision(Evaluable left, Evaluable right) : BinaryExpression(
 		}
 		catch (OverflowException)
 		{
-			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw RuntimeException.Overflow(Source?.Token);
 		}
 	}
 
@@ -165,7 +165,7 @@ public class SingleDivision(Evaluable left, Evaluable right) : BinaryExpression(
 		}
 		catch (OverflowException)
 		{
-			throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw CompilerException.Overflow(Source?.Token);
 		}
 	}
 }
@@ -185,7 +185,7 @@ public class DoubleDivision(Evaluable left, Evaluable right) : BinaryExpression(
 		}
 		catch (OverflowException)
 		{
-			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw RuntimeException.Overflow(Source?.Token);
 		}
 	}
 
@@ -200,7 +200,7 @@ public class DoubleDivision(Evaluable left, Evaluable right) : BinaryExpression(
 		}
 		catch (OverflowException)
 		{
-			throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw CompilerException.Overflow(Source?.Token);
 		}
 	}
 }
@@ -219,13 +219,13 @@ public class CurrencyDivision(Evaluable left, Evaluable right) : BinaryExpressio
 			decimal value = leftValue.Value / rightValue.Value;
 
 			if (!value.IsInCurrencyRange())
-				throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+				throw RuntimeException.Overflow(Source?.Token);
 
 			return new CurrencyVariable(value);
 		}
 		catch (OverflowException)
 		{
-			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw RuntimeException.Overflow(Source?.Token);
 		}
 	}
 
@@ -239,13 +239,13 @@ public class CurrencyDivision(Evaluable left, Evaluable right) : BinaryExpressio
 			decimal value = leftValue.Value / rightValue.Value;
 
 			if (!value.IsInCurrencyRange())
-				throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+				throw CompilerException.Overflow(Source?.Token);
 
 			return new CurrencyLiteralValue(value);
 		}
 		catch (OverflowException)
 		{
-			throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw CompilerException.Overflow(Source?.Token);
 		}
 	}
 }

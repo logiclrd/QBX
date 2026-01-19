@@ -14,11 +14,7 @@ public class TypeRepository
 	public void RegisterType(UserDataType userType)
 	{
 		if (_typeByName.ContainsKey(userType.Name))
-		{
-			throw new RuntimeException(
-				userType.Statement?.NameToken,
-				"Duplicate definition");
-		}
+			throw CompilerException.DuplicateDefinition(userType.Statement);
 
 		_typeByName[userType.Name] = new DataType(userType);
 	}
@@ -41,7 +37,7 @@ public class TypeRepository
 		if (_typeByName.TryGetValue(userTypeName, out var type))
 			return type;
 
-		throw new RuntimeException(context, "Type not defined");
+		throw CompilerException.TypeNotDefined(context);
 	}
 
 	public DataType ResolveType(CodeModel.ParameterDefinition param, Mapper mapper)

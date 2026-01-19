@@ -32,7 +32,7 @@ public class UnformattedPrintStatement(CodeModel.Statements.Statement? source) :
 				case PrintArgumentType.Tab:
 				case PrintArgumentType.Space:
 				{
-					int newCursorX = argument.Expression.Evaluate(context, stackFrame).CoerceToInt();
+					int newCursorX = argument.Expression.EvaluateAndCoerceToInt(context, stackFrame);
 
 					newCursorX = (newCursorX - 1) % context.VisualLibrary.CharacterWidth;
 

@@ -45,10 +45,10 @@ public class ColorStatement(CodeModel.Statements.Statement? source) : Executable
 
 					if (Argument1Expression != null)
 					{
-						foregroundColour = Argument1Expression.Evaluate(context, stackFrame).CoerceToInt();
+						foregroundColour = Argument1Expression.EvaluateAndCoerceToInt(context, stackFrame);
 
 						if (foregroundColour != (foregroundColour & 31))
-							throw RuntimeException.IllegalFunctionCall(Argument1Expression.SourceExpression?.Token);
+							throw RuntimeException.IllegalFunctionCall(Argument1Expression.Source);
 
 						blink = (foregroundColour & 16) != 0;
 
@@ -57,10 +57,10 @@ public class ColorStatement(CodeModel.Statements.Statement? source) : Executable
 
 					if (Argument2Expression != null)
 					{
-						backgroundColour = Argument2Expression.Evaluate(context, stackFrame).CoerceToInt();
+						backgroundColour = Argument2Expression.EvaluateAndCoerceToInt(context, stackFrame);
 
 						if (backgroundColour != (backgroundColour & 15))
-							throw RuntimeException.IllegalFunctionCall(Argument2Expression.SourceExpression?.Token);
+							throw RuntimeException.IllegalFunctionCall(Argument2Expression.Source);
 
 						backgroundColour &= 7;
 					}
@@ -72,7 +72,7 @@ public class ColorStatement(CodeModel.Statements.Statement? source) : Executable
 
 				if (Argument3Expression != null)
 				{
-					int newOverscanAttribute = Argument3Expression.Evaluate(context, stackFrame).CoerceToInt() & 15;
+					int newOverscanAttribute = Argument3Expression.EvaluateAndCoerceToInt(context, stackFrame) & 15;
 
 					context.Machine.GraphicsArray.AttributeController.Registers[GraphicsArray.AttributeControllerRegisters.OverscanPaletteIndex]
 						= unchecked((byte)newOverscanAttribute);
@@ -84,10 +84,10 @@ public class ColorStatement(CodeModel.Statements.Statement? source) : Executable
 			// CGA modes
 			if (Argument1Expression != null)
 			{
-				int newBackgroundAttribute = Argument1Expression.Evaluate(context, stackFrame).CoerceToInt();
+				int newBackgroundAttribute = Argument1Expression.EvaluateAndCoerceToInt(context, stackFrame);
 
 				if ((newBackgroundAttribute < 0) || (newBackgroundAttribute > 255))
-					throw RuntimeException.IllegalFunctionCall(Argument1Expression.SourceStatement);
+					throw RuntimeException.IllegalFunctionCall(Argument1Expression.Source);
 
 				newBackgroundAttribute &= 15;
 
@@ -97,10 +97,10 @@ public class ColorStatement(CodeModel.Statements.Statement? source) : Executable
 
 			if (Argument2Expression != null)
 			{
-				int newCGAPalette = Argument2Expression.Evaluate(context, stackFrame).CoerceToInt();
+				int newCGAPalette = Argument2Expression.EvaluateAndCoerceToInt(context, stackFrame);
 
 				if ((newCGAPalette < 0) || (newCGAPalette > 255))
-					throw RuntimeException.IllegalFunctionCall(Argument2Expression.SourceStatement);
+					throw RuntimeException.IllegalFunctionCall(Argument2Expression.Source);
 
 				newCGAPalette &= 1;
 
@@ -114,14 +114,14 @@ public class ColorStatement(CodeModel.Statements.Statement? source) : Executable
 			if (context.VisualLibrary is GraphicsLibrary graphicsLibrary)
 			{
 				if (Argument3Expression != null)
-					throw RuntimeException.IllegalFunctionCall(Argument3Expression.SourceStatement);
+					throw RuntimeException.IllegalFunctionCall(Argument3Expression.Source);
 
 				if ((Argument2Expression != null) && !context.RuntimeState.EnablePaletteRemapping)
-					throw RuntimeException.IllegalFunctionCall(Argument2Expression.SourceStatement);
+					throw RuntimeException.IllegalFunctionCall(Argument2Expression.Source);
 
 				if (Argument1Expression != null)
 				{
-					int newAttribute = Argument1Expression.Evaluate(context, stackFrame).CoerceToInt();
+					int newAttribute = Argument1Expression.EvaluateAndCoerceToInt(context, stackFrame);
 
 					graphicsLibrary.SetDrawingAttribute(newAttribute);
 				}

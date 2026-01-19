@@ -12,7 +12,7 @@ public class LenFunction : Function
 	protected override void SetArgument(int index, Evaluable value)
 	{
 		if (!value.Type.IsString && !value.Type.IsUserType)
-			throw CompilerException.TypeMismatch(value.SourceExpression?.Token);
+			throw CompilerException.TypeMismatch(value.Source);
 
 		Argument = value;
 	}
@@ -45,7 +45,7 @@ public class LenFunction : Function
 			throw new Exception("Internal error");
 
 		if (lengthValue > short.MaxValue)
-			throw RuntimeException.Overflow(Argument.SourceExpression?.Token);
+			throw RuntimeException.Overflow(Argument.Source);
 
 		return new IntegerVariable((short)lengthValue);
 	}

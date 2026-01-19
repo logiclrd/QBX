@@ -75,11 +75,7 @@ public class LineStatement(CodeModel.Statements.Statement source) : Executable(s
 		int attribute;
 
 		if (ColourExpression != null)
-		{
-			var colourValue = ColourExpression.Evaluate(context, stackFrame);
-
-			attribute = colourValue.CoerceToInt();
-		}
+			attribute = ColourExpression.EvaluateAndCoerceToInt(context, stackFrame);
 		else
 			attribute = visual.DrawingAttribute;
 
@@ -88,10 +84,8 @@ public class LineStatement(CodeModel.Statements.Statement source) : Executable(s
 
 		if (StyleExpression != null)
 		{
-			var styleValue = StyleExpression.Evaluate(context, stackFrame);
-
+			styleBits = StyleExpression.EvaluateAndCoerceToInt(context, stackFrame);
 			haveStyle = true;
-			styleBits = styleValue.CoerceToInt();
 		}
 
 		switch (DrawStyle)

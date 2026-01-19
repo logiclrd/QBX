@@ -19,7 +19,7 @@ public class LeftFunction : Function
 		{
 			case 0:
 				if (!value.Type.IsString)
-					throw CompilerException.TypeMismatch(value.SourceExpression?.Token);
+					throw CompilerException.TypeMismatch(value.Source);
 
 				StringExpression = value;
 				break;
@@ -50,12 +50,12 @@ public class LeftFunction : Function
 
 		int stringLength = stringVariable.ValueSpan.Length;
 
-		int length = lengthValue.CoerceToInt();
+		int length = lengthValue.CoerceToInt(context: LengthExpression);
 
 		if (length > stringLength)
 			length = stringLength;
 		if (length < 0)
-			throw RuntimeException.IllegalFunctionCall(SourceStatement);
+			throw RuntimeException.IllegalFunctionCall(Source);
 
 		return new Substring(stringVariable, 0, length);
 	}

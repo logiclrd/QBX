@@ -11,9 +11,9 @@ public static class Or
 	public static Evaluable Construct(Evaluable left, Evaluable right)
 	{
 		if (!left.Type.IsNumeric)
-			throw CompilerException.TypeMismatch(left.SourceExpression?.Token);
+			throw CompilerException.TypeMismatch(left.Source);
 		if (!right.Type.IsNumeric)
-			throw CompilerException.TypeMismatch(right.SourceExpression?.Token);
+			throw CompilerException.TypeMismatch(right.Source);
 
 		if (left.Type.IsInteger && right.Type.IsInteger)
 			return new IntegerOr(left, right);

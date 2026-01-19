@@ -13,7 +13,7 @@ public class UCaseFunction : Function
 	protected override void SetArgument(int index, Evaluable value)
 	{
 		if (!value.Type.IsString)
-			throw CompilerException.TypeMismatch(value.SourceExpression?.Token);
+			throw CompilerException.TypeMismatch(value.Source);
 
 		ArgumentExpression = value;
 	}

@@ -58,7 +58,7 @@ public class FormattedPrintStatement(CodeModel.Statements.Statement? source) : E
 								break;
 							}
 
-							int newCursorX = argument.Expression.Evaluate(context, stackFrame).CoerceToInt();
+							int newCursorX = argument.Expression.EvaluateAndCoerceToInt(context, stackFrame);
 
 							newCursorX = (newCursorX - 1) % context.VisualLibrary.CharacterWidth;
 

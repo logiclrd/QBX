@@ -12,7 +12,7 @@ public class ChrFunction : Function
 	protected override void SetArgument(int index, Evaluable value)
 	{
 		if (!value.Type.IsNumeric)
-			throw CompilerException.TypeMismatch(value.SourceExpression?.Token);
+			throw CompilerException.TypeMismatch(value.Source);
 
 		Argument = value;
 	}
@@ -35,11 +35,11 @@ public class ChrFunction : Function
 
 		try
 		{
-			stringValue[0] = (byte)argumentValue.CoerceToInt();
+			stringValue[0] = (byte)argumentValue.CoerceToInt(context: Argument);
 		}
 		catch (OverflowException)
 		{
-			throw RuntimeException.Overflow(Argument.SourceExpression?.Token);
+			throw RuntimeException.Overflow(Argument.Source);
 		}
 
 		return new StringVariable(stringValue);

@@ -9,8 +9,7 @@ namespace QBX.ExecutionEngine.Compiled;
 
 public abstract class Evaluable
 {
-	public CodeModel.Statements.Statement? SourceStatement { get; set; }
-	public CodeModel.Expressions.Expression? SourceExpression { get; set; }
+	public CodeModel.Expressions.Expression? Source;
 
 	public abstract DataType Type { get; }
 
@@ -41,8 +40,11 @@ public abstract class Evaluable
 
 	public abstract Variable Evaluate(ExecutionContext context, StackFrame stackFrame);
 
+	public int EvaluateAndCoerceToInt(ExecutionContext context, StackFrame stackFrame)
+		=> Evaluate(context, stackFrame).CoerceToInt(context: this);
+
 	public virtual bool IsConstant
 		=> false;
 	public virtual LiteralValue EvaluateConstant()
-		=> throw CompilerException.ValueIsNotConstant(SourceExpression?.Token);
+		=> throw CompilerException.ValueIsNotConstant(Source);
 }

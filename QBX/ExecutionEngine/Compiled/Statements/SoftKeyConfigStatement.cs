@@ -20,7 +20,7 @@ public class SoftKeyConfigStatement(CodeModel.Statements.Statement source) : Exe
 		var keyValue = KeyExpression.Evaluate(context, stackFrame);
 		var macroValue = (StringVariable)MacroExpression.Evaluate(context, stackFrame);
 
-		int key = keyValue.CoerceToInt();
+		int key = keyValue.CoerceToInt(context: KeyExpression);
 		var macro = macroValue.CloneValue();
 
 		if (key == 30)

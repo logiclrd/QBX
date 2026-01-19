@@ -40,7 +40,7 @@ public class IfStatement(CodeModel.Statements.Statement? source) : Executable(so
 		var value = Condition.Evaluate(context, stackFrame);
 
 		if (!value.DataType.IsNumeric)
-			throw CompilerException.TypeMismatch(Condition.SourceStatement);
+			throw CompilerException.TypeMismatch(Condition.Source);
 
 		if (!value.IsZero)
 			context.Dispatch(ThenBody, stackFrame);

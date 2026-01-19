@@ -33,7 +33,7 @@ public class IntegerModulo(Evaluable left, Evaluable right) : BinaryExpression(l
 		var rightValue = (IntegerVariable)right.Evaluate(context, stackFrame);
 
 		if (rightValue.Value == 0)
-			throw RuntimeException.DivisionByZero(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw RuntimeException.DivisionByZero(Source);
 
 		int remainder = leftValue.Value % rightValue.Value;
 
@@ -46,7 +46,7 @@ public class IntegerModulo(Evaluable left, Evaluable right) : BinaryExpression(l
 		var rightValue = (IntegerLiteralValue)right.EvaluateConstant();
 
 		if (rightValue.Value == 0)
-			throw CompilerException.DivisionByZero(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw CompilerException.DivisionByZero(Source?.Token);
 
 		int remainder = leftValue.Value % rightValue.Value;
 
@@ -64,7 +64,7 @@ public class LongModulo(Evaluable left, Evaluable right) : BinaryExpression(left
 		var rightValue = (LongVariable)right.Evaluate(context, stackFrame);
 
 		if (rightValue.Value == 0)
-			throw RuntimeException.DivisionByZero(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw RuntimeException.DivisionByZero(Source);
 
 		try
 		{
@@ -72,7 +72,7 @@ public class LongModulo(Evaluable left, Evaluable right) : BinaryExpression(left
 		}
 		catch (OverflowException)
 		{
-			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw RuntimeException.Overflow(Source?.Token);
 		}
 	}
 
@@ -82,7 +82,7 @@ public class LongModulo(Evaluable left, Evaluable right) : BinaryExpression(left
 		var rightValue = (LongLiteralValue)right.EvaluateConstant();
 
 		if (rightValue.Value == 0)
-			throw CompilerException.DivisionByZero(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw CompilerException.DivisionByZero(Source?.Token);
 
 		try
 		{
@@ -90,7 +90,7 @@ public class LongModulo(Evaluable left, Evaluable right) : BinaryExpression(left
 		}
 		catch (OverflowException)
 		{
-			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw RuntimeException.Overflow(Source?.Token);
 		}
 	}
 }

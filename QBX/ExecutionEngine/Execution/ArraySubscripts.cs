@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 
+using QBX.ExecutionEngine.Compiled;
 using QBX.ExecutionEngine.Execution.Variables;
-using QBX.LexicalAnalysis;
 using QBX.Utility;
 
 namespace QBX.ExecutionEngine.Execution;
@@ -14,7 +14,7 @@ public class ArraySubscripts
 
 	public int ElementCount => Subscripts.Select(subscript => subscript.ElementCount).Product();
 
-	public int GetElementIndex(int[] subscriptValues, Token[]? subscriptTokens = null)
+	public int GetElementIndex(int[] subscriptValues, IList<Evaluable>? subscriptExpressions = null)
 	{
 		int index = 0;
 
@@ -26,7 +26,7 @@ public class ArraySubscripts
 			int subscript = subscriptValues[i];
 
 			if ((subscript < lowerBound) || (subscript > upperBound))
-				throw RuntimeException.SubscriptOutOfRange(subscriptTokens?[i]);
+				throw RuntimeException.SubscriptOutOfRange(subscriptExpressions?[i]?.Source);
 
 			index = index * Subscripts[i].ElementCount + subscriptValues[i] - Subscripts[i].LowerBound;
 		}
@@ -37,14 +37,14 @@ public class ArraySubscripts
 	[ThreadStatic]
 	static int[]? s_subscriptValueBuffer;
 
-	public int GetElementIndex(Variable[] subscriptValues)
+	public int GetElementIndex(Variable[] subscriptValues, IList<Evaluable> subscriptExpressions)
 	{
 		if ((s_subscriptValueBuffer == null) || (s_subscriptValueBuffer.Length < subscriptValues.Length))
 			s_subscriptValueBuffer = new int[subscriptValues.Length * 2];
 
 		for (int i = 0; i < subscriptValues.Length; i++)
-			s_subscriptValueBuffer[i] = subscriptValues[i].CoerceToInt();
+			s_subscriptValueBuffer[i] = subscriptValues[i].CoerceToInt(context: subscriptExpressions[i]);
 
-		return GetElementIndex(s_subscriptValueBuffer);
+		return GetElementIndex(s_subscriptValueBuffer, subscriptExpressions);
 	}
 }

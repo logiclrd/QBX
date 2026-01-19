@@ -20,23 +20,8 @@ public class TextViewportStatement(CodeModel.Statements.Statement source) : Exec
 			if (WindowEndExpression == null)
 				throw new Exception("TextViewportStatement with no WindowEndExpression");
 
-			var windowStartValue = WindowStartExpression.Evaluate(context, stackFrame);
-			var windowEndValue = WindowEndExpression.Evaluate(context, stackFrame);
-
-			int windowStart;
-			int windowEnd;
-
-			try
-			{
-				windowStart = windowStartValue.CoerceToInt();
-			}
-			catch (CompilerException e) { throw e.AddContext(WindowStartExpression.SourceExpression?.Token); }
-
-			try
-			{
-				windowEnd = windowEndValue.CoerceToInt();
-			}
-			catch (CompilerException e) { throw e.AddContext(WindowStartExpression.SourceExpression?.Token); }
+			int windowStart = WindowStartExpression.EvaluateAndCoerceToInt(context, stackFrame);
+			int windowEnd = WindowEndExpression.EvaluateAndCoerceToInt(context, stackFrame);
 
 			context.VisualLibrary.UpdateCharacterLineWindow(windowStart, windowEnd);
 		}

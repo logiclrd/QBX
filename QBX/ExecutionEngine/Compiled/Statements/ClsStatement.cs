@@ -12,7 +12,7 @@ public class ClsStatement(CodeModel.Statements.Statement source) : Executable(so
 		int mode;
 
 		if (ArgumentExpression != null)
-			mode = ArgumentExpression.Evaluate(context, stackFrame).CoerceToInt();
+			mode = ArgumentExpression.EvaluateAndCoerceToInt(context, stackFrame);
 		else
 		{
 			if (context.VisualLibrary is TextLibrary)

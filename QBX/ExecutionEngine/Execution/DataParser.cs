@@ -125,7 +125,7 @@ public class DataParser
 		if (targetVariable.DataType.IsString)
 			targetVariable.SetData(new StringValue(valueString));
 		else if (!targetVariable.DataType.IsNumeric)
-			throw RuntimeException.TypeMismatch(targetExpression.SourceExpression?.Token);
+			throw RuntimeException.TypeMismatch(targetExpression.Source);
 		else
 		{
 			switch (targetVariable)
@@ -153,7 +153,7 @@ public class DataParser
 			}
 
 			if (!NumberParser.TryParse(valueString, out var value))
-				throw RuntimeException.SyntaxError(targetExpression.SourceExpression?.Token);
+				throw RuntimeException.SyntaxError(targetExpression.Source);
 
 			targetVariable.SetData(value);
 		}

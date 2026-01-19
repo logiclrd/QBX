@@ -168,7 +168,7 @@ public class ExecutionContext
 			}
 			catch (EndProgram) { }
 
-			int exitCode = _rootFrame.Variables[0].CoerceToInt();
+			int exitCode = _rootFrame.Variables[0].CoerceToInt(context: null);
 
 			return exitCode;
 		}

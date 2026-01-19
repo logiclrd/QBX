@@ -20,7 +20,7 @@ public class AssignmentStatement(CodeModel.Statements.Statement? source) : Execu
 		}
 		catch (RuntimeException error)
 		{
-			throw error.AddContext(TargetExpression.SourceExpression?.Token);
+			throw error.AddContext(TargetExpression.Source);
 		}
 	}
 }

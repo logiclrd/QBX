@@ -1737,7 +1737,7 @@ public class Compiler
 					statement = unresolvedWidthStatement.ResolveToScreenWidth();
 				}
 				else
-					throw RuntimeException.TypeMismatch(firstArgumentExpression.SourceExpression?.Token);
+					throw RuntimeException.TypeMismatch(firstArgumentExpression.Source);
 
 				TranslateStatement(element, ref statement, iterator, container, mapper, compilation, module, out nextStatementInfo);
 
@@ -1765,7 +1765,7 @@ public class Compiler
 
 		var translatedExpression = TranslateExpressionUncollapsed(expression, forAssignment, container, mapper, compilation, createImplicitArray);
 
-		translatedExpression.SourceExpression = expression;
+		translatedExpression.Source = expression;
 
 		Evaluable.CollapseConstantExpression(ref translatedExpression);
 
@@ -1857,13 +1857,22 @@ public class Compiler
 					throw CompilerException.InvalidConstant(callOrIndexExpression.Token);
 
 				string? identifier = (callOrIndexExpression.Subject as CodeModel.Expressions.IdentifierExpression)?.Identifier;
+				Token? identifierToken = callOrIndexExpression.Subject.Token;
 
 				if (identifier == null)
 				{
-					identifier = CollapseDottedIdentifierExpression(callOrIndexExpression.Subject, mapper);
+					identifier = CollapseDottedIdentifierExpression(callOrIndexExpression.Subject, mapper, out int column);
 
 					if (identifier == null)
 						throw new CompilerException("Can't translate Subject expression for CallOrIndexExpression");
+
+					identifierToken = new Token(
+						callOrIndexExpression.Subject.Token?.Line ?? 0,
+						column,
+						TokenType.Identifier,
+						identifier);
+
+					identifierToken.OwnerStatement = expression.Token?.OwnerStatement;
 				}
 
 				// TODO: standard library functions
@@ -1936,6 +1945,7 @@ public class Compiler
 						translatedCallExpression.UnresolvedTargetName = unqualifiedIdentifier;
 						if (forwardReference != null)
 							translatedCallExpression.UnresolvedTargetType = forwardReference.ReturnType;
+						translatedCallExpression.UnresolvedTargetToken = identifierToken;
 						forwardReference!.UnresolvedCalls.Add(translatedCallExpression);
 					}
 
@@ -2074,7 +2084,7 @@ public class Compiler
 			{
 				if (binaryExpression.Operator == CodeModel.Expressions.Operator.Field)
 				{
-					string? dottedIdentifier = CollapseDottedIdentifierExpression(binaryExpression, mapper);
+					string? dottedIdentifier = CollapseDottedIdentifierExpression(binaryExpression, mapper, out int column);
 
 					if (dottedIdentifier != null)
 					{
@@ -2083,16 +2093,13 @@ public class Compiler
 
 						if (constantValue)
 						{
-							var blame = binaryExpression.Left;
-
-							while (blame is CodeModel.Expressions.BinaryExpression subBinary)
-								blame = subBinary.Left;
-
 							var blameToken = new Token(
-								blame.Token?.Line ?? 0,
-								blame.Token?.Column ?? 0,
+								binaryExpression.Token?.Line ?? 0,
+								column,
 								TokenType.Identifier,
 								dottedIdentifier);
+
+							blameToken.OwnerStatement = expression.Token?.OwnerStatement;
 
 							throw CompilerException.InvalidConstant(blameToken);
 						}
@@ -2179,24 +2186,27 @@ public class Compiler
 		throw new Exception("Internal error: Can't translate expression");
 	}
 
-	string? CollapseDottedIdentifierExpression(CodeModel.Expressions.Expression expression, Mapper mapper)
+	string? CollapseDottedIdentifierExpression(CodeModel.Expressions.Expression expression, Mapper mapper, out int column)
 	{
 		if (expression is CodeModel.Expressions.BinaryExpression binaryExpression)
-			return CollapseDottedIdentifierExpression(binaryExpression, mapper);
+			return CollapseDottedIdentifierExpression(binaryExpression, mapper, out column);
 		else
+		{
+			column = 0;
 			return null;
+		}
 	}
 
-	internal string? CollapseDottedIdentifierExpression(CodeModel.Expressions.BinaryExpression binaryExpression, Mapper mapper)
+	internal string? CollapseDottedIdentifierExpression(CodeModel.Expressions.BinaryExpression binaryExpression, Mapper mapper, out int column)
 	{
 		StringBuilder? builder = null;
 
-		CollapseDottedIdentifierExpression(binaryExpression, mapper, ref builder);
+		CollapseDottedIdentifierExpression(binaryExpression, mapper, ref builder, out column);
 
 		return builder?.ToString();
 	}
 
-	void CollapseDottedIdentifierExpression(CodeModel.Expressions.BinaryExpression binaryExpression, Mapper mapper, ref StringBuilder? identifierBuilder)
+	void CollapseDottedIdentifierExpression(CodeModel.Expressions.BinaryExpression binaryExpression, Mapper mapper, ref StringBuilder? identifierBuilder, out int column)
 	{
 		// The specific pattern we're looking for is a left tree of field access expressions where
 		// every leaf is an identifier. If we identify that the tree has the correct operator and
@@ -2204,6 +2214,8 @@ public class Compiler
 		//
 		// When we hit the leftmost node, that's the part of the dotted identifier we're calling
 		// the "slug". We can check if the current Mapper allows that slug or not.
+
+		column = default;
 
 		if (binaryExpression.Operator != CodeModel.Expressions.Operator.Field)
 			return;
@@ -2215,10 +2227,13 @@ public class Compiler
 		{
 			case CodeModel.Expressions.IdentifierExpression leftIdentifier:
 				if (!mapper.IsDisallowedSlug(leftIdentifier.Identifier))
+				{
 					identifierBuilder = new StringBuilder(leftIdentifier.Identifier);
+					column = leftIdentifier.Token?.Column ?? 0;
+				}
 				break;
 			case CodeModel.Expressions.BinaryExpression leftBinary:
-				CollapseDottedIdentifierExpression(leftBinary, mapper, ref identifierBuilder);
+				CollapseDottedIdentifierExpression(leftBinary, mapper, ref identifierBuilder, out column);
 				break;
 		}
 

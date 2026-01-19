@@ -40,7 +40,7 @@ public abstract class Variable
 
 	public abstract object GetData();
 	public abstract void SetData(object value);
-	public abstract int CoerceToInt();
+	public abstract int CoerceToInt(Evaluable? context);
 
 	public abstract void Serialize(Span<byte> buffer);
 	public abstract void Deserialize(ReadOnlySpan<byte> buffer);

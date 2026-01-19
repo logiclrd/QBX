@@ -21,7 +21,7 @@ public class UserDataTypeVariable : Variable
 	public override bool IsPositive => false;
 	public override bool IsNegative => false;
 
-	public override int CoerceToInt() => throw CompilerException.TypeMismatch(context: null);
+	public override int CoerceToInt(Evaluable? context) => throw RuntimeException.TypeMismatch(context?.Source);
 
 	public override object GetData() => this;
 	public override void SetData(object value) => throw new NotSupportedException();

@@ -13,7 +13,7 @@ public class StrFunction : Function
 	protected override void SetArgument(int index, Evaluable value)
 	{
 		if (!value.Type.IsNumeric)
-			throw CompilerException.TypeMismatch(value.SourceExpression?.Token);
+			throw CompilerException.TypeMismatch(value.Source);
 
 		Argument = value;
 	}
@@ -32,7 +32,7 @@ public class StrFunction : Function
 
 		var argumentValue = Argument.Evaluate(context, stackFrame);
 
-		var formatted = NumberFormatter.Format(argumentValue, qualify: false, context: SourceExpression?.Token);
+		var formatted = NumberFormatter.Format(argumentValue, qualify: false, Source);
 
 		var stringValue = new StringValue(formatted);
 

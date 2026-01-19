@@ -12,15 +12,13 @@ public class DefSegStatement(CodeModel.Statements.Statement source) : Executable
 			context.RuntimeState.SegmentBase = context.RuntimeState.GetDataSegmentBase();
 		else
 		{
-			var segmentValue = SegmentExpression.Evaluate(context, stackFrame);
-
-			int segment = segmentValue.CoerceToInt();
+			int segment = SegmentExpression.EvaluateAndCoerceToInt(context, stackFrame);
 
 			if (segment < 0)
 				segment += 0x10000;
 
 			if ((segment < 0) || (segment >= 0x10000))
-				throw RuntimeException.Overflow(SegmentExpression.SourceStatement?.FirstToken);
+				throw RuntimeException.Overflow(Source);
 
 			context.RuntimeState.SegmentBase = segment * 0x10;
 		}

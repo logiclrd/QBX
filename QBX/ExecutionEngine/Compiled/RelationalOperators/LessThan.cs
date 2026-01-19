@@ -14,7 +14,7 @@ public static class LessThan
 			return new StringLessThan(left, right);
 
 		if (left.Type.IsString || right.Type.IsString)
-			throw CompilerException.TypeMismatch(right.SourceExpression?.Token);
+			throw CompilerException.TypeMismatch(right.Source);
 
 		if (left.Type.IsDouble || right.Type.IsDouble)
 		{

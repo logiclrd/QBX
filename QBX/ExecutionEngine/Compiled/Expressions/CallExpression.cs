@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 
 using QBX.ExecutionEngine.Execution.Variables;
+using QBX.LexicalAnalysis;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
@@ -12,6 +13,7 @@ public class CallExpression : Evaluable, IUnresolvedCall
 
 	public string? UnresolvedTargetName;
 	public DataType? UnresolvedTargetType;
+	public Token? UnresolvedTargetToken;
 
 	public override DataType Type =>
 		Target?.ReturnType ??
@@ -38,7 +40,7 @@ public class CallExpression : Evaluable, IUnresolvedCall
 	public override Variable Evaluate(Execution.ExecutionContext context, Execution.StackFrame stackFrame)
 	{
 		if (UnresolvedTargetName != null)
-			throw CompilerException.SubprogramNotDefined(SourceStatement);
+			throw CompilerException.SubprogramNotDefined(UnresolvedTargetToken ?? Source?.Token);
 
 		if (Target == null)
 			throw new Exception("CallStatement has no Target");

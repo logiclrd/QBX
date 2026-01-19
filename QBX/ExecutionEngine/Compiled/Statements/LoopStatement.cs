@@ -112,7 +112,7 @@ public abstract class ConditionalLoopStatement : LoopStatement
 
 		public override void Execute(ExecutionContext context, StackFrame stackFrame)
 		{
-			ConditionValue = condition.Evaluate(context, stackFrame).CoerceToInt() != 0;
+			ConditionValue = condition.EvaluateAndCoerceToInt(context, stackFrame) != 0;
 		}
 	}
 

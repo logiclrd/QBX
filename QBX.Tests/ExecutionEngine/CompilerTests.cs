@@ -9,11 +9,27 @@ public class CompilerTests
 {
 	static IEnumerable<object?[]> GenerateCollapseDottedIdentifierExpressionTestCases()
 	{
+		int column = 0;
+
 		IdentifierExpression Identifier(string identifier)
-			=> new IdentifierExpression(new Token(0, 0, TokenType.Identifier, identifier));
+		{
+			var ret = new IdentifierExpression(new Token(0, column, TokenType.Identifier, identifier));
+
+			column += ret.Token!.Length;
+
+			return ret;
+		}
+
 		Token CharacterToken(char ch)
-			=> Token.ForCharacter(0, 0, ch);
+		{
+			var ret = Token.ForCharacter(0, column, ch);
 
+			column++;
+
+			return ret;
+		}
+
+		column = 10;
 		yield return
 			new object?[]
 			{
@@ -22,9 +38,10 @@ public class CompilerTests
 					Identifier("a"),
 					CharacterToken('*'),
 					Identifier("b")),
-				null // "a*b"
+				null, 0 // "a*b"
 			};
 
+		column = 10;
 		yield return
 			new object?[]
 			{
@@ -36,9 +53,10 @@ public class CompilerTests
 						Identifier("b"),
 						CharacterToken('+'),
 						Identifier("c"))),
-				null // "a.b+c"
+				null, 0 // "a.b+c"
 			};
 
+		column = 10;
 		yield return
 			new object?[]
 			{
@@ -50,9 +68,10 @@ public class CompilerTests
 						Identifier("b"),
 						CharacterToken('.'),
 						Identifier("c"))),
-				null // "a.b.c" but down the wrong side
+				null, 0 // "a.b.c" but down the wrong side
 			};
 
+		column = 10;
 		yield return
 			new object?[]
 			{
@@ -61,9 +80,10 @@ public class CompilerTests
 					Identifier("a"),
 					CharacterToken('.'),
 					Identifier("b")),
-				"a.b"
+				"a.b", 10
 			};
 
+		column = 10;
 		yield return
 			new object?[]
 			{
@@ -72,9 +92,10 @@ public class CompilerTests
 					Identifier("a"),
 					CharacterToken('.'),
 					Identifier("b")),
-				"a.b"
+				"a.b", 10
 			};
 
+		column = 10;
 		yield return
 			new object?[]
 			{
@@ -83,9 +104,10 @@ public class CompilerTests
 					Identifier("a"),
 					CharacterToken('.'),
 					Identifier("b")),
-				null
+				null, 0
 			};
 
+		column = 10;
 		yield return
 			new object?[]
 			{
@@ -97,9 +119,10 @@ public class CompilerTests
 						Identifier("c")),
 					CharacterToken('.'),
 					Identifier("b")),
-				null // "a+c.b"
+				null, 0 // "a+c.b"
 			};
 
+		column = 10;
 		yield return
 			new object?[]
 			{
@@ -111,9 +134,10 @@ public class CompilerTests
 						Identifier("c")),
 					CharacterToken('.'),
 					Identifier("b")),
-				null // "a.c.b"
+				null, 0 // "a.c.b"
 			};
 
+		column = 10;
 		yield return
 			new object?[]
 			{
@@ -125,9 +149,10 @@ public class CompilerTests
 						Identifier("c")),
 					CharacterToken('.'),
 					Identifier("b")),
-				"a.c.b"
+				"a.c.b", 10
 			};
 
+		column = 10;
 		yield return
 			new object?[]
 			{
@@ -139,9 +164,10 @@ public class CompilerTests
 						Identifier("c")),
 					CharacterToken('.'),
 					Identifier("b")),
-				"a.c.b"
+				"a.c.b", 10
 			};
 
+		column = 10;
 		yield return
 			new object?[]
 			{
@@ -153,9 +179,10 @@ public class CompilerTests
 						Identifier("c")),
 					CharacterToken('.'),
 					Identifier("b")),
-				null
+				null, 0
 			};
 
+		column = 10;
 		yield return
 			new object?[]
 			{
@@ -170,9 +197,10 @@ public class CompilerTests
 							Identifier("d"))),
 					CharacterToken('.'),
 					Identifier("b")),
-				null // "a.c.d.b", but "c.d" is in the wrong place
+				null, 0 // "a.c.d.b", but "c.d" is in the wrong place
 			};
 
+		column = 10;
 		yield return
 			new object?[]
 			{
@@ -187,9 +215,10 @@ public class CompilerTests
 						Identifier("d")),
 					CharacterToken('.'),
 					Identifier("b")),
-				"a.c.d.b"
+				"a.c.d.b", 10
 			};
 
+		column = 10;
 		yield return
 			new object?[]
 			{
@@ -204,9 +233,10 @@ public class CompilerTests
 						Identifier("d")),
 					CharacterToken('.'),
 					Identifier("b")),
-				"a.c.d.b"
+				"a.c.d.b", 10
 			};
 
+		column = 10;
 		yield return
 			new object?[]
 			{
@@ -221,12 +251,12 @@ public class CompilerTests
 						Identifier("d")),
 					CharacterToken('.'),
 					Identifier("b")),
-				null
+				null, 0
 			};
 	}
 
 	[TestCaseSource(nameof(GenerateCollapseDottedIdentifierExpressionTestCases))]
-	public void CollapseDottedIdentifierExpression(string? disallowedSlug, BinaryExpression expression, string? expectedIdentifier)
+	public void CollapseDottedIdentifierExpression(string? disallowedSlug, BinaryExpression expression, string? expectedIdentifier, int expectedColumn)
 	{
 		// Arrange
 		var dummyRoutine = new Routine(new Module(), new QBX.CodeModel.CompilationElement(new QBX.CodeModel.CompilationUnit()));
@@ -239,9 +269,11 @@ public class CompilerTests
 		var sut = new Compiler();
 
 		// Act
-		var actual = sut.CollapseDottedIdentifierExpression(expression, mapper);
+		var actual = sut.CollapseDottedIdentifierExpression(expression, mapper, out int column);
 
 		// Assert
+		expression.Token!.Column.Should().NotBe(expectedColumn);
 		actual.Should().Be(expectedIdentifier);
+		column.Should().Be(expectedColumn);
 	}
 }

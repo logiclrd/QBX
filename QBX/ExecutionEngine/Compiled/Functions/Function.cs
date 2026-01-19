@@ -20,12 +20,12 @@ public abstract class Function : Evaluable
 		foreach (var argument in arguments)
 		{
 			if (count >= maxCount)
-				throw CompilerException.ArgumentCountMismatch(SourceExpression?.Token);
+				throw CompilerException.ArgumentCountMismatch(Source?.Token);
 
 			SetArgument(count++, argument);
 		}
 
 		if (count < minCount)
-			throw CompilerException.ArgumentCountMismatch(SourceExpression?.Token);
+			throw CompilerException.ArgumentCountMismatch(Source?.Token);
 	}
 }

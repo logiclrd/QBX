@@ -14,6 +14,6 @@ public class IdentifierExpression(int variableIndex, DataType type) : Evaluable
 
 	public override LiteralValue EvaluateConstant()
 	{
-		throw CompilerException.ValueIsNotConstant(SourceExpression?.Token);
+		throw CompilerException.ValueIsNotConstant(Source);
 	}
 }

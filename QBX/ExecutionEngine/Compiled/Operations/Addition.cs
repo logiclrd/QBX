@@ -89,7 +89,7 @@ public class IntegerAddition(Evaluable left, Evaluable right) : BinaryExpression
 		int sum = leftValue.Value + rightValue.Value;
 
 		if ((sum < short.MinValue) || (sum > short.MaxValue))
-			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw RuntimeException.Overflow(Source?.Token);
 
 		return new IntegerVariable(unchecked((short)sum));
 	}
@@ -102,7 +102,7 @@ public class IntegerAddition(Evaluable left, Evaluable right) : BinaryExpression
 		int sum = leftValue.Value + rightValue.Value;
 
 		if ((sum < short.MinValue) || (sum > short.MaxValue))
-			throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw CompilerException.Overflow(Source?.Token);
 
 		return new IntegerLiteralValue(unchecked((short)sum));
 	}
@@ -123,7 +123,7 @@ public class LongAddition(Evaluable left, Evaluable right) : BinaryExpression(le
 		}
 		catch (OverflowException)
 		{
-			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw RuntimeException.Overflow(Source?.Token);
 		}
 	}
 
@@ -138,7 +138,7 @@ public class LongAddition(Evaluable left, Evaluable right) : BinaryExpression(le
 		}
 		catch (OverflowException)
 		{
-			throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw CompilerException.Overflow(Source?.Token);
 		}
 	}
 }
@@ -158,7 +158,7 @@ public class SingleAddition(Evaluable left, Evaluable right) : BinaryExpression(
 		}
 		catch (OverflowException)
 		{
-			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw RuntimeException.Overflow(Source?.Token);
 		}
 	}
 
@@ -173,7 +173,7 @@ public class SingleAddition(Evaluable left, Evaluable right) : BinaryExpression(
 		}
 		catch (OverflowException)
 		{
-			throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw CompilerException.Overflow(Source?.Token);
 		}
 	}
 }
@@ -193,7 +193,7 @@ public class DoubleAddition(Evaluable left, Evaluable right) : BinaryExpression(
 		}
 		catch (OverflowException)
 		{
-			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw RuntimeException.Overflow(Source?.Token);
 		}
 	}
 
@@ -208,7 +208,7 @@ public class DoubleAddition(Evaluable left, Evaluable right) : BinaryExpression(
 		}
 		catch (OverflowException)
 		{
-			throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw CompilerException.Overflow(Source?.Token);
 		}
 	}
 }
@@ -228,7 +228,7 @@ public class CurrencyAddition(Evaluable left, Evaluable right) : BinaryExpressio
 		}
 		catch (OverflowException)
 		{
-			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw RuntimeException.Overflow(Source?.Token);
 		}
 	}
 
@@ -243,7 +243,7 @@ public class CurrencyAddition(Evaluable left, Evaluable right) : BinaryExpressio
 		}
 		catch (OverflowException)
 		{
-			throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw CompilerException.Overflow(Source?.Token);
 		}
 	}
 }
@@ -267,7 +267,7 @@ public class StringAddition(Evaluable left, Evaluable right) : BinaryExpression(
 		}
 		catch (OverflowException)
 		{
-			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw RuntimeException.Overflow(Source?.Token);
 		}
 	}
 
@@ -282,7 +282,7 @@ public class StringAddition(Evaluable left, Evaluable right) : BinaryExpression(
 		}
 		catch (OverflowException)
 		{
-			throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw CompilerException.Overflow(Source?.Token);
 		}
 	}
 }

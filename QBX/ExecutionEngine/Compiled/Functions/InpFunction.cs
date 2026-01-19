@@ -29,6 +29,6 @@ public class InpFunction : Function
 		var portValue = PortExpression.Evaluate(context, stackFrame);
 
 		return new IntegerVariable(context.Machine.InPort(
-			portValue.CoerceToInt()));
+			portValue.CoerceToInt(context: PortExpression)));
 	}
 }

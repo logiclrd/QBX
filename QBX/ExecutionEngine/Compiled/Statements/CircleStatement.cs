@@ -87,7 +87,7 @@ public class CircleStatement(CodeModel.Statements.Statement source) : Executable
 		{
 			var colourValue = ColourExpression.Evaluate(context, stackFrame);
 
-			int colour = colourValue.CoerceToInt();
+			int colour = colourValue.CoerceToInt(context: ColourExpression);
 
 			visual.Ellipse(
 				x, y,

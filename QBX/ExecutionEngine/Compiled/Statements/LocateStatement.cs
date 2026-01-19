@@ -23,27 +23,17 @@ public class LocateStatement(CodeModel.Statements.Statement? source) : Executabl
 			column = context.VisualLibrary.CursorX + 1;
 
 			if (RowExpression != null)
-			{
-				var rowValue = RowExpression.Evaluate(context, stackFrame);
-
-				row = rowValue.CoerceToInt();
-			}
+				row = RowExpression.EvaluateAndCoerceToInt(context, stackFrame);
 
 			if (ColumnExpression != null)
-			{
-				var columnValue = ColumnExpression.Evaluate(context, stackFrame);
-
-				column = columnValue.CoerceToInt();
-			}
+				column = ColumnExpression.EvaluateAndCoerceToInt(context, stackFrame);
 
 			context.VisualLibrary.MoveCursor(column - 1, row - 1);
 		}
 
 		if (CursorVisibilityExpression != null)
 		{
-			var cursorVisibilityValue = CursorVisibilityExpression.Evaluate(context, stackFrame);
-
-			int cursorVisibility = cursorVisibilityValue.CoerceToInt();
+			int cursorVisibility = CursorVisibilityExpression.EvaluateAndCoerceToInt(context, stackFrame);
 
 			var textLibrary = context.VisualLibrary as TextLibrary;
 
@@ -64,9 +54,7 @@ public class LocateStatement(CodeModel.Statements.Statement? source) : Executabl
 
 			if (CursorStartExpression != null)
 			{
-				var cursorStartValue = CursorStartExpression.Evaluate(context, stackFrame);
-
-				cursorStart = cursorStartValue.CoerceToInt();
+				int cursorStartValue = CursorStartExpression.EvaluateAndCoerceToInt(context, stackFrame);
 
 				if (cursorStart != (cursorStart & 31))
 					throw RuntimeException.IllegalFunctionCall(Source);
@@ -74,9 +62,7 @@ public class LocateStatement(CodeModel.Statements.Statement? source) : Executabl
 
 			if (CursorEndExpression != null)
 			{
-				var cursorEndValue = CursorEndExpression.Evaluate(context, stackFrame);
-
-				cursorEnd = cursorEndValue.CoerceToInt();
+				int cursorEndValue = CursorEndExpression.EvaluateAndCoerceToInt(context, stackFrame);
 
 				if (cursorEnd != (cursorEnd & 31))
 					throw RuntimeException.IllegalFunctionCall(Source);

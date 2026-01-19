@@ -25,7 +25,7 @@ public abstract class Conversion(Evaluable value) : Evaluable
 		if (expression is LiteralValue)
 		{
 			if (!expression.Type.IsNumeric)
-				throw CompilerException.TypeMismatch(expression.SourceExpression?.Token);
+				throw CompilerException.TypeMismatch(expression.Source);
 
 			var value = expression.EvaluateConstant();
 
@@ -44,7 +44,7 @@ public abstract class Conversion(Evaluable value) : Evaluable
 			}
 			catch (RuntimeException)
 			{
-				throw CompilerException.IllegalNumber(expression.SourceExpression?.Token);
+				throw CompilerException.IllegalNumber(expression.Source);
 			}
 		}
 

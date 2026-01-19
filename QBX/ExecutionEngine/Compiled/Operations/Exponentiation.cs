@@ -13,8 +13,8 @@ public static class Exponentiation
 		if (!left.Type.IsNumeric || !right.Type.IsNumeric)
 		{
 			var blame = !left.Type.IsNumeric
-				? right.SourceExpression?.Token
-				: left.SourceExpression?.Token;
+				? right.Source
+				: left.Source;
 
 			throw CompilerException.TypeMismatch(blame);
 		}
@@ -71,13 +71,13 @@ public class CurrencyExponentiation(Evaluable left, Evaluable right) : BinaryExp
 			decimal result = CalculateResult(leftValue.Value, rightValue.Value);
 
 			if (!result.IsInCurrencyRange())
-				throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+				throw RuntimeException.Overflow(Source?.Token);
 
 			return new CurrencyVariable(result);
 		}
 		catch (OverflowException)
 		{
-			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw RuntimeException.Overflow(Source?.Token);
 		}
 	}
 
@@ -91,13 +91,13 @@ public class CurrencyExponentiation(Evaluable left, Evaluable right) : BinaryExp
 			decimal result = CalculateResult(leftValue.Value, rightValue.Value);
 
 			if (!result.IsInCurrencyRange())
-				throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+				throw CompilerException.Overflow(Source?.Token);
 
 			return new CurrencyLiteralValue(result);
 		}
 		catch (OverflowException)
 		{
-			throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw CompilerException.Overflow(Source?.Token);
 		}
 	}
 }
@@ -117,7 +117,7 @@ public class DoubleExponentiation(Evaluable left, Evaluable right) : BinaryExpre
 		}
 		catch (OverflowException)
 		{
-			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw RuntimeException.Overflow(Source?.Token);
 		}
 	}
 
@@ -132,7 +132,7 @@ public class DoubleExponentiation(Evaluable left, Evaluable right) : BinaryExpre
 		}
 		catch (OverflowException)
 		{
-			throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw CompilerException.Overflow(Source?.Token);
 		}
 	}
 }

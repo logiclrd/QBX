@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 using QBX.ExecutionEngine.Compiled;
 using QBX.ExecutionEngine.Execution.Variables;
@@ -124,8 +125,7 @@ public class Array
 		return Elements[index] ??= Variable.Construct(ElementType);
 	}
 
-	public Variable GetElement(int[] subscripts) => GetElement(Subscripts.GetElementIndex(subscripts));
-	public Variable GetElement(Variable[] subscripts) => GetElement(Subscripts.GetElementIndex(subscripts));
+	public Variable GetElement(Variable[] subscripts, IList<Evaluable> expressions) => GetElement(Subscripts.GetElementIndex(subscripts, expressions));
 
 	public void Serialize(Span<byte> buffer)
 	{

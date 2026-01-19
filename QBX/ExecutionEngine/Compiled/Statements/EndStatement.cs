@@ -8,7 +8,7 @@ public class EndStatement(CodeModel.Statements.Statement source) : Executable(so
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
-		int exitCode = ExitCodeExpression?.Evaluate(context, stackFrame).CoerceToInt() ?? 0;
+		int exitCode = ExitCodeExpression?.EvaluateAndCoerceToInt(context, stackFrame) ?? 0;
 
 		context.SetExitCode(exitCode);
 

@@ -12,7 +12,7 @@ public class SpaceFunction : Function
 	protected override void SetArgument(int index, Evaluable value)
 	{
 		if (!value.Type.IsNumeric)
-			throw CompilerException.TypeMismatch(value.SourceExpression?.Token);
+			throw CompilerException.TypeMismatch(value.Source);
 
 		Argument = value;
 	}
@@ -35,11 +35,11 @@ public class SpaceFunction : Function
 
 		try
 		{
-			numSpaces = (byte)argumentValue.CoerceToInt();
+			numSpaces = (byte)argumentValue.CoerceToInt(context: Argument);
 		}
 		catch (OverflowException)
 		{
-			throw RuntimeException.Overflow(Argument.SourceExpression?.Token);
+			throw RuntimeException.Overflow(Argument.Source);
 		}
 
 		var stringValue = StringValue.CreateFixedLength(numSpaces);

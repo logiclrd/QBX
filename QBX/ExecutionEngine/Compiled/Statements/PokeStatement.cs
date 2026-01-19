@@ -16,10 +16,10 @@ public class PokeStatement(CodeModel.Statements.Statement source) : Executable(s
 		if (ValueExpression is null)
 			throw new Exception("PokeStatement has no ValueExpression");
 
-		var address = AddressExpression.Evaluate(context, stackFrame);
-		var value = ValueExpression.Evaluate(context, stackFrame);
+		int address = AddressExpression.EvaluateAndCoerceToInt(context, stackFrame);
+		int value = ValueExpression.EvaluateAndCoerceToInt(context, stackFrame);
 
-		context.Machine.MemoryBus[context.RuntimeState.SegmentBase + address.CoerceToInt()] =
-			unchecked((byte)value.CoerceToInt());
+		context.Machine.MemoryBus[context.RuntimeState.SegmentBase + address] =
+			unchecked((byte)value);
 	}
 }

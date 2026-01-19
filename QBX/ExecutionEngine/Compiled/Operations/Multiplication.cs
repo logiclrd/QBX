@@ -15,8 +15,8 @@ public static class Multiplication
 		if (!left.Type.IsNumeric || !right.Type.IsNumeric)
 		{
 			var blame = !left.Type.IsNumeric
-				? right.SourceExpression?.Token
-				: left.SourceExpression?.Token;
+				? right.Source
+				: left.Source;
 
 			throw CompilerException.TypeMismatch(blame);
 		}
@@ -91,7 +91,7 @@ public class IntegerMultiplication(Evaluable left, Evaluable right) : BinaryExpr
 		int product = leftValue.Value * rightValue.Value;
 
 		if ((product < short.MinValue) || (product > short.MaxValue))
-			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw RuntimeException.Overflow(Source?.Token);
 
 		return new IntegerVariable(unchecked((short)product));
 	}
@@ -104,7 +104,7 @@ public class IntegerMultiplication(Evaluable left, Evaluable right) : BinaryExpr
 		int product = leftValue.Value * rightValue.Value;
 
 		if ((product < short.MinValue) || (product > short.MaxValue))
-			throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw CompilerException.Overflow(Source?.Token);
 
 		return new IntegerLiteralValue(unchecked((short)product));
 	}
@@ -125,7 +125,7 @@ public class LongMultiplication(Evaluable left, Evaluable right) : BinaryExpress
 		}
 		catch (OverflowException)
 		{
-			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw RuntimeException.Overflow(Source?.Token);
 		}
 	}
 
@@ -140,7 +140,7 @@ public class LongMultiplication(Evaluable left, Evaluable right) : BinaryExpress
 		}
 		catch (OverflowException)
 		{
-			throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw CompilerException.Overflow(Source?.Token);
 		}
 	}
 }
@@ -160,7 +160,7 @@ public class SingleMultiplication(Evaluable left, Evaluable right) : BinaryExpre
 		}
 		catch (OverflowException)
 		{
-			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw RuntimeException.Overflow(Source?.Token);
 		}
 	}
 
@@ -175,7 +175,7 @@ public class SingleMultiplication(Evaluable left, Evaluable right) : BinaryExpre
 		}
 		catch (OverflowException)
 		{
-			throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw CompilerException.Overflow(Source?.Token);
 		}
 	}
 }
@@ -195,7 +195,7 @@ public class DoubleMultiplication(Evaluable left, Evaluable right) : BinaryExpre
 		}
 		catch (OverflowException)
 		{
-			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw RuntimeException.Overflow(Source?.Token);
 		}
 	}
 
@@ -210,7 +210,7 @@ public class DoubleMultiplication(Evaluable left, Evaluable right) : BinaryExpre
 		}
 		catch (OverflowException)
 		{
-			throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw CompilerException.Overflow(Source?.Token);
 		}
 	}
 }
@@ -230,7 +230,7 @@ public class CurrencyMultiplication(Evaluable left, Evaluable right) : BinaryExp
 		}
 		catch (OverflowException)
 		{
-			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw RuntimeException.Overflow(Source?.Token);
 		}
 	}
 
@@ -245,7 +245,7 @@ public class CurrencyMultiplication(Evaluable left, Evaluable right) : BinaryExp
 		}
 		catch (OverflowException)
 		{
-			throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw CompilerException.Overflow(Source?.Token);
 		}
 	}
 }

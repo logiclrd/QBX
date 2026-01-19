@@ -14,14 +14,14 @@ public class ScreenStatement(CodeModel.Statements.Statement? source) : Executabl
 	{
 		if (ModeExpression != null)
 		{
-			int qbMode = ModeExpression.Evaluate(context, stackFrame).CoerceToInt();
+			int qbMode = ModeExpression.EvaluateAndCoerceToInt(context, stackFrame);
 
 			int hardwareMode = System.Array.FindLastIndex(
 				Video.Modes,
 				mode => mode?.ScreenNumber == qbMode);
 
 			if (!context.Machine.VideoFirmware.SetMode(hardwareMode))
-				throw RuntimeException.IllegalFunctionCall(ModeExpression.SourceStatement);
+				throw RuntimeException.IllegalFunctionCall(ModeExpression.Source);
 
 			if (Video.Modes[hardwareMode] is ModeParameters modeParams)
 			{
@@ -48,18 +48,18 @@ public class ScreenStatement(CodeModel.Statements.Statement? source) : Executabl
 
 		if (ActivePageExpression != null)
 		{
-			int activePage = ActivePageExpression.Evaluate(context, stackFrame).CoerceToInt();
+			int activePage = ActivePageExpression.EvaluateAndCoerceToInt(context, stackFrame);
 
 			if (!context.VisualLibrary.SetActivePage(activePage))
-				throw RuntimeException.IllegalFunctionCall(ActivePageExpression.SourceStatement);
+				throw RuntimeException.IllegalFunctionCall(ActivePageExpression.Source);
 		}
 
 		if (VisiblePageExpression != null)
 		{
-			int visiblePage = VisiblePageExpression.Evaluate(context, stackFrame).CoerceToInt();
+			int visiblePage = VisiblePageExpression.EvaluateAndCoerceToInt(context, stackFrame);
 
 			if (!context.Machine.VideoFirmware.SetVisiblePage(visiblePage))
-				throw RuntimeException.IllegalFunctionCall(VisiblePageExpression.SourceStatement);
+				throw RuntimeException.IllegalFunctionCall(VisiblePageExpression.Source);
 		}
 	}
 }

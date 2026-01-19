@@ -12,7 +12,7 @@ public class AscFunction : Function
 	protected override void SetArgument(int index, Evaluable value)
 	{
 		if (!value.Type.IsString)
-			throw CompilerException.TypeMismatch(value.SourceExpression?.Token);
+			throw CompilerException.TypeMismatch(value.Source);
 
 		Argument = value;
 	}
@@ -32,7 +32,7 @@ public class AscFunction : Function
 		var argumentValue = ((StringVariable)Argument.Evaluate(context, stackFrame)).ValueSpan;
 
 		if (argumentValue.Length == 0)
-			throw RuntimeException.IllegalFunctionCall(SourceExpression?.Token);
+			throw RuntimeException.IllegalFunctionCall(Source);
 
 		return new IntegerVariable(argumentValue[0]);
 	}

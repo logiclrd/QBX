@@ -24,7 +24,7 @@ public class LongVariable : Variable
 	public override object GetData() => Value;
 	public override void SetData(object value) => Value = NumberConverter.ToLong(value);
 
-	public override int CoerceToInt() => NumberConverter.ToLong(Value);
+	public override int CoerceToInt(Evaluable? context) => NumberConverter.ToLong(Value, context?.Source?.Token);
 	public override string ToString() => NumberFormatter.Format(Value);
 
 	public override void Serialize(Span<byte> buffer)

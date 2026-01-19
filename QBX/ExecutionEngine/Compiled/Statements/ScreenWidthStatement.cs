@@ -20,23 +20,15 @@ public class ScreenWidthStatement(CodeModel.Statements.ScreenWidthStatement sour
 		int height = context.VisualLibrary.CharacterHeight;
 
 		if (WidthExpression != null)
-		{
-			var widthValue = WidthExpression.Evaluate(context, stackFrame);
-
-			width = widthValue.CoerceToInt();
-		}
+			width = WidthExpression.EvaluateAndCoerceToInt(context, stackFrame);
 
 		if (HeightExpression != null)
-		{
-			var heightValue = HeightExpression.Evaluate(context, stackFrame);
-
-			height = heightValue.CoerceToInt();
-		}
+			height = HeightExpression.EvaluateAndCoerceToInt(context, stackFrame);
 
 		if (width != context.VisualLibrary.CharacterWidth)
 		{
 			if (context.VisualLibrary is not TextLibrary textLibrary)
-				throw RuntimeException.IllegalFunctionCall(WidthExpression?.SourceStatement);
+				throw RuntimeException.IllegalFunctionCall(Source);
 
 			context.Machine.VideoFirmware.SetMode(
 				width switch
@@ -44,7 +36,7 @@ public class ScreenWidthStatement(CodeModel.Statements.ScreenWidthStatement sour
 					80 => 3,
 					40 => 1,
 
-					_ => throw RuntimeException.IllegalFunctionCall(WidthExpression?.SourceExpression?.Token)
+					_ => throw RuntimeException.IllegalFunctionCall(WidthExpression?.Source)
 				});
 
 			textLibrary.RefreshParameters();
@@ -75,7 +67,7 @@ public class ScreenWidthStatement(CodeModel.Statements.ScreenWidthStatement sour
 			}
 			catch
 			{
-				throw RuntimeException.IllegalFunctionCall(HeightExpression?.SourceExpression?.Token);
+				throw RuntimeException.IllegalFunctionCall(HeightExpression?.Source);
 			}
 		}
 	}

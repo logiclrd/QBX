@@ -13,7 +13,7 @@ public class ErrorStatement(CodeModel.Statements.Statement source) : Executable(
 		if (ErrorNumberExpression == null)
 			throw new Exception("ErrorStatement with no ErrorNumberExpression");
 
-		int errorNumber = ErrorNumberExpression.Evaluate(context, stackFrame).CoerceToInt();
+		int errorNumber = ErrorNumberExpression.EvaluateAndCoerceToInt(context, stackFrame);
 
 		if ((errorNumber < short.MinValue) || (errorNumber > short.MaxValue))
 			throw RuntimeException.Overflow(source);

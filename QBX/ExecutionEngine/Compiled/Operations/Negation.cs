@@ -11,7 +11,7 @@ public static class Negation
 	public static Evaluable Construct(Evaluable right)
 	{
 		if (!right.Type.IsNumeric)
-			throw CompilerException.TypeMismatch(right.SourceExpression?.Token);
+			throw CompilerException.TypeMismatch(right.Source);
 
 		if (right.Type.IsInteger)
 			return new IntegerNegation(right);
@@ -37,7 +37,7 @@ public class IntegerNegation(Evaluable right) : UnaryExpression(right)
 		var rightValue = (IntegerVariable)right.Evaluate(context, stackFrame);
 
 		if (rightValue.Value == short.MinValue) // -MinValue is larger than MaxValue
-			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw RuntimeException.Overflow(Source?.Token);
 
 		return new IntegerVariable(unchecked((short)-rightValue.Value));
 	}
@@ -47,7 +47,7 @@ public class IntegerNegation(Evaluable right) : UnaryExpression(right)
 		var rightValue = (IntegerLiteralValue)right.EvaluateConstant();
 
 		if (rightValue.Value == short.MinValue) // -MinValue is larger than MaxValue
-			throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw CompilerException.Overflow(Source?.Token);
 
 		return new IntegerLiteralValue(unchecked((short)-rightValue.Value));
 	}
@@ -62,7 +62,7 @@ public class LongNegation(Evaluable right) : UnaryExpression(right)
 		var rightValue = (LongVariable)right.Evaluate(context, stackFrame);
 
 		if (rightValue.Value == int.MinValue) // -MinValue is larger than MaxValue
-			throw RuntimeException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw RuntimeException.Overflow(Source?.Token);
 
 		return new LongVariable(-rightValue.Value);
 	}
@@ -72,7 +72,7 @@ public class LongNegation(Evaluable right) : UnaryExpression(right)
 		var rightValue = (LongLiteralValue)right.EvaluateConstant();
 
 		if (rightValue.Value == int.MinValue) // -MinValue is larger than MaxValue
-			throw CompilerException.Overflow(SourceExpression?.Token ?? SourceStatement?.FirstToken);
+			throw CompilerException.Overflow(Source?.Token);
 
 		return new LongLiteralValue(-rightValue.Value);
 	}

@@ -23,7 +23,7 @@ public class MidFunction : Function
 		{
 			case 0:
 				if (!value.Type.IsString)
-					throw CompilerException.TypeMismatch(value.SourceExpression?.Token);
+					throw CompilerException.TypeMismatch(value.Source);
 
 				IsAssignable =
 					(value is IdentifierExpression) ||
@@ -64,11 +64,11 @@ public class MidFunction : Function
 
 		int stringLength = stringVariable.ValueSpan.Length;
 
-		int start = startValue.CoerceToInt() - 1;
-		int length = lengthValue?.CoerceToInt() ?? (stringLength - start);
+		int start = startValue.CoerceToInt(context: StartExpression) - 1;
+		int length = lengthValue?.CoerceToInt(context: LengthExpression) ?? (stringLength - start);
 
 		if ((start < 0) || (length < 0) || (start + length >= stringLength))
-			throw RuntimeException.IllegalFunctionCall(SourceStatement);
+			throw RuntimeException.IllegalFunctionCall(Source);
 
 		return new Substring(stringVariable, start, length);
 	}

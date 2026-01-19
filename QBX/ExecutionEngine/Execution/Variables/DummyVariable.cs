@@ -16,7 +16,7 @@ public class DummyVariable : Variable
 	public override object GetData() => throw CreateError();
 	public override void SetData(object value) => throw CreateError();
 
-	public override int CoerceToInt() => throw CreateError();
+	public override int CoerceToInt(Evaluable? context) => throw CreateError();
 	public override string ToString() => throw CreateError();
 
 	public override void Serialize(Span<byte> buffer) => throw CreateError();

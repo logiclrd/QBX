@@ -17,11 +17,8 @@ public class OutStatement(CodeModel.Statements.Statement source)
 		if (DataExpression == null)
 			throw new Exception("OutStatement with no Dataxpression");
 
-		var portValue = PortExpression.Evaluate(context, stackFrame);
-		var dataValue = DataExpression.Evaluate(context, stackFrame);
-
-		int port = portValue.CoerceToInt();
-		int data = dataValue.CoerceToInt();
+		int port = PortExpression.EvaluateAndCoerceToInt(context, stackFrame);
+		int data = DataExpression.EvaluateAndCoerceToInt(context, stackFrame);
 
 		context.Machine.OutPort(port, unchecked((byte)data));
 	}

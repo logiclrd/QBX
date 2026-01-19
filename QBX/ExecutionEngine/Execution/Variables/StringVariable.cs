@@ -50,9 +50,9 @@ public class StringVariable : Variable
 	}
 
 	public override object GetData() => Value;
-	public override void SetData(object value) => SetValue(value as StringValue ?? throw CompilerException.TypeMismatch(context: null));
+	public override void SetData(object value) => SetValue(value as StringValue ?? throw RuntimeException.TypeMismatch());
 
-	public override int CoerceToInt() => throw CompilerException.TypeMismatch(context: null);
+	public override int CoerceToInt(Evaluable? context) => throw RuntimeException.TypeMismatch(context?.Source);
 	public override string ToString() => ValueString;
 
 	public override void Serialize(Span<byte> buffer)
@@ -107,7 +107,7 @@ public class Substring : StringVariable
 		_length = length;
 	}
 
-	public override int CoerceToInt()
+	public override int CoerceToInt(Evaluable? context)
 	{
 		string substring = ValueString;
 

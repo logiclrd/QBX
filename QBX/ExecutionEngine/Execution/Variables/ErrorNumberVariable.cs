@@ -12,7 +12,7 @@ public class ErrorNumberVariable : IntegerVariable
 		short newValue = NumberConverter.ToInteger(value);
 
 		if ((newValue < 0) || (newValue > 255))
-			throw RuntimeException.IllegalFunctionCall(default(Token));
+			throw RuntimeException.IllegalFunctionCall();
 
 		Value = newValue;
 	}

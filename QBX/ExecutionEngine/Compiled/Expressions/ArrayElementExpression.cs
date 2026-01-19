@@ -47,6 +47,6 @@ public class ArrayElementExpression(int variableIndex, DataType type) : Evaluabl
 		for (int i = 0; i < subscripts.Length; i++)
 			subscripts[i] = SubscriptExpressions[i].Evaluate(context, stackFrame);
 
-		return array.GetElement(subscripts);
+		return array.GetElement(subscripts, SubscriptExpressions);
 	}
 }

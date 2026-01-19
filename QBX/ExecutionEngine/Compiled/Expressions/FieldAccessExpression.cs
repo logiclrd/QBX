@@ -20,7 +20,7 @@ public class FieldAccessExpression(Evaluable expression, int fieldIndex, DataTyp
 		var dataType = expression.Type;
 
 		if (!dataType.IsUserType)
-			throw new CompilerException(expression.SourceExpression?.Token, "Left expression of a FieldAccessExpression must evaluate to a user-defined type");
+			throw new CompilerException(expression.Source, "Left expression of a FieldAccessExpression must evaluate to a user-defined type");
 
 		var userType = dataType.UserType;
 
@@ -32,7 +32,7 @@ public class FieldAccessExpression(Evaluable expression, int fieldIndex, DataTyp
 				return new FieldAccessExpression(expression, fieldIndex, field.Type);
 		}
 
-		throw CompilerException.ElementNotDefined(expression.SourceExpression?.Token);
+		throw CompilerException.ElementNotDefined(expression.Source);
 	}
 
 	public override DataType Type => fieldType;
@@ -50,5 +50,5 @@ public class FieldAccessExpression(Evaluable expression, int fieldIndex, DataTyp
 		return structure.Fields[FieldIndex];
 	}
 
-	public override LiteralValue EvaluateConstant() => throw CompilerException.ValueIsNotConstant(expression?.SourceExpression?.Token);
+	public override LiteralValue EvaluateConstant() => throw CompilerException.ValueIsNotConstant(expression.Source);
 }

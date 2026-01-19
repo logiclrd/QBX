@@ -13,7 +13,7 @@ public class CosFunction : Function
 	protected override void SetArgument(int index, Evaluable value)
 	{
 		if (!value.Type.IsNumeric)
-			throw CompilerException.TypeMismatch(value.SourceExpression?.Token);
+			throw CompilerException.TypeMismatch(value.Source);
 
 		Argument = value;
 	}
@@ -34,7 +34,7 @@ public class CosFunction : Function
 
 		var argumentValue = Argument.Evaluate(context, stackFrame);
 
-		var angle = NumberConverter.ToDouble(argumentValue, SourceExpression?.Token);
+		var angle = NumberConverter.ToDouble(argumentValue, Source?.Token);
 
 		var result = Math.Cos(angle);
 

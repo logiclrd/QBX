@@ -289,7 +289,7 @@ public class NumberFormatter
 			return currencyValue.ToString(formatString);
 	}
 
-	public static string Format(Variable value, bool qualify = true, Token? context = null)
+	public static string Format(Variable value, bool qualify = true, CodeModel.Expressions.Expression? expression = null)
 	{
 		switch (value)
 		{
@@ -300,7 +300,7 @@ public class NumberFormatter
 			case CurrencyVariable currencyValue: return Format(currencyValue.Value, qualify);
 
 			default:
-				throw RuntimeException.TypeMismatch(context);
+				throw RuntimeException.TypeMismatch(expression);
 		}
 	}
 }

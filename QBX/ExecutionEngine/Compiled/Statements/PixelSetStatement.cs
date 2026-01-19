@@ -15,7 +15,7 @@ public class PixelSetStatement(CodeModel.Statements.Statement? source) : Executa
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (context.VisualLibrary is not GraphicsLibrary graphicsLibrary)
-			throw RuntimeException.IllegalFunctionCall(XExpression?.SourceStatement);
+			throw RuntimeException.IllegalFunctionCall(XExpression?.Source);
 
 		var xValue = XExpression!.Evaluate(context, stackFrame);
 		var yValue = YExpression!.Evaluate(context, stackFrame);
@@ -38,9 +38,7 @@ public class PixelSetStatement(CodeModel.Statements.Statement? source) : Executa
 		}
 		else
 		{
-			var colourValue = ColourExpression.Evaluate(context, stackFrame);
-
-			int colour = colourValue.CoerceToInt();
+			int colour = ColourExpression.EvaluateAndCoerceToInt(context, stackFrame);
 
 			graphicsLibrary.PixelSet(x, y, colour);
 		}
