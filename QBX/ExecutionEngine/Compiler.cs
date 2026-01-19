@@ -2033,12 +2033,7 @@ public class Compiler
 					case TokenType.MID: function = new MidFunction(); break;
 					case TokenType.PEEK: function = new PeekFunction(); break;
 					case TokenType.RIGHT: function = new RightFunction(); break;
-					case TokenType.RND:
-						if (keywordFunction.Arguments == null)
-							return RndFunction.NoParameterInstance;
-						else
-							function = new RndFunction();
-						break;
+					case TokenType.RND: function = new RndFunction(); break;
 					case TokenType.SIN: function = new SinFunction(); break;
 					case TokenType.SPACE: function = new SpaceFunction(); break;
 					case TokenType.STR: function = new StrFunction(); break;

@@ -19,10 +19,6 @@ public class RndFunction : Function
 		CollapseConstantExpression(ref Argument);
 	}
 
-	static RndFunction s_noParameter = new RndFunction();
-
-	public static RndFunction NoParameterInstance => s_noParameter;
-
 	public override DataType Type => DataType.Single;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
