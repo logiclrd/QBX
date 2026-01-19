@@ -9,11 +9,14 @@ public abstract class Executable
 	public Sequence? Sequence;
 	public int Index;
 
-	public CodeModel.Statements.Statement? Source { get; set; }
+	public CodeModel.Statements.Statement? Source;
+
+	public int LineNumberForErrorReporting;
 
 	public Executable(CodeModel.Statements.Statement? source)
 	{
 		Source = source?.TrueSource ?? source;
+		LineNumberForErrorReporting = Source?.LineNumberForErrorReporting ?? 0;
 	}
 
 	public StatementPath GetPathToStatement(int offset = 0)

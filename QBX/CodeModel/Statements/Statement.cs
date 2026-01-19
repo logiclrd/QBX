@@ -19,6 +19,8 @@ public abstract class Statement : IRenderableCode
 
 	public Statement? TrueSource { get; set; }
 
+	public int LineNumberForErrorReporting { get; set; }
+
 	public void Render(TextWriter writer)
 	{
 		writer.Write(Indentation);

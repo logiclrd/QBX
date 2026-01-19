@@ -119,7 +119,25 @@ public class Compiler
 				info.Routine.TranslateParameters(info.Mapper, compilation);
 		}
 
-		// Fourth pass: Collect constants and then translate statements.
+		// Fourth pass: collect line numbers for error reporting.
+		foreach (var element in unit.Elements)
+		{
+			// BC doesn't reset this for each new element, but QBX does
+			int lineNumberForReporting = 0;
+
+			foreach (var line in element.Lines)
+			{
+				if ((line.LineNumber != null)
+				 && int.TryParse(line.LineNumber, out var parsedLineNumber)
+				 && (parsedLineNumber <= 65529)) // Observed in QuickBASIC 7.1
+					lineNumberForReporting = parsedLineNumber;
+
+				foreach (var statement in line.Statements)
+					statement.LineNumberForErrorReporting = lineNumberForReporting;
+			}
+		}
+
+		// Fifth pass: Collect constants and then translate statements.
 		// => CONST definitions inside DEF FN are local to the DEF FN and are not processed here
 		foreach (var info in translationInfo)
 		{
@@ -1982,7 +2000,7 @@ public class Compiler
 
 				if (forAssignment)
 				{
-					if (keywordFunction.Function != TokenType.MID)
+					if (!keywordFunction.IsValidAssignmentTarget())
 						throw CompilerException.ExpectedStatement(keywordFunction.Token);
 				}
 
@@ -2004,6 +2022,8 @@ public class Compiler
 					case TokenType.ATN: function = new AtnFunction(); break;
 					case TokenType.CHR: function = new ChrFunction(); break;
 					case TokenType.COS: function = new CosFunction(); break;
+					case TokenType.ERR: function = new ErrFunction(); break;
+					case TokenType.ERL: function = new ErlFunction(); break;
 					case TokenType.INKEY: function = new InKeyFunction(); break;
 					case TokenType.INP: function = new InpFunction(); break;
 					case TokenType.INT: return IntFunction.Construct(keywordFunction.Token, arguments);

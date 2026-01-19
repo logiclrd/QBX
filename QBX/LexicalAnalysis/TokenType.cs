@@ -98,7 +98,7 @@ public enum TokenType
 	[KeywordToken("ERDEV$")] ERDEV_s,
 	[KeywordFunction(parameterCount: 0)]
 	[KeywordToken] ERL,
-	[KeywordFunction(parameterCount: 0)]
+	[KeywordFunction(parameterCount: 0, isAssignable: true)]
 	[KeywordToken] ERR,
 	[KeywordToken] ERROR,
 	[KeywordFunction]

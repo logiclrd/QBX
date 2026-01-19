@@ -46,6 +46,9 @@ public class ExecutionContext
 
 	RuntimeState _runtimeState = new RuntimeState();
 
+	public readonly ErrorNumberVariable ErrVariable = new ErrorNumberVariable();
+	public readonly LongVariable ErlVariable = new LongVariable();
+
 	public ExecutionContext(Machine machine, PlayProcessor playProcessor)
 	{
 		_executionState = new ExecutionState();
@@ -225,6 +228,8 @@ public class ExecutionContext
 					if (executable.CanBreak)
 						_executionState.NextStatement(executable.Source);
 
+					RuntimeException.LastLineNumber = executable.LineNumberForErrorReporting;
+
 					try
 					{
 						executable.Execute(this, stackFrame);
@@ -296,6 +301,9 @@ public class ExecutionContext
 		{
 			stackFrame.IsHandlingError = true;
 
+			ErrVariable.Value = (short)error.ErrorNumber;
+			ErlVariable.Value = error.LineNumber;
+
 			_goTo = handler.HandlerPath.Clone();
 
 			Call(stackFrame.Routine, stackFrame, enterRoutine: switchFrame, handlingError: true);
@@ -325,6 +333,9 @@ public class ExecutionContext
 		finally
 		{
 			stackFrame.IsHandlingError = false;
+
+			ErrVariable.Value = 0;
+			ErlVariable.Value = 0;
 		}
 	}
 

@@ -9,8 +9,12 @@ public class RuntimeException : Exception
 {
 	public int ErrorNumber { get; }
 
+	public int LineNumber { get; }
+
 	public Token? Context { get; }
 	public int ContextLength { get; }
+
+	public static int LastLineNumber;
 
 	public RuntimeException(string message, int errorNumber = -1)
 		: this(default(Token), message, errorNumber)
@@ -32,12 +36,32 @@ public class RuntimeException : Exception
 	}
 
 	public RuntimeException(Token? context, int contextLength, string message, int errorNumber = -1)
+		: this(context, contextLength, message, errorNumber, LastLineNumber)
+	{
+	}
+
+	RuntimeException(Token? context, int contextLength, string message, int errorNumber, int lineNumber)
 		: base(message)
 	{
 		Context = context;
 		ContextLength = contextLength;
 
 		ErrorNumber = errorNumber;
+
+		LineNumber = lineNumber;
+	}
+
+	public RuntimeException AddContext(Token? context)
+		=> AddContext(context, context?.Length ?? 0);
+
+	public RuntimeException AddContext(Token? context, int contextLength)
+	{
+		return new RuntimeException(
+			context,
+			contextLength,
+			Message,
+			ErrorNumber,
+			LineNumber);
 	}
 
 	public static string GetErrorMessage(int errorNumber)
