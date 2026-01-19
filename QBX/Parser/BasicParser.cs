@@ -937,6 +937,15 @@ public class BasicParser
 				return new EndIfStatement();
 			}
 
+			case TokenType.ERROR:
+			{
+				var error = new ErrorStatement();
+
+				error.ErrorNumberExpression = ParseExpressionForStatement(error, tokenHandler.RemainingTokens, tokenHandler.EndToken);
+
+				return error;
+			}
+
 			case TokenType.EXIT:
 			{
 				// One of:
@@ -2044,7 +2053,7 @@ public class BasicParser
 
 					if (tokenHandler.NextTokenIs(TokenType.LOCAL))
 					{
-						onError.LocalErrorsOnly = true;
+						onError.LocalHandler = true;
 						tokenHandler.Advance();
 					}
 

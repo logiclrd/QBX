@@ -830,6 +830,17 @@ public class Compiler
 
 				break;
 			}
+			case CodeModel.Statements.ErrorStatement errorStatement:
+			{
+				var translatedErrorStatement = new ErrorStatement(errorStatement);
+
+				TranslateNumericArgumentExpression(
+					ref translatedErrorStatement.ErrorNumberExpression, errorStatement.ErrorNumberExpression);
+
+				container.Append(translatedErrorStatement);
+
+				break;
+			}
 			case CodeModel.Statements.ExitScopeStatement exitScopeStatement:
 			{
 				// TODO: validation
@@ -1200,6 +1211,32 @@ public class Compiler
 
 				break;
 			}
+			case CodeModel.Statements.OnErrorStatement onErrorStatement:
+			{
+				Executable translatedOnErrorStatement;
+
+				switch (onErrorStatement.Action)
+				{
+					case CodeModel.Statements.OnErrorAction.DoNotHandle:
+						translatedOnErrorStatement = new OnErrorGoTo0Statement(onErrorStatement.LocalHandler, onErrorStatement);
+						break;
+					case CodeModel.Statements.OnErrorAction.ResumeNext:
+						translatedOnErrorStatement = new OnErrorResumeNextStatement(onErrorStatement.LocalHandler, onErrorStatement);
+						break;
+					case CodeModel.Statements.OnErrorAction.GoToHandler:
+						translatedOnErrorStatement = new OnErrorGoToLineStatement(
+							target: onErrorStatement.TargetLabel ?? onErrorStatement.TargetLineNumber ?? throw new Exception("Internal error: OnErrorStatement with Action GoTo but no target line"),
+							local: onErrorStatement.LocalHandler,
+							source: onErrorStatement);
+						break;
+
+					default: throw new Exception("Unrecognized OnErrorAction " + onErrorStatement.Action);
+				}
+
+				container.Append(translatedOnErrorStatement);
+
+				break;
+			}
 			case CodeModel.Statements.OutStatement outStatement:
 			{
 				var translatedOutStatement = new OutStatement(outStatement);
@@ -1343,6 +1380,23 @@ public class Compiler
 				translatedRestoreStatement.LabelName = restoreStatement.TargetLabel ?? restoreStatement.TargetLineNumber;
 
 				container.Append(translatedRestoreStatement);
+
+				break;
+			}
+			case CodeModel.Statements.ResumeStatement resumeStatement:
+			{
+				Executable translatedResumeStatement;
+
+				if ((resumeStatement.TargetLabel != null) || (resumeStatement.TargetLineNumber != null))
+				{
+					translatedResumeStatement = new ResumeLineStatement(
+						target: resumeStatement.TargetLabel ?? resumeStatement.TargetLineNumber ?? throw new Exception("Sanity failure"),
+						source: resumeStatement);
+				}
+				else
+					translatedResumeStatement = new ResumeStatement(resumeStatement.SameStatement, resumeStatement);
+
+				container.Append(translatedResumeStatement);
 
 				break;
 			}

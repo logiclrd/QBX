@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Threading.Tasks;
 
 using QBX.CodeModel.Statements;
 using QBX.ExecutionEngine;
@@ -58,7 +58,14 @@ public partial class Program
 		var thread = new System.Threading.Thread(
 			() =>
 			{
-				_executionContext.Run(compilation);
+				try
+				{
+					_executionContext.Run(compilation);
+				}
+				catch (Exception e)
+				{
+					PresentError("Internal error: " + e.ToString());
+				}
 			});
 
 		thread.IsBackground = false;
@@ -77,7 +84,11 @@ public partial class Program
 		{
 			SaveOutput();
 			SetIDEVideoMode();
+
 			ShowNextStatement(_executionContext.ExecutionState.Stack);
+
+			if (_executionContext.ExecutionState.CurrentError != null)
+				PresentError(_executionContext.ExecutionState.CurrentError);
 		}
 	}
 

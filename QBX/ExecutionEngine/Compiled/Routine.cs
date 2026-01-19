@@ -208,20 +208,40 @@ public class Routine : Sequence
 		}
 	}
 
+	Dictionary<string, StatementPath>? _cachedLabels = null;
+
+	public Dictionary<string, StatementPath> CollectLabels()
+	{
+		if (_cachedLabels == null)
+		{
+			_cachedLabels = new Dictionary<string, StatementPath>();
+
+			foreach (var label in AllStatements.OfType<LabelStatement>())
+			{
+				if (_cachedLabels.ContainsKey(label.LabelName))
+					throw CompilerException.DuplicateLabel(label.Source);
+
+				_cachedLabels[label.LabelName] = label.GetPathToStatement();
+			}
+		}
+
+		return _cachedLabels;
+	}
+
 	public void ResolveJumpStatements()
 	{
-		var labels = new Dictionary<string, StatementPath>();
+		// By the time we're running, if we're not the main routine, then the
+		// main routine will already have had its own ResolveJumpStatements
+		// pass and will have collected the labels already. So, we're not
+		// instigating more work, even if we don't use rootLabels.
 
-		foreach (var label in AllStatements.OfType<LabelStatement>())
-		{
-			if (labels.ContainsKey(label.LabelName))
-				throw CompilerException.DuplicateLabel(label.Source);
-
-			labels[label.LabelName] = label.GetPathToStatement();
-		}
+		var rootLabels = Module.MainRoutine!.CollectLabels();
+		var localLabels = CollectLabels();
 
 		foreach (var jump in AllStatements.OfType<JumpStatement>())
 		{
+			var labels = jump.TargetIsInMainModule ? rootLabels : localLabels;
+
 			if (!labels.TryGetValue(jump.TargetLabelName, out var targetPath))
 				throw CompilerException.LabelNotDefined(jump.Source?.FirstToken);
 

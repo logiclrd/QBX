@@ -384,13 +384,26 @@ public class DataParserTests
 		result2.Should().BeTrue();
 	}
 
+	static StackFrame CreateDummyStackFrame(params Variable[] variables)
+	{
+		var dummyUnit = new QBX.CodeModel.CompilationUnit();
+
+		var dummySource = new QBX.CodeModel.CompilationElement(dummyUnit);
+
+		var dummyModule = new Module();
+
+		var dummyRoutine = new Routine(dummyModule, dummySource);
+
+		return new StackFrame(dummyRoutine, variables);
+	}
+
 	[Test]
 	public void ReadDataItem_should_populate_variable_INTEGER()
 	{
 		// Arrange
 		var targetVariable = new IntegerVariable(0);
 
-		var stackFrame = new StackFrame([targetVariable]);
+		var stackFrame = CreateDummyStackFrame(targetVariable);
 
 		var targetExpression = new IdentifierExpression(0, targetVariable.DataType);
 
@@ -422,7 +435,7 @@ public class DataParserTests
 		// Arrange
 		var targetVariable = new LongVariable(0);
 
-		var stackFrame = new StackFrame([targetVariable]);
+		var stackFrame = CreateDummyStackFrame(targetVariable);
 
 		var targetExpression = new IdentifierExpression(0, targetVariable.DataType);
 
@@ -454,7 +467,7 @@ public class DataParserTests
 		// Arrange
 		var targetVariable = new SingleVariable(0);
 
-		var stackFrame = new StackFrame([targetVariable]);
+		var stackFrame = CreateDummyStackFrame(targetVariable);
 
 		var targetExpression = new IdentifierExpression(0, targetVariable.DataType);
 
@@ -486,7 +499,7 @@ public class DataParserTests
 		// Arrange
 		var targetVariable = new DoubleVariable(0);
 
-		var stackFrame = new StackFrame([targetVariable]);
+		var stackFrame = CreateDummyStackFrame(targetVariable);
 
 		var targetExpression = new IdentifierExpression(0, targetVariable.DataType);
 
@@ -518,7 +531,7 @@ public class DataParserTests
 		// Arrange
 		var targetVariable = new CurrencyVariable(0);
 
-		var stackFrame = new StackFrame([targetVariable]);
+		var stackFrame = CreateDummyStackFrame(targetVariable);
 
 		var targetExpression = new IdentifierExpression(0, targetVariable.DataType);
 
@@ -550,7 +563,7 @@ public class DataParserTests
 		// Arrange
 		var targetVariable = new StringVariable();
 
-		var stackFrame = new StackFrame([targetVariable]);
+		var stackFrame = CreateDummyStackFrame(targetVariable);
 
 		var targetExpression = new IdentifierExpression(0, targetVariable.DataType);
 
@@ -585,7 +598,7 @@ public class DataParserTests
 		var targetVariable3 = new DoubleVariable();
 		var targetVariable4 = new CurrencyVariable();
 
-		var stackFrame = new StackFrame([targetVariable1, targetVariable2, targetVariable3, targetVariable4]);
+		var stackFrame = CreateDummyStackFrame(targetVariable1, targetVariable2, targetVariable3, targetVariable4);
 
 		var targetExpression1 = new IdentifierExpression(0, targetVariable1.DataType);
 		var targetExpression2 = new IdentifierExpression(1, targetVariable1.DataType);

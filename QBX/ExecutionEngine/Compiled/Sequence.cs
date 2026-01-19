@@ -54,8 +54,8 @@ public class Sequence
 		}
 	}
 
-	public Executable this[int index] => Statements[index];
-	public int Count => Statements.Count;
+	public Executable this[int index] => _statements[index];
+	public int Count => _statements.Count;
 
 	public void Append(Executable executable)
 	{

@@ -5,10 +5,14 @@ using QBX.ExecutionEngine.Execution.Variables;
 
 namespace QBX.ExecutionEngine.Execution;
 
-public class StackFrame(Variable[] variables)
+public class StackFrame(Routine routine, Variable[] variables)
 {
-	public Variable[] Variables = variables;
+	public readonly Routine Routine = routine;
+	public readonly Variable[] Variables = variables;
 	public CodeModel.Statements.Statement? CurrentStatement;
+
+	public bool IsHandlingError;
+	public ErrorHandler? NewErrorHandler;
 
 	// FOR loops have this interesting property that they capture
 	// state pertinent to the current stack frame. The from, to and

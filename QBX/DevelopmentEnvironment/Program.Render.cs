@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 
 using QBX.Firmware;
+using QBX.LexicalAnalysis;
 using QBX.Utility;
 
 namespace QBX.DevelopmentEnvironment;
@@ -205,19 +206,39 @@ public partial class Program : HostedProgram
 	int RenderViewport(int row, Viewport viewport, bool connectUp, bool verticalScrollBar = true, bool horizontalScrollBar = true)
 	{
 		int nextLineIndex = -1;
+		int nextStartColumn = -1;
+		int nextEndColumn = -1;
 
 		if (IsExecuting && (viewport.CompilationUnit != null))
 		{
-			var currentStackFrame = _executionContext.ExecutionState.Stack.FirstOrDefault();
+			var nextStatement = ErrorToken?.OwnerStatement;
 
-			if (currentStackFrame != null)
+			if (nextStatement == null)
 			{
-				var nextStatement = currentStackFrame.CurrentStatement;
+				var currentStackFrame = _executionContext.ExecutionState.Stack.FirstOrDefault();
 
-				if ((nextStatement != null)
-				 && _statementLocation.TryGetValue(nextStatement, out var location)
-				 && (viewport.CompilationElement == location.Element))
-					nextLineIndex = location.LineIndex;
+				if (currentStackFrame != null)
+				{
+					nextStatement = currentStackFrame.CurrentStatement;
+				}
+			}
+
+			if ((nextStatement != null)
+			 && _statementLocation.TryGetValue(nextStatement, out var location)
+			 && (viewport.CompilationElement == location.Element))
+			{
+				nextLineIndex = location.LineIndex;
+
+				if (ErrorToken != null)
+				{
+					nextStartColumn = ErrorToken.Column;
+					nextEndColumn = nextStartColumn + ErrorToken.Length - 1;
+				}
+				else
+				{
+					nextStartColumn = nextStatement.SourceColumn;
+					nextEndColumn = nextStatement.SourceColumn + nextStatement.SourceLength - 1;
+				}
 			}
 		}
 
@@ -230,6 +251,8 @@ public partial class Program : HostedProgram
 		var attr = (viewport.HelpPage != null)
 			? Configuration.DisplayAttributes.HelpWindowNormalText
 			: Configuration.DisplayAttributes.ProgramViewWindowNormalText;
+
+		var highlightAttr = Configuration.DisplayAttributes.ProgramViewWindowCurrentStatement;
 
 		char topLeft = connectUp ? '├' : '┌';
 		char topRight = connectUp ? '┤' : '┐';
@@ -303,15 +326,9 @@ public partial class Program : HostedProgram
 		{
 			TextLibrary.WriteText(leftRight);
 
-			// TODO: current statement
 			// TODO: show included lines
 
 			int lineIndex = y + viewport.ScrollY;
-
-			var lineAttr =
-				lineIndex == nextLineIndex
-				? Configuration.DisplayAttributes.ProgramViewWindowCurrentStatement
-				: attr;
 
 			StringBuilder buffer;
 
@@ -337,62 +354,144 @@ public partial class Program : HostedProgram
 				CalculateSelectionHighlight(viewport.Clipboard, lineIndex, viewport.ScrollX, viewportContentWidth);
 
 			if (selected != 0)
-				lineAttr = attr;
-
-			if (unselectedLeft != 0)
 			{
-				lineAttr.Set(TextLibrary);
+				// Draw line that contains at least some selected characters.
 
-				if (chars >= unselectedLeft)
-					TextLibrary.WriteText(buffer, viewport.ScrollX, unselectedLeft);
-				else
+				if (unselectedLeft != 0)
 				{
-					int virtualChars = unselectedLeft - chars;
-					int realChars = unselectedLeft - virtualChars;
+					attr.Set(TextLibrary);
 
-					TextLibrary.WriteText(buffer, viewport.ScrollX, realChars);
-					TextLibrary.WriteText(_spaces, 0, virtualChars);
+					if (chars >= unselectedLeft)
+						TextLibrary.WriteText(buffer, viewport.ScrollX, unselectedLeft);
+					else
+					{
+						int virtualChars = unselectedLeft - chars;
+						int realChars = unselectedLeft - virtualChars;
+
+						TextLibrary.WriteText(buffer, viewport.ScrollX, realChars);
+						TextLibrary.WriteText(_spaces, 0, virtualChars);
+					}
 				}
-			}
 
-			chars -= unselectedLeft;
-			if (chars < 0)
-				chars = 0;
+				chars -= unselectedLeft;
+				if (chars < 0)
+					chars = 0;
 
-			if (selected != 0)
-			{
-				attr.SetInverted(TextLibrary);
-
-				if (chars >= selected)
-					TextLibrary.WriteText(buffer, viewport.ScrollX + unselectedLeft, selected);
-				else
+				if (selected != 0)
 				{
-					int virtualChars = selected - chars;
-					int realChars = selected - virtualChars;
+					attr.SetInverted(TextLibrary);
 
-					TextLibrary.WriteText(buffer, viewport.ScrollX + unselectedLeft, realChars);
-					TextLibrary.WriteText(_spaces, 0, virtualChars);
+					if (chars >= selected)
+						TextLibrary.WriteText(buffer, viewport.ScrollX + unselectedLeft, selected);
+					else
+					{
+						int virtualChars = selected - chars;
+						int realChars = selected - virtualChars;
+
+						TextLibrary.WriteText(buffer, viewport.ScrollX + unselectedLeft, realChars);
+						TextLibrary.WriteText(_spaces, 0, virtualChars);
+					}
 				}
 
 				attr.Set(TextLibrary);
+
+				chars -= selected;
+				if (chars < 0)
+					chars = 0;
+
+				if (unselectedRight != 0)
+				{
+					attr.Set(TextLibrary);
+
+					if (chars >= unselectedRight)
+						TextLibrary.WriteText(buffer, viewport.ScrollX + unselectedLeft + selected, unselectedLeft);
+					else
+					{
+						int virtualChars = unselectedRight - chars;
+						int realChars = unselectedRight - virtualChars;
+
+						TextLibrary.WriteText(buffer, viewport.ScrollX + unselectedLeft + selected, realChars);
+						TextLibrary.WriteText(_spaces, 0, virtualChars);
+					}
+				}
 			}
-
-			chars -= selected;
-			if (chars < 0)
-				chars = 0;
-
-			if (unselectedRight != 0)
+			else
 			{
-				lineAttr.Set(TextLibrary);
+				// Draw line that contains no selected characters but might have some highlighted characters.
+				int highlightStart = -1;
+				int highlightEnd = -1;
 
-				if (chars >= unselectedRight)
-					TextLibrary.WriteText(buffer, viewport.ScrollX + unselectedLeft + selected, unselectedLeft);
+				if (y == nextLineIndex)
+				{
+					highlightStart = nextStartColumn - viewport.ScrollX;
+					highlightEnd = nextEndColumn - viewport.ScrollX;
+				}
+
+				if ((highlightStart >= viewportContentWidth) || (highlightEnd < 0))
+				{
+					attr.Set(TextLibrary);
+
+					int virtualChars = viewportContentWidth - chars;
+
+					TextLibrary.WriteText(buffer, viewport.ScrollX, chars);
+					TextLibrary.WriteText(_spaces, 0, virtualChars);
+				}
 				else
 				{
-					int virtualChars = unselectedRight - chars;
-					int realChars = unselectedRight - virtualChars;
+					if (viewport.ScrollX + highlightStart > buffer.Length)
+						highlightStart = buffer.Length - viewport.ScrollX;
 
-					TextLibrary.WriteText(buffer, viewport.ScrollX + unselectedLeft + selected, realChars);
+					int unhighlightedLeft = highlightStart;
+					int highlightedChars = highlightEnd - highlightStart + 1;
+					int unhighlightedRight = viewportContentWidth - highlightEnd - 1;
+
+					// Unhighlighted portion to the left
+					int realChars = unhighlightedLeft;
+
+					if (viewport.ScrollX + realChars > buffer.Length)
+						realChars = buffer.Length - viewport.ScrollX;
+
+					int virtualChars = unhighlightedLeft - realChars;
+
+					attr.Set(TextLibrary);
+
+					TextLibrary.WriteText(buffer, viewport.ScrollX, realChars);
+					TextLibrary.WriteText(_spaces, 0, virtualChars);
+
+					// Highlighted portion
+					realChars = highlightedChars;
+
+					if (viewport.ScrollX + highlightStart + realChars > buffer.Length)
+					{
+						realChars = buffer.Length - viewport.ScrollX - highlightStart;
+
+						if (realChars < 0)
+							realChars = 0;
+					}
+
+					virtualChars = highlightedChars - realChars;
+
+					highlightAttr.Set(TextLibrary);
+
+					TextLibrary.WriteText(buffer, viewport.ScrollX + highlightStart, realChars);
+					TextLibrary.WriteText(_spaces, 0, virtualChars);
+
+					// Unhighlighted portion to the right
+					attr.Set(TextLibrary);
+
+					realChars = unhighlightedRight;
+
+					if (viewport.ScrollX + highlightEnd + 1 + realChars > buffer.Length)
+					{
+						realChars = buffer.Length - viewport.ScrollX - highlightEnd - 1;
+
+						if (realChars < 0)
+							realChars = 0;
+					}
+
+					virtualChars = unhighlightedRight - realChars;
+
+					TextLibrary.WriteText(buffer, viewport.ScrollX + highlightEnd + 1, realChars);
 					TextLibrary.WriteText(_spaces, 0, virtualChars);
 				}
 			}

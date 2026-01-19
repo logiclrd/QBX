@@ -1,12 +1,17 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
+using QBX.DevelopmentEnvironment.Dialogs;
+using QBX.ExecutionEngine;
 using QBX.ExecutionEngine.Execution;
+using QBX.LexicalAnalysis;
 
 namespace QBX.DevelopmentEnvironment;
 
 public partial class Program
 {
+	public Token? ErrorToken = null;
+
 	private void ShowNextStatement(IEnumerable<StackFrame> stack)
 	{
 		var currentFrame = stack.FirstOrDefault();
@@ -42,5 +47,17 @@ public partial class Program
 				// necessary.
 			}
 		}
+	}
+
+	public void PresentError(RuntimeException error)
+	{
+		PresentError(error.Message, error.Context);
+	}
+
+	public void PresentError(string errorMessage, Token? context = null)
+	{
+		// TODO: navigate viewport to context
+
+		ShowDialog(new ErrorDialog(Configuration, errorMessage));
 	}
 }

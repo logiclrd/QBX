@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 
 using QBX.ExecutionEngine.Compiled;
 using QBX.ExecutionEngine.Compiled.Statements;
@@ -15,10 +17,7 @@ namespace QBX.ExecutionEngine.Execution;
 // - ON ERROR (non-local) can be run at any time in any context and changes the
 //   registered handler in the root frame
 // - execution of the handler re-enters the associated stack frame if necessary
-// - the statement path to resume to is stored in the ExecutionContext, not in
-//   any particular stack frame
-// - when an error occurs and a handler is active, the statement that caused the error
-//   is stashed
+// - the execution of the handler is modelled as a type of Call
 // - RESUME retries the statement that failed
 // - RESUME NEXT also goes back but skips the statement that failed
 // - if an error happens and there's already a return location from a previous
@@ -42,6 +41,9 @@ public class ExecutionContext
 	StackFrame? _rootFrame;
 	StatementPath? _goTo;
 
+	ErrorHandler? _mainErrorHandler = null;
+	Stack<ErrorHandler> _localErrorHandlers = new Stack<ErrorHandler>();
+
 	RuntimeState _runtimeState = new RuntimeState();
 
 	public ExecutionContext(Machine machine, PlayProcessor playProcessor)
@@ -51,6 +53,94 @@ public class ExecutionContext
 		Machine = machine;
 		VisualLibrary = new TextLibrary(machine);
 		PlayProcessor = playProcessor;
+	}
+
+	public void SetErrorHandler(ErrorResponse response, StatementPath? handlerPath = null)
+	{
+		if ((response == ErrorResponse.ExecuteHandler) && (handlerPath == null))
+			throw new Exception("Internal error: SetErrorHandler called with ErrorResponse.ExecuteHandler but no handlerPath");
+
+		_mainErrorHandler ??= new ErrorHandler() { StackFrame = _rootFrame };
+		_mainErrorHandler.Response = response;
+		_mainErrorHandler.HandlerPath = handlerPath;
+	}
+
+	public void ClearErrorHandler(CodeModel.Statements.Statement source)
+	{
+		if (_rootFrame!.IsHandlingError)
+		{
+			// If this stack frame is already handling an error, the dispatch
+			// has pulled the handler off of the error handlers stack and
+			// will be reinstalling it on resume. That reinstallation doesn't
+			// support clearing the handler. This matches QuickBASIC's behaviour.
+			throw RuntimeException.IllegalFunctionCall(source);
+		}
+
+		_mainErrorHandler = null;
+	}
+
+	public void SetLocalErrorHandler(StackFrame stackFrame, ErrorResponse response, StatementPath? handlerPath = null)
+	{
+		if ((response == ErrorResponse.ExecuteHandler) && (handlerPath == null))
+			throw new Exception("Internal error: SetLocalErrorHandler called with ErrorResponse.ExecuteHandler but no handlerPath");
+
+		if (stackFrame.IsHandlingError)
+		{
+			// If this stack frame is already handling an error, then
+			//
+			// * We don't want to be able to re-entrantly catch errors
+			//   that happen during the handling.
+			// * The dispatch of the error handler has pulled the
+			//   handler off the stack and will be reinstalling it on
+			//   exit.
+			//
+			// So, we just stash the change and defer processing.
+
+			var newHandler = new ErrorHandler();
+
+			newHandler.StackFrame = stackFrame;
+			newHandler.Response = response;
+			newHandler.HandlerPath = handlerPath;
+
+			stackFrame.NewErrorHandler = newHandler;
+
+			return;
+		}
+
+		// If the top of the stack is not a match for the stack frame,
+		// then it is further up the stack, so we need to make a new
+		// error handler frame.
+
+		if (_localErrorHandlers.TryPeek(out var handler))
+		{
+			if (handler.StackFrame != stackFrame)
+				handler = null;
+		}
+
+		if (handler == null)
+		{
+			handler = new ErrorHandler();
+			handler.StackFrame = stackFrame;
+		}
+
+		handler.Response = response;
+		handler.HandlerPath = handlerPath;
+	}
+
+	public void ClearLocalErrorHandler(StackFrame stackFrame, CodeModel.Statements.Statement? source)
+	{
+		if (stackFrame.IsHandlingError)
+		{
+			// If this stack frame is already handling an error, the dispatch
+			// has pulled the handler off of the error handlers stack and
+			// will be reinstalling it on resume. That reinstallation doesn't
+			// support clearing the handler. This matches QuickBASIC's behaviour.
+			throw RuntimeException.IllegalFunctionCall(source);
+		}
+
+		if (_localErrorHandlers.TryPeek(out var handler)
+		 && (handler.StackFrame == stackFrame))
+			_localErrorHandlers.Pop();
 	}
 
 	public int Run(Compilation compilation)
@@ -78,6 +168,11 @@ public class ExecutionContext
 			int exitCode = _rootFrame.Variables[0].CoerceToInt();
 
 			return exitCode;
+		}
+		catch (GoTo)
+		{
+			Debugger.Break();
+			throw new Exception("Internal error: GoTo was thrown with a TargetFrame that didn't match anything");
 		}
 		catch (TerminatedException)
 		{
@@ -123,10 +218,43 @@ public class ExecutionContext
 			}
 			else
 			{
-				if (executable.CanBreak)
-					_executionState.NextStatement(executable.Source);
+				bool retryStatement = false;
 
-				executable.Execute(this, stackFrame);
+				do
+				{
+					if (executable.CanBreak)
+						_executionState.NextStatement(executable.Source);
+
+					try
+					{
+						executable.Execute(this, stackFrame);
+					}
+					catch (RuntimeException error)
+					{
+						ErrorHandler? handler = null;
+
+						if (!stackFrame.IsHandlingError)
+						{
+							if (_localErrorHandlers.TryPeek(out handler))
+							{
+								if (handler.StackFrame == stackFrame)
+									_localErrorHandlers.Pop();
+								else
+									handler = null;
+							}
+
+							handler ??= _mainErrorHandler;
+						}
+
+						if (handler != null)
+							CallErrorHandler(handler, error, switchFrame: handler.StackFrame != stackFrame, out retryStatement);
+						else
+						{
+							_executionState.Error(error);
+							retryStatement = true;
+						}
+					}
+				} while (retryStatement);
 			}
 		}
 	}
@@ -154,6 +282,52 @@ public class ExecutionContext
 		}
 	}
 
+	private void CallErrorHandler(ErrorHandler handler, RuntimeException error, bool switchFrame, out bool retryStatement)
+	{
+		retryStatement = false;
+
+		if (handler.Response == ErrorResponse.SkipStatement)
+			return;
+
+		var stackFrame = handler.StackFrame ?? throw new Exception("Internal error: ErrorHandler does not have StackFrame set");
+		var handlerPath = handler.HandlerPath ?? throw new Exception("Internal error: ErrorHandler's Response is not SkipStatement but it has no HandlerPath set");
+
+		try
+		{
+			stackFrame.IsHandlingError = true;
+
+			_goTo = handler.HandlerPath.Clone();
+
+			Call(stackFrame.Routine, stackFrame, enterRoutine: switchFrame, handlingError: true);
+
+			// TODO: find end token of the compilation element
+			throw RuntimeException.NoResume(stackFrame.CurrentStatement);
+		}
+		catch (ExitRoutine exitRoutine)
+		{
+			exitRoutine.StackFrame = stackFrame;
+			throw;
+		}
+		catch (Resume resume)
+		{
+			stackFrame.IsHandlingError = false;
+
+			if (handler.StackFrame == _rootFrame)
+				_mainErrorHandler = _rootFrame.NewErrorHandler ?? handler;
+			else
+				_localErrorHandlers.Push(stackFrame.NewErrorHandler ?? handler);
+
+			if (resume.GoTo != null)
+				throw resume.GoTo;
+
+			retryStatement = resume.RetryStatement;
+		}
+		finally
+		{
+			stackFrame.IsHandlingError = false;
+		}
+	}
+
 	static Variable s_dummyVariable = new DummyVariable();
 
 	public Variable Call(Routine routine, Variable[] arguments)
@@ -170,12 +344,20 @@ public class ExecutionContext
 		else
 			frame = CreateFrame(routine.Module, routine, arguments);
 
-		return Call(routine, frame);
+		try
+		{
+			return Call(routine, frame);
+		}
+		finally
+		{
+			ClearLocalErrorHandler(frame, source: null);
+		}
 	}
 
-	Variable Call(Routine routine, StackFrame frame)
+	Variable Call(Routine routine, StackFrame frame, bool enterRoutine = true, bool handlingError = false)
 	{
-		_executionState.EnterRoutine(routine, frame);
+		if (enterRoutine)
+			_executionState.EnterRoutine(routine, frame);
 
 		try
 		{
@@ -186,10 +368,41 @@ public class ExecutionContext
 			}
 			catch (GoTo goTo)
 			{
+				if ((goTo.TargetFrame != null) && (goTo.TargetFrame != frame))
+					throw; // "RESUME linenumber/label" in a different stack frame -- keep searching
+
 				_goTo = goTo.StatementPath.Clone();
 				goto goTo_;
 			}
-			catch (ExitRoutine) { }
+			catch (ExitRoutine exitRoutine)
+			{
+				if ((exitRoutine.StackFrame != null)
+				 && (exitRoutine.StackFrame != frame))
+				{
+					// This ExitRoutine came from an EXIT SUB/EXIT FUNCTION inside an
+					// event handler that was handling an error from further down the
+					// call stack.
+					//
+					//   SUB a                                1
+					//   |- ON LOCAL ERROR GOTO x             1
+					//   |- b                                 1
+					//   `- SUB b                             2
+					//      :                                 2
+					//      :  d                              2
+					//      `- SUB d                          3
+					//         |- ERROR                       3
+					//         `- SUB a:handler               1
+					//            `- EXIT SUB => ExitRoutine  1
+					//
+					// (2 here represents any number of intermediary calls, including
+					// possibly none)
+					//
+					// Since StackFrame doesn't match, we're frame 3, and we need
+					// to keep walking up the stack so that 1 can process this
+					// ExitRoutine.
+					throw;
+				}
+			}
 
 			if (routine.ReturnType != null)
 				return frame.Variables[routine.ReturnValueVariableIndex];
@@ -198,7 +411,8 @@ public class ExecutionContext
 		}
 		finally
 		{
-			_executionState.ExitRoutine();
+			if (enterRoutine)
+				_executionState.ExitRoutine();
 		}
 	}
 
@@ -242,6 +456,6 @@ public class ExecutionContext
 			}
 		}
 
-		return new StackFrame(variables);
+		return new StackFrame(routine, variables);
 	}
 }

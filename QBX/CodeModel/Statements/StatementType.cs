@@ -30,6 +30,7 @@ public enum StatementType
 	EndScope,
 	EndType,
 	Empty,
+	Error,
 	EventControl,
 	ExitScope,
 	Field,

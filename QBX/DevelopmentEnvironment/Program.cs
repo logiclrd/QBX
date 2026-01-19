@@ -6,6 +6,7 @@ using QBX.Firmware;
 using QBX.Hardware;
 using QBX.Parser;
 using QBX.ExecutionEngine;
+using QBX.DevelopmentEnvironment.Dialogs;
 
 namespace QBX.DevelopmentEnvironment;
 
@@ -82,6 +83,12 @@ public partial class Program : HostedProgram
 	}
 
 	public override bool EnableMainLoop => true;
+
+	public void ShowDialog(Dialog dialog)
+	{
+		CurrentDialog = dialog;
+		Mode = UIMode.Dialog;
+	}
 
 	public override void Run(CancellationToken cancellationToken)
 	{

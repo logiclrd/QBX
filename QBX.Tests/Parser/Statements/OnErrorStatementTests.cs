@@ -31,7 +31,7 @@ public class OnErrorStatementTests
 
 		var onErrorResult = (OnErrorStatement)result;
 
-		onErrorResult.LocalErrorsOnly.Should().Be(expectedLocalOnly);
+		onErrorResult.LocalHandler.Should().Be(expectedLocalOnly);
 		onErrorResult.Action.Should().Be(expectedAction);
 		onErrorResult.TargetLineNumber.Should().Be(expectedTargetLineNumber);
 		onErrorResult.TargetLabel.Should().Be(expectedTargetLabel);

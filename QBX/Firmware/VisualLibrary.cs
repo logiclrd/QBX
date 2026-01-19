@@ -118,7 +118,7 @@ public abstract class VisualLibrary
 		WriteText(ch);
 	}
 
-	public void WriteTextAt(int x, int y, string text)
+	public void WriteTextAt(int x, int y, ReadOnlySpan<char> text)
 	{
 		MoveCursor(x, y);
 		WriteText(text);

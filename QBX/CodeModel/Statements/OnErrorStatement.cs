@@ -7,7 +7,7 @@ public class OnErrorStatement : Statement
 {
 	public override StatementType Type => StatementType.OnError;
 
-	public bool LocalErrorsOnly { get; set; }
+	public bool LocalHandler { get; set; }
 	public OnErrorAction Action { get; set; }
 	public string? TargetLineNumber;
 	public string? TargetLabel;
@@ -16,7 +16,7 @@ public class OnErrorStatement : Statement
 	{
 		writer.Write("ON ");
 
-		if (LocalErrorsOnly)
+		if (LocalHandler)
 			writer.Write("LOCAL ");
 
 		writer.Write("ERROR ");

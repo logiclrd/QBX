@@ -9,6 +9,8 @@ public abstract class JumpStatement(string targetLabelName, CodeModel.Statements
 	public StatementPath? TargetPath;
 	public string TargetLabelName => targetLabelName;
 
+	public virtual bool TargetIsInMainModule => false;
+
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (TargetPath == null)

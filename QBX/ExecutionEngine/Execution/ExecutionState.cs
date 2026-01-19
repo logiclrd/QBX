@@ -10,9 +10,11 @@ namespace QBX.ExecutionEngine.Execution;
 public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 {
 	public IEnumerable<StackFrame> Stack => _stack;
+	public RuntimeException? CurrentError => _currentError;
 	public bool IsTerminated => _isTerminated;
 
 	Stack<StackFrame> _stack = new Stack<StackFrame>();
+	RuntimeException? _currentError = null;
 	bool _isTerminated;
 
 	int _stepOverNesting;
@@ -133,6 +135,17 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 			DebugOut("PROGRAM: break");
 			WaitToContinue();
 		}
+	}
+
+	public void Error(RuntimeException error)
+	{
+		_currentError = error;
+		_break = true;
+
+		DebugOut("PROGRAM: error pause");
+		WaitToContinue();
+
+		_currentError = null;
 	}
 
 	public void ExitRoutine()
