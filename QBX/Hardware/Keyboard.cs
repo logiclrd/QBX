@@ -169,6 +169,8 @@ public class Keyboard(Machine machine)
 
 	public byte InPort(int portNumber, out bool handled)
 	{
-		throw new NotImplementedException("TODO");
+		handled = false;
+		return 0;
+		// TODO
 	}
 }

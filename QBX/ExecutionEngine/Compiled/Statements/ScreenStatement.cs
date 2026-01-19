@@ -43,6 +43,16 @@ public class ScreenStatement(CodeModel.Statements.Statement? source) : Executabl
 					context.VisualLibrary = new GraphicsLibrary_4bppPlanar(context.Machine);
 
 				context.RuntimeState.EnablePaletteRemapping = (hardwareMode < 0x12);
+				context.RuntimeState.PaletteMode = modeParams.Use256Colours ? PaletteMode.DAC : PaletteMode.Attribute;
+				context.RuntimeState.MaximumAttribute = modeParams.Use256Colours ? 255 : 15;
+
+				if (modeParams.ShiftRegisterInterleave)
+				{
+					context.RuntimeState.PaletteMode = PaletteMode.CGA;
+					context.RuntimeState.MaximumAttribute = 3;
+				}
+				else if (modeParams.IsMonochrome)
+					context.RuntimeState.MaximumAttribute = 1;
 			}
 		}
 

@@ -1,6 +1,7 @@
 using QBX.ExecutionEngine.Execution;
 using QBX.Firmware;
-using QBX.Hardware;
+
+using static QBX.Hardware.GraphicsArray;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
@@ -74,8 +75,9 @@ public class ColorStatement(CodeModel.Statements.Statement? source) : Executable
 				{
 					int newOverscanAttribute = Argument3Expression.EvaluateAndCoerceToInt(context, stackFrame) & 15;
 
-					context.Machine.GraphicsArray.AttributeController.Registers[GraphicsArray.AttributeControllerRegisters.OverscanPaletteIndex]
-						= unchecked((byte)newOverscanAttribute);
+					context.Machine.InPort(InputStatusRegisters.InputStatus1Port);
+					context.Machine.OutPort(AttributeControllerRegisters.IndexAndDataWritePort, AttributeControllerRegisters.OverscanPaletteIndex);
+					context.Machine.OutPort(AttributeControllerRegisters.IndexAndDataWritePort, unchecked((byte)newOverscanAttribute));
 				}
 			}
 		}
@@ -91,8 +93,9 @@ public class ColorStatement(CodeModel.Statements.Statement? source) : Executable
 
 				newBackgroundAttribute &= 15;
 
-				context.Machine.GraphicsArray.AttributeController.Registers[0] =
-					unchecked((byte)newBackgroundAttribute);
+				context.Machine.InPort(InputStatusRegisters.InputStatus1Port);
+				context.Machine.OutPort(AttributeControllerRegisters.IndexAndDataWritePort, 0);
+				context.Machine.OutPort(AttributeControllerRegisters.IndexAndDataWritePort, unchecked((byte)newBackgroundAttribute));
 			}
 
 			if (Argument2Expression != null)

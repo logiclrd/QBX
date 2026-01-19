@@ -1268,6 +1268,19 @@ public class Compiler
 
 				break;
 			}
+			case CodeModel.Statements.PaletteStatement paletteStatement:
+			{
+				var translatedPaletteStatement = new PaletteStatement(paletteStatement);
+
+				TranslateNumericArgumentExpression(
+					ref translatedPaletteStatement.AttributeExpression, paletteStatement.AttributeExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedPaletteStatement.ColourExpression, paletteStatement.ColourExpression);
+
+				container.Append(translatedPaletteStatement);
+
+				break;
+			}
 			case CodeModel.Statements.PixelSetStatement pixelSetStatement:
 			{
 				var translatedPixelSetStatement = new PixelSetStatement(pixelSetStatement);

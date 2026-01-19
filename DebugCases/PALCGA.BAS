@@ -1,0 +1,20 @@
+SCREEN 1
+
+OUT &H3C8, 7
+OUT &H3C9, 10
+OUT &H3C9, 63
+OUT &H3C9, 15
+
+FOR i% = 0 TO 3
+  LINE (i% * 20, 0)-STEP(20, 20), i%, BF
+NEXT i%
+
+WHILE INKEY$ = "": WEND
+
+COLOR , 0
+
+WHILE INKEY$ = "": WEND
+
+COLOR , 1
+
+WHILE INKEY$ = "": WEND
