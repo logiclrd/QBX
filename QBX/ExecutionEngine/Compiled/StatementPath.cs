@@ -5,6 +5,9 @@ namespace QBX.ExecutionEngine.Compiled;
 
 public class StatementPath : Stack<int>
 {
+	// TODO: StatementPath needs to capture StackFrames to permit resuming across
+	//       Routine boundaries (needed for error handling)
+
 	public StatementPath()
 	{
 	}
