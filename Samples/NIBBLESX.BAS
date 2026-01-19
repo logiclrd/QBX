@@ -198,7 +198,7 @@ SUB GetInputs (NumPlayers, speed, iterations&, diff$, monitor$)
     LOOP UNTIL VAL(gamespeed$) >= 1 AND VAL(gamespeed$) <= 100
     speed = VAL(gamespeed$)
   
-    speed = (100 - speed) * 2 + 1
+    speed = (100 - speed) + 8
 
     DO
         LOCATE 15, 56: PRINT SPACE$(25);
@@ -216,6 +216,8 @@ SUB GetInputs (NumPlayers, speed, iterations&, diff$, monitor$)
 
     ' Count how many times we can do the inner FOR loop per TIMER tick (18.2 Hz).
     iterations& = 0
+    startTime# = TIMER
+    WHILE startTime# = TIMER: WEND
     startTime# = TIMER                          ' Calculate speed of system
     DO                                          ' and do some compensation
         ' loop unrolled to minimize the effect of the DO loop on the performance test
@@ -232,8 +234,8 @@ SUB GetInputs (NumPlayers, speed, iterations&, diff$, monitor$)
         iterations& = iterations& + 10
     LOOP UNTIL startTime# <> TIMER
 
-    ' Base timing unit is 1/100th of a TIMER tick.
-    iterations& = iterations& \ 100
+    ' Base timing unit is 1/20th of a TIMER tick.
+    iterations& = iterations& \ 20
 
 END SUB
 
@@ -527,7 +529,7 @@ SUB PlayNibbles (NumPlayers, speed, iterations&, diff$)
                         SpacePause "     Level" + STR$(curLevel) + ",  Push Space"
                         IF NumPlayers = 1 THEN sammy(2).row = 0
                         number = 1
-                        IF diff$ = "P" THEN speed = speed - 10: curSpeed = speed
+                        IF diff$ = "Y" THEN speed = speed - 10: curSpeed = speed
                     END IF
                     nonum = TRUE
                     IF curSpeed < 1 THEN curSpeed = 1
