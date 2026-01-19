@@ -54,6 +54,14 @@ public class BinaryExpression : Expression
 			};
 	}
 
+	public override Expression ClaimTokens(CodeModel.Statements.Statement owner)
+	{
+		Left?.ClaimTokens(owner);
+		Right?.ClaimTokens(owner);
+
+		return base.ClaimTokens(owner);
+	}
+
 	public override void Render(TextWriter writer)
 	{
 		Left.Render(writer);

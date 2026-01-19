@@ -20,6 +20,14 @@ public class CallOrIndexExpression : Expression
 		Arguments = arguments;
 	}
 
+	public override Expression ClaimTokens(CodeModel.Statements.Statement owner)
+	{
+		Subject?.ClaimTokens(owner);
+		Arguments.ClaimTokens(owner);
+
+		return base.ClaimTokens(owner);
+	}
+
 	public override void Render(TextWriter writer)
 	{
 		Subject.Render(writer);

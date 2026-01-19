@@ -18,6 +18,8 @@ public class Token(int line, int column, TokenType type, string value, DataType 
 	public int Line => line;
 	public int Column => column;
 
+	public CodeModel.Statements.Statement? OwnerStatement;
+
 	public int Length => value.Length;
 
 	public bool IsDataType => DataTypeConverter.TryFromToken(this, out var _);

@@ -306,6 +306,9 @@ public class BasicParser
 		{
 			var statement = ParseStatement(tokens, consumeTokensToEndOfLine, isNested, ignoreErrors);
 
+			foreach (var token in tokens)
+				token.OwnerStatement = statement;
+
 			statement.Indentation = indentation;
 
 			int lastTokenIndex = tokens.Count - 1;
@@ -314,6 +317,7 @@ public class BasicParser
 				lastTokenIndex--;
 
 			statement.FirstToken = tokens.Any() ? tokens[0] : endToken;
+			statement.SourceColumn = statement.FirstToken.Column;
 			statement.SourceLength = tokens.Take(lastTokenIndex).Sum(token => token.Length);
 
 			return statement;
@@ -404,7 +408,11 @@ public class BasicParser
 
 				tokenHandler.ExpectEndOfTokens();
 
-				return new CallStatement(CallStatementType.Explicit, targetName, arguments);
+				var call = new CallStatement(CallStatementType.Explicit, targetName, arguments);
+
+				arguments?.ClaimTokens(call);
+
+				return call;
 			}
 
 			case TokenType.CASE:
@@ -449,8 +457,8 @@ public class BasicParser
 
 				var midToken = tokens[coordinates[1].Unwrap().Offset - 1];
 
-				circle.XExpression = ParseExpression(coordinates[0], midToken);
-				circle.YExpression = ParseExpression(coordinates[1], tokenHandler.PreviousToken);
+				circle.XExpression = ParseExpressionForStatement(circle, coordinates[0], midToken);
+				circle.YExpression = ParseExpressionForStatement(circle, coordinates[1], tokenHandler.PreviousToken);
 
 				tokenHandler.Expect(TokenType.Comma);
 
@@ -466,7 +474,7 @@ public class BasicParser
 					? tokens[arguments[1].Unwrap().Offset - 1]
 					: tokenHandler.EndToken;
 
-				circle.RadiusExpression = ParseExpression(arguments[0], midToken);
+				circle.RadiusExpression = ParseExpressionForStatement(circle, arguments[0], midToken);
 
 				if (arguments.Count > 1)
 				{
@@ -476,7 +484,7 @@ public class BasicParser
 							? tokens[arguments[2].Unwrap().Offset - 1]
 							: tokenHandler.EndToken;
 
-						circle.ColourExpression = ParseExpression(arguments[1], midToken);
+						circle.ColourExpression = ParseExpressionForStatement(circle, arguments[1], midToken);
 					}
 
 					if (arguments.Count > 2)
@@ -487,7 +495,7 @@ public class BasicParser
 								? tokens[arguments[3].Unwrap().Offset - 1]
 								: tokenHandler.EndToken;
 
-							circle.StartExpression = ParseExpression(arguments[2], midToken);
+							circle.StartExpression = ParseExpressionForStatement(circle, arguments[2], midToken);
 						}
 
 						if (arguments.Count > 3)
@@ -498,7 +506,7 @@ public class BasicParser
 									? tokens[arguments[4].Unwrap().Offset - 1]
 									: tokenHandler.EndToken;
 
-								circle.EndExpression = ParseExpression(arguments[3], midToken);
+								circle.EndExpression = ParseExpressionForStatement(circle, arguments[3], midToken);
 							}
 
 							if (arguments.Count > 5)
@@ -509,7 +517,7 @@ public class BasicParser
 							}
 
 							if (arguments.Count == 5)
-								circle.AspectExpression = ParseExpression(arguments[4], tokenHandler.EndToken);
+								circle.AspectExpression = ParseExpressionForStatement(circle, arguments[4], tokenHandler.EndToken);
 						}
 					}
 				}
@@ -539,7 +547,7 @@ public class BasicParser
 							arguments[i] = arguments[i].Slice(1);
 
 						closeStatement.FileNumberExpressions.Add(
-							ParseExpression(arguments[i], midToken));
+							ParseExpressionForStatement(closeStatement, arguments[i], midToken));
 					}
 				}
 
@@ -552,7 +560,11 @@ public class BasicParser
 				{
 					var mode = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken);
 
-					return new ClsStatement(mode);
+					var cls = new ClsStatement(mode);
+
+					mode.ClaimTokens(cls);
+
+					return cls;
 				}
 				else
 					return new ClsStatement();
@@ -569,7 +581,7 @@ public class BasicParser
 					foreach (var range in SplitCommaDelimitedList(tokenHandler.RemainingTokens, endTokenRef))
 					{
 						if (range.Any())
-							color.Arguments.Add(ParseExpression(range, endTokenRef.Token ?? tokenHandler.EndToken));
+							color.Arguments.Add(ParseExpressionForStatement(color, range, endTokenRef.Token ?? tokenHandler.EndToken));
 						else
 							color.Arguments.Add(null);
 					}
@@ -684,7 +696,7 @@ public class BasicParser
 					{
 						tokenHandler.Advance();
 
-						defSeg.SegmentExpression = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken);
+						defSeg.SegmentExpression = ParseExpressionForStatement(defSeg, tokenHandler.RemainingTokens, tokenHandler.EndToken);
 					}
 
 					return defSeg;
@@ -710,7 +722,7 @@ public class BasicParser
 					if (tokenHandler.HasMoreTokens && (tokenHandler.NextToken.Type == TokenType.Equals))
 					{
 						tokenHandler.Advance();
-						defFn.ExpressionBody = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken);
+						defFn.ExpressionBody = ParseExpressionForStatement(defFn, tokenHandler.RemainingTokens, tokenHandler.EndToken);
 						tokenHandler.AdvanceToEnd();
 					}
 
@@ -852,7 +864,7 @@ public class BasicParser
 						case TokenType.UNTIL: statement.ConditionType = DoConditionType.Until; break;
 					}
 
-					statement.Expression = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken);
+					statement.Expression = ParseExpressionForStatement(statement, tokenHandler.RemainingTokens, tokenHandler.EndToken);
 				}
 
 				return statement;
@@ -898,11 +910,15 @@ public class BasicParser
 					default:
 					{
 						// Skip the common tail for this case.
-						return
+						var end =
 							new EndStatement()
 							{
 								ExitCodeExpression = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken)
 							};
+
+						end.ExitCodeExpression.ClaimTokens(end);
+
+						return end;
 					}
 				}
 
@@ -970,7 +986,7 @@ public class BasicParser
 				foreach (var argument in SplitCommaDelimitedList(tokenHandler.RemainingTokens, endTokenRef))
 				{
 					if (isFileNumberArgument)
-						field.FileNumberExpression = ParseExpression(argument, endTokenRef.Token ?? tokenHandler.EndToken);
+						field.FileNumberExpression = ParseExpressionForStatement(field, argument, endTokenRef.Token ?? tokenHandler.EndToken);
 					else
 						field.FieldDefinitions.Add(ParseFieldDefinition(argument, endTokenRef.Token ?? tokenHandler.EndToken));
 
@@ -1010,14 +1026,14 @@ public class BasicParser
 					? tokenHandler.EndToken
 					: tokens[clauses[1].Unwrap().Offset - 1];
 
-				forStatement.StartExpression = ParseExpression(rangeExpressions[0], midToken);
-				forStatement.EndExpression = ParseExpression(rangeExpressions[1], endToken);
+				forStatement.StartExpression = ParseExpressionForStatement(forStatement, rangeExpressions[0], midToken);
+				forStatement.EndExpression = ParseExpressionForStatement(forStatement, rangeExpressions[1], endToken);
 
 				if (clauses.Count > 2)
 					throw new SyntaxErrorException(clauses[2].First(), "Expected: end of statement");
 
 				if (clauses.Count == 2)
-					forStatement.StepExpression = ParseExpression(clauses[1], tokenHandler.EndToken);
+					forStatement.StepExpression = ParseExpressionForStatement(forStatement, clauses[1], tokenHandler.EndToken);
 
 				return forStatement;
 			}
@@ -1072,8 +1088,8 @@ public class BasicParser
 								var midToken = tokens[fromExpressions[1].Unwrap().Offset - 1];
 								var endToken = tokenHandler.PreviousToken;
 
-								getSpriteStatement.FromXExpression = ParseExpression(fromExpressions[0], midToken);
-								getSpriteStatement.FromYExpression = ParseExpression(fromExpressions[1], endToken);
+								getSpriteStatement.FromXExpression = ParseExpressionForStatement(getSpriteStatement, fromExpressions[0], midToken);
+								getSpriteStatement.FromYExpression = ParseExpressionForStatement(getSpriteStatement, fromExpressions[1], endToken);
 							}
 
 							tokenHandler.Expect(TokenType.Hyphen);
@@ -1113,14 +1129,14 @@ public class BasicParser
 								var midToken = tokens[toExpressions[1].Unwrap().Offset - 1];
 								var endToken = tokenHandler.PreviousToken;
 
-								getSpriteStatement.ToXExpression = ParseExpression(toExpressions[0], midToken);
-								getSpriteStatement.ToYExpression = ParseExpression(toExpressions[1], endToken);
+								getSpriteStatement.ToXExpression = ParseExpressionForStatement(getSpriteStatement, toExpressions[0], midToken);
+								getSpriteStatement.ToYExpression = ParseExpressionForStatement(getSpriteStatement, toExpressions[1], endToken);
 							}
 
 							// , array[(offset)]
 							tokenHandler.Expect(TokenType.Comma);
 
-							getSpriteStatement.TargetExpression = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken);
+							getSpriteStatement.TargetExpression = ParseExpressionForStatement(getSpriteStatement, tokenHandler.RemainingTokens, tokenHandler.EndToken);
 
 							return getSpriteStatement;
 						}
@@ -1166,8 +1182,8 @@ public class BasicParser
 								var midToken = tokens[coordinateExpressions[1].Unwrap().Offset - 1];
 								var endToken = tokenHandler.PreviousToken;
 
-								putSpriteStatement.XExpression = ParseExpression(coordinateExpressions[0], midToken);
-								putSpriteStatement.YExpression = ParseExpression(coordinateExpressions[1], endToken);
+								putSpriteStatement.XExpression = ParseExpressionForStatement(putSpriteStatement, coordinateExpressions[0], midToken);
+								putSpriteStatement.YExpression = ParseExpressionForStatement(putSpriteStatement, coordinateExpressions[1], endToken);
 							}
 
 							// , array[(offset)][, actionverb]
@@ -1176,10 +1192,11 @@ public class BasicParser
 							int separator = tokenHandler.FindNextUnparenthesizedOf(TokenType.Comma);
 
 							if (separator < 0)
-								putSpriteStatement.SourceExpression = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken);
+								putSpriteStatement.SourceExpression = ParseExpressionForStatement(putSpriteStatement, tokenHandler.RemainingTokens, tokenHandler.EndToken);
 							else
 							{
-								putSpriteStatement.SourceExpression = ParseExpression(
+								putSpriteStatement.SourceExpression = ParseExpressionForStatement(
+									putSpriteStatement,
 									tokenHandler.RemainingTokens.Slice(0, separator),
 									tokenHandler[separator]);
 
@@ -1234,28 +1251,28 @@ public class BasicParser
 						throw new SyntaxErrorException(tokenHandler.EndToken, "Expected: expression");
 
 					if (arguments.Count == 1)
-						statement.FileNumberExpression = ParseExpression(arguments[0], tokenHandler.EndToken);
+						statement.FileNumberExpression = ParseExpressionForStatement(statement, arguments[0], tokenHandler.EndToken);
 					else if (arguments.Count == 2)
 					{
 						var midToken = tokens[arguments[1].Unwrap().Offset - 1];
 
-						statement.FileNumberExpression = ParseExpression(arguments[0], midToken);
-						statement.RecordNumberExpression = ParseExpression(arguments[1], tokenHandler.EndToken);
+						statement.FileNumberExpression = ParseExpressionForStatement(statement, arguments[0], midToken);
+						statement.RecordNumberExpression = ParseExpressionForStatement(statement, arguments[1], tokenHandler.EndToken);
 					}
 					else if (arguments.Count == 3)
 					{
 						var midToken = tokens[arguments[1].Unwrap().Offset - 1];
 
-						statement.FileNumberExpression = ParseExpression(arguments[0], midToken);
+						statement.FileNumberExpression = ParseExpressionForStatement(statement, arguments[0], midToken);
 
 						if (arguments[1].Any())
 						{
 							midToken = tokens[arguments[2].Unwrap().Offset - 1];
 
-							statement.RecordNumberExpression = ParseExpression(arguments[1], midToken);
+							statement.RecordNumberExpression = ParseExpressionForStatement(statement, arguments[1], midToken);
 						}
 
-						statement.TargetExpression = ParseExpression(arguments[2], tokenHandler.EndToken);
+						statement.TargetExpression = ParseExpressionForStatement(statement, arguments[2], tokenHandler.EndToken);
 					}
 					else
 					{
@@ -1341,7 +1358,7 @@ public class BasicParser
 
 				if (thenIndex >= 0)
 				{
-					statement.ConditionExpression = ParseExpression(tokenHandler.RemainingTokens.Slice(0, thenIndex), tokenHandler[thenIndex]);
+					statement.ConditionExpression = ParseExpressionForStatement(statement, tokenHandler.RemainingTokens.Slice(0, thenIndex), tokenHandler[thenIndex]);
 
 					tokenHandler.Advance(thenIndex);
 					tokenHandler.Expect(TokenType.THEN);
@@ -1354,7 +1371,7 @@ public class BasicParser
 						throw new SyntaxErrorException(tokenHandler.EndToken, "Expected: THEN");
 
 					statement.OmitThen = true;
-					statement.ConditionExpression = ParseExpression(tokenHandler.RemainingTokens.Slice(0, gotoIndex), tokenHandler[gotoIndex]);
+					statement.ConditionExpression = ParseExpressionForStatement(statement, tokenHandler.RemainingTokens.Slice(0, gotoIndex), tokenHandler[gotoIndex]);
 
 					tokenHandler.Advance(gotoIndex);
 				}
@@ -1465,7 +1482,7 @@ public class BasicParser
 
 					tokenHandler.ExpectOneOf(TokenType.Number, TokenType.Identifier);
 
-					input.FileNumberExpression = ParseExpression(fileNumberToken, tokenHandler.RemainingTokens.Skip(1).FirstOrDefault() ?? tokenHandler.EndToken);
+					input.FileNumberExpression = ParseExpressionForStatement(input, fileNumberToken, tokenHandler.RemainingTokens.Skip(1).FirstOrDefault() ?? tokenHandler.EndToken);
 
 					tokenHandler.Expect(TokenType.Comma);
 				}
@@ -1503,7 +1520,7 @@ public class BasicParser
 						throw new SyntaxErrorException(tokens[range.Offset], "Expected: expression");
 					}
 
-					var target = ParseExpression(targetTokens, endTokenRef.Token ?? tokenHandler.EndToken);
+					var target = ParseExpressionForStatement(input, targetTokens, endTokenRef.Token ?? tokenHandler.EndToken);
 
 					if (!target.IsValidAssignmentTarget())
 						throw new SyntaxErrorException(targetTokens[0], "Cannot assign to this expression");
@@ -1532,7 +1549,7 @@ public class BasicParser
 
 					var sourceExpressionTokens = tokenHandler.ExpectParenthesizedTokens();
 
-					eventControl.SourceExpression = ParseExpression(sourceExpressionTokens, tokenHandler.PreviousToken);
+					eventControl.SourceExpression = ParseExpressionForStatement(eventControl, sourceExpressionTokens, tokenHandler.PreviousToken);
 
 					var modeToken = tokenHandler.ExpectOneOf(TokenType.ON, TokenType.OFF, TokenType.STOP);
 
@@ -1585,8 +1602,8 @@ public class BasicParser
 
 							var keyConfig = new SoftKeyConfigStatement();
 
-							keyConfig.KeyExpression = ParseExpression(argumentExpressions[0], midToken);
-							keyConfig.MacroExpression = ParseExpression(argumentExpressions[1], endToken);
+							keyConfig.KeyExpression = ParseExpressionForStatement(keyConfig, argumentExpressions[0], midToken);
+							keyConfig.MacroExpression = ParseExpressionForStatement(keyConfig, argumentExpressions[1], endToken);
 
 							statement = keyConfig;
 
@@ -1613,12 +1630,12 @@ public class BasicParser
 
 				var midToken = tokens[separator];
 
-				letStatement.TargetExpression = ParseExpression(tokenHandler.RemainingTokens.Slice(0, separator), midToken);
+				letStatement.TargetExpression = ParseExpressionForStatement(letStatement, tokenHandler.RemainingTokens.Slice(0, separator), midToken);
 
 				tokenHandler.Advance(separator);
 				tokenHandler.Expect(TokenType.Equals);
 
-				letStatement.ValueExpression = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken);
+				letStatement.ValueExpression = ParseExpressionForStatement(letStatement, tokenHandler.RemainingTokens, tokenHandler.EndToken);
 
 				return letStatement;
 			}
@@ -1644,7 +1661,7 @@ public class BasicParser
 
 						tokenHandler.ExpectOneOf(TokenType.Number, TokenType.Identifier);
 
-						lineInput.FileNumberExpression = ParseExpression(fileNumberToken, tokenHandler.RemainingTokens.Skip(1).FirstOrDefault() ?? tokenHandler.EndToken);
+						lineInput.FileNumberExpression = ParseExpressionForStatement(lineInput, fileNumberToken, tokenHandler.RemainingTokens.Skip(1).FirstOrDefault() ?? tokenHandler.EndToken);
 
 						tokenHandler.Expect(TokenType.Comma);
 					}
@@ -1716,8 +1733,8 @@ public class BasicParser
 						var midToken = tokens[fromExpressions[1].Unwrap().Offset - 1];
 						var endToken = tokenHandler.PreviousToken;
 
-						lineStatement.FromXExpression = ParseExpression(fromExpressions[0], midToken);
-						lineStatement.FromYExpression = ParseExpression(fromExpressions[1], endToken);
+						lineStatement.FromXExpression = ParseExpressionForStatement(lineStatement, fromExpressions[0], midToken);
+						lineStatement.FromYExpression = ParseExpressionForStatement(lineStatement, fromExpressions[1], endToken);
 					}
 
 					tokenHandler.Expect(TokenType.Hyphen);
@@ -1757,8 +1774,8 @@ public class BasicParser
 						var midToken = tokens[toExpressions[1].Unwrap().Offset - 1];
 						var endToken = tokenHandler.PreviousToken;
 
-						lineStatement.ToXExpression = ParseExpression(toExpressions[0], midToken);
-						lineStatement.ToYExpression = ParseExpression(toExpressions[1], endToken);
+						lineStatement.ToXExpression = ParseExpressionForStatement(lineStatement, toExpressions[0], midToken);
+						lineStatement.ToYExpression = ParseExpressionForStatement(lineStatement, toExpressions[1], endToken);
 					}
 
 					// [, [color] [, [B[F]] [, style]]]
@@ -1778,7 +1795,7 @@ public class BasicParser
 								: tokenHandler.EndToken;
 
 							if (options[0].Any())
-								lineStatement.ColourExpression = ParseExpression(options[0], colourEndToken);
+								lineStatement.ColourExpression = ParseExpressionForStatement(lineStatement, options[0], colourEndToken);
 
 							if (options.Count > 1)
 							{
@@ -1809,7 +1826,7 @@ public class BasicParser
 										? tokens[options[2].Unwrap().Offset - 1]
 										: tokenHandler.EndToken;
 
-									lineStatement.StyleExpression = ParseExpression(options[2], styleEndToken);
+									lineStatement.StyleExpression = ParseExpressionForStatement(lineStatement, options[2], styleEndToken);
 
 									if (options.Count > 3)
 									{
@@ -1837,7 +1854,7 @@ public class BasicParser
 					: tokenHandler.EndToken;
 
 				if (arguments[0].Count > 0)
-					locate.RowExpression = ParseExpression(arguments[0], rowEndToken);
+					locate.RowExpression = ParseExpressionForStatement(locate, arguments[0], rowEndToken);
 
 				if ((arguments.Count > 1) && arguments[1].Any())
 				{
@@ -1845,7 +1862,7 @@ public class BasicParser
 						? tokens[arguments[2].Unwrap().Offset - 1]
 						: tokenHandler.EndToken;
 
-					locate.ColumnExpression = ParseExpression(arguments[1], columnEndToken);
+					locate.ColumnExpression = ParseExpressionForStatement(locate, arguments[1], columnEndToken);
 				}
 
 				if ((arguments.Count > 2) && arguments[2].Any())
@@ -1854,7 +1871,7 @@ public class BasicParser
 						? tokens[arguments[3].Unwrap().Offset - 1]
 						: tokenHandler.EndToken;
 
-					locate.CursorVisibilityExpression = ParseExpression(arguments[2], cursorVisibilityEndToken);
+					locate.CursorVisibilityExpression = ParseExpressionForStatement(locate, arguments[2], cursorVisibilityEndToken);
 				}
 
 				if (arguments.Count > 3)
@@ -1863,7 +1880,7 @@ public class BasicParser
 						? tokens[arguments[4].Unwrap().Offset - 1]
 						: tokenHandler.EndToken;
 
-					locate.CursorStartExpression = ParseExpression(arguments[3], endToken);
+					locate.CursorStartExpression = ParseExpressionForStatement(locate, arguments[3], endToken);
 				}
 
 				if (arguments.Count > 4)
@@ -1872,7 +1889,7 @@ public class BasicParser
 						? tokens[arguments[5].Unwrap().Offset - 1]
 						: tokenHandler.EndToken;
 
-					locate.CursorEndExpression = ParseExpression(arguments[4], endToken);
+					locate.CursorEndExpression = ParseExpressionForStatement(locate, arguments[4], endToken);
 				}
 
 				if (arguments.Count > 5)
@@ -1920,7 +1937,7 @@ public class BasicParser
 					fileNumberTokens = fileNumberTokens.Slice(0, comma);
 				}
 
-				statement.FileNumberExpression = ParseExpression(fileNumberTokens, midToken);
+				statement.FileNumberExpression = ParseExpressionForStatement(statement, fileNumberTokens, midToken);
 
 				tokenHandler.Advance(fileNumberTokens.Count);
 
@@ -1931,7 +1948,7 @@ public class BasicParser
 					var bounds = SplitDelimitedList(tokenHandler.RemainingTokens, TokenType.TO).ToList();
 
 					if (bounds.Count == 1)
-						statement.RangeStartExpression = ParseExpression(bounds[0], tokenHandler.EndToken);
+						statement.RangeStartExpression = ParseExpressionForStatement(statement, bounds[0], tokenHandler.EndToken);
 					else if (bounds.Count > 2)
 					{
 						var blame = tokens[bounds[2].Unwrap().Offset - 1];
@@ -1942,8 +1959,8 @@ public class BasicParser
 					{
 						midToken = tokens[bounds[1].Unwrap().Offset - 1];
 
-						statement.RangeStartExpression = ParseExpression(bounds[0], midToken);
-						statement.RangeEndExpression = ParseExpression(bounds[1], tokenHandler.EndToken);
+						statement.RangeStartExpression = ParseExpressionForStatement(statement, bounds[0], midToken);
+						statement.RangeEndExpression = ParseExpressionForStatement(statement, bounds[1], tokenHandler.EndToken);
 					}
 				}
 
@@ -1963,7 +1980,7 @@ public class BasicParser
 						var arg = new PrintArgument();
 
 						if (nextSeparatorIndex > 0)
-							arg.Expression = ParseExpression(tokenHandler.RemainingTokens.Slice(0, nextSeparatorIndex), tokenHandler[nextSeparatorIndex]);
+							arg.Expression = ParseExpressionForStatement(lprint, tokenHandler.RemainingTokens.Slice(0, nextSeparatorIndex), tokenHandler[nextSeparatorIndex]);
 
 						tokenHandler.Advance(nextSeparatorIndex);
 
@@ -1981,7 +1998,7 @@ public class BasicParser
 					{
 						var arg = new PrintArgument();
 
-						arg.Expression = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken);
+						arg.Expression = ParseExpressionForStatement(lprint, tokenHandler.RemainingTokens, tokenHandler.EndToken);
 						arg.CursorAction = PrintCursorAction.NextLine;
 
 						lprint.Arguments.Add(arg);
@@ -2007,7 +2024,7 @@ public class BasicParser
 							? tokens[counters[i + 1].Unwrap().Offset - 1]
 							: tokenHandler.EndToken;
 
-						var counter = ParseExpression(counters[i], endToken);
+						var counter = ParseExpressionForStatement(next, counters[i], endToken);
 
 						if (counter is not IdentifierExpression)
 							throw new SyntaxErrorException(counters[i][0], "Expected: identifier");
@@ -2298,7 +2315,7 @@ public class BasicParser
 						filenamePart = filenamePart.Slice(0, forIndex);
 					}
 
-					open.FileNameExpression = ParseExpression(filenamePart, filenameEndToken);
+					open.FileNameExpression = ParseExpressionForStatement(open, filenamePart, filenameEndToken);
 
 					// Part 2: (AS) [#]filenumber% [LEN=reclen%]
 					int lenIndex = fileNumberPart.Index()
@@ -2323,7 +2340,7 @@ public class BasicParser
 
 						lenArgs = lenArgs.Slice(1);
 
-						open.RecordLengthExpression = ParseExpression(lenArgs, tokenHandler.EndToken);
+						open.RecordLengthExpression = ParseExpressionForStatement(open, lenArgs, tokenHandler.EndToken);
 
 						fileNumberEndToken = fileNumberPart[lenIndex];
 						fileNumberPart = fileNumberPart.Slice(0, lenIndex);
@@ -2335,7 +2352,7 @@ public class BasicParser
 					if (fileNumberPart[0].Type == TokenType.NumberSign)
 						fileNumberPart = fileNumberPart.Slice(1);
 
-					open.FileNumberExpression = ParseExpression(fileNumberPart, fileNumberEndToken);
+					open.FileNumberExpression = ParseExpressionForStatement(open, fileNumberPart, fileNumberEndToken);
 
 					return open;
 				}
@@ -2359,23 +2376,23 @@ public class BasicParser
 
 					var midToken = tokens[parts[1].Unwrap().Offset - 1];
 
-					open.ModeExpression = ParseExpression(parts[0], midToken);
+					open.ModeExpression = ParseExpressionForStatement(open, parts[0], midToken);
 
 					if ((parts[1].Count > 0) && (parts[1][0].Type == TokenType.NumberSign))
 						parts[1] = parts[1].Slice(1);
 
 					midToken = tokens[parts[2].Unwrap().Offset - 1];
 
-					open.FileNumberExpression = ParseExpression(parts[1], midToken);
+					open.FileNumberExpression = ParseExpressionForStatement(open, parts[1], midToken);
 
 					midToken = parts.Count > 3
 						? tokens[parts[3].Unwrap().Offset - 1]
 						: tokenHandler.EndToken;
 
-					open.FileNameExpression = ParseExpression(parts[2], midToken);
+					open.FileNameExpression = ParseExpressionForStatement(open, parts[2], midToken);
 
 					if (parts.Count == 4)
-						open.RecordLengthExpression = ParseExpression(parts[3], tokenHandler.EndToken);
+						open.RecordLengthExpression = ParseExpressionForStatement(open, parts[3], tokenHandler.EndToken);
 
 					return open;
 				}
@@ -2398,8 +2415,8 @@ public class BasicParser
 
 				var midToken = tokens[arguments[1].Unwrap().Offset - 1];
 
-				@out.PortExpression = ParseExpression(arguments[0], midToken);
-				@out.DataExpression = ParseExpression(arguments[1], tokenHandler.PreviousToken);
+				@out.PortExpression = ParseExpressionForStatement(@out, arguments[0], midToken);
+				@out.DataExpression = ParseExpressionForStatement(@out, arguments[1], tokenHandler.PreviousToken);
 
 				return @out;
 			}
@@ -2429,8 +2446,8 @@ public class BasicParser
 
 				var midToken = tokens[coordinates[1].Unwrap().Offset - 1];
 
-				paint.XExpression = ParseExpression(coordinates[0], midToken);
-				paint.YExpression = ParseExpression(coordinates[1], tokenHandler.PreviousToken);
+				paint.XExpression = ParseExpressionForStatement(paint, coordinates[0], midToken);
+				paint.YExpression = ParseExpressionForStatement(paint, coordinates[1], tokenHandler.PreviousToken);
 
 				if (tokenHandler.HasMoreTokens)
 				{
@@ -2450,7 +2467,7 @@ public class BasicParser
 							? tokens[arguments[1].Unwrap().Offset - 1]
 							: tokenHandler.EndToken;
 
-						paint.PaintExpression = ParseExpression(arguments[0], midToken);
+						paint.PaintExpression = ParseExpressionForStatement(paint, arguments[0], midToken);
 					}
 
 					if (arguments.Count > 1)
@@ -2461,7 +2478,7 @@ public class BasicParser
 								? tokens[arguments[2].Unwrap().Offset - 1]
 								: tokenHandler.EndToken;
 
-							paint.BorderColourExpression = ParseExpression(arguments[1], midToken);
+							paint.BorderColourExpression = ParseExpressionForStatement(paint, arguments[1], midToken);
 						}
 
 						if (arguments.Count > 2)
@@ -2472,7 +2489,7 @@ public class BasicParser
 									? tokens[arguments[3].Unwrap().Offset - 1]
 									: tokenHandler.EndToken;
 
-								paint.BackgroundExpression = ParseExpression(arguments[2], midToken);
+								paint.BackgroundExpression = ParseExpressionForStatement(paint, arguments[2], midToken);
 							}
 
 							if (arguments.Count > 3)
@@ -2496,7 +2513,7 @@ public class BasicParser
 				{
 					tokenHandler.Advance();
 
-					palette.ArrayExpression = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken);
+					palette.ArrayExpression = ParseExpressionForStatement(palette, tokenHandler.RemainingTokens, tokenHandler.EndToken);
 				}
 				else if (tokenHandler.HasMoreTokens)
 				{
@@ -2508,14 +2525,14 @@ public class BasicParser
 
 					enumerator.MoveNext();
 
-					palette.AttributeExpression = ParseExpression(enumerator.Current, endTokenRef.Token ?? tokenHandler.EndToken);
+					palette.AttributeExpression = ParseExpressionForStatement(palette, enumerator.Current, endTokenRef.Token ?? tokenHandler.EndToken);
 
 					if (!enumerator.MoveNext())
 						throw new SyntaxErrorException(tokenHandler.EndToken, "Expected: ,");
 
 					var endToken = endTokenRef.Token ?? tokenHandler.EndToken;
 
-					palette.ColourExpression = ParseExpression(enumerator.Current, endToken);
+					palette.ColourExpression = ParseExpressionForStatement(palette, enumerator.Current, endToken);
 
 					if (enumerator.MoveNext())
 						throw new SyntaxErrorException(endToken, "Expected: end of statement");
@@ -2544,8 +2561,8 @@ public class BasicParser
 
 				var midToken = tokens[arguments[1].Unwrap().Offset - 1];
 
-				pcopy.SourcePageExpression = ParseExpression(arguments[0], midToken);
-				pcopy.DestinationPageExpression = ParseExpression(arguments[1], tokenHandler.EndToken);
+				pcopy.SourcePageExpression = ParseExpressionForStatement(pcopy, arguments[0], midToken);
+				pcopy.DestinationPageExpression = ParseExpressionForStatement(pcopy, arguments[1], tokenHandler.EndToken);
 
 				return pcopy;
 			}
@@ -2579,7 +2596,7 @@ public class BasicParser
 				{
 					var play = new PlayStatement();
 
-					play.CommandExpression = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken);
+					play.CommandExpression = ParseExpressionForStatement(play, tokenHandler.RemainingTokens, tokenHandler.EndToken);
 
 					return play;
 				}
@@ -2606,8 +2623,8 @@ public class BasicParser
 				var addressEndToken = tokens[arguments[1].Unwrap().Offset - 1];
 				var valueEndToken = tokenHandler.PreviousToken;
 
-				poke.AddressExpression = ParseExpression(arguments[0], addressEndToken);
-				poke.ValueExpression = ParseExpression(arguments[1], valueEndToken);
+				poke.AddressExpression = ParseExpressionForStatement(poke, arguments[0], addressEndToken);
+				poke.ValueExpression = ParseExpressionForStatement(poke, arguments[1], valueEndToken);
 
 				return poke;
 			}
@@ -2625,7 +2642,7 @@ public class BasicParser
 					if (separatorIndex < 0)
 						throw new SyntaxErrorException(tokenHandler.EndToken, "Expected: ,");
 
-					print.FileNumberExpression = ParseExpression(tokenHandler.RemainingTokens.Slice(0, separatorIndex), tokenHandler[separatorIndex]);
+					print.FileNumberExpression = ParseExpressionForStatement(print, tokenHandler.RemainingTokens.Slice(0, separatorIndex), tokenHandler[separatorIndex]);
 
 					tokenHandler.Advance(separatorIndex + 1);
 				}
@@ -2687,7 +2704,7 @@ public class BasicParser
 								nextSeparatorIndex = 0;
 							}
 
-							arg.Expression = ParseExpression(expressionTokens, tokenHandler[nextSeparatorIndex]);
+							arg.Expression = ParseExpressionForStatement(print, expressionTokens, tokenHandler[nextSeparatorIndex]);
 
 							tokenHandler.Advance(nextSeparatorIndex);
 						}
@@ -2720,7 +2737,7 @@ public class BasicParser
 					{
 						var arg = new PrintArgument();
 
-						arg.Expression = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken);
+						arg.Expression = ParseExpressionForStatement(print, tokenHandler.RemainingTokens, tokenHandler.EndToken);
 						arg.CursorAction = PrintCursorAction.NextLine;
 
 						print.Arguments.Add(arg);
@@ -2768,14 +2785,14 @@ public class BasicParser
 				var xEndToken = tokens[coordinates[1].Unwrap().Offset - 1];
 				var yEndToken = tokenHandler.PreviousToken;
 
-				pixel.XExpression = ParseExpression(coordinates[0], xEndToken);
-				pixel.YExpression = ParseExpression(coordinates[1], yEndToken);
+				pixel.XExpression = ParseExpressionForStatement(pixel, coordinates[0], xEndToken);
+				pixel.YExpression = ParseExpressionForStatement(pixel, coordinates[1], yEndToken);
 
 				if (tokenHandler.HasMoreTokens)
 				{
 					tokenHandler.Expect(TokenType.Comma);
 
-					pixel.ColourExpression = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken);
+					pixel.ColourExpression = ParseExpressionForStatement(pixel, tokenHandler.RemainingTokens, tokenHandler.EndToken);
 
 					tokenHandler.AdvanceToEnd();
 				}
@@ -2790,7 +2807,7 @@ public class BasicParser
 				var randomize = new RandomizeStatement();
 
 				if (tokenHandler.HasMoreTokens)
-					randomize.ArgumentExpression = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken);
+					randomize.ArgumentExpression = ParseExpressionForStatement(randomize, tokenHandler.RemainingTokens, tokenHandler.EndToken);
 
 				return randomize;
 			}
@@ -2815,7 +2832,7 @@ public class BasicParser
 						throw new SyntaxErrorException(tokens[range.Offset], "Expected: expression");
 					}
 
-					var targetExpression = ParseExpression(target, endTokenRef.Token ?? tokenHandler.EndToken);
+					var targetExpression = ParseExpressionForStatement(read, target, endTokenRef.Token ?? tokenHandler.EndToken);
 
 					if (!targetExpression.IsValidAssignmentTarget())
 						throw new SyntaxErrorException(target[0], "Expected: valid assignment target");
@@ -2883,7 +2900,7 @@ public class BasicParser
 					? tokens[arguments[1].Unwrap().Offset - 1]
 					: tokenHandler.EndToken;
 
-				screen.ModeExpression = ParseExpression(arguments[0], modeEndToken);
+				screen.ModeExpression = ParseExpressionForStatement(screen, arguments[0], modeEndToken);
 
 				if (arguments.Count > 1)
 				{
@@ -2893,7 +2910,7 @@ public class BasicParser
 							? tokens[arguments[2].Unwrap().Offset - 1]
 							: tokenHandler.EndToken;
 
-						screen.ColourSwitchExpression = ParseExpression(arguments[1], endToken);
+						screen.ColourSwitchExpression = ParseExpressionForStatement(screen, arguments[1], endToken);
 					}
 
 					if (arguments.Count > 2)
@@ -2904,7 +2921,7 @@ public class BasicParser
 								? tokens[arguments[3].Unwrap().Offset - 1]
 								: tokenHandler.EndToken;
 
-							screen.ActivePageExpression = ParseExpression(arguments[2], endToken);
+							screen.ActivePageExpression = ParseExpressionForStatement(screen, arguments[2], endToken);
 						}
 
 						if (arguments.Count > 3)
@@ -2925,7 +2942,7 @@ public class BasicParser
 								? tokens[arguments[4].Unwrap().Offset - 1]
 								: tokenHandler.EndToken;
 
-							screen.VisiblePageExpression = ParseExpression(arguments[3], endToken);
+							screen.VisiblePageExpression = ParseExpressionForStatement(screen, arguments[3], endToken);
 
 							if (arguments.Count > 4)
 							{
@@ -2946,7 +2963,7 @@ public class BasicParser
 
 				tokenHandler.Expect(TokenType.CASE);
 
-				selectCase.Expression = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken);
+				selectCase.Expression = ParseExpressionForStatement(selectCase, tokenHandler.RemainingTokens, tokenHandler.EndToken);
 
 				return selectCase;
 			}
@@ -3036,8 +3053,8 @@ public class BasicParser
 
 				var midToken = tokens[arguments[1].Unwrap().Offset - 1];
 
-				sound.FrequencyExpression = ParseExpression(arguments[0], midToken);
-				sound.DurationExpression = ParseExpression(arguments[1], tokenHandler.PreviousToken);
+				sound.FrequencyExpression = ParseExpressionForStatement(sound, arguments[0], midToken);
+				sound.DurationExpression = ParseExpressionForStatement(sound, arguments[1], tokenHandler.PreviousToken);
 
 				return sound;
 			}
@@ -3104,7 +3121,7 @@ public class BasicParser
 				{
 					var sourceExpressionTokens = tokenHandler.ExpectParenthesizedTokens();
 
-					eventControl.SourceExpression = ParseExpression(sourceExpressionTokens, tokenHandler.PreviousToken);
+					eventControl.SourceExpression = ParseExpressionForStatement(eventControl, sourceExpressionTokens, tokenHandler.PreviousToken);
 				}
 
 				var modeToken = tokenHandler.ExpectOneOf(TokenType.ON, TokenType.OFF, TokenType.STOP);
@@ -3157,8 +3174,8 @@ public class BasicParser
 
 						var midToken = tokens[arguments[1].Unwrap().Offset - 1];
 
-						viewport.TopExpression = ParseExpression(arguments[0], midToken);
-						viewport.BottomExpression = ParseExpression(arguments[1], tokenHandler.EndToken);
+						viewport.TopExpression = ParseExpressionForStatement(viewport, arguments[0], midToken);
+						viewport.BottomExpression = ParseExpressionForStatement(viewport, arguments[1], tokenHandler.EndToken);
 					}
 
 					return viewport;
@@ -3189,8 +3206,8 @@ public class BasicParser
 						var fromXEndToken = tokens[fromCoordinates[1].Unwrap().Offset - 1];
 						var fromYEndToken = tokenHandler.PreviousToken;
 
-						view.FromXExpression = ParseExpression(fromCoordinates[0], fromXEndToken);
-						view.FromYExpression = ParseExpression(fromCoordinates[1], fromYEndToken);
+						view.FromXExpression = ParseExpressionForStatement(view, fromCoordinates[0], fromXEndToken);
+						view.FromYExpression = ParseExpressionForStatement(view, fromCoordinates[1], fromYEndToken);
 
 						tokenHandler.Expect(TokenType.Hyphen);
 
@@ -3208,8 +3225,8 @@ public class BasicParser
 						var toXEndToken = tokens[toCoordinates[1].Unwrap().Offset - 1];
 						var toYEndToken = tokenHandler.PreviousToken;
 
-						view.ToXExpression = ParseExpression(toCoordinates[0], toXEndToken);
-						view.ToYExpression = ParseExpression(toCoordinates[1], toYEndToken);
+						view.ToXExpression = ParseExpressionForStatement(view, toCoordinates[0], toXEndToken);
+						view.ToYExpression = ParseExpressionForStatement(view, toCoordinates[1], toYEndToken);
 
 						if (tokenHandler.NextTokenIs(TokenType.Comma))
 						{
@@ -3228,7 +3245,7 @@ public class BasicParser
 									endToken = tokenHandler[separator];
 								}
 
-								view.FillColourExpression = ParseExpression(expressionTokens, endToken);
+								view.FillColourExpression = ParseExpressionForStatement(view, expressionTokens, endToken);
 
 								tokenHandler.Advance(separator);
 							}
@@ -3237,7 +3254,7 @@ public class BasicParser
 							{
 								tokenHandler.Advance();
 
-								view.BorderColourExpression = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken);
+								view.BorderColourExpression = ParseExpressionForStatement(view, tokenHandler.RemainingTokens, tokenHandler.EndToken);
 							}
 						}
 					}
@@ -3256,7 +3273,7 @@ public class BasicParser
 			{
 				var whileStatement = new WhileStatement();
 
-				whileStatement.Condition = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken);
+				whileStatement.Condition = ParseExpressionForStatement(whileStatement, tokenHandler.RemainingTokens, tokenHandler.EndToken);
 
 				return whileStatement;
 			}
@@ -3290,8 +3307,8 @@ public class BasicParser
 
 					var fileWidthMidToken = tokens[fileWidthArguments[1].Unwrap().Offset - 1];
 
-					width.FileNumberExpression = ParseExpression(fileWidthArguments[0], fileWidthMidToken);
-					width.WidthExpression = ParseExpression(fileWidthArguments[1], tokenHandler.EndToken);
+					width.FileNumberExpression = ParseExpressionForStatement(width, fileWidthArguments[0], fileWidthMidToken);
+					width.WidthExpression = ParseExpressionForStatement(width, fileWidthArguments[1], tokenHandler.EndToken);
 
 					return width;
 				}
@@ -3302,7 +3319,7 @@ public class BasicParser
 
 					tokenHandler.Advance();
 
-					width.WidthExpression = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken);
+					width.WidthExpression = ParseExpressionForStatement(width, tokenHandler.RemainingTokens, tokenHandler.EndToken);
 
 					return width;
 				}
@@ -3319,9 +3336,9 @@ public class BasicParser
 						: tokens[arguments[1].Unwrap().Offset - 1];
 
 					if (arguments[0].Any())
-						width.WidthExpression = ParseExpression(arguments[0], screenWidthMidToken);
+						width.WidthExpression = ParseExpressionForStatement(width, arguments[0], screenWidthMidToken);
 					if (arguments.Count > 1)
-						width.HeightExpression = ParseExpression(arguments[1], tokenHandler.EndToken);
+						width.HeightExpression = ParseExpressionForStatement(width, arguments[1], tokenHandler.EndToken);
 
 					return width;
 				}
@@ -3337,8 +3354,8 @@ public class BasicParser
 
 				var midToken = tokens[arguments[1].Unwrap().Offset - 1];
 
-				unresolvedWidth.Expression1 = ParseExpression(arguments[0], midToken);
-				unresolvedWidth.Expression2 = ParseExpression(arguments[1], tokenHandler.EndToken);
+				unresolvedWidth.Expression1 = ParseExpressionForStatement(unresolvedWidth, arguments[0], midToken);
+				unresolvedWidth.Expression2 = ParseExpressionForStatement(unresolvedWidth, arguments[1], tokenHandler.EndToken);
 
 				return unresolvedWidth;
 			}
@@ -3370,10 +3387,12 @@ public class BasicParser
 
 				assignment.TargetExpression = targetExpression;
 
+				targetExpression.ClaimTokens(assignment);
+
 				tokenHandler.Advance(equalsSign);
 				tokenHandler.Expect(TokenType.Equals);
 
-				assignment.ValueExpression = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken);
+				assignment.ValueExpression = ParseExpressionForStatement(assignment, tokenHandler.RemainingTokens, tokenHandler.EndToken);
 
 				return assignment;
 			}
@@ -3479,7 +3498,11 @@ public class BasicParser
 				if (tokenHandler.HasMoreTokens)
 					arguments = ParseExpressionList(tokenHandler.RemainingTokens, tokenHandler.EndToken);
 
-				return new CallStatement(CallStatementType.Implicit, targetName, arguments);
+				var call = new CallStatement(CallStatementType.Implicit, targetName, arguments);
+
+				arguments?.ClaimTokens(call);
+
+				return call;
 			}
 		}
 
@@ -3834,6 +3857,9 @@ public class BasicParser
 
 		return list;
 	}
+
+	Expression ParseExpressionForStatement(Statement statement, ListRange<Token> tokens, Token endToken)
+		=> ParseExpression(tokens, endToken).ClaimTokens(statement);
 
 	internal Expression ParseExpression(ListRange<Token> tokens, Token endToken)
 	{

@@ -70,8 +70,10 @@ public class CodeLine : IRenderableCode
 
 	public void Render(TextWriter writer) => Render(writer, includeCRLF: true);
 
-	public void Render(TextWriter writer, bool includeCRLF = true)
+	public void Render(TextWriter baseWriter, bool includeCRLF = true)
 	{
+		var writer = new ColumnTrackingTextWriter(baseWriter);
+
 		if (LineNumber != null)
 			writer.Write(LineNumber);
 
@@ -88,7 +90,9 @@ public class CodeLine : IRenderableCode
 			var statement = Statements[i];
 			bool hasNextStatement = (i + 1 < Statements.Count);
 
+			statement.SourceColumn = writer.Column;
 			statement.Render(writer);
+			statement.SourceLength = writer.Column - statement.SourceColumn;
 
 			if (hasNextStatement)
 			{

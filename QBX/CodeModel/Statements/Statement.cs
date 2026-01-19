@@ -14,6 +14,7 @@ public abstract class Statement : IRenderableCode
 	public virtual bool ExtraSpace => false;
 
 	public Token? FirstToken { get; set; }
+	public int SourceColumn { get; set; }
 	public int SourceLength { get; set; }
 
 	public Statement? TrueSource { get; set; }

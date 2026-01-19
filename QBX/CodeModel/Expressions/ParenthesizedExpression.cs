@@ -14,6 +14,13 @@ public class ParenthesizedExpression : Expression
 		Child = child;
 	}
 
+	public override Expression ClaimTokens(CodeModel.Statements.Statement owner)
+	{
+		Child.ClaimTokens(owner);
+
+		return base.ClaimTokens(owner);
+	}
+
 	public override void Render(TextWriter writer)
 	{
 		writer.Write('(');
