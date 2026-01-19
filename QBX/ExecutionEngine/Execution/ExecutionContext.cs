@@ -8,6 +8,20 @@ using QBX.Hardware;
 
 namespace QBX.ExecutionEngine.Execution;
 
+// ON ERROR:
+// - error handler state is global, not tied to stack frames
+// - handler itself must live in the main module
+// - ON ERROR can be run at any time in any context and changes the registered handler in the global state
+// - execution of the handler uses the root stack frame, re-entering it if necessary
+// - when an error occurs and a handler is active, the statement that caused the error
+//   is stashed
+// - RESUME retries the statement that failed
+// - RESUME NEXT also goes back but skips the statement that failed
+// - if an error happens and there's already a return location from a previous
+//   error being handled, then it doesn't get handled
+// - if code flows off the end of the main module (as opposed to the program being explicitly ENDed),
+//   then an error "No RESUME" is raised
+
 public class ExecutionContext
 {
 	public Machine Machine;
