@@ -1,9 +1,7 @@
-﻿using QBX.Hardware;
+﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 
-using System;
+using QBX.Hardware;
 
 using CSharpTest.Net.Collections;
 
@@ -997,6 +995,10 @@ public abstract class GraphicsLibrary : VisualLibrary
 		public int X1 = x1;
 		public int X2 = x2;
 
+		public const int HaveNotYetScanned = int.MinValue;
+
+		public int AlreadyScannedAndFoundBorderAtX = HaveNotYetScanned;
+
 		public bool TryExtend = true;
 		public bool PropagateUp = (dy < 0);
 		public bool PropagateDown = (dy > 0);
@@ -1049,8 +1051,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 	public void BorderFill(int x, int y, int borderAttribute, int fillAttribute)
 	{
 		var queuedSpans = new Queue<Span>();
-		var interior = new BTreeDictionary<int, int>();
-		var scanned = new BTreeDictionary<int, int>();
+		var processed = new BTreeDictionary<int, int>();
 		var scan = new bool[Width].AsSpan();
 
 		int width = Width;
@@ -1150,7 +1151,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 		// Adds the parts of the span that aren't already in the interior.
 		void AddToQueue(Span newSpan)
 		{
-			foreach (var exteriorSpan in ExcludeSet(newSpan, interior))
+			foreach (var exteriorSpan in ExcludeSet(newSpan, processed))
 				queuedSpans.Enqueue(newSpan);
 		}
 
@@ -1182,7 +1183,6 @@ public abstract class GraphicsLibrary : VisualLibrary
 		// internal array, and we should avoid doing that resize reallocation
 		// multiple times.
 		var newlyScanned = new List<Span>();
-		var interiorSpans = new List<Span>();
 
 		while (queuedSpans.TryDequeue(out var potentialSpan))
 		{
@@ -1198,14 +1198,28 @@ public abstract class GraphicsLibrary : VisualLibrary
 			// are covering pixels that were already scanned, which is why we maintain
 			// the "scanned" set.
 
-			foreach (var unscannedSpan in ExcludeSet(potentialSpan, scanned))
+			foreach (var unscannedSpan in ExcludeSet(potentialSpan, processed))
 			{
 				var span = unscannedSpan;
 
-				// Gather border information in this scan.
-				scan.Slice(0, span.X1).Clear();
-				scan.Slice(span.X2 + 1).Clear();
-				Scan(span.X1, span.X2, span.Y, borderAttribute, scan.Slice(span.X1, span.Width));
+				// Gather border information in this scan. In the case of extensions,
+				// we already know that every pixel in the span is going to be interior,
+				// because we started at an interior pixel and walked to the next
+				// border. No need to re-scan.
+				if (span.AlreadyScannedAndFoundBorderAtX != Span.HaveNotYetScanned)
+				{
+					scan.Clear();
+
+					if ((span.AlreadyScannedAndFoundBorderAtX >= 0)
+					 && (span.AlreadyScannedAndFoundBorderAtX < scan.Length))
+						scan[span.AlreadyScannedAndFoundBorderAtX] = true;
+				}
+				else
+				{
+					scan.Slice(0, span.X1).Clear();
+					scan.Slice(span.X2 + 1).Clear();
+					Scan(span.X1, span.X2, span.Y, borderAttribute, scan.Slice(span.X1, span.Width));
+				}
 
 				newlyScanned.Add(span);
 
@@ -1217,7 +1231,9 @@ public abstract class GraphicsLibrary : VisualLibrary
 				{
 					if (!scan[span.X1])
 					{
-						int newX1 = Find(span.X1 - 1, 0, span.Y, borderAttribute);
+						int borderX = Find(span.X1 - 1, 0, span.Y, borderAttribute);
+
+						int newX1 = borderX;
 
 						if (newX1 >= 0)
 						{
@@ -1234,6 +1250,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 							extension.TryExtend = false;
 							extension.PropagateUp = true;
 							extension.PropagateDown = true;
+							extension.AlreadyScannedAndFoundBorderAtX = borderX;
 
 							AddToQueue(extension);
 						}
@@ -1241,7 +1258,9 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 					if (!scan[span.X2])
 					{
-						int newX2 = Find(span.X2 + 1, Width - 1, span.Y, borderAttribute);
+						int borderX = Find(span.X2 + 1, Width - 1, span.Y, borderAttribute);
+
+						int newX2 = borderX;
 
 						if (newX2 >= 0)
 						{
@@ -1258,6 +1277,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 							extension.TryExtend = false;
 							extension.PropagateUp = true;
 							extension.PropagateDown = true;
+							extension.AlreadyScannedAndFoundBorderAtX = borderX;
 
 							AddToQueue(extension);
 						}
@@ -1281,19 +1301,9 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 						if (span.X2 >= span.X1)
 						{
-							// Don't double-paint pixels. We have to capture the results of
-							// ExcludeSet because as we process them one by one, we're
-							// modifying the set that it would be in the middle of
-							// enumerating.
-							interiorSpans.AddRange(ExcludeSet(span, interior));
-
-							foreach (var newInteriorSpan in interiorSpans)
-							{
+							// Don't double-paint pixels.
+							foreach (var newInteriorSpan in ExcludeSet(span, processed))
 								HorizontalLine(newInteriorSpan.X1, newInteriorSpan.X2, newInteriorSpan.Y, fillAttribute);
-								AddToSet(newInteriorSpan, interior);
-							}
-
-							interiorSpans.Clear();
 
 							if (span.PropagateUp)
 								AddToQueue(span.Up());
@@ -1309,8 +1319,10 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 			// Add these outside of the loop because adding them within the loop
 			// would interfere with the loop's existing enumeration of the set.
+			// All of the spans we just painted, if any, are contained within
+			// these spans.
 			foreach (var span in newlyScanned)
-				AddToSet(span, scanned);
+				AddToSet(span, processed);
 
 			newlyScanned.Clear();
 		}
