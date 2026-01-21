@@ -967,6 +967,695 @@ public abstract class GraphicsLibrary : VisualLibrary
 	}
 	#endregion Ellipse
 
+	#region Paint
+	protected void Scan(int x1, int x2, int y, int findAttribute, Span<bool> matches)
+	{
+		for (int x = x1; x <= x2; x++)
+			matches[x - x1] = PixelGet(x, y) == findAttribute;
+	}
+
+	protected int Find(int x1, int x2, int y, int findAttribute)
+	{
+		int dx = (x1 == x2) ? 1 : Math.Sign(x2 - x1);
+
+		// Include x2 in the loop range.
+		x2 += dx;
+
+		for (int x = x1; x != x2; x += dx)
+			if (PixelGet(x, y) == findAttribute)
+				return x;
+
+		return -1;
+	}
+
+	static StreamWriter? dbg;
+
+	class FillAction(int x1, int x2, int y, int dy) : IComparable<FillAction>
+	{
+		static int s_nextSequence;
+
+		public readonly int Sequence = s_nextSequence++;
+
+		public readonly int Y = y;
+
+		public int X1 = x1;
+		public int X2 = x2;
+		public int DY = dy;
+
+		public int LimitRows;
+		public bool LimitLeft;
+		public bool LimitRight;
+
+		public bool IsCancelled;
+		public int AddedInIteration;
+		public FillAction? ExcludePixelsFromAdjacentSpans;
+
+		public int Width => X2 - X1 + 1;
+
+		public int CompareTo(FillAction? other)
+		{
+			if (other == null)
+				return 1;
+
+			if (X1 != other.X1)
+				return X1.CompareTo(other.X1);
+			else
+				return Sequence.CompareTo(other.Sequence);
+		}
+
+		public bool MergeRight(FillAction other)
+		{
+			if (other.X1 < X1)
+				throw new InvalidOperationException();
+
+			if (other.X1 > X2 + 1)
+				return false;
+
+			if (other.X2 > X2)
+				X2 = other.X2;
+
+			return true;
+		}
+
+		public FillAction Clone()
+			=> new FillAction(X1, X2, Y, DY);
+
+		public FillAction Clone(int newY)
+			=> new FillAction(X1, X2, newY, DY);
+
+		public void CopyTo(FillAction other)
+		{
+			if (Y != other.Y)
+				throw new InvalidOperationException();
+
+			other.X1 = X1;
+			other.X2 = X2;
+			other.DY = DY;
+			other.IsCancelled = IsCancelled;
+		}
+
+		public bool Subsumes(FillAction other)
+		{
+			return (X1 <= other.X1) && (X2 >= other.X2);
+		}
+
+		public bool Intersects(FillAction other)
+		{
+			return (X2 >= other.X1) && (other.X2 >= X1);
+		}
+
+		public void Exclude(FillAction other)
+		{
+			if (!IsCancelled && !other.IsCancelled)
+			{
+				if ((other.X1 <= X1) && (other.X2 >= X2))
+				{
+					dbg?.WriteLine("EXCLUDE: {0} fully subsumed", this);
+					X2 = X1 - 1;
+				}
+				else
+				{
+					if ((X1 >= other.X1) && (X1 <= other.X2))
+					{
+						dbg?.Write("EXCLUDE: {0} -> ", this);
+						X1 = other.X2 + 1;
+						LimitLeft = true;
+						dbg?.WriteLine(this);
+					}
+					if ((X2 >= other.X1) && (X2 <= other.X2))
+					{
+						dbg?.Write("EXCLUDE: {0} -> ", this);
+						X2 = other.X1 - 1;
+						LimitRight = true;
+						dbg?.WriteLine(this);
+					}
+				}
+
+				IsCancelled = (X1 > X2);
+			}
+		}
+
+		public FillAction IntersectionWith(FillAction other)
+		{
+			return new FillAction(
+				Math.Max(X1, other.X1),
+				Math.Min(X2, other.X2),
+				Y,
+				DY);
+		}
+
+		public override string ToString()
+		{
+			return (IsCancelled ? "CANCELLED " : null) + Y + (DY > 0 ? "++" : DY < 0 ? "--" : null) + ": " + X1 + " to " + X2;
+		}
+	}
+
+	public void BorderFill(int x, int y, int borderAttribute, int fillAttribute)
+	{
+		dbg?.Close();
+
+		File.WriteAllBytes(@"C:\code\QBX\paintdbg.init", Machine.GraphicsArray.VRAM.AsSpan().Slice(0, 64000));
+		dbg = new StreamWriter(@"C:\code\QBX\paintdbg.txt") { AutoFlush = true };
+		//dbg = null;
+
+		var queuedActions = new Queue<FillAction>();
+		var queuedActionsByY = new List<FillAction>[Height];
+		var scan = new bool[Width].AsSpan();
+
+		int iteration = 0;
+
+		void AddToQueueWithException(FillAction newSpan, FillAction? exclude)
+		{
+			if ((exclude == null) || !newSpan.Intersects(exclude))
+				AddToQueue(newSpan);
+			else
+			{
+				var left = newSpan.Clone();
+				var right = newSpan;
+
+				left.X2 = exclude.X1 - 1;
+				right.X1 = exclude.X2 + 2;
+
+				if (left.X1 <= left.X2)
+					AddToQueue(left);
+				if (right.X1 <= right.X2)
+					AddToQueue(right);
+			}
+		}
+
+		void AddToQueue(FillAction newSpan)
+		{
+			if ((newSpan.Y < 0) || (newSpan.Y >= Height))
+				return;
+
+			var actionsForY = queuedActionsByY[newSpan.Y] ??= new List<FillAction>();
+
+			bool sortActions = false;
+			List<FillAction>? newActions = null;
+
+			foreach (var queuedAction in actionsForY)
+			{
+				if (newSpan.Subsumes(queuedAction))
+				{
+					dbg?.WriteLine("EXISTING QUEUED ACTION OBVIATED: {0}", queuedAction);
+
+					if (queuedAction.DY == newSpan.DY)
+					{
+						queuedAction.X1 = newSpan.X1;
+						queuedAction.X2 = newSpan.X2;
+
+						return;
+					}
+
+					queuedAction.ExcludePixelsFromAdjacentSpans = queuedAction.Clone();
+
+					int leftPartSize = Math.Max(0, queuedAction.X1 - newSpan.X1);
+					int rightPartSize = Math.Max(0, newSpan.X2 - queuedAction.X2);
+
+					if ((leftPartSize == 0) && (rightPartSize == 0))
+					{
+						queuedAction.ExcludePixelsFromAdjacentSpans = newSpan;
+						return; // nothing to queue; these are exactly the same size
+					}
+
+					if ((leftPartSize > 0) && (rightPartSize > 0))
+					{
+						// This existing queue entry takes a chunk out of the new
+						// span, leaving behind some on the left and some on the
+						// right.
+						//
+						// We want to keep the both sides, but also prevent both sides
+						// from seeing the pixels covered by the new action.
+
+						var newLeft = new FillAction(newSpan.X1, queuedAction.X1 - 1, newSpan.Y, newSpan.DY);
+
+						newLeft.LimitRight = true;
+
+						newSpan.X1 = queuedAction.X2 + 1;
+						newSpan.LimitLeft = true;
+
+						sortActions = true;
+
+						newActions ??= new List<FillAction>();
+						newActions.Add(newLeft);
+					}
+					else if (leftPartSize > 0)
+					{
+						dbg?.Write("TRIM: X2 {0}", newSpan.X2);
+
+						newSpan.X2 = newSpan.X1 + leftPartSize - 1;
+						newSpan.LimitRight = true;
+
+						dbg?.WriteLine(" => {0}", newSpan.X2);
+					}
+					else if (rightPartSize > 0)
+					{
+						dbg?.Write("TRIM: X1 {0}", newSpan.X1);
+
+						newSpan.X1 = newSpan.X2 - rightPartSize + 1;
+						newSpan.LimitLeft = true;
+
+						dbg?.WriteLine(" => {0}", newSpan.X1);
+
+						sortActions = true;
+					}
+				}
+				else if (queuedAction.Subsumes(newSpan))
+				{
+					dbg?.WriteLine("LIMITING TO ONE MORE ROW: {0} (is subsumed by existing {1})", newSpan, queuedAction);
+
+					newSpan.DY = 0;
+					newSpan.LimitLeft = true;
+					newSpan.LimitRight = true;
+
+					int leftPartSize = (newSpan.X1 > queuedAction.X1)
+						? newSpan.X1 - queuedAction.X1
+						: -1;
+
+					int rightPartSize = (newSpan.X2 < queuedAction.X2)
+						? queuedAction.X2 - newSpan.X2
+						: -1;
+
+					if ((leftPartSize > 0) && (rightPartSize > 0))
+					{
+						// The new action takes a chunk out of the existing queued action.
+						// This only happens when the existing queued action came from
+						// an expansion scan that extended the range in one row and then
+						// queued a scan of an adjacent row.
+						//
+						// We want to keep the both sides, but also prevent both sides
+						// from seeing the pixels covered by the new action.
+						//
+						// We can alter the queue entry to be one of the sides but will
+						// have to add one for the other side.
+
+						dbg?.Write("SPLIT: {0} into ", queuedAction);
+
+						var newRight = queuedAction.Clone();
+
+						queuedAction.X2 = newSpan.X1 - 1;
+						queuedAction.LimitRight = true;
+
+						newRight.X1 = newSpan.X2 + 1;
+						newRight.LimitLeft = true;
+
+						dbg?.WriteLine("{0} and {1}", queuedAction, newRight);
+
+						newActions ??= new List<FillAction>();
+						newActions.Add(newRight);
+					}
+					else if (leftPartSize > 0)
+					{
+						dbg?.Write("TRIM: X2 {0}", queuedAction.X2);
+
+						queuedAction.X2 = newSpan.X1 - 1;
+						queuedAction.LimitRight = true;
+
+						dbg?.WriteLine(" => {0}", queuedAction.X2);
+					}
+					else if (rightPartSize > 0)
+					{
+						dbg?.Write("TRIM: X1 {0}", queuedAction.X1);
+
+						queuedAction.X1 = newSpan.X2 + 1;
+						queuedAction.LimitLeft = true;
+
+						dbg?.WriteLine(" => {0}", queuedAction.X1);
+
+						sortActions = true;
+					}
+					else
+					{
+						dbg?.WriteLine("STOP AFTER (DY = 0)");
+						queuedAction.ExcludePixelsFromAdjacentSpans = newSpan.Clone();
+					}
+				}
+				else if (newSpan.Intersects(queuedAction))
+				{
+					dbg?.WriteLine("HANDLING OVERLAP: {0} vs. {1}", newSpan, queuedAction);
+
+					var overlap = queuedAction.IntersectionWith(newSpan);
+
+					newSpan.Exclude(queuedAction);
+
+					queuedAction.Exclude(overlap);
+
+					overlap.DY = 0;
+
+					dbg?.WriteLine("OVERLAP {0}, NEW SPAN {1}, QUEUED ACTION {2}", overlap, newSpan, queuedAction);
+
+					newActions ??= new List<FillAction>();
+					newActions.Add(overlap);
+
+					sortActions = true;
+				}
+			}
+
+			if (sortActions)
+				actionsForY.Sort();
+
+			if (newActions != null)
+			{
+				foreach (var newAction in newActions)
+					AddToQueue(newAction);
+			}
+
+			int index = actionsForY.BinarySearch(newSpan);
+
+			if (index >= 0)
+				throw new Exception("Internal error: Exclusion should have eliminated key collisions");
+
+			actionsForY.Insert(~index, newSpan);
+
+			queuedActions.Enqueue(newSpan);
+
+			newSpan.AddedInIteration = iteration;
+
+			dbg?.WriteLine("QUEUE: " + newSpan);
+		}
+
+		// Start by scanning to the left and right and seeding the queue with spans to scan.
+		int x1 = Find(x, 0, y, borderAttribute);
+		int x2 = Find(x, Width - 1, y, borderAttribute);
+
+		if (x1 == x) // Starting on a border pixel.
+			return;
+
+		// Don't include the border pixels themselves.
+		x1++;
+
+		if (x2 >= 0)
+			x2--;
+		else
+			x2 = Width - 1;
+
+		var scanUp = new FillAction(x1, x2, y, -1);
+		var scanDown = new FillAction(x1, x2, y, +1);
+
+		AddToQueue(scanUp);
+
+		while (queuedActions.TryDequeue(out var action))
+		{
+			iteration++;
+
+			dbg?.WriteLine();
+			dbg?.WriteLine("[" + iteration + "] DEQUEUE: " + action);
+			foreach (var upcoming in queuedActions)
+				dbg?.WriteLine("- " + upcoming);
+
+			var actionsForY = queuedActionsByY[action.Y];
+
+			int index = actionsForY.BinarySearch(action);
+
+			if (index >= 0)
+				actionsForY.RemoveAt(index);
+			else
+				index = 0; // Leave index pointing at the next action, if any
+
+			if (action.IsCancelled)
+				continue;
+
+			const int ZoomCenterX = 160;
+			const int ZoomCenterY = 100;
+			const int ZoomScale = 2;
+
+			for (int j = 160; j < 200; j++)
+			{
+				for (int i = 0; i < 320; i++)
+				{
+					int dx = i - 160;
+					int dy = j - 180;
+
+					dx = dx / ZoomScale;
+					dy = dy / ZoomScale;
+
+					dx = dx + ZoomCenterX;
+					dy = dy + ZoomCenterY;
+
+					PixelSet(i, j, PixelGet(dx, dy));
+				}
+			}
+
+			int TX(int x) => (x - ZoomCenterX) * ZoomScale + 160;
+			int TY(int y) => (y - ZoomCenterY) * ZoomScale + 180;
+
+			void DebugPlot(FillAction queuedAct, bool current)
+			{
+				int qy = TY(queuedAct.Y);
+				if (qy < 160)
+					return;
+				int qx1 = TX(queuedAct.X1);
+				int qx2 = TX(queuedAct.X2);
+
+				int a = current ? 12 : queuedAct.IsCancelled ? 8 : (queuedAct.DY > 0) ? 11 : (queuedAct.DY < 0) ? 14 : 7;
+
+				for (int i = qx1; i <= qx2; i++)
+					PixelSet(i, qy, a);
+			}
+
+			foreach (var queuedAct in queuedActions)
+				DebugPlot(queuedAct, current: false);
+
+			DebugPlot(action, current: true);
+
+			System.Threading.Thread.Sleep(50);
+
+			if (iteration >= 193)
+				Debugger.Break();
+
+			scan.Slice(0, action.X1).Clear();
+			scan.Slice(action.X2 + 1).Clear();
+			Scan(action.X1, action.X2, action.Y, borderAttribute, scan.Slice(action.X1, action.Width));
+
+			if (!action.LimitLeft && !scan[action.X1])
+			{
+				int newX1 = Find(action.X1 - 1, 0, action.Y, borderAttribute);
+
+				if (newX1 >= 0)
+				{
+					scan[newX1] = true;
+					newX1++;
+				}
+				else
+					newX1 = 0;
+
+				dbg?.WriteLine("extend left to " + newX1);
+
+				int checkX1 = action.X1;
+
+				int i = index;
+
+				while (i > 0)
+				{
+					i--;
+
+					if (actionsForY[i].IsCancelled)
+						continue;
+
+					if ((actionsForY[i].X2 >= newX1) && (actionsForY[i].X1 <= checkX1))
+					{
+						dbg?.WriteLine("TRIM OVERLAP LEFT");
+
+						actionsForY[i].LimitRight = true;
+
+						if (actionsForY[i].DY != action.DY)
+						{
+							dbg?.WriteLine("COLLISION");
+
+							newX1 = actionsForY[i].X2 + 1;
+
+							break;
+						}
+						else
+						{
+							//  ^------^ ^--------^
+							//         3 5
+
+							int pixelsExposed = action.X1 - actionsForY[i].X2 - 1;
+
+							if (pixelsExposed > 0)
+							{
+								var reverse = new FillAction(actionsForY[i].X2 + 1, action.X1 - 1, action.Y - action.DY, -action.DY);
+
+								dbg?.WriteLine("generated reverse span: " + reverse);
+
+								AddToQueueWithException(reverse, action.ExcludePixelsFromAdjacentSpans);
+							}
+
+							dbg?.WriteLine("MERGED: {0}", actionsForY[i]);
+
+							action.X1 = actionsForY[i].X1;
+
+							if (actionsForY[i].X1 >= newX1)
+								actionsForY[i].IsCancelled = true;
+							else
+								actionsForY[i].X2 = newX1 - 1;
+						}
+					}
+				}
+
+				if ((newX1 < action.X1) && (action.DY != 0))
+				{
+					var reverse = new FillAction(newX1, action.X1 - 1, action.Y - action.DY, -action.DY);
+
+					reverse.LimitRight = true;
+
+					dbg?.WriteLine("generated reverse span: " + reverse);
+
+					AddToQueueWithException(reverse, action.ExcludePixelsFromAdjacentSpans);
+				}
+
+				action.X1 = Math.Max(0, newX1);
+			}
+
+			if (!action.LimitRight && !scan[action.X2])
+			{
+				int newX2 = Find(action.X2 + 1, Width - 1, action.Y, borderAttribute);
+
+				if (newX2 >= 0)
+				{
+					scan[newX2] = true;
+					newX2--;
+				}
+				else
+					newX2 = Width - 1;
+
+				dbg?.WriteLine("extend right to " + newX2);
+
+				int checkX2 = action.X2;
+
+				// We have already removed action, so the indices are shifted left.
+				for (int i = index; i < actionsForY.Count; i++)
+				{
+					if (actionsForY[i].IsCancelled)
+						continue;
+
+					if ((actionsForY[i].X1 <= newX2) && (actionsForY[i].X2 >= checkX2))
+					{
+						dbg?.WriteLine("TRIM OVERLAP RIGHT");
+
+						actionsForY[i].LimitLeft = true;
+
+						if (actionsForY[i].DY != action.DY)
+						{
+							dbg?.WriteLine("COLLISION");
+
+							if (actionsForY[i].X2 <= newX2)
+							{
+								if (actionsForY[i].DY == 0)
+									actionsForY[i].DY = action.DY;
+								if (action.DY == 0)
+									action.DY = actionsForY[i].DY;
+							}
+
+							newX2 = actionsForY[i].X1 - 1;
+
+							break;
+						}
+						else 
+						{
+							//  ^------^ ^--------^
+							//         3 5
+
+							int pixelsExposed = actionsForY[i].X1 - action.X2 - 1;
+
+							if (pixelsExposed > 0)
+							{
+								var reverse = new FillAction(action.X2 + 1, actionsForY[i].X1 - 1, action.Y - action.DY, -action.DY);
+
+								dbg?.WriteLine("generated reverse span: " + reverse);
+
+								AddToQueueWithException(reverse, action.ExcludePixelsFromAdjacentSpans);
+							}
+
+							dbg?.WriteLine("MERGED: {0}", actionsForY[i]);
+
+							action.X2 = actionsForY[i].X2;
+
+							if (actionsForY[i].X2 <= newX2)
+								actionsForY[i].IsCancelled = true;
+							else
+								actionsForY[i].X1 = newX2 + 1;
+						}
+					}
+				}
+
+				if ((newX2 > action.X2) && (action.DY != 0))
+				{
+					var reverse = new FillAction(action.X2 + 1, newX2, action.Y - action.DY, -action.DY);
+
+					reverse.LimitLeft = true;
+
+					dbg?.WriteLine("generated reverse span: " + reverse);
+
+					AddToQueueWithException(reverse, action.ExcludePixelsFromAdjacentSpans);
+				}
+
+				action.X2 = Math.Min(newX2, Width - 1);
+			}
+
+			// Now that we've broadened the connected span as much as possible, eliminate
+			// other queued actions that would check the same pixels.
+			if (action != scanUp)
+			{
+				foreach (var otherAction in actionsForY)
+					if (otherAction != action)
+						otherAction.Exclude(action);
+
+				actionsForY.Sort();
+			}
+
+			// Now extract the contiguous spans of pixels to be painted and paint them.
+			// Each one has a contiguous span of pixels on the adjacent row; queue that
+			// row (per the action's DY) for processing.
+			var span = action.Clone();
+
+			for (x = action.X1; x <= action.X2; x++)
+			{
+				if ((scan[x] == true) || (x == action.X2))
+				{
+					span.X2 = x;
+
+					if (scan[x])
+						span.X2--;
+
+					if (span.X2 >= span.X1)
+					{
+						dbg?.WriteLine("PAINT: {0} {1}..{2}", action.Y, span.X1, span.X2);
+
+						HorizontalLine(span.X1, span.X2, action.Y, fillAttribute);
+
+						if ((action.DY != 0) && (action.LimitRows != 1))
+						{
+							int ny = action.Y + action.DY;
+
+							if ((ny >= 0) && (ny < queuedActionsByY.Length))
+							{
+								var nextSpan = span.Clone(action.Y + action.DY);
+
+								if (action.LimitRows > 1)
+									nextSpan.LimitRows = action.LimitRows - 1;
+
+								AddToQueueWithException(nextSpan, action.ExcludePixelsFromAdjacentSpans);
+							}
+						}
+					}
+
+					span.X1 = x + 1;
+				}
+			}
+
+			// The seed scans scanUp and scanDown overlap, so scanDown needs to be delayed
+			// until after scanUp has finished processing.
+			if (scanDown != null)
+			{
+				AddToQueue(scanDown);
+				scanDown = null;
+			}
+		}
+	}
+	#endregion
+
 	#region Text
 	public override void WriteText(ReadOnlySpan<byte> buffer)
 	{
