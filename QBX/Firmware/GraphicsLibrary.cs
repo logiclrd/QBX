@@ -1,11 +1,11 @@
-﻿using CSharpTest.Net.Collections;
-using QBX.CodeModel.Statements;
-using QBX.ExecutionEngine.Compiled.Functions;
-using QBX.Hardware;
-using System;
+﻿using QBX.Hardware;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+
+using System;
+
+using CSharpTest.Net.Collections;
 
 namespace QBX.Firmware;
 
@@ -990,8 +990,6 @@ public abstract class GraphicsLibrary : VisualLibrary
 		return -1;
 	}
 
-	static StreamWriter? dbg;
-
 	struct Span(int x1, int x2, int y = 0, int dy = 0)
 	{
 		public static Span Empty => new Span(1, 0);
@@ -1030,59 +1028,9 @@ public abstract class GraphicsLibrary : VisualLibrary
 			return (X1 <= other.X1) && (X2 >= other.X2);
 		}
 
-		public bool Intersects(Span other)
-		{
-			return (X2 >= other.X1) && (other.X2 >= X1);
-		}
-
 		public bool Intersects(int otherX1, int otherX2)
 		{
 			return (X2 >= otherX1) && (otherX2 >= X1);
-		}
-
-		public Span IntersectionWith(Span other)
-		{
-			var intersection = this;
-
-			intersection.X1 = Math.Max(X1, other.X1);
-			intersection.X2 = Math.Min(X2, other.X2);
-
-			return intersection;
-		}
-
-		public (Span LeftPart, Span RightPart) Exclude(Span other)
-		{
-			if (other.X2 < X1)
-				return (Empty, this);
-			if (other.X1 < X2)
-				return (this, Empty);
-
-			if (other.Subsumes(this))
-				return (Empty, Empty);
-			if (this.Subsumes(other))
-				return (this, Empty);
-
-			if ((X1 >= other.X1) && (X1 <= other.X2))
-			{
-				var rightPartSize = X2 - other.X2;
-
-				if (rightPartSize > 0)
-					return (Empty, Slice(other.X2 + 1, X2));
-				else
-					return (Empty, Empty);
-			}
-
-			if ((X2 >= other.X1) && (X2 <= other.X2))
-			{
-				var leftPartSize = other.X1 - X1;
-
-				if (leftPartSize > 0)
-					return (Slice(X1, other.X1 - 1), Empty);
-				else
-					return (Empty, Empty);
-			}
-
-			throw new Exception("Sanity failure");
 		}
 
 		public override string ToString()
@@ -1100,20 +1048,12 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	public void BorderFill(int x, int y, int borderAttribute, int fillAttribute)
 	{
-		dbg?.Close();
-
-		File.WriteAllBytes(@"C:\code\QBX\paintdbg.init", Machine.GraphicsArray.VRAM.AsSpan().Slice(0, 64000));
-		dbg = new StreamWriter(@"C:\code\QBX\paintdbg.txt") { AutoFlush = true };
-		//dbg = null;
-
 		var queuedSpans = new Queue<Span>();
 		var interior = new BTreeDictionary<int, int>();
 		var scanned = new BTreeDictionary<int, int>();
 		var scan = new bool[Width].AsSpan();
 
 		int width = Width;
-
-		int iteration = 0;
 
 		void AddToSet(Span span, BTreeDictionary<int, int> set)
 		{
@@ -1237,74 +1177,42 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 		AddToQueue(initialSpan);
 
+		// Allocate these here, because they will likely expand at some point
+		// to hold more data, and that expansion requires reallocating the
+		// internal array, and we should avoid doing that resize reallocation
+		// multiple times.
 		var newlyScanned = new List<Span>();
 		var interiorSpans = new List<Span>();
 
 		while (queuedSpans.TryDequeue(out var potentialSpan))
 		{
+			// Every pixel in this span is guaranteed to be adjacent to a known interior
+			// pixel. But, some of them may be border pixels. So, our job is to:
+			//
+			// - Identify the subspans that are not border pixels and which are thus
+			//   now also known interior pixels.
+			// - Queue subsequent new spans that are now known to be adjacent to known
+			//   interior pixels.
+			//
+			// The algorithm can and does regularly queue up redundant checks that
+			// are covering pixels that were already scanned, which is why we maintain
+			// the "scanned" set.
+
 			foreach (var unscannedSpan in ExcludeSet(potentialSpan, scanned))
 			{
-				iteration++;
-
 				var span = unscannedSpan;
 
-				const int ZoomCenterX = 160;
-				const int ZoomCenterY = 100;
-				const int ZoomScale = 2;
-
-				for (int j = 160; j < 200; j++)
-				{
-					for (int i = 0; i < 320; i++)
-					{
-						int dx = i - 160;
-						int dy = j - 180;
-
-						dx = dx / ZoomScale;
-						dy = dy / ZoomScale;
-
-						dx = dx + ZoomCenterX;
-						dy = dy + ZoomCenterY;
-
-						PixelSet(i, j, PixelGet(dx, dy));
-					}
-				}
-
-				int TX(int x) => (x - ZoomCenterX) * ZoomScale + 160;
-				int TY(int y) => (y - ZoomCenterY) * ZoomScale + 180;
-
-				void DebugPlot(Span queuedAct, bool current)
-				{
-					int qy = TY(queuedAct.Y);
-					if (qy < 160)
-						return;
-					int qx1 = TX(queuedAct.X1);
-					int qx2 = TX(queuedAct.X2);
-
-					int dy = (queuedAct.PropagateUp ? -1 : 0)
-						+ (queuedAct.PropagateDown ? +1 : 0);
-
-					int a = current ? 12 : (dy > 0) ? 11 : (dy < 0) ? 14 : 7;
-
-					for (int i = qx1; i <= qx2; i++)
-						PixelSet(i, qy, a);
-				}
-
-				foreach (var queuedAct in queuedSpans)
-					DebugPlot(queuedAct, current: false);
-
-				DebugPlot(span, current: true);
-
-				System.Threading.Thread.Sleep(50);
-
-				if (iteration >= 0)
-					Debugger.Break();
-
+				// Gather border information in this scan.
 				scan.Slice(0, span.X1).Clear();
 				scan.Slice(span.X2 + 1).Clear();
 				Scan(span.X1, span.X2, span.Y, borderAttribute, scan.Slice(span.X1, span.Width));
 
 				newlyScanned.Add(span);
 
+				// Scan to the left and right of the span. If we find more interior pixels there,
+				// queue spans set to propagate both up and down. (Disable extending these, though,
+				// as there's no point; they're already the result of an extension and are
+				// guaranteed not to find anything new past their range.)
 				if (span.TryExtend)
 				{
 					if (!scan[span.X1])
@@ -1373,8 +1281,10 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 						if (span.X2 >= span.X1)
 						{
-							dbg?.WriteLine("PAINT: {0} {1}..{2}", span.Y, span.X1, span.X2);
-
+							// Don't double-paint pixels. We have to capture the results of
+							// ExcludeSet because as we process them one by one, we're
+							// modifying the set that it would be in the middle of
+							// enumerating.
 							interiorSpans.AddRange(ExcludeSet(span, interior));
 
 							foreach (var newInteriorSpan in interiorSpans)
@@ -1397,6 +1307,8 @@ public abstract class GraphicsLibrary : VisualLibrary
 				}
 			}
 
+			// Add these outside of the loop because adding them within the loop
+			// would interfere with the loop's existing enumeration of the set.
 			foreach (var span in newlyScanned)
 				AddToSet(span, scanned);
 
