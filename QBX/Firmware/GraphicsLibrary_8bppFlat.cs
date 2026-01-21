@@ -21,6 +21,15 @@ public class GraphicsLibrary_8bppFlat : GraphicsLibrary
 		Array.VRAM.AsSpan().Slice(StartAddress + windowOffset, windowLength).Clear();
 	}
 
+	public override int PixelGet(int x, int y)
+	{
+		if ((x >= 0) && (x < Width)
+		 && (y >= 0) && (y < Height))
+			return Array.VRAM[StartAddress + y * Width + x];
+
+		return 0;
+	}
+
 	public override void PixelSet(int x, int y, int attribute)
 	{
 		if ((x >= 0) && (x < Width)

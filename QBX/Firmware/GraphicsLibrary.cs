@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 
 using QBX.Hardware;
 
@@ -97,8 +100,20 @@ public abstract class GraphicsLibrary : VisualLibrary
 		DrawingAttribute = attribute;
 	}
 
+	#region PixelGet
+	public virtual int PixelGet(float x, float y)
+	{
+		var translated = Window.TranslatePoint(x, y);
+
+		return PixelGet(translated.X, translated.Y);
+
+	}
+
+	public abstract int PixelGet(int x, int y);
+	#endregion
+
 	#region PixelSet
-	public virtual void PixelSet(float x, float y)
+	public void PixelSet(float x, float y)
 		=> PixelSet(x, y, DrawingAttribute);
 
 	public void PixelSet(float x, float y, int attribute)

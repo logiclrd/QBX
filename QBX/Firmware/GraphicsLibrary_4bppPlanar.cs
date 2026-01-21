@@ -49,6 +49,26 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 		vramSpan.Slice(_plane3Offset + windowOffset, windowLength).Clear();
 	}
 
+	public override int PixelGet(int x, int y)
+	{
+		if ((x >= 0) && (x < Width)
+		 && (y >= 0) && (y < Height))
+		{
+			int offset = y * _stride + (x >> 3);
+			int shift = 7 - (x & 7);
+			int bitMask = 1 << shift;
+
+			var bits0 = (Array.VRAM[_plane0Offset + offset] >> shift) & 1;
+			var bits1 = (Array.VRAM[_plane0Offset + offset] >> shift) & 1;
+			var bits2 = (Array.VRAM[_plane0Offset + offset] >> shift) & 1;
+			var bits3 = (Array.VRAM[_plane0Offset + offset] >> shift) & 1;
+
+			return bits0 | (bits1 << 1) | (bits2 << 2) | (bits3 << 3);
+		}
+
+		return 0;
+	}
+
 	public override void PixelSet(int x, int y, int attribute)
 	{
 		if ((x >= 0) && (x < Width)

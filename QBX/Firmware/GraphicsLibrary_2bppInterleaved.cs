@@ -55,6 +55,31 @@ public class GraphicsLibrary_2bppInterleaved : GraphicsLibrary
 		vramSpan.Slice(_plane3Offset + windowOffset, windowLength).Clear();
 	}
 
+	public override int PixelGet(int x, int y)
+	{
+		if ((x >= 0) && (x < Width)
+		 && (y >= 0) && (y < Height))
+		{
+			bool evenColumn = ((x & 1) == 0);
+			bool evenScan = ((y & 1) == 0);
+
+			int planeOffset = evenScan
+				? (evenColumn ? _plane0Offset : _plane2Offset)
+				: (evenColumn ? _plane1Offset : _plane3Offset);
+
+			int offset = (y >> 1) * _stride + (x >> 3);
+			int shift = 6 - ((x >> 1) & 3) * 2;
+
+			int address = planeOffset + offset;
+
+			var bits = Array.VRAM[address];
+
+			return (bits >> shift) & 0b11;
+		}
+
+		return 0;
+	}
+
 	public override void PixelSet(int x, int y, int attribute)
 	{
 		if ((x >= 0) && (x < Width)
