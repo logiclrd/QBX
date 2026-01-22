@@ -24,6 +24,9 @@ public class RightFunction : Function
 				StringExpression = value;
 				break;
 			case 1:
+				if (!value.Type.IsNumeric)
+					throw CompilerException.TypeMismatch(value.Source);
+
 				LengthExpression = value;
 				break;
 		}
@@ -46,11 +49,9 @@ public class RightFunction : Function
 
 		var stringVariable = (StringVariable)StringExpression.Evaluate(context, stackFrame);
 
-		var lengthValue = LengthExpression.Evaluate(context, stackFrame);
-
 		int stringLength = stringVariable.ValueSpan.Length;
 
-		int length = lengthValue.CoerceToInt(context: LengthExpression);
+		int length = LengthExpression.EvaluateAndCoerceToInt(context, stackFrame);
 
 		if (length > stringLength)
 			length = stringLength;

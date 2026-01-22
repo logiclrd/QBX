@@ -32,9 +32,15 @@ public class MidFunction : Function
 				StringExpression = value;
 				break;
 			case 1:
+				if (!value.Type.IsNumeric)
+					throw CompilerException.TypeMismatch(value.Source);
+
 				StartExpression = value;
 				break;
 			case 2:
+				if (!value.Type.IsNumeric)
+					throw CompilerException.TypeMismatch(value.Source);
+
 				LengthExpression = value;
 				break;
 		}
@@ -58,14 +64,10 @@ public class MidFunction : Function
 
 		var stringVariable = (StringVariable)StringExpression.Evaluate(context, stackFrame);
 
-		var startValue = StartExpression.Evaluate(context, stackFrame);
-
-		var lengthValue = LengthExpression?.Evaluate(context, stackFrame);
-
 		int stringLength = stringVariable.ValueSpan.Length;
 
-		int start = startValue.CoerceToInt(context: StartExpression) - 1;
-		int length = lengthValue?.CoerceToInt(context: LengthExpression) ?? (stringLength - start);
+		int start = StartExpression.EvaluateAndCoerceToInt(context, stackFrame) - 1;
+		int length = LengthExpression?.EvaluateAndCoerceToInt(context, stackFrame) ?? (stringLength - start);
 
 		if ((start < 0) || (length < 0) || (start + length >= stringLength))
 			throw RuntimeException.IllegalFunctionCall(Source);
