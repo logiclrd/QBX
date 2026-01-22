@@ -60,6 +60,8 @@ public class RuntimeException : Exception
 		LineNumber = lineNumber;
 	}
 
+	public RuntimeException AddContext(CodeModel.Statements.Statement? statement)
+		=> AddContext(statement?.FirstToken, statement?.FirstToken?.Length ?? 0);
 	public RuntimeException AddContext(CodeModel.Expressions.Expression? expression)
 		=> AddContext(expression?.Token, expression?.Token?.Length ?? 0);
 
@@ -204,6 +206,10 @@ public class RuntimeException : Exception
 		=> ForErrorNumber(6, context);
 	public static RuntimeException SubscriptOutOfRange(CodeModel.Expressions.Expression? expression)
 		=> ForErrorNumber(9, expression);
+	public static RuntimeException SubscriptOutOfRange()
+		=> ForErrorNumber(9, default(Token));
+	public static RuntimeException DuplicateDefinition(CodeModel.Statements.Statement? statement)
+		=> ForErrorNumber(10, statement);
 	public static RuntimeException DivisionByZero(CodeModel.Expressions.Expression? expression)
 		=> ForErrorNumber(11, expression);
 	public static RuntimeException TypeMismatch(CodeModel.Statements.Statement? statement)

@@ -26,7 +26,12 @@ public class ArraySubscripts
 	{
 		int index = 0;
 
-		for (int i = 0; i < Subscripts.Count; i++)
+		// By processing the subscripts in reverse order, a multidimensional array is effectively an array
+		// of arrays of all the leading subscripts. When redimensioning with preservation, the elements
+		// can simply be copied because their layout doesn't change, only the number of repetitions
+		// changes.
+
+		for (int i = Subscripts.Count - 1; i >= 0; i++)
 		{
 			int lowerBound = Subscripts[i].LowerBound;
 			int upperBound = Subscripts[i].UpperBound;
@@ -40,6 +45,30 @@ public class ArraySubscripts
 		}
 
 		return index;
+	}
+
+	public int GetSubarraySize()
+	{
+		// Data is laid out in the array so that each successive dimension can be interpreted
+		// as an array of the array described by the preceding dimensions.
+		//
+		// (1 TO 10) = 10 consecutive integers
+		// (1 TO 10, 1 TO 5) = 5 consecutive copies of (1 TO 10)
+		// (1 TO 10, 1 TO 5, 1 TO 8) = 8 consecutive copies of (1 TO 10, 1 TO 5)
+		//
+		// This allows for REDIM PRESERVE, with its restriction that only the upper bound of
+		// the last dimension can be changed, to be implemented as a raw copy of the elements
+		// without having to reorganize the array.
+		//
+		// This copy requires knowing the size of that second-to-last subarray, e.g.
+		// (1 TO 10, 1 TO 5) in the example above.
+
+		int size = 1;
+
+		for (int i = Subscripts.Count - 2; i >= 0; i--)
+			size *= Subscripts[i].ElementCount;
+
+		return size;
 	}
 
 	[ThreadStatic]

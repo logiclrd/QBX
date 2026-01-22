@@ -31,6 +31,61 @@ public class Array
 		Elements = new Variable?[subscripts.ElementCount];
 	}
 
+	public void RedimensionPreservingData(ArraySubscripts newSubscripts)
+	{
+		// Data is laid out in the array so that each successive dimension can be interpreted
+		// as an array of the array described by the preceding dimensions.
+		//
+		// (1 TO 10) = 10 consecutive integers
+		// (1 TO 10, 1 TO 5) = 5 consecutive copies of (1 TO 10)
+		// (1 TO 10, 1 TO 5, 1 TO 8) = 8 consecutive copies of (1 TO 10, 1 TO 5)
+		//
+		// This allows for REDIM PRESERVE, with its restriction that only the upper bound of
+		// the last dimension can be changed, to be implemented as a raw copy of the elements
+		// without having to reorganize the array.
+		//
+		// This copy requires knowing the size of that second-to-last subarray, e.g.
+		// (1 TO 10, 1 TO 5) in the example above.
+
+		if (newSubscripts.Dimensions != Subscripts.Dimensions)
+			throw new Exception("Internal error: RedimensionPreservingData called with an ArraySubscripts with a different number of dimensions");
+
+		for (int i = 0; i < Subscripts.Dimensions - 1; i++)
+		{
+			var oldSubscript = Subscripts[i];
+			var newSubscript = newSubscripts[i];
+
+			if ((oldSubscript.LowerBound != newSubscript.LowerBound)
+			 || (oldSubscript.UpperBound != newSubscript.UpperBound))
+				throw RuntimeException.SubscriptOutOfRange();
+		}
+
+		var oldLastSubscript = Subscripts[Subscripts.Dimensions - 1];
+		var newLastSubscript = newSubscripts[newSubscripts.Dimensions - 1];
+
+		if (oldLastSubscript.LowerBound != newLastSubscript.LowerBound)
+			throw RuntimeException.SubscriptOutOfRange();
+
+		int subarraySize = Subscripts.GetSubarraySize();
+
+		int oldSubarrayCount = oldLastSubscript.ElementCount;
+		int newSubarrayCount = newLastSubscript.ElementCount;
+
+		int numPreservedSubarrays = Math.Min(oldSubarrayCount, newSubarrayCount);
+
+		int newElementCount = newSubarrayCount * subarraySize;
+
+		if (newElementCount != newSubscripts.ElementCount)
+			throw new Exception("Sanity check failed");
+
+		var newElements = new Variable?[newElementCount];
+
+		Elements.AsSpan().Slice(0, numPreservedSubarrays * subarraySize).CopyTo(newElements);
+
+		Elements = newElements;
+		Subscripts = newSubscripts;
+	}
+
 	public void Pack()
 	{
 		if (_packedData != null)
