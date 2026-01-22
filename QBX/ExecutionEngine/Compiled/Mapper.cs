@@ -547,13 +547,12 @@ public class Mapper
 		if (_arrayIndexByName.TryGetValue(name, out index))
 			return index;
 
-		if (arrayType == null)
-		{
-			name = QualifyIdentifier(name);
+		name = arrayType != null
+			? QualifyIdentifier(name, arrayType)
+			: QualifyIdentifier(name);
 
-			if (_arrayIndexByName.TryGetValue(name, out index))
-				return index;
-		}
+		if (_arrayIndexByName.TryGetValue(name, out index))
+			return index;
 
 		implicitlyCreated = true;
 
