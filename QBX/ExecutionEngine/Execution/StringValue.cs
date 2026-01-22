@@ -51,6 +51,8 @@ public class StringValue : IComparable<StringValue>, IEquatable<StringValue>
 
 	public Span<byte> AsSpan() => CollectionsMarshal.AsSpan(_bytes);
 
+	public byte[] ToByteArray() => _bytes.ToArray();
+
 	public int Length => _bytes.Count;
 
 	public bool IsFixedLength => _isFixedLength;

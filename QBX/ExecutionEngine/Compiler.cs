@@ -1274,6 +1274,32 @@ public class Compiler
 
 				break;
 			}
+			case CodeModel.Statements.PaintStatement paintStatement:
+			{
+				var xExpression = TranslateExpression(paintStatement.XExpression, container, mapper, compilation);
+				var yExpression = TranslateExpression(paintStatement.YExpression, container, mapper, compilation);
+				var paintExpression = TranslateExpression(paintStatement.PaintExpression, container, mapper, compilation);
+				var borderColourExpression = TranslateExpression(paintStatement.BorderColourExpression, container, mapper, compilation);
+				var backgroundExpression = TranslateExpression(paintStatement.BackgroundExpression, container, mapper, compilation);
+
+				if (xExpression == null)
+					throw new Exception("PaintStatement with no XExpression");
+				if (yExpression == null)
+					throw new Exception("PaintStatement with no YExpression");
+
+				var translatedPaintStatement = PaintStatement.Construct(
+					paintStatement,
+					paintStatement.Step,
+					xExpression,
+					yExpression,
+					paintExpression,
+					borderColourExpression,
+					backgroundExpression);
+
+				container.Append(translatedPaintStatement);
+
+				break;
+			}
 			case CodeModel.Statements.PaletteStatement paletteStatement:
 			{
 				var translatedPaletteStatement = new PaletteStatement(paletteStatement);
