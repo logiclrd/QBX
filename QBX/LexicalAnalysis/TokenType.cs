@@ -143,7 +143,7 @@ public enum TokenType
 	[KeywordToken("IOCTL$")] IOCTL_s, // TODO: parsing must allow for a # sign before file numbers
 	[KeywordToken] IS,
 	[KeywordToken] KEY,
-	[KeywordFunction(maximumParameterCount: 2)]
+	[KeywordFunction(maximumParameterCount: 2, arrayArgumentIndex: 0)]
 	[KeywordToken] LBOUND,
 	[KeywordFunction]
 	[KeywordToken("LCASE$")] LCASE,
@@ -291,7 +291,7 @@ public enum TokenType
 	[KeywordToken] TIMER,
 	[KeywordToken] TO,
 	[KeywordToken] TYPE,
-	[KeywordFunction(maximumParameterCount: 2)]
+	[KeywordFunction(maximumParameterCount: 2, arrayArgumentIndex: 0)]
 	[KeywordToken] UBOUND,
 	[KeywordFunction]
 	[KeywordToken("UCASE$")] UCASE,

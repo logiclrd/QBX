@@ -1765,18 +1765,18 @@ public class Compiler
 	}
 
 	[return: NotNullIfNotNull(nameof(expression))]
-	private Evaluable? TranslateExpression(CodeModel.Expressions.Expression? expression, Sequence? container, Mapper mapper, Compilation compilation, bool createImplicitArray = false)
+	private Evaluable? TranslateExpression(CodeModel.Expressions.Expression? expression, Sequence? container, Mapper mapper, Compilation compilation, bool createImplicitArray = false, bool parseIdentifiersAsArrays = false)
 	{
-		return TranslateExpression(expression, forAssignment: false, container, mapper, compilation, createImplicitArray);
+		return TranslateExpression(expression, forAssignment: false, container, mapper, compilation, createImplicitArray, parseIdentifiersAsArrays);
 	}
 
 	[return: NotNullIfNotNull(nameof(expression))]
-	private Evaluable? TranslateExpression(CodeModel.Expressions.Expression? expression, bool forAssignment, Sequence? container, Mapper mapper, Compilation compilation, bool createImplicitArray = false)
+	private Evaluable? TranslateExpression(CodeModel.Expressions.Expression? expression, bool forAssignment, Sequence? container, Mapper mapper, Compilation compilation, bool createImplicitArray = false, bool parseIdentifiersAsArrays = false)
 	{
 		if (expression == null)
 			return null;
 
-		var translatedExpression = TranslateExpressionUncollapsed(expression, forAssignment, container, mapper, compilation, createImplicitArray);
+		var translatedExpression = TranslateExpressionUncollapsed(expression, forAssignment, container, mapper, compilation, createImplicitArray, parseIdentifiersAsArrays: parseIdentifiersAsArrays);
 
 		translatedExpression.Source = expression;
 
@@ -1785,7 +1785,7 @@ public class Compiler
 		return translatedExpression;
 	}
 
-	private Evaluable TranslateExpressionUncollapsed(CodeModel.Expressions.Expression expression, bool forAssignment, Sequence? container, Mapper mapper, Compilation compilation, bool constantValue = false, bool createImplicitArray = false)
+	private Evaluable TranslateExpressionUncollapsed(CodeModel.Expressions.Expression expression, bool forAssignment, Sequence? container, Mapper mapper, Compilation compilation, bool constantValue = false, bool createImplicitArray = false, bool parseIdentifiersAsArrays = false)
 	{
 		switch (expression)
 		{
@@ -1844,10 +1844,20 @@ public class Compiler
 					}
 				}
 
-				int variableIndex = mapper.ResolveVariable(identifier.Identifier);
-				var variableType = mapper.GetVariableType(variableIndex);
+				if (parseIdentifiersAsArrays)
+				{
+					int variableIndex = mapper.ResolveArray(identifier.Identifier, out _);
+					var variableType = mapper.GetVariableType(variableIndex);
 
-				return new IdentifierExpression(variableIndex, variableType);
+					return new IdentifierExpression(variableIndex, variableType);
+				}
+				else
+				{
+					int variableIndex = mapper.ResolveVariable(identifier.Identifier);
+					var variableType = mapper.GetVariableType(variableIndex);
+
+					return new IdentifierExpression(variableIndex, variableType);
+				}
 			}
 
 			case CodeModel.Expressions.CallOrIndexExpression callOrIndexExpression:
@@ -2031,9 +2041,11 @@ public class Compiler
 
 				if (keywordFunction.Arguments != null)
 				{
+					int arrayArgumentIndex = keywordFunction.GetArrayArgumentIndex(); // -1 if there isn't one
+
 					arguments =
-						keywordFunction.Arguments!.Expressions.Select(expr =>
-							TranslateExpression(expr, container, mapper, compilation)
+						keywordFunction.Arguments!.Expressions.Select((expr, idx) =>
+							TranslateExpression(expr, container, mapper, compilation, parseIdentifiersAsArrays: idx == arrayArgumentIndex)
 								?? throw new Exception("Argument expression translated to null"));
 				}
 
@@ -2050,6 +2062,7 @@ public class Compiler
 					case TokenType.INKEY: function = new InKeyFunction(); break;
 					case TokenType.INP: function = new InpFunction(); break;
 					case TokenType.INT: return IntFunction.Construct(keywordFunction.Token, arguments);
+					case TokenType.LBOUND: function = new LBoundFunction(); break;
 					case TokenType.LCASE: function = new LCaseFunction(); break;
 					case TokenType.LEFT: function = new LeftFunction(); break;
 					case TokenType.LEN: function = new LenFunction(); break;
@@ -2062,6 +2075,7 @@ public class Compiler
 					case TokenType.STR: function = new StrFunction(); break;
 					case TokenType.TAN: function = new TanFunction(); break;
 					case TokenType.TIMER: function = new TimerFunction(); break;
+					case TokenType.UBOUND: function = new UBoundFunction(); break;
 					case TokenType.UCASE: function = new UCaseFunction(); break;
 					case TokenType.VAL: function = new ValFunction(); break;
 

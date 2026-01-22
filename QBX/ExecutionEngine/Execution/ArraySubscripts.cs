@@ -12,6 +12,14 @@ public class ArraySubscripts
 {
 	public List<ArraySubscript> Subscripts { get; } = new List<ArraySubscript>();
 
+	public int Dimensions => Subscripts.Count;
+
+	public ArraySubscript this[int index]
+	{
+		get => Subscripts[index];
+		set => Subscripts[index] = value;
+	}
+
 	public int ElementCount => Subscripts.Select(subscript => subscript.ElementCount).Product();
 
 	public int GetElementIndex(int[] subscriptValues, IList<Evaluable>? subscriptExpressions = null)

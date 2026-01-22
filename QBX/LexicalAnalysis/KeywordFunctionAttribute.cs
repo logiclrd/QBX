@@ -9,8 +9,9 @@ public class KeywordFunctionAttribute : Attribute
 	public readonly int MaximumParameterCount;
 	public readonly int FileNumberParameter;
 	public readonly bool IsAssignable;
+	public readonly int ArrayArgumentIndex; // If set, identifiers in this argument resolve to arrays.
 
-	public KeywordFunctionAttribute(int parameterCount = 1, int minimumParameterCount = -1, int maximumParameterCount = -1, int fileNumberParameter = -1, bool isAssignable = false)
+	public KeywordFunctionAttribute(int parameterCount = 1, int minimumParameterCount = -1, int maximumParameterCount = -1, int fileNumberParameter = -1, bool isAssignable = false, int arrayArgumentIndex = -1)
 	{
 		int Default(int optionalCount) => optionalCount == -1 ? parameterCount : optionalCount;
 
@@ -18,6 +19,7 @@ public class KeywordFunctionAttribute : Attribute
 		MaximumParameterCount = Math.Max(Default(minimumParameterCount), Default(maximumParameterCount));
 		FileNumberParameter = fileNumberParameter;
 		IsAssignable = isAssignable;
+		ArrayArgumentIndex = arrayArgumentIndex;
 	}
 
 	public bool TakesParameters => MaximumParameterCount > 0;

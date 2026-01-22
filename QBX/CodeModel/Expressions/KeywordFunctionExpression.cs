@@ -9,6 +9,14 @@ public class KeywordFunctionExpression : Expression
 	public TokenType Function { get; set; }
 	public ExpressionList? Arguments { get; set; }
 
+	public int GetArrayArgumentIndex()
+	{
+		if (Token.TryGetKeywordFunctionAttribute(Function, out var attribute))
+			return attribute.ArrayArgumentIndex;
+
+		return -1;
+	}
+
 	// For special cases such as:
 	//   MID$(s$, start%, length%) = "replace substring"
 	public override bool IsValidAssignmentTarget()
