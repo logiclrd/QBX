@@ -10,6 +10,9 @@ public class DimStatement : Statement
 	public bool Shared { get; set; }
 	public List<VariableDeclaration> Declarations { get; } = new List<VariableDeclaration>();
 
+	public virtual bool AlwaysDeclareArrays => true;
+	public virtual bool DeclareScalars => true;
+
 	protected virtual string StatementName => "DIM";
 
 	protected virtual void RenderPreserveFlag(TextWriter writer)

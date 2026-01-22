@@ -672,6 +672,9 @@ public class Compiler
 
 					if (declaration.Subscripts == null)
 					{
+						if (!dimStatement.DeclareScalars)
+							throw new Exception("Internal error: DimStatement that does not declare scalars with a Declaration with no Subscripts");
+
 						variableIndex = mapper.DeclareVariable(declaration.Name, dataType);
 
 						if (dimStatement.Shared)
@@ -681,7 +684,10 @@ public class Compiler
 					{
 						dataType = dataType.MakeArrayType();
 
-						variableIndex = mapper.DeclareArray(declaration.Name, dataType);
+						if (dimStatement.AlwaysDeclareArrays)
+							variableIndex = mapper.DeclareArray(declaration.Name, dataType);
+						else
+							variableIndex = mapper.ResolveArray(declaration.Name, out _, dataType);
 
 						if (dimStatement.Shared)
 							mapper.MakeGlobalArray(declaration.Name, dataType);
