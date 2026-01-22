@@ -1,5 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 
 using QBX.Hardware;
 
@@ -33,6 +37,9 @@ public abstract class GraphicsLibrary : VisualLibrary
 	public Point LastPoint;
 
 	public int CharacterScans; // doesn't exist on the VGA chip in graphics modes
+
+	public abstract int MaximumAttribute { get; }
+	public abstract int PixelsPerByte { get; }
 
 	public override void RefreshParameters()
 	{
@@ -100,6 +107,207 @@ public abstract class GraphicsLibrary : VisualLibrary
 		DrawingAttribute = attribute;
 	}
 
+	#region Patterns
+	protected interface IPattern
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		int GetAttribute(int x, int y);
+	}
+
+	class SolidPattern(int attribute) : IPattern
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public int GetAttribute(int x, int y) => attribute;
+	}
+
+	class TiledPattern1(int[] tileData) : IPattern
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public int GetAttribute(int x, int y)
+			=> tileData[y % tileData.Length];
+	}
+
+	class TiledPattern1x2(int[] tileData) : IPattern
+	{
+		int even = tileData[0];
+		int odd = tileData[1];
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public int GetAttribute(int x, int y)
+			=> ((y & 1) == 0) ? even : odd;
+	}
+
+	class TiledPattern1x4(int[] tileData) : IPattern
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public int GetAttribute(int x, int y)
+			=> tileData[y & 3];
+	}
+
+	class TiledPattern1x8(int[] tileData) : IPattern
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public int GetAttribute(int x, int y)
+			=> tileData[y & 7];
+	}
+
+	class TiledPattern1x16(int[] tileData) : IPattern
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public int GetAttribute(int x, int y)
+			=> tileData[y & 15];
+	}
+
+	class TiledPattern1x32(int[] tileData) : IPattern
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public int GetAttribute(int x, int y)
+			=> tileData[y & 15];
+	}
+
+	class TiledPattern1x64(int[] tileData) : IPattern
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public int GetAttribute(int x, int y)
+			=> tileData[y & 31];
+	}
+
+	class TiledPattern4(int[] tileData, int ySize) : IPattern
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public int GetAttribute(int x, int y)
+		{
+			return tileData[(y % ySize) * 4 + (x & 3)];
+		}
+	}
+
+	class TiledPattern4x1(int[] tileData) : IPattern
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public int GetAttribute(int x, int y)
+		{
+			return tileData[x & 3];
+		}
+	}
+
+	class TiledPattern4x2(int[] tileData) : IPattern
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public int GetAttribute(int x, int y)
+		{
+			return tileData[(y & 1) * 4 + (x & 3)];
+		}
+	}
+
+	class TiledPattern4x4(int[] tileData) : IPattern
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public int GetAttribute(int x, int y)
+		{
+			return tileData[(y & 3) * 4 + (x & 3)];
+		}
+	}
+
+	class TiledPattern4x8(int[] tileData) : IPattern
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public int GetAttribute(int x, int y)
+		{
+			return tileData[(y & 7) * 4 + (x & 3)];
+		}
+	}
+
+	class TiledPattern4x16(int[] tileData) : IPattern
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public int GetAttribute(int x, int y)
+		{
+			return tileData[(y & 15) * 4 + (x & 3)];
+		}
+	}
+
+	class TiledPattern4x32(int[] tileData) : IPattern
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public int GetAttribute(int x, int y)
+		{
+			return tileData[(y & 31) * 4 + (x & 3)];
+		}
+	}
+
+	class TiledPattern8(int[] tileData, int ySize) : IPattern
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public int GetAttribute(int x, int y)
+		{
+			return tileData[(y % ySize) * 8 + (x & 7)];
+		}
+	}
+
+	class TiledPattern8x1(int[] tileData) : IPattern
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public int GetAttribute(int x, int y)
+		{
+			return tileData[x & 7];
+		}
+	}
+
+	class TiledPattern8x2(int[] tileData) : IPattern
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public int GetAttribute(int x, int y)
+		{
+			return tileData[(y & 1) * 8 + (x & 7)];
+		}
+	}
+
+	class TiledPattern8x4(int[] tileData) : IPattern
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public int GetAttribute(int x, int y)
+		{
+			return tileData[(y & 3) * 8 + (x & 7)];
+		}
+	}
+
+	class TiledPattern8x8(int[] tileData) : IPattern
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public int GetAttribute(int x, int y)
+		{
+			return tileData[(y & 7) * 8 + (x & 7)];
+		}
+	}
+
+	class TiledPattern8x16(int[] tileData) : IPattern
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public int GetAttribute(int x, int y)
+		{
+			return tileData[(y & 15) * 8 + (x & 7)];
+		}
+	}
+
+	class TiledPattern8x32(int[] tileData) : IPattern
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public int GetAttribute(int x, int y)
+		{
+			return tileData[(y & 31) * 8 + (x & 7)];
+		}
+	}
+
+	class TiledPattern8x64(int[] tileData) : IPattern
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public int GetAttribute(int x, int y)
+		{
+			return tileData[(y & 63) * 8 + (x & 7)];
+		}
+	}
+	#endregion
+
 	#region PixelGet
 	public virtual int PixelGet(float x, float y)
 	{
@@ -134,6 +342,13 @@ public abstract class GraphicsLibrary : VisualLibrary
 	{
 		for (int x = x1; x <= x2; x++)
 			PixelSet(x, y, attribute);
+	}
+
+	protected virtual void HorizontalLine<TPattern>(int x1, int x2, int y, TPattern pattern)
+		where TPattern : IPattern
+	{
+		for (int x = x1; x <= x2; x++)
+			PixelSet(x, y, pattern.GetAttribute(x, y));
 	}
 	#endregion
 
@@ -968,24 +1183,29 @@ public abstract class GraphicsLibrary : VisualLibrary
 	#endregion Ellipse
 
 	#region Paint
-	protected void Scan(int x1, int x2, int y, int findAttribute, Span<bool> matches)
+	protected virtual void PixelGetSpan(int x1, int x2, int y, Span<int> values)
 	{
 		for (int x = x1; x <= x2; x++)
-			matches[x - x1] = PixelGet(x, y) == findAttribute;
+			values[x - x1] = PixelGet(x, y);
 	}
 
-	protected int Find(int x1, int x2, int y, int findAttribute)
+	protected virtual int PixelGetSpanFind(int x1, int x2, int y, Span<int> values, int findAttribute)
 	{
 		int dx = (x1 == x2) ? 1 : Math.Sign(x2 - x1);
 
-		// Include x2 in the loop range.
-		x2 += dx;
+		var spanStart = Math.Min(x1, x2);
 
 		for (int x = x1; x != x2; x += dx)
-			if (PixelGet(x, y) == findAttribute)
-				return x;
+		{
+			int xx = x - spanStart;
 
-		return -1;
+			values[xx] = PixelGet(x, y);
+
+			if (values[xx] == findAttribute)
+				return x;
+		}
+
+		return x2 + dx;
 	}
 
 	struct Span(int x1, int x2, int y = 0, int dy = 0)
@@ -1048,11 +1268,169 @@ public abstract class GraphicsLibrary : VisualLibrary
 		}
 	}
 
+	[return: NotNullIfNotNull(nameof(patternBytes))]
+	IPattern? DecodePattern(byte[]? patternBytes)
+	{
+		if (patternBytes == null)
+			return null;
+
+		int bitsPerPixel =
+			MaximumAttribute switch
+			{
+				1 => 1,
+				3 => 2,
+				15 => 4,
+				255 => 8,
+
+				_ => throw new Exception("Internal error")
+			};
+
+		int bytesPerRow = bitsPerPixel * PixelsPerByte / 8;
+
+		int rows = (patternBytes.Length + bytesPerRow - 1) / bytesPerRow;
+
+		var patternPixels = new int[PixelsPerByte * rows];
+		var patternPixelsSpan = patternPixels.AsSpan();
+
+		if (bitsPerPixel == 8)
+		{
+			for (int i = 0; i < patternPixels.Length; i++)
+				patternPixels[i] = patternBytes[i];
+
+			switch (rows)
+			{
+				case 1: return new SolidPattern(patternPixels[0]);
+				case 2: return new TiledPattern1x2(patternPixels);
+				case 4: return new TiledPattern1x4(patternPixels);
+				case 8: return new TiledPattern1x8(patternPixels);
+				case 16: return new TiledPattern1x16(patternPixels);
+				case 32: return new TiledPattern1x64(patternPixels);
+				case 64: return new TiledPattern1x32(patternPixels);
+				default: return new TiledPattern1(patternPixels);
+			}
+		}
+		else
+		{
+			switch (PixelsPerByte)
+			{
+				case 4:
+				{
+					for (int y = 0; y < rows; y++)
+					{
+						int rowByte = patternBytes[y];
+						var rowPixels = patternPixelsSpan.Slice(y * 4, 4);
+
+						for (int x = 0; x < PixelsPerByte; x++)
+						{
+							rowPixels[x] = (rowByte >> 6) & 3;
+							rowByte <<= 2;
+						}
+					}
+
+					switch (rows)
+					{
+						case 1: return new TiledPattern4x1(patternPixels);
+						case 2: return new TiledPattern4x2(patternPixels);
+						case 4: return new TiledPattern4x4(patternPixels);
+						case 8: return new TiledPattern4x8(patternPixels);
+						case 16: return new TiledPattern4x16(patternPixels);
+						case 32: return new TiledPattern4x32(patternPixels);
+						default: return new TiledPattern4(patternPixels, rows);
+					}
+				}
+
+				case 8:
+				{
+					int offset = 0;
+
+					for (int y = 0; y < rows; y++)
+					{
+						var rowPixels = patternPixelsSpan.Slice(y * 8, 8);
+
+						for (int bit = 0, bitValueForThisByte = 1; bit < bitsPerPixel; bit++, bitValueForThisByte <<= 1)
+						{
+							int rowByte = (offset < patternBytes.Length) ? patternBytes[offset] : 0;
+
+							for (int x = 0; x < PixelsPerByte; x++)
+							{
+								if ((rowByte & 128) != 0)
+									rowPixels[x] |= bitValueForThisByte;
+
+								rowByte <<= 1;
+							}
+
+							offset++;
+						}
+					}
+
+					switch (rows)
+					{
+						case 1: return new TiledPattern8x1(patternPixels);
+						case 2: return new TiledPattern8x2(patternPixels);
+						case 4: return new TiledPattern8x4(patternPixels);
+						case 8: return new TiledPattern8x8(patternPixels);
+						case 16: return new TiledPattern8x16(patternPixels);
+						case 32: return new TiledPattern8x32(patternPixels);
+						case 64: return new TiledPattern8x64(patternPixels);
+						default: return new TiledPattern8(patternPixels, rows);
+					}
+				}
+
+				default:
+					throw new Exception("Internal error: Unrecognized PixelsPerByte value " + PixelsPerByte);
+			}
+		}
+	}
+
+	public void BorderFill(float x, float y, int borderAttribute, int fillAttribute)
+	{
+		var translated = Window.TranslatePoint(x, y);
+
+		BorderFill(translated.X, translated.Y, borderAttribute, fillAttribute);
+
+		LastPoint = (x, y);
+	}
+
+	public void BorderFill(float x, float y, int borderAttribute, byte[] fillPatternBytes, byte[]? backgroundPatternBytes)
+	{
+		var translated = Window.TranslatePoint(x, y);
+
+		BorderFill(translated.X, translated.Y, borderAttribute, fillPatternBytes, backgroundPatternBytes);
+
+		LastPoint = (x, y);
+	}
+
 	public void BorderFill(int x, int y, int borderAttribute, int fillAttribute)
+	{
+		var fillPattern = new SolidPattern(fillAttribute);
+		var backgroundPattern = new SolidPattern(0);
+
+		BorderFill(x, y, borderAttribute, fillPattern, backgroundPattern);
+	}
+
+	public void BorderFill(int x, int y, int borderAttribute, byte[] fillPatternBytes, byte[]? backgroundPatternBytes)
+	{
+		var fillPattern = DecodePattern(fillPatternBytes);
+		var backgroundPattern = DecodePattern(backgroundPatternBytes);
+
+		backgroundPattern ??= new SolidPattern(0);
+
+		var borderFillMethod = s_BorderFillMethodDefinition.MakeGenericMethod(fillPattern.GetType(), backgroundPattern.GetType());
+
+		borderFillMethod.Invoke(this, [x, y, borderAttribute, fillPattern, backgroundPattern]);
+	}
+
+	static MethodInfo s_BorderFillMethodDefinition =
+		typeof(GraphicsLibrary).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic)
+		.Single(methodInfo => methodInfo.IsGenericMethodDefinition && (methodInfo.Name == nameof(BorderFill)));
+
+	void BorderFill<TFill, TBackground>(int x, int y, int borderAttribute, TFill fillPattern, TBackground backgroundPattern)
+		where TFill : IPattern
+		where TBackground : IPattern
 	{
 		var queuedSpans = new Queue<Span>();
 		var processed = new BTreeDictionary<int, int>();
-		var scan = new bool[Width].AsSpan();
+		var scan = new int[Width].AsSpan();
 
 		int width = Width;
 
@@ -1156,19 +1534,15 @@ public abstract class GraphicsLibrary : VisualLibrary
 		}
 
 		// Start by scanning to the left and right and seeding the queue with spans to scan.
-		int x1 = Find(x, 0, y, borderAttribute);
-		int x2 = Find(x, Width - 1, y, borderAttribute);
+		int x1 = PixelGetSpanFind(x, 0, y, scan, borderAttribute);
+		int x2 = PixelGetSpanFind(x, Width - 1, y, scan.Slice(x), borderAttribute);
 
 		if (x1 == x) // Starting on a border pixel.
 			return;
 
 		// Don't include the border pixels themselves.
 		x1++;
-
-		if (x2 >= 0)
-			x2--;
-		else
-			x2 = Width - 1;
+		x2--;
 
 		var initialSpan = new Span(x1, x2, y);
 
@@ -1178,11 +1552,14 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 		AddToQueue(initialSpan);
 
-		// Allocate these here, because they will likely expand at some point
+		// Allocate this here, because it will likely expand at some point
 		// to hold more data, and that expansion requires reallocating the
 		// internal array, and we should avoid doing that resize reallocation
 		// multiple times.
 		var newlyScanned = new List<Span>();
+
+		bool isSolidFill = fillPattern is SolidPattern;
+		int solidFillAttribute = fillPattern.GetAttribute(0, 0);
 
 		while (queuedSpans.TryDequeue(out var potentialSpan))
 		{
@@ -1208,17 +1585,17 @@ public abstract class GraphicsLibrary : VisualLibrary
 				// border. No need to re-scan.
 				if (span.AlreadyScannedAndFoundBorderAtX != Span.HaveNotYetScanned)
 				{
-					scan.Clear();
+					scan.Fill(-1);
 
 					if ((span.AlreadyScannedAndFoundBorderAtX >= 0)
 					 && (span.AlreadyScannedAndFoundBorderAtX < scan.Length))
-						scan[span.AlreadyScannedAndFoundBorderAtX] = true;
+						scan[span.AlreadyScannedAndFoundBorderAtX] = borderAttribute;
 				}
 				else
 				{
-					scan.Slice(0, span.X1).Clear();
-					scan.Slice(span.X2 + 1).Clear();
-					Scan(span.X1, span.X2, span.Y, borderAttribute, scan.Slice(span.X1, span.Width));
+					scan.Slice(0, span.X1).Fill(-1);
+					scan.Slice(span.X2 + 1).Fill(-1);
+					PixelGetSpan(span.X1, span.X2, span.Y, scan.Slice(span.X1, span.Width));
 				}
 
 				newlyScanned.Add(span);
@@ -1229,19 +1606,11 @@ public abstract class GraphicsLibrary : VisualLibrary
 				// guaranteed not to find anything new past their range.)
 				if (span.TryExtend)
 				{
-					if (!scan[span.X1])
+					if (scan[span.X1] != borderAttribute)
 					{
-						int borderX = Find(span.X1 - 1, 0, span.Y, borderAttribute);
+						int borderX = PixelGetSpanFind(span.X1 - 1, 0, span.Y, scan, borderAttribute);
 
-						int newX1 = borderX;
-
-						if (newX1 >= 0)
-						{
-							scan[newX1] = true;
-							newX1++;
-						}
-						else
-							newX1 = 0;
+						int newX1 = borderX + 1;
 
 						if (newX1 < span.X1)
 						{
@@ -1256,19 +1625,11 @@ public abstract class GraphicsLibrary : VisualLibrary
 						}
 					}
 
-					if (!scan[span.X2])
+					if (scan[span.X2] != borderAttribute)
 					{
-						int borderX = Find(span.X2 + 1, Width - 1, span.Y, borderAttribute);
+						int borderX = PixelGetSpanFind(span.X2 + 1, Width - 1, span.Y, scan, borderAttribute);
 
-						int newX2 = borderX;
-
-						if (newX2 >= 0)
-						{
-							scan[newX2] = true;
-							newX2--;
-						}
-						else
-							newX2 = Width - 1;
+						int newX2 = borderX - 1;
 
 						if (newX2 > span.X2)
 						{
@@ -1292,24 +1653,53 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 				for (x = x1; x <= x2; x++)
 				{
-					if ((scan[x] == true) || (x == x2))
+					if ((scan[x] == borderAttribute) || (x == x2))
 					{
 						span.X2 = x;
 
-						if (scan[x])
+						if (scan[x] == borderAttribute)
 							span.X2--;
 
 						if (span.X2 >= span.X1)
 						{
-							// Don't double-paint pixels.
-							foreach (var newInteriorSpan in ExcludeSet(span, processed))
-								HorizontalLine(newInteriorSpan.X1, newInteriorSpan.X2, newInteriorSpan.Y, fillAttribute);
+							// In addition to the boundary, if a span is already entirely
+							// the fill attribute, then it counts as border
+							var spanScan = scan.Slice(span.X1, span.X2 - span.X1 + 1);
 
-							if (span.PropagateUp)
-								AddToQueue(span.Up());
+							bool paint = false;
+							bool allBackground = true;
 
-							if (span.PropagateDown)
-								AddToQueue(span.Down());
+							for (int i = 0; i < spanScan.Length; i++)
+							{
+								int sx = span.X1 + i;
+
+								if (spanScan[i] != backgroundPattern.GetAttribute(sx, span.Y))
+									allBackground = false;
+								if (spanScan[i] != fillPattern.GetAttribute(sx, span.Y))
+									paint = true;
+							}
+
+							if (paint || allBackground)
+							{
+								// Don't double-paint pixels.
+								if (isSolidFill)
+								{
+									// Less generic, more performant.
+									foreach (var newInteriorSpan in ExcludeSet(span, processed))
+										HorizontalLine(newInteriorSpan.X1, newInteriorSpan.X2, newInteriorSpan.Y, solidFillAttribute);
+								}
+								else
+								{
+									foreach (var newInteriorSpan in ExcludeSet(span, processed))
+										HorizontalLine(newInteriorSpan.X1, newInteriorSpan.X2, newInteriorSpan.Y, fillPattern);
+								}
+
+								if (span.PropagateUp)
+									AddToQueue(span.Up());
+
+								if (span.PropagateDown)
+									AddToQueue(span.Down());
+							}
 						}
 
 						span.X1 = x + 1;

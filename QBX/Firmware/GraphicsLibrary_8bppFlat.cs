@@ -13,6 +13,9 @@ public class GraphicsLibrary_8bppFlat : GraphicsLibrary
 		RefreshParameters();
 	}
 
+	public override int PixelsPerByte => 1;
+	public override int MaximumAttribute => 255;
+
 	protected override void ClearGraphicsImplementation(int windowStart, int windowEnd)
 	{
 		int windowOffset = windowStart * Width;

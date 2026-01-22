@@ -21,6 +21,9 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 	int _plane2Offset;
 	int _plane3Offset;
 
+	public override int PixelsPerByte => 8;
+	public override int MaximumAttribute => 15;
+
 	public override void RefreshParameters()
 	{
 		base.RefreshParameters();

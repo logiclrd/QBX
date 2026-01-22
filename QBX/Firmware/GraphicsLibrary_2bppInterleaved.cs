@@ -21,6 +21,9 @@ public class GraphicsLibrary_2bppInterleaved : GraphicsLibrary
 	int _plane2Offset;
 	int _plane3Offset;
 
+	public override int PixelsPerByte => 4;
+	public override int MaximumAttribute => 3;
+
 	public override void RefreshParameters()
 	{
 		base.RefreshParameters();
