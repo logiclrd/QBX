@@ -140,7 +140,7 @@ public class BorderFillTest(Machine machine) : HostedProgram
 
 		var seed = rnd.Next();
 
-		seed = 710843189;
+		//seed = 710843189;
 
 		Debug.WriteLine("SEED: " + seed);
 
