@@ -35,6 +35,12 @@ public class Speaker(Machine machine)
 	volatile bool _isEnabled;
 	volatile byte _value;
 	volatile byte _latchedValue;
+	volatile byte _lastValue = 127;
+
+	const byte Off = 127 - 30;
+	const byte On = 127 + 30;
+
+	const byte Delta = 15;
 
 	DateTime _firstSampleEmittedTime;
 	long _lastSampleEmitted;
@@ -140,6 +146,7 @@ public class Speaker(Machine machine)
 		bool isEnabled = _isEnabled;
 		byte value = _value;
 		byte latchedValue = _latchedValue;
+		byte lastValue = _lastValue;
 		long lastSampleEmitted = _lastSampleEmitted;
 		int tickValue = _tickValue;
 		int tickLength = _tickLength;
@@ -157,7 +164,20 @@ public class Speaker(Machine machine)
 
 		for (int i = 0; i < samples.Length; i++)
 		{
-			samples[i] = latchedValue;
+			if (lastValue < latchedValue)
+			{
+				lastValue = unchecked((byte)(lastValue + Delta));
+				if (lastValue > latchedValue)
+					lastValue = latchedValue;
+			}
+			else if (lastValue > latchedValue)
+			{
+				lastValue = unchecked((byte)(lastValue - Delta));
+				if (lastValue < latchedValue)
+					lastValue = latchedValue;
+			}
+
+			samples[i] = lastValue;
 			lastSampleEmitted++;
 
 			tickValue += tickLength;
@@ -167,7 +187,7 @@ public class Speaker(Machine machine)
 				tickValue -= HalfWavelength;
 				value = unchecked((byte)~value);
 				if (isEnabled)
-					latchedValue = value;
+					latchedValue = (value == 0) ? Off : On;
 			}
 
 			var nextSoundChange = _nextSoundChange;
@@ -184,13 +204,13 @@ public class Speaker(Machine machine)
 					tickLength = nextSoundChange.TickLength;
 
 					if (!isEnabled)
-						latchedValue = 0;
+						latchedValue = Off;
 					else
 					{
 						if (nextSoundChange.InvertValue)
 						{
 							value = unchecked((byte)~value);
-							latchedValue = value;
+							latchedValue = (value == 0) ? Off : On;
 						}
 
 						if (nextSoundChange.Frequency != 0)
@@ -213,6 +233,7 @@ public class Speaker(Machine machine)
 		_isEnabled = isEnabled;
 		_value = value;
 		_latchedValue = latchedValue;
+		_lastValue = lastValue;
 		_lastSampleEmitted = lastSampleEmitted;
 		_tickValue = tickValue;
 		_tickLength = tickLength;
