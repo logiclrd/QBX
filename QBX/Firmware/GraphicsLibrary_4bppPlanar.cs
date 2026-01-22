@@ -62,9 +62,9 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 			int bitMask = 1 << shift;
 
 			var bits0 = (Array.VRAM[_plane0Offset + offset] >> shift) & 1;
-			var bits1 = (Array.VRAM[_plane0Offset + offset] >> shift) & 1;
-			var bits2 = (Array.VRAM[_plane0Offset + offset] >> shift) & 1;
-			var bits3 = (Array.VRAM[_plane0Offset + offset] >> shift) & 1;
+			var bits1 = (Array.VRAM[_plane1Offset + offset] >> shift) & 1;
+			var bits2 = (Array.VRAM[_plane2Offset + offset] >> shift) & 1;
+			var bits3 = (Array.VRAM[_plane3Offset + offset] >> shift) & 1;
 
 			return bits0 | (bits1 << 1) | (bits2 << 2) | (bits3 << 3);
 		}
