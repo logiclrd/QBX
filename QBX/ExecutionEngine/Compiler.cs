@@ -2185,6 +2185,7 @@ public class Compiler
 					case TokenType.ERL: function = new ErlFunction(); break;
 					case TokenType.INKEY: function = new InKeyFunction(); break;
 					case TokenType.INP: function = new InpFunction(); break;
+					case TokenType.INSTR: function = new InStrFunction(); break;
 					case TokenType.INT: return IntFunction.Construct(keywordFunction.Token, arguments);
 					case TokenType.LBOUND: function = new LBoundFunction(); break;
 					case TokenType.LCASE: function = new LCaseFunction(); break;

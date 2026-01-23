@@ -169,6 +169,11 @@ public class StringValue : IComparable<StringValue>, IEquatable<StringValue>
 		return CompareTo(other);
 	}
 
+	public int IndexOf(StringValue searchFor, int start = 0)
+	{
+		return AsSpan().Slice(start).IndexOf(searchFor.AsSpan()) + start;
+	}
+
 	public static StringValue operator +(StringValue left, StringValue right)
 	{
 		var ret = new StringValue();
