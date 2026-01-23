@@ -2180,8 +2180,13 @@ public class Compiler
 					case TokenType.ABS: return AbsFunction.Construct(keywordFunction.Token, arguments);
 					case TokenType.ASC: function = new AscFunction(); break;
 					case TokenType.ATN: function = new AtnFunction(); break;
+					case TokenType.CCUR: function = new CCurFunction(); break;
+					case TokenType.CDBL: function = new CDblFunction(); break;
 					case TokenType.CHR: function = new ChrFunction(); break;
+					case TokenType.CINT: function = new CIntFunction(); break;
+					case TokenType.CLNG: function = new CLngFunction(); break;
 					case TokenType.COS: function = new CosFunction(); break;
+					case TokenType.CSNG: function = new CSngFunction(); break;
 					case TokenType.ERR: function = new ErrFunction(); break;
 					case TokenType.ERL: function = new ErlFunction(); break;
 					case TokenType.FIX: return FixFunction.Construct(keywordFunction.Token, arguments);
