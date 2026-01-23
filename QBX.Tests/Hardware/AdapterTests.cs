@@ -84,8 +84,13 @@ public class AdapterTests
 
 			if (maxColour == 1)
 			{
+				// monochrome is actually 4bpp with all planes mapped
+				int attribute = 0b1111;
+
+				int paletteEntry = machine.GraphicsArray.AttributeController.Registers[attribute];
+
 				paletteBGRA[0] = dacPaletteBGRA[0];
-				paletteBGRA[1] = dacPaletteBGRA[15]; // monochrome is actually 4bpp with all planes mapped
+				paletteBGRA[1] = dacPaletteBGRA[paletteEntry];
 			}
 			else
 			{
