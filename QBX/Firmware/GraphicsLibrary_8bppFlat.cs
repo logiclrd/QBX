@@ -58,8 +58,11 @@ public class GraphicsLibrary_8bppFlat : GraphicsLibrary
 		Array.VRAM.AsSpan().Slice(o, x2 - x1 + 1).Fill(unchecked((byte)attribute));
 	}
 
-	public override void GetSprite(int x, int y, int w, int h, Span<byte> buffer)
+	public override void GetSprite(int x1, int y1, int x2, int y2, Span<byte> buffer)
 	{
+		int x = x1, y = y1;
+		int w = x2 - x1 + 1, h = y2 - y1 + 1;
+
 		if ((x < 0) || (y < 0) || (w < 0) || (h < 0))
 			throw new InvalidOperationException();
 		if ((x + w >= Width) || (y + h >= Height))

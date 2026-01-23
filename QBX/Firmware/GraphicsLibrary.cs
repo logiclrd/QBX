@@ -1775,16 +1775,15 @@ public abstract class GraphicsLibrary : VisualLibrary
 		}
 	}
 
-	public void GetSprite(float x, float y, float w, float h, Span<byte> buffer)
+	public void GetSprite(float x1, float y1, float x2, float y2, Span<byte> buffer)
 	{
-		var (translatedX, translatedY) = Window.TranslatePoint(x, y);
-		var translatedW = Window.TranslateWidth(x);
-		var translatedH = Window.TranslateHeight(y);
+		var pt1 = Window.TranslatePoint(x1, y1);
+		var pt2 = Window.TranslatePoint(x2, y2);
 
-		GetSprite(translatedX, translatedY, translatedW, translatedH, buffer);
+		GetSprite(pt1.X, pt1.Y, pt2.X, pt2.Y, buffer);
 	}
 
-	public abstract void GetSprite(int x, int y, int w, int h, Span<byte> buffer);
+	public abstract void GetSprite(int x1, int y1, int x2, int y2, Span<byte> buffer);
 
 	public void PutSprite(Span<byte> buffer, PutSpriteAction action, float x, float y)
 	{

@@ -1,8 +1,8 @@
+using System;
+
 using QBX.ExecutionEngine.Execution;
 using QBX.Firmware;
-using QBX.Hardware;
 using QBX.Numbers;
-using System;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
