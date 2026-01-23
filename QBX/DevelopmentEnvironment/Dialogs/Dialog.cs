@@ -20,6 +20,8 @@ public abstract class Dialog(Configuration configuration)
 
 	public Widget? FocusedWidget = null;
 
+	public event EventHandler? Close;
+
 	const string Spaces = "                                                                                ";
 	const string HorizontalRule = "────────────────────────────────────────────────────────────────────────────────";
 
@@ -135,5 +137,7 @@ public abstract class Dialog(Configuration configuration)
 	public void ProcessKey(KeyEvent input)
 	{
 		// TODO
+		if (input.ScanCode == ScanCode.Escape)
+			Close?.Invoke(this, EventArgs.Empty);
 	}
 }

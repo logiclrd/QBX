@@ -86,8 +86,17 @@ public partial class Program : HostedProgram
 
 	public void ShowDialog(Dialog dialog)
 	{
+		var previousMode = Mode;
+
 		CurrentDialog = dialog;
 		Mode = UIMode.Dialog;
+
+		dialog.Close +=
+			(_, _) =>
+			{
+				CurrentDialog = null;
+				Mode = previousMode;
+			};
 	}
 
 	public override void Run(CancellationToken cancellationToken)

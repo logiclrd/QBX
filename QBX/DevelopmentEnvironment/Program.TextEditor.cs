@@ -234,6 +234,12 @@ public partial class Program
 						Run();
 					else
 						Continue();
+
+					ReloadViewportParameters();
+				}
+				catch (RuntimeException error)
+				{
+					PresentError(error);
 				}
 				catch
 				{
