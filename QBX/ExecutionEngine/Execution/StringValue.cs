@@ -63,6 +63,10 @@ public class StringValue : IComparable<StringValue>, IEquatable<StringValue>
 		set => _bytes[index] = value;
 	}
 
+	public StringValue Set(string str)
+		=> Set(s_cp437.GetBytes(str));
+
+
 	public StringValue Set(StringValue data)
 		=> Set(data.AsSpan());
 

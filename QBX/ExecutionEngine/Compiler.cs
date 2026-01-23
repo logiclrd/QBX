@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
@@ -1235,6 +1236,34 @@ public class Compiler
 					ref translatedLineStatement.StyleExpression, lineStatement.StyleExpression);
 
 				container.Append(translatedLineStatement);
+
+				break;
+			}
+			case CodeModel.Statements.LineInputStatement lineInputStatement:
+			{
+				var translatedLineInputStatement = new LineInputStatement(
+					lineInputStatement.PromptString,
+					lineInputStatement.EchoNewLine,
+					lineInputStatement);
+
+				try
+				{
+					translatedLineInputStatement.TargetExpression = TranslateExpression(
+						lineInputStatement.TargetExpression,
+						forAssignment: true,
+						container,
+						mapper,
+						compilation);
+
+					if (translatedLineInputStatement.TargetExpression is Function)
+						throw new Exception();
+				}
+				catch
+				{
+					throw CompilerException.ExpectedVariable(lineInputStatement.TargetExpression?.Token);
+				}
+
+				container.Append(translatedLineInputStatement);
 
 				break;
 			}

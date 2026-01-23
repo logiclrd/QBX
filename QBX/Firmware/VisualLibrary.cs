@@ -254,7 +254,7 @@ public abstract class VisualLibrary
 
 	public abstract void WriteText(ReadOnlySpan<byte> buffer);
 
-	public string ReadLine(Keyboard input)
+	public string ReadLine(Keyboard input, bool echoNewline = true)
 	{
 		var graphics = this as GraphicsLibrary;
 		var text = this as TextLibrary;
@@ -342,7 +342,8 @@ public abstract class VisualLibrary
 				}
 				else if (evt.ScanCode == ScanCode.Return)
 				{
-					NewLine();
+					if (echoNewline)
+						NewLine();
 					break;
 				}
 				else if (evt.TextCharacter != '\0')
