@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -51,6 +50,20 @@ public class CodeLine : IRenderableCode
 		return line;
 	}
 
+	public IEnumerable<Statement> AllStatements
+	{
+		get
+		{
+			foreach (var statement in Statements)
+			{
+				yield return statement;
+
+				foreach (var substatement in statement.Substatements)
+					yield return substatement;
+			}
+		}
+	}
+
 	public void AppendStatement(Statement statement)
 	{
 		_statements.Add(statement);
@@ -90,7 +103,7 @@ public class CodeLine : IRenderableCode
 			var statement = Statements[i];
 			bool hasNextStatement = (i + 1 < Statements.Count);
 
-			statement.SourceColumn = writer.Column;
+			statement.SourceColumn = writer.Column + statement.Indentation.Length;
 			statement.Render(writer);
 			statement.SourceLength = writer.Column - statement.SourceColumn;
 

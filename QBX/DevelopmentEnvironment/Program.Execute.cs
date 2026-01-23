@@ -41,7 +41,7 @@ public partial class Program
 				{
 					var line = element.Lines[lineIndex];
 
-					foreach (var statement in line.Statements)
+					foreach (var statement in line.AllStatements)
 						_statementLocation[statement] = new SourceLocation(file, element, line, statement, lineIndex);
 				}
 

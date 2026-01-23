@@ -2,8 +2,8 @@
 using System.Linq;
 using System.Text;
 
+using QBX.CodeModel;
 using QBX.Firmware;
-using QBX.LexicalAnalysis;
 using QBX.Utility;
 
 namespace QBX.DevelopmentEnvironment;
@@ -248,11 +248,18 @@ public partial class Program : HostedProgram
 			horizontalScrollBar = false;
 		}
 
-		var attr = (viewport.HelpPage != null)
+		var normalAttr = (viewport.HelpPage != null)
 			? Configuration.DisplayAttributes.HelpWindowNormalText
 			: Configuration.DisplayAttributes.ProgramViewWindowNormalText;
 
 		var highlightAttr = Configuration.DisplayAttributes.ProgramViewWindowCurrentStatement;
+
+		var breakpointAttr = Configuration.DisplayAttributes.ProgramViewWindowBreakpointLines;
+
+		var breakpointHighlightAttr = new DisplayAttribute(
+			highlightAttr.Foreground,
+			breakpointAttr.Background,
+			name: "Highlighted Breakpoint Line (Computed)");
 
 		char topLeft = connectUp ? '├' : '┌';
 		char topRight = connectUp ? '┤' : '┐';
@@ -297,23 +304,23 @@ public partial class Program : HostedProgram
 
 		TextLibrary.MoveCursor(0, row);
 
-		attr.Set(TextLibrary);
+		normalAttr.Set(TextLibrary);
 		TextLibrary.WriteText(topLeft);
 		TextLibrary.WriteText(_horizontalRule, 0, headingLeft);
 		if (viewport.IsFocused)
-			attr.SetInverted(TextLibrary);
+			normalAttr.SetInverted(TextLibrary);
 		TextLibrary.WriteText(' ');
 		TextLibrary.WriteText(viewport.Heading);
 		TextLibrary.WriteText(' ');
-		attr.Set(TextLibrary);
+		normalAttr.Set(TextLibrary);
 		TextLibrary.WriteText(_horizontalRule, 0, headingRight);
 
 		if (viewport.ShowMaximize)
 		{
 			TextLibrary.WriteText('┤');
-			attr.SetInverted(TextLibrary);
+			normalAttr.SetInverted(TextLibrary);
 			TextLibrary.WriteText('↑');
-			attr.Set(TextLibrary);
+			normalAttr.Set(TextLibrary);
 			TextLibrary.WriteText("├─");
 		}
 
@@ -353,13 +360,23 @@ public partial class Program : HostedProgram
 			var (unselectedLeft, selected, unselectedRight) =
 				CalculateSelectionHighlight(viewport.Clipboard, lineIndex, viewport.ScrollX, viewportContentWidth);
 
+			var rowAttr = normalAttr;
+			var rowHighlightAttr = highlightAttr;
+
+			if ((viewport.TryGetCodeLineAt(lineIndex) is CodeLine currentCodeLine)
+			 && Breakpoints.Contains(currentCodeLine))
+			{
+				rowAttr = breakpointAttr;
+				rowHighlightAttr = breakpointHighlightAttr;
+			}
+
 			if (selected != 0)
 			{
 				// Draw line that contains at least some selected characters.
 
 				if (unselectedLeft != 0)
 				{
-					attr.Set(TextLibrary);
+					rowAttr.Set(TextLibrary);
 
 					if (chars >= unselectedLeft)
 						TextLibrary.WriteText(buffer, viewport.ScrollX, unselectedLeft);
@@ -379,7 +396,7 @@ public partial class Program : HostedProgram
 
 				if (selected != 0)
 				{
-					attr.SetInverted(TextLibrary);
+					rowAttr.SetInverted(TextLibrary);
 
 					if (chars >= selected)
 						TextLibrary.WriteText(buffer, viewport.ScrollX + unselectedLeft, selected);
@@ -393,7 +410,7 @@ public partial class Program : HostedProgram
 					}
 				}
 
-				attr.Set(TextLibrary);
+				rowAttr.Set(TextLibrary);
 
 				chars -= selected;
 				if (chars < 0)
@@ -401,7 +418,7 @@ public partial class Program : HostedProgram
 
 				if (unselectedRight != 0)
 				{
-					attr.Set(TextLibrary);
+					rowAttr.Set(TextLibrary);
 
 					if (chars >= unselectedRight)
 						TextLibrary.WriteText(buffer, viewport.ScrollX + unselectedLeft + selected, unselectedLeft);
@@ -421,7 +438,7 @@ public partial class Program : HostedProgram
 				int highlightStart = -1;
 				int highlightEnd = -1;
 
-				if (y == nextLineIndex)
+				if (lineIndex == nextLineIndex)
 				{
 					highlightStart = nextStartColumn - viewport.ScrollX;
 					highlightEnd = nextEndColumn - viewport.ScrollX;
@@ -429,7 +446,7 @@ public partial class Program : HostedProgram
 
 				if ((highlightStart >= viewportContentWidth) || (highlightEnd < 0))
 				{
-					attr.Set(TextLibrary);
+					rowAttr.Set(TextLibrary);
 
 					int virtualChars = viewportContentWidth - chars;
 
@@ -445,6 +462,12 @@ public partial class Program : HostedProgram
 					int highlightedChars = highlightEnd - highlightStart + 1;
 					int unhighlightedRight = viewportContentWidth - highlightEnd - 1;
 
+					if (unhighlightedRight < 0)
+					{
+						highlightedChars += unhighlightedRight;
+						unhighlightedRight = 0;
+					}
+
 					// Unhighlighted portion to the left
 					int realChars = unhighlightedLeft;
 
@@ -453,7 +476,7 @@ public partial class Program : HostedProgram
 
 					int virtualChars = unhighlightedLeft - realChars;
 
-					attr.Set(TextLibrary);
+					rowAttr.Set(TextLibrary);
 
 					TextLibrary.WriteText(buffer, viewport.ScrollX, realChars);
 					TextLibrary.WriteText(_spaces, 0, virtualChars);
@@ -471,13 +494,13 @@ public partial class Program : HostedProgram
 
 					virtualChars = highlightedChars - realChars;
 
-					highlightAttr.Set(TextLibrary);
+					rowHighlightAttr.Set(TextLibrary);
 
 					TextLibrary.WriteText(buffer, viewport.ScrollX + highlightStart, realChars);
 					TextLibrary.WriteText(_spaces, 0, virtualChars);
 
 					// Unhighlighted portion to the right
-					attr.Set(TextLibrary);
+					rowAttr.Set(TextLibrary);
 
 					realChars = unhighlightedRight;
 
@@ -498,7 +521,7 @@ public partial class Program : HostedProgram
 
 			if (!verticalScrollBar)
 			{
-				attr.Set(TextLibrary);
+				normalAttr.Set(TextLibrary);
 				TextLibrary.WriteText(leftRight);
 			}
 			else
@@ -523,7 +546,7 @@ public partial class Program : HostedProgram
 					TextLibrary.WriteText('░');
 				}
 
-				attr.Set(TextLibrary);
+				normalAttr.Set(TextLibrary);
 			}
 		}
 
@@ -547,7 +570,7 @@ public partial class Program : HostedProgram
 
 			TextLibrary.WriteText('→');
 
-			attr.Set(TextLibrary);
+			normalAttr.Set(TextLibrary);
 
 			TextLibrary.WriteText(leftRight);
 

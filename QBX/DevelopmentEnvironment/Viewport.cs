@@ -97,18 +97,27 @@ public class Viewport
 
 	public CodeLine GetCodeLineAt(int y)
 	{
-		if (CompilationElement != null)
-		{
-			if ((y >= 0) && (y < CompilationElement.Lines.Count))
-				return CompilationElement.Lines[y];
-		}
-		else if (HelpPage != null)
+		if (TryGetCodeLineAt(y) is CodeLine line)
+			return line;
+
+		if (HelpPage != null)
 		{
 			if ((y >= 0) && (y < HelpPage.Lines.Count))
 				return CodeLine.CreateUnparsed(HelpPage.Lines[y]);
 		}
 
 		return CodeLine.CreateEmpty();
+	}
+
+	public CodeLine? TryGetCodeLineAt(int y)
+	{
+		if (CompilationElement != null)
+		{
+			if ((y >= 0) && (y < CompilationElement.Lines.Count))
+				return CompilationElement.Lines[y];
+		}
+
+		return null;
 	}
 
 	public void DeleteLine(int y)

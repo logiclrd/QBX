@@ -846,6 +846,9 @@ public class Compiler
 				if (!iterator.ExpectEnd())
 					throw CompilerException.EndSubOrEndFunctionMustBeLastLine(statement);
 
+				// A no-op that makes it possible to pause execution on the END SUB/FUNCTION.
+				container.Append(new EndOfRoutineStatement(endScopeStatement));
+
 				break;
 			}
 			case CodeModel.Statements.EndStatement endStatement:

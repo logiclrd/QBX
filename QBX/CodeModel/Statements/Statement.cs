@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 using QBX.LexicalAnalysis;
 
@@ -18,8 +20,11 @@ public abstract class Statement : IRenderableCode
 	public int SourceLength { get; set; }
 
 	public Statement? TrueSource { get; set; }
+	public bool IsBreakpoint;
 
 	public int LineNumberForErrorReporting { get; set; }
+
+	public virtual IEnumerable<Statement> Substatements => Enumerable.Empty<Statement>();
 
 	public void Render(TextWriter writer)
 	{

@@ -3,7 +3,7 @@ using System.IO;
 using System.Text;
 
 using QBX.CodeModel;
-
+using QBX.ExecutionEngine;
 using QBX.Hardware;
 
 namespace QBX.DevelopmentEnvironment;
@@ -253,9 +253,31 @@ public partial class Program
 
 					ReloadViewportParameters();
 				}
+				catch (RuntimeException error)
+				{
+					PresentError(error);
+				}
 				catch
 				{
 					// TODO: present error
+				}
+
+				break;
+			}
+
+			case ScanCode.F9:
+			{
+				if (input.Modifiers.CtrlKey || input.Modifiers.AltKey)
+					break;
+
+				if (input.Modifiers.ShiftKey)
+				{
+					// TODO: quick watch
+				}
+				else
+				{
+					if (FocusedViewport.TryGetCodeLineAt(FocusedViewport.CursorY) is CodeLine currentCodeLine)
+						ToggleBreakpoint(currentCodeLine);
 				}
 
 				break;

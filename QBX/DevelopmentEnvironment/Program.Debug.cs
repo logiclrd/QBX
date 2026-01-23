@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
+using QBX.CodeModel;
 using QBX.DevelopmentEnvironment.Dialogs;
 using QBX.ExecutionEngine;
 using QBX.ExecutionEngine.Execution;
@@ -11,6 +12,7 @@ namespace QBX.DevelopmentEnvironment;
 public partial class Program
 {
 	public Token? ErrorToken = null;
+	public HashSet<CodeLine> Breakpoints = new HashSet<CodeLine>();
 
 	private void ShowNextStatement(IEnumerable<StackFrame> stack)
 	{
@@ -34,12 +36,9 @@ public partial class Program
 						FocusedViewport.SwitchTo(location.Element);
 				}
 
+				FocusedViewport.CursorX = nextStatement.SourceColumn;
 				FocusedViewport.CursorY = location.LineIndex;
 
-				// TODO: per-statement location
-				// => renderer will need to take charge of rendering the individual
-				//    statements in the CodeLine
-				// => renderer can then update the source location for each statement
 				// TODO: move SourceLocation into the CodeModel, get rid of the hash table
 
 				// We are invoked as part of a key handler in ProcessTextEditorKey.
@@ -59,5 +58,29 @@ public partial class Program
 		// TODO: navigate viewport to context
 
 		ShowDialog(new ErrorDialog(Configuration, errorMessage));
+	}
+
+	public void ToggleBreakpoint(CodeLine codeLine)
+	{
+		if (!Breakpoints.Contains(codeLine))
+			SetBreakpoint(codeLine);
+		else
+			ClearBreakpoint(codeLine);
+	}
+
+	public void SetBreakpoint(CodeLine codeLine)
+	{
+		foreach (var statement in codeLine.Statements)
+			statement.IsBreakpoint = true;
+
+		Breakpoints.Add(codeLine);
+	}
+
+	public void ClearBreakpoint(CodeLine codeLine)
+	{
+		foreach (var statement in codeLine.Statements)
+			statement.IsBreakpoint = false;
+
+		Breakpoints.Remove(codeLine);
 	}
 }

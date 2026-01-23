@@ -130,6 +130,9 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 
 		currentStackFrame.CurrentStatement = statement;
 
+		if ((statement != null) && statement.IsBreakpoint)
+			_break = true;
+
 		if (_break)
 		{
 			DebugOut("PROGRAM: break");

@@ -317,7 +317,7 @@ public class BasicParser
 				lastTokenIndex--;
 
 			statement.FirstToken = tokens.Any() ? tokens[0] : endToken;
-			statement.SourceColumn = statement.FirstToken.Column;
+			statement.SourceColumn = statement.FirstToken.Column - 1; // zero-based in CodeModel
 			statement.SourceLength = tokens.Take(lastTokenIndex).Sum(token => token.Length);
 
 			return statement;

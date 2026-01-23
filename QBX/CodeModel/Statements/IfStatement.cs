@@ -15,6 +15,34 @@ public class IfStatement : Statement
 	public List<Statement>? ElseBody { get; set; }
 	public bool OmitThen { get; set; }
 
+	public override IEnumerable<Statement> Substatements
+	{
+		get
+		{
+			if (ThenBody != null)
+			{
+				foreach (var statement in ThenBody)
+				{
+					yield return statement;
+
+					foreach (var substatement in statement.Substatements)
+						yield return substatement;
+				}
+			}
+
+			if (ElseBody != null)
+			{
+				foreach (var statement in ElseBody)
+				{
+					yield return statement;
+
+					foreach (var substatement in statement.Substatements)
+						yield return substatement;
+				}
+			}
+		}
+	}
+
 	protected virtual void Validate()
 	{
 		if (ConditionExpression == null)
@@ -43,6 +71,8 @@ public class IfStatement : Statement
 		if (!OmitThen)
 			writer.Write(" THEN");
 
+		var columnTracker = writer as ColumnTrackingTextWriter;
+
 		if (ThenBody != null)
 		{
 			writer.Write(' ');
@@ -57,7 +87,11 @@ public class IfStatement : Statement
 						writer.Write(' ');
 				}
 
+				if (columnTracker != null)
+					ThenBody[i].SourceColumn = columnTracker.Column + ThenBody[i].Indentation.Length;
 				ThenBody[i].Render(writer);
+				if (columnTracker != null)
+					ThenBody[i].SourceLength = columnTracker.Column - ThenBody[i].SourceColumn;
 			}
 
 			if (ElseBody != null)
@@ -78,7 +112,11 @@ public class IfStatement : Statement
 								writer.Write(' ');
 						}
 
+						if (columnTracker != null)
+							ElseBody[i].SourceColumn = columnTracker.Column + ElseBody[i].Indentation.Length;
 						ElseBody[i].Render(writer);
+						if (columnTracker != null)
+							ElseBody[i].SourceLength = columnTracker.Column - ElseBody[i].SourceColumn;
 					}
 				}
 			}
