@@ -314,7 +314,6 @@ public abstract class GraphicsLibrary : VisualLibrary
 		var translated = Window.TranslatePoint(x, y);
 
 		return PixelGet(translated.X, translated.Y);
-
 	}
 
 	public abstract int PixelGet(int x, int y);
@@ -1717,6 +1716,84 @@ public abstract class GraphicsLibrary : VisualLibrary
 			newlyScanned.Clear();
 		}
 	}
+	#endregion
+
+	#region Sprites
+	protected interface ISpriteOperation
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		byte ApplySpriteBits(byte bufferByte, int spriteByte, int unrelatedMask, int spriteMask);
+	}
+
+	protected class SpriteOperation_PixelSet : ISpriteOperation
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public byte ApplySpriteBits(byte bufferByte, int spriteByte, int unrelatedMask, int spriteMask)
+		{
+			return unchecked((byte)(
+				(bufferByte & unrelatedMask) | (spriteByte & spriteMask)));
+		}
+	}
+
+	protected class SpriteOperation_PixelSetInverted : ISpriteOperation
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public byte ApplySpriteBits(byte bufferByte, int spriteByte, int unrelatedMask, int spriteMask)
+		{
+			return unchecked((byte)(
+				(bufferByte & unrelatedMask) | ((~spriteByte) & spriteMask)));
+		}
+	}
+
+	protected class SpriteOperation_And : ISpriteOperation
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public byte ApplySpriteBits(byte bufferByte, int spriteByte, int unrelatedMask, int spriteMask)
+		{
+			return unchecked((byte)(
+				(bufferByte & unrelatedMask) | ((bufferByte & spriteByte) & spriteMask)));
+		}
+	}
+
+	protected class SpriteOperation_Or : ISpriteOperation
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public byte ApplySpriteBits(byte bufferByte, int spriteByte, int unrelatedMask, int spriteMask)
+		{
+			return unchecked((byte)(
+				(bufferByte & unrelatedMask) | ((bufferByte | spriteByte) & spriteMask)));
+		}
+	}
+
+	protected class SpriteOperation_ExclusiveOr : ISpriteOperation
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public byte ApplySpriteBits(byte bufferByte, int spriteByte, int unrelatedMask, int spriteMask)
+		{
+			return unchecked((byte)(
+				(bufferByte & unrelatedMask) | ((bufferByte ^ spriteByte) & spriteMask)));
+		}
+	}
+
+	public void GetSprite(float x, float y, float w, float h, Span<byte> buffer)
+	{
+		var (translatedX, translatedY) = Window.TranslatePoint(x, y);
+		var translatedW = Window.TranslateWidth(x);
+		var translatedH = Window.TranslateHeight(y);
+
+		GetSprite(translatedX, translatedY, translatedW, translatedH, buffer);
+	}
+
+	public abstract void GetSprite(int x, int y, int w, int h, Span<byte> buffer);
+
+	public void PutSprite(Span<byte> buffer, PutSpriteAction action, float x, float y)
+	{
+		var (translatedX, translatedY) = Window.TranslatePoint(x, y);
+
+		PutSprite(buffer, action, translatedX, translatedY);
+	}
+
+	public abstract void PutSprite(Span<byte> buffer, PutSpriteAction action, int x, int y);
 	#endregion
 
 	#region Text

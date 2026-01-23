@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 using QBX.Hardware;
 
@@ -245,6 +246,170 @@ public class GraphicsLibrary_2bppInterleaved : GraphicsLibrary
 
 			SetLeftPixels(secondPlaneOffset, secondPlaneFirstCompleteByte, secondPlaneLeftPixels);
 			SetRightPixels(secondPlaneOffset, secondPlaneLastCompleteByte, secondPlaneRightPixels);
+		}
+	}
+
+	public override void GetSprite(int x, int y, int w, int h, Span<byte> buffer)
+	{
+		// TODO: rework to avoid using PixelGet
+		if ((x < 0) || (y < 0) || (w < 0) || (h < 0))
+			throw new InvalidOperationException();
+		if ((x + w >= Width) || (y + h >= Height))
+			throw new InvalidOperationException();
+
+		var vramSpan = Array.VRAM.AsSpan();
+
+		var plane = vramSpan.Slice(StartAddress, 64000);
+
+		int bytesPerScan = w;
+
+		int headerBytes = 4;
+		int dataBytes = bytesPerScan * h;
+
+		int totalBytes = headerBytes + dataBytes;
+
+		if (buffer.Length < totalBytes)
+			throw new InvalidOperationException();
+
+		var header = MemoryMarshal.Cast<byte, short>(buffer.Slice(0, headerBytes));
+
+		header[0] = (short)(w * 2);
+		header[1] = (short)h;
+
+		var data = buffer.Slice(headerBytes);
+
+		int o = 0;
+
+		for (int yy = 0; yy < h; yy++)
+			for (int xx = 0; xx < w; xx += 4, o++)
+			{
+				int p0 =                PixelGet(x + xx + 0, y + yy);
+				int p1 = (xx + 1 < w) ? PixelGet(x + xx + 1, y + yy) : 0;
+				int p2 = (xx + 2 < w) ? PixelGet(x + xx + 2, y + yy) : 0;
+				int p3 = (xx + 3 < w) ? PixelGet(x + xx + 3, y + yy) : 0;
+
+				data[o] = unchecked((byte)(
+					(p0 << 6) | (p1 << 4) | (p2 << 2) | p3));
+			}
+	}
+
+	public override void PutSprite(Span<byte> buffer, PutSpriteAction action, int x, int y)
+	{
+		switch (action)
+		{
+			case PutSpriteAction.PixelSet: PutSprite(buffer, x, y); break;
+			case PutSpriteAction.PixelSetInverted: PutSprite<SpriteOperation_PixelSetInverted>(buffer, x, y); break;
+			case PutSpriteAction.And: PutSprite<SpriteOperation_And>(buffer, x, y); break;
+			case PutSpriteAction.Or: PutSprite<SpriteOperation_Or>(buffer, x, y); break;
+			case PutSpriteAction.ExclusiveOr: PutSprite<SpriteOperation_ExclusiveOr>(buffer, x, y); break;
+		}
+	}
+
+	void PutSprite(Span<byte> buffer, int x, int y)
+	{
+		// TODO: rework to avoid using PixelGet
+		if (buffer.Length < 4)
+			throw new InvalidOperationException();
+
+		int headerBytes = 4;
+
+		var header = MemoryMarshal.Cast<byte, short>(buffer.Slice(0, headerBytes));
+
+		int w = header[0] / 2;
+		int h = header[1];
+
+		if ((x < 0) || (y < 0) || (w < 0) || (h < 0))
+			throw new InvalidOperationException();
+		if ((x + w >= Width) || (y + h >= Height))
+			throw new InvalidOperationException();
+
+		var vramSpan = Array.VRAM.AsSpan();
+
+		var plane = vramSpan.Slice(StartAddress, 64000);
+
+		int bytesPerScan = w;
+
+		int dataBytes = bytesPerScan * h;
+
+		int totalBytes = headerBytes + dataBytes;
+
+		if (buffer.Length < totalBytes)
+			throw new InvalidOperationException();
+
+		var data = buffer.Slice(headerBytes);
+
+		int o = 0;
+
+		for (int yy = 0; yy < h; yy++)
+		{
+			int packed = data[o++];
+
+			for (int xx = 0; xx < w; xx++)
+			{
+				PixelSet(x + xx, y + yy, (packed >> 6) & 3);
+
+				packed <<= 2;
+
+				if ((xx & 3) == 3)
+					packed = data[o++];
+			}
+		}
+	}
+
+	void PutSprite<TAction>(Span<byte> buffer, int x, int y)
+		where TAction : ISpriteOperation, new()
+	{
+		// TODO: rework to avoid using PixelGet
+		if (buffer.Length < 4)
+			throw new InvalidOperationException();
+
+		int headerBytes = 4;
+
+		var header = MemoryMarshal.Cast<byte, short>(buffer.Slice(0, headerBytes));
+
+		int w = header[0] / 2;
+		int h = header[1];
+
+		if ((x < 0) || (y < 0) || (w < 0) || (h < 0))
+			throw new InvalidOperationException();
+		if ((x + w >= Width) || (y + h >= Height))
+			throw new InvalidOperationException();
+
+		var vramSpan = Array.VRAM.AsSpan();
+
+		var plane = vramSpan.Slice(StartAddress, 64000);
+
+		int bytesPerScan = w;
+
+		int dataBytes = bytesPerScan * h;
+
+		int totalBytes = headerBytes + dataBytes;
+
+		if (buffer.Length < totalBytes)
+			throw new InvalidOperationException();
+
+		var data = buffer.Slice(headerBytes);
+
+		int o = 0;
+
+		var action = new TAction();
+
+		for (int yy = 0; yy < h; yy++)
+		{
+			int packed = data[o++];
+
+			for (int xx = 0; xx < w; xx++)
+			{
+				byte planePixel = unchecked((byte)PixelGet(x + xx, y + yy));
+				int dataPixel = ((packed >> 6) & 3);
+
+				PixelSet(x + xx, y + yy, action.ApplySpriteBits(planePixel, dataPixel, 0, 0xFF));
+
+				packed <<= 2;
+
+				if ((xx & 3) == 3)
+					packed = data[o++];
+			}
 		}
 	}
 

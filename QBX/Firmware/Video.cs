@@ -83,7 +83,7 @@ public class Video(Machine machine)
 			Characters = (80, 25),
 			IsGraphicsMode = true,
 			IsMonochrome = true,
-			PaletteType = PaletteType.CGA,
+			PaletteType = PaletteType.EGA,
 			BaseAddress = BaseAddress.B800,
 			CharacterWidth = CharacterWidth._8,
 			CharacterHeight = 8,
