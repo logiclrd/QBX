@@ -33,19 +33,24 @@ public class ArrayElementExpression(int variableIndex, DataType type) : Evaluabl
 			CollapseConstantExpression(SubscriptExpressions, i);
 	}
 
-	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
+	public void EvaluateInParts(ExecutionContext context, StackFrame stackFrame, out Execution.Array array, out Variable[] subscripts)
 	{
 		var arrayVariable = (ArrayVariable)stackFrame.Variables[variableIndex];
 
-		if (SubscriptExpressions.Count == 0)
-			return arrayVariable;
+		array = arrayVariable.Array;
 
-		var array = arrayVariable.Array;
-
-		var subscripts = new Variable[SubscriptExpressions.Count];
+		subscripts = new Variable[SubscriptExpressions.Count];
 
 		for (int i = 0; i < subscripts.Length; i++)
 			subscripts[i] = SubscriptExpressions[i].Evaluate(context, stackFrame);
+	}
+
+	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
+	{
+		if (SubscriptExpressions.Count == 0)
+			return stackFrame.Variables[variableIndex];
+
+		EvaluateInParts(context, stackFrame, out var array, out var subscripts);
 
 		return array.GetElement(subscripts, SubscriptExpressions);
 	}

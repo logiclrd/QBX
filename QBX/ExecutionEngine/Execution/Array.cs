@@ -13,7 +13,7 @@ public class Array
 	public ArraySubscripts Subscripts;
 	public Variable?[] Elements;
 
-	public ReadOnlyMemory<byte>? PackedData => _packedData;
+	public Span<byte> PackedData => _packedData;
 	public int PackedSize => Elements.Length * ElementType.ByteSize;
 
 	byte[]? _packedData;
@@ -22,6 +22,20 @@ public class Array
 	public static readonly Array Uninitialized = new Array(DataType.Integer, new ArraySubscripts());
 
 	public bool IsUninitialized => ReferenceEquals(this, Uninitialized);
+
+	public bool IsPacked => (_packedData != null);
+
+	public void EnsurePacked()
+	{
+		if (_packedData == null)
+			Pack();
+	}
+
+	public void EnsureUnpacked()
+	{
+		if (_packedData != null)
+			Unpack();
+	}
 
 	public Array(DataType elementType, ArraySubscripts subscripts)
 	{
@@ -165,12 +179,6 @@ public class Array
 
 			buffer = buffer.Slice(elementSize);
 		}
-	}
-
-	void EnsureUnpacked()
-	{
-		if (_packedData != null)
-			Unpack();
 	}
 
 	public Variable GetElement(int index)

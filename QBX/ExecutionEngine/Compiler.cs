@@ -975,6 +975,35 @@ public class Compiler
 
 				break;
 			}
+			case CodeModel.Statements.GetSpriteStatement getSpriteStatement:
+			{
+				var translatedGetStatement = new GetSpriteStatement(getSpriteStatement);
+
+				translatedGetStatement.FromStep = getSpriteStatement.FromStep;
+
+				TranslateNumericArgumentExpression(
+					ref translatedGetStatement.FromXExpression, getSpriteStatement.FromXExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedGetStatement.FromYExpression, getSpriteStatement.FromYExpression);
+
+				translatedGetStatement.ToStep = getSpriteStatement.ToStep;
+
+				TranslateNumericArgumentExpression(
+					ref translatedGetStatement.ToXExpression, getSpriteStatement.ToXExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedGetStatement.ToYExpression, getSpriteStatement.ToYExpression);
+
+				translatedGetStatement.TargetExpression = TranslateExpression(
+					getSpriteStatement.TargetExpression,
+					container,
+					mapper,
+					compilation,
+					parseIdentifiersAsArrays: true);
+
+				container.Append(translatedGetStatement);
+
+				break;
+			}
 			case CodeModel.Statements.GoToStatement goToStatement:
 			{
 				string target =
@@ -1407,6 +1436,40 @@ public class Compiler
 
 					container.Append(translatedPrintStatement);
 				}
+
+				break;
+			}
+			case CodeModel.Statements.PutSpriteStatement putSpriteStatement:
+			{
+				var translatedPutStatement = new PutSpriteStatement(putSpriteStatement);
+
+				translatedPutStatement.Step = putSpriteStatement.Step;
+
+				TranslateNumericArgumentExpression(
+					ref translatedPutStatement.XExpression, putSpriteStatement.XExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedPutStatement.YExpression, putSpriteStatement.YExpression);
+
+				translatedPutStatement.SourceExpression = TranslateExpression(
+					putSpriteStatement.SourceExpression,
+					container,
+					mapper,
+					compilation,
+					parseIdentifiersAsArrays: true);
+
+				translatedPutStatement.ActionVerb =
+					putSpriteStatement.ActionVerb switch
+					{
+						CodeModel.Statements.PutSpriteAction.PixelSet => PutSpriteAction.PixelSet,
+						CodeModel.Statements.PutSpriteAction.PixelSetInverted => PutSpriteAction.PixelSet,
+						CodeModel.Statements.PutSpriteAction.And => PutSpriteAction.And,
+						CodeModel.Statements.PutSpriteAction.Or => PutSpriteAction.Or,
+						CodeModel.Statements.PutSpriteAction.ExclusiveOr => PutSpriteAction.ExclusiveOr,
+
+						_ => PutSpriteAction.PixelSet
+					};
+
+				container.Append(translatedPutStatement);
 
 				break;
 			}
