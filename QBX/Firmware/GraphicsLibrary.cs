@@ -327,7 +327,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 	{
 		var translated = Window.TranslatePoint(x, y);
 
-		PixelSet(translated.X, translated.Y);
+		PixelSet(translated.X, translated.Y, attribute);
 	}
 
 	public abstract void PixelSet(int x, int y, int attribute);
