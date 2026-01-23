@@ -2177,6 +2177,7 @@ public class Compiler
 
 				switch (keywordFunction.Function)
 				{
+					case TokenType.ABS: return AbsFunction.Construct(keywordFunction.Token, arguments);
 					case TokenType.ASC: function = new AscFunction(); break;
 					case TokenType.ATN: function = new AtnFunction(); break;
 					case TokenType.CHR: function = new ChrFunction(); break;

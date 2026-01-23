@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
+using QBX.ExecutionEngine.Compiled.Expressions;
 using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
 using QBX.LexicalAnalysis;
@@ -61,6 +62,13 @@ public class SingleIntFunction(Evaluable argument) : IntFunction(argument)
 
 		return new SingleVariable(float.Truncate(value.Value));
 	}
+
+	public override LiteralValue EvaluateConstant()
+	{
+		var value = (SingleLiteralValue)argument.EvaluateConstant();
+
+		return new SingleLiteralValue(float.Truncate(value.Value));
+	}
 }
 
 public class DoubleIntFunction(Evaluable argument) : IntFunction(argument)
@@ -73,6 +81,13 @@ public class DoubleIntFunction(Evaluable argument) : IntFunction(argument)
 
 		return new DoubleVariable(double.Truncate(value.Value));
 	}
+
+	public override LiteralValue EvaluateConstant()
+	{
+		var value = (DoubleLiteralValue)argument.EvaluateConstant();
+
+		return new DoubleLiteralValue(double.Truncate(value.Value));
+	}
 }
 
 public class CurrencyIntFunction(Evaluable argument) : IntFunction(argument)
@@ -84,5 +99,12 @@ public class CurrencyIntFunction(Evaluable argument) : IntFunction(argument)
 		var value = (CurrencyVariable)argument.Evaluate(context, stackFrame);
 
 		return new CurrencyVariable(decimal.Truncate(value.Value));
+	}
+
+	public override LiteralValue EvaluateConstant()
+	{
+		var value = (CurrencyLiteralValue)argument.EvaluateConstant();
+
+		return new CurrencyLiteralValue(decimal.Truncate(value.Value));
 	}
 }
