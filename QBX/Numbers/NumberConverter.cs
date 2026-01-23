@@ -27,7 +27,7 @@ public static class NumberConverter
 	public static short ToInteger(SingleLiteralValue value, Token? context = null) => ToInteger(value.Value, context);
 	public static short ToInteger(float value, Token? context = null)
 	{
-		value = float.Round(value);
+		value = float.Round(value, MidpointRounding.ToEven);
 
 		if ((value < short.MinValue) || (value > short.MaxValue))
 			throw RuntimeException.Overflow(context);
@@ -39,7 +39,7 @@ public static class NumberConverter
 	public static short ToInteger(DoubleLiteralValue value, Token? context = null) => ToInteger(value.Value, context);
 	public static short ToInteger(double value, Token? context = null)
 	{
-		value = double.Round(value);
+		value = double.Round(value, MidpointRounding.ToEven);
 
 		if ((value < short.MinValue) || (value > short.MaxValue))
 			throw RuntimeException.Overflow(context);
@@ -51,7 +51,7 @@ public static class NumberConverter
 	public static short ToInteger(CurrencyLiteralValue value, Token? context = null) => ToInteger(value.Value, context);
 	public static short ToInteger(decimal value, Token? context = null)
 	{
-		value = decimal.Round(value);
+		value = decimal.Round(value, MidpointRounding.ToEven);
 
 		if ((value < short.MinValue) || (value > short.MaxValue))
 			throw RuntimeException.Overflow(context);
@@ -71,7 +71,7 @@ public static class NumberConverter
 	public static int ToLong(SingleLiteralValue value, Token? context = null) => ToLong(value.Value, context);
 	public static int ToLong(float value, Token? context = null)
 	{
-		value = float.Round(value);
+		value = float.Round(value, MidpointRounding.ToEven);
 
 		if ((value < int.MinValue) || (value > int.MaxValue))
 			throw RuntimeException.Overflow(context);
@@ -83,7 +83,7 @@ public static class NumberConverter
 	public static int ToLong(DoubleLiteralValue value, Token? context = null) => ToLong(value.Value, context);
 	public static int ToLong(double value, Token? context = null)
 	{
-		value = double.Round(value);
+		value = double.Round(value, MidpointRounding.ToEven);
 
 		if ((value < int.MinValue) || (value > int.MaxValue))
 			throw RuntimeException.Overflow(context);
@@ -95,7 +95,7 @@ public static class NumberConverter
 	public static int ToLong(CurrencyLiteralValue value, Token? context = null) => ToLong(value.Value, context);
 	public static int ToLong(decimal value, Token? context = null)
 	{
-		value = decimal.Round(value);
+		value = decimal.Round(value, MidpointRounding.ToEven);
 
 		if ((value < int.MinValue) || (value > int.MaxValue))
 			throw RuntimeException.Overflow(context);

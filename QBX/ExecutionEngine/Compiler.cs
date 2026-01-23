@@ -2184,6 +2184,7 @@ public class Compiler
 					case TokenType.COS: function = new CosFunction(); break;
 					case TokenType.ERR: function = new ErrFunction(); break;
 					case TokenType.ERL: function = new ErlFunction(); break;
+					case TokenType.FIX: return FixFunction.Construct(keywordFunction.Token, arguments);
 					case TokenType.INKEY: function = new InKeyFunction(); break;
 					case TokenType.INP: function = new InpFunction(); break;
 					case TokenType.INSTR: function = new InStrFunction(); break;

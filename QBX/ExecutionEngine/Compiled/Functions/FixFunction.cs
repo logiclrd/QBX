@@ -9,7 +9,7 @@ using QBX.LexicalAnalysis;
 
 namespace QBX.ExecutionEngine.Compiled.Functions;
 
-public abstract class IntFunction : ConstructibleFunction
+public abstract class FixFunction : ConstructibleFunction
 {
 	Evaluable? _argumentExpression;
 
@@ -17,7 +17,7 @@ public abstract class IntFunction : ConstructibleFunction
 
 	public override bool IsConstant => _argumentExpression?.IsConstant ?? false;
 
-	protected IntFunction(Evaluable? argumentExpression)
+	protected FixFunction(Evaluable? argumentExpression)
 	{
 		_argumentExpression = argumentExpression;
 	}
@@ -43,16 +43,16 @@ public abstract class IntFunction : ConstructibleFunction
 		{
 			case PrimitiveDataType.Integer: return arg;
 			case PrimitiveDataType.Long: return arg;
-			case PrimitiveDataType.Single: return new SingleIntFunction(arg);
-			case PrimitiveDataType.Double: return new DoubleIntFunction(arg);
-			case PrimitiveDataType.Currency: return new CurrencyIntFunction(arg);
+			case PrimitiveDataType.Single: return new SingleFixFunction(arg);
+			case PrimitiveDataType.Double: return new DoubleFixFunction(arg);
+			case PrimitiveDataType.Currency: return new CurrencyFixFunction(arg);
 		}
 
 		throw new Exception("Internal error");
 	}
 }
 
-public class SingleIntFunction(Evaluable argument) : IntFunction(argument)
+public class SingleFixFunction(Evaluable argument) : FixFunction(argument)
 {
 	public override DataType Type => DataType.Single;
 
@@ -60,18 +60,18 @@ public class SingleIntFunction(Evaluable argument) : IntFunction(argument)
 	{
 		var value = (SingleVariable)argument.Evaluate(context, stackFrame);
 
-		return new SingleVariable(float.Floor(value.Value));
+		return new SingleVariable(float.Truncate(value.Value));
 	}
 
 	public override LiteralValue EvaluateConstant()
 	{
 		var value = (SingleLiteralValue)argument.EvaluateConstant();
 
-		return new SingleLiteralValue(float.Floor(value.Value));
+		return new SingleLiteralValue(float.Truncate(value.Value));
 	}
 }
 
-public class DoubleIntFunction(Evaluable argument) : IntFunction(argument)
+public class DoubleFixFunction(Evaluable argument) : FixFunction(argument)
 {
 	public override DataType Type => DataType.Double;
 
@@ -79,18 +79,18 @@ public class DoubleIntFunction(Evaluable argument) : IntFunction(argument)
 	{
 		var value = (DoubleVariable)argument.Evaluate(context, stackFrame);
 
-		return new DoubleVariable(double.Floor(value.Value));
+		return new DoubleVariable(double.Truncate(value.Value));
 	}
 
 	public override LiteralValue EvaluateConstant()
 	{
 		var value = (DoubleLiteralValue)argument.EvaluateConstant();
 
-		return new DoubleLiteralValue(double.Floor(value.Value));
+		return new DoubleLiteralValue(double.Truncate(value.Value));
 	}
 }
 
-public class CurrencyIntFunction(Evaluable argument) : IntFunction(argument)
+public class CurrencyFixFunction(Evaluable argument) : FixFunction(argument)
 {
 	public override DataType Type => DataType.Currency;
 
@@ -98,13 +98,13 @@ public class CurrencyIntFunction(Evaluable argument) : IntFunction(argument)
 	{
 		var value = (CurrencyVariable)argument.Evaluate(context, stackFrame);
 
-		return new CurrencyVariable(decimal.Floor(value.Value));
+		return new CurrencyVariable(decimal.Truncate(value.Value));
 	}
 
 	public override LiteralValue EvaluateConstant()
 	{
 		var value = (CurrencyLiteralValue)argument.EvaluateConstant();
 
-		return new CurrencyLiteralValue(decimal.Floor(value.Value));
+		return new CurrencyLiteralValue(decimal.Truncate(value.Value));
 	}
 }
