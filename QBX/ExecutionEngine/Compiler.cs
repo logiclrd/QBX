@@ -460,6 +460,9 @@ public class Compiler
 
 						translatedCallStatement.Arguments.Add(translatedExpression);
 					}
+
+					if (translatedCallStatement.Target != null)
+						translatedCallStatement.EnsureParameterTypes();
 				}
 
 				container.Append(translatedCallStatement);
@@ -2105,6 +2108,9 @@ public class Compiler
 
 						translatedCallExpression.Arguments.Add(translatedArgument);
 					}
+
+					if (translatedCallExpression.Target != null)
+						translatedCallExpression.EnsureParameterTypes();
 
 					return translatedCallExpression;
 				}

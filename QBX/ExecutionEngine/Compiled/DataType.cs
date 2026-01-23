@@ -146,4 +146,16 @@ public class DataType
 
 		return false;
 	}
+
+	public override string ToString()
+	{
+		string? array = IsArray ? "()" : null;
+
+		if (IsPrimitiveType)
+			return PrimitiveType.ToString().ToUpperInvariant() + array;
+		else if (IsUserType)
+			return "TYPE " + UserType + array;
+		else
+			return "Data Type";
+	}
 }
