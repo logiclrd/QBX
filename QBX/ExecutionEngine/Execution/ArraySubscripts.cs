@@ -31,7 +31,7 @@ public class ArraySubscripts
 		// can simply be copied because their layout doesn't change, only the number of repetitions
 		// changes.
 
-		for (int i = Subscripts.Count - 1; i >= 0; i++)
+		for (int i = Subscripts.Count - 1; i >= 0; i--)
 		{
 			int lowerBound = Subscripts[i].LowerBound;
 			int upperBound = Subscripts[i].UpperBound;
