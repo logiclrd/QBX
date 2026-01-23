@@ -28,7 +28,7 @@ public class SinFunction : Function
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (Argument == null)
-			throw new Exception("ValFunction with no Argument");
+			throw new Exception("SinFunction with no Argument");
 
 		var type = Argument.Type;
 

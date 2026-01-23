@@ -28,7 +28,7 @@ public class TanFunction : Function
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (Argument == null)
-			throw new Exception("ValFunction with no Argument");
+			throw new Exception("TanFunction with no Argument");
 
 		var type = Argument.Type;
 

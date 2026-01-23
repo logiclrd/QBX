@@ -28,7 +28,7 @@ public class CosFunction : Function
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (Argument == null)
-			throw new Exception("ValFunction with no Argument");
+			throw new Exception("CosFunction with no Argument");
 
 		var type = Argument.Type;
 
