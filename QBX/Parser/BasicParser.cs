@@ -1684,16 +1684,17 @@ public class BasicParser
 					{
 						if (tokenHandler.NextTokenIs(TokenType.String))
 						{
-							lineInput.PromptString = tokenHandler.NextToken.Value;
+							lineInput.PromptString = tokenHandler.NextToken.StringLiteralValue;
 
 							tokenHandler.Advance();
-							tokenHandler.Expect(TokenType.Semicolon);
+
+							var separator = tokenHandler.ExpectOneOf(TokenType.Semicolon, TokenType.Comma);
+
+							lineInput.PromptStringSeparatorCharacter = separator.Value[0];
 						}
 					}
 
-					lineInput.Variable = tokenHandler.ExpectIdentifier(allowTypeCharacter: true);
-
-					tokenHandler.ExpectEndOfTokens();
+					lineInput.TargetExpression = ParseExpressionForStatement(lineInput, tokenHandler.RemainingTokens, tokenHandler.EndToken);
 
 					return lineInput;
 				}
