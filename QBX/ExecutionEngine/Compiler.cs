@@ -2191,10 +2191,12 @@ public class Compiler
 					case TokenType.LCASE: function = new LCaseFunction(); break;
 					case TokenType.LEFT: function = new LeftFunction(); break;
 					case TokenType.LEN: function = new LenFunction(); break;
+					case TokenType.LTRIM: function = new LTrimFunction(); break;
 					case TokenType.MID: function = new MidFunction(); break;
 					case TokenType.PEEK: function = new PeekFunction(); break;
 					case TokenType.RIGHT: function = new RightFunction(); break;
 					case TokenType.RND: function = new RndFunction(); break;
+					case TokenType.RTRIM: function = new RTrimFunction(); break;
 					case TokenType.SIN: function = new SinFunction(); break;
 					case TokenType.SPACE: function = new SpaceFunction(); break;
 					case TokenType.STR: function = new StrFunction(); break;
