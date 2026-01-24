@@ -49,10 +49,10 @@ jobs:
       uses: KamaranL/add-signtool-action@v1
 
     - name: Sign QBX.exe
-      run: signtool /f QBXCodeSigning.pfx QBX\bin\Release\net10.0\QBX.exe
+      run: signtool sign /f QBXCodeSigning.pfx /fd SHA256 QBX\bin\Release\net10.0\QBX.exe
 
     - name: Sign QBX.dll
-      run: signtool /f QBXCodeSigning.pfx QBX\bin\Release\net10.0\QBX.dll
+      run: signtool sign /f QBXCodeSigning.pfx /fd SHA256 QBX\bin\Release\net10.0\QBX.dll
 
     - name: Remove QBXCodeSigning.pfx
       run: Remove-Item -path QBXCodeSigning.pfx
