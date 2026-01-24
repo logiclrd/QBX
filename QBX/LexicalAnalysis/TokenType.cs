@@ -255,6 +255,7 @@ public enum TokenType
 	[KeywordFunction]
 	[KeywordToken] SIN,
 	[KeywordToken] SINGLE,
+	[KeywordToken] SLEEP,
 	[KeywordToken] SOUND,
 	[KeywordFunction]
 	[KeywordToken("SPACE$")] SPACE,

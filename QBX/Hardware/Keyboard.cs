@@ -69,6 +69,15 @@ public class Keyboard(Machine machine)
 			unchecked((byte)keyboardStatus);
 	}
 
+	bool? _suppressNextIfIsRelease;
+	ScanCode? _suppressNextIfHasScanCode;
+
+	public void SuppressNextEventIf(bool? isRelease, ScanCode? hasScanCode)
+	{
+		_suppressNextIfIsRelease = isRelease;
+		_suppressNextIfHasScanCode = hasScanCode;
+	}
+
 	public void HandleEvent(SDL.KeyboardEvent evt)
 	{
 		switch (evt.Scancode)
@@ -86,6 +95,22 @@ public class Keyboard(Machine machine)
 		}
 
 		var keyEvent = new KeyEvent(evt.Scancode, machine.SystemMemory.GetKeyModifiers(), isRelease: !evt.Down);
+
+		if (_suppressNextIfIsRelease.HasValue || _suppressNextIfHasScanCode.HasValue)
+		{
+			bool suppress = true;
+
+			if (_suppressNextIfIsRelease.HasValue && (keyEvent.IsRelease != _suppressNextIfIsRelease))
+				suppress = false;
+			if (_suppressNextIfHasScanCode.HasValue && (keyEvent.ScanCode != _suppressNextIfHasScanCode))
+				suppress = false;
+
+			_suppressNextIfIsRelease = null;
+			_suppressNextIfHasScanCode = null;
+
+			if (suppress)
+				return;
+		}
 
 		lock (_sync)
 		{
@@ -115,6 +140,44 @@ public class Keyboard(Machine machine)
 		lock (_sync)
 		{
 			while (_inputQueue.Count == 0)
+			{
+				var remainingTime = deadline - DateTime.UtcNow;
+
+				if (remainingTime <= TimeSpan.Zero)
+					return false;
+
+				Monitor.Wait(_sync, remainingTime);
+			}
+
+			return true;
+		}
+	}
+
+	public bool WaitForNewInput(int timeoutMilliseconds = Timeout.Infinite)
+	{
+		if (timeoutMilliseconds != Timeout.Infinite)
+			return WaitForNewInput(TimeSpan.FromMilliseconds(timeoutMilliseconds));
+
+		int countOnEntry = _inputQueue.Count;
+
+		lock (_sync)
+		{
+			while (_inputQueue.Count == countOnEntry)
+				Monitor.Wait(_sync);
+
+			return true;
+		}
+	}
+
+	public bool WaitForNewInput(TimeSpan timeout)
+	{
+		var deadline = DateTime.UtcNow + timeout;
+
+		int countOnEntry = _inputQueue.Count;
+
+		lock (_sync)
+		{
+			while (_inputQueue.Count == countOnEntry)
 			{
 				var remainingTime = deadline - DateTime.UtcNow;
 

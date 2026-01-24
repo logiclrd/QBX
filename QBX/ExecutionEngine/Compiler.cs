@@ -513,8 +513,8 @@ public class Compiler
 			{
 				var translatedClsStatement = new ClsStatement(clsStatement);
 
-				translatedClsStatement.ArgumentExpression =
-					TranslateExpression(clsStatement.Mode, container, mapper, compilation);
+				TranslateNumericArgumentExpression(
+					ref translatedClsStatement.ArgumentExpression, clsStatement.Mode);
 
 				container.Append(translatedClsStatement);
 
@@ -1736,6 +1736,17 @@ public class Compiler
 				}
 
 				container.Append(translatedSelectCaseStatement);
+
+				break;
+			}
+			case CodeModel.Statements.SleepStatement sleepStatement:
+			{
+				var translatedSleepStatement = new SleepStatement(sleepStatement);
+
+				TranslateNumericArgumentExpression(
+					ref translatedSleepStatement.SecondsExpression, sleepStatement.Seconds);
+
+				container.Append(translatedSleepStatement);
 
 				break;
 			}

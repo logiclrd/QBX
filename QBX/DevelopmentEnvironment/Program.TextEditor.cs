@@ -226,6 +226,8 @@ public partial class Program
 			}
 			case ScanCode.F5:
 			{
+				Machine.Keyboard.SuppressNextEventIf(isRelease: true, ScanCode.F5);
+
 				try
 				{
 					PrimaryViewport.CommitCurrentLine();
@@ -259,6 +261,8 @@ public partial class Program
 			}
 			case ScanCode.F8:
 			{
+				Machine.Keyboard.SuppressNextEventIf(isRelease: true, ScanCode.F8);
+
 				try
 				{
 					PrimaryViewport.CommitCurrentLine();

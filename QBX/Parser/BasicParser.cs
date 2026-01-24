@@ -3047,6 +3047,22 @@ public class BasicParser
 				return scopeStatement;
 			}
 
+			case TokenType.SLEEP:
+			{
+				if (tokenHandler.HasMoreTokens)
+				{
+					var seconds = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken);
+
+					var sleep = new SleepStatement(seconds);
+
+					seconds.ClaimTokens(sleep);
+
+					return sleep;
+				}
+				else
+					return new SleepStatement();
+			}
+
 			case TokenType.SOUND:
 			{
 				var sound = new SoundStatement();
