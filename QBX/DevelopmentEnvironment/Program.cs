@@ -1,4 +1,6 @@
-﻿using System.Threading;
+﻿using System;
+using System.IO;
+using System.Threading;
 using System.Collections.Generic;
 
 using QBX.CodeModel;
@@ -80,6 +82,9 @@ public partial class Program : HostedProgram
 		Mode = UIMode.TextEditor;
 
 		StartNewProgram();
+
+		if (File.Exists(Environment.CommandLine))
+			LoadFile(Environment.CommandLine, replaceExistingProgram: true);
 	}
 
 	public override bool EnableMainLoop => true;

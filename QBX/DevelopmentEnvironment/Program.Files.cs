@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 
 using QBX.CodeModel;
 using QBX.Firmware.Fonts;
@@ -30,11 +31,22 @@ namespace QBX.DevelopmentEnvironment
 
 		public void LoadFile(string path, bool replaceExistingProgram)
 		{
-			using (var reader = new StreamReader(path, new CP437Encoding(ControlCharacterInterpretation.Semantic)))
+			try
 			{
-				string shortName = Path.GetFileName(path).ToUpperInvariant();
+				using (var reader = new StreamReader(path, new CP437Encoding(ControlCharacterInterpretation.Semantic)))
+				{
+					string shortName = Path.GetFileName(path).ToUpperInvariant();
 
-				Load(reader, shortName, replaceExistingProgram);
+					Load(reader, shortName, replaceExistingProgram);
+				}
+			}
+			catch (FileNotFoundException)
+			{
+				PresentError("File not found");
+			}
+			catch (Exception e)
+			{
+				PresentError(e.Message);
 			}
 		}
 
