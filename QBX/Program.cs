@@ -78,10 +78,15 @@ class Program
 				}
 			}
 
+			// Explicitly capture the delegate, because the only references captured
+			// within SDL are unmanaged, and the delegate is at risk of being garbage
+			// collected.
+			SDL.AudioStreamCallback audioCallback = AudioCallback;
+
 			var audioStream = SDL.OpenAudioDeviceStream(
 				SDL.AudioDeviceDefaultPlayback,
 				audioSpec,
-				AudioCallback,
+				audioCallback,
 				default);
 
 			if (audioStream != default)
