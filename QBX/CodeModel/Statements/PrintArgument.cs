@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 
 using QBX.CodeModel.Expressions;
 
@@ -6,13 +7,31 @@ namespace QBX.CodeModel.Statements;
 
 public class PrintArgument : IRenderableCode
 {
+	public PrintArgumentType ArgumentType = PrintArgumentType.Value;
 	public Expression? Expression { get; set; }
-	public PrintExpressionType ExpressionType = PrintExpressionType.Value;
 	public PrintCursorAction CursorAction { get; set; }
 
 	public void Render(TextWriter writer)
 	{
-		Expression?.Render(writer);
+		switch (ArgumentType)
+		{
+			case PrintArgumentType.Value:
+				Expression?.Render(writer);
+				break;
+			case PrintArgumentType.Tab:
+				writer.Write("TAB(");
+				Expression?.Render(writer);
+				writer.Write(')');
+				break;
+			case PrintArgumentType.Space:
+				writer.Write("TAB(");
+				Expression?.Render(writer);
+				writer.Write(')');
+				break;
+
+			default:
+				throw new Exception("Internal error: Unrecognized PrintArgumentType " + ArgumentType);
+		}
 
 		switch (CursorAction)
 		{

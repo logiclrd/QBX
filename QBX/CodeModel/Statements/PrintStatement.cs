@@ -36,36 +36,10 @@ public class PrintStatement : Statement
 			if (i > 0)
 				writer.Write(' ');
 
-			switch (Arguments[i].ExpressionType)
-			{
-				case PrintExpressionType.Tab:
-					writer.Write("TAB(");
-					Arguments[i].Expression?.Render(writer);
-					writer.Write(')');
-					break;
-				case PrintExpressionType.Space:
-					writer.Write("SPC(");
-					Arguments[i].Expression?.Render(writer);
-					writer.Write(')');
-					break;
-				default:
-					Arguments[i].Expression?.Render(writer);
-					break;
-			}
+			if (UsingExpression != null)
+				Arguments[i].CursorAction = PrintCursorAction.None;
 
-			switch (Arguments[i].CursorAction)
-			{
-				case PrintCursorAction.None: writer.Write(';'); break;
-				case PrintCursorAction.NextZone:
-				{
-					if (UsingExpression != null)
-						writer.Write(';');
-					else
-						writer.Write(',');
-
-					break;
-				}
-			}
+			Arguments[i].Render(writer);
 		}
 	}
 }

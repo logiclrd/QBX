@@ -1441,11 +1441,11 @@ public class Compiler
 					var translatedArgument = new PrintArgument();
 
 					translatedArgument.ArgumentType =
-						argument.ExpressionType switch
+						argument.ArgumentType switch
 						{
-							CodeModel.Statements.PrintExpressionType.Value => PrintArgumentType.Value,
-							CodeModel.Statements.PrintExpressionType.Tab => PrintArgumentType.Tab,
-							CodeModel.Statements.PrintExpressionType.Space => PrintArgumentType.Space,
+							CodeModel.Statements.PrintArgumentType.Value => PrintArgumentType.Value,
+							CodeModel.Statements.PrintArgumentType.Tab => PrintArgumentType.Tab,
+							CodeModel.Statements.PrintArgumentType.Space => PrintArgumentType.Space,
 							_ => throw new Exception("Internal error: Unrecognized PrintArgument ExpressionType")
 						};
 

@@ -1,6 +1,6 @@
 ﻿namespace QBX.CodeModel.Statements;
 
-public enum PrintExpressionType
+public enum PrintArgumentType
 {
 	Value,
 	Tab,

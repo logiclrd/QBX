@@ -2702,9 +2702,9 @@ public class BasicParser
 							if (isTab || isSpace)
 							{
 								if (isTab)
-									arg.ExpressionType = PrintExpressionType.Tab;
+									arg.ArgumentType = PrintArgumentType.Tab;
 								if (isSpace)
-									arg.ExpressionType = PrintExpressionType.Space;
+									arg.ArgumentType = PrintArgumentType.Space;
 
 								var separatorToken = tokenHandler[nextSeparatorIndex];
 
@@ -2720,7 +2720,7 @@ public class BasicParser
 							tokenHandler.Advance(nextSeparatorIndex);
 						}
 
-						if (arg.ExpressionType != PrintExpressionType.Value)
+						if (arg.ArgumentType != PrintArgumentType.Value)
 						{
 							arg.CursorAction = PrintCursorAction.None;
 
