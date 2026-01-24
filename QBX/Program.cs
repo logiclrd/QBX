@@ -138,6 +138,11 @@ class Program
 			cancellationTokenSource.Cancel();
 
 			driverThread.Join(TimeSpan.FromSeconds(5));
+
+			SDL.PauseAudioStreamDevice(audioStream);
+
+			// Keep the reference alive to the end of the scope.
+			audioCallback.ToString();
 		}
 
 		Environment.Exit(machine.ExitCode);
