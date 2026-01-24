@@ -1,0 +1,71 @@
+# NB: This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+name: QBX Build Snapshot
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+
+    strategy:
+      matrix:
+        configuration: [Release]
+
+    runs-on: ubuntu-latest  # For a list of available runner types, refer to
+                             # https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on
+
+    env:
+      Solution_Name: QBX.sln
+      Test_Project_Path: QBX.Tests.csproj
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Install .NET 10
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+
+    - name: Execute test suite
+      run: dotnet test -p:Configuration=Release
+
+    - name: Retrieve QBXCodeSigning.pfx
+      run: |
+        $pfx_cert_byte = [System.Convert]::FromBase64String("${{ secrets.Base64_Encoded_Pfx }}")
+        [IO.File]::WriteAllBytes("QBXCodeSigning.pfx", $pfx_cert_byte)
+
+    - name: Build QBX
+      run: dotnet build -t:QBX -p:Configuration=Release
+
+    - name: Sign QBX.exe
+      run: signtool /f QBXCodeSigning.pfx QBX\bin\Release\net10.0\QBX.exe
+
+    - name: Sign QBX.dll
+      run: signtool /f QBXCodeSigning.pfx QBX\bin\Release\net10.0\QBX.dll
+
+    - name: Remove QBXCodeSigning.pfx
+      run: Remove-Item -path QBXCodeSigning.pfx
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: QBX-${{ steps.get_sha.outputs.short_sha }}
+        path: QBX\bin\Release\net10.0\**\*
+
+
+
+
+
+
+
