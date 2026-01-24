@@ -619,4 +619,94 @@ public class GraphicsLibraryTests
 		for (int i = pixelCount; i < sut.Width; i++)
 			target[i].Should().Be(Black);
 	}
+
+	[Test]
+	public void GetSprite_PutSprite(
+		[Values(5, 6, 0x12, 0x13)]
+		int mode,
+		[Values(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)]
+		int x,
+		[Values(0, 5, 10)]
+		int y,
+		[Values(1, 2, 3, 4, 5, 6, 7, 8, 9, 15, 16, 17, 23, 24, 25)]
+		int w,
+		[Values(1, 3, 5)]
+		int h,
+		[Values(155, 156, 157, 158, 159, 160, 161, 162)]
+		int tx)
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var array = machine.GraphicsArray;
+
+		machine.VideoFirmware.SetMode(mode);
+
+		var sut =
+			mode switch
+			{
+				5 => new GraphicsLibrary_2bppInterleaved(machine),
+				6 => new GraphicsLibrary_1bppPacked(machine),
+				0x12 => new GraphicsLibrary_4bppPlanar(machine),
+				0x13 => new GraphicsLibrary_8bppFlat(machine),
+				_ => default(GraphicsLibrary) ?? throw new Exception("Sanity failure")
+			};
+
+		int maxAttribute =
+			mode switch
+			{
+				5 => 3,
+				6 => 1,
+				0x12 => 15,
+				0x13 => 255,
+				_ => throw new Exception("Sanity failure")
+			};
+
+		int seed = mode + x * 5 + y * 50 + w * 500 + h * 5000;
+
+		Random rnd = new Random(seed);
+
+		for (int i = 0; i < 50; i++)
+			sut.Ellipse(rnd.Next(50), rnd.Next(50), rnd.Next(20), rnd.Next(20), 0, 0, false, false, rnd.Next(maxAttribute));
+
+		var buffer = new byte[(w + 7) * h + 4];
+
+		int[] expectedPixels = new int[w * h];
+
+		for (int yy = 0, o = 0; yy < h; yy++)
+			for (int xx = 0; xx < w; xx++, o++)
+				expectedPixels[o] = sut.PixelGet(x + xx, y + yy);
+
+		// Act
+		sut.GetSprite(x, y, x + w - 1, y + h - 1, buffer);
+		sut.Clear();
+		sut.PutSprite(buffer, PutSpriteAction.PixelSet, tx, 100);
+
+		// Assert
+		char[] buf = new char[w + 20];
+
+		for (int yy = -10; yy < h + 10; yy++)
+		{
+			for (int xx = -10; xx < w + 10; xx++)
+			{
+				int pel = sut.PixelGet(xx + tx, yy + 100);
+
+				if (pel > 9)
+					buf[xx + 10] = unchecked((char)('A' + (pel - 10)));
+				else
+					buf[xx + 10] = unchecked((char)('0' + pel));
+			}
+
+			System.Diagnostics.Debug.WriteLine(new string(buf));
+		}
+
+		for (int yy = 0, o = 0; yy < h; yy++)
+			for (int xx = 0; xx < w; xx++, o++)
+				sut.PixelGet(xx + tx, yy + 100).Should().Be(expectedPixels[o]);
+
+		for (int yy = -10; yy < h + 10; yy++)
+			for (int xx = -10; xx < w + 10; xx++)
+				if ((xx < 0) || (xx >= w) || (yy < 0) || (yy >= h))
+					sut.PixelGet(xx + tx, yy + 100).Should().Be(0);
+	}
 }

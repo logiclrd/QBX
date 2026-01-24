@@ -342,19 +342,18 @@ public class GraphicsLibrary_2bppInterleaved : GraphicsLibrary
 		var data = buffer.Slice(headerBytes);
 
 		int o = 0;
+		int packed = 0;
 
 		for (int yy = 0; yy < h; yy++)
 		{
-			int packed = data[o++];
-
 			for (int xx = 0; xx < w; xx++)
 			{
+				if ((xx & 3) == 0)
+					packed = data[o++];
+
 				PixelSet(x + xx, y + yy, (packed >> 6) & 3);
 
 				packed <<= 2;
-
-				if ((xx & 3) == 3)
-					packed = data[o++];
 			}
 		}
 	}

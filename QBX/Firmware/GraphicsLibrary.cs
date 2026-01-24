@@ -880,6 +880,27 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 		radiusY = (radiusY + Aspect - 1) / Aspect;
 
+		if ((radiusX < 0) || (radiusY < 0))
+			return;
+
+		if ((radiusX == 0) && (radiusY == 0))
+		{
+			PixelSet(x, y, attribute);
+			return;
+		}
+
+		if (radiusX == 0)
+		{
+			Line(x, y - radiusY, x, y + radiusY, attribute);
+			return;
+		}
+
+		if (radiusY == 0)
+		{
+			Line(x - radiusX, y, x + radiusX, y, attribute);
+			return;
+		}
+
 		IntegerPoint startPoint, endPoint;
 		int startOctant, endOctant;
 		IntegerRect startClip, endClip, startStopExclude;

@@ -273,7 +273,7 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 		int bitsForNextPixel2 = 0;
 		int bitsForNextPixel3 = 0;
 
-		int lastByteMask = unchecked((byte)(255 << (w & 7)));
+		int lastByteMask = unchecked((byte)(0x7F80 >> ((w - 1) & 7)));
 
 		for (int yy = 0; yy < h; yy++)
 		{
@@ -284,6 +284,23 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 			int p1 = p + 1 * bytesPerScan;
 			int p2 = p + 2 * bytesPerScan;
 			int p3 = p + 3 * bytesPerScan;
+
+			if (rightPixelMask != 0)
+			{
+				// Input and output bytes are not aligned, and the offset o has only
+				// some of the bits for the first output byte in each plane.
+				int sample0 = plane0[o];
+				int sample1 = plane1[o];
+				int sample2 = plane2[o];
+				int sample3 = plane3[o];
+
+				bitsForNextPixel0 = (sample0 & rightPixelMask) << rightPixelShift;
+				bitsForNextPixel1 = (sample1 & rightPixelMask) << rightPixelShift;
+				bitsForNextPixel2 = (sample2 & rightPixelMask) << rightPixelShift;
+				bitsForNextPixel3 = (sample3 & rightPixelMask) << rightPixelShift;
+
+				o++;
+			}
 
 			for (int xx = 0; xx < w; xx += 8, o++, p0++, p1++, p2++, p3++)
 			{
@@ -374,11 +391,25 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 		if (leftPixelShift == 0)
 			rightPixelMask = 0;
 
+		int lastDataBytePixels = ((w - 1) & 7) + 1;
 		int lastOutputBytePixels = (x + w) & 7;
 
 		int lastByteMask = unchecked((byte)~(255 >> lastOutputBytePixels));
 
-		int startXX = 7 - ((x - 1) & 7);
+		int subByteAlignment = 0;
+
+		int loopBytes = ((x & 7) + w) >> 3;
+
+		if ((x & 7) + w < 8)
+		{
+			// Start and end in the same output byte.
+			// We'll skip the main loop and just use the tail,
+			// but that means we're also skipping incrementing
+			// p, which the tail depends on. So, factor that in.
+			subByteAlignment = x & 7;
+			lastByteMask = unchecked((byte)(((255 << (8 - w)) & 255) >> subByteAlignment));
+			lastOutputBytePixels = lastDataBytePixels;
+		}
 
 		var action = new TAction();
 
@@ -400,7 +431,7 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 			int bitsForNextPixel2 = 0;
 			int bitsForNextPixel3 = 0;
 
-			for (int xx = startXX; xx < w; xx += 8, o++, p0++, p1++, p2++, p3++)
+			for (int xx = 0; xx < loopBytes; xx++, o++, p0++, p1++, p2++, p3++)
 			{
 				{
 					byte planeByte = (unrelatedMask == 0) ? (byte)0 : plane0[o];
@@ -451,37 +482,25 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 				unrelatedMask = unchecked((byte)~lastByteMask);
 				spriteMask = lastByteMask;
 
+				if (subByteAlignment != 0)
 				{
-					byte planeByte = plane0[o];
-
-					bitsForNextPixel0 |= data[p0 - 1] << (8 - lastOutputBytePixels);
-
-					plane0[o] = action.ApplySpriteBits(planeByte, bitsForNextPixel0, unrelatedMask, spriteMask);
+					bitsForNextPixel0 = data[p0] >> subByteAlignment;
+					bitsForNextPixel1 = data[p1] >> subByteAlignment;
+					bitsForNextPixel2 = data[p2] >> subByteAlignment;
+					bitsForNextPixel3 = data[p3] >> subByteAlignment;
+				}
+				else if (lastDataBytePixels <= lastOutputBytePixels)
+				{
+					bitsForNextPixel0 |= data[p0] >> leftPixelShift;
+					bitsForNextPixel1 |= data[p1] >> leftPixelShift;
+					bitsForNextPixel2 |= data[p2] >> leftPixelShift;
+					bitsForNextPixel3 |= data[p3] >> leftPixelShift;
 				}
 
-				{
-					byte planeByte = plane1[o];
-
-					bitsForNextPixel1 |= data[p1 - 1] << (8 - lastOutputBytePixels);
-
-					plane1[o] = action.ApplySpriteBits(planeByte, bitsForNextPixel1, unrelatedMask, spriteMask);
-				}
-
-				{
-					byte planeByte = plane2[o];
-
-					bitsForNextPixel2 |= data[p2 - 1] << (8 - lastOutputBytePixels);
-
-					plane2[o] = action.ApplySpriteBits(planeByte, bitsForNextPixel2, unrelatedMask, spriteMask);
-				}
-
-				{
-					byte planeByte = plane3[o];
-
-					bitsForNextPixel3 |= data[p3 - 1] << (8 - lastOutputBytePixels);
-
-					plane3[o] = action.ApplySpriteBits(planeByte, bitsForNextPixel3, unrelatedMask, spriteMask);
-				}
+				plane0[o] = action.ApplySpriteBits(plane0[o], bitsForNextPixel0, unrelatedMask, spriteMask);
+				plane1[o] = action.ApplySpriteBits(plane1[o], bitsForNextPixel1, unrelatedMask, spriteMask);
+				plane2[o] = action.ApplySpriteBits(plane2[o], bitsForNextPixel2, unrelatedMask, spriteMask);
+				plane3[o] = action.ApplySpriteBits(plane3[o], bitsForNextPixel3, unrelatedMask, spriteMask);
 			}
 		}
 	}
