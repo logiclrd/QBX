@@ -104,7 +104,7 @@ public class PaintSolidFill(CodeModel.Statements.Statement source) : PaintStatem
 		if (PaintExpression != null)
 			paint = PaintExpression.EvaluateAndCoerceToInt(context, stackFrame);
 
-		int border = visual.DrawingAttribute;
+		int border = paint;
 
 		if (BorderExpression != null)
 			border = BorderExpression.EvaluateAndCoerceToInt(context, stackFrame);

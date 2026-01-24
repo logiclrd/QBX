@@ -478,7 +478,7 @@ public class Mapper
 		// existing ones for DEF FN parameters.
 		if (_semiscopeMode != SemiscopeMode.Setup)
 		{
-			if (_variableIndexByName.TryGetValue(name, out _))
+			if (_variableIndexByName.ContainsKey(name))
 				throw CompilerException.DuplicateDefinition(token);
 		}
 
@@ -500,20 +500,20 @@ public class Mapper
 	{
 		int index;
 
-		if (_variableIndexByName.TryGetValue(name, out index))
-			return index;
 		if ((_semiscopeOverlay != null)
 		 && _semiscopeOverlay.TryGetValue(name, out index))
+			return index;
+		if (_variableIndexByName.TryGetValue(name, out index))
 			return index;
 
 		if (dataType == null)
 		{
 			name = QualifyIdentifier(name);
 
-			if (_variableIndexByName.TryGetValue(name, out index))
-				return index;
 			if ((_semiscopeOverlay != null)
 			 && _semiscopeOverlay.TryGetValue(name, out index))
+				return index;
+			if (_variableIndexByName.TryGetValue(name, out index))
 				return index;
 		}
 
