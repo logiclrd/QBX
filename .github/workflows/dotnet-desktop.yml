@@ -61,7 +61,9 @@ jobs:
       run: |
         md Stage
         Copy-Item QBX\bin\Release\net10.0\* Stage\ -Recurse
-        Copy-Item Samples Stage -Recurse
+        md Stage\Samples
+        Copy-Item Samples\*.md Stage\Samples -Recurse
+        Copy-Item Samples\*.BAS Stage\Samples -Recurse
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
