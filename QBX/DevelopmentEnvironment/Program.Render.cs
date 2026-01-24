@@ -211,7 +211,7 @@ public partial class Program : HostedProgram
 
 		if (IsExecuting && (viewport.CompilationUnit != null))
 		{
-			var nextStatement = ErrorToken?.OwnerStatement;
+			var nextStatement = RuntimeErrorToken?.OwnerStatement;
 
 			if (nextStatement == null)
 			{
@@ -229,10 +229,10 @@ public partial class Program : HostedProgram
 			{
 				nextLineIndex = location.LineIndex;
 
-				if (ErrorToken != null)
+				if (RuntimeErrorToken != null)
 				{
-					nextStartColumn = ErrorToken.Column;
-					nextEndColumn = nextStartColumn + ErrorToken.Length - 1;
+					nextStartColumn = RuntimeErrorToken.Column;
+					nextEndColumn = nextStartColumn + RuntimeErrorToken.Length - 1;
 				}
 				else
 				{

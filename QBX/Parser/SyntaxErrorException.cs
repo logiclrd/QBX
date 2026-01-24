@@ -16,6 +16,6 @@ public class SyntaxErrorException : Exception
 
 	public override string ToString()
 	{
-		return Message + $" ({Token.Line}:{Token.Column})";
+		return Message + $" ({Token.Line + 1}:{Token.Column + 1})";
 	}
 }

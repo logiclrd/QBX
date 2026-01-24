@@ -84,9 +84,12 @@ public partial class Program : HostedProgram
 
 	public override bool EnableMainLoop => true;
 
-	public void ShowDialog(Dialog dialog)
+	public TDialog ShowDialog<TDialog>(TDialog dialog)
+		where TDialog : Dialog
 	{
 		var previousMode = Mode;
+
+		dialog.Y = (TextLibrary.Height - dialog.Height + 1) / 2;
 
 		CurrentDialog = dialog;
 		Mode = UIMode.Dialog;
@@ -97,6 +100,8 @@ public partial class Program : HostedProgram
 				CurrentDialog = null;
 				Mode = previousMode;
 			};
+
+		return dialog;
 	}
 
 	public override void Run(CancellationToken cancellationToken)

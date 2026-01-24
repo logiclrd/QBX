@@ -2052,7 +2052,7 @@ public class Compiler
 						throw new CompilerException("Can't translate Subject expression for CallOrIndexExpression");
 
 					identifierToken = new Token(
-						callOrIndexExpression.Subject.Token?.Line ?? 0,
+						callOrIndexExpression.Subject.Token?.Line ?? -1,
 						column,
 						TokenType.Identifier,
 						identifier);
@@ -2297,7 +2297,7 @@ public class Compiler
 						if (constantValue)
 						{
 							var blameToken = new Token(
-								binaryExpression.Token?.Line ?? 0,
+								binaryExpression.Token?.Line ?? -1,
 								column,
 								TokenType.Identifier,
 								dottedIdentifier);
@@ -2432,7 +2432,7 @@ public class Compiler
 				if (!mapper.IsDisallowedSlug(leftIdentifier.Identifier))
 				{
 					identifierBuilder = new StringBuilder(leftIdentifier.Identifier);
-					column = leftIdentifier.Token?.Column ?? 0;
+					column = leftIdentifier.Token?.Column ?? -1;
 				}
 				break;
 			case CodeModel.Expressions.BinaryExpression leftBinary:

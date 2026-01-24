@@ -14,18 +14,20 @@ public class CompilationElement(CompilationUnit owner) : IRenderableCode
 	public string? Name { get; set; }
 
 	public CompilationElementType Type { get; set; }
-	public List<CodeLine> Lines { get; } = new List<CodeLine>();
+	public IReadOnlyList<CodeLine> Lines => _lines;
 
 	public int CachedCursorLine; // Used by DevelopmentEnvironment
 
-	public IEnumerable<Statement> AllStatements => Lines.SelectMany(line => line.Statements);
+	public IEnumerable<Statement> AllStatements => _lines.SelectMany(line => line.Statements);
+
+	List<CodeLine> _lines = new List<CodeLine>();
 
 	public CompilationElement Clone()
 	{
 		var clone = new CompilationElement(owner);
 
 		clone.Type = Type;
-		clone.Lines.AddRange(Lines);
+		clone.AddLines(Lines);
 
 		return clone;
 	}
@@ -37,16 +39,43 @@ public class CompilationElement(CompilationUnit owner) : IRenderableCode
 
 	public void AddLine(CodeLine line)
 	{
-		Lines.Add(line);
+		_lines.Add(line);
 		line.CompilationElement = this;
 	}
 
 	public void AddLines(IEnumerable<CodeLine> lines)
 	{
-		Lines.AddRange(lines);
+		_lines.AddRange(lines);
 
 		foreach (var line in lines)
 			line.CompilationElement = this;
+	}
+
+	public void InsertLine(int index, CodeLine line)
+	{
+		_lines.Insert(index, line);
+		line.CompilationElement = this;
+	}
+
+	public void ReplaceLine(int index, CodeLine newLine)
+	{
+		if ((index < 0) || (index >= _lines.Count))
+			throw new ArgumentOutOfRangeException(nameof(index));
+
+		_lines[index].CompilationElement = null;
+
+		_lines[index] = newLine;
+
+		newLine.CompilationElement = this;
+	}
+
+	public void RemoveLineAt(int index)
+	{
+		if ((index >= 0) && (index < _lines.Count))
+		{
+			_lines[index].CompilationElement = null;
+			_lines.RemoveAt(index);
+		}
 	}
 
 	public static DataType[] MakeDefaultDefTypeMap()
@@ -126,7 +155,7 @@ public class CompilationElement(CompilationUnit owner) : IRenderableCode
 
 			if ((line.Statements.Count == 0) && (line.EndOfLineComment == null))
 			{
-				Lines.RemoveAt(lineIndex);
+				_lines.RemoveAt(lineIndex);
 				lineIndex--;
 			}
 		}
@@ -148,12 +177,12 @@ public class CompilationElement(CompilationUnit owner) : IRenderableCode
 
 			line.AppendStatement(defType);
 
-			Lines.Insert(0, line);
+			InsertLine(0, line);
 		}
 	}
 
 	public void Render(TextWriter writer)
 	{
-		Lines.ForEach(line => line.Render(writer));
+		_lines.ForEach(line => line.Render(writer));
 	}
 }

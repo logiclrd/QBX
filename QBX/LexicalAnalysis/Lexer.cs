@@ -48,8 +48,8 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 		var buffer = new StringBuilder();
 		var mode = Mode.Any;
 
-		int line = 1;
-		int column = 1;
+		int line = 0;
+		int column = 0;
 
 		int tokenStartColumn = column;
 
@@ -80,7 +80,7 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 						{
 							yield return new Token(line, tokenStartColumn, TokenType.NewLine, "\n");
 							line++;
-							column = 1;
+							column = 0;
 							tokenStartColumn = column;
 							break;
 						}
@@ -140,8 +140,8 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 							yield return new Token(line, tokenStartColumn, TokenType.NewLine, "\r\n");
 
 							line++;
-							column = 1;
-							tokenStartColumn = 1;
+							column = 0;
+							tokenStartColumn = 0;
 
 							buffer.Clear();
 							mode = Mode.Any;
@@ -151,7 +151,7 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 							yield return new Token(line, column, TokenType.NewLine, "\r");
 
 							line++;
-							column = 1;
+							column = 0;
 							tokenStartColumn = 1;
 
 							if (ch != '\r')

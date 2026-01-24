@@ -36,7 +36,8 @@ public class PrintStatement : Statement
 			if (i > 0)
 				writer.Write(' ');
 
-			if (UsingExpression != null)
+			if ((UsingExpression != null)
+			 && (Arguments[i].CursorAction == PrintCursorAction.NextZone))
 				Arguments[i].CursorAction = PrintCursorAction.None;
 
 			Arguments[i].Render(writer);

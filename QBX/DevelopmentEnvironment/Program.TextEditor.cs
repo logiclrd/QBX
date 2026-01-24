@@ -11,12 +11,6 @@ namespace QBX.DevelopmentEnvironment;
 
 public partial class Program
 {
-	enum Priority
-	{
-		Cursor,
-		Scroll,
-	}
-
 	void ProcessTextEditorKey(KeyEvent input)
 	{
 		if (input.IsRelease)
@@ -37,7 +31,7 @@ public partial class Program
 		int newCursorX, newCursorY;
 		int newScrollX, newScrollY;
 
-		var priority = Priority.Cursor;
+		var priority = ViewportPositioningPriority.Cursor;
 		bool select = input.Modifiers.ShiftKey;
 
 		int contentLineCount;
@@ -316,8 +310,8 @@ public partial class Program
 					switch (input.ScanCode)
 					{
 						// Ctrl-Up, Ctrl-Down: scroll viewport
-						case ScanCode.Up: newScrollY--; priority = Priority.Scroll; break;
-						case ScanCode.Down: newScrollY++; priority = Priority.Scroll; break;
+						case ScanCode.Up: newScrollY--; priority = ViewportPositioningPriority.Scroll; break;
+						case ScanCode.Down: newScrollY++; priority = ViewportPositioningPriority.Scroll; break;
 						// Ctrl-Left, Ctrl-Right: previous/next word
 						case ScanCode.Left: FindPreviousWord(); break;
 						case ScanCode.Right: FindNextWord(); break;
@@ -614,78 +608,20 @@ public partial class Program
 			}
 		}
 
-		void ClampCursorToDocument()
+		try
 		{
-			if (newCursorX < 0)
-				newCursorX = 0;
-			if (newCursorY < 0)
-				newCursorY = 0;
-			if (newCursorY > contentLineCount)
-				newCursorY = contentLineCount;
+			FocusedViewport.ScrollCursorIntoView(newCursorX, newCursorY, newScrollX, newScrollY, priority, viewportWidth);
 		}
-
-		void ClampCursorToViewportScroll()
+		catch (SyntaxErrorException error)
 		{
-			if (newCursorX < newScrollX)
-				newCursorX = newScrollX;
-			if (newCursorX >= newScrollX + viewportWidth)
-				newCursorX = newScrollX + viewportWidth - 1;
-			if (newCursorY < newScrollY)
-				newCursorY = newScrollY;
-			if (newCursorY >= newScrollY + viewportHeight)
-				newCursorY = newScrollY + viewportHeight - 1;
-		}
-
-		void ClampViewportScrollToCursor()
-		{
-			if (newCursorX < newScrollX)
-				newScrollX = newCursorX;
-			if (newCursorX >= newScrollX + viewportWidth)
-				newScrollX = newCursorX - viewportWidth + 1;
-			if (newCursorY < newScrollY)
-				newScrollY = newCursorY;
-			if (newCursorY >= newScrollY + viewportHeight)
-				newScrollY = newCursorY - viewportHeight + 1;
-		}
-
-		ClampCursorToDocument();
-
-		if (priority == Priority.Scroll)
-		{
-			ClampCursorToViewportScroll();
-			ClampCursorToDocument();
-		}
-
-		ClampViewportScrollToCursor();
-
-		if (newScrollY < 0)
-			newScrollY = 0;
-
-		if (newCursorY != FocusedViewport.CursorY)
-		{
-			try
-			{
-				FocusedViewport.CommitCurrentLine();
-			}
-			catch
-			{
-				if (Configuration.EnableSyntaxChecking)
-				{
-					// TODO: raise error
-					newCursorY = FocusedViewport.CursorY;
-				}
-			}
+			if (Configuration.EnableSyntaxChecking)
+				PresentError(error);
 		}
 
 		if (!select && !input.IsModifierKey)
-			FocusedViewport.Clipboard.StartSelection(newCursorX, newCursorY);
+			FocusedViewport.Clipboard.StartSelection(FocusedViewport.CursorX, FocusedViewport.CursorY);
 		else
-			FocusedViewport.Clipboard.ExtendSelection(newCursorX, newCursorY);
-
-		FocusedViewport.CursorX = newCursorX;
-		FocusedViewport.CursorY = newCursorY;
-		FocusedViewport.ScrollX = newScrollX;
-		FocusedViewport.ScrollY = newScrollY;
+			FocusedViewport.Clipboard.ExtendSelection(FocusedViewport.CursorX, FocusedViewport.CursorY);
 	}
 
 	public void NavigateTo(CompilationElement element, int lineNumber, int column)

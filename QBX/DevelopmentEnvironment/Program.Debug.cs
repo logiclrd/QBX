@@ -2,9 +2,11 @@
 using System.Linq;
 
 using QBX.CodeModel;
+using QBX.CodeModel.Statements;
 using QBX.DevelopmentEnvironment.Dialogs;
 using QBX.ExecutionEngine;
 using QBX.ExecutionEngine.Execution;
+using QBX.Firmware;
 using QBX.LexicalAnalysis;
 using QBX.Parser;
 
@@ -12,7 +14,7 @@ namespace QBX.DevelopmentEnvironment;
 
 public partial class Program
 {
-	public Token? ErrorToken = null;
+	public Token? RuntimeErrorToken = null;
 	public HashSet<CodeLine> Breakpoints = new HashSet<CodeLine>();
 
 	private void ShowNextStatement(IEnumerable<StackFrame> stack)
@@ -62,13 +64,31 @@ public partial class Program
 	public void PresentError(RuntimeException error)
 	{
 		PresentError(error.Message, error.Context);
+
+		RuntimeErrorToken = error.Context;
 	}
 
 	public void PresentError(string errorMessage, Token? context = null)
 	{
-		// TODO: navigate viewport to context
+		if ((context?.OwnerStatement is Statement statement)
+		 && (statement.CodeLine is CodeLine line)
+		 && (line.CompilationElement is CompilationElement element))
+		{
+			if (FocusedViewport!.CompilationElement != element)
+				FocusedViewport.SwitchTo(element);
 
-		ShowDialog(new ErrorDialog(Configuration, errorMessage));
+			FocusedViewport.ScrollCursorIntoView(
+				newCursorX: context.Column, newCursorY: context.Line,
+				FocusedViewport.ScrollX, FocusedViewport.ScrollY,
+				ViewportPositioningPriority.Cursor,
+				viewportWidth: TextLibrary.CharacterWidth - 2);
+		}
+
+		var dialog = ShowDialog(new ErrorDialog(Configuration, errorMessage));
+
+		if ((TextLibrary.CursorY >= dialog.Y)
+		 && (TextLibrary.CursorY <= dialog.Y + dialog.Height)) // include the shadow
+			dialog.Y = TextLibrary.Height - dialog.Height - 1;
 	}
 
 	public void ToggleBreakpoint(CodeLine codeLine)

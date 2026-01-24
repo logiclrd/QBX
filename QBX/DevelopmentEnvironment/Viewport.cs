@@ -126,7 +126,7 @@ public class Viewport
 		{
 			if (y < CompilationElement.Lines.Count)
 			{
-				CompilationElement.Lines.RemoveAt(y);
+				CompilationElement.RemoveLineAt(y);
 				CompilationElement.Dirty();
 			}
 		}
@@ -137,9 +137,9 @@ public class Viewport
 		if ((CompilationElement != null) && IsEditable)
 		{
 			if (y < CompilationElement.Lines.Count)
-				CompilationElement.Lines.Insert(y, newLine);
+				CompilationElement.InsertLine(y, newLine);
 			else
-				CompilationElement.Lines.Add(newLine);
+				CompilationElement.AddLine(newLine);
 
 			CompilationElement.Dirty();
 		}
@@ -150,9 +150,9 @@ public class Viewport
 		if ((CompilationElement != null) && IsEditable)
 		{
 			if (CursorY < CompilationElement.Lines.Count)
-				CompilationElement.Lines[CursorY] = newLine;
+				CompilationElement.ReplaceLine(CursorY, newLine);
 			else
-				CompilationElement.Lines.Add(newLine);
+				CompilationElement.AddLine(newLine);
 
 			CompilationElement.Dirty();
 
@@ -212,5 +212,70 @@ public class Viewport
 			ReplaceCurrentLine(CodeLine.CreateUnparsed(buffer.ToString()));
 			throw;
 		}
+	}
+
+	public void ScrollCursorIntoView(int newCursorX, int newCursorY, int newScrollX, int newScrollY, ViewportPositioningPriority priority, int viewportWidth)
+	{
+		int contentLineCount = GetContentLineCount();
+
+		int viewportHeight = CachedContentHeight;
+
+		if (viewportHeight == 0)
+			viewportHeight = Height - 2;
+
+		void ClampCursorToDocument()
+		{
+			if (newCursorX < 0)
+				newCursorX = 0;
+			if (newCursorY < 0)
+				newCursorY = 0;
+			if (newCursorY > contentLineCount)
+				newCursorY = contentLineCount;
+		}
+
+		void ClampCursorToViewportScroll()
+		{
+			if (newCursorX < newScrollX)
+				newCursorX = newScrollX;
+			if (newCursorX >= newScrollX + viewportWidth)
+				newCursorX = newScrollX + viewportWidth - 1;
+			if (newCursorY < newScrollY)
+				newCursorY = newScrollY;
+			if (newCursorY >= newScrollY + viewportHeight)
+				newCursorY = newScrollY + viewportHeight - 1;
+		}
+
+		void ClampViewportScrollToCursor()
+		{
+			if (newCursorX < newScrollX)
+				newScrollX = newCursorX;
+			if (newCursorX >= newScrollX + viewportWidth)
+				newScrollX = newCursorX - viewportWidth + 1;
+			if (newCursorY < newScrollY)
+				newScrollY = newCursorY;
+			if (newCursorY >= newScrollY + viewportHeight)
+				newScrollY = newCursorY - viewportHeight + 1;
+		}
+
+		ClampCursorToDocument();
+
+		if (priority == ViewportPositioningPriority.Scroll)
+		{
+			ClampCursorToViewportScroll();
+			ClampCursorToDocument();
+		}
+
+		ClampViewportScrollToCursor();
+
+		if (newScrollY < 0)
+			newScrollY = 0;
+
+		if (newCursorY != CursorY)
+			CommitCurrentLine();
+
+		CursorX = newCursorX;
+		CursorY = newCursorY;
+		ScrollX = newScrollX;
+		ScrollY = newScrollY;
 	}
 }

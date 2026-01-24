@@ -4,6 +4,7 @@ using NUnit.Framework.Internal;
 
 using QBX.Firmware;
 using QBX.Hardware;
+using QBX.Tests.Utility;
 
 namespace QBX.Tests.Firmware;
 
@@ -620,20 +621,56 @@ public class GraphicsLibraryTests
 			target[i].Should().Be(Black);
 	}
 
-	[Test]
-	public void GetSprite_PutSprite(
-		[Values(5, 6, 0x12, 0x13)]
-		int mode,
-		[Values(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)]
-		int x,
-		[Values(0, 5, 10)]
-		int y,
-		[Values(1, 2, 3, 4, 5, 6, 7, 8, 9, 15, 16, 17, 23, 24, 25)]
-		int w,
-		[Values(1, 3, 5)]
-		int h,
-		[Values(155, 156, 157, 158, 159, 160, 161, 162)]
-		int tx)
+	static IEnumerable<object[]> SpriteTestGenerator()
+	{
+		if (Environment.GetEnvironmentVariable("FULL_SPRITE_TEST") != null)
+		{
+			// Full combinatoric set, currently generates 47,520 tests.
+			foreach (int mode in GetSprite_PutSprite_Modes)
+				foreach (int x in GetSprite_PutSprite_XValues)
+					foreach (int y in GetSprite_PutSprite_YValues)
+						foreach (int w in GetSprite_PutSprite_WValues)
+							foreach (int h in GetSprite_PutSprite_HValues)
+								foreach (int tx in GetSprite_PutSprite_TargetXValues)
+									yield return new object[] { mode, x, y, w, h, tx };
+		}
+		else
+		{
+			// Random sampling of tests. Pick LightTestCount of them. Echo the
+			// random number seed to the test context for reproducibility if
+			// a failure occurs.
+
+			int seed = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm").ToString().GetHashCode();
+
+			TestContext.Out.WriteLine("Seed for GetSprite_PutSprite test set: " + seed);
+
+			var rnd = new Random(seed);
+
+			for (int i = 0; i < GetSprite_PutSprite_LightTestCount; i++)
+			{
+				int mode = rnd.Next(GetSprite_PutSprite_Modes);
+				int x = rnd.Next(GetSprite_PutSprite_XValues);
+				int y = rnd.Next(GetSprite_PutSprite_YValues);
+				int w = rnd.Next(GetSprite_PutSprite_WValues);
+				int h = rnd.Next(GetSprite_PutSprite_HValues);
+				int tx = rnd.Next(GetSprite_PutSprite_TargetXValues);
+
+				yield return new object[] { mode, x, y, w, h, tx };
+			}
+		}
+	}
+
+	static int[] GetSprite_PutSprite_Modes = [5, 6, 0x12, 0x13];
+	static int[] GetSprite_PutSprite_XValues = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+	static int[] GetSprite_PutSprite_YValues = [0, 5, 10];
+	static int[] GetSprite_PutSprite_WValues = [1, 2, 3, 4, 5, 6, 7, 8, 9, 15, 16, 17, 23, 24, 25];
+	static int[] GetSprite_PutSprite_HValues = [1, 3, 5];
+	static int[] GetSprite_PutSprite_TargetXValues = [155, 156, 157, 158, 159, 160, 161, 162];
+
+	const int GetSprite_PutSprite_LightTestCount = 600;
+
+	[TestCaseSource(nameof(SpriteTestGenerator))]
+	public void GetSprite_PutSprite(int mode, int x, int y, int w, int h, int tx)
 	{
 		// Arrange
 		var machine = new Machine();
