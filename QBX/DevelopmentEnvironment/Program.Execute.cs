@@ -11,6 +11,7 @@ namespace QBX.DevelopmentEnvironment;
 
 public partial class Program
 {
+	System.Threading.Thread? _executionThread;
 	ExecutionContext? _executionContext;
 	Dictionary<Statement, SourceLocation> _statementLocation = new Dictionary<Statement, SourceLocation>();
 
@@ -23,10 +24,16 @@ public partial class Program
 		Continue();
 	}
 
+	public void Terminate()
+	{
+		_executionThread?.IsBackground = true;
+		_executionContext?.Controls.Terminate();
+	}
+
 	[MemberNotNull(nameof(_executionContext))]
 	public void Restart()
 	{
-		_executionContext?.Controls.Terminate();
+		Terminate();
 
 		_statementLocation.Clear();
 
@@ -55,7 +62,7 @@ public partial class Program
 		_executionContext = new ExecutionContext(Machine, PlayProcessor);
 		_executionContext.Controls.Break();
 
-		var thread = new System.Threading.Thread(
+		_executionThread = new System.Threading.Thread(
 			() =>
 			{
 				try
@@ -68,10 +75,10 @@ public partial class Program
 				}
 			});
 
-		thread.IsBackground = false;
-		thread.Name = "Program Execution Thread";
+		_executionThread.IsBackground = false;
+		_executionThread.Name = "Program Execution Thread";
 
-		thread.Start();
+		_executionThread.Start();
 	}
 
 	void UnpauseExecution()
@@ -131,6 +138,9 @@ public partial class Program
 	{
 		if (_executionContext == null)
 			return; // ??
+
+		if (!Machine.KeepRunning)
+			return;
 
 		var outputLibrary = _executionContext.VisualLibrary;
 

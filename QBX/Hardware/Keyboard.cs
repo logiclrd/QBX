@@ -126,10 +126,10 @@ public class Keyboard(Machine machine)
 
 		lock (_sync)
 		{
-			while (_inputQueue.Count == 0)
+			while (machine.KeepRunning && (_inputQueue.Count == 0))
 				Monitor.Wait(_sync);
 
-			return true;
+			return machine.KeepRunning;
 		}
 	}
 

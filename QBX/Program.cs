@@ -135,6 +135,7 @@ class Program
 			driverThread.Join(TimeSpan.FromSeconds(5));
 		}
 
+		Environment.Exit(machine.ExitCode);
 		return machine.ExitCode;
 	}
 }

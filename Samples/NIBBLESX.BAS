@@ -615,6 +615,11 @@ SUB PrintScore (NumPlayers, score1, score2, lives1, lives2)
     PRINT USING "SAMMY-->  Lives: #     #,###,#00"; lives1; score1
 END SUB
 
+SUB Rest
+    st# = TIMER
+    WHILE TIMER = st#: WEND
+END SUB
+
 'Set:
 '  Sets row and column on playing field to given color to facilitate moving
 '  of snakes around the field.
@@ -703,6 +708,8 @@ SUB SparklePause
                     PRINT " ";
                 END IF
             NEXT b
+
+            Rest
         NEXT a
     WEND
 

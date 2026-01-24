@@ -9,6 +9,7 @@ using QBX.Hardware;
 using QBX.Parser;
 using QBX.ExecutionEngine;
 using QBX.DevelopmentEnvironment.Dialogs;
+using QBX.ExecutionEngine.Execution;
 
 namespace QBX.DevelopmentEnvironment;
 
@@ -83,8 +84,17 @@ public partial class Program : HostedProgram
 
 		StartNewProgram();
 
-		if (File.Exists(Environment.CommandLine))
-			LoadFile(Environment.CommandLine, replaceExistingProgram: true);
+		string commandLine = Environment.CommandLine;
+
+		int space = commandLine.IndexOf(' ');
+
+		if (space >= 0)
+		{
+			string initialFilePath = commandLine.Substring(space + 1).TrimStart();
+
+			if (File.Exists(initialFilePath))
+				LoadFile(initialFilePath, replaceExistingProgram: true);
+		}
 	}
 
 	public override bool EnableMainLoop => true;
@@ -111,6 +121,12 @@ public partial class Program : HostedProgram
 
 	public override void Run(CancellationToken cancellationToken)
 	{
+		cancellationToken.Register(
+			() =>
+			{
+				Terminate();
+			});
+
 		while (Machine.KeepRunning)
 		{
 			Render();
@@ -135,10 +151,13 @@ public partial class Program : HostedProgram
 
 	void WaitForKey()
 	{
+		if (!Machine.KeepRunning)
+			return;
+
 		while (Machine.Keyboard.GetNextEvent() != null)
 			;
 
-		while (true)
+		while (Machine.KeepRunning)
 		{
 			Machine.Keyboard.WaitForInput();
 
