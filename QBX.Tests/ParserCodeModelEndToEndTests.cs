@@ -23,27 +23,11 @@ public class ParserCodeModelEndToEndTests
 		return Directory.EnumerateFiles(samplesPath, "*.BAS");
 	}
 
-	static string NormalizeNewLinesForNonWindowsPlatforms(string code)
-	{
-		if (Environment.NewLine == "\r\n")
-			return code;
-
-		var reader = new StringReader(code);
-		var writer = new StringWriter() { NewLine = "\r\n" };
-
-		while (reader.ReadLine() is string line)
-			writer.WriteLine(line);
-
-		return writer.ToString();
-	}
-
 	[TestCaseSource(nameof(EnumerateSamples))]
 	public void TestParseAndFormat(string path)
 	{
 		// Arrange
 		var sourceCode = File.ReadAllText(path);
-
-		sourceCode = NormalizeNewLinesForNonWindowsPlatforms(sourceCode);
 
 		var lexer = new Lexer(sourceCode);
 
