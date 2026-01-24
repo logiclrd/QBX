@@ -482,6 +482,8 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 
 		var action = new TAction();
 
+		bool needToReadPlaneBits = action.UsesPlaneBits;
+
 		for (int yy = 0; yy < h; yy++)
 		{
 			int o = (y + yy) * _stride + (x >> 3);
@@ -492,9 +494,11 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 
 			int bitsForNextPixel = 0;
 
+			bool readPlaneBits = (unrelatedMask != 0) || needToReadPlaneBits;
+
 			for (int xx = 0; xx < loopBytes; xx++, o++, p++)
 			{
-				byte planeByte = (unrelatedMask == 0) ? (byte)0 : plane[o];
+				byte planeByte = readPlaneBits ? plane[o] : (byte)0;
 
 				int sample = data[p];
 
@@ -515,6 +519,7 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 
 				unrelatedMask = 0;
 				spriteMask = 255;
+				readPlaneBits = needToReadPlaneBits;
 			}
 
 			if (lastByteMask != 0)

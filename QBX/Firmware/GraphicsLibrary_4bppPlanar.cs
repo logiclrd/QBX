@@ -413,6 +413,8 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 
 		var action = new TAction();
 
+		bool needToReadPlaneBits = action.UsesPlaneBits;
+
 		for (int yy = 0; yy < h; yy++)
 		{
 			int o = (y + yy) * _stride + (x >> 3);
@@ -431,10 +433,12 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 			int bitsForNextPixel2 = 0;
 			int bitsForNextPixel3 = 0;
 
+			bool readPlaneBits = (unrelatedMask != 0) || needToReadPlaneBits;
+
 			for (int xx = 0; xx < loopBytes; xx++, o++, p0++, p1++, p2++, p3++)
 			{
 				{
-					byte planeByte = (unrelatedMask == 0) ? (byte)0 : plane0[o];
+					byte planeByte = readPlaneBits ? plane0[o] : (byte)0;
 					int sample = data[p0];
 					int spriteByte = bitsForNextPixel0 | ((sample & leftPixelMask) >> leftPixelShift);
 
@@ -444,7 +448,7 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 				}
 
 				{
-					byte planeByte = (unrelatedMask == 0) ? (byte)0 : plane1[o];
+					byte planeByte = readPlaneBits ? plane1[o] : (byte)0;
 					int sample = data[p1];
 					int spriteByte = bitsForNextPixel1 | ((sample & leftPixelMask) >> leftPixelShift);
 
@@ -454,7 +458,7 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 				}
 
 				{
-					byte planeByte = (unrelatedMask == 0) ? (byte)0 : plane2[o];
+					byte planeByte = readPlaneBits ? plane2[o] : (byte)0;
 					int sample = data[p2];
 					int spriteByte = bitsForNextPixel2 | ((sample & leftPixelMask) >> leftPixelShift);
 
@@ -464,7 +468,7 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 				}
 
 				{
-					byte planeByte = (unrelatedMask == 0) ? (byte)0 : plane3[o];
+					byte planeByte = readPlaneBits ? plane3[o] : (byte)0;
 					int sample = data[p3];
 					int spriteByte = bitsForNextPixel3 | ((sample & leftPixelMask) >> leftPixelShift);
 
@@ -475,6 +479,7 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 
 				unrelatedMask = 0;
 				spriteMask = 255;
+				readPlaneBits = needToReadPlaneBits;
 			}
 
 			if (lastByteMask != 0)

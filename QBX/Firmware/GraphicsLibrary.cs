@@ -1742,12 +1742,16 @@ public abstract class GraphicsLibrary : VisualLibrary
 	#region Sprites
 	protected interface ISpriteOperation
 	{
+		bool UsesPlaneBits { get; }
+
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		byte ApplySpriteBits(byte bufferByte, int spriteByte, int unrelatedMask, int spriteMask);
 	}
 
 	protected class SpriteOperation_PixelSet : ISpriteOperation
 	{
+		public bool UsesPlaneBits => false;
+
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public byte ApplySpriteBits(byte bufferByte, int spriteByte, int unrelatedMask, int spriteMask)
 		{
@@ -1758,6 +1762,8 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	protected class SpriteOperation_PixelSetInverted : ISpriteOperation
 	{
+		public bool UsesPlaneBits => false;
+
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public byte ApplySpriteBits(byte bufferByte, int spriteByte, int unrelatedMask, int spriteMask)
 		{
@@ -1768,6 +1774,8 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	protected class SpriteOperation_And : ISpriteOperation
 	{
+		public bool UsesPlaneBits => true;
+
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public byte ApplySpriteBits(byte bufferByte, int spriteByte, int unrelatedMask, int spriteMask)
 		{
@@ -1778,6 +1786,8 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	protected class SpriteOperation_Or : ISpriteOperation
 	{
+		public bool UsesPlaneBits => true;
+
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public byte ApplySpriteBits(byte bufferByte, int spriteByte, int unrelatedMask, int spriteMask)
 		{
@@ -1788,6 +1798,8 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	protected class SpriteOperation_ExclusiveOr : ISpriteOperation
 	{
+		public bool UsesPlaneBits => true;
+
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public byte ApplySpriteBits(byte bufferByte, int spriteByte, int unrelatedMask, int spriteMask)
 		{
