@@ -19,8 +19,6 @@ public abstract class GraphicsLibrary : VisualLibrary
 		Window = Window.Dummy;
 	}
 
-	public int Aspect;
-
 	public byte[][] Font = CreateBlankFont();
 
 	static byte[][] CreateBlankFont()
@@ -31,6 +29,9 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 		return ret;
 	}
+
+	public int PhysicalWidth;
+	public int PhysicalHeight;
 
 	public int DrawingAttribute;
 	public Window Window;
@@ -46,6 +47,9 @@ public abstract class GraphicsLibrary : VisualLibrary
 		Width = Array.MiscellaneousOutput.BasePixelWidth >> (Array.Sequencer.DotDoubling ? 1 : 0);
 		Height = Array.CRTController.NumScanLines;
 
+		PhysicalWidth = Array.MiscellaneousOutput.BasePixelWidth;
+		PhysicalHeight = Height * (Array.CRTController.ScanDoubling ? 2 : 1);
+
 		Window = new Window(0, 0, Width, Height, Width, Height);
 
 		if (CharacterScans == 0)
@@ -60,11 +64,6 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 		CharacterWidth = Width / Array.Sequencer.CharacterWidth;
 		CharacterHeight = Height / CharacterScans;
-
-		if ((Width >= 640) && (Height <= 240))
-			Aspect = 2;
-		else
-			Aspect = 1;
 
 		Font = Machine.VideoFirmware.GetFont(CharacterScans);
 
@@ -878,7 +877,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 			return ((int)Math.Round(x), (int)Math.Round(y));
 		}
 
-		radiusY = (radiusY + Aspect - 1) / Aspect;
+		radiusY = (radiusY * PhysicalHeight + 240) / 480;
 
 		if ((radiusX < 0) || (radiusY < 0))
 			return;
@@ -1549,6 +1548,9 @@ public abstract class GraphicsLibrary : VisualLibrary
 		// Adds the parts of the span that aren't already in the interior.
 		void AddToQueue(Span newSpan)
 		{
+			if ((newSpan.Y < 0) || (newSpan.Y >= Height))
+				return;
+
 			foreach (var exteriorSpan in ExcludeSet(newSpan, processed))
 				queuedSpans.Enqueue(newSpan);
 		}

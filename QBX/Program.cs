@@ -90,8 +90,8 @@ class Program
 			IntPtr texture = default;
 			int textureWidth = -1;
 			int textureHeight = -1;
-			int widthScale = -1;
-			int heightScale = -1;
+			int physicalWidth = -1;
+			int physicalHeight = -1;
 
 			while (machine.KeepRunning)
 			{
@@ -109,7 +109,7 @@ class Program
 						machine.Keyboard.HandleEvent(evt.Key);
 				}
 
-				if (machine.Display.UpdateResolution(ref textureWidth, ref textureHeight, ref widthScale, ref heightScale))
+				if (machine.Display.UpdateResolution(ref textureWidth, ref textureHeight, ref physicalWidth, ref physicalHeight))
 				{
 					if (texture != default)
 						SDL.DestroyTexture(texture);
@@ -118,7 +118,7 @@ class Program
 
 					SDL.SetTextureScaleMode(texture, SDL.ScaleMode.Nearest);
 
-					SDL.SetWindowSize(window, textureWidth * widthScale, textureHeight * heightScale);
+					SDL.SetWindowSize(window, physicalWidth, physicalHeight);
 				}
 
 				machine.Display.Render(texture);

@@ -23,7 +23,12 @@ public class TextViewportStatement(CodeModel.Statements.Statement source) : Exec
 			int windowStart = WindowStartExpression.EvaluateAndCoerceToInt(context, stackFrame);
 			int windowEnd = WindowEndExpression.EvaluateAndCoerceToInt(context, stackFrame);
 
-			context.VisualLibrary.UpdateCharacterLineWindow(windowStart, windowEnd);
+			if ((windowStart > windowEnd)
+			 || (windowStart < 1)
+			 || (windowEnd > context.VisualLibrary.CharacterHeight))
+				throw RuntimeException.IllegalFunctionCall(Source);
+
+			context.VisualLibrary.UpdateCharacterLineWindow(windowStart - 1, windowEnd - 1);
 		}
 	}
 }

@@ -1440,7 +1440,17 @@ public class Compiler
 				{
 					var translatedArgument = new PrintArgument();
 
+					translatedArgument.ArgumentType =
+						argument.ExpressionType switch
+						{
+							CodeModel.Statements.PrintExpressionType.Value => PrintArgumentType.Value,
+							CodeModel.Statements.PrintExpressionType.Tab => PrintArgumentType.Tab,
+							CodeModel.Statements.PrintExpressionType.Space => PrintArgumentType.Space,
+							_ => throw new Exception("Internal error: Unrecognized PrintArgument ExpressionType")
+						};
+
 					translatedArgument.Expression = TranslateExpression(argument.Expression, container, mapper, compilation);
+
 					translatedArgument.CursorAction =
 						argument.CursorAction switch
 						{

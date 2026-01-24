@@ -9,7 +9,7 @@ public class Adapter
 {
 	GraphicsArray _array;
 	int _width, _height;
-	int _widthScale, _heightScale;
+	int _physicalWidth, _physicalHeight;
 
 	readonly long Epoch = DateTime.UtcNow.Ticks;
 
@@ -23,16 +23,23 @@ public class Adapter
 		_array = array;
 	}
 
-	public bool UpdateResolution(ref int width, ref int height, ref int widthScale, ref int heightScale)
+	public bool UpdateResolution(ref int width, ref int height, ref int physicalWidth, ref int physicalHeight)
 	{
 		_width = _array.MiscellaneousOutput.BasePixelWidth >> (_array.Sequencer.DotDoubling ? 1 : 0);
 		_height = _array.CRTController.NumScanLines;
-		_widthScale = _array.Sequencer.DotDoubling ? 2 : 1; ;
-		_heightScale = _array.CRTController.ScanDoubling ? 2 : 1;;
 
-		if ((width != _width) || (height != _height) || (widthScale != _widthScale) || (heightScale != _heightScale))
+		int widthScale = _array.Sequencer.DotDoubling ? 2 : 1;
+		int heightScale = _array.CRTController.ScanDoubling ? 2 : 1;
+
+		_physicalWidth = _width * widthScale;
+		_physicalHeight = _height * heightScale;
+
+		if (_height == 350)
+			_physicalHeight = _physicalHeight * 480 / 350;
+
+		if ((width != _width) || (height != _height) || (physicalWidth != _physicalWidth) || (physicalHeight != _physicalHeight))
 		{
-			(width, height, widthScale, heightScale) = (_width, _height, _widthScale, _heightScale);
+			(width, height, physicalWidth, physicalHeight) = (_width, _height, _physicalWidth, _physicalHeight);
 			return true;
 		}
 
