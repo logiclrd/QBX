@@ -173,6 +173,15 @@ public class Compiler
 							{
 								var constValueExpression = TranslateExpression(definition.Value, container: null, mapper, compilation);
 
+								var targetType = mapper.GetTypeForIdentifier(definition.Identifier);
+
+								if (constValueExpression.Type.IsPrimitiveType
+								 && (constValueExpression.Type.PrimitiveType != targetType))
+								{
+									constValueExpression =
+										Conversion.Construct(constValueExpression, targetType);
+								}
+
 								mapper.DefineConstant(
 									definition.Identifier,
 									constValueExpression.EvaluateConstant());
@@ -669,6 +678,8 @@ public class Compiler
 
 					if (declaration.UserType != null)
 						dataType = compilation.TypeRepository.ResolveType(declaration.UserType);
+					else if (declaration.Type != null)
+						dataType = DataType.FromCodeModelDataType(declaration.Type.Value);
 					else
 						dataType = DataType.ForPrimitiveDataType(mapper.GetTypeForIdentifier(declaration.Name));
 
@@ -903,6 +914,11 @@ public class Compiler
 			{
 				var iteratorVariableIndex = mapper.ResolveVariable(forStatement.CounterVariable);
 
+				var iteratorVariableType = mapper.GetVariableType(iteratorVariableIndex);
+
+				if (!iteratorVariableType.IsNumeric)
+					throw CompilerException.TypeMismatch(forStatement.CounterVariableToken);
+
 				var fromExpression = TranslateExpression(forStatement.StartExpression, container, mapper, compilation);
 				var toExpression = TranslateExpression(forStatement.EndExpression, container, mapper, compilation);
 				var stepExpression = TranslateExpression(forStatement.StepExpression, container, mapper, compilation);
@@ -968,7 +984,7 @@ public class Compiler
 
 				var translatedForStatement = ForStatement.Construct(
 					iteratorVariableIndex,
-					mapper.GetTypeForIdentifier(forStatement.CounterVariable),
+					iteratorVariableType.PrimitiveType,
 					fromExpression,
 					toExpression,
 					stepExpression,
@@ -1937,9 +1953,9 @@ public class Compiler
 			case CodeModel.Expressions.IdentifierExpression identifier:
 			{
 				string qualifiedIdentifier = mapper.QualifyIdentifier(identifier.Identifier);
-				string unqualifiedIdentifier = mapper.StripTypeCharacter(identifier.Identifier);
+				string unqualifiedIdentifier = Mapper.UnqualifyIdentifier(identifier.Identifier);
 
-				if (mapper.TryResolveConstant(qualifiedIdentifier, out var literal))
+				if (mapper.TryResolveConstant(unqualifiedIdentifier, out var literal))
 					return literal;
 
 				if (constantValue)
@@ -1957,11 +1973,6 @@ public class Compiler
 					else
 					{
 						var returnType = function.ReturnType ?? throw new Exception("Internal error: function with no return type");
-
-						string qualifiedFunction = mapper.QualifyIdentifier(function.Name, function.ReturnType);
-
-						if (qualifiedIdentifier != qualifiedFunction)
-							throw CompilerException.DuplicateDefinition(expression.Token);
 
 						if (function.ParameterTypes.Count > 0)
 							throw CompilerException.ArgumentCountMismatch(expression.Token);
@@ -2063,9 +2074,9 @@ public class Compiler
 				// - SLN#()
 				// - SYD#()
 
-				bool isForwardReference = compilation.UnresolvedReferences.TryGetDeclaration(identifier, out var forwardReference);
+				string unqualifiedIdentifier = Mapper.UnqualifyIdentifier(identifier);
 
-				string unqualifiedIdentifier = mapper.UnqualifyIdentifier(identifier);
+				bool isForwardReference = compilation.UnresolvedReferences.TryGetDeclaration(unqualifiedIdentifier, out var forwardReference);
 
 				if (compilation.IsRegistered(unqualifiedIdentifier) || isForwardReference)
 				{

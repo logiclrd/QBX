@@ -6,6 +6,7 @@ using QBX.DevelopmentEnvironment.Dialogs;
 using QBX.ExecutionEngine;
 using QBX.ExecutionEngine.Execution;
 using QBX.LexicalAnalysis;
+using QBX.Parser;
 
 namespace QBX.DevelopmentEnvironment;
 
@@ -46,6 +47,16 @@ public partial class Program
 				// necessary.
 			}
 		}
+	}
+
+	public void PresentError(SyntaxErrorException error)
+	{
+		PresentError(error.Message, error.Token);
+	}
+
+	public void PresentError(CompilerException error)
+	{
+		PresentError(error.Message, error.Context);
 	}
 
 	public void PresentError(RuntimeException error)

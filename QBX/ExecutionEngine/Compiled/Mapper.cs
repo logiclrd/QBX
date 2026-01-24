@@ -138,8 +138,6 @@ public class Mapper
 		if (_root != null)
 			throw new Exception("Can only make global variables working with the root Mapper");
 
-		identifier = QualifyIdentifier(identifier);
-
 		_globalVariableNames.Add(identifier);
 	}
 
@@ -147,8 +145,6 @@ public class Mapper
 	{
 		if (_root != null)
 			throw new Exception("Can only make global variables working with the root Mapper");
-
-		identifier = QualifyIdentifier(identifier, type);
 
 		_globalArrayNames.Add(identifier);
 	}
@@ -269,14 +265,6 @@ public class Mapper
 	public DataType GetVariableType(int variableIndex)
 		=> _variables[variableIndex].Type;
 
-	public string StripTypeCharacter(string identifier)
-	{
-		if ((identifier.Length > 1) && CodeModel.TypeCharacter.TryParse(identifier.Last(), out _))
-			return identifier.Remove(identifier.Length - 1);
-		else
-			return identifier;
-	}
-
 	public string QualifyIdentifier(string name, PrimitiveDataType type)
 	{
 		switch (name[name.Length - 1])
@@ -341,7 +329,7 @@ public class Mapper
 		return QualifyIdentifier(name, GetTypeForIdentifier(name));
 	}
 
-	public string UnqualifyIdentifier(string name)
+	public static string UnqualifyIdentifier(string name)
 	{
 		if (CodeModel.TypeCharacter.TryParse(name[name.Length - 1], out _))
 			name = name.Remove(name.Length - 1);
@@ -410,7 +398,7 @@ public class Mapper
 		 && _disallowedSlugs.Contains(slug))
 			throw CompilerException.IdentifierCannotIncludePeriod(default);
 
-		name = QualifyIdentifier(name);
+		name = UnqualifyIdentifier(name);
 
 		if (_constantValueByName.TryGetValue(name, out _))
 			throw CompilerException.DuplicateDefinition(default(Token));
@@ -422,7 +410,7 @@ public class Mapper
 
 	public bool TryResolveConstant(string name, [NotNullWhen(true)] out LiteralValue? literalValue)
 	{
-		if (_constantValueByName.TryGetValue(QualifyIdentifier(name), out literalValue))
+		if (_constantValueByName.TryGetValue(name, out literalValue))
 			return true;
 		else if (_root != null)
 			return _root.TryResolveConstant(name, out literalValue);
@@ -466,12 +454,13 @@ public class Mapper
 		 && _disallowedSlugs.Contains(slug))
 			throw CompilerException.IdentifierCannotIncludePeriod(token);
 
-		name = QualifyIdentifier(name, dataType);
+		string qualifiedName = QualifyIdentifier(name, dataType);
+		string unqualifiedName = UnqualifyIdentifier(name);
 
-		if (_constantValueByName.TryGetValue(name, out _))
+		if (_constantValueByName.TryGetValue(unqualifiedName, out _))
 			throw CompilerException.DuplicateDefinition(token);
 		if ((_root != null)
-		 && _root._constantValueByName.TryGetValue(name, out _))
+		 && _root._constantValueByName.TryGetValue(unqualifiedName, out _))
 			throw CompilerException.DuplicateDefinition(token);
 
 		// During semiscope setup, we allow new declarations to shadow
@@ -479,6 +468,9 @@ public class Mapper
 		if (_semiscopeMode != SemiscopeMode.Setup)
 		{
 			if (_variableIndexByName.ContainsKey(name))
+				throw CompilerException.DuplicateDefinition(token);
+			if ((name != qualifiedName)
+			 && _variableIndexByName.ContainsKey(qualifiedName))
 				throw CompilerException.DuplicateDefinition(token);
 		}
 
@@ -491,9 +483,19 @@ public class Mapper
 		_variables.Add(info);
 
 		if (_semiscopeMode != SemiscopeMode.Setup)
-			return _variableIndexByName[name] = index;
+		{
+			_variableIndexByName[name] = index;
+			if (name != qualifiedName)
+				_variableIndexByName[qualifiedName] = index;
+		}
 		else
-			return _semiscopeOverlay![name] = index;
+		{
+			_semiscopeOverlay![name] = index;
+			if (name != qualifiedName)
+				_semiscopeOverlay![qualifiedName] = index;
+		}
+
+		return index;
 	}
 
 	public int ResolveVariable(string name, DataType? dataType = null)
@@ -508,12 +510,12 @@ public class Mapper
 
 		if (dataType == null)
 		{
-			name = QualifyIdentifier(name);
+			string qualifiedName = QualifyIdentifier(name);
 
 			if ((_semiscopeOverlay != null)
-			 && _semiscopeOverlay.TryGetValue(name, out index))
+			 && _semiscopeOverlay.TryGetValue(qualifiedName, out index))
 				return index;
-			if (_variableIndexByName.TryGetValue(name, out index))
+			if (_variableIndexByName.TryGetValue(qualifiedName, out index))
 				return index;
 		}
 

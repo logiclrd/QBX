@@ -39,14 +39,14 @@ public class Compilation
 
 	public void RegisterFunction(Routine routine)
 	{
-		Functions[routine.Name] = routine;
+		Functions[Mapper.UnqualifyIdentifier(routine.Name)] = routine;
 	}
 
 	public bool TryGetSub(string name, [NotNullWhen(true)] out Routine? sub)
 		=> Subs.TryGetValue(name, out sub);
 
 	public bool TryGetFunction(string name, [NotNullWhen(true)] out Routine? function)
-		=> Functions.TryGetValue(name, out function);
+		=> Functions.TryGetValue(Mapper.UnqualifyIdentifier(name), out function);
 
 	public bool TryGetRoutine(string name, [NotNullWhen(true)] out Routine? routine)
 		=> TryGetSub(name, out routine) || TryGetFunction(name, out routine);

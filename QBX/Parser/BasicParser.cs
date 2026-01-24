@@ -1012,6 +1012,7 @@ public class BasicParser
 			{
 				var forStatement = new ForStatement();
 
+				forStatement.CounterVariableToken = tokenHandler.NextToken;
 				forStatement.CounterVariable = tokenHandler.ExpectIdentifier(allowTypeCharacter: true);
 
 				tokenHandler.Expect(TokenType.Equals);
@@ -3613,6 +3614,12 @@ public class BasicParser
 
 		if (tokenHandler.NextTokenIs(TokenType.AS))
 		{
+			if (char.IsSymbol(declaration.Name.Last()))
+			{
+				throw new SyntaxErrorException(
+					tokenHandler.NextToken,
+					"Expected: , or )");
+			}
 			tokenHandler.Advance();
 
 			if (tokenHandler.NextTokenIs(TokenType.Identifier))

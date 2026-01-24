@@ -2,6 +2,7 @@
 using System.IO;
 
 using QBX.CodeModel.Expressions;
+using QBX.LexicalAnalysis;
 
 namespace QBX.CodeModel.Statements;
 
@@ -13,6 +14,8 @@ public class ForStatement : Statement
 	public Expression? StartExpression { get; set; }
 	public Expression? EndExpression { get; set; }
 	public Expression? StepExpression { get; set; }
+
+	public Token? CounterVariableToken { get; set; }
 
 	protected override void RenderImplementation(TextWriter writer)
 	{

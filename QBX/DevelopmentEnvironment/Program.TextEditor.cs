@@ -5,6 +5,7 @@ using System.Text;
 using QBX.CodeModel;
 using QBX.ExecutionEngine;
 using QBX.Hardware;
+using QBX.Parser;
 
 namespace QBX.DevelopmentEnvironment;
 
@@ -236,6 +237,14 @@ public partial class Program
 						Continue();
 
 					ReloadViewportParameters();
+				}
+				catch (SyntaxErrorException error)
+				{
+					PresentError(error);
+				}
+				catch (CompilerException error)
+				{
+					PresentError(error);
 				}
 				catch (RuntimeException error)
 				{
