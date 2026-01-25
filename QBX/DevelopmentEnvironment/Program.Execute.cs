@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
-using QBX.CodeModel.Statements;
 using QBX.ExecutionEngine;
 using QBX.ExecutionEngine.Execution;
 using QBX.Firmware;
@@ -13,7 +11,7 @@ public partial class Program
 {
 	System.Threading.Thread? _executionThread;
 	ExecutionContext? _executionContext;
-	Dictionary<Statement, SourceLocation> _statementLocation = new Dictionary<Statement, SourceLocation>();
+	Compiler? _compiler;
 
 	[MemberNotNullWhen(true, nameof(_executionContext))]
 	public bool IsExecuting => (_executionContext != null);
@@ -35,25 +33,12 @@ public partial class Program
 	{
 		Terminate();
 
-		_statementLocation.Clear();
-
 		var compilation = new Compilation();
 
-		var compiler = new Compiler();
+		_compiler = new Compiler();
 
 		foreach (var file in LoadedFiles)
-		{
-			foreach (var element in file.Elements)
-				for (int lineIndex = 0; lineIndex < element.Lines.Count; lineIndex++)
-				{
-					var line = element.Lines[lineIndex];
-
-					foreach (var statement in line.AllStatements)
-						_statementLocation[statement] = new SourceLocation(file, element, line, statement, lineIndex);
-				}
-
-			compiler.Compile(file, compilation);
-		}
+			_compiler.Compile(file, compilation);
 
 		compilation.SetDefaultEntrypoint();
 

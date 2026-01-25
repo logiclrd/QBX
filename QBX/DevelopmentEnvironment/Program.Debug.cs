@@ -14,8 +14,13 @@ namespace QBX.DevelopmentEnvironment;
 
 public partial class Program
 {
-	public Token? RuntimeErrorToken = null;
-	public HashSet<CodeLine> Breakpoints = new HashSet<CodeLine>();
+	public Statement? NextStatement => _nextStatement;
+	public Token? RuntimeErrorToken => _runtimeErrorToken;
+	public IReadOnlySet<CodeLine> Breakpoints => _breakpoints;
+
+	Statement? _nextStatement = null;
+	Token? _runtimeErrorToken = null;
+	HashSet<CodeLine> _breakpoints = new HashSet<CodeLine>();
 
 	private void ShowNextStatement(IEnumerable<StackFrame> stack)
 	{
@@ -23,26 +28,27 @@ public partial class Program
 
 		if (currentFrame != null)
 		{
-			var nextStatement = currentFrame.CurrentStatement;
+			_nextStatement = currentFrame.CurrentStatement;
 
-			if ((nextStatement != null)
-			 && _statementLocation.TryGetValue(nextStatement, out var location))
+			if (_nextStatement != null)
 			{
-				if (FocusedViewport!.CompilationElement != location.Element)
+				if ((_nextStatement.CodeLine is CodeLine line)
+				 && (line.CompilationElement is CompilationElement element))
 				{
-					if (PrimaryViewport.CompilationElement == location.Element)
-						FocusedViewport = PrimaryViewport;
-					else if (SplitViewport?.CompilationElement == location.Element)
-						FocusedViewport = SplitViewport;
+					if (FocusedViewport!.CompilationElement != element)
+					{
+						if (PrimaryViewport.CompilationElement == element)
+							FocusedViewport = PrimaryViewport;
+						else if (SplitViewport?.CompilationElement == element)
+							FocusedViewport = SplitViewport;
 
-					if (FocusedViewport.CompilationElement != location.Element)
-						FocusedViewport.SwitchTo(location.Element);
+						if (FocusedViewport.CompilationElement != element)
+							FocusedViewport.SwitchTo(element);
+					}
+
+					FocusedViewport.CursorX = _nextStatement.SourceColumn;
+					FocusedViewport.CursorY = line.LineIndex;
 				}
-
-				FocusedViewport.CursorX = nextStatement.SourceColumn;
-				FocusedViewport.CursorY = location.LineIndex;
-
-				// TODO: move SourceLocation into the CodeModel, get rid of the hash table
 
 				// We are invoked as part of a key handler in ProcessTextEditorKey.
 				// The caller will ensure that the viewport scroll is adjusted as
@@ -65,7 +71,7 @@ public partial class Program
 	{
 		PresentError(error.Message, error.Context);
 
-		RuntimeErrorToken = error.Context;
+		_runtimeErrorToken = error.Context;
 	}
 
 	public void PresentError(string errorMessage, Token? context = null)
@@ -93,7 +99,7 @@ public partial class Program
 
 	public void ToggleBreakpoint(CodeLine codeLine)
 	{
-		if (!Breakpoints.Contains(codeLine))
+		if (!_breakpoints.Contains(codeLine))
 			SetBreakpoint(codeLine);
 		else
 			ClearBreakpoint(codeLine);
@@ -104,7 +110,7 @@ public partial class Program
 		foreach (var statement in codeLine.Statements)
 			statement.IsBreakpoint = true;
 
-		Breakpoints.Add(codeLine);
+		_breakpoints.Add(codeLine);
 	}
 
 	public void ClearBreakpoint(CodeLine codeLine)
@@ -112,6 +118,6 @@ public partial class Program
 		foreach (var statement in codeLine.Statements)
 			statement.IsBreakpoint = false;
 
-		Breakpoints.Remove(codeLine);
+		_breakpoints.Remove(codeLine);
 	}
 }

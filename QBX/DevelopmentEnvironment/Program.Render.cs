@@ -211,28 +211,18 @@ public partial class Program : HostedProgram
 
 		if (IsExecuting && (viewport.CompilationUnit != null))
 		{
-			var nextStatement = RuntimeErrorToken?.OwnerStatement;
-
-			if (nextStatement == null)
-			{
-				var currentStackFrame = _executionContext.ExecutionState.Stack.FirstOrDefault();
-
-				if (currentStackFrame != null)
-				{
-					nextStatement = currentStackFrame.CurrentStatement;
-				}
-			}
+			var nextStatement = _runtimeErrorToken?.OwnerStatement ?? _nextStatement;
 
 			if ((nextStatement != null)
-			 && _statementLocation.TryGetValue(nextStatement, out var location)
-			 && (viewport.CompilationElement == location.Element))
+			 && (nextStatement.CodeLine is CodeLine codeLine)
+			 && (viewport.CompilationElement == codeLine.CompilationElement))
 			{
-				nextLineIndex = location.LineIndex;
+				nextLineIndex = codeLine.LineIndex;
 
-				if (RuntimeErrorToken != null)
+				if (_runtimeErrorToken != null)
 				{
-					nextStartColumn = RuntimeErrorToken.Column;
-					nextEndColumn = nextStartColumn + RuntimeErrorToken.Length - 1;
+					nextStartColumn = _runtimeErrorToken.Column;
+					nextEndColumn = nextStartColumn + _runtimeErrorToken.Length - 1;
 				}
 				else
 				{
@@ -364,7 +354,7 @@ public partial class Program : HostedProgram
 			var rowHighlightAttr = highlightAttr;
 
 			if ((viewport.TryGetCodeLineAt(lineIndex) is CodeLine currentCodeLine)
-			 && Breakpoints.Contains(currentCodeLine))
+			 && _breakpoints.Contains(currentCodeLine))
 			{
 				rowAttr = breakpointAttr;
 				rowHighlightAttr = breakpointHighlightAttr;

@@ -25,6 +25,8 @@ public class CompilationElementStatementIterator(CompilationElement element, Cod
 
 			line = element.Lines[lineIndex];
 
+			line.LineIndex = LineIndex;
+
 			if (line.LineNumber != null)
 				SetLineNumberStatement(new LabelStatement(line.LineNumber, line.Statements.First()));
 			if (line.Label != null)

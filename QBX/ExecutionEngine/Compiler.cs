@@ -252,6 +252,8 @@ public class Compiler
 
 		var line = element.Lines[lineIndex];
 
+		line.LineIndex = lineIndex;
+
 		if (statementIndex >= line.Statements.Count)
 		{
 			lineIndexRef = lineIndex + 1;

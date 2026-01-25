@@ -11,6 +11,9 @@ public class CodeLine : IRenderableCode
 {
 	public CompilationElement? CompilationElement { get; set; }
 
+	// Populated by Compiler
+	public int LineIndex;
+
 	// Line number must be numeric in format, but in practice is
 	// parsed as any string ###.### with total length <= 40.
 	public string? LineNumber { get; set; }
