@@ -392,7 +392,7 @@ public class DataParserTests
 
 		var dummyModule = new Module();
 
-		var dummyRoutine = new Routine(dummyModule, dummySource);
+		var dummyRoutine = new Routine(dummyModule, rootMapper: null, source: dummySource);
 
 		return new StackFrame(dummyRoutine, variables);
 	}

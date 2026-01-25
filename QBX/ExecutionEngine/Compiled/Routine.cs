@@ -20,6 +20,8 @@ public class Routine : Sequence
 	public int[] ParameterVariableIndices;
 	public int ReturnValueVariableIndex = -1;
 
+	public Mapper Mapper;
+
 	public CodeModel.CompilationElement Source;
 
 	// Labels:
@@ -52,11 +54,15 @@ public class Routine : Sequence
 	public bool UseRootFrame = false;
 
 	// SUB or FUNCTION
-	public Routine(Module module, CodeModel.CompilationElement source)
+	public Routine(Module module, Mapper? rootMapper, CodeModel.CompilationElement source)
 	{
 		Module = module;
 
 		Source = source;
+
+		Mapper = (rootMapper == null)
+			? new Mapper(this)
+			: rootMapper.CreateScope(this);
 
 		Name = GetName(source);
 
@@ -108,11 +114,14 @@ public class Routine : Sequence
 	}
 
 	// DEF FN
-	public Routine(Module module, CodeModel.CompilationElement source, DefFnStatement openingStatement, TypeRepository typeRepository)
+	public Routine(Module module, Mapper mapper, CodeModel.CompilationElement source, DefFnStatement openingStatement, TypeRepository typeRepository)
 	{
 		Module = module;
 
 		Source = source;
+
+		// DEF FN shares the scope of the main module in which it is defined.
+		Mapper = mapper;
 
 		Name = openingStatement.Name;
 

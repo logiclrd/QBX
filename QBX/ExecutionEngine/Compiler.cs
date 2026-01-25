@@ -20,32 +20,18 @@ namespace QBX.ExecutionEngine;
 
 public class Compiler
 {
-	class TranslationInfo(CodeModel.CompilationElement element, Mapper rootMapper, Routine routine)
-	{
-		public CodeModel.CompilationElement Element = element;
-
-		public Routine Routine = routine;
-
-		public Mapper Mapper =
-			(element.Type == CodeModel.CompilationElementType.Main)
-			? rootMapper
-			: rootMapper.CreateScope(routine);
-	}
-
 	public Module Compile(CodeModel.CompilationUnit unit, Compilation compilation)
 	{
 		var module = new Module();
 
 		Mapper? rootMapper = null;
 
-		var routineByName = module.Routines;
-
-		var translationInfo = new List<TranslationInfo>();
+		var routines = new List<Routine>();
 
 		// First pass: collect all routines
 		foreach (var element in unit.Elements)
 		{
-			var routine = new Routine(module, element);
+			var routine = new Routine(module, rootMapper, element);
 
 			if (compilation.IsRegistered(routine.Name))
 				throw CompilerException.DuplicateDefinition(element.AllStatements.FirstOrDefault());
@@ -55,7 +41,7 @@ public class Compiler
 				if (routine.Name != Routine.MainRoutineName)
 					throw new Exception("First routine is not the main routine");
 
-				rootMapper = new Mapper(routine);
+				rootMapper = routine.Mapper;
 			}
 
 			if (routine.Name == Routine.MainRoutineName)
@@ -63,18 +49,15 @@ public class Compiler
 			else
 				routine.Register(compilation);
 
-			var info = new TranslationInfo(element, rootMapper, routine);
-
 			if (routine.OpeningStatement is not null)
 			{
-				routine.ApplyOpeningDefTypeStatements(info.Mapper);
+				routine.ApplyOpeningDefTypeStatements(routine.Mapper);
 
 				if (routine.OpeningStatement is CodeModel.Statements.FunctionStatement)
-					routine.SetReturnType(info.Mapper, compilation.TypeRepository);
+					routine.SetReturnType(routine.Mapper, compilation.TypeRepository);
 			}
 
-			translationInfo.Add(info);
-			routineByName[routine.Name] = routine;
+			routines.Add(routine);
 		}
 
 		// Second pass: process all TYPE definitions
@@ -111,13 +94,13 @@ public class Compiler
 			throw CompilerException.TypeWithoutEndType(typeStatement);
 
 		// Third pass: process parameters, which requires that we know all the FUNCTIONs and UDTs
-		foreach (var info in translationInfo)
+		foreach (var routine in routines)
 		{
-			if (info.Routine.ReturnType != null)
-				info.Routine.ReturnValueVariableIndex = info.Mapper.DeclareVariable(info.Routine.Name, info.Routine.ReturnType);
+			if (routine.ReturnType != null)
+				routine.ReturnValueVariableIndex = routine.Mapper.DeclareVariable(routine.Name, routine.ReturnType);
 
-			if (info.Element.Type != CodeModel.CompilationElementType.Main)
-				info.Routine.TranslateParameters(info.Mapper, compilation);
+			if (routine.Source.Type != CodeModel.CompilationElementType.Main)
+				routine.TranslateParameters(routine.Mapper, compilation);
 		}
 
 		// Fourth pass: collect line numbers for error reporting.
@@ -140,14 +123,14 @@ public class Compiler
 
 		// Fifth pass: Collect constants and then translate statements.
 		// => CONST definitions inside DEF FN are local to the DEF FN and are not processed here
-		foreach (var info in translationInfo)
+		foreach (var routine in routines)
 		{
-			if (info.Element.Type != CodeModel.CompilationElementType.Main)
-				info.Mapper.LinkGlobalVariablesAndArrays();
+			if (routine.Source.Type != CodeModel.CompilationElementType.Main)
+				routine.Mapper.LinkGlobalVariablesAndArrays();
 
-			var element = info.Element;
+			var element = routine.Source;
 
-			var mapper = info.Mapper;
+			var mapper = routine.Mapper;
 
 			mapper.ScanForDisallowedSlugs(element.AllStatements);
 
@@ -193,10 +176,6 @@ public class Compiler
 			}
 
 			mapper.PopIdentifierTypes();
-
-			string routineName = Routine.GetName(element);
-
-			var routine = routineByName[routineName];
 
 			int lineIndex = 0;
 			int statementIndex = 0;
@@ -576,7 +555,7 @@ public class Compiler
 				//     FNfork = SQR(x%)
 				//   END DEF
 
-				var routine = new Routine(module, element, defFnStatement, typeRepository);
+				var routine = new Routine(module, mapper, element, defFnStatement, typeRepository);
 
 				if (routine.ReturnType == null)
 				{
