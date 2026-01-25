@@ -3,6 +3,8 @@
 using QBX.CodeModel;
 using QBX.LexicalAnalysis;
 
+using QBX.Tests.Utility;
+
 namespace QBX.Tests.LexicalAnalysis;
 
 public class LexerTests
@@ -192,10 +194,11 @@ public class LexerTests
 		result[0].DataType.Should().Be(expectedType);
 	}
 
+	[Test]
 	public void Identifiers(
 		[Values("i", "bob", "M34", "HelloWorld", "Hello9World")]
 		string name,
-		[Values]
+		[ValuesExcept(DataType.UserDataType)]
 		DataType dataType)
 	{
 		// Arrange
