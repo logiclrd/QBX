@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -161,6 +162,7 @@ public class Viewport
 		}
 	}
 
+	[MemberNotNull(nameof(CurrentLineBuffer))]
 	public StringBuilder EditCurrentLine()
 	{
 		if (CurrentLineBuffer == null)

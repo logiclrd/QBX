@@ -64,6 +64,15 @@ public class Mapper
 
 	public readonly Routine Routine;
 
+	bool _isFrozen;
+
+	public bool IsFrozen => _isFrozen;
+
+	public void Freeze()
+	{
+		_isFrozen = true;
+	}
+
 	Dictionary<string, LiteralValue> _constantValueByName = new Dictionary<string, LiteralValue>(StringComparer.OrdinalIgnoreCase);
 
 	List<VariableInfo> _variables = new List<VariableInfo>();
@@ -135,6 +144,8 @@ public class Mapper
 
 	public void MakeGlobalVariable(string identifier)
 	{
+		if (_isFrozen)
+			throw new Exception("The Mapper is frozen");
 		if (_root != null)
 			throw new Exception("Can only make global variables working with the root Mapper");
 
@@ -143,6 +154,8 @@ public class Mapper
 
 	public void MakeGlobalArray(string identifier, DataType type)
 	{
+		if (_isFrozen)
+			throw new Exception("The Mapper is frozen");
 		if (_root != null)
 			throw new Exception("Can only make global variables working with the root Mapper");
 
@@ -151,6 +164,8 @@ public class Mapper
 
 	public void LinkGlobalVariablesAndArrays()
 	{
+		if (_isFrozen)
+			throw new Exception("The Mapper is frozen");
 		if (_root == null)
 			throw new InvalidOperationException("Cannot call LinkGlobalVariable on the root Mapper");
 
@@ -185,6 +200,9 @@ public class Mapper
 
 	public void PushIdentifierTypes()
 	{
+		if (_isFrozen)
+			throw new Exception("The Mapper is frozen");
+
 		var saved = new PrimitiveDataType[_identifierTypes.Length];
 
 		_identifierTypes.CopyTo(saved);
@@ -194,6 +212,9 @@ public class Mapper
 
 	public void PopIdentifierTypes()
 	{
+		if (_isFrozen)
+			throw new Exception("The Mapper is frozen");
+
 		var saved = _identifierTypesStack.Pop();
 
 		saved.CopyTo(_identifierTypes);
@@ -201,6 +222,9 @@ public class Mapper
 
 	public void ApplyDefTypeStatement(CodeModel.Statements.DefTypeStatement defTypeStatement)
 	{
+		if (_isFrozen)
+			throw new Exception("The Mapper is frozen");
+
 		var dataType = DataType.FromCodeModelDataType(defTypeStatement.DataType);
 
 		if (!dataType.IsPrimitiveType)
@@ -212,6 +236,9 @@ public class Mapper
 
 	public void SetIdentifierTypes(char from, char to, PrimitiveDataType type)
 	{
+		if (_isFrozen)
+			throw new Exception("The Mapper is frozen");
+
 		from = char.ToUpperInvariant(from);
 		to = char.ToUpperInvariant(to);
 
@@ -347,6 +374,8 @@ public class Mapper
 
 	public void LinkRootVariable(string name)
 	{
+		if (_isFrozen)
+			throw new Exception("The Mapper is frozen");
 		if (_root == null)
 			throw new Exception("Cannot link to a root variable from the root");
 
@@ -372,6 +401,8 @@ public class Mapper
 
 	public void AddDisallowedSlug(string slug)
 	{
+		if (_isFrozen)
+			throw new Exception("The Mapper is frozen");
 		_disallowedSlugs.Add(slug);
 	}
 
@@ -394,6 +425,9 @@ public class Mapper
 
 	public void DefineConstant(string name, LiteralValue literalValue)
 	{
+		if (_isFrozen)
+			throw new Exception("The Mapper is frozen");
+
 		if ((GetSlug(name) is string slug)
 		 && _disallowedSlugs.Contains(slug))
 			throw CompilerException.IdentifierCannotIncludePeriod(default);
@@ -433,23 +467,35 @@ public class Mapper
 
 	public void StartSemiscopeSetup()
 	{
+		if (_isFrozen)
+			throw new Exception("The Mapper is frozen");
+
 		_semiscopeMode = SemiscopeMode.Setup;
 		_semiscopeOverlay = new Dictionary<string, int>();
 	}
 
 	public void EnterSemiscope()
 	{
+		if (_isFrozen)
+			throw new Exception("The Mapper is frozen");
+
 		_semiscopeMode = SemiscopeMode.Active;
 	}
 
 	public void ExitSemiscope()
 	{
+		if (_isFrozen)
+			throw new Exception("The Mapper is frozen");
+
 		_semiscopeMode = SemiscopeMode.Inactive;
 		_semiscopeOverlay = null;
 	}
 
 	public int DeclareVariable(string name, DataType dataType, Token? token = null)
 	{
+		if (_isFrozen)
+			throw new Exception("The Mapper is frozen");
+
 		if ((GetSlug(name) is string slug)
 		 && _disallowedSlugs.Contains(slug))
 			throw CompilerException.IdentifierCannotIncludePeriod(token);
@@ -519,11 +565,17 @@ public class Mapper
 				return index;
 		}
 
+		if (_isFrozen)
+			return -1;
+
 		return DeclareVariable(name, dataType ?? DataType.ForPrimitiveDataType(GetTypeForIdentifier(name)));
 	}
 
 	public int DeclareArray(string name, DataType dataType, Token? token = null)
 	{
+		if (_isFrozen)
+			throw new Exception("The Mapper is frozen");
+
 		name = QualifyIdentifier(name, dataType);
 
 		if (_arrayIndexByName.TryGetValue(name, out var index))
@@ -555,6 +607,9 @@ public class Mapper
 
 		if (_arrayIndexByName.TryGetValue(name, out index))
 			return index;
+
+		if (_isFrozen)
+			return -1;
 
 		implicitlyCreated = true;
 

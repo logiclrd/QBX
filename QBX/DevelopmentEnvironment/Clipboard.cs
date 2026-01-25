@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 using QBX.CodeModel;
@@ -61,7 +62,7 @@ public class Clipboard(Viewport owner)
 
 	void CutCopy(bool retain, bool stash)
 	{
-		if (!_owner.IsEditable)
+		if (!_owner.IsEditable && !retain)
 		{
 			CancelSelection();
 			return;
@@ -171,5 +172,79 @@ public class Clipboard(Viewport owner)
 
 			_owner.CurrentLineChanged = true;
 		}
+	}
+
+	public string GetSelectedText(bool multiline)
+	{
+		int effectiveStartX = Math.Min(_clipStartX, _clipEndX);
+		int effectiveEndX = Math.Max(_clipStartX, _clipEndX);
+
+		int effectiveStartY = Math.Min(_clipStartY, _clipEndY);
+		int effectiveEndY = Math.Max(_clipStartY, _clipEndY);
+
+		if ((effectiveStartX == 0) && (effectiveEndX == 0))
+			effectiveEndY--;
+
+		if (_clipStartY != _clipEndY)
+		{
+			if (!multiline)
+				return "";
+
+			int lineCount = 1 + effectiveEndY - effectiveStartY;
+
+			var writer = new StringWriter();
+
+			for (int i = 0; i < lineCount; i++)
+			{
+				_owner.GetCodeLineAt(effectiveStartY).Render(writer);
+				writer.WriteLine();
+
+				effectiveStartY++;
+			}
+
+			return writer.ToString();
+		}
+		else if (effectiveStartX != effectiveEndX)
+		{
+			if (effectiveStartY != _owner.CursorY)
+				throw new Exception("Internal error: Single-line selection is not on current line");
+
+			var writer = new StringWriter();
+
+			_owner.RenderLine(_owner.CursorY, writer);
+
+			var selection = writer.GetStringBuilder();
+
+			int startX = Math.Min(effectiveStartX, effectiveEndX);
+			int charCount = Math.Abs(effectiveEndX - effectiveStartX);
+
+			if (startX < 0)
+				startX = 0;
+			if (startX > selection.Length)
+				startX = selection.Length;
+
+			int realChars = charCount;
+
+			if (startX + realChars > selection.Length)
+				realChars = selection.Length - startX;
+
+			int virtualChars = charCount - realChars;
+
+			if (startX + charCount < selection.Length)
+			{
+				selection.Remove(
+					startX + charCount,
+					selection.Length - startX - charCount);
+			}
+
+			selection.Remove(
+				0,
+				startX);
+
+			return selection.ToString();
+		}
+		else
+			return "";
+
 	}
 }

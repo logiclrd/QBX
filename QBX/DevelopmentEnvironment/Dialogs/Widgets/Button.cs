@@ -1,12 +1,26 @@
-﻿using QBX.Firmware;
+﻿using System;
+
+using QBX.Firmware;
 
 namespace QBX.DevelopmentEnvironment.Dialogs.Widgets;
 
 public class Button : Widget
 {
 	public string Text = "";
-	public int AcceleratorKeyIndex;
+	public int AcceleratorKeyIndex = -1;
 	public bool IsEnabled;
+
+	public Button()
+	{
+		IsTabStop = true;
+	}
+
+	public Action? Activated;
+
+	public override void Activate()
+	{
+		Activated?.Invoke();
+	}
 
 	public override void Render(TextLibrary visual, IntegerRect bounds, Configuration configuration)
 	{

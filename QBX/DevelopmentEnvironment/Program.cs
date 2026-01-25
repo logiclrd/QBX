@@ -9,7 +9,6 @@ using QBX.Hardware;
 using QBX.Parser;
 using QBX.ExecutionEngine;
 using QBX.DevelopmentEnvironment.Dialogs;
-using QBX.ExecutionEngine.Execution;
 
 namespace QBX.DevelopmentEnvironment;
 
@@ -104,7 +103,7 @@ public partial class Program : HostedProgram
 	{
 		var previousMode = Mode;
 
-		dialog.Y = (TextLibrary.Height - dialog.Height + 1) / 2;
+		dialog.Y = (TextLibrary.Height - dialog.Height) / 2;
 
 		CurrentDialog = dialog;
 		Mode = UIMode.Dialog;

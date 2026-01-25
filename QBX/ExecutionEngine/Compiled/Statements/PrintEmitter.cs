@@ -11,6 +11,16 @@ public class PrintEmitter(ExecutionContext context)
 {
 	VisualLibrary _visual = context.VisualLibrary;
 
+	public void CaptureOutputTo(StringValue str)
+	{
+		_visual = new CapturingTextLibrary(context.Machine, str);
+	}
+
+	public void StopCapturingOutput()
+	{
+		_visual = context.VisualLibrary;
+	}
+
 	public void NextLine()
 	{
 		_visual.NewLine();

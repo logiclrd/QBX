@@ -8,8 +8,12 @@ public abstract class Widget
 	public int Width, Height;
 
 	public bool IsFocused;
-	public bool IsTabStop = true;
+	public bool IsTabStop = false;
 
 	public abstract void Render(TextLibrary visual, IntegerRect bounds, Configuration configuration);
 	public abstract void PlaceCursorForFocus(TextLibrary visual, IntegerRect bounds);
+
+	public virtual void Activate()
+	{
+	}
 }

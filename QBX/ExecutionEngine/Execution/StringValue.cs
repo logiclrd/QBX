@@ -25,7 +25,7 @@ public class StringValue : IComparable<StringValue>, IEquatable<StringValue>
 		Append(other.AsSpan());
 	}
 
-	public StringValue(Span<byte> data)
+	public StringValue(ReadOnlySpan<byte> data)
 	{
 		Append(data);
 	}
@@ -96,7 +96,7 @@ public class StringValue : IComparable<StringValue>, IEquatable<StringValue>
 	public StringValue Append(StringValue data)
 		=> Append(data.AsSpan());
 
-	public StringValue Append(Span<byte> data)
+	public StringValue Append(ReadOnlySpan<byte> data)
 	{
 		if (!_isFixedLength)
 			_bytes.AddRange(data);

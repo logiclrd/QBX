@@ -141,4 +141,10 @@ public class Token(int line, int column, TokenType type, string value, DataType 
 
 		return false;
 	}
+
+	internal void SetLocation(int newLine, int newColumn)
+	{
+		line = newLine;
+		column = newColumn;
+	}
 }

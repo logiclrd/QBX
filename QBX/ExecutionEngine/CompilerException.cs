@@ -128,4 +128,6 @@ public class CompilerException : Exception
 		=> new CompilerException(context, "Expected: statement");
 	public static CompilerException ExpectedVariable(Token? context)
 		=> new CompilerException(context, "Expected: variable");
+	public static CompilerException ArrayNotDefined(Token? context)
+		=> new CompilerException(context, "Array not defined");
 }

@@ -577,6 +577,10 @@ public partial class Program : HostedProgram
 
 		var (startX, startY, endX, endY) = clipboard.GetSelectionRange();
 
+		// Selection is not rendered when a dialog is active.
+		if (CurrentDialog != null)
+			return (chars, 0, 0);
+
 		int effectiveStartX = Math.Min(startX, endX);
 		int effectiveEndX = Math.Max(startX, endX);
 

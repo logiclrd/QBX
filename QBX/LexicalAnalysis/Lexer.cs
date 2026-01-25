@@ -13,6 +13,9 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 {
 	TextReader _input = input;
 	bool _consumed = false;
+	Token _endToken = new Token(-1, -1, TokenType.Empty, "");
+
+	public Token EndToken => _endToken;
 
 	public Lexer(string text)
 		: this(new StringReader(text))
@@ -516,7 +519,10 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 			} while (reparse);
 
 			if (atEOF)
+			{
+				_endToken.SetLocation(line, column);
 				break;
+			}
 
 			if ((ch != '\r') && (ch != '\n'))
 				column++;

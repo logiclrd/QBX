@@ -12,6 +12,7 @@ public partial class Program
 	System.Threading.Thread? _executionThread;
 	ExecutionContext? _executionContext;
 	Compiler? _compiler;
+	Compilation? _compilation;
 
 	[MemberNotNullWhen(true, nameof(_executionContext))]
 	public bool IsExecuting => (_executionContext != null);
@@ -33,14 +34,13 @@ public partial class Program
 	{
 		Terminate();
 
-		var compilation = new Compilation();
-
 		_compiler = new Compiler();
+		_compilation = new Compilation();
 
 		foreach (var file in LoadedFiles)
-			_compiler.Compile(file, compilation);
+			_compiler.Compile(file, _compilation);
 
-		compilation.SetDefaultEntrypoint();
+		_compilation.SetDefaultEntrypoint();
 
 		RestoreOutput();
 
@@ -52,7 +52,7 @@ public partial class Program
 			{
 				try
 				{
-					_executionContext.Run(compilation);
+					_executionContext.Run(_compilation);
 				}
 				catch (Exception e)
 				{

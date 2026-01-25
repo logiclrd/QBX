@@ -33,6 +33,7 @@ public class ErrorDialog : Dialog
 				Y = 4,
 				Width = 8,
 				Text = "OK",
+				Activated = OnClose
 			});
 
 		Widgets.Add(
@@ -45,6 +46,6 @@ public class ErrorDialog : Dialog
 				AcceleratorKeyIndex = 0,
 			});
 
-		FocusedWidget = Widgets[1];
+		SetFocus(Widgets[1]);
 	}
 }

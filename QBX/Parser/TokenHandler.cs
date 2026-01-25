@@ -5,9 +5,9 @@ using QBX.LexicalAnalysis;
 
 namespace QBX.Parser;
 
-public class TokenHandler(ListRange<Token> tokenss)
+public class TokenHandler(ListRange<Token> tokens)
 {
-	ListRange<Token> _tokens = tokenss;
+	ListRange<Token> _tokens = tokens;
 	int _tokenIndex = 0;
 
 	Token FindTokenToBlame()

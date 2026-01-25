@@ -211,11 +211,25 @@ public class Compiler
 			foreach (var statement in routine.AllStatements)
 				if (statement is IUnresolvedLineReference unresolvedLineReference)
 					unresolvedLineReference.Resolve(routine);
+
+			routine.Mapper.Freeze();
 		}
 
 		compilation.Modules.Add(module);
 
 		return module;
+	}
+
+	public Evaluable CompileExpression(CodeModel.Expressions.Expression expression, Mapper mapper, Compilation compilation)
+	{
+		var dummyContainer = new Sequence();
+
+		return TranslateExpressionUncollapsed(
+			expression,
+			forAssignment: false,
+			dummyContainer,
+			mapper,
+			compilation);
 	}
 
 	void TranslateTypeDefinition(CodeModel.Statements.TypeStatement typeStatement, List<CodeModel.Statements.TypeElementStatement> elements, Compilation compilation)
@@ -1992,14 +2006,27 @@ public class Compiler
 					int variableIndex = mapper.ResolveArray(identifier.Identifier, out _);
 					var variableType = mapper.GetVariableType(variableIndex);
 
+					if (variableIndex < 0)
+						throw CompilerException.ArrayNotDefined(identifier.Token);
+
 					return new IdentifierExpression(variableIndex, variableType);
 				}
 				else
 				{
 					int variableIndex = mapper.ResolveVariable(identifier.Identifier);
-					var variableType = mapper.GetVariableType(variableIndex);
 
-					return new IdentifierExpression(variableIndex, variableType);
+					if (variableIndex < 0)
+					{
+						var type = mapper.GetTypeForIdentifier(identifier.Identifier);
+
+						return LiteralValue.Construct(0, type, identifier.Token);
+					}
+					else
+					{
+						var variableType = mapper.GetVariableType(variableIndex);
+
+						return new IdentifierExpression(variableIndex, variableType);
+					}
 				}
 			}
 
@@ -2133,6 +2160,13 @@ public class Compiler
 
 				// It's not a function call, so it's an array access.
 				var variableIndex = mapper.ResolveArray(identifier, out bool implicitlyCreated);
+
+				if (variableIndex < 0)
+				{
+					var type = mapper.GetTypeForIdentifier(identifier);
+
+					return LiteralValue.Construct(0, type, identifierToken);
+				}
 
 				if (implicitlyCreated)
 				{
@@ -2289,9 +2323,19 @@ public class Compiler
 						}
 
 						int variableIndex = mapper.ResolveVariable(dottedIdentifier);
-						var variableType = mapper.GetVariableType(variableIndex);
 
-						return new IdentifierExpression(variableIndex, variableType);
+						if (variableIndex < 0)
+						{
+							var type = mapper.GetTypeForIdentifier(dottedIdentifier);
+
+							return LiteralValue.Construct(0, type, expression.Token);
+						}
+						else
+						{
+							var variableType = mapper.GetVariableType(variableIndex);
+
+							return new IdentifierExpression(variableIndex, variableType);
+						}
 					}
 					else
 					{

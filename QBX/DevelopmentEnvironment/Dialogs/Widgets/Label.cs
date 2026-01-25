@@ -8,11 +8,6 @@ public class Label : Widget
 {
 	public string Text = "";
 
-	public Label()
-	{
-		IsTabStop = false;
-	}
-
 	public override void Render(TextLibrary visual, IntegerRect bounds, Configuration configuration)
 	{
 		int x = X + bounds.X1;

@@ -2,11 +2,45 @@
 
 using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
+using QBX.LexicalAnalysis;
+using QBX.Numbers;
 
 namespace QBX.ExecutionEngine.Compiled.Expressions;
 
 public abstract class LiteralValue : Evaluable
 {
+	public static Evaluable Construct(object value, DataType type, Token? context)
+	{
+		if (!type.IsPrimitiveType)
+			throw new Exception("Internal error: Attempt to construct a LiteralValue with a non-primitive type.");
+
+		return Construct(value, type.PrimitiveType, context);
+	}
+
+	public static Evaluable Construct(object value, PrimitiveDataType type, Token? context)
+	{
+		switch (type)
+		{
+			case PrimitiveDataType.Integer: return new IntegerLiteralValue(Convert.ToInt16(value));
+			case PrimitiveDataType.Long: return new LongLiteralValue(Convert.ToInt32(value));
+			case PrimitiveDataType.Single: return new SingleLiteralValue(Convert.ToSingle(value));
+			case PrimitiveDataType.Double: return new DoubleLiteralValue(Convert.ToDouble(value));
+
+			case PrimitiveDataType.Currency:
+				decimal decimalValue = Convert.ToDecimal(value);
+
+				if (!decimalValue.IsInCurrencyRange())
+					throw CompilerException.Overflow(context);
+
+				return new CurrencyLiteralValue(decimalValue);
+
+			case PrimitiveDataType.String:
+				return new StringLiteralValue(new StringValue((string)value));
+
+			default: throw new Exception("Unrecognized primitive type " + type);
+		}
+	}
+
 	public static Evaluable ConstructFromCodeModel(CodeModel.Expressions.LiteralExpression literal)
 	{
 		if (literal.IsStringLiteral)
