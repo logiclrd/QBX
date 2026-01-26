@@ -1552,7 +1552,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 				return;
 
 			foreach (var exteriorSpan in ExcludeSet(newSpan, processed))
-				queuedSpans.Enqueue(newSpan);
+				queuedSpans.Enqueue(exteriorSpan);
 		}
 
 		// Start by scanning to the left and right and seeding the queue with spans to scan.
