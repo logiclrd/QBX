@@ -1227,7 +1227,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 		return x2 + dx;
 	}
 
-	struct Span(int x1, int x2, int y = 0, int dy = 0)
+	struct Span(int x1, int x2, int y = 0)
 	{
 		public static Span Empty => new Span(1, 0);
 
@@ -1238,16 +1238,12 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 		public int AlreadyScannedAndFoundBorderAtX = HaveNotYetScanned;
 
-		public bool TryExtend = true;
-		public bool PropagateUp = (dy < 0);
-		public bool PropagateDown = (dy > 0);
-
 		public readonly int Y = y;
 
 		public int Width => X2 - X1 + 1;
 
-		public Span Up() => new Span(X1, X2, Y - 1, dy: -1);
-		public Span Down() => new Span(X1, X2, Y + 1, dy: +1);
+		public Span Up() => new Span(X1, X2, Y - 1);
+		public Span Down() => new Span(X1, X2, Y + 1);
 
 		public Span Slice(int subX1, int subX2)
 		{
@@ -1276,13 +1272,6 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 		public override string ToString()
 		{
-			if (PropagateUp && PropagateDown)
-				return Y + "+/-: " + X1 + " to " + X2;
-			if (PropagateUp)
-				return Y + "--: " + X1 + " to " + X2;
-			if (PropagateDown)
-				return Y + "++: " + X1 + " to " + X2;
-
 			return Y + ": " + X1 + " to " + X2;
 		}
 	}
@@ -1447,7 +1436,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 		where TFill : IPattern
 		where TBackground : IPattern
 	{
-		var queuedSpans = new Queue<Span>();
+		var queuedSpans = new BTreeDictionary<int, int>();
 		var processed = new BTreeDictionary<int, int>();
 		var scan = new int[Width].AsSpan();
 
@@ -1556,7 +1545,27 @@ public abstract class GraphicsLibrary : VisualLibrary
 				return;
 
 			foreach (var exteriorSpan in ExcludeSet(newSpan, processed))
-				queuedSpans.Enqueue(exteriorSpan);
+				AddToSet(exteriorSpan, queuedSpans);
+		}
+
+		bool TryDequeue(out Span potentialSpan)
+		{
+			if (!queuedSpans.TryGetFirst(out var offsets))
+			{
+				potentialSpan = default;
+				return false;
+			}
+
+			queuedSpans.Remove(offsets.Key);
+
+			int offsetY = offsets.Value / 320;
+			int offsetO = offsetY * 320;
+			int offsetX1 = offsets.Value - offsetO;
+			int offsetX2 = offsets.Key - offsetO;
+
+			potentialSpan = new Span(offsetX1, offsetX2, offsetY);
+
+			return true;
 		}
 
 		// Start by scanning to the left and right and seeding the queue with spans to scan.
@@ -1572,10 +1581,6 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 		var initialSpan = new Span(x1, x2, y);
 
-		initialSpan.PropagateUp = true;
-		initialSpan.PropagateDown = true;
-		initialSpan.TryExtend = false;
-
 		AddToQueue(initialSpan);
 
 		// Allocate this here, because it will likely expand at some point
@@ -1587,7 +1592,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 		bool isSolidFill = fillPattern is SolidPattern;
 		int solidFillAttribute = fillPattern.GetAttribute(0, 0);
 
-		while (queuedSpans.TryDequeue(out var potentialSpan))
+		while (TryDequeue(out var potentialSpan))
 		{
 			// Every pixel in this span is guaranteed to be adjacent to a known interior
 			// pixel. But, some of them may be border pixels. So, our job is to:
@@ -1605,24 +1610,10 @@ public abstract class GraphicsLibrary : VisualLibrary
 			{
 				var span = unscannedSpan;
 
-				// Gather border information in this scan. In the case of extensions,
-				// we already know that every pixel in the span is going to be interior,
-				// because we started at an interior pixel and walked to the next
-				// border. No need to re-scan.
-				if (span.AlreadyScannedAndFoundBorderAtX != Span.HaveNotYetScanned)
-				{
-					scan.Fill(-1);
-
-					if ((span.AlreadyScannedAndFoundBorderAtX >= 0)
-					 && (span.AlreadyScannedAndFoundBorderAtX < scan.Length))
-						scan[span.AlreadyScannedAndFoundBorderAtX] = borderAttribute;
-				}
-				else
-				{
-					scan.Slice(0, span.X1).Fill(-1);
-					scan.Slice(span.X2 + 1).Fill(-1);
-					PixelGetSpan(span.X1, span.X2, span.Y, scan.Slice(span.X1, span.Width));
-				}
+				// Gather border information in this scan.
+				scan.Slice(0, span.X1).Fill(-1);
+				scan.Slice(span.X2 + 1).Fill(-1);
+				PixelGetSpan(span.X1, span.X2, span.Y, scan.Slice(span.X1, span.Width));
 
 				newlyScanned.Add(span);
 
@@ -1630,45 +1621,18 @@ public abstract class GraphicsLibrary : VisualLibrary
 				// queue spans set to propagate both up and down. (Disable extending these, though,
 				// as there's no point; they're already the result of an extension and are
 				// guaranteed not to find anything new past their range.)
-				if (span.TryExtend)
+				if ((span.X1 > 0) && (scan[span.X1] != borderAttribute))
 				{
-					if (scan[span.X1] != borderAttribute)
-					{
-						int borderX = PixelGetSpanFind(span.X1 - 1, 0, span.Y, scan, borderAttribute);
+					int borderX = PixelGetSpanFind(span.X1 - 1, 0, span.Y, scan, borderAttribute);
 
-						int newX1 = borderX + 1;
+					span.X1 = borderX + 1;
+				}
 
-						if (newX1 < span.X1)
-						{
-							var extension = new Span(newX1, span.X1 - 1, span.Y);
+				if ((span.X2 + 1 < Width) && (scan[span.X2] != borderAttribute))
+				{
+					int borderX = PixelGetSpanFind(span.X2 + 1, Width - 1, span.Y, scan.Slice(span.X2 + 1), borderAttribute);
 
-							extension.TryExtend = false;
-							extension.PropagateUp = true;
-							extension.PropagateDown = true;
-							extension.AlreadyScannedAndFoundBorderAtX = borderX;
-
-							AddToQueue(extension);
-						}
-					}
-
-					if (scan[span.X2] != borderAttribute)
-					{
-						int borderX = PixelGetSpanFind(span.X2 + 1, Width - 1, span.Y, scan, borderAttribute);
-
-						int newX2 = borderX - 1;
-
-						if (newX2 > span.X2)
-						{
-							var extension = new Span(span.X2 + 1, newX2, span.Y);
-
-							extension.TryExtend = false;
-							extension.PropagateUp = true;
-							extension.PropagateDown = true;
-							extension.AlreadyScannedAndFoundBorderAtX = borderX;
-
-							AddToQueue(extension);
-						}
-					}
+					span.X2 = borderX - 1;
 				}
 
 				// Now extract the contiguous spans of pixels to be painted and paint them.
@@ -1720,11 +1684,8 @@ public abstract class GraphicsLibrary : VisualLibrary
 										HorizontalLine(newInteriorSpan.X1, newInteriorSpan.X2, newInteriorSpan.Y, fillPattern);
 								}
 
-								if (span.PropagateUp)
-									AddToQueue(span.Up());
-
-								if (span.PropagateDown)
-									AddToQueue(span.Down());
+								AddToQueue(span.Up());
+								AddToQueue(span.Down());
 							}
 						}
 
