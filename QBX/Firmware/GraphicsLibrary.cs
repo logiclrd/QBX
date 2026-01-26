@@ -1467,7 +1467,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 				foreach (var existing in set.EnumerateFrom(o1 - 1))
 				{
 					int existingO1 = existing.Value;
-					int existingO2 = existing.Value;
+					int existingO2 = existing.Key;
 
 					if (existingO1 <= o1)
 					{
@@ -1481,7 +1481,9 @@ public abstract class GraphicsLibrary : VisualLibrary
 							// `----.----'
 							//    merged
 							set.Remove(existingO2);
-							set.Add(o2, existingO1);
+
+							// If there is a value at o2, it is another span whose left end is inside newSpan.
+							set[o2] = existingO1;
 						}
 						// else existing completely contains the new span
 
