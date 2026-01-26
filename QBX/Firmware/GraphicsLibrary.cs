@@ -1558,10 +1558,22 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 			queuedSpans.Remove(offsets.Key);
 
-			int offsetY = offsets.Value / 320;
-			int offsetO = offsetY * 320;
+			int offsetY = offsets.Value / Width;
+			int offsetO = offsetY * Width;
 			int offsetX1 = offsets.Value - offsetO;
 			int offsetX2 = offsets.Key - offsetO;
+
+			if (offsetX2 >= Width)
+			{
+				// A span at the end of one row was merged into a span at the start of the next row.
+				// This isn't actually a valid merge, as they aren't adjacent.
+
+				// Put the bit on the next row back in.
+				queuedSpans.Add(offsets.Key, (offsetY + 1) * Width);
+
+				// Truncate the one we're dequeuing.
+				offsetX2 = Width - 1;
+			}
 
 			potentialSpan = new Span(offsetX1, offsetX2, offsetY);
 
