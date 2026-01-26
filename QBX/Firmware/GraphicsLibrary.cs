@@ -1460,10 +1460,12 @@ public abstract class GraphicsLibrary : VisualLibrary
 			int o1 = o + span.X1;
 			int o2 = o + span.X2;
 
-			bool checkAgain = false;
+			bool checkAgain;
 
 			do
 			{
+				checkAgain = false;
+
 				foreach (var existing in set.EnumerateFrom(o1 - 1))
 				{
 					int existingO1 = existing.Value;
