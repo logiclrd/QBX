@@ -13,36 +13,39 @@ public class BorderFillTest(Machine machine) : HostedProgram
 
 	void T1_SmallEllipse(GraphicsLibrary visual)
 	{
-		visual.Ellipse(160, 100, 3, 3, 0, 0, false, false, 1);
+		visual.Ellipse(visual.Width / 2, visual.Height / 2, 3, 3, 0, 0, false, false, 1);
 	}
 
 	void T2_LargeEllipse(GraphicsLibrary visual)
 	{
-		visual.Ellipse(160, 100, 50, 25, 0, 0, false, false, 1);
+		visual.Ellipse(visual.Width / 2, visual.Height / 2, 50, 25, 0, 0, false, false, 1);
 	}
 
 	void T3_WedgeToLeftEdge(GraphicsLibrary visual)
 	{
-		visual.Line(0, 50, 200, 100, 1);
-		visual.Line(0, 150, 200, 100, 1);
+		visual.Line(0, visual.Height / 4, visual.Width * 5 / 8, visual.Height / 2, 1);
+		visual.Line(0, visual.Height * 3 / 4, visual.Width * 5 / 8, visual.Height / 2, 1);
 	}
 
 	void T4_EllipseWithCutouts(GraphicsLibrary visual)
 	{
-		visual.Ellipse(160, 100, 50, 25, 0, 0, false, false, 1);
-		visual.Ellipse(130, 100, 15, 15, 0, 0, false, false, 1);
-		visual.Ellipse(190, 100, 15, 15, 0, 0, false, false, 1);
+		visual.Ellipse(visual.Width / 2, visual.Height / 2, 50, 25, 0, 0, false, false, 1);
+		visual.Ellipse(visual.Width / 2 - visual.Width / 20, visual.Height / 2, 15, 15, 0, 0, false, false, 1);
+		visual.Ellipse(visual.Width / 2 + visual.Width / 20, visual.Height / 2, 15, 15, 0, 0, false, false, 1);
 	}
 
 	void T5_BoxWithPixels(GraphicsLibrary visual)
 	{
-		visual.Box(155, 90, 165, 110, 1);
+		int hw = visual.Width / 2;
+		int hh = visual.Height / 2;
 
-		visual.PixelSet(158, 100, 1);
-		visual.PixelSet(158, 99, 1);
+		visual.Box(hw - 5, hh - 10, hw + 5, hh + 10, 1);
 
-		visual.PixelSet(158, 97, 1);
-		visual.PixelSet(158, 96, 1);
+		visual.PixelSet(hw - 2, hh, 1);
+		visual.PixelSet(hw - 2, hh - 1, 1);
+
+		visual.PixelSet(hw - 2, hh - 3, 1);
+		visual.PixelSet(hw - 2, hh - 4, 1);
 	}
 
 	void T6_RandomMaze(GraphicsLibrary visual)
@@ -52,21 +55,21 @@ public class BorderFillTest(Machine machine) : HostedProgram
 		var seed = rnd.Next();
 
 		//seed = 916776031;
-		seed = 396652144;
+		//seed = 396652144;
 
 		Debug.WriteLine("SEED: " + seed);
 
 		rnd = new Random(seed);
 
-		visual.FillBox(0, 0, 319, 199, 1);
+		visual.FillBox(0, 0, visual.Width - 1, visual.Height - 1, 1);
 
-		for (int i = 0; i < 20; i++)
+		for (int i = 0; i < 100; i++)
 		{
-			int x = rnd.Next(0, 320);
-			int y = rnd.Next(0, 200);
+			int x = rnd.Next(0, visual.Width);
+			int y = rnd.Next(0, visual.Height);
 
-			int dx = rnd.Next(50, 100);
-			int dy = rnd.Next(50, 100);
+			int dx = rnd.Next(visual.Width / 13, visual.Width / 6);
+			int dy = rnd.Next(visual.Width / 13, visual.Width / 6);
 
 			if ((rnd.Next() & 1) == 0)
 				dx /= 20;
@@ -76,43 +79,58 @@ public class BorderFillTest(Machine machine) : HostedProgram
 			visual.FillBox(x - dx, y - dy, x + dx, y + dy, 0);
 		}
 
-		visual.FillBox(150, 90, 170, 110, 0);
+		int hw = visual.Width / 2;
+		int hh = visual.Height / 2;
+
+		visual.FillBox(hw - 10, hh - 10, hw + 10, hh + 10, 0);
 	}
 
 	void T7_MultipleEntrancesInScan(GraphicsLibrary visual)
 	{
-		visual.Box(140, 80, 180, 120, 1);
+		int hw = visual.Width / 2;
+		int hh = visual.Height / 2;
+
+		visual.Box(hw - 20, hh - 20, hw + 20, hh + 20, 1);
 
 		for (int i = 0; i < 3; i++)
-			for (int j = 150; j <= 170; j += 10)
-				visual.Line(j - 1, 95 - i, j + 1, 95 - i, 1);
+			for (int j = hw - 10; j <= hw + 10; j += 10)
+				visual.Line(j - 1, hh - 5 - i, j + 1, hh - 5 - i, 1);
 	}
 
 	void T8_TouchRightEdgeOfScreen(GraphicsLibrary visual)
 	{
-		visual.FillBox(0, 0, 319, 199, 1);
-		visual.FillBox(150, 90, 319, 110, 0);
+		int hw = visual.Width / 2;
+		int hh = visual.Height / 2;
+
+		visual.FillBox(0, 0, visual.Width - 1, visual.Height - 1, 1);
+		visual.FillBox(hw - 10, hh - 10, visual.Width - 1, hh + 10, 0);
 	}
 
 	void T9_MultipleDiscoverDownWhenExtendingToTheRight(GraphicsLibrary visual)
 	{
-		visual.FillBox(0, 0, 319, 199, 1);
-		visual.FillBox(150, 90, 170, 110, 0);
-		visual.FillBox(150, 90, 250, 95, 0);
-		visual.FillBox(160, 96, 165, 98, 1);
-		visual.FillBox(200, 90, 210, 130, 0);
-		visual.FillBox(230, 90, 240, 130, 0);
+		int hw = visual.Width / 2;
+		int hh = visual.Height / 2;
+
+		visual.FillBox(0, 0, visual.Width - 1, visual.Height - 1, 1);
+		visual.FillBox(hw - 10, hh - 10, hw + 10, hh + 10, 0);
+		visual.FillBox(hw - 10, hh - 10, hw + 90, hh - 5, 0);
+		visual.FillBox(hw, hh - 4, hw + 5, hh - 2, 1);
+		visual.FillBox(hw + 40, hh - 10, hw + 50, hh + 30, 0);
+		visual.FillBox(hw + 70, hh - 10, hw + 80, hh + 30, 0);
 	}
 
 	void T10_MeetUpWithExtensionScan(GraphicsLibrary visual)
 	{
-		visual.FillBox(0, 0, 319, 199, 1);
-		visual.FillBox(155, 95, 175, 105, 0);
-		visual.Line(130, 101, 160, 101, 0);
-		visual.FillBox(130, 90, 135, 101, 0);
-		visual.FillBox(140, 90, 145, 101, 0);
-		visual.Line(130, 90, 160, 90, 0);
-		visual.FillBox(155, 90, 160, 100, 0);
+		int hw = visual.Width / 2;
+		int hh = visual.Height / 2;
+
+		visual.FillBox(0, 0, visual.Width - 1, visual.Height - 1, 1);
+		visual.FillBox(hw - 5, hh - 5, hw + 15, hh + 5, 0);
+		visual.Line(hw - 30, hh + 1, hw, hh + 1, 0);
+		visual.FillBox(hw - 30, hh - 10, hw - 25, hh + 1, 0);
+		visual.FillBox(hw - 20, hh - 10, hw - 15, hh + 1, 0);
+		visual.Line(hw - 30, hh - 10, hw, hh - 10, 0);
+		visual.FillBox(hw - 5, hh - 10, hw, hh, 0);
 	}
 
 	void T11_MiniMaze(GraphicsLibrary visual)
@@ -128,10 +146,13 @@ public class BorderFillTest(Machine machine) : HostedProgram
 
 		rnd = new Random(seed);
 
-		visual.Box(150, 90, 170, 110, 1);
+		int hw = visual.Width / 2;
+		int hh = visual.Height / 2;
+
+		visual.Box(hw - 10, hh - 10, hw + 10, hh + 10, 1);
 
 		for (int i = 0; i < 30; i++)
-			visual.PixelSet(rnd.Next(150, 170), rnd.Next(90, 110), 1);
+			visual.PixelSet(rnd.Next(hw - 10, hw + 10), rnd.Next(hh - 10, hh + 10), 1);
 	}
 
 	void T12_MediumMaze(GraphicsLibrary visual)
@@ -146,12 +167,31 @@ public class BorderFillTest(Machine machine) : HostedProgram
 
 		rnd = new Random(seed);
 
-		visual.Box(100, 90, 220, 110, 1);
+		int hw = visual.Width / 2;
+		int hh = visual.Height / 2;
+
+		visual.Box(hw - 60, hh - 10, hw + 60, hh + 10, 1);
 
 		for (int i = 0; i < 500; i++)
-			visual.PixelSet(rnd.Next(100, 220), rnd.Next(90, 110), 1);
+			visual.PixelSet(rnd.Next(hw - 60, hw + 60), rnd.Next(hh - 10, hh + 10), 1);
 
-		visual.PixelSet(160, 100, 0);
+		visual.PixelSet(hw, hh, 0);
+	}
+
+	void T13_FullScreenMaze(GraphicsLibrary visual)
+	{
+		Random rnd = new Random();
+
+		var seed = rnd.Next();
+
+		Debug.WriteLine("SEED: " + seed);
+
+		rnd = new Random(seed);
+
+		for (int i = 0; i < visual.Width * visual.Height / 6; i++)
+			visual.PixelSet(rnd.Next(0, visual.Width), rnd.Next(0, visual.Height), 1);
+
+		visual.PixelSet(visual.Width / 2, visual.Height / 2, 0);
 	}
 
 	void DrawBoundary(GraphicsLibrary visual)
@@ -161,31 +201,53 @@ public class BorderFillTest(Machine machine) : HostedProgram
 		//T3_WedgeToLeftEdge(visual);
 		//T4_EllipseWithCutouts(visual);
 		//T5_BoxWithPixels(visual);
-		//T6_RandomMaze(visual);
+		T6_RandomMaze(visual);
 		//T7_MultipleEntrancesInScan(visual);
 		//T8_TouchRightEdgeOfScreen(visual);
 		//T9_MultipleDiscoverDownWhenExtendingToTheRight(visual);
 		//T10_MeetUpWithExtensionScan(visual);
 		//T11_MiniMaze(visual);
-		T12_MediumMaze(visual);
+		//T12_MediumMaze(visual);
+		//T13_FullScreenMaze(visual);
 	}
 
 	public override void Run(CancellationToken cancellationToken)
 	{
-		machine.VideoFirmware.SetMode(0x13);
+		machine.VideoFirmware.SetMode(0x12);
 
-		var visual = new GraphicsLibrary_8bppFlat(machine);
+		GraphicsLibrary visual = new GraphicsLibrary_4bppPlanar(machine);
+
+		int count = 5;
+		int mode = 0x13;
 
 		while (true)
 		{
+			if (count == 0)
+			{
+				count = 5;
+				machine.VideoFirmware.SetMode(mode);
+
+				visual =
+					mode switch
+					{
+						0x12 => new GraphicsLibrary_4bppPlanar(machine),
+						0x13 => new GraphicsLibrary_8bppFlat(machine),
+						_ => throw new Exception()
+					};
+
+				mode ^= 1;
+			}
+
+			count--;
+
 			visual.Clear();
 
 			DrawBoundary(visual);
 
 			Thread.Sleep(1500);
 
-			visual.BorderFill(160, 100, 1, 112);
-			visual.Box(0, 0, 319, 199, 14);
+			visual.BorderFill(visual.Width / 2, visual.Height / 2, 1, 4);
+			visual.Box(0, 0, visual.Width - 1, visual.Height - 1, 14);
 
 			Thread.Sleep(1200);
 		}
