@@ -239,18 +239,33 @@ public class LexerTests
 		result[0].Value.Should().Be(content);
 	}
 
-	static IEnumerable<object[]> LineAndColumnTestSource()
+	static IEnumerable<TestCaseData<string, (int Line, int Column)[]>> LineAndColumnTestSource()
 	{
-		object Expected(params (int Line, int Column)[] data) => data;
+		TestCaseData<string, (int Line, int Column)[]> MakeTestCaseData(
+			string input,
+			(int Line, int Column)[] expected)
+		{
+			var data = new TestCaseData<string, (int Line, int Column)[]>(
+				input,
+				expected);
+
+			data.SetName("LineAndColumn.LineAndColumn(\"" + input.Substring(0, 15) + "...");
+
+			return data;
+		}
+
+		(int Line, int Column)[] Expected(params (int Line, int Column)[] data) => data;
 
 		yield return
-			[
+			MakeTestCaseData
+			(
 				"PRINT \"Hello, world\"\n",
 				Expected((0, 0), (0, 5), (0, 6), (0, 20))
-			];
+			);
 
 		yield return//1         2         3         4         5          6
-			[//1234567890123456789012345678901234567890123456789012345678 901234567890
+			MakeTestCaseData
+			(//1234567890123456789012345678901234567890123456789012345678 901234567890
 				"newX# = COS(angle#) * oldX# + SIN(angle#) * oldY# ' rotate\nPRINT newX#",
 				Expected(
 					(0, 0), // "newX#"
@@ -283,10 +298,11 @@ public class LexerTests
 					(1, 5), // " "
 					(1, 6) // "newX#"
 				)
-			];
+			);
 
 		yield return
-			[
+			MakeTestCaseData
+			(
 				"IF a& >= 1 AND a& <= 10 THEN",
 				Expected(
 					(0, 0), // "IF"
@@ -307,7 +323,7 @@ public class LexerTests
 					(0, 23), // " "
 					(0, 24) // "THEN"
 				)
-			];
+			);
 	}
 
 	[TestCaseSource(nameof(LineAndColumnTestSource))]
