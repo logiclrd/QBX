@@ -25,8 +25,15 @@ public partial class Program
 
 	public void Terminate()
 	{
-		_executionThread?.IsBackground = true;
-		_executionContext?.Controls.Terminate();
+		try
+		{
+			if ((_executionThread != null)
+			 && _executionThread.IsAlive)
+				_executionThread.IsBackground = true;
+
+			_executionContext?.Controls.Terminate();
+		}
+		catch { }
 	}
 
 	[MemberNotNull(nameof(_executionContext))]
