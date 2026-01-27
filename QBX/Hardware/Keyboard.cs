@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 
 using SDL3;
@@ -11,6 +10,8 @@ public class Keyboard(Machine machine)
 {
 	object _sync = new();
 	Queue<KeyEvent> _inputQueue = new Queue<KeyEvent>();
+	Queue<KeyEvent> _divertedEvents = new Queue<KeyEvent>();
+	bool _divertEvents = false;
 
 	void UpdateModifiers(SDL.KeyboardEvent evt)
 	{
@@ -114,9 +115,19 @@ public class Keyboard(Machine machine)
 
 		lock (_sync)
 		{
-			_inputQueue.Enqueue(keyEvent);
+			if (_divertEvents)
+				_divertedEvents.Enqueue(keyEvent);
+			else
+				_inputQueue.Enqueue(keyEvent);
+
 			Monitor.PulseAll(_sync);
 		}
+	}
+
+	void EatReleaseEvents(Queue<KeyEvent> queue)
+	{
+		while ((queue.Count > 0) && queue.Peek().IsRelease)
+			queue.Dequeue();
 	}
 
 	public bool WaitForInput(int timeoutMilliseconds = Timeout.Infinite)
@@ -126,8 +137,14 @@ public class Keyboard(Machine machine)
 
 		lock (_sync)
 		{
+			EatReleaseEvents(_inputQueue);
+
 			while (machine.KeepRunning && (_inputQueue.Count == 0))
+			{
 				Monitor.Wait(_sync);
+				EatReleaseEvents(_inputQueue);
+			}
+
 
 			return machine.KeepRunning;
 		}
@@ -139,6 +156,8 @@ public class Keyboard(Machine machine)
 
 		lock (_sync)
 		{
+			EatReleaseEvents(_inputQueue);
+
 			while (_inputQueue.Count == 0)
 			{
 				var remainingTime = deadline - DateTime.UtcNow;
@@ -147,6 +166,8 @@ public class Keyboard(Machine machine)
 					return false;
 
 				Monitor.Wait(_sync, remainingTime);
+
+				EatReleaseEvents(_inputQueue);
 			}
 
 			return true;
@@ -158,14 +179,32 @@ public class Keyboard(Machine machine)
 		if (timeoutMilliseconds != Timeout.Infinite)
 			return WaitForNewInput(TimeSpan.FromMilliseconds(timeoutMilliseconds));
 
-		int countOnEntry = _inputQueue.Count;
-
 		lock (_sync)
 		{
-			while (_inputQueue.Count == countOnEntry)
-				Monitor.Wait(_sync);
+			if (_divertEvents)
+				throw new InvalidOperationException("WaitForNextInput does not support concurrent operation");
 
-			return true;
+			_divertEvents = true;
+
+			try
+			{
+				while (_divertedEvents.Count == 0)
+				{
+					Monitor.Wait(_sync);
+
+					EatReleaseEvents(_divertedEvents);
+				}
+
+				foreach (var newEvent in _divertedEvents)
+					_inputQueue.Enqueue(newEvent);
+
+				return true;
+			}
+			finally
+			{
+				_divertEvents = false;
+				_divertedEvents.Clear();
+			}
 		}
 	}
 
@@ -173,24 +212,39 @@ public class Keyboard(Machine machine)
 	{
 		var deadline = DateTime.UtcNow + timeout;
 
-		int countOnEntry = _inputQueue.Count;
-
 		lock (_sync)
 		{
-			while (_inputQueue.Count == countOnEntry)
+			if (_divertEvents)
+				throw new InvalidOperationException("WaitForNextInput does not support concurrent operation");
+
+			_divertEvents = true;
+
+			try
 			{
-				var remainingTime = deadline - DateTime.UtcNow;
+				while (_divertedEvents.Count == 0)
+				{
+					var remainingTime = deadline - DateTime.UtcNow;
 
-				if (remainingTime <= TimeSpan.Zero)
-					return false;
+					if (remainingTime <= TimeSpan.Zero)
+						return false;
 
-				Monitor.Wait(_sync, remainingTime);
+					Monitor.Wait(_sync, remainingTime);
+
+					EatReleaseEvents(_divertedEvents);
+				}
+
+				foreach (var newEvent in _divertedEvents)
+					_inputQueue.Enqueue(newEvent);
+
+				return true;
 			}
-
-			return true;
+			finally
+			{
+				_divertEvents = false;
+				_divertedEvents.Clear();
+			}
 		}
 	}
-
 
 	public bool WaitForInput(CancellationToken cancellationToken)
 	{
@@ -206,6 +260,9 @@ public class Keyboard(Machine machine)
 			while (_inputQueue.Count == 0)
 			{
 				Monitor.Wait(_sync);
+
+				while ((_inputQueue.Count > 0) && _inputQueue.Peek().IsRelease)
+					_inputQueue.Dequeue();
 
 				if (cancellationToken.IsCancellationRequested)
 					return false;
