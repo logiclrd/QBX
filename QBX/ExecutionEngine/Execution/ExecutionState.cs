@@ -133,6 +133,8 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 		if ((statement != null) && statement.IsBreakpoint)
 			_break = true;
 
+		// TODO: watchpoints
+
 		if (_break)
 		{
 			DebugOut("PROGRAM: break");

@@ -25,9 +25,6 @@ public partial class Program
 			return;
 		}
 
-		if (FocusedViewport == null)
-			FocusedViewport = PrimaryViewport;
-
 		int newCursorX, newCursorY;
 		int newScrollX, newScrollY;
 
@@ -43,9 +40,6 @@ public partial class Program
 			new Lazy<StringBuilder>(
 				() =>
 				{
-					if (FocusedViewport == null)
-						throw new Exception("Internal error: No focused viewport");
-
 					if (FocusedViewport.CurrentLineBuffer == null)
 					{
 						var writer = new StringWriter();
@@ -284,120 +278,7 @@ public partial class Program
 					break;
 
 				if (input.Modifiers.ShiftKey)
-				{
-					// If there is a selection, use the selection.
-					// If there isn't a selection, walk backward until we find an
-					// alphanumeric character or a close parenthesis. Then continue
-					// until we find either the end of the alphanumeric sequence or
-					// an open parenthesis, respectively, and Instant Watch on that.
-
-					string subject = "";
-
-					bool isValid = true;
-
-					if (FocusedViewport.Clipboard.HasSelection)
-						subject = FocusedViewport.Clipboard.GetSelectedText(multiline: false);
-					else
-					{
-						FocusedViewport.EditCurrentLine();
-
-						var buffer = FocusedViewport.CurrentLineBuffer;
-
-						int endIndex = FocusedViewport.CursorX;
-
-						if (endIndex >= buffer.Length)
-							endIndex = buffer.Length - 1;
-
-						while (endIndex >= 0)
-						{
-							char ch = buffer[endIndex];
-
-							if ((ch == ')') || char.IsAsciiLetterOrDigit(ch))
-								break;
-
-							endIndex--;
-						}
-
-						if (endIndex < 0)
-							isValid = false;
-						else
-						{
-							int startIndex = endIndex;
-
-							switch (buffer[endIndex])
-							{
-								case '(': // Find end parenthesis
-									endIndex++;
-
-									while (endIndex < buffer.Length)
-									{
-										if (buffer[endIndex] == ')')
-											break;
-
-										endIndex++;
-									}
-
-									if (endIndex >= buffer.Length)
-										isValid = false;
-
-									break;
-								case ')': // Find start parenthesis
-									startIndex = endIndex - 1;
-
-									while (startIndex >= 0)
-									{
-										if (buffer[startIndex] == '(')
-											break;
-
-										startIndex--;
-									}
-
-									if (startIndex < 0)
-										isValid = false;
-
-									break;
-								default: // Find identifier extent
-									// Grow left
-									while (startIndex > 0)
-									{
-										char ch = buffer[startIndex - 1];
-
-										if (!char.IsAsciiLetterOrDigit(ch))
-											break;
-
-										startIndex--;
-									}
-
-									// Grow right
-									while (endIndex + 1 < buffer.Length)
-									{
-										char ch = buffer[endIndex + 1];
-
-										if (!char.IsAsciiLetterOrDigit(ch)
-										 && !"%&!#@$".Contains(ch))
-											break;
-
-										endIndex++;
-									}
-
-									break;
-							}
-
-							if (isValid)
-								subject = buffer.ToString(startIndex, endIndex - startIndex + 1);
-						}
-					}
-
-					subject = subject.Trim();
-
-					if (subject.Length == 0)
-						isValid = false;
-
-					if (isValid)
-						ShowInstantWatch(_nextStatementRoutine?.Mapper, subject);
-					else
-						PresentError("Invalid expression for Instant Watch");
-				}
+					InstantWatchAtCurrentCursorLocation();
 				else
 				{
 					if (FocusedViewport.TryGetCodeLineAt(FocusedViewport.CursorY) is CodeLine currentCodeLine)
@@ -733,6 +614,122 @@ public partial class Program
 			FocusedViewport.Clipboard.StartSelection(FocusedViewport.CursorX, FocusedViewport.CursorY);
 		else
 			FocusedViewport.Clipboard.ExtendSelection(FocusedViewport.CursorX, FocusedViewport.CursorY);
+	}
+
+	private void InstantWatchAtCurrentCursorLocation()
+	{
+		// If there is a selection, use the selection.
+		// If there isn't a selection, walk backward until we find an
+		// alphanumeric character or a close parenthesis. Then continue
+		// until we find either the end of the alphanumeric sequence or
+		// an open parenthesis, respectively, and Instant Watch on that.
+
+		string subject = "";
+
+		bool isValid = true;
+
+		if (FocusedViewport.Clipboard.HasSelection)
+			subject = FocusedViewport.Clipboard.GetSelectedText(multiline: false);
+		else
+		{
+			FocusedViewport.EditCurrentLine();
+
+			var buffer = FocusedViewport.CurrentLineBuffer;
+
+			int endIndex = FocusedViewport.CursorX;
+
+			if (endIndex >= buffer.Length)
+				endIndex = buffer.Length - 1;
+
+			while (endIndex >= 0)
+			{
+				char ch = buffer[endIndex];
+
+				if ((ch == ')') || char.IsAsciiLetterOrDigit(ch))
+					break;
+
+				endIndex--;
+			}
+
+			if (endIndex < 0)
+				isValid = false;
+			else
+			{
+				int startIndex = endIndex;
+
+				switch (buffer[endIndex])
+				{
+					case '(': // Find end parenthesis
+						endIndex++;
+
+						while (endIndex < buffer.Length)
+						{
+							if (buffer[endIndex] == ')')
+								break;
+
+							endIndex++;
+						}
+
+						if (endIndex >= buffer.Length)
+							isValid = false;
+
+						break;
+					case ')': // Find start parenthesis
+						startIndex = endIndex - 1;
+
+						while (startIndex >= 0)
+						{
+							if (buffer[startIndex] == '(')
+								break;
+
+							startIndex--;
+						}
+
+						if (startIndex < 0)
+							isValid = false;
+
+						break;
+					default: // Find identifier extent
+									 // Grow left
+						while (startIndex > 0)
+						{
+							char ch = buffer[startIndex - 1];
+
+							if (!char.IsAsciiLetterOrDigit(ch))
+								break;
+
+							startIndex--;
+						}
+
+						// Grow right
+						while (endIndex + 1 < buffer.Length)
+						{
+							char ch = buffer[endIndex + 1];
+
+							if (!char.IsAsciiLetterOrDigit(ch)
+							 && !"%&!#@$".Contains(ch))
+								break;
+
+							endIndex++;
+						}
+
+						break;
+				}
+
+				if (isValid)
+					subject = buffer.ToString(startIndex, endIndex - startIndex + 1);
+			}
+		}
+
+		subject = subject.Trim();
+
+		if (subject.Length == 0)
+			isValid = false;
+
+		if (isValid)
+			ShowInstantWatch(_nextStatementRoutine?.Mapper, subject);
+		else
+			PresentError("Invalid expression for Instant Watch");
 	}
 
 	public void NavigateTo(CompilationElement element, int lineNumber, int column)

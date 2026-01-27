@@ -32,9 +32,14 @@ public abstract class Dialog(Configuration configuration)
 		_focusedWidgetIndex = index;
 	}
 
-	public event EventHandler? Close;
+	public event EventHandler? Closed;
 
-	protected void OnClose() => Close?.Invoke(this, EventArgs.Empty);
+	protected void OnClosed() => Closed?.Invoke(this, EventArgs.Empty);
+
+	public void Close()
+	{
+		OnClosed();
+	}
 
 	public void Render(TextLibrary visual)
 	{
@@ -85,7 +90,7 @@ public abstract class Dialog(Configuration configuration)
 				break;
 
 			case ScanCode.Escape:
-				Close?.Invoke(this, EventArgs.Empty);
+				Closed?.Invoke(this, EventArgs.Empty);
 				break;
 		}
 		// TODO

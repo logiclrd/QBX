@@ -8,7 +8,6 @@ using QBX.ExecutionEngine;
 using QBX.ExecutionEngine.Compiled;
 using QBX.ExecutionEngine.Compiled.Statements;
 using QBX.ExecutionEngine.Execution;
-using QBX.ExecutionEngine.Execution.Variables;
 using QBX.Firmware;
 using QBX.LexicalAnalysis;
 using QBX.Parser;
@@ -21,11 +20,15 @@ public partial class Program
 	public Routine? NextStatementRoutine => _nextStatementRoutine;
 	public Token? RuntimeErrorToken => _runtimeErrorToken;
 	public IReadOnlySet<CodeLine> Breakpoints => _breakpoints;
+	public IReadOnlyList<Watch> Watches => _watches;
+
+	public const int MaxWatches = 16;
 
 	Statement? _nextStatement = null;
 	Routine? _nextStatementRoutine = null;
 	Token? _runtimeErrorToken = null;
 	HashSet<CodeLine> _breakpoints = new HashSet<CodeLine>();
+	List<Watch> _watches = new List<Watch>();
 
 	private void ShowNextStatement(IEnumerable<StackFrame> stack)
 	{
@@ -41,7 +44,7 @@ public partial class Program
 				if ((_nextStatement.CodeLine is CodeLine line)
 				 && (line.CompilationElement is CompilationElement element))
 				{
-					if (FocusedViewport!.CompilationElement != element)
+					if (FocusedViewport.CompilationElement != element)
 					{
 						if (PrimaryViewport.CompilationElement == element)
 							FocusedViewport = PrimaryViewport;
@@ -86,7 +89,7 @@ public partial class Program
 		 && (statement.CodeLine is CodeLine line)
 		 && (line.CompilationElement is CompilationElement element))
 		{
-			if (FocusedViewport!.CompilationElement != element)
+			if (FocusedViewport.CompilationElement != element)
 				FocusedViewport.SwitchTo(element);
 
 			FocusedViewport.ScrollCursorIntoView(
@@ -132,51 +135,176 @@ public partial class Program
 
 	public void ShowInstantWatch(Mapper? mapper, string subject)
 	{
+		if ((FocusedViewport.CompilationUnit == null)
+		 || (FocusedViewport.CompilationElement == null))
+			return;
+
 		try
 		{
 			var dialog = new InstantWatchDialog(Configuration);
 
 			dialog.SetExpression(subject);
 
-			if ((_compiler == null)
-				|| (_compilation == null)
-				|| (mapper == null)
-				|| (_nextStatement == null)
-				|| (_nextStatementRoutine == null)
-				|| (_executionContext == null)
-				|| !_executionContext.ExecutionState.Stack.Any())
-				dialog.SetValue("<Not available>");
-			else
-			{
-				var lexer = new Lexer(subject);
+			var instantWatch = new Watch(
+				FocusedViewport.CompilationUnit,
+				FocusedViewport.CompilationElement,
+				subject);
 
-				var tokens = lexer.ToList();
+			instantWatch.Routine = _nextStatementRoutine;
 
-				tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
+			dialog.SetWatch(instantWatch);
 
-				var parsedSubject = Parser.ParseExpression(tokens, lexer.EndToken);
+			if (EvaluateWatch(instantWatch))
+				dialog.Update();
 
-				var evaluable = _compiler.CompileExpression(parsedSubject, mapper, _compilation);
+			dialog.AddWatchClicked +=
+				() =>
+				{
+					AddWatch(instantWatch);
+					dialog.Close();
+				};
 
-				var stackFrame = _executionContext.ExecutionState.Stack.First();
-
-				var result = evaluable.Evaluate(_executionContext, stackFrame);
-
-				var emitter = new PrintEmitter(_executionContext);
-
-				var value = new StringValue();
-
-				emitter.CaptureOutputTo(value);
-				emitter.Emit(result);
-
-				dialog.SetValue(value.ToString());
-			}
+			if (_watches.Count >= MaxWatches)
+				dialog.EnableAddWatch = false;
 
 			ShowDialog(dialog);
 		}
 		catch
 		{
 			PresentError("Invalid expression for Instant Watch");
+		}
+	}
+
+	public void AddWatch(string expression, bool watchPoint)
+	{
+		if (_watches.Count == MaxWatches)
+			return;
+
+		if (FocusedViewport == HelpViewport)
+			FocusedViewport = PrimaryViewport;
+
+		if ((FocusedViewport.CompilationUnit == null)
+		 || (FocusedViewport.CompilationElement == null))
+			return;
+
+		var watch = new Watch(
+			FocusedViewport.CompilationUnit,
+			FocusedViewport.CompilationElement,
+			expression);
+
+		watch.IsWatchPoint = watchPoint;
+
+		_watches.Add(watch);
+	}
+
+	public void AddWatch(Watch watch)
+	{
+		if (_watches.Count < MaxWatches)
+		{
+			_watches.Add(watch);
+
+			mnuDebugDeleteWatch.IsEnabled = true;
+			mnuDebugDeleteAllWatch.IsEnabled = true;
+		}
+	}
+
+	public void RemoveWatchAt(int index)
+	{
+		if ((index >= 0) && (index < _watches.Count))
+		{
+			_watches.RemoveAt(index);
+
+			if (_watches.Count == 0)
+			{
+				mnuDebugDeleteWatch.IsEnabled = false;
+				mnuDebugDeleteAllWatch.IsEnabled = false;
+			}
+		}
+	}
+
+	public void ClearWatches()
+	{
+		_watches.Clear();
+
+		mnuDebugDeleteWatch.IsEnabled = false;
+		mnuDebugDeleteAllWatch.IsEnabled = false;
+	}
+
+	public void AssociateWatches(Compilation compilation)
+	{
+		var routines = compilation.AllRegisteredRoutines.ToDictionary(key => key.Source);
+
+		foreach (var watch in _watches)
+			routines.TryGetValue(watch.CompilationElement, out watch.Routine);
+	}
+
+	public void DisassociateWatches()
+	{
+		foreach (var watch in _watches)
+			watch.Routine = null;
+	}
+
+	public bool EvaluateWatch(Watch watch)
+	{
+		EvaluateWatches([watch], out var @break);
+		return @break;
+	}
+
+	public void EvaluateWatches(out bool @break)
+		=> EvaluateWatches(_watches, out @break);
+
+	public void EvaluateWatches(IEnumerable<Watch> watches, out bool @break)
+	{
+		@break = false;
+
+		var stackFrame = _executionContext?.ExecutionState.Stack.FirstOrDefault();
+
+		var currentRoutine = stackFrame?.Routine;
+
+		foreach (var watch in _watches)
+			watch.LastValueFormatted = null;
+
+		if ((_compiler != null)
+		 && (_compilation != null)
+		 && (_executionContext != null)
+		 && (currentRoutine != null)
+		 && (stackFrame != null))
+		{
+			foreach (var watch in _watches)
+			{
+				watch.LastValueFormatted = null;
+
+				if (!ReferenceEquals(watch.Routine, currentRoutine))
+				{
+					try
+					{
+						var lexer = new Lexer(watch.Expression);
+
+						var tokens = lexer.ToList();
+
+						tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
+
+						var parsedSubject = Parser.ParseExpression(tokens, lexer.EndToken);
+
+						var evaluable = _compiler.CompileExpression(parsedSubject, currentRoutine.Mapper, _compilation);
+
+						watch.LastValue = evaluable.Evaluate(_executionContext, stackFrame);
+
+						if (!watch.IsWatchPoint)
+						{
+							var emitter = new PrintEmitter(_executionContext);
+
+							var value = new StringValue();
+
+							emitter.CaptureOutputTo(value);
+							emitter.Emit(watch.LastValue);
+
+							watch.LastValueFormatted = value;
+						}
+					}
+					catch { }
+				}
+			}
 		}
 	}
 }

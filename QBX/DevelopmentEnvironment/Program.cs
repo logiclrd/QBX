@@ -22,7 +22,6 @@ public partial class Program : HostedProgram
 	public List<CompilationUnit> LoadedFiles = new List<CompilationUnit>();
 	public int MainModuleIndex;
 
-	public List<Watch> Watches = new List<Watch>();
 	public Viewport? HelpViewport = null; // new Viewport() { HelpPage = new HelpPage(), IsEditable = false };
 	public Viewport PrimaryViewport;
 	public Viewport? SplitViewport;
@@ -31,7 +30,7 @@ public partial class Program : HostedProgram
 	public int SelectedReferenceBarAction = -1;
 	public string? ReferenceBarText;
 
-	public Viewport? FocusedViewport;
+	public Viewport FocusedViewport;
 	public bool EnableOvertype = false;
 
 	public UIMode Mode;
@@ -108,7 +107,7 @@ public partial class Program : HostedProgram
 		CurrentDialog = dialog;
 		Mode = UIMode.Dialog;
 
-		dialog.Close +=
+		dialog.Closed +=
 			(_, _) =>
 			{
 				CurrentDialog = null;
@@ -128,6 +127,8 @@ public partial class Program : HostedProgram
 
 		while (Machine.KeepRunning)
 		{
+			EvaluateWatches(_watches, out bool @break);
+
 			Render();
 
 			if (Machine.Keyboard.WaitForInput(cancellationToken))

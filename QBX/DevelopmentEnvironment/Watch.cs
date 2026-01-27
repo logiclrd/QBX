@@ -1,9 +1,53 @@
-﻿using QBX.CodeModel.Expressions;
+﻿using QBX.CodeModel;
+using QBX.ExecutionEngine;
+using QBX.ExecutionEngine.Compiled;
+using QBX.ExecutionEngine.Execution;
+using QBX.ExecutionEngine.Execution.Variables;
 
 namespace QBX.DevelopmentEnvironment;
 
-public class Watch
+public class Watch(CompilationUnit unit, CompilationElement element, string expression)
 {
-	// TODO: probably wants to be a compiled expression
-	public Expression? Expression;
+	public CompilationUnit CompilationUnit = unit;
+	public CompilationElement CompilationElement = element;
+	public Routine? Routine;
+	public string Expression = expression;
+	public bool IsWatchPoint = false;
+	public Variable? LastValue = null;
+	public StringValue? LastValueFormatted = null;
+
+	public override string ToString() => ToStringValue(out _).ToString();
+
+	static readonly StringValue InternalError = new StringValue("<Internal error>");
+	static readonly StringValue NotWatchable = new StringValue("<Not watchable>");
+	static readonly StringValue TypeMismatch = new StringValue("Type mismatch");
+	static readonly StringValue True = new StringValue("<TRUE>");
+	static readonly StringValue False = new StringValue("<FALSE>");
+
+	public StringValue ToStringValue(out bool highlight)
+	{
+		highlight = false;
+
+		if (!IsWatchPoint)
+			return LastValueFormatted ?? NotWatchable;
+		else
+		{
+			try
+			{
+				if (LastValue == null)
+					return InternalError;
+
+				if (!LastValue.DataType.IsNumeric)
+					return TypeMismatch;
+
+				highlight = true;
+
+				return LastValue.IsZero ? True : False;
+			}
+			catch (RuntimeException error)
+			{
+				return new StringValue(error.Message);
+			}
+		}
+	}
 }

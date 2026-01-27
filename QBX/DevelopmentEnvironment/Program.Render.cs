@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Text;
 
 using QBX.CodeModel;
@@ -31,6 +30,8 @@ public partial class Program : HostedProgram
 		height--; // menu bar
 		height--; // status bar
 
+		height -= _watches.Count;
+
 		height -= (ImmediateViewport.Height + 1);
 
 		if (SplitViewport != null)
@@ -60,6 +61,9 @@ public partial class Program : HostedProgram
 
 		row += RenderMenuBar(row, isMenuActive, isMenuOpen);
 
+		foreach (var watch in _watches)
+			row += RenderWatch(row, watch);
+
 		if (HelpViewport != null)
 			row += RenderViewport(row, HelpViewport, connectUp: false, horizontalScrollBar: false);
 
@@ -81,7 +85,7 @@ public partial class Program : HostedProgram
 		}
 		else if (CurrentDialog != null)
 			CurrentDialog.Render(TextLibrary);
-		else if (FocusedViewport != null)
+		else
 		{
 			int cursorActualX = 1 + (FocusedViewport.CursorX - FocusedViewport.ScrollX);
 			int cursorActualY = FocusedViewport.CachedContentTopY + (FocusedViewport.CursorY - FocusedViewport.ScrollY);
@@ -142,6 +146,44 @@ public partial class Program : HostedProgram
 
 		menuAttr.Set(TextLibrary);
 		TextLibrary.WriteText(' ');
+
+		return 1;
+	}
+
+	int RenderWatch(int row, Watch watch)
+	{
+		string location =
+			watch.CompilationElement?.Name ??
+			watch.CompilationUnit?.Name ??
+			"<unknown>";
+
+		string label = " " + location + " " + watch.Expression + ": ";
+
+		Configuration.DisplayAttributes.DebugWatchWindowNormalText.Set(TextLibrary);
+
+		if (label.Length >= TextLibrary.CharacterWidth)
+			TextLibrary.WriteText(label.AsSpan().Slice(0, TextLibrary.CharacterWidth));
+		else
+		{
+			TextLibrary.WriteText(label);
+
+			int remainingColumns = TextLibrary.CharacterWidth - TextLibrary.CursorX;
+
+			var value = watch.ToStringValue(out bool highlight);
+
+			if (highlight)
+				Configuration.DisplayAttributes.DebugWatchWindowHighlightedText.Set(TextLibrary);
+
+			if (value.Length >= remainingColumns)
+				TextLibrary.WriteText(value.AsSpan().Slice(0, remainingColumns));
+			else
+			{
+				int spaces = remainingColumns - value.Length;
+
+				TextLibrary.WriteText(value.AsSpan());
+				TextLibrary.WriteText(_spaces.AsSpan().Slice(0, spaces));
+			}
+		}
 
 		return 1;
 	}

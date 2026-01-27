@@ -1,4 +1,5 @@
 ﻿using QBX.DevelopmentEnvironment.Dialogs.Widgets;
+using System;
 
 namespace QBX.DevelopmentEnvironment.Dialogs;
 
@@ -12,6 +13,21 @@ public class InstantWatchDialog : Dialog
 	Button cmdAddWatch;
 	Button cmdCancel;
 	Button cmdHelp;
+
+	Watch? _watch;
+
+	public bool EnableAddWatch
+	{
+		get => cmdAddWatch.IsEnabled;
+		set => cmdAddWatch.IsEnabled = value;
+	}
+
+	public event Action? AddWatchClicked;
+
+	protected void OnAddWatchClicked()
+	{
+		AddWatchClicked?.Invoke();
+	}
 
 	public InstantWatchDialog(Configuration configuration)
 		: base(configuration)
@@ -47,13 +63,14 @@ public class InstantWatchDialog : Dialog
 		cmdAddWatch.Width = 13;
 		cmdAddWatch.Text = "Add Watch";
 		cmdAddWatch.AcceleratorKeyIndex = 0;
+		cmdAddWatch.Activated = OnAddWatchClicked;
 
 		cmdCancel = new Button();
 		cmdCancel.X = 21;
 		cmdCancel.Y = 9;
 		cmdCancel.Width = 10;
 		cmdCancel.Text = "Cancel";
-		cmdCancel.Activated = OnClose;
+		cmdCancel.Activated = OnClosed;
 
 		cmdHelp = new Button();
 		cmdHelp.X = 35;
@@ -74,11 +91,20 @@ public class InstantWatchDialog : Dialog
 
 	public void SetExpression(string text)
 	{
-		lblExpression.Text = text;
 	}
 
-	public void SetValue(string text)
+	public void SetWatch(Watch watch)
 	{
-		lblValue.Text = text;
+		_watch = watch;
+		Update();
+	}
+
+	public void Update()
+	{
+		if (_watch != null)
+		{
+			lblExpression.Text = _watch.Expression;
+			lblValue.Text = _watch.LastValueFormatted?.ToString() ?? "<Not available>";
+		}
 	}
 }

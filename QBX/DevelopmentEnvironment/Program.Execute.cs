@@ -42,6 +42,8 @@ public partial class Program
 
 		_compilation.SetDefaultEntrypoint();
 
+		AssociateWatches(_compilation);
+
 		RestoreOutput();
 
 		_executionContext = new ExecutionContext(Machine, PlayProcessor);
@@ -147,6 +149,8 @@ public partial class Program
 		outputLibrary.WriteText("Press any key to continue");
 
 		WaitForKey();
+
+		DisassociateWatches();
 
 		SetIDEVideoMode();
 

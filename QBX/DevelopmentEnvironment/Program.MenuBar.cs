@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 using QBX.Hardware;
@@ -10,15 +11,39 @@ public partial class Program
 	MenuBar MenuBar;
 
 	Menu mnuFile;
+
 	Menu mnuEdit;
+
 	Menu mnuView;
+
 	Menu mnuSearch;
+
 	Menu mnuRun;
+
 	Menu mnuDebug;
+	MenuItem mnuDebugInstantWatch;
+	MenuItem mnuDebugDeleteWatch;
+	MenuItem mnuDebugDeleteAllWatch;
+
 	Menu mnuCalls;
+
 	Menu mnuUtility;
+
 	Menu mnuOptions;
+
 	Menu mnuHelp;
+
+	public int SelectedMenu = -1;
+	public int SelectedMenuItem = -1;
+	public AltRelease AltReleaseAction;
+
+	public enum AltRelease
+	{
+		DeactivateMenuBar,
+		CloseMenu,
+		ActivateMenuBar,
+		Ignore,
+	}
 
 	[MemberNotNull(
 		nameof(MenuBar),
@@ -28,6 +53,9 @@ public partial class Program
 		nameof(mnuSearch),
 		nameof(mnuRun),
 		nameof(mnuDebug),
+		nameof(mnuDebugInstantWatch),
+		nameof(mnuDebugDeleteWatch),
+		nameof(mnuDebugDeleteAllWatch),
 		nameof(mnuCalls),
 		nameof(mnuUtility),
 		nameof(mnuOptions),
@@ -110,10 +138,10 @@ public partial class Program
 			new Menu("&Debug", 27)
 			{
 				new MenuItem("&Add Watch..."),
-				new MenuItem("&Instanc Watch...   Shift+F9"),
+				(mnuDebugInstantWatch = new MenuItem("&Instant Watch...   Shift+F9")),
 				new MenuItem("&Watchpoint..."),
-				new MenuItem("&Delete Watch...") { IsEnabled = false },
-				new MenuItem("De&lete All Watch") { IsEnabled = false },
+				(mnuDebugDeleteWatch = new MenuItem("&Delete Watch...") { IsEnabled = false }),
+				(mnuDebugDeleteAllWatch = new MenuItem("De&lete All Watch") { IsEnabled = false }),
 				MenuItem.Separator,
 				new MenuItem("&Trace On"),
 				new MenuItem("&History On"),
@@ -169,18 +197,19 @@ public partial class Program
 				mnuOptions,
 				mnuHelp
 			};
+
+		mnuDebugInstantWatch.Clicked = mnuDebugInstantWatch_Clicked;
+		mnuDebugDeleteAllWatch.Clicked = mnuDebugDeleteAllWatch_Clicked;
 	}
 
-	public int SelectedMenu = -1;
-	public int SelectedMenuItem = -1;
-	public AltRelease AltReleaseAction;
-
-	public enum AltRelease
+	private void mnuDebugInstantWatch_Clicked()
 	{
-		DeactivateMenuBar,
-		CloseMenu,
-		ActivateMenuBar,
-		Ignore,
+		InstantWatchAtCurrentCursorLocation();
+	}
+
+	private void mnuDebugDeleteAllWatch_Clicked()
+	{
+		ClearWatches();
 	}
 
 	bool ActivateMenuItem(MenuItem item)
