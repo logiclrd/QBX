@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Linq;
 using System.Text;
 
 using QBX.CodeModel;
+using QBX.DevelopmentEnvironment.Dialogs;
 using QBX.Firmware;
 using QBX.Utility;
 
@@ -11,6 +13,8 @@ public partial class Program : HostedProgram
 {
 	string _spaces = "                                                                                ";
 	string _horizontalRule = "────────────────────────────────────────────────────────────────────────────────";
+
+	Dialog? _lastRenderDialog;
 
 	void Render()
 	{
@@ -57,49 +61,63 @@ public partial class Program : HostedProgram
 
 		PrimaryViewport.Height = height;
 
-		int row = 0;
+		var currentDialog = Dialogs.LastOrDefault();
 
-		row += RenderMenuBar(row, isMenuActive, isMenuOpen);
+		bool hideCursor = (isMenuActive || isMenuOpen) && (currentDialog == null);
 
-		foreach (var watch in _watches)
-			row += RenderWatch(row, watch);
-
-		if (HelpViewport != null)
-			row += RenderViewport(row, HelpViewport, connectUp: false, horizontalScrollBar: false);
-
-		row += RenderViewport(row, PrimaryViewport, connectUp: false);
-
-		if (SplitViewport != null)
-			row += RenderViewport(row, SplitViewport, connectUp: true);
-
-		row += RenderViewport(row, ImmediateViewport, connectUp: true, horizontalScrollBar: false);
-
-		RenderReferenceBar(row);
-
-		if (isMenuActive || isMenuOpen)
+		if ((currentDialog == null) || (currentDialog != _lastRenderDialog))
 		{
-			TextLibrary.HideCursor();
+			_lastRenderDialog = currentDialog;
+
+			int row = 0;
+
+			row += RenderMenuBar(row, isMenuActive, isMenuOpen);
+
+			foreach (var watch in _watches)
+				row += RenderWatch(row, watch);
+
+			if (HelpViewport != null)
+				row += RenderViewport(row, HelpViewport, connectUp: false, horizontalScrollBar: false);
+
+			row += RenderViewport(row, PrimaryViewport, connectUp: false);
+
+			if (SplitViewport != null)
+				row += RenderViewport(row, SplitViewport, connectUp: true);
+
+			row += RenderViewport(row, ImmediateViewport, connectUp: true, horizontalScrollBar: false);
+
+			RenderReferenceBar(row);
 
 			if (isMenuOpen)
 				RenderOpenMenu();
+
+			for (int i = 0, l = Dialogs.Count - 1; i < l; i++)
+				Dialogs[i].Render(TextLibrary);
 		}
-		else if (CurrentDialog != null)
-			CurrentDialog.Render(TextLibrary);
-		else
+
+		if (currentDialog != null)
+			currentDialog.Render(TextLibrary);
+		else if (!hideCursor)
 		{
 			int cursorActualX = 1 + (FocusedViewport.CursorX - FocusedViewport.ScrollX);
 			int cursorActualY = FocusedViewport.CachedContentTopY + (FocusedViewport.CursorY - FocusedViewport.ScrollY);
 
+			TextLibrary.MoveCursor(cursorActualX, cursorActualY);
+		}
+
+		if (hideCursor)
+			TextLibrary.HideCursor();
+		else
+		{
 			TextLibrary.ShowCursor();
 			TextLibrary.SetCursorScans(EnableOvertype ? 0 : 14, 15);
-			TextLibrary.MoveCursor(cursorActualX, cursorActualY);
 			TextLibrary.UpdatePhysicalCursor();
 		}
 	}
 
 	int RenderMenuBar(int row, bool isMenuActive, bool isMenuOpen)
 	{
-		bool showAccessKeys = isMenuActive && !isMenuOpen;
+		bool showAccessKeys = isMenuActive && !isMenuOpen && (Dialogs.Count == 0);
 
 		TextLibrary.MoveCursor(0, row);
 
@@ -620,7 +638,7 @@ public partial class Program : HostedProgram
 		var (startX, startY, endX, endY) = clipboard.GetSelectionRange();
 
 		// Selection is not rendered when a dialog is active.
-		if (CurrentDialog != null)
+		if (Dialogs.Count != 0)
 			return (chars, 0, 0);
 
 		int effectiveStartX = Math.Min(startX, endX);

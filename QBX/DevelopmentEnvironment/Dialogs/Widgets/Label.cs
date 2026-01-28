@@ -7,6 +7,13 @@ namespace QBX.DevelopmentEnvironment.Dialogs.Widgets;
 public class Label : Widget
 {
 	public string Text = "";
+	public int AccessKeyIndex = -1;
+	public Widget? FocusTarget;
+
+	public override char AccessKeyCharacter
+		=> ((AccessKeyIndex >= 0) && (AccessKeyIndex < Text.Length))
+			? Text[AccessKeyIndex]
+			: '\0';
 
 	public override void Render(TextLibrary visual, IntegerRect bounds, Configuration configuration)
 	{
@@ -17,6 +24,7 @@ public class Label : Widget
 			return;
 
 		var chars = Text.AsSpan();
+		int acceleratorKeyIndex = AccessKeyIndex;
 
 		if (x < bounds.X1)
 		{
@@ -27,6 +35,7 @@ public class Label : Widget
 
 			chars = chars.Slice(clipped);
 			x += clipped;
+			AccessKeyIndex -= clipped;
 		}
 
 		if (x + chars.Length - 1 > bounds.X2)
@@ -36,10 +45,18 @@ public class Label : Widget
 			if (remaining <= 0)
 				return;
 
-			chars = chars.Slice(remaining);
+			chars = chars.Slice(0, remaining);
 		}
 
-		visual.WriteTextAt(x, y, chars);
+		WriteTextWithAccessKey(
+			visual,
+			x, y,
+			textAreaWidth: Width,
+			textOffset: 0,
+			chars,
+			AccessKeyIndex,
+			configuration.DisplayAttributes.DialogBoxNormalText,
+			configuration.DisplayAttributes.DialogBoxAccessKeys);
 	}
 
 	public override void PlaceCursorForFocus(TextLibrary visual, IntegerRect bounds)

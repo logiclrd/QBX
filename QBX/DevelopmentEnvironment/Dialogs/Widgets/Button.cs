@@ -7,8 +7,13 @@ namespace QBX.DevelopmentEnvironment.Dialogs.Widgets;
 public class Button : Widget
 {
 	public string Text = "";
-	public int AcceleratorKeyIndex = -1;
+	public int AccessKeyIndex = -1;
 	public bool IsEnabled;
+
+	public override char AccessKeyCharacter
+		=> ((AccessKeyIndex >= 0) && (AccessKeyIndex < Text.Length))
+			? Text[AccessKeyIndex]
+			: '\0';
 
 	public Button()
 	{
@@ -17,9 +22,10 @@ public class Button : Widget
 
 	public Action? Activated;
 
-	public override void Activate()
+	public override bool Activate()
 	{
 		Activated?.Invoke();
+		return true;
 	}
 
 	public override void Render(TextLibrary visual, IntegerRect bounds, Configuration configuration)
@@ -34,7 +40,7 @@ public class Button : Widget
 			? configuration.DisplayAttributes.DialogBoxActiveCommandButtonBorderCharacters
 			: textAttr;
 
-		var acceleratorAttr = configuration.DisplayAttributes.DialogBoxAccessKeys;
+		var accessKeyAttr = configuration.DisplayAttributes.DialogBoxAccessKeys;
 
 		int x = X + bounds.X1;
 		int y = Y + bounds.Y1;
@@ -52,21 +58,17 @@ public class Button : Widget
 			int textAreaWidth = Width - 2;
 			int textOffset = (textAreaWidth - Text.Length) / 2;
 
-			for (int i = 0; (i < textAreaWidth) && (x < bounds.X2); i++, x++)
-			{
-				int index = i - textOffset;
+			WriteTextWithAccessKey(
+				visual,
+				x, y,
+				textAreaWidth,
+				textOffset,
+				Text.AsSpan(),
+				AccessKeyIndex,
+				configuration.DisplayAttributes.DialogBoxCommandButtons,
+				configuration.DisplayAttributes.DialogBoxAccessKeys);
 
-				if ((index < 0) || (index >= Text.Length))
-					visual.WriteText(' ');
-				else if (index == AcceleratorKeyIndex)
-				{
-					acceleratorAttr.Set(visual);
-					visual.WriteText(Text[index]);
-					textAttr.Set(visual);
-				}
-				else
-					visual.WriteText(Text[index]);
-			}
+			x += textAreaWidth;
 
 			if (x < bounds.X2)
 			{

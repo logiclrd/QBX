@@ -633,6 +633,11 @@ class CP437Encoding : Encoding
 		}
 	}
 
+
+	public bool IsAsciiLetterOrDigit(byte v)
+		=> IsAsciiLetter(v) || IsDigit(v);
+	public bool IsAsciiLetter(byte v)
+		=> IsAsciiLetterLower(v) || IsAsciiLetterUpper(v);
 	public bool IsAsciiLetterUpper(byte v)
 		=> (v >= (byte)'A') && (v <= (byte)'Z');
 	public bool IsAsciiLetterLower(byte v)

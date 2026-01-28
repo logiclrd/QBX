@@ -1,4 +1,5 @@
 ﻿using QBX.Firmware;
+using QBX.Hardware;
 
 namespace QBX.DevelopmentEnvironment.Dialogs.Widgets;
 
@@ -15,6 +16,24 @@ public class Border : Widget
 		Y = child.Y - 1;
 		Width = child.Width + 2;
 		Height = child.Height + 2;
+
+		IsTabStop = child.IsTabStop;
+	}
+
+	internal override void NotifyGotFocus()
+	{
+		Child?.IsFocused = IsFocused;
+
+		base.NotifyGotFocus();
+		Child?.NotifyGotFocus();
+	}
+
+	internal override void NotifyLostFocus()
+	{
+		Child?.IsFocused = IsFocused;
+
+		base.NotifyLostFocus();
+		Child?.NotifyLostFocus();
 	}
 
 	public override void PlaceCursorForFocus(TextLibrary visual, IntegerRect bounds)
@@ -51,8 +70,16 @@ public class Border : Widget
 				int childY2 = bounds.Y1 + Child.Y + Child.Height - 1;
 
 				using (visual.PushClipRect(childX1, childY1, childX2, childY2))
+				{
+					Child.IsFocused = IsFocused;
 					Child.Render(visual, bounds, configuration);
+				}
 			}
 		}
+	}
+
+	public override bool ProcessKey(KeyEvent input, IOvertypeFlag overtypeFlag)
+	{
+		return Child?.ProcessKey(input, overtypeFlag) ?? false;
 	}
 }

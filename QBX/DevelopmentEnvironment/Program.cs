@@ -9,10 +9,11 @@ using QBX.Hardware;
 using QBX.Parser;
 using QBX.ExecutionEngine;
 using QBX.DevelopmentEnvironment.Dialogs;
+using System.Linq;
 
 namespace QBX.DevelopmentEnvironment;
 
-public partial class Program : HostedProgram
+public partial class Program : HostedProgram, IOvertypeFlag
 {
 	public Machine Machine;
 	public TextLibrary TextLibrary;
@@ -35,11 +36,19 @@ public partial class Program : HostedProgram
 
 	public UIMode Mode;
 
-	public Dialog? CurrentDialog;
+	public List<Dialog> Dialogs = new List<Dialog>();
 
 	public BasicParser Parser;
 
 	public PlayProcessor PlayProcessor;
+
+	bool IOvertypeFlag.Value
+	{
+		get => EnableOvertype;
+		set => EnableOvertype = value;
+	}
+
+	void IOvertypeFlag.Toggle() => EnableOvertype = !EnableOvertype;
 
 	public Program(Machine machine)
 	{
@@ -104,13 +113,14 @@ public partial class Program : HostedProgram
 
 		dialog.Y = (TextLibrary.Height - dialog.Height) / 2;
 
-		CurrentDialog = dialog;
-		Mode = UIMode.Dialog;
+		int dialogPoint = Dialogs.Count;
+
+		Dialogs.Add(dialog);
 
 		dialog.Closed +=
 			(_, _) =>
 			{
-				CurrentDialog = null;
+				Dialogs.RemoveRange(dialogPoint, Dialogs.Count - dialogPoint);
 				Mode = previousMode;
 			};
 
@@ -137,12 +147,18 @@ public partial class Program : HostedProgram
 
 				if (input != null)
 				{
-					switch (Mode)
+					var currentDialog = Dialogs.LastOrDefault();
+
+					if (currentDialog != null)
+						currentDialog.ProcessKey(input, overtypeFlag: this);
+					else
 					{
-						case UIMode.TextEditor: ProcessTextEditorKey(input); break;
-						case UIMode.Menu: ProcessMenuKey(input); break;
-						case UIMode.MenuBar: ProcessMenuBarKey(input); break;
-						case UIMode.Dialog: CurrentDialog?.ProcessKey(input); break;
+						switch (Mode)
+						{
+							case UIMode.TextEditor: ProcessTextEditorKey(input); break;
+							case UIMode.Menu: ProcessMenuKey(input); break;
+							case UIMode.MenuBar: ProcessMenuBarKey(input); break;
+						}
 					}
 				}
 			}

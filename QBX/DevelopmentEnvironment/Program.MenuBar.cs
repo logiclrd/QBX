@@ -11,6 +11,8 @@ public partial class Program
 	MenuBar MenuBar;
 
 	Menu mnuFile;
+	MenuItem mnuFileOpenProgram;
+	MenuItem mnuFileLoadFile;
 
 	Menu mnuEdit;
 
@@ -48,6 +50,8 @@ public partial class Program
 	[MemberNotNull(
 		nameof(MenuBar),
 		nameof(mnuFile),
+		nameof(mnuFileOpenProgram),
+		nameof(mnuFileLoadFile),
 		nameof(mnuEdit),
 		nameof(mnuView),
 		nameof(mnuSearch),
@@ -66,14 +70,14 @@ public partial class Program
 			new Menu("&File", 16)
 			{
 				new MenuItem("&New Program"),
-				new MenuItem("&Open Program..."),
+				(mnuFileOpenProgram = new MenuItem("&Open Program...")),
 				new MenuItem("&Merge..."),
 				new MenuItem("&Save"),
 				new MenuItem("Save &As..."),
 				new MenuItem("Sa&ve All"),
 				MenuItem.Separator,
 				new MenuItem("&Create File..."),
-				new MenuItem("&Load File..."),
+				(mnuFileLoadFile = new MenuItem("&Load File...")),
 				new MenuItem("&Unload File..."),
 				MenuItem.Separator,
 				new MenuItem("&Print..."),
@@ -198,8 +202,21 @@ public partial class Program
 				mnuHelp
 			};
 
+		mnuFileOpenProgram.Clicked = mnuFileOpenProgram_Clicked;
+		mnuFileLoadFile.Clicked = mnuFileLoadFile_Clicked;
+
 		mnuDebugInstantWatch.Clicked = mnuDebugInstantWatch_Clicked;
 		mnuDebugDeleteAllWatch.Clicked = mnuDebugDeleteAllWatch_Clicked;
+	}
+
+	private void mnuFileOpenProgram_Clicked()
+	{
+		ShowOpenFileDialog(replaceExistingProgram: true);
+	}
+
+	private void mnuFileLoadFile_Clicked()
+	{
+		ShowOpenFileDialog(replaceExistingProgram: false);
 	}
 
 	private void mnuDebugInstantWatch_Clicked()
@@ -320,7 +337,7 @@ public partial class Program
 					break;
 				case ScanCode.Return:
 					if (ActivateMenuItem(MenuBar[SelectedMenu].Items[SelectedMenuItem]))
-						Mode = UIMode.TextEditor;
+						SetUIModeAfterMenuItemActivation();
 					break;
 				case ScanCode.Left:
 				case ScanCode.Right:
@@ -364,13 +381,29 @@ public partial class Program
 							SelectedMenuItem = menu.IndexOf(item);
 
 							if (ActivateMenuItem(item))
-								Mode = UIMode.TextEditor;
+								SetUIModeAfterMenuItemActivation();
 						}
 					}
 
 					break;
 				}
 			}
+		}
+	}
+
+	void SetUIModeAfterMenuItemActivation()
+	{
+		if (Dialogs.Count == 0)
+			Mode = UIMode.TextEditor;
+		else
+		{
+			Mode = UIMode.MenuBar;
+
+			Dialogs.Last().Closed +=
+				(_, _) =>
+				{
+					Mode = UIMode.TextEditor;
+				};
 		}
 	}
 

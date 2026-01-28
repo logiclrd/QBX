@@ -13,6 +13,24 @@ public class StringValue : IComparable<StringValue>, IEquatable<StringValue>
 {
 	static Encoding s_cp437 = new CP437Encoding(ControlCharacterInterpretation.Semantic);
 
+	[ThreadStatic]
+	static char[]? s_characterBuffer;
+	[ThreadStatic]
+	static byte[]? s_conversionBuffer;
+
+	[MemberNotNull(nameof(s_characterBuffer))]
+	static void EnsureCharacterBuffer()
+	{
+		s_characterBuffer ??= new char[1];
+	}
+
+	[MemberNotNull(nameof(s_conversionBuffer))]
+	static void EnsureConversionBuffer(int length)
+	{
+		if ((s_conversionBuffer == null) || (s_conversionBuffer.Length < length))
+			s_conversionBuffer = new byte[length * 2];
+	}
+
 	public static bool IsNullOrEmpty([NotNullWhen(false)] StringValue? test)
 		=> (test == null) || (test.Length == 0);
 
@@ -64,13 +82,23 @@ public class StringValue : IComparable<StringValue>, IEquatable<StringValue>
 	}
 
 	public StringValue Set(string str)
-		=> Set(s_cp437.GetBytes(str));
-
+		=> Set(str.AsSpan());
 
 	public StringValue Set(StringValue data)
 		=> Set(data.AsSpan());
 
-	public StringValue Set(Span<byte> data)
+	public StringValue Set(ReadOnlySpan<char> str)
+	{
+		EnsureConversionBuffer(str.Length);
+
+		int convertedCharacters = s_cp437.GetBytes(
+			str,
+			s_conversionBuffer.AsSpan());
+
+		return Set(s_conversionBuffer.AsSpan().Slice(0, convertedCharacters));
+	}
+
+	public StringValue Set(ReadOnlySpan<byte> data)
 	{
 		if (_isFixedLength)
 		{
@@ -93,6 +121,46 @@ public class StringValue : IComparable<StringValue>, IEquatable<StringValue>
 		return this;
 	}
 
+	public StringValue SetCharacterAt(int index, char ch)
+	{
+		EnsureCharacterBuffer();
+
+		s_characterBuffer[0] = ch;
+
+		EnsureConversionBuffer(1);
+
+		s_cp437.GetBytes(s_characterBuffer, 0, 1, s_conversionBuffer, 0);
+
+		return SetCharacterAt(index, s_conversionBuffer[0]);
+	}
+
+	public StringValue SetCharacterAt(int index, byte ch)
+	{
+		if ((index < 0) || (index > Length))
+			throw new ArgumentOutOfRangeException(nameof(index));
+
+		if (index < _bytes.Count)
+			_bytes[index] = ch;
+		else if (!_isFixedLength)
+			_bytes.Add(ch);
+
+		return this;
+	}
+
+	public StringValue Append(string str)
+	{
+		EnsureConversionBuffer(str.Length);
+
+		int convertedCharacters = s_cp437.GetBytes(
+			str,
+			0,
+			str.Length,
+			s_conversionBuffer,
+			0);
+
+		return Append(s_conversionBuffer.AsSpan().Slice(0, convertedCharacters));
+	}
+
 	public StringValue Append(StringValue data)
 		=> Append(data.AsSpan());
 
@@ -104,12 +172,64 @@ public class StringValue : IComparable<StringValue>, IEquatable<StringValue>
 		return this;
 	}
 
+	public StringValue Insert(int index, char ch)
+	{
+		if (!_isFixedLength)
+		{
+			EnsureCharacterBuffer();
+
+			s_characterBuffer[0] = ch;
+
+			EnsureConversionBuffer(1);
+
+			s_cp437.GetBytes(s_characterBuffer, 0, 1, s_conversionBuffer, 0);
+
+			_bytes.Insert(index, s_conversionBuffer[0]);
+		}
+
+		return this;
+	}
+
+	public StringValue Insert(int index, byte ch)
+	{
+		if (!_isFixedLength)
+			_bytes.Insert(index, ch);
+
+		return this;
+	}
+
+	public StringValue Insert(int index, StringValue data)
+		=> Insert(index, data.AsSpan());
+
+	public StringValue Insert(int index, ReadOnlySpan<byte> data)
+	{
+		if (!_isFixedLength)
+			_bytes.InsertRange(index, data);
+
+		return this;
+	}
+
 	public StringValue ReplaceSubstring(int offset, Span<byte> data)
 	{
 		if (offset + data.Length > Length)
 			data = data.Slice(0, Length - offset);
 
 		data.CopyTo(AsSpan().Slice(offset));
+
+		return this;
+	}
+
+	public StringValue Remove(int index, int length)
+	{
+		if (!_isFixedLength)
+			_bytes.RemoveRange(index, length);
+		else
+		{
+			var byteSpan = AsSpan();
+
+			byteSpan.Slice(index + length).CopyTo(byteSpan.Slice(index));
+			byteSpan.Slice(byteSpan.Length - length).Clear();
+		}
 
 		return this;
 	}
