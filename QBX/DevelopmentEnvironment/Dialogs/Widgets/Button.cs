@@ -8,7 +8,7 @@ public class Button : Widget
 {
 	public string Text = "";
 	public int AccessKeyIndex = -1;
-	public bool IsEnabled;
+	public bool IsEnabled = true;
 
 	public override char AccessKeyCharacter
 		=> ((AccessKeyIndex >= 0) && (AccessKeyIndex < Text.Length))
