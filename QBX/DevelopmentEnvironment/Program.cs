@@ -9,10 +9,11 @@ using QBX.Hardware;
 using QBX.Parser;
 using QBX.ExecutionEngine;
 using QBX.DevelopmentEnvironment.Dialogs;
+using System.Linq;
 
 namespace QBX.DevelopmentEnvironment;
 
-public partial class Program : HostedProgram
+public partial class Program : HostedProgram, IOvertypeFlag
 {
 	public Machine Machine;
 	public TextLibrary TextLibrary;
@@ -40,6 +41,14 @@ public partial class Program : HostedProgram
 	public BasicParser Parser;
 
 	public PlayProcessor PlayProcessor;
+
+	bool IOvertypeFlag.Value
+	{
+		get => EnableOvertype;
+		set => EnableOvertype = value;
+	}
+
+	void IOvertypeFlag.Toggle() => EnableOvertype = !EnableOvertype;
 
 	public Program(Machine machine)
 	{

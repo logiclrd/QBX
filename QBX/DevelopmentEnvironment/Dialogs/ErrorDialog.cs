@@ -23,6 +23,7 @@ public class ErrorDialog : Dialog
 			{
 				X = 3,
 				Y = 1,
+				Width = Width - 5,
 				Text = errorMessage,
 			});
 
@@ -43,7 +44,7 @@ public class ErrorDialog : Dialog
 				Y = 4,
 				Width = 8,
 				Text = "Help",
-				AcceleratorKeyIndex = 0,
+				AccessKeyIndex = 0,
 			});
 
 		SetFocus(Widgets[1]);

@@ -62,7 +62,7 @@ public class InstantWatchDialog : Dialog
 		cmdAddWatch.Y = 9;
 		cmdAddWatch.Width = 13;
 		cmdAddWatch.Text = "Add Watch";
-		cmdAddWatch.AcceleratorKeyIndex = 0;
+		cmdAddWatch.AccessKeyIndex = 0;
 		cmdAddWatch.Activated = OnAddWatchClicked;
 
 		cmdCancel = new Button();
@@ -77,7 +77,7 @@ public class InstantWatchDialog : Dialog
 		cmdHelp.Y = 9;
 		cmdHelp.Width = 8;
 		cmdHelp.Text = "Help";
-		cmdHelp.AcceleratorKeyIndex = 0;
+		cmdHelp.AccessKeyIndex = 0;
 
 		Widgets.Add(bdrExpression);
 		Widgets.Add(bdrValue);

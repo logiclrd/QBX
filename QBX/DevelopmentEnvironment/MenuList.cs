@@ -9,7 +9,7 @@ public class MenuList<TItem>(string label) : MenuItem(label), IList<TItem>, IEnu
 {
 	public List<TItem> Items = new List<TItem>();
 
-	public Dictionary<string, TItem> ItemByAccelerator = new Dictionary<string, TItem>(StringComparer.OrdinalIgnoreCase);
+	public Dictionary<string, TItem> ItemByAccessKey = new Dictionary<string, TItem>(StringComparer.OrdinalIgnoreCase);
 
 	public int Count => Items.Count;
 	public bool IsReadOnly => false;
@@ -27,9 +27,9 @@ public class MenuList<TItem>(string label) : MenuItem(label), IList<TItem>, IEnu
 	public int IndexOf(TItem item) => Items.IndexOf(item);
 	public void RemoveAt(int index) => Items.RemoveAt(index);
 
-	public void EnsureAcceleratorLookUp()
+	public void EnsureAccessKeyLookUp()
 	{
-		if (ItemByAccelerator.Count == 0)
+		if (ItemByAccessKey.Count == 0)
 		{
 			foreach (var item in Items)
 			{
@@ -44,7 +44,7 @@ public class MenuList<TItem>(string label) : MenuItem(label), IList<TItem>, IEnu
 				{
 					string accel = label.Substring(accelIndex + 1, 1);
 
-					ItemByAccelerator[accel] = item;
+					ItemByAccessKey[accel] = item;
 				}
 			}
 		}

@@ -91,6 +91,21 @@ public class TextLibrary : VisualLibrary
 			end));
 	}
 
+	public void MoveCursorWithinClip(int x, int y)
+	{
+		if (x > _clipRect.X2)
+			x = _clipRect.X2;
+		if (x < _clipRect.X1)
+			x = _clipRect.X1;
+
+		if (y > _clipRect.Y2)
+			y = _clipRect.Y2;
+		if (y < _clipRect.Y1)
+			y = _clipRect.Y1;
+
+		MoveCursor(x, y);
+	}
+
 	protected override void MoveCursorHandlePhysicalCursor()
 	{
 		if (MovePhysicalCursor)

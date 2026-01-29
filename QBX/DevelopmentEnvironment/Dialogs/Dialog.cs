@@ -29,7 +29,13 @@ public abstract class Dialog(Configuration configuration)
 
 	public void SetFocus(int index)
 	{
+		if ((_focusedWidgetIndex >= 0) && (_focusedWidgetIndex < Widgets.Count))
+			Widgets[_focusedWidgetIndex].NotifyLostFocus();
+
 		_focusedWidgetIndex = index;
+
+		if ((_focusedWidgetIndex >= 0) && (_focusedWidgetIndex < Widgets.Count))
+			Widgets[_focusedWidgetIndex].NotifyGotFocus();
 	}
 
 	public event EventHandler? Closed;
@@ -67,7 +73,7 @@ public abstract class Dialog(Configuration configuration)
 		visual.UpdatePhysicalCursor();
 	}
 
-	public void ProcessKey(KeyEvent input)
+	public void ProcessKey(KeyEvent input, IOvertypeFlag overtypeFlag)
 	{
 		if (input.IsRelease)
 			return;
@@ -75,24 +81,38 @@ public abstract class Dialog(Configuration configuration)
 		switch (input.ScanCode)
 		{
 			case ScanCode.Tab:
+			{
+				int newFocusedWidgetIndex = _focusedWidgetIndex;
+
 				do
 				{
 					if (input.Modifiers.ShiftKey)
-						_focusedWidgetIndex = (_focusedWidgetIndex + Widgets.Count - 1) % Widgets.Count;
+						newFocusedWidgetIndex = (newFocusedWidgetIndex + Widgets.Count - 1) % Widgets.Count;
 					else
-						_focusedWidgetIndex = (_focusedWidgetIndex + 1) % Widgets.Count;
-				} while (!Widgets[_focusedWidgetIndex].IsTabStop);
+						newFocusedWidgetIndex = (newFocusedWidgetIndex + 1) % Widgets.Count;
+				} while (!Widgets[newFocusedWidgetIndex].IsTabStop);
+
+				SetFocus(newFocusedWidgetIndex);
 
 				break;
+			}
 
 			case ScanCode.Return:
-				FocusedWidget?.Activate();
+				if ((FocusedWidget == null) || !FocusedWidget.Activate())
+					OnActivated();
 				break;
 
 			case ScanCode.Escape:
 				Closed?.Invoke(this, EventArgs.Empty);
 				break;
+
+			default:
+				FocusedWidget?.ProcessKey(input, overtypeFlag);
+				break;
 		}
-		// TODO
+	}
+
+	protected virtual void OnActivated()
+	{
 	}
 }
