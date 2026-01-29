@@ -29,10 +29,16 @@ public class OpenFileDialog : DialogWithDirectoryList
 	public event Action<RuntimeException>? Error;
 	public event Action<string>? FileSelected;
 
-	public OpenFileDialog(Configuration configuration)
+	public OpenFileDialog(OpenFileDialogTitle title, Configuration configuration)
 		: base(configuration)
 	{
 		InitializeComponent();
+
+		switch (title)
+		{
+			case OpenFileDialogTitle.OpenProgram: Title = "Open Program"; break;
+			case OpenFileDialogTitle.LoadFile: Title = "Load File"; break;
+		}
 
 		SetCurrentDirectory(Environment.CurrentDirectory);
 	}

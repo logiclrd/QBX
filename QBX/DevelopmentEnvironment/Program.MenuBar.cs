@@ -241,7 +241,7 @@ public partial class Program
 		if (FocusedViewport?.CompilationUnit is CompilationUnit unit)
 		{
 			if (CommitViewportsOrPresentError())
-				InteractiveSave(unit);
+				InteractiveSave(unit, title: DevelopmentEnvironment.Dialogs.SaveFileDialogTitle.SaveAs);
 		}
 	}
 

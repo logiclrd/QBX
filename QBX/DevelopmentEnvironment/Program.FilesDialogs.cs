@@ -94,9 +94,9 @@ namespace QBX.DevelopmentEnvironment
 				InteractiveSave(unit);
 		}
 
-		public void InteractiveSave(CompilationUnit unit, Action? continuation = null)
+		public void InteractiveSave(CompilationUnit unit, Action? continuation = null, SaveFileDialogTitle title = SaveFileDialogTitle.Save)
 		{
-			var dialog = new SaveFileDialog(unit.FilePath, Configuration);
+			var dialog = new SaveFileDialog(title, unit.FilePath, Configuration);
 
 			dialog.Error +=
 				(error) =>
@@ -122,7 +122,11 @@ namespace QBX.DevelopmentEnvironment
 
 		public void ShowOpenFileDialog(bool replaceExistingProgram)
 		{
-			var dialog = new OpenFileDialog(Configuration);
+			var title = replaceExistingProgram
+				? OpenFileDialogTitle.OpenProgram
+				: OpenFileDialogTitle.LoadFile;
+
+			var dialog = new OpenFileDialog(title, Configuration);
 
 			dialog.Error +=
 				(error) =>

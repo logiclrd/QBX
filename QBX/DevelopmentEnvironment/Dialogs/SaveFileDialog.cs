@@ -47,10 +47,16 @@ public class SaveFileDialog : DialogWithDirectoryList
 	public event Action<RuntimeException>? Error;
 	public event Action<string>? TargetPathSpecified;
 
-	public SaveFileDialog(string filePath, Configuration configuration)
+	public SaveFileDialog(SaveFileDialogTitle title, string filePath, Configuration configuration)
 		: base(configuration)
 	{
 		InitializeComponent(Path.GetFileName(filePath));
+
+		switch (title)
+		{
+			case SaveFileDialogTitle.Save: Title = "Save"; break;
+			case SaveFileDialogTitle.SaveAs: Title = "Save As"; break;
+		}
 
 		SetCurrentDirectory(Path.GetDirectoryName(filePath) ?? Environment.CurrentDirectory);
 	}
