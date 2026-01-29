@@ -8,7 +8,14 @@ public class Button : Widget
 {
 	public string Text = "";
 	public int AccessKeyIndex = -1;
-	public bool IsEnabled = true;
+
+	public bool IsEnabled
+	{
+		get => _isEnabled;
+		set => _isEnabled = IsTabStop = value;
+	}
+
+	bool _isEnabled = true;
 
 	public override char AccessKeyCharacter
 		=> ((AccessKeyIndex >= 0) && (AccessKeyIndex < Text.Length))
@@ -24,7 +31,8 @@ public class Button : Widget
 
 	public override bool Activate()
 	{
-		Activated?.Invoke();
+		if (IsEnabled)
+			Activated?.Invoke();
 		return true;
 	}
 
@@ -40,7 +48,10 @@ public class Button : Widget
 			? configuration.DisplayAttributes.DialogBoxActiveCommandButtonBorderCharacters
 			: textAttr;
 
-		var accessKeyAttr = configuration.DisplayAttributes.DialogBoxAccessKeys;
+		var accessKeyAttr =
+			IsEnabled
+			? configuration.DisplayAttributes.DialogBoxAccessKeys
+			: configuration.DisplayAttributes.PullDownMenuandDialogBoxDisabledItems;
 
 		int x = X + bounds.X1;
 		int y = Y + bounds.Y1;
@@ -65,8 +76,8 @@ public class Button : Widget
 				textOffset,
 				Text.AsSpan(),
 				AccessKeyIndex,
-				configuration.DisplayAttributes.DialogBoxCommandButtons,
-				configuration.DisplayAttributes.DialogBoxAccessKeys);
+				textAttr,
+				accessKeyAttr);
 
 			x += textAreaWidth;
 
