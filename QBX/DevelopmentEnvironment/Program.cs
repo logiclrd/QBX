@@ -36,7 +36,7 @@ public partial class Program : HostedProgram, IOvertypeFlag
 
 	public UIMode Mode;
 
-	public Dialog? CurrentDialog;
+	public List<Dialog> Dialogs = new List<Dialog>();
 
 	public BasicParser Parser;
 
@@ -113,13 +113,14 @@ public partial class Program : HostedProgram, IOvertypeFlag
 
 		dialog.Y = (TextLibrary.Height - dialog.Height) / 2;
 
-		CurrentDialog = dialog;
-		Mode = UIMode.Dialog;
+		int dialogPoint = Dialogs.Count;
+
+		Dialogs.Add(dialog);
 
 		dialog.Closed +=
 			(_, _) =>
 			{
-				CurrentDialog = null;
+				Dialogs.RemoveRange(dialogPoint, Dialogs.Count - dialogPoint);
 				Mode = previousMode;
 			};
 
@@ -146,12 +147,18 @@ public partial class Program : HostedProgram, IOvertypeFlag
 
 				if (input != null)
 				{
-					switch (Mode)
+					var currentDialog = Dialogs.LastOrDefault();
+
+					if (currentDialog != null)
+						currentDialog.ProcessKey(input, overtypeFlag: this);
+					else
 					{
-						case UIMode.TextEditor: ProcessTextEditorKey(input); break;
-						case UIMode.Menu: ProcessMenuKey(input); break;
-						case UIMode.MenuBar: ProcessMenuBarKey(input); break;
-						case UIMode.Dialog: CurrentDialog?.ProcessKey(input); break;
+						switch (Mode)
+						{
+							case UIMode.TextEditor: ProcessTextEditorKey(input); break;
+							case UIMode.Menu: ProcessMenuKey(input); break;
+							case UIMode.MenuBar: ProcessMenuBarKey(input); break;
+						}
 					}
 				}
 			}

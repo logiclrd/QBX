@@ -273,9 +273,9 @@ public partial class Program
 
 					if (!string.IsNullOrEmpty(inkey))
 					{
-						MenuBar.EnsureAcceleratorLookUp();
+						MenuBar.EnsureAccessKeyLookUp();
 
-						if (MenuBar.ItemByAccelerator.TryGetValue(inkey, out var menu))
+						if (MenuBar.ItemByAccessKey.TryGetValue(inkey, out var menu))
 						{
 							Mode = UIMode.Menu;
 							SelectedMenu = MenuBar.Items.IndexOf(menu);
@@ -320,7 +320,7 @@ public partial class Program
 					break;
 				case ScanCode.Return:
 					if (ActivateMenuItem(MenuBar[SelectedMenu].Items[SelectedMenuItem]))
-						Mode = UIMode.TextEditor;
+						SetUIModeAfterMenuItemActivation();
 					break;
 				case ScanCode.Left:
 				case ScanCode.Right:
@@ -357,20 +357,36 @@ public partial class Program
 					{
 						var menu = MenuBar[SelectedMenu];
 
-						menu.EnsureAcceleratorLookUp();
+						menu.EnsureAccessKeyLookUp();
 
-						if (menu.ItemByAccelerator.TryGetValue(inkey, out var item))
+						if (menu.ItemByAccessKey.TryGetValue(inkey, out var item))
 						{
 							SelectedMenuItem = menu.IndexOf(item);
 
 							if (ActivateMenuItem(item))
-								Mode = UIMode.TextEditor;
+								SetUIModeAfterMenuItemActivation();
 						}
 					}
 
 					break;
 				}
 			}
+		}
+	}
+
+	void SetUIModeAfterMenuItemActivation()
+	{
+		if (Dialogs.Count == 0)
+			Mode = UIMode.TextEditor;
+		else
+		{
+			Mode = UIMode.MenuBar;
+
+			Dialogs.Last().Closed +=
+				(_, _) =>
+				{
+					Mode = UIMode.TextEditor;
+				};
 		}
 	}
 

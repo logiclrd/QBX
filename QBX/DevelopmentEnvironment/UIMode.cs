@@ -5,5 +5,4 @@ public enum UIMode
 	TextEditor,
 	MenuBar,
 	Menu,
-	Dialog,
 }
