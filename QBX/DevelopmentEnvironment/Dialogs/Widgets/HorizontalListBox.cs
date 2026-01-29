@@ -49,7 +49,7 @@ public class HorizontalListBox : Widget
 	[ThreadStatic]
 	static char[]? s_charBuffer;
 
-	public override bool ProcessKey(KeyEvent input, IOvertypeFlag overtypeFlag)
+	public override bool ProcessKey(KeyEvent input, IFocusContext focusContext, IOvertypeFlag overtypeFlag)
 	{
 		int innerWidth = Width - 2;
 		int innerHeight = Height - 2;
@@ -83,9 +83,11 @@ public class HorizontalListBox : Widget
 							break;
 						}
 					}
+
+					break;
 				}
 
-				break;
+				return false;
 		}
 
 		if (newSelectedIndex >= Items.Count)
@@ -229,7 +231,7 @@ public class HorizontalListBox : Widget
 				}
 			}
 
-			if ((_selectedIndex >= 0) && (_selectedIndex < Items.Count))
+			if (IsFocused && (_selectedIndex >= 0) && (_selectedIndex < Items.Count))
 			{
 				int selectionColumn = _selectedIndex / columnHeight;
 				int selectionRow = _selectedIndex % columnHeight;

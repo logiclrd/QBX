@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Runtime.InteropServices;
-using System.Text.RegularExpressions;
 
 using QBX.DevelopmentEnvironment.Dialogs.Widgets;
 using QBX.ExecutionEngine;
@@ -10,29 +8,23 @@ using QBX.ExecutionEngine.Execution;
 
 namespace QBX.DevelopmentEnvironment.Dialogs;
 
-public class OpenFileDialog : Dialog
+public class OpenFileDialog : DialogWithDirectoryList
 {
 	Label lblFileName;
 	Border bdrFileName;
 	TextInput txtFileName;
 
-	Label lblCurrentDirectory;
+	// from base: Label lblCurrentDirectory;
 
 	Label lblFiles;
 	HorizontalListBox lstFiles;
 
-	Label lblDirectories;
-	VerticalListBox lstDirectories;
+	// from base: Label lblDirectories;
+	// from base: VerticalListBox lstDirectories;
 
 	Button cmdOK;
 	Button cmdCancel;
 	Button cmdHelp;
-	
-	const string InitialFilter = "*.BAS";
-
-	string _filter = InitialFilter;
-	Regex _filterExpression = TranslateWildcardsToRegex(InitialFilter);
-	string _currentDirectory;
 
 	public event Action<RuntimeException>? Error;
 	public event Action<string>? FileSelected;
@@ -48,11 +40,8 @@ public class OpenFileDialog : Dialog
 	[MemberNotNull(nameof(lblFileName))]
 	[MemberNotNull(nameof(bdrFileName))]
 	[MemberNotNull(nameof(txtFileName))]
-	[MemberNotNull(nameof(lblCurrentDirectory))]
 	[MemberNotNull(nameof(lblFiles))]
 	[MemberNotNull(nameof(lstFiles))]
-	[MemberNotNull(nameof(lblDirectories))]
-	[MemberNotNull(nameof(lstDirectories))]
 	[MemberNotNull(nameof(cmdOK))]
 	[MemberNotNull(nameof(cmdCancel))]
 	[MemberNotNull(nameof(cmdHelp))]
@@ -64,11 +53,8 @@ public class OpenFileDialog : Dialog
 		lblFileName = new Label();
 		bdrFileName = new Border();
 		txtFileName = new TextInput();
-		lblCurrentDirectory = new Label();
 		lblFiles = new Label();
 		lstFiles = new HorizontalListBox();
-		lblDirectories = new Label();
-		lstDirectories = new VerticalListBox();
 		cmdOK = new Button();
 		cmdCancel = new Button();
 		cmdHelp = new Button();
@@ -84,7 +70,7 @@ public class OpenFileDialog : Dialog
 		txtFileName.Y = 1;
 		txtFileName.Width = 50;
 		txtFileName.Height = 1;
-		txtFileName.Text = new StringValue(_filter);
+		txtFileName.Text = new StringValue(Filter);
 		txtFileName.GotFocus = txtFileName_GotFocus;
 
 		bdrFileName.Enclose(txtFileName);
@@ -112,9 +98,6 @@ public class OpenFileDialog : Dialog
 		lblDirectories.Y = 5;
 		lblDirectories.Width = 11;
 		lblDirectories.Height = 1;
-		lblDirectories.Text = "Dirs/Drives";
-		lblDirectories.AccessKeyIndex = 0;
-		lblDirectories.FocusTarget = lstDirectories;
 
 		lstDirectories.X = 48;
 		lstDirectories.Y = 6;
@@ -134,6 +117,7 @@ public class OpenFileDialog : Dialog
 		cmdCancel.Width = 10;
 		cmdCancel.Height = 1;
 		cmdCancel.Text = "Cancel";
+		cmdCancel.Activated = cmdCancel_Activated;
 
 		cmdHelp.X = 48;
 		cmdHelp.Y = 18;
@@ -156,145 +140,24 @@ public class OpenFileDialog : Dialog
 		SetFocus(bdrFileName);
 	}
 
-	void SetFilter(string newFilter)
-	{
-		_filter = newFilter;
-		_filterExpression = TranslateWildcardsToRegex(_filter);
-
-		RefreshLists();
-	}
-
-	[MemberNotNull(nameof(_currentDirectory))]
-	void SetCurrentDirectory(string newPath)
-	{
-		newPath = Path.GetFullPath(newPath);
-
-		try
-		{
-			Environment.CurrentDirectory = newPath;
-		}
-		catch { }
-
-		if (newPath.Length <= lblCurrentDirectory.Width)
-			lblCurrentDirectory.Text = newPath;
-		else
-		{
-			int remainingChars = lblCurrentDirectory.Width - 6;
-
-			string prefix = newPath.Substring(0, 3);
-			string suffix = newPath.Substring(newPath.Length - remainingChars);
-
-			if (suffix[0] != '\\')
-			{
-				int separatorIndex = suffix.IndexOf('\\');
-
-				suffix = suffix.Substring(separatorIndex);
-			}
-
-			lblCurrentDirectory.Text = prefix + "..." + suffix;
-		}
-
-		_currentDirectory = newPath;
-
-		RefreshLists();
-	}
-
-	static Regex TranslateWildcardsToRegex(string pattern)
-	{
-		var ignoreCase = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-			? RegexOptions.IgnoreCase
-			: RegexOptions.None;
-
-		return new Regex(
-			"^" + Regex.Escape(pattern).Replace(@"\*", ".*").Replace(@"\?", ".") + "$",
-			RegexOptions.Singleline | ignoreCase);
-	}
-
-	void RefreshLists()
+	protected override void RefreshLists()
 	{
 		try
 		{
-			int maxDirectoryWidth = lstDirectories.Width - 2;
-
 			lstFiles.Clear();
-			lstDirectories.Clear();
 
-			foreach (var entry in new DirectoryInfo(_currentDirectory).EnumerateFileSystemInfos())
-			{
-				if (entry is FileInfo)
+			RefreshLists(
+				fileEntry =>
 				{
-					if (_filterExpression.IsMatch(entry.Name))
-						lstFiles.Items.Add(new ListBoxItem(entry.Name));
-				}
-				else
-					lstDirectories.Items.Add(new ListBoxItem(entry.Name, entry.Name + Path.DirectorySeparatorChar));
-			}
+					if (FilterExpression.IsMatch(fileEntry.Name))
+						lstFiles.Items.Add(new ListBoxItem(fileEntry.Name));
+				});
 
 			lstFiles.Items.Sort();
-			lstDirectories.Items.Sort();
-
-			if (Path.GetDirectoryName(_currentDirectory) != null)
-				lstDirectories.Items.Insert(0, new ListBoxItem("..", ".." + Path.DirectorySeparatorChar));
-
-			foreach (var driveInfo in DriveInfo.GetDrives())
-			{
-				string name = driveInfo.Name;
-
-				if ((name.Length >= 2) && (name[1] == ':'))
-					lstDirectories.Items.Add(new ListBoxItem($"[-{name[0]}-]", driveInfo.RootDirectory.FullName.TrimEnd('\\')));
-				else
-				{
-					if (!HideDrive(driveInfo))
-					{
-						if (name.Length + 2 > maxDirectoryWidth)
-							name = ".." + name.Substring(name.Length - maxDirectoryWidth + 2);
-
-						lstDirectories.Items.Add(new ListBoxItem($"[{name}]", driveInfo.RootDirectory.FullName));
-					}
-				}
-			}
-
 			lstFiles.RecalculateColumns();
-
 			lstFiles.IsTabStop = (lstFiles.Items.Count > 0);
 		}
 		catch { }
-	}
-
-	static bool HideDrive(DriveInfo driveInfo)
-	{
-		// On Linux, DriveInfo.GetDrives() returns a lot of mount points that aren't appropriate in this context.
-
-		if (driveInfo.DriveType == DriveType.Unknown)
-			return true;
-
-		switch (driveInfo.DriveFormat)
-		{
-			case "squashfs":
-			case "udev":
-				return true;
-		}
-
-		string path = driveInfo.RootDirectory.FullName;
-
-		string[] components = path.Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries);
-
-		if (components.Length > 0)
-		{
-			string firstComponent = components[0];
-
-			switch (firstComponent)
-			{
-				case "boot":
-				case "dev":
-				case "proc":
-				case "run":
-				case "sys":
-					return true;
-			}
-		}
-
-		return false;
 	}
 
 	protected override void OnActivated()
@@ -327,7 +190,7 @@ public class OpenFileDialog : Dialog
 					break;
 				}
 
-				_currentDirectory = rootString;
+				CurrentDirectory = rootString;
 				txtFileName.Text.Set(input);
 				txtFileName.SelectAll();
 			}
@@ -341,7 +204,7 @@ public class OpenFileDialog : Dialog
 
 					input = input.Slice(separatorIndex + 1);
 
-					string subpath = Path.Combine(_currentDirectory, component);
+					string subpath = Path.Combine(CurrentDirectory, component);
 
 					if (!Directory.Exists(subpath))
 					{
@@ -349,20 +212,22 @@ public class OpenFileDialog : Dialog
 						break;
 					}
 
-					_currentDirectory = subpath;
+					CurrentDirectory = subpath;
 					txtFileName.Text.Set(input);
 					txtFileName.SelectAll();
 				}
 				else
 				{
-					SetCurrentDirectory(_currentDirectory);
+					SetCurrentDirectory(CurrentDirectory);
 
 					if (input.IndexOfAny('*', '?') >= 0)
 						SetFilter(input.ToString());
 					else
 					{
-						var selectedFilePath = Path.Combine(_currentDirectory, input.ToString());
+						var selectedFilePath = Path.Combine(CurrentDirectory, input.ToString());
 						FileSelected?.Invoke(selectedFilePath);
+
+						RestoreCurrentDirectory = false;
 					}
 
 					break;
@@ -385,23 +250,16 @@ public class OpenFileDialog : Dialog
 	private void lstDirectories_SelectionChanged()
 	{
 		if (lstDirectories.SelectedIndex >= 0)
-			txtFileName.Text.Set(lstDirectories.SelectedValue).Append(_filter);
-	}
-
-	private void lstDirectories_Activated()
-	{
-		if ((lstDirectories.SelectedIndex >= 0)
-		 && (lstDirectories.SelectedValue != ""))
-		{
-			SetCurrentDirectory(Path.Combine(_currentDirectory, lstDirectories.SelectedValue));
-			txtFileName.SelectAll();
-			SetFocus(bdrFileName);
-		}
+			txtFileName.Text.Set(lstDirectories.SelectedValue).Append(Filter);
 	}
 
 	private void cmdOK_Activated()
 	{
-		if (lstFiles.SelectedIndex >= 0)
-			FileSelected?.Invoke(lstFiles.SelectedValue);
+		txtFileName.Activate();
+	}
+
+	private void cmdCancel_Activated()
+	{
+		Close();
 	}
 }

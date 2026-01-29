@@ -15,6 +15,14 @@ public class Label : Widget
 			? Text[AccessKeyIndex]
 			: '\0';
 
+	public Label AutoSize()
+	{
+		Width = Text.Length;
+		Height = 1;
+
+		return this;
+	}
+
 	public override void Render(TextLibrary visual, IntegerRect bounds, Configuration configuration)
 	{
 		int x = X + bounds.X1;

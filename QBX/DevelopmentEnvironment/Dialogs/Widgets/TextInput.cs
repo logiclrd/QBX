@@ -23,7 +23,7 @@ public class TextInput : Widget
 
 	static CP437Encoding s_cp437 = new CP437Encoding(ControlCharacterInterpretation.Semantic);
 
-	public override bool ProcessKey(KeyEvent input, IOvertypeFlag overtypeFlag)
+	public override bool ProcessKey(KeyEvent input, IFocusContext focusContext, IOvertypeFlag overtypeFlag)
 	{
 		if (input.IsRelease)
 			return false;

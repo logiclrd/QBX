@@ -1,7 +1,7 @@
-﻿using System;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
+using QBX.CodeModel;
 using QBX.Hardware;
 
 namespace QBX.DevelopmentEnvironment;
@@ -11,6 +11,10 @@ public partial class Program
 	MenuBar MenuBar;
 
 	Menu mnuFile;
+	MenuItem mnuFileNew;
+	MenuItem mnuFileSave;
+	MenuItem mnuFileSaveAs;
+	MenuItem mnuFileSaveAll;
 	MenuItem mnuFileOpenProgram;
 	MenuItem mnuFileLoadFile;
 
@@ -50,6 +54,10 @@ public partial class Program
 	[MemberNotNull(
 		nameof(MenuBar),
 		nameof(mnuFile),
+		nameof(mnuFileNew),
+		nameof(mnuFileSave),
+		nameof(mnuFileSaveAs),
+		nameof(mnuFileSaveAll),
 		nameof(mnuFileOpenProgram),
 		nameof(mnuFileLoadFile),
 		nameof(mnuEdit),
@@ -69,12 +77,12 @@ public partial class Program
 		mnuFile =
 			new Menu("&File", 16)
 			{
-				new MenuItem("&New Program"),
+				(mnuFileNew = new MenuItem("&New Program")),
 				(mnuFileOpenProgram = new MenuItem("&Open Program...")),
 				new MenuItem("&Merge..."),
-				new MenuItem("&Save"),
-				new MenuItem("Save &As..."),
-				new MenuItem("Sa&ve All"),
+				(mnuFileSave = new MenuItem("&Save")),
+				(mnuFileSaveAs = new MenuItem("Save &As...")),
+				(mnuFileSaveAll = new MenuItem("Sa&ve All")),
 				MenuItem.Separator,
 				new MenuItem("&Create File..."),
 				(mnuFileLoadFile = new MenuItem("&Load File...")),
@@ -202,6 +210,10 @@ public partial class Program
 				mnuHelp
 			};
 
+		mnuFileNew.Clicked = mnuFileNew_Clicked;
+		mnuFileSave.Clicked = mnuFileSave_Clicked;
+		mnuFileSaveAs.Clicked = mnuFileSaveAs_Clicked;
+		mnuFileSaveAll.Clicked = mnuFileSaveAll_Clicked;
 		mnuFileOpenProgram.Clicked = mnuFileOpenProgram_Clicked;
 		mnuFileLoadFile.Clicked = mnuFileLoadFile_Clicked;
 
@@ -209,14 +221,46 @@ public partial class Program
 		mnuDebugDeleteAllWatch.Clicked = mnuDebugDeleteAllWatch_Clicked;
 	}
 
+	private void mnuFileNew_Clicked()
+	{
+		if (CommitViewportsOrPresentError())
+			PromptToSaveChanges(StartNewProgram);
+	}
+
+	private void mnuFileSave_Clicked()
+	{
+		if (FocusedViewport?.CompilationUnit is CompilationUnit unit)
+		{
+			if (CommitViewportsOrPresentError())
+				InteractiveSaveIfUnitHasNoFilePath(unit);
+		}
+	}
+
+	private void mnuFileSaveAs_Clicked()
+	{
+		if (FocusedViewport?.CompilationUnit is CompilationUnit unit)
+		{
+			if (CommitViewportsOrPresentError())
+				InteractiveSave(unit);
+		}
+	}
+
+	private void mnuFileSaveAll_Clicked()
+	{
+		if (CommitViewportsOrPresentError())
+			SaveAll();
+	}
+
 	private void mnuFileOpenProgram_Clicked()
 	{
-		ShowOpenFileDialog(replaceExistingProgram: true);
+		if (CommitViewportsOrPresentError())
+			ShowOpenFileDialog(replaceExistingProgram: true);
 	}
 
 	private void mnuFileLoadFile_Clicked()
 	{
-		ShowOpenFileDialog(replaceExistingProgram: false);
+		if (CommitViewportsOrPresentError())
+			ShowOpenFileDialog(replaceExistingProgram: false);
 	}
 
 	private void mnuDebugInstantWatch_Clicked()

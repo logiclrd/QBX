@@ -34,7 +34,7 @@ public class ErrorDialog : Dialog
 				Y = 4,
 				Width = 8,
 				Text = "OK",
-				Activated = OnClosed
+				Activated = Close
 			});
 
 		Widgets.Add(

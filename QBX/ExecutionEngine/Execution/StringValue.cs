@@ -147,6 +147,31 @@ public class StringValue : IComparable<StringValue>, IEquatable<StringValue>
 		return this;
 	}
 
+	public StringValue Append(char ch)
+	{
+		EnsureCharacterBuffer();
+		EnsureConversionBuffer(1);
+
+		s_characterBuffer[0] = ch;
+
+		s_cp437.GetBytes(
+			s_characterBuffer,
+			0,
+			1,
+			s_conversionBuffer,
+			0);
+
+		return Append(s_conversionBuffer[0]);
+	}
+
+	public StringValue Append(byte ch)
+	{
+		if (!_isFixedLength)
+			_bytes.Add(ch);
+
+		return this;
+	}
+
 	public StringValue Append(string str)
 	{
 		EnsureConversionBuffer(str.Length);

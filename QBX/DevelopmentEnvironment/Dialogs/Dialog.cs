@@ -6,7 +6,7 @@ using QBX.Hardware;
 
 namespace QBX.DevelopmentEnvironment.Dialogs;
 
-public abstract class Dialog(Configuration configuration)
+public abstract class Dialog(Configuration configuration) : IFocusContext
 {
 	public int Width = 40;
 	public int Height = 7;
@@ -40,7 +40,7 @@ public abstract class Dialog(Configuration configuration)
 
 	public event EventHandler? Closed;
 
-	protected void OnClosed() => Closed?.Invoke(this, EventArgs.Empty);
+	protected virtual void OnClosed() => Closed?.Invoke(this, EventArgs.Empty);
 
 	public void Close()
 	{
@@ -78,6 +78,12 @@ public abstract class Dialog(Configuration configuration)
 		if (input.IsRelease)
 			return;
 
+		var focusedWidget = FocusedWidget;
+
+		if ((focusedWidget != null)
+		 && focusedWidget.ProcessKey(input, focusContext: this, overtypeFlag))
+			return;
+
 		switch (input.ScanCode)
 		{
 			case ScanCode.Tab:
@@ -98,16 +104,12 @@ public abstract class Dialog(Configuration configuration)
 			}
 
 			case ScanCode.Return:
-				if ((FocusedWidget == null) || !FocusedWidget.Activate())
+				if ((focusedWidget == null) || !focusedWidget.Activate())
 					OnActivated();
 				break;
 
 			case ScanCode.Escape:
 				Closed?.Invoke(this, EventArgs.Empty);
-				break;
-
-			default:
-				FocusedWidget?.ProcessKey(input, overtypeFlag);
 				break;
 		}
 	}

@@ -34,11 +34,7 @@ namespace QBX.DevelopmentEnvironment
 			try
 			{
 				using (var reader = new StreamReader(path, new CP437Encoding(ControlCharacterInterpretation.Semantic)))
-				{
-					string shortName = Path.GetFileName(path).ToUpperInvariant();
-
-					Load(reader, shortName, replaceExistingProgram);
-				}
+					Load(reader, path, replaceExistingProgram);
 			}
 			catch (FileNotFoundException)
 			{
@@ -50,12 +46,12 @@ namespace QBX.DevelopmentEnvironment
 			}
 		}
 
-		public void Load(TextReader reader, string unitName, bool replaceExistingProgram)
+		public void Load(TextReader reader, string filePath, bool replaceExistingProgram)
 		{
 			if (replaceExistingProgram)
 				ClearProgram();
 
-			var unit = CompilationUnit.Read(reader, unitName, Parser, ignoreErrors: true);
+			var unit = CompilationUnit.Read(reader, filePath, Parser, ignoreErrors: true);
 
 			LoadedFiles.Add(unit);
 
@@ -81,6 +77,8 @@ namespace QBX.DevelopmentEnvironment
 
 			using (var writer = new StreamWriter(filePath) { NewLine = "\r\n" })
 				Save(unit, writer);
+
+			unit.FilePath = filePath;
 		}
 
 		public void Save(CompilationUnit unit, TextWriter writer)
@@ -107,7 +105,12 @@ namespace QBX.DevelopmentEnvironment
 
 			var unit = CompilationUnit.CreateNew();
 
-			unit.Name = fileName;
+			string filePath = fileName;
+
+			if (Path.GetDirectoryName(filePath) == null)
+				filePath = Path.Combine(Environment.CurrentDirectory, filePath);
+
+			unit.FilePath = filePath;
 
 			if (replaceExistingProgram)
 				ClearProgram();

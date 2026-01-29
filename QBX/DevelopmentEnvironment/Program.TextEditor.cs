@@ -216,33 +216,14 @@ public partial class Program
 			{
 				Machine.Keyboard.SuppressNextEventIf(isRelease: true, ScanCode.F5);
 
-				try
+				if (CommitViewportsOrPresentError())
 				{
-					PrimaryViewport.CommitCurrentLine();
-					SplitViewport?.CommitCurrentLine();
-
 					if (input.Modifiers.ShiftKey)
 						Run();
 					else
 						Continue();
 
 					ReloadViewportParameters();
-				}
-				catch (SyntaxErrorException error)
-				{
-					PresentError(error);
-				}
-				catch (CompilerException error)
-				{
-					PresentError(error);
-				}
-				catch (RuntimeException error)
-				{
-					PresentError(error);
-				}
-				catch
-				{
-					// TODO: present error
 				}
 
 				break;
@@ -614,6 +595,37 @@ public partial class Program
 			FocusedViewport.Clipboard.StartSelection(FocusedViewport.CursorX, FocusedViewport.CursorY);
 		else
 			FocusedViewport.Clipboard.ExtendSelection(FocusedViewport.CursorX, FocusedViewport.CursorY);
+	}
+
+	private bool CommitViewportsOrPresentError()
+		=> CommitViewportOrPresentError(PrimaryViewport)
+		&& CommitViewportOrPresentError(SplitViewport);
+
+	private bool CommitViewportOrPresentError(Viewport? viewport)
+	{
+		try
+		{
+			viewport?.CommitCurrentLine();
+			return true;
+		}
+		catch (SyntaxErrorException error)
+		{
+			PresentError(error);
+		}
+		catch (CompilerException error)
+		{
+			PresentError(error);
+		}
+		catch (RuntimeException error)
+		{
+			PresentError(error);
+		}
+		catch (Exception exception)
+		{
+			PresentError(exception.Message);
+		}
+
+		return false;
 	}
 
 	private void InstantWatchAtCurrentCursorLocation()

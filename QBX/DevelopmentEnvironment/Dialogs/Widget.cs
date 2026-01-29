@@ -1,6 +1,7 @@
-﻿using QBX.Firmware;
+﻿using System;
+
+using QBX.Firmware;
 using QBX.Hardware;
-using System;
 
 namespace QBX.DevelopmentEnvironment.Dialogs;
 
@@ -103,7 +104,7 @@ public abstract class Widget
 		}
 	}
 
-	public virtual bool ProcessKey(KeyEvent input, IOvertypeFlag overtypeFlag)
+	public virtual bool ProcessKey(KeyEvent input, IFocusContext focusContext, IOvertypeFlag overtypeFlag)
 	{
 		return false;
 	}

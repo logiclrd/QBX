@@ -8,7 +8,25 @@ namespace QBX.CodeModel;
 
 public class CompilationUnit : IRenderableCode
 {
-	public string Name { get; set; } = "Untitled";
+	string _name = "Untitled";
+	string _filePath = "";
+	bool _hasFilePath = false;
+
+	public string Name => _name;
+
+	public bool HasName => _hasFilePath;
+
+	public string FilePath
+	{
+		get => _filePath;
+		set
+		{
+			_filePath = value;
+			_hasFilePath = true;
+
+			_name = Path.GetFileName(_filePath);
+		}
+	}
 
 	public List<CompilationElement> Elements { get; } = new List<CompilationElement>();
 
@@ -74,13 +92,13 @@ public class CompilationUnit : IRenderableCode
 	//
 	// These methods, Read and Write, perform these translations.
 
-	public static CompilationUnit Read(TextReader reader, string unitName, BasicParser parser, bool ignoreErrors = false)
+	public static CompilationUnit Read(TextReader reader, string filePath, BasicParser parser, bool ignoreErrors = false)
 	{
 		var lexer = new Lexer(reader);
 
 		var unit = parser.Parse(lexer, ignoreErrors);
 
-		unit.Name = unitName;
+		unit.FilePath = filePath;
 
 		var allSingleTypeMap = CompilationElement.MakeDefaultDefTypeMap();
 		var identifierTypesGlobalState = CompilationElement.MakeDefaultDefTypeMap();

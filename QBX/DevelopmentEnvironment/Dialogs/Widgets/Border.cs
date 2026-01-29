@@ -80,8 +80,8 @@ public class Border : Widget
 		}
 	}
 
-	public override bool ProcessKey(KeyEvent input, IOvertypeFlag overtypeFlag)
+	public override bool ProcessKey(KeyEvent input, IFocusContext focusContext, IOvertypeFlag overtypeFlag)
 	{
-		return Child?.ProcessKey(input, overtypeFlag) ?? false;
+		return Child?.ProcessKey(input, focusContext, overtypeFlag) ?? false;
 	}
 }

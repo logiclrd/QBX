@@ -44,7 +44,7 @@ public class VerticalListBox : Widget
 	[ThreadStatic]
 	static char[]? s_charBuffer;
 
-	public override bool ProcessKey(KeyEvent input, IOvertypeFlag overtypeFlag)
+	public override bool ProcessKey(KeyEvent input, IFocusContext focusContext, IOvertypeFlag overtypeFlag)
 	{
 		int innerHeight = Height - 2;
 
@@ -98,9 +98,11 @@ public class VerticalListBox : Widget
 							break;
 						}
 					}
+
+					break;
 				}
 
-				break;
+				return false;
 		}
 
 		if (newSelectedIndex < 0)
@@ -166,7 +168,7 @@ public class VerticalListBox : Widget
 
 			for (int idx = _scrollTop, itemY = innerY1; itemY <= innerY2; idx++, itemY++)
 			{
-				bool highlight = (idx == _selectedIndex);
+				bool highlight = IsFocused && (idx == _selectedIndex);
 
 				string label = ((idx >= 0) && (idx < Items.Count)) ? Items[idx].Label : "";
 
