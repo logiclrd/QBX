@@ -222,4 +222,8 @@ public class RuntimeException : Exception
 		=> ForErrorNumber(19, statement);
 	public static RuntimeException ResumeWithoutError(CodeModel.Statements.Statement? statement)
 		=> ForErrorNumber(20, statement);
+	public static RuntimeException DeviceUnavailable()
+		=> ForErrorNumber(68, default(Token));
+	public static RuntimeException PathNotFound()
+		=> ForErrorNumber(76, default(Token));
 }
