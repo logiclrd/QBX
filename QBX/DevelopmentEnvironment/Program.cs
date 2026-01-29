@@ -2,6 +2,7 @@
 using System.IO;
 using System.Threading;
 using System.Collections.Generic;
+using System.Linq;
 
 using QBX.CodeModel;
 using QBX.Firmware;
@@ -9,7 +10,6 @@ using QBX.Hardware;
 using QBX.Parser;
 using QBX.ExecutionEngine;
 using QBX.DevelopmentEnvironment.Dialogs;
-using System.Linq;
 
 namespace QBX.DevelopmentEnvironment;
 
