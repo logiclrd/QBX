@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 using QBX.Firmware;
 using QBX.Hardware;
@@ -10,16 +11,24 @@ public abstract class Widget
 	public int X, Y;
 	public int Width, Height = 1;
 
+	public virtual bool IsEnabled { get; set; } = true;
+
 	public bool IsFocused;
 	public bool IsTabStop = false;
+	public Widget? FocusTarget;
 
 	public Action? GotFocus;
 	public Action? LostFocus;
 
-	internal virtual void NotifyGotFocus() => GotFocus?.Invoke();
-	internal virtual void NotifyLostFocus() => LostFocus?.Invoke();
+	internal virtual void NotifyGotFocus(IFocusContext focusContext) => GotFocus?.Invoke();
+	internal virtual void NotifyLostFocus(IFocusContext focusContext) => LostFocus?.Invoke();
 
 	public virtual char AccessKeyCharacter => '\0';
+
+	public virtual IEnumerable<Widget> EnumerateAllWidgets()
+	{
+		yield return this;
+	}
 
 	public abstract void Render(TextLibrary visual, IntegerRect bounds, Configuration configuration);
 	public abstract void PlaceCursorForFocus(TextLibrary visual, IntegerRect bounds);

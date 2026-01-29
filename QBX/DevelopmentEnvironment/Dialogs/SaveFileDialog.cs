@@ -5,6 +5,7 @@ using System.IO;
 using QBX.DevelopmentEnvironment.Dialogs.Widgets;
 using QBX.ExecutionEngine;
 using QBX.ExecutionEngine.Execution;
+using QBX.Hardware;
 
 namespace QBX.DevelopmentEnvironment.Dialogs;
 
@@ -23,12 +24,10 @@ public class SaveFileDialog : DialogWithDirectoryList
 	Canvas cnvFormats;
 
 	RadioButton optBinary;
-	Canvas cnvBinaryLabel;
 	Label lblBinaryLine1;
 	Label lblBinaryLine2;
 
 	RadioButton optText;
-	Canvas cnvTextLabel;
 	Label lblTextLine1;
 	Label lblTextLine2;
 
@@ -47,8 +46,8 @@ public class SaveFileDialog : DialogWithDirectoryList
 	public event Action<RuntimeException>? Error;
 	public event Action<string>? TargetPathSpecified;
 
-	public SaveFileDialog(SaveFileDialogTitle title, string filePath, Configuration configuration)
-		: base(configuration)
+	public SaveFileDialog(Machine machine, Configuration configuration, SaveFileDialogTitle title, string filePath)
+		: base(machine, configuration)
 	{
 		InitializeComponent(Path.GetFileName(filePath));
 
@@ -67,11 +66,9 @@ public class SaveFileDialog : DialogWithDirectoryList
 	[MemberNotNull(nameof(bdrFormat))]
 	[MemberNotNull(nameof(cnvFormats))]
 	[MemberNotNull(nameof(optBinary))]
-	[MemberNotNull(nameof(cnvBinaryLabel))]
 	[MemberNotNull(nameof(lblBinaryLine1))]
 	[MemberNotNull(nameof(lblBinaryLine2))]
 	[MemberNotNull(nameof(optText))]
-	[MemberNotNull(nameof(cnvTextLabel))]
 	[MemberNotNull(nameof(lblTextLine1))]
 	[MemberNotNull(nameof(lblTextLine2))]
 	[MemberNotNull(nameof(cmdOK))]
@@ -88,11 +85,9 @@ public class SaveFileDialog : DialogWithDirectoryList
 		bdrFormat = new Border();
 		cnvFormats = new Canvas();
 		optBinary = new RadioButton();
-		cnvBinaryLabel = new Canvas();
 		lblBinaryLine1 = new Label();
 		lblBinaryLine2 = new Label();
 		optText = new RadioButton();
-		cnvTextLabel = new Canvas();
 		lblTextLine1 = new Label();
 		lblTextLine2 = new Label();
 		cmdOK = new Button();
@@ -146,19 +141,15 @@ public class SaveFileDialog : DialogWithDirectoryList
 		cnvFormats.Width = 26;
 		cnvFormats.Height = 7;
 		cnvFormats.Children.Add(optBinary);
+		cnvFormats.Children.Add(lblBinaryLine1);
+		cnvFormats.Children.Add(lblBinaryLine2);
 		cnvFormats.Children.Add(optText);
+		cnvFormats.Children.Add(lblTextLine1);
+		cnvFormats.Children.Add(lblTextLine2);
 
 		optBinary.X = 23;
 		optBinary.Y = 7;
-		optBinary.Label = cnvBinaryLabel;
 		optBinary.RadioButtonGroup = formatGroup;
-
-		cnvBinaryLabel.X = 27;
-		cnvBinaryLabel.Y = 7;
-		cnvBinaryLabel.Width = 18;
-		cnvBinaryLabel.Height = 2;
-		cnvBinaryLabel.Children.Add(lblBinaryLine1);
-		cnvBinaryLabel.Children.Add(lblBinaryLine2);
 
 		lblBinaryLine1.X = 27;
 		lblBinaryLine1.Y = 7;
@@ -174,15 +165,7 @@ public class SaveFileDialog : DialogWithDirectoryList
 
 		optText.X = 23;
 		optText.Y = 11;
-		optText.Label = cnvTextLabel;
 		optText.RadioButtonGroup = formatGroup;
-
-		cnvTextLabel.X = 27;
-		cnvTextLabel.Y = 11;
-		cnvTextLabel.Width = 18;
-		cnvTextLabel.Height = 2;
-		cnvTextLabel.Children.Add(lblTextLine1);
-		cnvTextLabel.Children.Add(lblTextLine2);
 
 		lblTextLine1.X = 27;
 		lblTextLine1.Y = 11;

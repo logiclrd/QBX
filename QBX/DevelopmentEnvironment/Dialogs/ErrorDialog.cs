@@ -1,11 +1,12 @@
 ﻿using QBX.DevelopmentEnvironment.Dialogs.Widgets;
+using QBX.Hardware;
 
 namespace QBX.DevelopmentEnvironment.Dialogs;
 
 public class ErrorDialog : Dialog
 {
-	public ErrorDialog(Configuration configuration, string errorMessage)
-		: base(configuration)
+	public ErrorDialog(Machine machine, Configuration configuration, string errorMessage)
+		: base(machine, configuration)
 	{
 		if (errorMessage.Length > 65)
 			errorMessage = errorMessage.Substring(0, 65) + "...";

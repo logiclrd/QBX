@@ -99,7 +99,7 @@ public partial class Program
 				viewportWidth: TextLibrary.CharacterWidth - 2);
 		}
 
-		var dialog = ShowDialog(new ErrorDialog(Configuration, errorMessage));
+		var dialog = ShowDialog(new ErrorDialog(Machine, Configuration, errorMessage));
 
 		if (avoidContext)
 		{
@@ -141,7 +141,7 @@ public partial class Program
 
 		try
 		{
-			var dialog = new InstantWatchDialog(Configuration);
+			var dialog = new InstantWatchDialog(Machine, Configuration);
 
 			dialog.SetExpression(subject);
 

@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
 using QBX.DevelopmentEnvironment.Dialogs.Widgets;
+using QBX.Hardware;
 
 namespace QBX.DevelopmentEnvironment.Dialogs;
 
@@ -49,8 +50,8 @@ public abstract class DialogWithDirectoryList : Dialog
 	/// <summary>
 	/// The subclass must call SetCurrentDirectory after completing initialization.
 	/// </summary>
-	protected DialogWithDirectoryList(Configuration configuration)
-		: base(configuration)
+	protected DialogWithDirectoryList(Machine machine, Configuration configuration)
+		: base(machine, configuration)
 	{
 		InitializeComponent();
 	}

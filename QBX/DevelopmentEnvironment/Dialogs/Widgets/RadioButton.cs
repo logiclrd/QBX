@@ -1,6 +1,4 @@
-﻿using System;
-
-using QBX.Firmware;
+﻿using QBX.Firmware;
 using QBX.Hardware;
 
 namespace QBX.DevelopmentEnvironment.Dialogs.Widgets;
@@ -9,19 +7,17 @@ public class RadioButton : Widget
 {
 	public bool IsSelected;
 	public RadioButtonGroup? RadioButtonGroup;
-	public Widget? Label;
 
-	public override char AccessKeyCharacter => Label?.AccessKeyCharacter ?? '\0';
+	internal override void NotifyGotFocus(IFocusContext focusContext)
+	{
+		RadioButtonGroup?.Select(this, focusContext);
+	}
 
 	public override void Render(TextLibrary visual, IntegerRect bounds, Configuration configuration)
 	{
-		int x = X + bounds.X1;
-		int y = Y + bounds.Y1;
-
-		Label?.Render(visual, bounds, configuration);
-
 		visual.WriteTextAt(
-			x, y,
+			X + bounds.X1,
+			Y + bounds.Y1,
 			IsSelected ? "(●)" : "( )");
 	}
 

@@ -1,12 +1,25 @@
-﻿using QBX.Firmware;
+﻿using System.Collections.Generic;
+
+using QBX.Firmware;
 using QBX.Hardware;
 
 namespace QBX.DevelopmentEnvironment.Dialogs.Widgets;
 
-public class Border : Widget
+public class Border : Widget, IWrapperWidget
 {
 	public string Title = "";
-	public Widget? Child;
+	public Widget? Child { get; set; }
+
+	public override IEnumerable<Widget> EnumerateAllWidgets()
+	{
+		yield return this;
+
+		if (Child != null)
+		{
+			foreach (var child in Child.EnumerateAllWidgets())
+				yield return child;
+		}
+	}
 
 	public void Enclose(Widget child)
 	{
@@ -20,20 +33,20 @@ public class Border : Widget
 		IsTabStop = child.IsTabStop;
 	}
 
-	internal override void NotifyGotFocus()
+	internal override void NotifyGotFocus(IFocusContext focusContext)
 	{
 		Child?.IsFocused = IsFocused;
 
-		base.NotifyGotFocus();
-		Child?.NotifyGotFocus();
+		base.NotifyGotFocus(focusContext);
+		Child?.NotifyGotFocus(focusContext);
 	}
 
-	internal override void NotifyLostFocus()
+	internal override void NotifyLostFocus(IFocusContext focusContext)
 	{
 		Child?.IsFocused = IsFocused;
 
-		base.NotifyLostFocus();
-		Child?.NotifyLostFocus();
+		base.NotifyLostFocus(focusContext);
+		Child?.NotifyLostFocus(focusContext);
 	}
 
 	public override char AccessKeyCharacter => Child?.AccessKeyCharacter ?? base.AccessKeyCharacter;

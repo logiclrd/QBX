@@ -1,5 +1,7 @@
-﻿using QBX.DevelopmentEnvironment.Dialogs.Widgets;
-using System;
+﻿using System;
+
+using QBX.DevelopmentEnvironment.Dialogs.Widgets;
+using QBX.Hardware;
 
 namespace QBX.DevelopmentEnvironment.Dialogs;
 
@@ -29,8 +31,8 @@ public class InstantWatchDialog : Dialog
 		AddWatchClicked?.Invoke();
 	}
 
-	public InstantWatchDialog(Configuration configuration)
-		: base(configuration)
+	public InstantWatchDialog(Machine machine, Configuration configuration)
+		: base(machine, configuration)
 	{
 		Title = "Instant Watch";
 

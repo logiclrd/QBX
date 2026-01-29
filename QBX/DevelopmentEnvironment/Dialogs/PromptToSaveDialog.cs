@@ -1,6 +1,7 @@
 ﻿using System;
 
 using QBX.DevelopmentEnvironment.Dialogs.Widgets;
+using QBX.Hardware;
 
 namespace QBX.DevelopmentEnvironment.Dialogs;
 
@@ -12,8 +13,8 @@ public class PromptToSaveDialog : Dialog
 	protected void OnSave() => Save?.Invoke();
 	protected void OnDoNotSave() => DoNotSave?.Invoke();
 
-	public PromptToSaveDialog(Configuration configuration)
-		: base(configuration)
+	public PromptToSaveDialog(Machine machine, Configuration configuration)
+		: base(machine, configuration)
 	{
 		Width = 60;
 		Height = 7;

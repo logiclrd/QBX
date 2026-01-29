@@ -5,6 +5,7 @@ using System.IO;
 using QBX.DevelopmentEnvironment.Dialogs.Widgets;
 using QBX.ExecutionEngine;
 using QBX.ExecutionEngine.Execution;
+using QBX.Hardware;
 
 namespace QBX.DevelopmentEnvironment.Dialogs;
 
@@ -29,8 +30,8 @@ public class OpenFileDialog : DialogWithDirectoryList
 	public event Action<RuntimeException>? Error;
 	public event Action<string>? FileSelected;
 
-	public OpenFileDialog(OpenFileDialogTitle title, Configuration configuration)
-		: base(configuration)
+	public OpenFileDialog(Machine machine, Configuration configuration, OpenFileDialogTitle title)
+		: base(machine, configuration)
 	{
 		InitializeComponent();
 
@@ -161,6 +162,8 @@ public class OpenFileDialog : DialogWithDirectoryList
 
 			lstFiles.Items.Sort();
 			lstFiles.RecalculateColumns();
+
+			lstFiles.IsEnabled =
 			lstFiles.IsTabStop = (lstFiles.Items.Count > 0);
 		}
 		catch { }

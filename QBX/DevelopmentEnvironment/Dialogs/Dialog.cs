@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
+using QBX.DevelopmentEnvironment.Dialogs.Widgets;
 using QBX.Firmware;
+using QBX.Firmware.Fonts;
 using QBX.Hardware;
 
 namespace QBX.DevelopmentEnvironment.Dialogs;
 
-public abstract class Dialog(Configuration configuration) : IFocusContext
+public abstract class Dialog(Machine machine, Configuration configuration) : IFocusContext
 {
 	public int Width = 40;
 	public int Height = 7;
@@ -18,6 +21,9 @@ public abstract class Dialog(Configuration configuration) : IFocusContext
 
 	public List<Widget> Widgets = new List<Widget>();
 
+	public IEnumerable<Widget> EnumerateAllWidgets()
+		=> Widgets.SelectMany(widget => widget.EnumerateAllWidgets());
+
 	public Widget? FocusedWidget =>
 		((_focusedWidgetIndex >= 0) && (_focusedWidgetIndex < Widgets.Count))
 		? Widgets[_focusedWidgetIndex]
@@ -25,17 +31,58 @@ public abstract class Dialog(Configuration configuration) : IFocusContext
 
 	int _focusedWidgetIndex = -1;
 
-	public void SetFocus(Widget widget) => SetFocus(Widgets.IndexOf(widget));
+	public void SetFocus(Widget widget)
+	{
+		while (widget.FocusTarget != null)
+			widget = widget.FocusTarget;
+
+		SetFocus(Widgets.IndexOf(widget));
+	}
+
+	AccessKeyMap? _accessKeyMap = null;
+
+	public bool TrySetFocus(byte accessKey)
+	{
+		_accessKeyMap ??= new AccessKeyMap(Widgets);
+
+		if (_accessKeyMap.TryGetValue(accessKey, out var widget))
+		{
+			while (widget.FocusTarget != null)
+				widget = widget.FocusTarget;
+
+			var childContext = widget;
+
+			while (childContext is IWrapperWidget wrapper)
+				childContext = wrapper.Child;
+
+			if (!widget.IsEnabled
+			 || ((childContext is IFocusContext focusContext) && !focusContext.TrySetFocus(accessKey)))
+			{
+				machine.Speaker.ChangeSound(true, false, 850, true, TimeSpan.FromMilliseconds(165));
+				machine.Speaker.ChangeSound(false, false, 850, false);
+			}
+			else
+			{
+				SetFocus(widget);
+				return true;
+			}
+		}
+
+		return false;
+	}
 
 	public void SetFocus(int index)
 	{
-		if ((_focusedWidgetIndex >= 0) && (_focusedWidgetIndex < Widgets.Count))
-			Widgets[_focusedWidgetIndex].NotifyLostFocus();
+		if (index != _focusedWidgetIndex)
+		{
+			if ((_focusedWidgetIndex >= 0) && (_focusedWidgetIndex < Widgets.Count))
+				Widgets[_focusedWidgetIndex].NotifyLostFocus(this);
 
-		_focusedWidgetIndex = index;
+			_focusedWidgetIndex = index;
 
-		if ((_focusedWidgetIndex >= 0) && (_focusedWidgetIndex < Widgets.Count))
-			Widgets[_focusedWidgetIndex].NotifyGotFocus();
+			if ((_focusedWidgetIndex >= 0) && (_focusedWidgetIndex < Widgets.Count))
+				Widgets[_focusedWidgetIndex].NotifyGotFocus(this);
+		}
 	}
 
 	public event EventHandler? Closed;
@@ -110,6 +157,16 @@ public abstract class Dialog(Configuration configuration) : IFocusContext
 
 			case ScanCode.Escape:
 				Closed?.Invoke(this, EventArgs.Empty);
+				break;
+
+			default:
+				if (!input.Modifiers.CtrlKey)
+				{
+					byte accessKey = CP437Encoding.GetByteSemantic(input.ScanCode.ToCharacter());
+
+					TrySetFocus(accessKey);
+				}
+
 				break;
 		}
 	}

@@ -8,7 +8,6 @@ public class Label : Widget
 {
 	public string Text = "";
 	public int AccessKeyIndex = -1;
-	public Widget? FocusTarget;
 
 	public override char AccessKeyCharacter
 		=> ((AccessKeyIndex >= 0) && (AccessKeyIndex < Text.Length))

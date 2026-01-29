@@ -14,15 +14,7 @@ public class StringValue : IComparable<StringValue>, IEquatable<StringValue>
 	static Encoding s_cp437 = new CP437Encoding(ControlCharacterInterpretation.Semantic);
 
 	[ThreadStatic]
-	static char[]? s_characterBuffer;
-	[ThreadStatic]
 	static byte[]? s_conversionBuffer;
-
-	[MemberNotNull(nameof(s_characterBuffer))]
-	static void EnsureCharacterBuffer()
-	{
-		s_characterBuffer ??= new char[1];
-	}
 
 	[MemberNotNull(nameof(s_conversionBuffer))]
 	static void EnsureConversionBuffer(int length)
@@ -123,15 +115,9 @@ public class StringValue : IComparable<StringValue>, IEquatable<StringValue>
 
 	public StringValue SetCharacterAt(int index, char ch)
 	{
-		EnsureCharacterBuffer();
+		byte @byte = CP437Encoding.GetByteSemantic(ch);
 
-		s_characterBuffer[0] = ch;
-
-		EnsureConversionBuffer(1);
-
-		s_cp437.GetBytes(s_characterBuffer, 0, 1, s_conversionBuffer, 0);
-
-		return SetCharacterAt(index, s_conversionBuffer[0]);
+		return SetCharacterAt(index, @byte);
 	}
 
 	public StringValue SetCharacterAt(int index, byte ch)
@@ -149,19 +135,9 @@ public class StringValue : IComparable<StringValue>, IEquatable<StringValue>
 
 	public StringValue Append(char ch)
 	{
-		EnsureCharacterBuffer();
-		EnsureConversionBuffer(1);
+		byte @byte = CP437Encoding.GetByteSemantic(ch);
 
-		s_characterBuffer[0] = ch;
-
-		s_cp437.GetBytes(
-			s_characterBuffer,
-			0,
-			1,
-			s_conversionBuffer,
-			0);
-
-		return Append(s_conversionBuffer[0]);
+		return Append(@byte);
 	}
 
 	public StringValue Append(byte ch)
@@ -201,15 +177,9 @@ public class StringValue : IComparable<StringValue>, IEquatable<StringValue>
 	{
 		if (!_isFixedLength)
 		{
-			EnsureCharacterBuffer();
+			byte @byte = CP437Encoding.GetByteSemantic(ch);
 
-			s_characterBuffer[0] = ch;
-
-			EnsureConversionBuffer(1);
-
-			s_cp437.GetBytes(s_characterBuffer, 0, 1, s_conversionBuffer, 0);
-
-			_bytes.Insert(index, s_conversionBuffer[0]);
+			_bytes.Insert(index, @byte);
 		}
 
 		return this;

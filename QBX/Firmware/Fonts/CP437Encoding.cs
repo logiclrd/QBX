@@ -64,6 +64,16 @@ class CP437Encoding : Encoding
 		return byteCount;
 	}
 
+	public static byte GetByteGraphic(char ch)
+		=> s_charToByteGraphic.TryGetValue(ch, out var @byte) ? @byte : UnknownCharacterByte;
+	public static char GetCharGraphic(byte @byte)
+		=> s_byteToCharGraphic[@byte];
+
+	public static byte GetByteSemantic(char ch)
+		=> s_charToByteSemantic.TryGetValue(ch, out var @byte) ? @byte : UnknownCharacterByte;
+	public static char GetCharSemantic(byte @byte)
+		=> s_byteToCharSemantic[@byte];
+
 	const byte UnknownCharacterByte = (byte)'?';
 
 	static readonly Dictionary<char, byte> s_charToByteGraphic =

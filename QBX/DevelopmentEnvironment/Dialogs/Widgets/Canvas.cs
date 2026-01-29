@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 using QBX.Firmware;
 using QBX.Hardware;
@@ -15,29 +16,74 @@ public class Canvas : Widget, IFocusContext
 		? Children[FocusedChildIndex]
 		: null;
 
+	public override IEnumerable<Widget> EnumerateAllWidgets()
+		=> Children.SelectMany(child => child.EnumerateAllWidgets());
+
 	public void SetFocus(Widget widget)
 	{
-		FocusedChildIndex = Children.IndexOf(widget);
+		while (widget.FocusTarget != null)
+			widget = widget.FocusTarget;
+
+		int newFocusedChildIndex = Children.IndexOf(widget);
+
+		if (newFocusedChildIndex != FocusedChildIndex)
+		{
+			if ((FocusedChildIndex >= 0) && (FocusedChildIndex < Children.Count))
+				Children[FocusedChildIndex].NotifyLostFocus(this);
+
+			FocusedChildIndex = newFocusedChildIndex;
+
+			if ((FocusedChildIndex >= 0) && (FocusedChildIndex < Children.Count))
+				Children[FocusedChildIndex].NotifyGotFocus(this);
+		}
 	}
 
-	internal override void NotifyGotFocus()
+	AccessKeyMap? _accessKeyMap = null;
+
+	public bool TrySetFocus(byte accessKey)
+	{
+		_accessKeyMap ??= new AccessKeyMap(Children);
+
+		if (_accessKeyMap.TryGetValue(accessKey, out var widget))
+		{
+			while (widget.FocusTarget != null)
+				widget = widget.FocusTarget;
+
+			var childContext = widget;
+
+			while (childContext is IWrapperWidget wrapper)
+				childContext = wrapper.Child;
+
+			if ((widget != null)
+			 && widget.IsEnabled
+			 && ((childContext is not IFocusContext focusContext) || focusContext.TrySetFocus(accessKey)))
+			{
+				SetFocus(widget);
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	internal override void NotifyGotFocus(IFocusContext focusContext)
 	{
 		var focusedWidget = FocusedChild;
 
 		focusedWidget?.IsFocused = IsFocused;
 
-		base.NotifyGotFocus();
-		focusedWidget?.NotifyGotFocus();
+		base.NotifyGotFocus(focusContext);
+		focusedWidget?.NotifyGotFocus(this);
 	}
 
-	internal override void NotifyLostFocus()
+	internal override void NotifyLostFocus(IFocusContext focusContext)
 	{
 		var focusedWidget = FocusedChild;
 
 		focusedWidget?.IsFocused = IsFocused;
 
-		base.NotifyLostFocus();
-		focusedWidget?.NotifyLostFocus();
+		base.NotifyLostFocus(focusContext);
+		focusedWidget?.NotifyLostFocus(this);
 	}
 
 	char _accessKeyCharacter;

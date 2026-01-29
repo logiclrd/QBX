@@ -9,13 +9,11 @@ public class Button : Widget
 	public string Text = "";
 	public int AccessKeyIndex = -1;
 
-	public bool IsEnabled
+	public override bool IsEnabled
 	{
-		get => _isEnabled;
-		set => _isEnabled = IsTabStop = value;
+		get => base.IsEnabled;
+		set => base.IsEnabled = IsTabStop = value;
 	}
-
-	bool _isEnabled = true;
 
 	public override char AccessKeyCharacter
 		=> ((AccessKeyIndex >= 0) && (AccessKeyIndex < Text.Length))
