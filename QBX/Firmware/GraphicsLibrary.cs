@@ -1914,6 +1914,8 @@ public abstract class GraphicsLibrary : VisualLibrary
 	public int PointerY => _pointerY;
 	public bool PointerVisible => _pointerVisible;
 
+	public bool EnablePointerAwareDrawing = false;
+
 	int _pointerX;
 	int _pointerY;
 	bool _pointerVisible;
@@ -2024,7 +2026,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	protected IDisposable? HidePointerForOperation(int x, int y)
 	{
-		if (_isHiddenForOperation || _isDrawing)
+		if (_isHiddenForOperation || _isDrawing || !EnablePointerAwareDrawing)
 			return null;
 
 		if (!_pointerDrawn)

@@ -1,7 +1,8 @@
-﻿using QBX.Firmware;
-using QBX.Hardware;
-using System;
+﻿using System;
 using System.Threading;
+
+using QBX.Firmware;
+using QBX.Hardware;
 
 namespace QBX.TestDrivers;
 
@@ -11,9 +12,9 @@ public class PointerTest(Machine machine) : HostedProgram
 
 	public override void Run(CancellationToken cancellationToken)
 	{
-		machine.VideoFirmware.SetMode(0x6);
+		machine.VideoFirmware.SetMode(0x13);
 
-		var visual = new GraphicsLibrary_1bppPacked(machine);
+		var visual = new GraphicsLibrary_8bppFlat(machine);
 
 		double a = 0;
 		int waveAttribute = 1;
