@@ -1,4 +1,5 @@
 ﻿using QBX.Firmware;
+using QBX.Interrupts;
 
 namespace QBX.Hardware;
 
@@ -13,6 +14,7 @@ public class Machine
 	public TimerChip Timer { get; }
 
 	public MemoryBus MemoryBus { get; }
+	public InterruptHandler?[] InterruptHandlers { get; } = new InterruptHandler[256];
 
 	public bool KeepRunning = true;
 	public int ExitCode = 0;
