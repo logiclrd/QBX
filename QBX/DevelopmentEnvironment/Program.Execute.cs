@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using QBX.ExecutionEngine;
 using QBX.ExecutionEngine.Execution;
 using QBX.Firmware;
+using QBX.Utility;
 
 namespace QBX.DevelopmentEnvironment;
 
@@ -14,7 +15,7 @@ public partial class Program
 	Compiler? _compiler;
 	Compilation? _compilation;
 
-	public bool DetectDelayLoops = false;
+	public bool DetectDelayLoops = new SystemDetector().IsLaptop();
 
 	[MemberNotNullWhen(true, nameof(_executionContext))]
 	public bool IsExecuting => (_executionContext != null);
