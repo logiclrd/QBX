@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 using SDL3;
 
@@ -17,6 +18,9 @@ public class Adapter
 
 	const long TicksPerCursorSwitch = TimeSpan.TicksPerSecond * 8 / 70;
 	const long TicksPerBlinkSwitch = TimeSpan.TicksPerSecond * 16 / 70;
+
+	ManualResetEvent _scanStart = new ManualResetEvent(initialState: false);
+	ManualResetEvent _scanEnd = new ManualResetEvent(initialState: false);
 
 	public Adapter(GraphicsArray array)
 	{
@@ -63,10 +67,19 @@ public class Adapter
 		}
 	}
 
+	public void VerticalSync()
+	{
+		_scanStart.WaitOne();
+		_scanEnd.WaitOne();
+	}
+
 	public void Render(Span<byte> target, int targetPitch)
 	{
 		try
 		{
+			_scanEnd.Reset();
+			_scanStart.Set();
+
 			int rowWidthOut = _width * 4;
 
 			int bitsPerPixelPerPlane =
@@ -322,5 +335,10 @@ public class Adapter
 			}
 		}
 		catch { }
+		finally
+		{
+			_scanEnd.Set();
+			_scanStart.Reset();
+		}
 	}
 }

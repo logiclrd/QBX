@@ -12,9 +12,9 @@ public class PointerTest(Machine machine) : HostedProgram
 
 	public override void Run(CancellationToken cancellationToken)
 	{
-		machine.VideoFirmware.SetMode(0x13);
+		machine.VideoFirmware.SetMode(0x12);
 
-		var visual = new GraphicsLibrary_8bppFlat(machine);
+		var visual = new GraphicsLibrary_4bppPlanar(machine);
 
 		double a = 0;
 		int waveAttribute = 1;
@@ -27,6 +27,11 @@ public class PointerTest(Machine machine) : HostedProgram
 		int my = visual.Height / 2;
 
 		visual.ShowPointer();
+
+		visual.EnablePointerAwareDrawing = true;
+
+		if (visual.MaximumAttribute > 1)
+			visual.BorderFill(10, 10, 1, 1);
 
 		while (true)
 		{
@@ -58,7 +63,8 @@ public class PointerTest(Machine machine) : HostedProgram
 				pointerVisibilityCounter = 0;
 			}
 
-			Thread.Sleep(10);
+			//Thread.Sleep(100);
+			machine.Display.VerticalSync();
 		}
 	}
 }

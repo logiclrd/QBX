@@ -640,10 +640,10 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 				int p2 = p + 2 * bytesPerScan;
 				int p3 = p + 3 * bytesPerScan;
 
-				int q0 = q + 0 * bytesPerScan;
-				int q1 = q + 1 * bytesPerScan;
-				int q2 = q + 2 * bytesPerScan;
-				int q3 = q + 3 * bytesPerScan;
+				int q0 = q + 0 * maskBytesPerScan;
+				int q1 = q + 1 * maskBytesPerScan;
+				int q2 = q + 2 * maskBytesPerScan;
+				int q3 = q + 3 * maskBytesPerScan;
 
 				int spriteMask = leftPixelMask >> leftPixelShift;
 				int unrelatedMask = unchecked((byte)~spriteMask);
@@ -658,7 +658,7 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 				int maskBitsForNextPixel2 = 0;
 				int maskBitsForNextPixel3 = 0;
 
-				for (int xx = 0; xx < loopBytes; xx++, o++, p0++, p1++, p2++, p3++)
+				for (int xx = 0; xx < loopBytes; xx++, o++, p0++, p1++, p2++, p3++, q0++, q1++, q2++, q3++)
 				{
 					int rx = xx + x;
 
@@ -674,6 +674,7 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 							plane0[o] = action.ApplySpriteBits(plane0[o], spriteByte, unrelatedMask | ~spriteMaskByte, spriteMask & spriteMaskByte);
 
 						bitsForNextPixel0 = (sample & rightPixelMask) << rightPixelShift;
+						maskBitsForNextPixel0 = (maskSample & rightPixelMask) << rightPixelShift;
 					}
 
 					{
@@ -686,6 +687,7 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 							plane1[o] = action.ApplySpriteBits(plane1[o], spriteByte, unrelatedMask | ~spriteMaskByte, spriteMask & spriteMaskByte);
 
 						bitsForNextPixel1 = (sample & rightPixelMask) << rightPixelShift;
+						maskBitsForNextPixel1 = (maskSample & rightPixelMask) << rightPixelShift;
 					}
 
 					{
@@ -698,6 +700,7 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 							plane2[o] = action.ApplySpriteBits(plane2[o], spriteByte, unrelatedMask | ~spriteMaskByte, spriteMask & spriteMaskByte);
 
 						bitsForNextPixel2 = (sample & rightPixelMask) << rightPixelShift;
+						maskBitsForNextPixel2 = (maskSample & rightPixelMask) << rightPixelShift;
 					}
 
 					{
@@ -710,6 +713,7 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 							plane3[o] = action.ApplySpriteBits(plane3[o], spriteByte, unrelatedMask | ~spriteMaskByte, spriteMask & spriteMaskByte);
 
 						bitsForNextPixel3 = (sample & rightPixelMask) << rightPixelShift;
+						maskBitsForNextPixel3 = (maskSample & rightPixelMask) << rightPixelShift;
 					}
 
 					unrelatedMask = 0;
