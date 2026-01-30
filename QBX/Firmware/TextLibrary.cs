@@ -486,4 +486,55 @@ public class TextLibrary : VisualLibrary
 				plane1.Slice(x1, width).Fill(Attributes);
 		}
 	}
+
+	public override int PointerMaximumX => CharacterWidth * Array.Sequencer.CharacterWidth;
+	public override int PointerMaximumY => CharacterHeight * Array.CRTController.CharacterHeight;
+
+	byte _pointerSaved;
+	int _pointerSavedOffset;
+	bool _pointerDrawn;
+
+	protected override void DrawPointer()
+	{
+		if (PointerVisible && !_pointerDrawn)
+		{
+			int pointerCharacterX = PointerX / Array.Sequencer.CharacterWidth;
+			int pointerCharacterY = PointerY / Array.CRTController.CharacterHeight;
+
+			int pointerOffset = pointerCharacterY * CharacterWidth + pointerCharacterX;
+
+			Span<byte> vramSpan = Array.VRAM;
+
+			vramSpan = vramSpan.Slice(StartAddress);
+
+			var plane1 = vramSpan.Slice(0x10000);
+
+			_pointerSaved = plane1[pointerOffset];
+			_pointerSavedOffset = pointerOffset;
+
+			byte highlighted = unchecked((byte)((_pointerSaved << 4) | (_pointerSaved >> 4)));
+
+			if (Array.AttributeController.EnableBlinking)
+				highlighted = unchecked((byte)((highlighted & 0x7F) | (_pointerSaved & 0x80)));
+
+			plane1[pointerOffset] = highlighted;
+
+			_pointerDrawn = true;
+		}
+	}
+
+	protected override void UndrawPointer()
+	{
+		if (_pointerDrawn)
+		{
+			Span<byte> vramSpan = Array.VRAM;
+
+			vramSpan = vramSpan.Slice(StartAddress);
+
+			var plane1 = vramSpan.Slice(0x10000);
+
+			plane1[_pointerSavedOffset] = _pointerSaved;
+			_pointerDrawn = false;
+		}
+	}
 }

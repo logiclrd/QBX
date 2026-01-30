@@ -1910,15 +1910,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 	protected abstract byte[] MakePointerSprite();
 	protected abstract byte[] MakePointerMask();
 
-	public int PointerX => _pointerX;
-	public int PointerY => _pointerY;
-	public bool PointerVisible => _pointerVisible;
-
 	public bool EnablePointerAwareDrawing = false;
-
-	int _pointerX;
-	int _pointerY;
-	bool _pointerVisible;
 
 	byte[]? _pointerSprite;
 	byte[]? _pointerMask;
@@ -1929,16 +1921,16 @@ public abstract class GraphicsLibrary : VisualLibrary
 	bool _isHiddenForOperation;
 	bool _isDrawing;
 
-	void DrawPointer()
+	protected override void DrawPointer()
 	{
-		if (_pointerVisible && !_pointerDrawn)
+		if (PointerVisible && !_pointerDrawn)
 		{
 			_pointerSprite ??= MakePointerSprite();
 			_pointerMask ??= MakePointerMask();
 			_pointerSaved = new byte[_pointerSprite.Length];
 
-			_pointerSavedX = Math.Max(0, _pointerX - 1);
-			_pointerSavedY = Math.Max(0, _pointerY - 1);
+			_pointerSavedX = Math.Max(0, PointerX - 1);
+			_pointerSavedY = Math.Max(0, PointerY - 1);
 
 			_isDrawing = true;
 
@@ -1952,7 +1944,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 				PutMaskedSprite(
 					_pointerSprite, _pointerMask,
-					_pointerX - 1, _pointerY - 1);
+					PointerX - 1, PointerY - 1);
 
 				_pointerDrawn = true;
 			}
@@ -1963,7 +1955,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 		}
 	}
 
-	void UndrawPointer()
+	protected override void UndrawPointer()
 	{
 		if (_pointerDrawn)
 		{
@@ -2059,28 +2051,6 @@ public abstract class GraphicsLibrary : VisualLibrary
 			return null;
 
 		return new HidePointerScope(this);
-	}
-
-	public void ShowPointer()
-	{
-		_pointerVisible = true;
-		DrawPointer();
-	}
-
-	public void HidePointer()
-	{
-		_pointerVisible = false;
-		UndrawPointer();
-	}
-
-	public void MovePointer(int newX, int newY)
-	{
-		UndrawPointer();
-
-		_pointerX = newX;
-		_pointerY = newY;
-
-		DrawPointer();
 	}
 	#endregion
 }

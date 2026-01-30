@@ -419,4 +419,40 @@ public abstract class VisualLibrary
 	}
 
 	public abstract void ScrollText();
+
+	protected abstract void DrawPointer();
+	protected abstract void UndrawPointer();
+
+	public int PointerX => _pointerX;
+	public int PointerY => _pointerY;
+	public bool PointerVisible => _pointerVisible;
+
+	public virtual int PointerMaximumX => Width - 1;
+	public virtual int PointerMaximumY => Height - 1;
+
+	int _pointerX;
+	int _pointerY;
+	bool _pointerVisible;
+
+	public void ShowPointer()
+	{
+		_pointerVisible = true;
+		DrawPointer();
+	}
+
+	public void HidePointer()
+	{
+		_pointerVisible = false;
+		UndrawPointer();
+	}
+
+	public void MovePointer(int newX, int newY)
+	{
+		UndrawPointer();
+
+		_pointerX = newX;
+		_pointerY = newY;
+
+		DrawPointer();
+	}
 }
