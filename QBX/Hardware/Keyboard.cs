@@ -13,6 +13,8 @@ public class Keyboard(Machine machine)
 	Queue<KeyEvent> _divertedEvents = new Queue<KeyEvent>();
 	bool _divertEvents = false;
 
+	public event Action? Break;
+
 	void UpdateModifiers(SDL.KeyboardEvent evt)
 	{
 		var mods = SDL.GetModState();
@@ -96,6 +98,9 @@ public class Keyboard(Machine machine)
 		}
 
 		var keyEvent = new KeyEvent(evt.Scancode, machine.SystemMemory.GetKeyModifiers(), isRelease: !evt.Down);
+
+		if (keyEvent.IsBreak)
+			Break?.Invoke();
 
 		if (_suppressNextIfIsRelease.HasValue || _suppressNextIfHasScanCode.HasValue)
 		{

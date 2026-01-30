@@ -102,6 +102,8 @@ public partial class Program : HostedProgram, IOvertypeFlag
 			if (File.Exists(initialFilePath))
 				LoadFile(initialFilePath, replaceExistingProgram: true);
 		}
+
+		AttachBreakHandler();
 	}
 
 	public override bool EnableMainLoop => true;

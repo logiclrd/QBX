@@ -17,6 +17,15 @@ public partial class Program
 	[MemberNotNullWhen(true, nameof(_executionContext))]
 	public bool IsExecuting => (_executionContext != null);
 
+	void AttachBreakHandler()
+	{
+		Machine.Keyboard.Break +=
+			() =>
+			{
+				_executionContext?.Controls.Break();
+			};
+	}
+
 	public void Run()
 	{
 		Restart();

@@ -17,6 +17,8 @@ public class KeyEvent
 	public bool IsEmpty => (TextCharacter == default) && (ScanCode == 0);
 	public bool IsNormalText => (TextCharacter >= 32);
 
+	public bool IsBreak => Modifiers.CtrlKey && (SDLScanCode == SDL.Scancode.Pause);
+
 	public bool IsModifierKey
 	{
 		get
