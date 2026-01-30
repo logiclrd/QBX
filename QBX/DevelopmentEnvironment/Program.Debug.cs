@@ -152,10 +152,9 @@ public partial class Program
 
 			instantWatch.Routine = _nextStatementRoutine;
 
-			dialog.SetWatch(instantWatch);
+			EvaluateWatch(instantWatch);
 
-			if (EvaluateWatch(instantWatch))
-				dialog.Update();
+			dialog.SetWatch(instantWatch);
 
 			dialog.AddWatchClicked +=
 				() =>
@@ -270,11 +269,11 @@ public partial class Program
 		 && (currentRoutine != null)
 		 && (stackFrame != null))
 		{
-			foreach (var watch in _watches)
+			foreach (var watch in watches)
 			{
 				watch.LastValueFormatted = null;
 
-				if (!ReferenceEquals(watch.Routine, currentRoutine))
+				if (ReferenceEquals(watch.Routine, currentRoutine))
 				{
 					try
 					{

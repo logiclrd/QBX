@@ -14,6 +14,8 @@ public partial class Program
 	Compiler? _compiler;
 	Compilation? _compilation;
 
+	public bool DetectDelayLoops = false;
+
 	[MemberNotNullWhen(true, nameof(_executionContext))]
 	public bool IsExecuting => (_executionContext != null);
 
@@ -52,6 +54,8 @@ public partial class Program
 
 		_compiler = new Compiler();
 		_compilation = new Compilation();
+
+		_compiler.DetectDelayLoops = DetectDelayLoops;
 
 		foreach (var file in LoadedFiles)
 			_compiler.Compile(file, _compilation);

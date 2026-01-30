@@ -20,6 +20,8 @@ namespace QBX.ExecutionEngine;
 
 public class Compiler
 {
+	public bool DetectDelayLoops { get; set; }
+
 	public Module Compile(CodeModel.CompilationUnit unit, Compilation compilation)
 	{
 		var module = new Module();
@@ -817,17 +819,20 @@ public class Compiler
 					translatedLoopStatement = LoopStatement.ConstructPreConditionLoop(
 						preCondition,
 						body,
-						doStatement);
+						doStatement,
+						DetectDelayLoops);
 				else if (postCondition != null)
 					translatedLoopStatement = LoopStatement.ConstructPostConditionLoop(
 						body,
 						postCondition,
 						loopStatement,
-						doStatement);
+						doStatement,
+						DetectDelayLoops);
 				else
 					translatedLoopStatement = LoopStatement.ConstructUnconditionalLoop(
 						body,
-						doStatement);
+						doStatement,
+						DetectDelayLoops);
 
 				translatedLoopStatement.Type = LoopType.Do;
 
@@ -985,7 +990,8 @@ public class Compiler
 					stepExpression,
 					body,
 					forStatement,
-					nextStatement);
+					nextStatement,
+					DetectDelayLoops);
 
 				body.OwnerExecutable = translatedForStatement;
 
@@ -1874,7 +1880,8 @@ public class Compiler
 				LoopStatement translatedLoopStatement = LoopStatement.ConstructPreConditionLoop(
 					condition,
 					body,
-					whileStatement);
+					whileStatement,
+					DetectDelayLoops);
 
 				translatedLoopStatement.Type = LoopType.While;
 

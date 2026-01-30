@@ -2,6 +2,7 @@
 
 using QBX.ExecutionEngine;
 using QBX.ExecutionEngine.Compiled.Expressions;
+using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
 using QBX.LexicalAnalysis;
 
@@ -351,5 +352,19 @@ public static class NumberConverter
 		}
 
 		throw CompilerException.TypeMismatch(context);
+	}
+
+	public static object ChangeType(object value, PrimitiveDataType primitiveType, Token? context = null)
+	{
+		switch (primitiveType)
+		{
+			case PrimitiveDataType.Integer: return ToInteger(value);
+			case PrimitiveDataType.Long: return ToLong(value);
+			case PrimitiveDataType.Single: return ToSingle(value);
+			case PrimitiveDataType.Double: return ToDouble(value);
+			case PrimitiveDataType.Currency: return ToCurrency(value);
+
+			default: throw CompilerException.TypeMismatch(context);
+		}
 	}
 }

@@ -36,6 +36,7 @@ public partial class Program
 	Menu mnuUtility;
 
 	Menu mnuOptions;
+	MenuItem mnuOptionsDetectDelayLoops;
 
 	Menu mnuHelp;
 
@@ -71,6 +72,7 @@ public partial class Program
 		nameof(mnuCalls),
 		nameof(mnuUtility),
 		nameof(mnuOptions),
+		nameof(mnuOptionsDetectDelayLoops),
 		nameof(mnuHelp))]
 	void InitializeMenuBar()
 	{
@@ -178,12 +180,13 @@ public partial class Program
 			};
 
 		mnuOptions =
-			new Menu("&Options", 15)
+			new Menu("&Options", 18)
 			{
 				new MenuItem("&Display..."),
 				new MenuItem("Set &Paths..."),
 				new MenuItem("Right &Mouse..."),
 				new MenuItem("&Syntax Checking") { IsChecked = true },
+				(mnuOptionsDetectDelayLoops = new MenuItem("Detect Delay &Loops") { IsChecked = DetectDelayLoops }),
 			};
 
 		mnuHelp =
@@ -219,6 +222,8 @@ public partial class Program
 
 		mnuDebugInstantWatch.Clicked = mnuDebugInstantWatch_Clicked;
 		mnuDebugDeleteAllWatch.Clicked = mnuDebugDeleteAllWatch_Clicked;
+
+		mnuOptionsDetectDelayLoops.Clicked = mnuOptionsDetectDelayLoops_Clicked;
 	}
 
 	private void mnuFileNew_Clicked()
@@ -271,6 +276,13 @@ public partial class Program
 	private void mnuDebugDeleteAllWatch_Clicked()
 	{
 		ClearWatches();
+	}
+
+	private void mnuOptionsDetectDelayLoops_Clicked()
+	{
+		DetectDelayLoops = !DetectDelayLoops;
+
+		mnuOptionsDetectDelayLoops.IsChecked = DetectDelayLoops;
 	}
 
 	bool ActivateMenuItem(MenuItem item)

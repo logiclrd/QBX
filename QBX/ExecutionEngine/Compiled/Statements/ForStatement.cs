@@ -23,8 +23,26 @@ public abstract class ForStatement : Executable
 		Evaluable? stepExpression,
 		Sequence body,
 		CodeModel.Statements.ForStatement? sourceForStatement,
-		CodeModel.Statements.NextStatement? sourceNextStatement)
+		CodeModel.Statements.NextStatement? sourceNextStatement,
+		bool detectDelayLoops)
 	{
+		if (detectDelayLoops && (body.Count == 0))
+		{
+			fromExpression = Conversion.Construct(fromExpression, PrimitiveDataType.Double);
+			toExpression = Conversion.Construct(toExpression, PrimitiveDataType.Double);
+			stepExpression = Conversion.Construct(stepExpression, PrimitiveDataType.Double);
+
+			return
+				new DelayLoopForStatement(sourceForStatement, sourceNextStatement)
+				{
+					IteratorVariableIndex = iteratorVariableIndex,
+					FromExpression = fromExpression,
+					ToExpression = toExpression,
+					StepExpression = stepExpression,
+					Multiplier = (iteratorVariableType == PrimitiveDataType.Integer) ? 1 : 2
+				};
+		}
+
 		switch (iteratorVariableType)
 		{
 			case PrimitiveDataType.Integer:
@@ -664,5 +682,59 @@ public class CurrencyForStatement(CodeModel.Statements.ForStatement? sourceForSt
 			else if (step < 0)
 				FinishLoop = (NextValue < to);
 		}
+	}
+}
+
+public class DelayLoopForStatement(CodeModel.Statements.ForStatement? sourceForStatement, CodeModel.Statements.NextStatement? sourceNextStatement) : ForStatement(sourceForStatement, sourceNextStatement)
+{
+	public int IteratorVariableIndex;
+	public Evaluable? FromExpression;
+	public Evaluable? ToExpression;
+	public Evaluable? StepExpression;
+	public double Multiplier;
+
+	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	{
+		var iteratorVariable = stackFrame.Variables[IteratorVariableIndex];
+
+		if (iteratorVariable == null)
+			throw new Exception("CurrencyForStatement with no IteratorVariable");
+
+		var fromVariable = FromExpression?.Evaluate(context, stackFrame) ?? throw new Exception("DelayLoopForStatement with no FromExpression");
+		var toVariable = ToExpression?.Evaluate(context, stackFrame) ?? throw new Exception("DelayLoopForStatement with no ToExpression");
+		var stepVariable = StepExpression?.Evaluate(context, stackFrame);
+
+		double from = NumberConverter.ToDouble(fromVariable);
+		double to = NumberConverter.ToDouble(toVariable);
+		double step = stepVariable != null ? NumberConverter.ToDouble(stepVariable) : 1;
+
+		bool proceed = (from == to);
+
+		if (!proceed)
+		{
+			if (from < to)
+				proceed = (step > 0);
+			else
+				proceed = (step < 0);
+		}
+
+		if (proceed)
+		{
+			double iterations = (to - from) / step;
+
+			double delay = iterations * Multiplier / 30000.0;
+
+			System.Threading.Thread.Sleep(TimeSpan.FromSeconds(delay));
+
+			stackFrame.Variables[IteratorVariableIndex].SetData(
+				NumberConverter.ChangeType(
+					from + step * Math.Truncate(iterations),
+					stackFrame.Variables[IteratorVariableIndex].DataType.PrimitiveType));
+		}
+	}
+
+	protected override void DispatchImplementation(int statementIndex, ExecutionContext context, StackFrame stackFrame)
+	{
+		// It is not possible to jump into the middle of a DelayLoopForStatement.
 	}
 }

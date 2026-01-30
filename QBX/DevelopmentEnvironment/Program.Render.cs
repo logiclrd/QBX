@@ -820,7 +820,10 @@ public partial class Program : HostedProgram
 
 				TextLibrary.WriteText(vertical);
 				attr.Set(TextLibrary);
-				TextLibrary.WriteText(' ');
+				if (menu.Items[i].IsChecked)
+					TextLibrary.WriteText('●');
+				else
+					TextLibrary.WriteText(' ');
 				RenderTextWithAccessKey(menu.Items[i].Label, attr, accessKeyAttr);
 
 				int labelWidth = GetTextLength(menu.Items[i].Label);

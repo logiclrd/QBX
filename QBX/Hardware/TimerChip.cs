@@ -40,6 +40,27 @@ public class TimerChip
 		}
 	}
 
+	public TimeSpan TimeToNextTick
+	{
+		get
+		{
+			TimeSpan timeToNextTick;
+
+			do
+			{
+				long tickCount = TickCount;
+
+				double nextTickSeconds = (1 + tickCount - _tickBase) / Timer0.Frequency;
+
+				timeToNextTick = _tickEpoch.AddSeconds(nextTickSeconds) - DateTime.UtcNow;
+
+				System.Diagnostics.Debug.WriteLine('.');
+			} while (timeToNextTick < TimeSpan.Zero);
+
+			return timeToNextTick;
+		}
+	}
+
 	public void RebaseTickCount()
 	{
 		_tickBase = TickCount;
