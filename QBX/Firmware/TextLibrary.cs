@@ -192,30 +192,13 @@ public class TextLibrary : VisualLibrary
 
 		int width = x2 - x1 + 1;
 
-		if (width == CharacterWidth)
+		using (HidePointerForOperationIfPointerAware())
 		{
-			int windowStart = fromCharacterLine * Width;
-			int windowLength = (toCharacterLine - fromCharacterLine + 1) * Width;
-
-			if (windowStart + windowLength > planeBytesUsed)
-				windowLength = planeBytesUsed - windowStart;
-
-			if (windowLength <= 0)
-				return;
-
-			var plane0 = vramSpan.Slice(0x00000 + windowStart, windowLength);
-			var plane1 = vramSpan.Slice(0x10000 + windowStart, windowLength);
-
-			plane0.Clear();
-			plane1.Fill(Attributes);
-		}
-		else
-		{
-			int windowStart = fromCharacterLine * Width + x1;
-			int windowLength = width;
-
-			for (int y = _clipRect.Y1; y <= _clipRect.Y2; y++)
+			if (width == CharacterWidth)
 			{
+				int windowStart = fromCharacterLine * Width;
+				int windowLength = (toCharacterLine - fromCharacterLine + 1) * Width;
+
 				if (windowStart + windowLength > planeBytesUsed)
 					windowLength = planeBytesUsed - windowStart;
 
@@ -228,6 +211,26 @@ public class TextLibrary : VisualLibrary
 				plane0.Clear();
 				plane1.Fill(Attributes);
 			}
+			else
+			{
+				int windowStart = fromCharacterLine * Width + x1;
+				int windowLength = width;
+
+				for (int y = _clipRect.Y1; y <= _clipRect.Y2; y++)
+				{
+					if (windowStart + windowLength > planeBytesUsed)
+						windowLength = planeBytesUsed - windowStart;
+
+					if (windowLength <= 0)
+						return;
+
+					var plane0 = vramSpan.Slice(0x00000 + windowStart, windowLength);
+					var plane1 = vramSpan.Slice(0x10000 + windowStart, windowLength);
+
+					plane0.Clear();
+					plane1.Fill(Attributes);
+				}
+			}
 		}
 	}
 
@@ -236,7 +239,10 @@ public class TextLibrary : VisualLibrary
 		MoveCursor(x, y);
 
 		if (_clipRect.Contains(x, y))
-			WriteAttributes(charCount);
+		{
+			using (HidePointerForOperationIfPointerAware())
+				WriteAttributes(charCount);
+		}
 	}
 
 	public override void WriteText(ReadOnlySpan<byte> buffer)
@@ -279,49 +285,52 @@ public class TextLibrary : VisualLibrary
 
 		var attributes = Attributes;
 
-		while (!buffer.IsEmpty)
+		using (HidePointerForOperationIfPointerAware())
 		{
-			int remainingChars = Width - cursorX;
-
-			int spanLength = Math.Min(buffer.Length, remainingChars);
-
-			for (int i = 0; i < spanLength; i++)
+			while (!buffer.IsEmpty)
 			{
-				if (_clipRect.Contains(cursorX, cursorY))
+				int remainingChars = Width - cursorX;
+
+				int spanLength = Math.Min(buffer.Length, remainingChars);
+
+				for (int i = 0; i < spanLength; i++)
 				{
-					plane0[o] = buffer[i];
-					if (EnableWriteAttributes)
-						plane1[o] = attributes;
+					if (_clipRect.Contains(cursorX, cursorY))
+					{
+						plane0[o] = buffer[i];
+						if (EnableWriteAttributes)
+							plane1[o] = attributes;
+					}
+
+					o++;
+					cursorX++;
 				}
 
-				o++;
-				cursorX++;
-			}
+				buffer = buffer.Slice(spanLength);
 
-			buffer = buffer.Slice(spanLength);
-
-			if (!buffer.IsEmpty)
-			{
-				cursorX = 0;
-
-				if (cursorY + 1 <= CharacterLineWindowEnd)
-					cursorY++;
-				else
+				if (!buffer.IsEmpty)
 				{
-					ScrollText(
-						plane0.Slice(scrollOffset, plane1.Length - scrollOffset),
-						plane1.Slice(scrollOffset, plane0.Length - scrollOffset),
-						clearLastLineOnScroll);
+					cursorX = 0;
 
-					o -= Width;
+					if (cursorY + 1 <= CharacterLineWindowEnd)
+						cursorY++;
+					else
+					{
+						ScrollText(
+							plane0.Slice(scrollOffset, plane1.Length - scrollOffset),
+							plane1.Slice(scrollOffset, plane0.Length - scrollOffset),
+							clearLastLineOnScroll);
+
+						o -= Width;
+					}
 				}
 			}
+
+			if (cursorX < CharacterWidth)
+				MoveCursor(cursorX, cursorY);
+			else
+				PassiveNewLine();
 		}
-
-		if (cursorX < CharacterWidth)
-			MoveCursor(cursorX, cursorY);
-		else
-			PassiveNewLine();
 	}
 
 	public void WriteAttributes(int charCount)
@@ -357,38 +366,41 @@ public class TextLibrary : VisualLibrary
 
 		var attributes = Attributes;
 
-		while (charCount > 0)
+		using (HidePointerForOperationIfPointerAware())
 		{
-			int remainingChars = Width - cursorX;
-
-			int spanLength = Math.Min(charCount, remainingChars);
-
-			for (int i = 0; i < spanLength; i++)
+			while (charCount > 0)
 			{
-				if (_clipRect.Contains(cursorX, cursorY))
-					plane1[o] = attributes;
+				int remainingChars = Width - cursorX;
 
-				o++;
-				cursorX++;
-			}
+				int spanLength = Math.Min(charCount, remainingChars);
 
-			charCount -= spanLength;
-
-			if (charCount > 0)
-			{
-				cursorX = 0;
-
-				if (cursorY + 1 <= CharacterLineWindowEnd)
-					cursorY++;
-				else
+				for (int i = 0; i < spanLength; i++)
 				{
-					ScrollText(Span<byte>.Empty, plane1.Slice(scrollOffset, plane1.Length - scrollOffset), clearLastLineOnScroll);
-					o -= Width;
+					if (_clipRect.Contains(cursorX, cursorY))
+						plane1[o] = attributes;
+
+					o++;
+					cursorX++;
+				}
+
+				charCount -= spanLength;
+
+				if (charCount > 0)
+				{
+					cursorX = 0;
+
+					if (cursorY + 1 <= CharacterLineWindowEnd)
+						cursorY++;
+					else
+					{
+						ScrollText(Span<byte>.Empty, plane1.Slice(scrollOffset, plane1.Length - scrollOffset), clearLastLineOnScroll);
+						o -= Width;
+					}
 				}
 			}
-		}
 
-		MoveCursor(cursorX, cursorY);
+			MoveCursor(cursorX, cursorY);
+		}
 	}
 
 	public override void ScrollText()
@@ -440,50 +452,53 @@ public class TextLibrary : VisualLibrary
 
 	void ScrollText(Span<byte> plane0, Span<byte> plane1, bool clearLastLine)
 	{
-		int x1 = Math.Max(0, _clipRect.X1);
-		int x2 = Math.Min(CharacterWidth - 1, _clipRect.X2);
-
-		int width = x2 - x1 + 1;
-
-		if (width == Width)
+		using (HidePointerForOperationIfPointerAware())
 		{
-			if (plane0.Length > Width)
+			int x1 = Math.Max(0, _clipRect.X1);
+			int x2 = Math.Min(CharacterWidth - 1, _clipRect.X2);
+
+			int width = x2 - x1 + 1;
+
+			if (width == Width)
 			{
-				plane0.Slice(Width).CopyTo(plane0);
+				if (plane0.Length > Width)
+				{
+					plane0.Slice(Width).CopyTo(plane0);
+					if (clearLastLine)
+						plane0.Slice(plane0.Length - Width).Fill((byte)' ');
+				}
+				else if (clearLastLine)
+					plane0.Fill((byte)' ');
+
+				if (plane1.Length > Width)
+				{
+					plane1.Slice(Width).CopyTo(plane1);
+					if (clearLastLine)
+						plane1.Slice(plane1.Length - Width).Fill(Attributes);
+				}
+				else if (clearLastLine)
+					plane1.Fill(Attributes);
+			}
+			else
+			{
+				while (plane0.Length > Width)
+				{
+					plane0.Slice(x1 + Width, width).CopyTo(plane0.Slice(x1));
+					plane0 = plane0.Slice(Width);
+				}
+
 				if (clearLastLine)
-					plane0.Slice(plane0.Length - Width).Fill((byte)' ');
-			}
-			else if (clearLastLine)
-				plane0.Fill((byte)' ');
+					plane0.Slice(x1, width).Fill((byte)' ');
 
-			if (plane1.Length > Width)
-			{
-				plane1.Slice(Width).CopyTo(plane1);
+				while (plane1.Length > Width)
+				{
+					plane1.Slice(x1 + Width, width).CopyTo(plane1.Slice(x1));
+					plane1 = plane1.Slice(Width);
+				}
+
 				if (clearLastLine)
-					plane1.Slice(plane1.Length - Width).Fill(Attributes);
+					plane1.Slice(x1, width).Fill(Attributes);
 			}
-			else if (clearLastLine)
-				plane1.Fill(Attributes);
-		}
-		else
-		{
-			while (plane0.Length > Width)
-			{
-				plane0.Slice(x1 + Width, width).CopyTo(plane0.Slice(x1));
-				plane0 = plane0.Slice(Width);
-			}
-
-			if (clearLastLine)
-				plane0.Slice(x1, width).Fill((byte)' ');
-
-			while (plane1.Length > Width)
-			{
-				plane1.Slice(x1 + Width, width).CopyTo(plane1.Slice(x1));
-				plane1 = plane1.Slice(Width);
-			}
-
-			if (clearLastLine)
-				plane1.Slice(x1, width).Fill(Attributes);
 		}
 	}
 
@@ -492,11 +507,10 @@ public class TextLibrary : VisualLibrary
 
 	byte _pointerSaved;
 	int _pointerSavedOffset;
-	bool _pointerDrawn;
 
 	protected override void DrawPointer()
 	{
-		if (PointerVisible && !_pointerDrawn)
+		if (PointerVisible && !PointerIsDrawn)
 		{
 			int pointerCharacterX = PointerX / Array.Sequencer.CharacterWidth;
 			int pointerCharacterY = PointerY / Array.CRTController.CharacterHeight;
@@ -512,6 +526,11 @@ public class TextLibrary : VisualLibrary
 			_pointerSaved = plane1[pointerOffset];
 			_pointerSavedOffset = pointerOffset;
 
+			PointerRect.X1 = pointerCharacterX * Array.Sequencer.CharacterWidth;
+			PointerRect.Y1 = pointerCharacterY * Array.CRTController.CharacterHeight;
+			PointerRect.X2 = PointerRect.X1 + Array.Sequencer.CharacterWidth - 1;
+			PointerRect.Y2 = PointerRect.Y1 + Array.CRTController.CharacterHeight - 1;
+
 			byte highlighted = unchecked((byte)((_pointerSaved << 4) | (_pointerSaved >> 4)));
 
 			if (Array.AttributeController.EnableBlinking)
@@ -519,13 +538,13 @@ public class TextLibrary : VisualLibrary
 
 			plane1[pointerOffset] = highlighted;
 
-			_pointerDrawn = true;
+			PointerIsDrawn = true;
 		}
 	}
 
 	protected override void UndrawPointer()
 	{
-		if (_pointerDrawn)
+		if (PointerIsDrawn)
 		{
 			Span<byte> vramSpan = Array.VRAM;
 
@@ -534,7 +553,7 @@ public class TextLibrary : VisualLibrary
 			var plane1 = vramSpan.Slice(0x10000);
 
 			plane1[_pointerSavedOffset] = _pointerSaved;
-			_pointerDrawn = false;
+			PointerIsDrawn = false;
 		}
 	}
 }

@@ -420,6 +420,8 @@ public abstract class VisualLibrary
 
 	public abstract void ScrollText();
 
+	public bool EnablePointerAwareDrawing = false;
+
 	protected abstract void DrawPointer();
 	protected abstract void UndrawPointer();
 
@@ -433,6 +435,11 @@ public abstract class VisualLibrary
 	int _pointerX;
 	int _pointerY;
 	bool _pointerVisible;
+
+	protected IntegerRect PointerRect;
+	protected bool PointerIsDrawn;
+	protected bool PointerIsHiddenForOperation;
+	protected bool PointerIsDrawing;
 
 	public void ShowPointer()
 	{
@@ -454,5 +461,98 @@ public abstract class VisualLibrary
 		_pointerY = newY;
 
 		DrawPointer();
+	}
+
+	class HidePointerScope : IDisposable
+	{
+		VisualLibrary _owner;
+
+		public HidePointerScope(VisualLibrary owner)
+		{
+			_owner = owner;
+			_owner.BeginOperation();
+		}
+
+		public void Dispose()
+		{
+			_owner.EndOperation();
+		}
+	}
+
+	void BeginOperation()
+	{
+		UndrawPointer();
+		PointerIsHiddenForOperation = true;
+	}
+
+	void EndOperation()
+	{
+		PointerIsHiddenForOperation = false;
+		DrawPointer();
+	}
+
+	protected IDisposable? HidePointerForOperationIfPointerAware()
+	{
+		if (EnablePointerAwareDrawing)
+			return HidePointerForOperation();
+		else
+			return null;
+	}
+
+	public IDisposable? HidePointerForOperation()
+	{
+		if (PointerIsHiddenForOperation || PointerIsDrawing)
+			return null;
+
+		if (!PointerIsDrawn)
+			return null;
+
+		return new HidePointerScope(this);
+	}
+
+	protected IDisposable? HidePointerForOperationIfPointerAware(int x, int y)
+	{
+		if (EnablePointerAwareDrawing)
+			return HidePointerForOperation(x, y);
+		else
+			return null;
+	}
+
+	public IDisposable? HidePointerForOperation(int x, int y)
+	{
+		if (PointerIsHiddenForOperation || PointerIsDrawing)
+			return null;
+
+		if (!PointerIsDrawn)
+			return null;
+
+		if (!PointerRect.Contains(x, y))
+			return null;
+
+		return new HidePointerScope(this);
+	}
+
+	protected IDisposable? HidePointerForOperationIfPointerAware(int x1, int y1, int x2, int y2)
+	{
+		if (EnablePointerAwareDrawing)
+			return HidePointerForOperation(x1, y1, x2, y2);
+		else
+			return null;
+	}
+
+	public IDisposable? HidePointerForOperation(int x1, int y1, int x2, int y2)
+	{
+		if (PointerIsHiddenForOperation || PointerIsDrawing)
+			return null;
+
+		if (!PointerIsDrawn)
+			return null;
+
+		var operationRect = new IntegerRect(x1, y1, x2, y2);
+
+		if (!operationRect.Intersects(PointerRect))
+			return null;
+
+		return new HidePointerScope(this);
 	}
 }

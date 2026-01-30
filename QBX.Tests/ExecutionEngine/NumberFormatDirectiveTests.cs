@@ -303,5 +303,8 @@ public class NumberFormatDirectiveTests
 		public override void RefreshParameters() { }
 		public override void ScrollText() { }
 		protected override void ClearImplementation(int fromCharacterLine, int toCharacterLine) { }
+
+		protected override void DrawPointer() { }
+		protected override void UndrawPointer() { }
 	}
 }

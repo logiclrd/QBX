@@ -48,7 +48,7 @@ public class GraphicsLibrary_2bppInterleaved : GraphicsLibrary
 
 	protected override void ClearGraphicsImplementation(int windowStart, int windowEnd)
 	{
-		using (HidePointerForOperation())
+		using (HidePointerForOperationIfPointerAware())
 		{
 			var vramSpan = Array.VRAM.AsSpan();
 
@@ -64,7 +64,7 @@ public class GraphicsLibrary_2bppInterleaved : GraphicsLibrary
 
 	public override int PixelGet(int x, int y)
 	{
-		using (HidePointerForOperation(x, y))
+		using (HidePointerForOperationIfPointerAware(x, y))
 		{
 			if ((x >= 0) && (x < Width)
 			 && (y >= 0) && (y < Height))
@@ -92,7 +92,7 @@ public class GraphicsLibrary_2bppInterleaved : GraphicsLibrary
 
 	public override void PixelSet(int x, int y, int attribute)
 	{
-		using (HidePointerForOperation(x, y))
+		using (HidePointerForOperationIfPointerAware(x, y))
 		{
 			if ((x >= 0) && (x < Width)
 			 && (y >= 0) && (y < Height))
@@ -134,7 +134,7 @@ public class GraphicsLibrary_2bppInterleaved : GraphicsLibrary
 		if (x2 >= Width)
 			x2 = Width - 1;
 
-		using (HidePointerForOperation(x1, y, x2, y))
+		using (HidePointerForOperationIfPointerAware(x1, y, x2, y))
 		{
 			attribute &= 3;
 
@@ -272,7 +272,7 @@ public class GraphicsLibrary_2bppInterleaved : GraphicsLibrary
 		if ((x + w > Width) || (y + h > Height))
 			throw new InvalidOperationException();
 
-		using (HidePointerForOperation(x1, y1, x2, y2))
+		using (HidePointerForOperationIfPointerAware(x1, y1, x2, y2))
 		{
 			var vramSpan = Array.VRAM.AsSpan();
 
@@ -341,7 +341,7 @@ public class GraphicsLibrary_2bppInterleaved : GraphicsLibrary
 		if ((x + w > Width) || (y + h > Height))
 			throw new InvalidOperationException();
 
-		using (HidePointerForOperation(x, y, x + w - 1, y + h - 1))
+		using (HidePointerForOperationIfPointerAware(x, y, x + w - 1, y + h - 1))
 		{
 			var vramSpan = Array.VRAM.AsSpan();
 
@@ -395,7 +395,7 @@ public class GraphicsLibrary_2bppInterleaved : GraphicsLibrary
 		if ((x + w > Width) || (y + h > Height))
 			throw new InvalidOperationException();
 
-		using (HidePointerForOperation(x, y, x + w - 1, y + h - 1))
+		using (HidePointerForOperationIfPointerAware(x, y, x + w - 1, y + h - 1))
 		{
 			var vramSpan = Array.VRAM.AsSpan();
 
@@ -466,7 +466,7 @@ public class GraphicsLibrary_2bppInterleaved : GraphicsLibrary
 		if ((x >= Width) || (y >= Height))
 			return;
 
-		using (HidePointerForOperation(x, y, x + w - 1, y + h - 1))
+		using (HidePointerForOperationIfPointerAware(x, y, x + w - 1, y + h - 1))
 		{
 			var vramSpan = Array.VRAM.AsSpan();
 
@@ -548,7 +548,7 @@ public class GraphicsLibrary_2bppInterleaved : GraphicsLibrary
 		if (scanCount == 0)
 			return;
 
-		using (HidePointerForOperation(0, windowStart, Width, windowEnd + scanCount))
+		using (HidePointerForOperationIfPointerAware(0, windowStart, Width, windowEnd + scanCount))
 		{
 			var vramSpan = Array.VRAM.AsSpan();
 

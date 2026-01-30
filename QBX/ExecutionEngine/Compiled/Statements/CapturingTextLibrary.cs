@@ -15,4 +15,7 @@ class CapturingTextLibrary(Machine machine, StringValue captureBuffer) : VisualL
 	{
 		captureBuffer.Append(buffer);
 	}
+
+	protected override void DrawPointer() { }
+	protected override void UndrawPointer() { }
 }

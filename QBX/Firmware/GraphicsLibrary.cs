@@ -338,7 +338,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	public virtual void HorizontalLine(int x1, int x2, int y, int attribute)
 	{
-		using (HidePointerForOperation(x1, y, x2, y))
+		using (HidePointerForOperationIfPointerAware(x1, y, x2, y))
 			for (int x = x1; x <= x2; x++)
 				PixelSet(x, y, attribute);
 	}
@@ -346,7 +346,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 	protected virtual void HorizontalLine<TPattern>(int x1, int x2, int y, TPattern pattern)
 		where TPattern : IPattern
 	{
-		using (HidePointerForOperation(x1, y, x2, y))
+		using (HidePointerForOperationIfPointerAware(x1, y, x2, y))
 			for (int x = x1; x <= x2; x++)
 				PixelSet(x, y, pattern.GetAttribute(x, y));
 	}
@@ -386,7 +386,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	public void Line(int x1, int y1, int x2, int y2, int attribute)
 	{
-		using (HidePointerForOperation(x1, y1, x2, y2))
+		using (HidePointerForOperationIfPointerAware(x1, y1, x2, y2))
 		{
 			int dx = Math.Abs(x1 - x2);
 			int dy = Math.Abs(y1 - y2);
@@ -479,7 +479,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	public void LineStyle(int x1, int y1, int x2, int y2, int attribute, int styleBits)
 	{
-		using (HidePointerForOperation(x1, y1, x2, y2))
+		using (HidePointerForOperationIfPointerAware(x1, y1, x2, y2))
 		{
 			int dx = Math.Abs(x1 - x2);
 			int dy = Math.Abs(y1 - y2);
@@ -581,7 +581,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	public void Box(int x1, int y1, int x2, int y2, int attribute)
 	{
-		using (HidePointerForOperation(x1, y1, x2, y2))
+		using (HidePointerForOperationIfPointerAware(x1, y1, x2, y2))
 		{
 			LastPoint = Window.TranslateBack(x2, y2);
 
@@ -666,7 +666,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	public void BoxStyle(int x1, int y1, int x2, int y2, int attribute, int styleBits)
 	{
-		using (HidePointerForOperation(x1, y1, x2, y2))
+		using (HidePointerForOperationIfPointerAware(x1, y1, x2, y2))
 		{
 			LastPoint = Window.TranslateBack(x2, y2);
 
@@ -788,7 +788,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	public void FillBox(int x1, int y1, int x2, int y2, int attribute)
 	{
-		using (HidePointerForOperation(x1, y1, x2, y2))
+		using (HidePointerForOperationIfPointerAware(x1, y1, x2, y2))
 		{
 			LastPoint = Window.TranslateBack(x2, y2);
 
@@ -899,7 +899,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 		if ((radiusX < 0) || (radiusY < 0))
 			return;
 
-		using (HidePointerForOperation(x - radiusX, y - radiusY, x + radiusX, y + radiusY))
+		using (HidePointerForOperationIfPointerAware(x - radiusX, y - radiusY, x + radiusX, y + radiusY))
 		{
 			if ((radiusX == 0) && (radiusY == 0))
 			{
@@ -1445,7 +1445,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 		var borderFillMethod = s_BorderFillMethodDefinition.MakeGenericMethod(fillPattern.GetType(), backgroundPattern.GetType());
 
-		using (HidePointerForOperation())
+		using (HidePointerForOperationIfPointerAware())
 			borderFillMethod.Invoke(this, [x, y, borderAttribute, fillPattern, backgroundPattern]);
 	}
 
@@ -1836,7 +1836,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 		if (buffer.Length == 0)
 			return;
 
-		using (HidePointerForOperation())
+		using (HidePointerForOperationIfPointerAware())
 		{
 			ResolvePassiveNewLine();
 
@@ -1863,7 +1863,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 		byte[] glyph = Font[character];
 
-		using (HidePointerForOperation())
+		using (HidePointerForOperationIfPointerAware())
 		{
 			for (int yy = 0; yy < characterHeight; yy++)
 			{
@@ -1910,147 +1910,66 @@ public abstract class GraphicsLibrary : VisualLibrary
 	protected abstract byte[] MakePointerSprite();
 	protected abstract byte[] MakePointerMask();
 
-	public bool EnablePointerAwareDrawing = false;
-
 	byte[]? _pointerSprite;
 	byte[]? _pointerMask;
 	byte[]? _pointerSaved;
-	int _pointerSavedX;
-	int _pointerSavedY;
-	bool _pointerDrawn;
-	bool _isHiddenForOperation;
-	bool _isDrawing;
 
 	protected override void DrawPointer()
 	{
-		if (PointerVisible && !_pointerDrawn)
+		if (PointerVisible && !PointerIsDrawn)
 		{
 			_pointerSprite ??= MakePointerSprite();
 			_pointerMask ??= MakePointerMask();
 			_pointerSaved = new byte[_pointerSprite.Length];
 
-			_pointerSavedX = Math.Max(0, PointerX - 1);
-			_pointerSavedY = Math.Max(0, PointerY - 1);
+			PointerRect.X1 = Math.Max(0, PointerX - 1);
+			PointerRect.Y1 = Math.Max(0, PointerY - 1);
+			PointerRect.X2 = PointerRect.X1 + 15;
+			PointerRect.Y2 = PointerRect.Y1 + 15;
 
-			_isDrawing = true;
+			PointerIsDrawing = true;
 
 			try
 			{
 				GetSprite(
-					_pointerSavedX, _pointerSavedY,
-					Math.Min(_pointerSavedX + 15, Width - 1),
-					Math.Min(_pointerSavedY + 15, Height - 1),
+					PointerRect.X1, PointerRect.Y1,
+					Math.Min(PointerRect.X2, Width - 1),
+					Math.Min(PointerRect.Y2, Height - 1),
 					_pointerSaved);
 
 				PutMaskedSprite(
 					_pointerSprite, _pointerMask,
 					PointerX - 1, PointerY - 1);
 
-				_pointerDrawn = true;
+				PointerIsDrawn = true;
 			}
 			finally
 			{
-				_isDrawing = false;
+				PointerIsDrawing = false;
 			}
 		}
 	}
 
 	protected override void UndrawPointer()
 	{
-		if (_pointerDrawn)
+		if (PointerIsDrawn)
 		{
-			_isDrawing = true;
+			PointerIsDrawing = true;
 
 			try
 			{
 				PutSprite(
 					_pointerSaved,
 					PutSpriteAction.PixelSet,
-					_pointerSavedX, _pointerSavedY);
+					PointerRect.X1, PointerRect.Y1);
 
-				_pointerDrawn = false;
+				PointerIsDrawn = false;
 			}
 			finally
 			{
-				_isDrawing = false;
+				PointerIsDrawing = false;
 			}
 		}
-	}
-
-	class HidePointerScope : IDisposable
-	{
-		GraphicsLibrary _owner;
-
-		public HidePointerScope(GraphicsLibrary owner)
-		{
-			_owner = owner;
-			_owner.BeginOperation();
-		}
-
-		public void Dispose()
-		{
-			_owner.EndOperation();
-		}
-	}
-
-	void BeginOperation()
-	{
-		UndrawPointer();
-		_isHiddenForOperation = true;
-	}
-
-	void EndOperation()
-	{
-		_isHiddenForOperation = false;
-		DrawPointer();
-	}
-
-	protected IDisposable? HidePointerForOperation()
-	{
-		if (_isHiddenForOperation || _isDrawing)
-			return null;
-
-		if (!_pointerDrawn)
-			return null;
-
-		return new HidePointerScope(this);
-	}
-
-	protected IDisposable? HidePointerForOperation(int x, int y)
-	{
-		if (_isHiddenForOperation || _isDrawing || !EnablePointerAwareDrawing)
-			return null;
-
-		if (!_pointerDrawn)
-			return null;
-
-		if ((x < _pointerSavedX) || (y < _pointerSavedY)
-		 || (x > _pointerSavedX + 15) || (y > _pointerSavedY + 15))
-			return null;
-
-		return new HidePointerScope(this);
-	}
-
-	protected IDisposable? HidePointerForOperation(int x1, int y1, int x2, int y2)
-	{
-		if (_isHiddenForOperation || _isDrawing)
-			return null;
-
-		if (!_pointerDrawn)
-			return null;
-
-		var pointerRect = new IntegerRect(
-			_pointerSavedX,
-			_pointerSavedY,
-			_pointerSavedX + 15,
-			_pointerSavedY + 15);
-
-		var operationRect = new IntegerRect(x1, y1, x2, y2);
-
-		if (!operationRect.Intersects(pointerRect))
-			return null;
-
-		return new HidePointerScope(this);
 	}
 	#endregion
 }
