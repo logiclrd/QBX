@@ -49,4 +49,11 @@ public struct IntegerRect
 			(x >= X1) && (x <= X2) &&
 			(y >= Y1) && (y <= Y2);
 	}
+
+	public bool Intersects(IntegerRect other)
+	{
+		return
+			(X1 <= other.X2) && (other.X1 <= X2) &&
+			(Y1 <= other.Y2) && (other.Y1 <= Y2);
+	}
 }

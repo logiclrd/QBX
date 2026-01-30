@@ -338,15 +338,17 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	public virtual void HorizontalLine(int x1, int x2, int y, int attribute)
 	{
-		for (int x = x1; x <= x2; x++)
-			PixelSet(x, y, attribute);
+		using (HidePointerForOperation(x1, y, x2, y))
+			for (int x = x1; x <= x2; x++)
+				PixelSet(x, y, attribute);
 	}
 
 	protected virtual void HorizontalLine<TPattern>(int x1, int x2, int y, TPattern pattern)
 		where TPattern : IPattern
 	{
-		for (int x = x1; x <= x2; x++)
-			PixelSet(x, y, pattern.GetAttribute(x, y));
+		using (HidePointerForOperation(x1, y, x2, y))
+			for (int x = x1; x <= x2; x++)
+				PixelSet(x, y, pattern.GetAttribute(x, y));
 	}
 	#endregion
 
@@ -384,56 +386,59 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	public void Line(int x1, int y1, int x2, int y2, int attribute)
 	{
-		int dx = Math.Abs(x1 - x2);
-		int dy = Math.Abs(y1 - y2);
-
-		LastPoint = Window.TranslateBack(x2, y2);
-
-		if (dx > dy)
+		using (HidePointerForOperation(x1, y1, x2, y2))
 		{
-			if (x1 > x2)
-				(x1, y1, x2, y2) = (x2, y2, x1, y1);
+			int dx = Math.Abs(x1 - x2);
+			int dy = Math.Abs(y1 - y2);
 
-			int sy = Math.Sign(y2 - y1);
+			LastPoint = Window.TranslateBack(x2, y2);
 
-			int xStart = x1;
-			int y = y1;
-			int yError = 0;
-
-			for (int x = x1; x <= x2; x++)
+			if (dx > dy)
 			{
-				yError += dy;
+				if (x1 > x2)
+					(x1, y1, x2, y2) = (x2, y2, x1, y1);
 
-				if (yError >= dx)
+				int sy = Math.Sign(y2 - y1);
+
+				int xStart = x1;
+				int y = y1;
+				int yError = 0;
+
+				for (int x = x1; x <= x2; x++)
 				{
-					HorizontalLine(xStart, x - 1, y, attribute);
+					yError += dy;
 
-					xStart = x;
+					if (yError >= dx)
+					{
+						HorizontalLine(xStart, x - 1, y, attribute);
 
-					yError -= dx;
-					y += sy;
+						xStart = x;
+
+						yError -= dx;
+						y += sy;
+					}
 				}
+
+				HorizontalLine(xStart, x2, y, attribute);
 			}
-
-			HorizontalLine(xStart, x2, y, attribute);
-		}
-		else
-		{
-			if (y1 > y2)
-				(x1, y1, x2, y2) = (x2, y2, x1, y1);
-
-			int sx = Math.Sign(x2 - x1);
-
-			for (int x = x1, y = y1, xError = 0; y <= y2; y++)
+			else
 			{
-				PixelSet(x, y, attribute);
+				if (y1 > y2)
+					(x1, y1, x2, y2) = (x2, y2, x1, y1);
 
-				xError += dx;
+				int sx = Math.Sign(x2 - x1);
 
-				if (xError >= dy)
+				for (int x = x1, y = y1, xError = 0; y <= y2; y++)
 				{
-					xError -= dy;
-					x += sx;
+					PixelSet(x, y, attribute);
+
+					xError += dx;
+
+					if (xError >= dy)
+					{
+						xError -= dy;
+						x += sx;
+					}
 				}
 			}
 		}
@@ -474,65 +479,68 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	public void LineStyle(int x1, int y1, int x2, int y2, int attribute, int styleBits)
 	{
-		int dx = Math.Abs(x1 - x2);
-		int dy = Math.Abs(y1 - y2);
-
-		LastPoint = Window.TranslateBack(x2, y2);
-
-		if (dx > dy)
+		using (HidePointerForOperation(x1, y1, x2, y2))
 		{
-			if (x1 > x2)
-				(x1, y1, x2, y2) = (x2, y2, x1, y1);
+			int dx = Math.Abs(x1 - x2);
+			int dy = Math.Abs(y1 - y2);
 
-			int sy = Math.Sign(y2 - y1);
+			LastPoint = Window.TranslateBack(x2, y2);
 
-			int y = y1;
-			int yError = 0;
-
-			int test = 0x8000;
-
-			for (int x = x1; x <= x2; x++)
+			if (dx > dy)
 			{
-				if ((styleBits & test) != 0)
-					PixelSet(x, y, attribute);
+				if (x1 > x2)
+					(x1, y1, x2, y2) = (x2, y2, x1, y1);
 
-				test >>= 1;
-				if (test == 0)
-					test = 0x8000;
+				int sy = Math.Sign(y2 - y1);
 
-				yError += dy;
+				int y = y1;
+				int yError = 0;
 
-				if (yError >= dx)
+				int test = 0x8000;
+
+				for (int x = x1; x <= x2; x++)
 				{
-					yError -= dx;
-					y += sy;
+					if ((styleBits & test) != 0)
+						PixelSet(x, y, attribute);
+
+					test >>= 1;
+					if (test == 0)
+						test = 0x8000;
+
+					yError += dy;
+
+					if (yError >= dx)
+					{
+						yError -= dx;
+						y += sy;
+					}
 				}
 			}
-		}
-		else
-		{
-			if (y1 > y2)
-				(x1, y1, x2, y2) = (x2, y2, x1, y1);
-
-			int sx = Math.Sign(x2 - x1);
-
-			int test = 0x8000;
-
-			for (int x = x1, y = y1, xError = 0; y <= y2; y++)
+			else
 			{
-				if ((styleBits & test) != 0)
-					PixelSet(x, y, attribute);
+				if (y1 > y2)
+					(x1, y1, x2, y2) = (x2, y2, x1, y1);
 
-				test >>= 1;
-				if (test == 0)
-					test = 0x8000;
+				int sx = Math.Sign(x2 - x1);
 
-				xError += dx;
+				int test = 0x8000;
 
-				if (xError >= dy)
+				for (int x = x1, y = y1, xError = 0; y <= y2; y++)
 				{
-					xError -= dy;
-					x += sx;
+					if ((styleBits & test) != 0)
+						PixelSet(x, y, attribute);
+
+					test >>= 1;
+					if (test == 0)
+						test = 0x8000;
+
+					xError += dx;
+
+					if (xError >= dy)
+					{
+						xError -= dy;
+						x += sx;
+					}
 				}
 			}
 		}
@@ -573,49 +581,52 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	public void Box(int x1, int y1, int x2, int y2, int attribute)
 	{
-		LastPoint = Window.TranslateBack(x2, y2);
-
-		if (y1 > y2)
-			(y1, y2) = (y2, y1);
-		if (x1 > x2)
-			(x1, x2) = (x2, x1);
-
-		bool drawLeft = true;
-		bool drawRight = true;
-
-		if (x1 < 0)
+		using (HidePointerForOperation(x1, y1, x2, y2))
 		{
-			x1 = 0;
-			drawLeft = false;
-		}
+			LastPoint = Window.TranslateBack(x2, y2);
 
-		if (x2 >= Width)
-		{
-			x2 = Width - 1;
-			drawRight = false;
-		}
+			if (y1 > y2)
+				(y1, y2) = (y2, y1);
+			if (x1 > x2)
+				(x1, x2) = (x2, x1);
 
-		if (x1 > x2) // box is entirely off the screen
-			return;
+			bool drawLeft = true;
+			bool drawRight = true;
 
-		if (y1 >= 0)
-			HorizontalLine(x1, x2, y1++, attribute);
-		else
-			y1 = 0;
-
-		if (y2 < Height)
-			HorizontalLine(x1, x2, y2--, attribute);
-		else
-			y2 = Height - 1;
-
-		if (drawLeft || drawRight)
-		{
-			for (int y = y1; y <= y2; y++)
+			if (x1 < 0)
 			{
-				if (drawLeft)
-					PixelSet(x1, y, attribute);
-				if (drawRight)
-					PixelSet(x2, y, attribute);
+				x1 = 0;
+				drawLeft = false;
+			}
+
+			if (x2 >= Width)
+			{
+				x2 = Width - 1;
+				drawRight = false;
+			}
+
+			if (x1 > x2) // box is entirely off the screen
+				return;
+
+			if (y1 >= 0)
+				HorizontalLine(x1, x2, y1++, attribute);
+			else
+				y1 = 0;
+
+			if (y2 < Height)
+				HorizontalLine(x1, x2, y2--, attribute);
+			else
+				y2 = Height - 1;
+
+			if (drawLeft || drawRight)
+			{
+				for (int y = y1; y <= y2; y++)
+				{
+					if (drawLeft)
+						PixelSet(x1, y, attribute);
+					if (drawRight)
+						PixelSet(x2, y, attribute);
+				}
 			}
 		}
 	}
@@ -655,86 +666,89 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	public void BoxStyle(int x1, int y1, int x2, int y2, int attribute, int styleBits)
 	{
-		LastPoint = Window.TranslateBack(x2, y2);
-
-		if (y1 > y2)
-			(y1, y2) = (y2, y1);
-		if (x1 > x2)
-			(x1, x2) = (x2, x1);
-
-		bool drawLeft = true;
-		bool drawRight = true;
-
-		if (x1 < 0)
+		using (HidePointerForOperation(x1, y1, x2, y2))
 		{
-			x1 = 0;
-			drawLeft = false;
-		}
+			LastPoint = Window.TranslateBack(x2, y2);
 
-		if (x2 >= Width)
-		{
-			x2 = Width - 1;
-			drawRight = false;
-		}
+			if (y1 > y2)
+				(y1, y2) = (y2, y1);
+			if (x1 > x2)
+				(x1, x2) = (x2, x1);
 
-		if (x1 > x2) // box is entirely off the screen
-			return;
+			bool drawLeft = true;
+			bool drawRight = true;
 
-		int test = 0x8000;
-
-		if (y2 < Height)
-		{
-			for (int x = x1; x < x2; x++)
+			if (x1 < 0)
 			{
-				if ((styleBits & test) != 0)
-					PixelSet(x, y2, attribute);
-
-				test >>= 1;
-				if (test == 0)
-					test = 0x8000;
+				x1 = 0;
+				drawLeft = false;
 			}
-		}
-		else
-			y2 = Height - 1;
 
-		if (y1 >= 0)
-		{
-			for (int x = x1; x < x2; x++)
+			if (x2 >= Width)
 			{
-				if ((styleBits & test) != 0)
-					PixelSet(x, y1, attribute);
-
-				test >>= 1;
-				if (test == 0)
-					test = 0x8000;
+				x2 = Width - 1;
+				drawRight = false;
 			}
-		}
-		else
-			y1 = 0;
 
-		if (drawRight)
-		{
-			for (int y = y1; y <= y2; y++)
+			if (x1 > x2) // box is entirely off the screen
+				return;
+
+			int test = 0x8000;
+
+			if (y2 < Height)
 			{
-				if ((styleBits & test) != 0)
-					PixelSet(x2, y, attribute);
+				for (int x = x1; x < x2; x++)
+				{
+					if ((styleBits & test) != 0)
+						PixelSet(x, y2, attribute);
 
-				test >>= 1;
-				if (test == 0)
-					test = 0x8000;
+					test >>= 1;
+					if (test == 0)
+						test = 0x8000;
+				}
 			}
-		}
+			else
+				y2 = Height - 1;
 
-		if (drawLeft)
-		{
-			for (int y = y1; y <= y2; y++)
+			if (y1 >= 0)
 			{
-				if ((styleBits & test) != 0)
-					PixelSet(x1, y, attribute);
+				for (int x = x1; x < x2; x++)
+				{
+					if ((styleBits & test) != 0)
+						PixelSet(x, y1, attribute);
 
-				test >>= 1;
-				if (test == 0)
-					test = 0x8000;
+					test >>= 1;
+					if (test == 0)
+						test = 0x8000;
+				}
+			}
+			else
+				y1 = 0;
+
+			if (drawRight)
+			{
+				for (int y = y1; y <= y2; y++)
+				{
+					if ((styleBits & test) != 0)
+						PixelSet(x2, y, attribute);
+
+					test >>= 1;
+					if (test == 0)
+						test = 0x8000;
+				}
+			}
+
+			if (drawLeft)
+			{
+				for (int y = y1; y <= y2; y++)
+				{
+					if ((styleBits & test) != 0)
+						PixelSet(x1, y, attribute);
+
+					test >>= 1;
+					if (test == 0)
+						test = 0x8000;
+				}
 			}
 		}
 	}
@@ -774,28 +788,31 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	public void FillBox(int x1, int y1, int x2, int y2, int attribute)
 	{
-		LastPoint = Window.TranslateBack(x2, y2);
+		using (HidePointerForOperation(x1, y1, x2, y2))
+		{
+			LastPoint = Window.TranslateBack(x2, y2);
 
-		if (y1 > y2)
-			(y1, y2) = (y2, y1);
-		if (x1 > x2)
-			(x1, x2) = (x2, x1);
+			if (y1 > y2)
+				(y1, y2) = (y2, y1);
+			if (x1 > x2)
+				(x1, x2) = (x2, x1);
 
-		if (y1 < 0)
-			y1 = 0;
-		if (y2 >= Height)
-			y2 = Height - 1;
+			if (y1 < 0)
+				y1 = 0;
+			if (y2 >= Height)
+				y2 = Height - 1;
 
-		if (x1 < 0)
-			x1 = 0;
-		if (x2 >= Width)
-			x2 = Width - 1;
+			if (x1 < 0)
+				x1 = 0;
+			if (x2 >= Width)
+				x2 = Width - 1;
 
-		if (x1 > x2) // box is entirely off the screen
-			return;
+			if (x1 > x2) // box is entirely off the screen
+				return;
 
-		for (int y = y1; y <= y2; y++)
-			HorizontalLine(x1, x2, y, attribute);
+			for (int y = y1; y <= y2; y++)
+				HorizontalLine(x1, x2, y, attribute);
+		}
 	}
 	#endregion
 
@@ -882,322 +899,325 @@ public abstract class GraphicsLibrary : VisualLibrary
 		if ((radiusX < 0) || (radiusY < 0))
 			return;
 
-		if ((radiusX == 0) && (radiusY == 0))
+		using (HidePointerForOperation(x - radiusX, y - radiusY, x + radiusX, y + radiusY))
 		{
-			PixelSet(x, y, attribute);
-			return;
-		}
-
-		if (radiusX == 0)
-		{
-			Line(x, y - radiusY, x, y + radiusY, attribute);
-			return;
-		}
-
-		if (radiusY == 0)
-		{
-			Line(x - radiusX, y, x + radiusX, y, attribute);
-			return;
-		}
-
-		IntegerPoint startPoint, endPoint;
-		int startOctant, endOctant;
-		IntegerRect startClip, endClip, startStopExclude;
-
-		startPoint = PointAtAngle(startAngle);
-		endPoint = PointAtAngle(endAngle);
-
-		startStopExclude = IntegerRect.Empty;
-
-		// Unless it's a perfect circle, after deformation, the angles aren't linear.
-		// The provided angles are interpreted as though we will be drawing a perfect
-		// circle, and then the resulting section is deformed to the requested
-		// ellipse. Our quadrant calculations need to work with the *actual* angle,
-		// so convert the ellipse point back.
-		startAngle = Math.Atan2(startPoint.Y, startPoint.X);
-		endAngle = Math.Atan2(endPoint.Y, endPoint.X);
-
-		if (startAngle < 0)
-			startAngle += 2 * Math.PI;
-		if (endAngle < 0)
-			endAngle += 2 * Math.PI;
-
-		startOctant = endOctant = -1;
-		startClip = endClip = IntegerRect.Unrestricted;
-
-		// Octants divide where the tangent is a multiple of 45 degrees
-		//
-		// - Divisions at the axes where the tangent is horizontal/vertical
-		// - Divisions at the angle that produces the points with +/- 45-degree tangents.
-		//
-		// These angles are only even subdivisions when the ellipse is a perfect circle.
-		//
-		// The point of intersection with these tangent lines occurs at
-		//
-		// (rx^2 / sqrt(rx^2 + ry^2), ry^2 / sqrt(rx^2 + ry^2))
-
-		double superRadius = Math.Sqrt(radiusX * radiusX + radiusY * radiusY);
-		double octantChangeX = radiusX * radiusX / superRadius;
-		double octantChangeY = radiusY * radiusY / superRadius;
-
-		double octantChangeAngle = Math.Atan2(octantChangeY, octantChangeX);
-
-		if (startAngle < octantChangeAngle)
-		{
-			startOctant = 0;
-			(startClip.X2, startClip.Y1) = startPoint;
-		}
-		else if (startAngle < Math.PI * 0.5) // top edge
-		{
-			startOctant = 1;
-			(startClip.X2, startClip.Y1) = startPoint;
-		}
-		else if (startAngle < Math.PI - octantChangeAngle)
-		{
-			startOctant = 2;
-			(startClip.X2, startClip.Y2) = startPoint;
-		}
-		else if (startAngle < Math.PI) // left edge
-		{
-			startOctant = 3;
-			(startClip.X2, startClip.Y2) = startPoint;
-		}
-		else if (startAngle < Math.PI + octantChangeAngle)
-		{
-			startOctant = 4;
-			(startClip.X1, startClip.Y2) = startPoint;
-		}
-		else if (startAngle < Math.PI * 1.5) // bottom edge
-		{
-			startOctant = 5;
-			(startClip.X1, startClip.Y2) = startPoint;
-		}
-		else if (startAngle < 2 * Math.PI - octantChangeAngle)
-		{
-			startOctant = 6;
-			(startClip.X1, startClip.Y1) = startPoint;
-		}
-		else if (startAngle < 2 * Math.PI) // right edge
-		{
-			startOctant = 7;
-			(startClip.X1, startClip.Y1) = startPoint;
-		}
-
-		// Obvious difference: draw up to end angle instead of starting at end angle
-		// Subtle difference: end angle of 0 is treated as the end of the circle
-
-		if (endAngle == 0)
-			endAngle = 2 * Math.PI;
-
-		if (endAngle < octantChangeAngle)
-		{
-			endOctant = 0;
-			(endClip.X1, endClip.Y2) = endPoint;
-		}
-		else if (endAngle < Math.PI * 0.5) // top edge
-		{
-			endOctant = 1;
-			(endClip.X1, endClip.Y2) = endPoint;
-		}
-		else if (endAngle < Math.PI - octantChangeAngle)
-		{
-			endOctant = 2;
-			(endClip.X1, endClip.Y1) = endPoint;
-		}
-		else if (endAngle < Math.PI) // left edge
-		{
-			endOctant = 3;
-			(endClip.X1, endClip.Y1) = endPoint;
-		}
-		else if (endAngle < Math.PI + octantChangeAngle)
-		{
-			endOctant = 4;
-			(endClip.X2, endClip.Y1) = endPoint;
-		}
-		else if (endAngle < Math.PI * 1.5) // bottom edge
-		{
-			endOctant = 5;
-			(endClip.X2, endClip.Y1) = endPoint;
-		}
-		else if (endAngle < 2 * Math.PI - octantChangeAngle)
-		{
-			endOctant = 6;
-			(endClip.X2, endClip.Y2) = endPoint;
-		}
-		else if (endAngle < 2 * Math.PI) // right edge
-		{
-			endOctant = 7;
-			(endClip.X2, endClip.Y2) = endPoint;
-		}
-
-		if (startOctant == endOctant)
-		{
-			startStopExclude.X1 = Math.Max(startClip.X1, endClip.X1);
-			startStopExclude.Y1 = Math.Max(startClip.Y1, endClip.Y1);
-			startStopExclude.X2 = Math.Min(startClip.X2, endClip.X2);
-			startStopExclude.Y2 = Math.Min(startClip.Y2, endClip.Y2);
-
-			if (startStopExclude.X1 > startStopExclude.X2)
-				(startStopExclude.X1, startStopExclude.X2) = (startStopExclude.X2, startStopExclude.X1);
-			if (startStopExclude.Y1 > startStopExclude.Y2)
-				(startStopExclude.Y1, startStopExclude.Y2) = (startStopExclude.Y2, startStopExclude.Y1);
-		}
-
-		// Now draw
-		if (drawStartRadius)
-			Line(x, y, x + startPoint.X, y - startPoint.Y, attribute);
-		if (drawEndRadius)
-			Line(x, y, x + endPoint.X, y - endPoint.Y, attribute);
-
-		// Common
-		// - Algorithm based on "A Fast Bresenham Type Algorithm For Drawing Ellipses" by John Kennedy
-		int twoRadiusXSquared = 2 * radiusX * radiusX;
-		int twoRadiusYSquared = 2 * radiusY * radiusY;
-		int xChange, yChange;
-		int ellipseError;
-		int xStop, yStop;
-		int sx, sy;
-		bool wrap = startAngle > endAngle;
-
-		bool CheckOctant(int octant, int dx, int dy)
-		{
-			if (startOctant <= endOctant)
+			if ((radiusX == 0) && (radiusY == 0))
 			{
-				if (!wrap && ((octant < startOctant) || (octant > endOctant)))
-					return false;
-			}
-			else
-			{
-				if ((octant < startOctant) && (octant > endOctant))
-					return false;
+				PixelSet(x, y, attribute);
+				return;
 			}
 
-			if ((startOctant == endOctant) && wrap)
+			if (radiusX == 0)
 			{
-				if ((octant == startOctant) && startStopExclude.Contains(dx, dy))
-					return false;
-			}
-			else
-			{
-				if ((octant == startOctant) && !startClip.Contains(dx, dy))
-					return false;
-				if ((octant == endOctant) && !endClip.Contains(dx, dy))
-					return false;
+				Line(x, y - radiusY, x, y + radiusY, attribute);
+				return;
 			}
 
-			return true;
-		}
-
-
-		// Quadrants 0, 3, 4 and 7
-		void PixelPlot(int octant, int xSign, int ySign)
-		{
-			int dx = sx * xSign;
-			int dy = sy * ySign;
-
-			if (CheckOctant(octant, dx, dy))
-				PixelSet(x + dx, y - dy, attribute);
-		}
-
-		sx = radiusX;
-		sy = 0;
-
-		xChange = radiusY * radiusY * (1 - 2 * radiusX);
-		yChange = radiusX * radiusX;
-
-		ellipseError = 0;
-
-		xStop = twoRadiusYSquared * radiusX;
-		yStop = 0;
-
-		while (xStop >= yStop)
-		{
-			PixelPlot(0, +1, +1);
-			PixelPlot(3, -1, +1);
-			PixelPlot(4, -1, -1);
-			PixelPlot(7, +1, -1);
-
-			sy++;
-			yStop += twoRadiusXSquared;
-			ellipseError += yChange;
-			yChange += twoRadiusXSquared;
-
-			if (2 * ellipseError + xChange > 0)
+			if (radiusY == 0)
 			{
-				sx--;
-				xStop -= twoRadiusYSquared;
-				ellipseError += xChange;
-				xChange += twoRadiusYSquared;
+				Line(x - radiusX, y, x + radiusX, y, attribute);
+				return;
 			}
-		}
 
-		// Quadrants 1, 2, 5 and 6
-		sx = 0;
-		sy = radiusY;
+			IntegerPoint startPoint, endPoint;
+			int startOctant, endOctant;
+			IntegerRect startClip, endClip, startStopExclude;
 
-		xChange = radiusY * radiusY;
-		yChange = radiusX * radiusX * (1 - 2 * radiusY);
+			startPoint = PointAtAngle(startAngle);
+			endPoint = PointAtAngle(endAngle);
 
-		ellipseError = 0;
+			startStopExclude = IntegerRect.Empty;
 
-		xStop = 0;
-		yStop = twoRadiusXSquared * radiusY;
+			// Unless it's a perfect circle, after deformation, the angles aren't linear.
+			// The provided angles are interpreted as though we will be drawing a perfect
+			// circle, and then the resulting section is deformed to the requested
+			// ellipse. Our quadrant calculations need to work with the *actual* angle,
+			// so convert the ellipse point back.
+			startAngle = Math.Atan2(startPoint.Y, startPoint.X);
+			endAngle = Math.Atan2(endPoint.Y, endPoint.X);
 
-		var spans = new PixelSpan[7];
+			if (startAngle < 0)
+				startAngle += 2 * Math.PI;
+			if (endAngle < 0)
+				endAngle += 2 * Math.PI;
 
-		spans[1] = PixelSpan.Empty;
-		spans[2] = PixelSpan.Empty;
-		spans[5] = PixelSpan.Empty;
-		spans[6] = PixelSpan.Empty;
+			startOctant = endOctant = -1;
+			startClip = endClip = IntegerRect.Unrestricted;
 
-		void SpanPlot(int octant, int xSign, int ySign)
-		{
-			int dx = sx * xSign;
-			int dy = sy * ySign;
+			// Octants divide where the tangent is a multiple of 45 degrees
+			//
+			// - Divisions at the axes where the tangent is horizontal/vertical
+			// - Divisions at the angle that produces the points with +/- 45-degree tangents.
+			//
+			// These angles are only even subdivisions when the ellipse is a perfect circle.
+			//
+			// The point of intersection with these tangent lines occurs at
+			//
+			// (rx^2 / sqrt(rx^2 + ry^2), ry^2 / sqrt(rx^2 + ry^2))
 
-			if (CheckOctant(octant, dx, dy))
+			double superRadius = Math.Sqrt(radiusX * radiusX + radiusY * radiusY);
+			double octantChangeX = radiusX * radiusX / superRadius;
+			double octantChangeY = radiusY * radiusY / superRadius;
+
+			double octantChangeAngle = Math.Atan2(octantChangeY, octantChangeX);
+
+			if (startAngle < octantChangeAngle)
 			{
-				ref var span = ref spans[octant];
+				startOctant = 0;
+				(startClip.X2, startClip.Y1) = startPoint;
+			}
+			else if (startAngle < Math.PI * 0.5) // top edge
+			{
+				startOctant = 1;
+				(startClip.X2, startClip.Y1) = startPoint;
+			}
+			else if (startAngle < Math.PI - octantChangeAngle)
+			{
+				startOctant = 2;
+				(startClip.X2, startClip.Y2) = startPoint;
+			}
+			else if (startAngle < Math.PI) // left edge
+			{
+				startOctant = 3;
+				(startClip.X2, startClip.Y2) = startPoint;
+			}
+			else if (startAngle < Math.PI + octantChangeAngle)
+			{
+				startOctant = 4;
+				(startClip.X1, startClip.Y2) = startPoint;
+			}
+			else if (startAngle < Math.PI * 1.5) // bottom edge
+			{
+				startOctant = 5;
+				(startClip.X1, startClip.Y2) = startPoint;
+			}
+			else if (startAngle < 2 * Math.PI - octantChangeAngle)
+			{
+				startOctant = 6;
+				(startClip.X1, startClip.Y1) = startPoint;
+			}
+			else if (startAngle < 2 * Math.PI) // right edge
+			{
+				startOctant = 7;
+				(startClip.X1, startClip.Y1) = startPoint;
+			}
 
-				if (!span.Extend(dx, dy))
+			// Obvious difference: draw up to end angle instead of starting at end angle
+			// Subtle difference: end angle of 0 is treated as the end of the circle
+
+			if (endAngle == 0)
+				endAngle = 2 * Math.PI;
+
+			if (endAngle < octantChangeAngle)
+			{
+				endOctant = 0;
+				(endClip.X1, endClip.Y2) = endPoint;
+			}
+			else if (endAngle < Math.PI * 0.5) // top edge
+			{
+				endOctant = 1;
+				(endClip.X1, endClip.Y2) = endPoint;
+			}
+			else if (endAngle < Math.PI - octantChangeAngle)
+			{
+				endOctant = 2;
+				(endClip.X1, endClip.Y1) = endPoint;
+			}
+			else if (endAngle < Math.PI) // left edge
+			{
+				endOctant = 3;
+				(endClip.X1, endClip.Y1) = endPoint;
+			}
+			else if (endAngle < Math.PI + octantChangeAngle)
+			{
+				endOctant = 4;
+				(endClip.X2, endClip.Y1) = endPoint;
+			}
+			else if (endAngle < Math.PI * 1.5) // bottom edge
+			{
+				endOctant = 5;
+				(endClip.X2, endClip.Y1) = endPoint;
+			}
+			else if (endAngle < 2 * Math.PI - octantChangeAngle)
+			{
+				endOctant = 6;
+				(endClip.X2, endClip.Y2) = endPoint;
+			}
+			else if (endAngle < 2 * Math.PI) // right edge
+			{
+				endOctant = 7;
+				(endClip.X2, endClip.Y2) = endPoint;
+			}
+
+			if (startOctant == endOctant)
+			{
+				startStopExclude.X1 = Math.Max(startClip.X1, endClip.X1);
+				startStopExclude.Y1 = Math.Max(startClip.Y1, endClip.Y1);
+				startStopExclude.X2 = Math.Min(startClip.X2, endClip.X2);
+				startStopExclude.Y2 = Math.Min(startClip.Y2, endClip.Y2);
+
+				if (startStopExclude.X1 > startStopExclude.X2)
+					(startStopExclude.X1, startStopExclude.X2) = (startStopExclude.X2, startStopExclude.X1);
+				if (startStopExclude.Y1 > startStopExclude.Y2)
+					(startStopExclude.Y1, startStopExclude.Y2) = (startStopExclude.Y2, startStopExclude.Y1);
+			}
+
+			// Now draw
+			if (drawStartRadius)
+				Line(x, y, x + startPoint.X, y - startPoint.Y, attribute);
+			if (drawEndRadius)
+				Line(x, y, x + endPoint.X, y - endPoint.Y, attribute);
+
+			// Common
+			// - Algorithm based on "A Fast Bresenham Type Algorithm For Drawing Ellipses" by John Kennedy
+			int twoRadiusXSquared = 2 * radiusX * radiusX;
+			int twoRadiusYSquared = 2 * radiusY * radiusY;
+			int xChange, yChange;
+			int ellipseError;
+			int xStop, yStop;
+			int sx, sy;
+			bool wrap = startAngle > endAngle;
+
+			bool CheckOctant(int octant, int dx, int dy)
+			{
+				if (startOctant <= endOctant)
 				{
-					HorizontalLine(x + span.X1, x + span.X2, y - span.Y, attribute);
-					spans[octant] = new PixelSpan(dx, dy);
+					if (!wrap && ((octant < startOctant) || (octant > endOctant)))
+						return false;
 				}
+				else
+				{
+					if ((octant < startOctant) && (octant > endOctant))
+						return false;
+				}
+
+				if ((startOctant == endOctant) && wrap)
+				{
+					if ((octant == startOctant) && startStopExclude.Contains(dx, dy))
+						return false;
+				}
+				else
+				{
+					if ((octant == startOctant) && !startClip.Contains(dx, dy))
+						return false;
+					if ((octant == endOctant) && !endClip.Contains(dx, dy))
+						return false;
+				}
+
+				return true;
 			}
-		}
 
-		while (xStop <= yStop)
-		{
-			SpanPlot(1, +1, +1);
-			SpanPlot(2, -1, +1);
-			SpanPlot(5, -1, -1);
-			SpanPlot(6, +1, -1);
 
-			sx++;
-			xStop += twoRadiusYSquared;
-			ellipseError += xChange;
-			xChange += twoRadiusYSquared;
-
-			if (2 * ellipseError + yChange > 0)
+			// Quadrants 0, 3, 4 and 7
+			void PixelPlot(int octant, int xSign, int ySign)
 			{
-				sy--;
-				yStop -= twoRadiusXSquared;
+				int dx = sx * xSign;
+				int dy = sy * ySign;
+
+				if (CheckOctant(octant, dx, dy))
+					PixelSet(x + dx, y - dy, attribute);
+			}
+
+			sx = radiusX;
+			sy = 0;
+
+			xChange = radiusY * radiusY * (1 - 2 * radiusX);
+			yChange = radiusX * radiusX;
+
+			ellipseError = 0;
+
+			xStop = twoRadiusYSquared * radiusX;
+			yStop = 0;
+
+			while (xStop >= yStop)
+			{
+				PixelPlot(0, +1, +1);
+				PixelPlot(3, -1, +1);
+				PixelPlot(4, -1, -1);
+				PixelPlot(7, +1, -1);
+
+				sy++;
+				yStop += twoRadiusXSquared;
 				ellipseError += yChange;
 				yChange += twoRadiusXSquared;
+
+				if (2 * ellipseError + xChange > 0)
+				{
+					sx--;
+					xStop -= twoRadiusYSquared;
+					ellipseError += xChange;
+					xChange += twoRadiusYSquared;
+				}
 			}
+
+			// Quadrants 1, 2, 5 and 6
+			sx = 0;
+			sy = radiusY;
+
+			xChange = radiusY * radiusY;
+			yChange = radiusX * radiusX * (1 - 2 * radiusY);
+
+			ellipseError = 0;
+
+			xStop = 0;
+			yStop = twoRadiusXSquared * radiusY;
+
+			var spans = new PixelSpan[7];
+
+			spans[1] = PixelSpan.Empty;
+			spans[2] = PixelSpan.Empty;
+			spans[5] = PixelSpan.Empty;
+			spans[6] = PixelSpan.Empty;
+
+			void SpanPlot(int octant, int xSign, int ySign)
+			{
+				int dx = sx * xSign;
+				int dy = sy * ySign;
+
+				if (CheckOctant(octant, dx, dy))
+				{
+					ref var span = ref spans[octant];
+
+					if (!span.Extend(dx, dy))
+					{
+						HorizontalLine(x + span.X1, x + span.X2, y - span.Y, attribute);
+						spans[octant] = new PixelSpan(dx, dy);
+					}
+				}
+			}
+
+			while (xStop <= yStop)
+			{
+				SpanPlot(1, +1, +1);
+				SpanPlot(2, -1, +1);
+				SpanPlot(5, -1, -1);
+				SpanPlot(6, +1, -1);
+
+				sx++;
+				xStop += twoRadiusYSquared;
+				ellipseError += xChange;
+				xChange += twoRadiusYSquared;
+
+				if (2 * ellipseError + yChange > 0)
+				{
+					sy--;
+					yStop -= twoRadiusXSquared;
+					ellipseError += yChange;
+					yChange += twoRadiusXSquared;
+				}
+			}
+
+			if (!spans[1].IsEmpty)
+				HorizontalLine(x + spans[1].X1, x + spans[1].X2, y - spans[1].Y, attribute);
+			if (!spans[2].IsEmpty)
+				HorizontalLine(x + spans[2].X1, x + spans[2].X2, y - spans[2].Y, attribute);
+			if (!spans[5].IsEmpty)
+				HorizontalLine(x + spans[5].X1, x + spans[5].X2, y - spans[5].Y, attribute);
+			if (!spans[6].IsEmpty)
+				HorizontalLine(x + spans[6].X1, x + spans[6].X2, y - spans[6].Y, attribute);
+
+			LastPoint = Window.TranslateBack(x, y);
 		}
-
-		if (!spans[1].IsEmpty)
-			HorizontalLine(x + spans[1].X1, x + spans[1].X2, y - spans[1].Y, attribute);
-		if (!spans[2].IsEmpty)
-			HorizontalLine(x + spans[2].X1, x + spans[2].X2, y - spans[2].Y, attribute);
-		if (!spans[5].IsEmpty)
-			HorizontalLine(x + spans[5].X1, x + spans[5].X2, y - spans[5].Y, attribute);
-		if (!spans[6].IsEmpty)
-			HorizontalLine(x + spans[6].X1, x + spans[6].X2, y - spans[6].Y, attribute);
-
-		LastPoint = Window.TranslateBack(x, y);
 	}
 	#endregion Ellipse
 
@@ -1425,7 +1445,8 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 		var borderFillMethod = s_BorderFillMethodDefinition.MakeGenericMethod(fillPattern.GetType(), backgroundPattern.GetType());
 
-		borderFillMethod.Invoke(this, [x, y, borderAttribute, fillPattern, backgroundPattern]);
+		using (HidePointerForOperation())
+			borderFillMethod.Invoke(this, [x, y, borderAttribute, fillPattern, backgroundPattern]);
 	}
 
 	static MethodInfo s_BorderFillMethodDefinition =
@@ -1805,6 +1826,8 @@ public abstract class GraphicsLibrary : VisualLibrary
 	}
 
 	public abstract void PutSprite(Span<byte> buffer, PutSpriteAction action, int x, int y);
+
+	public abstract void PutMaskedSprite(Span<byte> buffer, Span<byte> mask, int x, int y);
 	#endregion
 
 	#region Text
@@ -1813,20 +1836,23 @@ public abstract class GraphicsLibrary : VisualLibrary
 		if (buffer.Length == 0)
 			return;
 
-		ResolvePassiveNewLine();
-
-		int characterWidth = Array.Sequencer.CharacterWidth;
-		int characterHeight = CharacterScans;
-
-		while (!buffer.IsEmpty)
+		using (HidePointerForOperation())
 		{
-			byte character = buffer[0];
+			ResolvePassiveNewLine();
 
-			WriteCharacterAt(CursorX * characterWidth, CursorY * characterHeight, character);
+			int characterWidth = Array.Sequencer.CharacterWidth;
+			int characterHeight = CharacterScans;
 
-			AdvanceCursor();
+			while (!buffer.IsEmpty)
+			{
+				byte character = buffer[0];
 
-			buffer = buffer.Slice(1);
+				WriteCharacterAt(CursorX * characterWidth, CursorY * characterHeight, character);
+
+				AdvanceCursor();
+
+				buffer = buffer.Slice(1);
+			}
 		}
 	}
 
@@ -1837,11 +1863,14 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 		byte[] glyph = Font[character];
 
-		for (int yy = 0; yy < characterHeight; yy++)
+		using (HidePointerForOperation())
 		{
-			byte glyphScan = (yy < glyph.Length) ? glyph[yy] : (byte)0;
+			for (int yy = 0; yy < characterHeight; yy++)
+			{
+				byte glyphScan = (yy < glyph.Length) ? glyph[yy] : (byte)0;
 
-			DrawCharacterScan(x, y + yy, characterWidth, glyphScan);
+				DrawCharacterScan(x, y + yy, characterWidth, glyphScan);
+			}
 		}
 	}
 
@@ -1876,4 +1905,180 @@ public abstract class GraphicsLibrary : VisualLibrary
 		}
 	}
 	#endregion Text
+
+	#region Pointer
+	protected abstract byte[] MakePointerSprite();
+	protected abstract byte[] MakePointerMask();
+
+	public int PointerX => _pointerX;
+	public int PointerY => _pointerY;
+	public bool PointerVisible => _pointerVisible;
+
+	int _pointerX;
+	int _pointerY;
+	bool _pointerVisible;
+
+	byte[]? _pointerSprite;
+	byte[]? _pointerMask;
+	byte[]? _pointerSaved;
+	int _pointerSavedX;
+	int _pointerSavedY;
+	bool _pointerDrawn;
+	bool _isHiddenForOperation;
+	bool _isDrawing;
+
+	void DrawPointer()
+	{
+		if (_pointerVisible && !_pointerDrawn)
+		{
+			_pointerSprite ??= MakePointerSprite();
+			_pointerMask ??= MakePointerMask();
+			_pointerSaved = new byte[_pointerSprite.Length];
+
+			_pointerSavedX = Math.Max(0, _pointerX - 1);
+			_pointerSavedY = Math.Max(0, _pointerY - 1);
+
+			_isDrawing = true;
+
+			try
+			{
+				GetSprite(
+					_pointerSavedX, _pointerSavedY,
+					Math.Min(_pointerSavedX + 15, Width - 1),
+					Math.Min(_pointerSavedY + 15, Height - 1),
+					_pointerSaved);
+
+				PutMaskedSprite(
+					_pointerSprite, _pointerMask,
+					_pointerX - 1, _pointerY - 1);
+
+				_pointerDrawn = true;
+			}
+			finally
+			{
+				_isDrawing = false;
+			}
+		}
+	}
+
+	void UndrawPointer()
+	{
+		if (_pointerDrawn)
+		{
+			_isDrawing = true;
+
+			try
+			{
+				PutSprite(
+					_pointerSaved,
+					PutSpriteAction.PixelSet,
+					_pointerSavedX, _pointerSavedY);
+
+				_pointerDrawn = false;
+			}
+			finally
+			{
+				_isDrawing = false;
+			}
+		}
+	}
+
+	class HidePointerScope : IDisposable
+	{
+		GraphicsLibrary _owner;
+
+		public HidePointerScope(GraphicsLibrary owner)
+		{
+			_owner = owner;
+			_owner.BeginOperation();
+		}
+
+		public void Dispose()
+		{
+			_owner.EndOperation();
+		}
+	}
+
+	void BeginOperation()
+	{
+		UndrawPointer();
+		_isHiddenForOperation = true;
+	}
+
+	void EndOperation()
+	{
+		_isHiddenForOperation = false;
+		DrawPointer();
+	}
+
+	protected IDisposable? HidePointerForOperation()
+	{
+		if (_isHiddenForOperation || _isDrawing)
+			return null;
+
+		if (!_pointerDrawn)
+			return null;
+
+		return new HidePointerScope(this);
+	}
+
+	protected IDisposable? HidePointerForOperation(int x, int y)
+	{
+		if (_isHiddenForOperation || _isDrawing)
+			return null;
+
+		if (!_pointerDrawn)
+			return null;
+
+		if ((x < _pointerSavedX) || (y < _pointerSavedY)
+		 || (x > _pointerSavedX + 15) || (y > _pointerSavedY + 15))
+			return null;
+
+		return new HidePointerScope(this);
+	}
+
+	protected IDisposable? HidePointerForOperation(int x1, int y1, int x2, int y2)
+	{
+		if (_isHiddenForOperation || _isDrawing)
+			return null;
+
+		if (!_pointerDrawn)
+			return null;
+
+		var pointerRect = new IntegerRect(
+			_pointerSavedX,
+			_pointerSavedY,
+			_pointerSavedX + 15,
+			_pointerSavedY + 15);
+
+		var operationRect = new IntegerRect(x1, y1, x2, y2);
+
+		if (!operationRect.Intersects(pointerRect))
+			return null;
+
+		return new HidePointerScope(this);
+	}
+
+	public void ShowPointer()
+	{
+		_pointerVisible = true;
+		DrawPointer();
+	}
+
+	public void HidePointer()
+	{
+		_pointerVisible = false;
+		UndrawPointer();
+	}
+
+	public void MovePointer(int newX, int newY)
+	{
+		UndrawPointer();
+
+		_pointerX = newX;
+		_pointerY = newY;
+
+		DrawPointer();
+	}
+	#endregion
 }
