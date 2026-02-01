@@ -19,6 +19,10 @@ public abstract class GraphicsLibrary : VisualLibrary
 		: base(machine)
 	{
 		Window = Window.Dummy;
+
+		machine.MouseDriver.PointerShapeChanged += UpdatePointerGraphics;
+
+		UpdatePointerGraphics();
 	}
 
 	public byte[][] Font = CreateBlankFont();
@@ -2023,18 +2027,54 @@ public abstract class GraphicsLibrary : VisualLibrary
 	#region Pointer
 	byte[] _pointerAnd = [0, 0, 0, 0];
 	byte[] _pointerXor = [0, 0, 0, 0];
+	int _pointerHotSpotX, _pointerHotSpotY;
 	byte[] _pointerSaved = [0, 0, 0, 0];
 
+	void UpdatePointerGraphics()
+	{
+		int mask = MaximumAttribute;
+		int attribute = mask & 15;
+
+		int[] xor = new int[16 * 16];
+		int[] and = new int[16 * 16];
+
+		byte[] andRaw = Machine.MouseDriver.PointerShapeMask;
+		byte[] xorRaw = Machine.MouseDriver.PointerShape;
+
+		for (int y = 0, o = 0, p = 0; y < 16; y++, p += 2)
+		{
+			for (int x = 0, b = 0x8080; x < 16; x++, b >>= 1, o++)
+			{
+				int q = p + (x >> 3);
+
+				bool andValue = (andRaw[q] & b & 0xFF) != 0;
+				bool xorValue = (xorRaw[q] & b & 0xFF) != 0;
+
+				and[o] = andValue ? mask : 0;
+				xor[o] = xorValue ? attribute : 0;
+			}
+		}
+
+		_pointerAnd = ConstructSprite(and, 16, 16);
+		_pointerXor = ConstructSprite(xor, 16, 16);
+		_pointerHotSpotX = Machine.MouseDriver.PointerHotSpotX;
+		_pointerHotSpotY = Machine.MouseDriver.PointerHotSpotY;
+	}
 
 	protected override void DrawPointer()
 	{
-		if (PointerVisible && !PointerIsDrawn)
+		if (Machine.MouseDriver.PointerVisible
+		 && (Machine.MouseDriver.DisplayPageNumber == ActivePageNumber)
+		 && !PointerIsDrawn)
 		{
 			if ((_pointerSaved == null) || (_pointerSaved.Length < _pointerXor.Length))
 				_pointerSaved = new byte[_pointerXor.Length];
 
-			PointerRect.X1 = Math.Max(0, PointerX - 1);
-			PointerRect.Y1 = Math.Max(0, PointerY - 1);
+			int pointerX = Machine.MouseDriver.PointerX - _pointerHotSpotX;
+			int pointerY = Machine.MouseDriver.PointerY - _pointerHotSpotY;
+
+			PointerRect.X1 = Math.Max(0, pointerX - 1);
+			PointerRect.Y1 = Math.Max(0, pointerY - 1);
 			PointerRect.X2 = PointerRect.X1 + 15;
 			PointerRect.Y2 = PointerRect.Y1 + 15;
 

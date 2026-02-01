@@ -9,6 +9,7 @@ public class Machine
 	public GraphicsArray GraphicsArray { get; }
 	public Adapter Display { get; }
 	public Video VideoFirmware { get; }
+	public MouseDriver MouseDriver { get; }
 	public Keyboard Keyboard { get; }
 	public Mouse Mouse { get; }
 	public Speaker Speaker { get; }
@@ -23,18 +24,21 @@ public class Machine
 	public Machine()
 	{
 		SystemMemory = new SystemMemory();
+
+		MemoryBus = new MemoryBus();
+
 		GraphicsArray = new GraphicsArray();
 		Display = new Adapter(GraphicsArray);
-		VideoFirmware = new Video(this);
 		Keyboard = new Keyboard(this);
 		Mouse = new Mouse();
 		Speaker = new Speaker(this);
 		Timer = new TimerChip(Speaker);
 
-		MemoryBus = new MemoryBus();
-
 		MemoryBus.MapRange(0x0000, SystemMemory.Length, SystemMemory);
 		MemoryBus.MapRange(0xA000, GraphicsArray.VRAM.Length, GraphicsArray);
+
+		VideoFirmware = new Video(this);
+		MouseDriver = new MouseDriver(this);
 	}
 
 	public void OutPort(int portNumber, byte data)

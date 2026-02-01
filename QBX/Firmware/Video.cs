@@ -1,14 +1,15 @@
 ﻿using System;
-using System.Runtime.InteropServices;
-using System.Xml.Schema;
+
 using QBX.Hardware;
-using QBX.Parser;
+
 using static QBX.Hardware.GraphicsArray;
 
 namespace QBX.Firmware;
 
 public class Video(Machine machine)
 {
+	public event Action<ModeParameters>? ModeChanged;
+
 	// 1: 40x25 text mode rendered to 360x400 dots
 	static readonly ModeParameters Mode1 =
 		new ModeParameters()
@@ -560,6 +561,8 @@ public class Video(Machine machine)
 			SequencerRegisters.IndexPort,
 			SequencerRegisters.Reset,
 			0b11);
+
+		ModeChanged?.Invoke(mode);
 
 		return true;
 	}

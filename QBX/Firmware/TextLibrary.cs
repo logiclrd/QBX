@@ -10,6 +10,21 @@ public class TextLibrary : VisualLibrary
 	public TextLibrary(Machine machine)
 		: base(machine)
 	{
+		machine.MouseDriver.TextPointerAppearanceChanged +=
+			() =>
+			{
+				if (machine.MouseDriver.TextPointerEnableSoftware)
+				{
+					_pointerCharacterMask = machine.MouseDriver.TextPointerCharacterMask;
+					_pointerCharacterInvert = machine.MouseDriver.TextPointerCharacterInvert;
+					_pointerAttributeMask = machine.MouseDriver.TextPointerAttributeMask;
+					_pointerAttributeInvert = machine.MouseDriver.TextPointerAttributeInvert;
+
+					DrawPointer();
+				}
+				else
+					UndrawPointer();
+			};
 	}
 
 	public int CursorAddress => CursorY * Width + CursorX;
@@ -109,6 +124,11 @@ public class TextLibrary : VisualLibrary
 
 	protected override void MoveCursorHandlePhysicalCursor()
 	{
+		// Check if the mouse driver has hijacked the cursor.
+		if ((Machine.MouseDriver.TextPointerEnableSoftware == false)
+		 && Machine.MouseDriver.PointerVisible)
+			return;
+
 		if (MovePhysicalCursor)
 			UpdatePhysicalCursor();
 	}
@@ -503,18 +523,21 @@ public class TextLibrary : VisualLibrary
 		}
 	}
 
-	public override int PointerMaximumX => CharacterWidth * Array.Sequencer.CharacterWidth;
-	public override int PointerMaximumY => CharacterHeight * Array.CRTController.CharacterHeight;
+	byte _pointerCharacterMask;
+	byte _pointerCharacterInvert;
+	byte _pointerAttributeMask;
+	byte _pointerAttributeInvert;
 
-	byte _pointerSaved;
+	byte _pointerSavedCharacter;
+	byte _pointerSavedAttribute;
 	int _pointerSavedOffset;
 
 	protected override void DrawPointer()
 	{
-		if (PointerVisible && !PointerIsDrawn)
+		if (Machine.MouseDriver.PointerVisible && Machine.MouseDriver.TextPointerEnableSoftware && !PointerIsDrawn)
 		{
-			int pointerCharacterX = PointerX / Array.Sequencer.CharacterWidth;
-			int pointerCharacterY = PointerY / Array.CRTController.CharacterHeight;
+			int pointerCharacterX = Machine.MouseDriver.PointerX / 8;
+			int pointerCharacterY = Machine.MouseDriver.PointerY / 8;
 
 			int pointerOffset = pointerCharacterY * CharacterWidth + pointerCharacterX;
 
@@ -522,9 +545,11 @@ public class TextLibrary : VisualLibrary
 
 			vramSpan = vramSpan.Slice(StartAddress);
 
+			var plane0 = vramSpan;
 			var plane1 = vramSpan.Slice(0x10000);
 
-			_pointerSaved = plane1[pointerOffset];
+			_pointerSavedCharacter = plane0[pointerOffset];
+			_pointerSavedAttribute = plane1[pointerOffset];
 			_pointerSavedOffset = pointerOffset;
 
 			PointerRect.X1 = pointerCharacterX * Array.Sequencer.CharacterWidth;
@@ -532,12 +557,10 @@ public class TextLibrary : VisualLibrary
 			PointerRect.X2 = PointerRect.X1 + Array.Sequencer.CharacterWidth - 1;
 			PointerRect.Y2 = PointerRect.Y1 + Array.CRTController.CharacterHeight - 1;
 
-			byte highlighted = unchecked((byte)((_pointerSaved << 4) | (_pointerSaved >> 4)));
-
-			if (Array.AttributeController.EnableBlinking)
-				highlighted = unchecked((byte)((highlighted & 0x7F) | (_pointerSaved & 0x80)));
-
-			plane1[pointerOffset] = highlighted;
+			plane0[pointerOffset] = unchecked((byte)(
+				(plane0[pointerOffset] & _pointerCharacterMask) ^ _pointerCharacterInvert));
+			plane1[pointerOffset] = unchecked((byte)(
+				(plane1[pointerOffset] & _pointerAttributeMask) ^ _pointerAttributeInvert));
 
 			PointerIsDrawn = true;
 		}
@@ -549,11 +572,11 @@ public class TextLibrary : VisualLibrary
 		{
 			Span<byte> vramSpan = Array.VRAM;
 
-			vramSpan = vramSpan.Slice(StartAddress);
+			var plane0 = vramSpan.Slice(StartAddress);
+			var plane1 = vramSpan.Slice(StartAddress + 0x10000);
 
-			var plane1 = vramSpan.Slice(0x10000);
-
-			plane1[_pointerSavedOffset] = _pointerSaved;
+			plane0[_pointerSavedOffset] = _pointerSavedCharacter;
+			plane1[_pointerSavedOffset] = _pointerSavedAttribute;
 			PointerIsDrawn = false;
 		}
 	}

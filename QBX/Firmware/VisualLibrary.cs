@@ -17,10 +17,36 @@ public abstract class VisualLibrary
 	{
 		Machine = machine;
 
+		machine.MouseDriver.DisplayPageNumberChanged += MouseDriver_DisplayPageNumberChanged;
+		machine.MouseDriver.PositionChanged += MouseDriver_PositionChanged;
+		machine.MouseDriver.PointerVisibleChanged += MouseDriver_PointerVisibleChanged;
+
 		Array = machine.GraphicsArray;
 
 		RefreshParameters();
 	}
+
+	private void MouseDriver_DisplayPageNumberChanged()
+	{
+		UndrawPointer();
+		DrawPointer();
+	}
+
+	private void MouseDriver_PositionChanged()
+	{
+		UndrawPointer();
+		DrawPointer();
+	}
+
+	private void MouseDriver_PointerVisibleChanged()
+	{
+		if (Machine.MouseDriver.PointerVisible)
+			DrawPointer();
+		else
+			UndrawPointer();
+	}
+
+	public int ActivePageNumber;
 
 	public int Width;
 	public int Height;
@@ -63,8 +89,14 @@ public abstract class VisualLibrary
 
 		if ((pageNumber >= 0) && (pageNumber < pageCount))
 		{
+			UndrawPointer();
+
 			StartAddress = pageNumber * pageSize;
 			RefreshParameters();
+
+			ActivePageNumber = pageNumber;
+
+			DrawPointer();
 
 			return true;
 		}
@@ -426,43 +458,10 @@ public abstract class VisualLibrary
 	protected abstract void DrawPointer();
 	protected abstract void UndrawPointer();
 
-	public int PointerX => _pointerX;
-	public int PointerY => _pointerY;
-	public bool PointerVisible => _pointerVisible;
-
-	public virtual int PointerMaximumX => Width - 1;
-	public virtual int PointerMaximumY => Height - 1;
-
-	int _pointerX;
-	int _pointerY;
-	bool _pointerVisible;
-
 	protected IntegerRect PointerRect;
 	protected bool PointerIsDrawn;
 	protected bool PointerIsHiddenForOperation;
 	protected bool PointerIsDrawing;
-
-	public void ShowPointer()
-	{
-		_pointerVisible = true;
-		DrawPointer();
-	}
-
-	public void HidePointer()
-	{
-		_pointerVisible = false;
-		UndrawPointer();
-	}
-
-	public void MovePointer(int newX, int newY)
-	{
-		UndrawPointer();
-
-		_pointerX = newX;
-		_pointerY = newY;
-
-		DrawPointer();
-	}
 
 	class HidePointerScope : IDisposable
 	{

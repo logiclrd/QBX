@@ -14,6 +14,8 @@ public class PointerTest(Machine machine) : HostedProgram
 	{
 		machine.VideoFirmware.SetMode(0x12);
 
+		machine.MouseDriver.Reset();
+
 		var visual = new GraphicsLibrary_4bppPlanar(machine);
 
 		double a = 0;
@@ -26,12 +28,15 @@ public class PointerTest(Machine machine) : HostedProgram
 		int mx = visual.Width / 2;
 		int my = visual.Height / 2;
 
-		visual.ShowPointer();
+		machine.MouseDriver.ShowPointer();
 
 		visual.EnablePointerAwareDrawing = true;
 
 		if (visual.MaximumAttribute > 1)
 			visual.BorderFill(10, 10, 1, 1);
+
+		int dotWidth = machine.GraphicsArray.Sequencer.DotDoubling ? 2 : 1;
+		int scanHeight = machine.GraphicsArray.CRTController.ScanDoubling ? 2 : 1;
 
 		while (true)
 		{
@@ -49,17 +54,17 @@ public class PointerTest(Machine machine) : HostedProgram
 				(int)(my + waveRadius * Math.Sin(waveAngle)),
 				waveAttribute);
 
-			visual.MovePointer(
-				(int)(mx + baseRadius * Math.Cos(pointerAngle)),
-				(int)(my + baseRadius * Math.Sin(pointerAngle)));
+			machine.Mouse.NotifyPositionChanged(
+				(int)(dotWidth * (mx + baseRadius * Math.Cos(pointerAngle))),
+				(int)(scanHeight * (my + baseRadius * Math.Sin(pointerAngle))));
 
 			//pointerVisibilityCounter++;
 
 			if (pointerVisibilityCounter == 40)
-				visual.HidePointer();
+				machine.MouseDriver.HidePointer();
 			else if (pointerVisibilityCounter == 80)
 			{
-				visual.ShowPointer();
+				machine.MouseDriver.ShowPointer();
 				pointerVisibilityCounter = 0;
 			}
 
