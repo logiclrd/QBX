@@ -1,6 +1,7 @@
 ﻿using System;
 using QBX.CodeModel;
 using QBX.Firmware;
+using QBX.Utility;
 
 namespace QBX.DevelopmentEnvironment.Dialogs;
 

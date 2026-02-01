@@ -1,7 +1,4 @@
-﻿using QBX.CodeModel.Expressions;
-using QBX.ExecutionEngine.Compiled.Functions;
-
-namespace QBX.Firmware;
+﻿namespace QBX.Utility;
 
 public struct IntegerPoint
 {

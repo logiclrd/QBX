@@ -1,4 +1,6 @@
-﻿namespace QBX.Firmware;
+﻿using System;
+
+namespace QBX.Utility;
 
 public struct IntegerRect
 {
@@ -55,5 +57,35 @@ public struct IntegerRect
 		return
 			(X1 <= other.X2) && (other.X1 <= X2) &&
 			(Y1 <= other.Y2) && (other.Y1 <= Y2);
+	}
+
+	public IntegerPoint Constrain(int x, int y)
+		=> Constrain((x, y));
+
+	public IntegerPoint Constrain(IntegerPoint pt)
+	{
+		return new IntegerPoint(
+			ConstrainX(pt.X),
+			ConstrainY(pt.Y));
+	}
+
+	public int ConstrainX(int x)
+	{
+		if (x > X2)
+			x = X2;
+		if (x < X1)
+			x = X1;
+
+		return x;
+	}
+
+	public int ConstrainY(int y)
+	{
+		if (y > Y2)
+			y = Y2;
+		if (y < Y1)
+			y = Y1;
+
+		return y;
 	}
 }

@@ -1,4 +1,4 @@
-﻿namespace QBX.Firmware;
+﻿namespace QBX.Utility;
 
 public static class IntegerPointExtensions
 {

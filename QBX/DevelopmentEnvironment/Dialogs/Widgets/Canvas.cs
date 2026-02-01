@@ -3,6 +3,7 @@ using System.Linq;
 
 using QBX.Firmware;
 using QBX.Hardware;
+using QBX.Utility;
 
 namespace QBX.DevelopmentEnvironment.Dialogs.Widgets;
 

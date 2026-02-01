@@ -4,6 +4,7 @@ using System.Text;
 
 using QBX.Firmware.Fonts;
 using QBX.Hardware;
+using QBX.Utility;
 
 namespace QBX.Firmware;
 

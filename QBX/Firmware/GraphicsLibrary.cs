@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 
 using QBX.Hardware;
+using QBX.Utility;
 
 using CSharpTest.Net.Collections;
 

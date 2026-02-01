@@ -1,6 +1,7 @@
 ﻿using System;
 
 using QBX.Hardware;
+using QBX.Utility;
 
 namespace QBX.Firmware;
 

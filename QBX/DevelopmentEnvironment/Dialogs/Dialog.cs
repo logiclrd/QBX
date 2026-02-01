@@ -6,6 +6,7 @@ using QBX.DevelopmentEnvironment.Dialogs.Widgets;
 using QBX.Firmware;
 using QBX.Firmware.Fonts;
 using QBX.Hardware;
+using QBX.Utility;
 
 namespace QBX.DevelopmentEnvironment.Dialogs;
 

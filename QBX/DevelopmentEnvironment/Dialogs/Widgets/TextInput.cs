@@ -4,6 +4,7 @@ using QBX.ExecutionEngine.Execution;
 using QBX.Firmware;
 using QBX.Firmware.Fonts;
 using QBX.Hardware;
+using QBX.Utility;
 
 namespace QBX.DevelopmentEnvironment.Dialogs.Widgets;
 
