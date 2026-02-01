@@ -234,6 +234,37 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 		}
 	}
 
+	protected override byte[]? ConstructSpriteImplementation(int[] pixels, int width, int height, Span<byte> buffer)
+	{
+		if (pixels.Length != width * height)
+			throw new ArgumentException(nameof(pixels), "Pixel data is not the expected length");
+
+		// In 4bpp planar modes, GET/PUT buffers are a bit weird. They actually internally represent each plane
+		// as a separate scan, so there are 4 scans per actual scan in the sprite. But, the header doesn't count
+		// them independently. To avoid complicating the sprite-generating code, we simply transform the input
+		// data so that the planes _are_ represented separately, construct a sprite from that, whose Height field
+		// in the header will be counting the per-plane scans independently, and then fix up the header.
+
+		// Separate the planes of data.
+		int[] planarPixels = new int[pixels.Length * 4];
+
+		for (int y = 0, o = 0, p = 0; y < height; y++, o += width)
+			for (int bit = 0; bit < 4; bit++)
+				for (int x = 0; x < width; x++, p++)
+					planarPixels[p] = (pixels[o + x] >> bit) & 1;
+
+		var sprite = base.ConstructSpriteImplementation(planarPixels, width, height * 4, buffer);
+
+		var header = MemoryMarshal.Cast<byte, short>(sprite.AsSpan().Slice(0, 4));
+
+		// We've created a sprite that represents each of the planes of each scan as a
+		// separate scan. Its height is treating those per-plane scans as independent
+		// scans, when really each group of 4 represents a single _actual_ scan.
+		header[1] /= 4;
+
+		return sprite;
+	}
+
 	public override void GetSprite(int x1, int y1, int x2, int y2, Span<byte> buffer)
 	{
 		int x = x1, y = y1;

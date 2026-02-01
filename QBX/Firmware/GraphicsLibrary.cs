@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 using QBX.Hardware;
 using QBX.Utility;
@@ -1741,6 +1742,118 @@ public abstract class GraphicsLibrary : VisualLibrary
 	#endregion
 
 	#region Sprites
+	public int GetSpriteBufferSize(int width, int height)
+	{
+		CalculateSpriteParameters(
+			width, height,
+			out _, out _, out _, out _, out _, out _,
+			totalSize: out var totalSize);
+
+		return totalSize;
+	}
+
+	public byte[] ConstructSprite(int[] pixels, int width, int height)
+	{
+		return ConstructSpriteImplementation(pixels, width, height, Span<byte>.Empty)!;
+	}
+
+	public void ConstructSprite(int[] pixels, int width, int height, Span<byte> buffer)
+	{
+		if (buffer.IsEmpty)
+			throw new ArgumentException(nameof(buffer), "Buffer is empty");
+
+		ConstructSpriteImplementation(pixels, width, height, buffer);
+	}
+
+	void CalculateSpriteParameters(
+		int width,
+		int height,
+		out int bitsPerPixel,
+		out int attributeMask,
+		out int bitWidth,
+		out int scanBytes,
+		out int headerSize,
+		out int dataSize,
+		out int totalSize)
+	{
+		bitsPerPixel = 8 / PixelsPerByte;
+
+		attributeMask = (1 << bitsPerPixel) - 1;
+		bitWidth = width * bitsPerPixel;
+
+		scanBytes = (bitWidth + 7) / 8;
+
+		headerSize = 4;
+		dataSize = scanBytes * height;
+
+		totalSize = headerSize + dataSize;
+	}
+
+	protected virtual byte[]? ConstructSpriteImplementation(int[] pixels, int width, int height, Span<byte> buffer)
+	{
+		CalculateSpriteParameters(
+			width,
+			height,
+			out int bitsPerPixel,
+			out int attributeMask,
+			out int bitWidth,
+			out int scanBytes,
+			out int headerSize,
+			out int dataSize,
+			out int totalSize);
+
+		byte[]? bufferAllocated = null;
+
+		if (buffer.IsEmpty)
+		{
+			bufferAllocated = new byte[totalSize];
+			buffer = bufferAllocated;
+		}
+		else if (totalSize > buffer.Length)
+			throw new ArgumentException(nameof(buffer), "Buffer is not large enough");
+
+		var header = MemoryMarshal.Cast<byte, short>(buffer);
+
+		header[0] = (short)bitWidth;
+		header[1] = (short)height;
+
+		var data = buffer.Slice(headerSize);
+
+		int accumulator = 0;
+
+		for (int y = 0, o = 0, p = 0; y < height; y++)
+		{
+			int bits = 0;
+
+			for (int x = 0; x < width; x++, o++)
+			{
+				accumulator <<= bitsPerPixel;
+				accumulator |= pixels[o] & attributeMask;
+
+				bits += bitsPerPixel;
+
+				if (bits == 8)
+				{
+					data[p++] = unchecked((byte)accumulator);
+					bits = 0;
+				}
+			}
+
+			if (bits != 0)
+			{
+				while ((bits & 7) != 0)
+				{
+					accumulator <<= bitsPerPixel;
+					bits += bitsPerPixel;
+				}
+
+				data[p++] = unchecked((byte)accumulator);
+			}
+		}
+
+		return bufferAllocated;
+	}
+
 	protected interface ISpriteOperation
 	{
 		bool UsesPlaneBits { get; }
