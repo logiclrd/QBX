@@ -436,108 +436,148 @@ public class GraphicsLibrary_2bppInterleaved : GraphicsLibrary
 		}
 	}
 
-	public override void PutMaskedSprite(Span<byte> buffer, Span<byte> mask, int x, int y)
+	[ThreadStatic]
+	static byte[]? s_zeroes;
+	[ThreadStatic]
+	static byte[]? s_ones;
+
+	public override void PutMaskedSprite(Span<byte> and, Span<byte> xor, int x, int y)
 	{
 		// TODO: rework to avoid using PixelGet
-		if (buffer.Length < 4)
+		if (xor.Length < 4)
 			throw new InvalidOperationException();
-		if (mask.Length < 4)
+		if (and.Length < 4)
 			throw new InvalidOperationException();
 
 		int headerBytes = 4;
 
-		var header = MemoryMarshal.Cast<byte, short>(buffer.Slice(0, headerBytes));
+		var andHeader = MemoryMarshal.Cast<byte, short>(and.Slice(0, headerBytes));
 
-		int w = header[0] / 2;
-		int h = header[1];
+		int andW = andHeader[0] / 2;
+		int andH = andHeader[1];
 
-		var maskHeader = MemoryMarshal.Cast<byte, short>(mask.Slice(0, headerBytes));
+		var xorHeader = MemoryMarshal.Cast<byte, short>(xor.Slice(0, headerBytes));
 
-		int maskW = maskHeader[0] / 2;
-		int maskH = maskHeader[1];
+		int xorW = xorHeader[0] / 2;
+		int xorH = xorHeader[1];
 
-		if ((maskW < w) || (maskH < h))
-			throw new InvalidOperationException("Mask is not large enough for the sprite");
+		int minW = Math.Min(andW, xorW);
+		int maxW = Math.Max(andW, xorW);
+		int maxH = Math.Max(andH, xorH);
 
-		if ((w < 0) || (h < 0))
+		if ((andW < 0) || (andH < 0))
 			throw new InvalidOperationException();
-		if ((x + w <= 0) || (y + h <= 0))
+		if ((xorW < 0) || (xorH < 0))
+			throw new InvalidOperationException();
+		if ((x + maxW <= 0) || (y + maxH <= 0))
 			return;
 		if ((x >= Width) || (y >= Height))
 			return;
 
-		using (HidePointerForOperationIfPointerAware(x, y, x + w - 1, y + h - 1))
+		using (HidePointerForOperationIfPointerAware(x, y, x + maxW - 1, y + maxH - 1))
 		{
 			var vramSpan = Array.VRAM.AsSpan();
 
 			var plane = vramSpan.Slice(StartAddress, 64000);
 
-			int bytesPerScan = (w + 3) / 4;
-			int maskBytesPerScan = (maskW + 3) / 4;
+			int andBytesPerScan = (andW + 3) / 4;
+			int xorBytesPerScan = (xorW + 3) / 4;
 
-			int dataBytes = bytesPerScan * h;
-			int maskDataBytes = maskBytesPerScan * h; // If maskH > h, use h anyway. We don't need more than that.
+			int andDataBytes = andBytesPerScan * andH;
+			int xorDataBytes = xorBytesPerScan * xorH;
 
-			int totalBytes = headerBytes + dataBytes;
-			int totalMaskBytes = headerBytes + maskDataBytes;
+			int totalAndBytes = headerBytes + andDataBytes;
+			int totalXorBytes = headerBytes + xorDataBytes;
 
-			if (buffer.Length < totalBytes)
+			if (and.Length < totalAndBytes)
 				throw new InvalidOperationException();
-			if (mask.Length < totalMaskBytes)
+			if (xor.Length < totalXorBytes)
 				throw new InvalidOperationException();
 
-			var data = buffer.Slice(headerBytes);
-			var maskData = mask.Slice(headerBytes);
+			var andData = and.Slice(headerBytes);
+			var xorData = xor.Slice(headerBytes);
 
 			if (y < 0)
 			{
-				data = data.Slice(-y * bytesPerScan);
-				maskData = maskData.Slice(-y * maskBytesPerScan);
+				xorData = xorData.Slice(-y * xorBytesPerScan);
+				andData = andData.Slice(-y * andBytesPerScan);
 
-				h += y;
+				andH += y;
+				xorH += y;
 				y = 0;
 			}
 
-			if (y + h >= Height)
-				h = Height - y;
+			if (y + andH >= Height)
+				andH = Height - y;
+			if (y + xorH >= Height)
+				xorH = Height - y;
 
-			int o = 0;
-			int packed = 0;
-			int maskPacked = 0;
+			maxH = Math.Max(andH, xorH);
 
-			for (int yy = 0; yy < h; yy++)
+			int andPacked = 0;
+			int xorPacked = 0;
+
+			int maxBytesPerScan = Math.Max(andBytesPerScan, xorBytesPerScan);
+
+			if ((andH < maxH) || (andW < maxW))
 			{
-				int p = yy * maskBytesPerScan;
+				if ((s_ones == null) || (s_ones.Length < maxBytesPerScan))
+				{
+					s_ones = new byte[maxBytesPerScan * 2];
+					s_ones.AsSpan().Fill(0xFF);
+				}
+			}
 
-				for (int xx = 0; xx < w; xx++)
+			if ((xorH < maxH) || (xorW < maxW))
+			{
+				if ((s_zeroes == null) || (s_zeroes.Length < maxBytesPerScan))
+					s_zeroes = new byte[maxBytesPerScan * 2];
+			}
+
+			var onesScan = s_ones.AsSpan();
+			var zeroesScan = s_zeroes.AsSpan();
+
+			for (int yy = 0; yy < maxH; yy++)
+			{
+				var andScan = (yy < andH) ? andData.Slice(yy * andBytesPerScan) : onesScan;
+				var xorScan = (yy < xorH) ? xorData.Slice(yy * xorBytesPerScan) : zeroesScan;
+
+				for (int xx = 0, o = 0; xx < maxW; xx++)
 				{
 					if ((xx & 3) == 0)
 					{
-						packed = data[o++];
-						maskPacked = maskData[p++];
+						if (o == andScan.Length)
+							andScan = onesScan;
+						if (o == xorScan.Length)
+							xorScan = zeroesScan;
+
+						xorPacked = xorScan[o];
+						andPacked = andScan[o];
+
+						o++;
 					}
 
 					int rx = xx + x;
 
 					if ((rx >= 0) && (rx < Width))
 					{
-						int maskBits = (maskPacked >> 6) & 3;
+						int andBits = (andPacked >> 6) & 3;
+						int xorBits = (xorPacked >> 6) & 3;
 
-						if (maskBits == 3)
-							PixelSet(x + xx, y + yy, (packed >> 6) & 3);
-						else if (maskBits != 0)
+						if (andBits == 0)
+							PixelSet(x + xx, y + yy, (xorPacked >> 6) & 3);
+						else
 						{
 							int existing = PixelGet(x + xx, y + yy);
 
-							int newColour =
-								(existing & ~maskBits) |
-								((packed >> 6) & maskBits);
+							int newColour = (existing & andBits) ^ xorBits;
 
 							PixelSet(x + xx, y + yy, newColour & 3);
 						}
 					}
 
-					packed <<= 2;
+					andPacked <<= 2;
+					xorPacked <<= 2;
 				}
 			}
 		}
@@ -683,20 +723,4 @@ public class GraphicsLibrary_2bppInterleaved : GraphicsLibrary
 			}
 		}
 	}
-
-	protected override byte[] MakePointerSprite() =>
-		[
-			32, 0, 16, 0, 0, 0, 0, 0, 48, 0, 0, 0, 60, 0, 0, 0, 63, 0, 0, 0, 63,
-			192, 0, 0, 63, 240, 0, 0, 63, 252, 0, 0, 63, 255, 0, 0, 63, 255, 192,
-			0, 63, 240, 0, 0, 60, 240, 0, 0, 48, 60, 0, 0, 0, 60, 0, 0, 0, 15, 0,
-			0, 0, 15, 0, 0, 0, 0, 0, 0
-		];
-
-	protected override byte[] MakePointerMask() =>
-		[
-			32, 0, 16, 0, 240, 0, 0, 0, 252, 0, 0, 0, 255, 0, 0, 0, 255, 192, 0,
-			0, 255, 240, 0, 0, 255, 252, 0, 0, 255, 255, 0, 0, 255, 255, 192, 0,
-			255, 255, 240, 0, 255, 255, 252, 0, 255, 252, 0, 0, 255, 255, 0, 0,
-			240, 255, 0, 0, 0, 63, 192, 0, 0, 63, 192, 0, 0, 15, 0, 0
-		];
 }

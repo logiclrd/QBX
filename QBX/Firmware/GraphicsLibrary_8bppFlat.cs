@@ -220,104 +220,159 @@ public class GraphicsLibrary_8bppFlat : GraphicsLibrary
 		}
 	}
 
-	public override void PutMaskedSprite(Span<byte> buffer, Span<byte> mask, int x, int y)
+	[ThreadStatic]
+	static byte[]? s_zeroes;
+	[ThreadStatic]
+	static byte[]? s_ones;
+
+	public override void PutMaskedSprite(Span<byte> and, Span<byte> xor, int x, int y)
 	{
-		if (buffer.Length < 4)
+		if (and.Length < 4)
 			throw new InvalidOperationException();
-		if (mask.Length < 4)
+		if (xor.Length < 4)
 			throw new InvalidOperationException();
 
 		int headerBytes = 4;
 
-		var header = MemoryMarshal.Cast<byte, short>(buffer.Slice(0, headerBytes));
+		var andHeader = MemoryMarshal.Cast<byte, short>(and.Slice(0, headerBytes));
 
-		int w = header[0] / 8;
-		int h = header[1];
+		int andW = andHeader[0] / 8;
+		int andH = andHeader[1];
 
-		var maskHeader = MemoryMarshal.Cast<byte, short>(mask.Slice(0, headerBytes));
+		var xorHeader = MemoryMarshal.Cast<byte, short>(xor.Slice(0, headerBytes));
 
-		int maskW = maskHeader[0] / 8;
-		int maskH = maskHeader[1];
+		int xorW = xorHeader[0] / 8;
+		int xorH = xorHeader[1];
 
-		if ((maskW < w) || (maskH < h))
-			throw new InvalidOperationException("Mask is not large enough for the sprite");
+		int minW = Math.Min(andW, xorW);
+		int maxW = Math.Max(andW, xorW);
+		int maxH = Math.Max(andH, xorH);
 
-		if ((w < 0) || (h < 0))
+		if ((andW < 0) || (andH < 0))
 			throw new InvalidOperationException();
-		if ((x + w <= 0) || (y + h <= 0))
+		if ((xorW < 0) || (xorH < 0))
+			throw new InvalidOperationException();
+		if ((x + maxW <= 0) || (y + maxH <= 0))
 			return;
 		if ((x >= Width) || (y >= Height))
 			return;
 
-		using (HidePointerForOperationIfPointerAware(x, y, x + w - 1, y + h - 1))
+		using (HidePointerForOperationIfPointerAware(x, y, x + maxW - 1, y + maxH - 1))
 		{
 			var vramSpan = Array.VRAM.AsSpan();
 
 			var plane = vramSpan.Slice(StartAddress, 64000);
 
-			int bytesPerScan = w;
-			int maskBytesPerScan = maskW;
+			int andBytesPerScan = andW;
+			int xorBytesPerScan = xorW;
 
-			int dataBytes = bytesPerScan * h;
-			int maskDataBytes = maskBytesPerScan * h; // If maskH > h, use h anyway. We don't need more than that.
+			int andStride = andBytesPerScan;
+			int xorStride = xorBytesPerScan;
 
-			int totalBytes = headerBytes + dataBytes;
-			int maskTotalBytes = headerBytes + maskDataBytes;
+			int andDataBytes = andStride * andH;
+			int xorDataBytes = xorStride * xorH;
 
-			if (buffer.Length < totalBytes)
+			int andTotalBytes = headerBytes + andDataBytes;
+			int xorTotalBytes = headerBytes + xorDataBytes;
+
+			if (and.Length < andTotalBytes)
 				throw new InvalidOperationException();
-			if (mask.Length < maskTotalBytes)
+			if (xor.Length < xorTotalBytes)
 				throw new InvalidOperationException();
 
-			var data = buffer.Slice(headerBytes, dataBytes);
-			var maskData = mask.Slice(headerBytes, maskDataBytes);
+			var andData = and.Slice(headerBytes, andDataBytes);
+			var xorData = xor.Slice(headerBytes, xorDataBytes);
 
 			if (y < 0)
 			{
-				data = data.Slice(-y * bytesPerScan);
-				maskData = maskData.Slice(-y * maskBytesPerScan);
+				andData = andData.Slice(-y * andStride);
+				xorData = xorData.Slice(-y * xorStride);
 
-				h += y;
+				andH += y;
+				xorH += y;
 				y = 0;
 			}
 
-			if (y + h >= Height)
-				h = Height - y;
+			if (y + andH >= Height)
+				andH = Height - y;
+			if (y + xorH >= Height)
+				xorH = Height - y;
 
 			if (x < 0)
 			{
-				data = data.Slice(-x);
-				maskData = maskData.Slice(-x);
+				xorData = xorData.Slice(-x);
+				andData = andData.Slice(-x);
 
-				w += x;
+				andW += x;
+				xorW += x;
+				andBytesPerScan += x;
+				xorBytesPerScan += x;
 				x = 0;
 			}
 
-			if (x + w > Width)
-				w = Width - x;
+			if (x + andW > Width)
+			{
+				int delta = (x + andW) - Width;
 
-			for (int yy = 0; yy < h; yy++)
+				andW -= delta;
+				andBytesPerScan -= delta;
+			}
+
+			if (x + xorW > Width)
+			{
+				int delta = (x + xorW) - Width;
+
+				xorW -= delta;
+				xorBytesPerScan -= delta;
+			}
+
+			maxW = Math.Max(andW, xorW);
+			maxH = Math.Max(andH, xorH);
+
+			int maxBytesPerScan = Math.Max(andBytesPerScan, xorBytesPerScan);
+
+			if ((andH < maxH) || (andW < maxW))
+			{
+				if ((s_ones == null) || (s_ones.Length < maxBytesPerScan))
+				{
+					s_ones = new byte[maxBytesPerScan * 2];
+					s_ones.AsSpan().Fill(0xFF);
+				}
+			}
+
+			if ((xorH < maxH) || (xorW < maxW))
+			{
+				if ((s_zeroes == null) || (s_zeroes.Length < maxBytesPerScan))
+					s_zeroes = new byte[maxBytesPerScan * 2];
+			}
+
+			var onesScan = s_ones.AsSpan();
+			var zeroesScan = s_zeroes.AsSpan();
+
+			for (int yy = 0; yy < maxH; yy++)
 			{
 				int o = (y + yy) * 320 + x;
-				int p = yy * bytesPerScan;
-				int q = yy * maskBytesPerScan;
+				int p = yy * andStride;
+				int q = yy * xorStride;
 
 				var planeScan = plane.Slice(o);
-				var dataScan = data.Slice(p);
-				var maskDataScan = maskData.Slice(q);
+				var andScan = andData.Slice(p, andBytesPerScan);
+				var xorScan = xorData.Slice(q, xorBytesPerScan);
 
-				for (int xx = 0; xx < w; xx++)
+				for (int xx = 0; xx < xorW; xx++)
 				{
-					int maskSample = maskDataScan[xx];
+					if (xx == andBytesPerScan)
+						andScan = onesScan;
+					if (xx == xorBytesPerScan)
+						xorScan = zeroesScan;
 
-					if (maskSample == 0xFF)
-						planeScan[xx] = dataScan[xx];
+					byte andSample = andScan[xx];
+					byte xorSample = xorScan[xx];
+
+					if (andSample == 0)
+						planeScan[xx] = xorSample;
 					else
-					{
-						planeScan[xx] = unchecked((byte)(
-							(planeScan[xx] & ~maskSample) |
-							(dataScan[xx] & maskSample)));
-					}
+						planeScan[xx] = unchecked((byte)((planeScan[xx] & andSample) ^ xorSample));
 				}
 			}
 		}
@@ -364,46 +419,4 @@ public class GraphicsLibrary_8bppFlat : GraphicsLibrary
 			characterBit >>= 1;
 		}
 	}
-
-	protected override byte[] MakePointerSprite() =>
-		[
-			128, 0, 16, 0,
-			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  
-			0,   0xF, 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  
-			0,   0xF, 0xF, 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  
-			0,   0xF, 0xF, 0xF, 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  
-			0,   0xF, 0xF, 0xF, 0xF, 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  
-			0,   0xF, 0xF, 0xF, 0xF, 0xF, 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  
-			0,   0xF, 0xF, 0xF, 0xF, 0xF, 0xF, 0,   0,   0,   0,   0,   0,   0,   0,   0,  
-			0,   0xF, 0xF, 0xF, 0xF, 0xF, 0xF, 0xF, 0,   0,   0,   0,   0,   0,   0,   0,  
-			0,   0xF, 0xF, 0xF, 0xF, 0xF, 0xF, 0xF, 0xF, 0,   0,   0,   0,   0,   0,   0,  
-			0,   0xF, 0xF, 0xF, 0xF, 0xF, 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  
-			0,   0xF, 0xF, 0,   0xF, 0xF, 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  
-			0,   0xF, 0,   0,   0,   0xF, 0xF, 0,   0,   0,   0,   0,   0,   0,   0,   0,  
-			0,   0,   0,   0,   0,   0xF, 0xF, 0,   0,   0,   0,   0,   0,   0,   0,   0,  
-			0,   0,   0,   0,   0,   0,   0xF, 0xF, 0,   0,   0,   0,   0,   0,   0,   0,  
-			0,   0,   0,   0,   0,   0,   0xF, 0xF, 0,   0,   0,   0,   0,   0,   0,   0,  
-			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0
-		];
-
-	protected override byte[] MakePointerMask() =>
-		[
-			128, 0, 16, 0,
-			0xFF, 0xFF, 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-			0xFF, 0xFF, 0xFF, 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-			0xFF, 0xFF, 0xFF, 0xFF, 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-			0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-			0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-			0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0,    0,    0,    0,    0,    0,    0,    0,    0,
-			0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0,    0,    0,    0,    0,    0,    0,    0,
-			0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0,    0,    0,    0,    0,    0,    0,
-			0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0,    0,    0,    0,    0,    0,
-			0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0,    0,    0,    0,    0,
-			0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0,    0,    0,    0,    0,    0,    0,    0,    0,
-			0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0,    0,    0,    0,    0,    0,    0,    0,
-			0xFF, 0xFF, 0,    0,    0xFF, 0xFF, 0xFF, 0xFF, 0,    0,    0,    0,    0,    0,    0,    0,
-			0,    0,    0,    0,    0,    0xFF, 0xFF, 0xFF, 0xFF, 0,    0,    0,    0,    0,    0,    0,
-			0,    0,    0,    0,    0,    0xFF, 0xFF, 0xFF, 0xFF, 0,    0,    0,    0,    0,    0,    0,
-			0,    0,    0,    0,    0,    0,    0xFF, 0xFF, 0,    0,    0,    0,    0,    0,    0,    0
-		];
 }

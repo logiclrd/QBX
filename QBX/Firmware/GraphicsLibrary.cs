@@ -1941,7 +1941,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	public abstract void PutSprite(Span<byte> buffer, PutSpriteAction action, int x, int y);
 
-	public abstract void PutMaskedSprite(Span<byte> buffer, Span<byte> mask, int x, int y);
+	public abstract void PutMaskedSprite(Span<byte> and, Span<byte> xor, int x, int y);
 	#endregion
 
 	#region Text
@@ -2021,20 +2021,17 @@ public abstract class GraphicsLibrary : VisualLibrary
 	#endregion Text
 
 	#region Pointer
-	protected abstract byte[] MakePointerSprite();
-	protected abstract byte[] MakePointerMask();
+	byte[] _pointerAnd = [0, 0, 0, 0];
+	byte[] _pointerXor = [0, 0, 0, 0];
+	byte[] _pointerSaved = [0, 0, 0, 0];
 
-	byte[]? _pointerSprite;
-	byte[]? _pointerMask;
-	byte[]? _pointerSaved;
 
 	protected override void DrawPointer()
 	{
 		if (PointerVisible && !PointerIsDrawn)
 		{
-			_pointerSprite ??= MakePointerSprite();
-			_pointerMask ??= MakePointerMask();
-			_pointerSaved = new byte[_pointerSprite.Length];
+			if ((_pointerSaved == null) || (_pointerSaved.Length < _pointerXor.Length))
+				_pointerSaved = new byte[_pointerXor.Length];
 
 			PointerRect.X1 = Math.Max(0, PointerX - 1);
 			PointerRect.Y1 = Math.Max(0, PointerY - 1);
@@ -2052,8 +2049,8 @@ public abstract class GraphicsLibrary : VisualLibrary
 					_pointerSaved);
 
 				PutMaskedSprite(
-					_pointerSprite, _pointerMask,
-					PointerX - 1, PointerY - 1);
+					_pointerAnd, _pointerXor,
+					pointerX - 1, pointerY - 1);
 
 				PointerIsDrawn = true;
 			}

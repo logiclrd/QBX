@@ -559,36 +559,44 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 		}
 	}
 
-	public override void PutMaskedSprite(Span<byte> buffer, Span<byte> mask, int x, int y)
+	[ThreadStatic]
+	static byte[]? s_zeroes;
+	[ThreadStatic]
+	static byte[]? s_ones;
+
+	public override void PutMaskedSprite(Span<byte> and, Span<byte> xor, int x, int y)
 	{
-		if (buffer.Length < 4)
+		if (and.Length < 4)
 			throw new InvalidOperationException();
-		if (mask.Length < 4)
+		if (xor.Length < 4)
 			throw new InvalidOperationException();
 
 		int headerBytes = 4;
 
-		var header = MemoryMarshal.Cast<byte, short>(buffer.Slice(0, headerBytes));
+		var andHeader = MemoryMarshal.Cast<byte, short>(and.Slice(0, headerBytes));
 
-		int w = header[0];
-		int h = header[1];
+		int andW = andHeader[0];
+		int andH = andHeader[1];
 
-		var maskHeader = MemoryMarshal.Cast<byte, short>(mask.Slice(0, headerBytes));
+		var xorHeader = MemoryMarshal.Cast<byte, short>(xor.Slice(0, headerBytes));
 
-		int maskW = maskHeader[0];
-		int maskH = maskHeader[1];
+		int xorW = xorHeader[0];
+		int xorH = xorHeader[1];
 
-		if ((maskW < w) || (maskH < h))
-			throw new InvalidOperationException("Mask is not large enough for the sprite");
+		int minW = Math.Min(andW, xorW);
+		int maxW = Math.Max(andW, xorW);
+		int maxH = Math.Max(andH, xorH);
 
-		if ((w < 0) || (h < 0))
+		if ((andW < 0) || (andH < 0))
 			throw new InvalidOperationException();
-		if ((x + w <= 0) || (y + h <= 0))
+		if ((xorW < 0) || (xorH < 0))
+			throw new InvalidOperationException();
+		if ((x + maxW <= 0) || (y + maxH <= 0))
 			return;
 		if ((x >= Width) || (y >= Height))
 			return;
 
-		using (HidePointerForOperationIfPointerAware(x, y, x + w - 1, y + h - 1))
+		using (HidePointerForOperationIfPointerAware(x, y, x + maxW - 1, y + maxH - 1))
 		{
 			var vramSpan = Array.VRAM.AsSpan();
 
@@ -597,34 +605,34 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 			var plane2 = vramSpan.Slice(_plane2Offset, _planeBytesUsed);
 			var plane3 = vramSpan.Slice(_plane3Offset, _planeBytesUsed);
 
-			int bytesPerScan = (w + 7) / 8;
-			int maskBytesPerScan = (maskW + 7) / 8;
+			int andBytesPerScan = (andW + 7) / 8;
+			int xorBytesPerScan = (xorW + 7) / 8;
 
-			int dataBytes = bytesPerScan * h * 4;
-			int maskDataBytes = maskBytesPerScan * h * 4; // If maskH > h, use h anyway. We don't need more than that.
+			int andDataBytes = andBytesPerScan * andH * 4;
+			int xorDataBytes = xorBytesPerScan * xorH * 4;
 
-			int totalBytes = headerBytes + dataBytes;
-			int totalMaskBytes = headerBytes + maskDataBytes;
+			int totalAndBytes = headerBytes + andDataBytes;
+			int totalXorBytes = headerBytes + xorDataBytes;
 
-			if (buffer.Length < totalBytes)
+			if (and.Length < totalAndBytes)
 				throw new InvalidOperationException();
-			if (mask.Length < totalMaskBytes)
+			if (xor.Length < totalXorBytes)
 				throw new InvalidOperationException();
 
-			var data = buffer.Slice(headerBytes, dataBytes);
-			var maskData = mask.Slice(headerBytes, maskDataBytes);
+			var andData = and.Slice(headerBytes, andDataBytes);
+			var xorData = xor.Slice(headerBytes, xorDataBytes);
 
 			if (y < 0)
 			{
-				data = data.Slice(-y * bytesPerScan);
-				maskData = maskData.Slice(-y * maskBytesPerScan);
+				andData = andData.Slice(-y * andBytesPerScan);
+				xorData = xorData.Slice(-y * xorBytesPerScan);
 
-				h += y;
+				xorH += y;
 				y = 0;
 			}
 
-			if (y + h >= Height)
-				h = Height - y;
+			if (y + xorH >= Height)
+				xorH = Height - y;
 
 			// 76543210
 			// ^-------  x = 0
@@ -638,153 +646,261 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 			if (leftPixelShift == 0)
 				rightPixelMask = 0;
 
-			int lastDataBytePixels = ((w - 1) & 7) + 1;
-			int lastOutputBytePixels = (x + w) & 7;
+			int lastAndBytePixels = ((andW - 1) & 7) + 1;
+			int lastXorBytePixels = ((xorW - 1) & 7) + 1;
+			int lastOutputBytePixels = (x + xorW) & 7;
 
 			int lastByteMask = unchecked((byte)~(255 >> lastOutputBytePixels));
 
 			int subByteAlignment = 0;
 
-			int loopBytes = ((x & 7) + w) >> 3;
+			int loopW = Math.Max(andW, xorW);
 
-			if (loopBytes == 0)
+			int loopBytes = ((x & 7) + loopW) >> 3;
+
+			if ((x & 7) + loopW < 8)
 			{
 				// Start and end in the same output byte.
 				// We'll skip the main loop and just use the tail,
 				// but that means we're also skipping incrementing
 				// p, which the tail depends on. So, factor that in.
 				subByteAlignment = x & 7;
-				lastByteMask = unchecked((byte)(((255 << (8 - w)) & 255) >> subByteAlignment));
-				lastOutputBytePixels = lastDataBytePixels;
+				lastByteMask = unchecked((byte)(((255 << (8 - loopW)) & 255) >> subByteAlignment));
+				lastOutputBytePixels = lastAndBytePixels | lastXorBytePixels;
 			}
 
-			var action = new SpriteOperation_PixelSet();
+			if (andBytesPerScan > xorBytesPerScan)
+			{
+				if ((s_zeroes == null) || (s_zeroes.Length < andBytesPerScan))
+					s_zeroes = new byte[andBytesPerScan * 2];
+			}
 
-			for (int yy = 0; yy < h; yy++)
+			if (xorBytesPerScan > andBytesPerScan)
+			{
+				if ((s_ones == null) || (s_ones.Length < xorBytesPerScan))
+				{
+					s_ones = new byte[xorBytesPerScan * 2];
+
+					s_ones.AsSpan().Fill(0xFF);
+				}
+			}
+
+			Span<byte> zeroesScan = s_zeroes;
+			Span<byte> onesScan = s_ones;
+
+			var andAction = new SpriteOperation_And();
+			var xorAction = new SpriteOperation_ExclusiveOr();
+
+			for (int yy = 0; yy < xorH; yy++)
 			{
 				int o = (y + yy) * _stride + (x >> 3);
-				int p = 4 * yy * bytesPerScan;
-				int q = 4 * yy * maskBytesPerScan;
+				int p = 4 * yy * andBytesPerScan;
+				int q = 4 * yy * xorBytesPerScan;
 
-				int p0 = p + 0 * bytesPerScan;
-				int p1 = p + 1 * bytesPerScan;
-				int p2 = p + 2 * bytesPerScan;
-				int p3 = p + 3 * bytesPerScan;
+				int p0 = p + 0 * andBytesPerScan;
+				int p1 = p + 1 * andBytesPerScan;
+				int p2 = p + 2 * andBytesPerScan;
+				int p3 = p + 3 * andBytesPerScan;
 
-				int q0 = q + 0 * maskBytesPerScan;
-				int q1 = q + 1 * maskBytesPerScan;
-				int q2 = q + 2 * maskBytesPerScan;
-				int q3 = q + 3 * maskBytesPerScan;
+				int q0 = q + 0 * xorBytesPerScan;
+				int q1 = q + 1 * xorBytesPerScan;
+				int q2 = q + 2 * xorBytesPerScan;
+				int q3 = q + 3 * xorBytesPerScan;
 
 				int spriteMask = leftPixelMask >> leftPixelShift;
 				int unrelatedMask = unchecked((byte)~spriteMask);
 
-				int bitsForNextPixel0 = 0;
-				int bitsForNextPixel1 = 0;
-				int bitsForNextPixel2 = 0;
-				int bitsForNextPixel3 = 0;
+				int andBitsForNextPixel0 = 0;
+				int andBitsForNextPixel1 = 0;
+				int andBitsForNextPixel2 = 0;
+				int andBitsForNextPixel3 = 0;
 
-				int maskBitsForNextPixel0 = 0;
-				int maskBitsForNextPixel1 = 0;
-				int maskBitsForNextPixel2 = 0;
-				int maskBitsForNextPixel3 = 0;
+				int xorBitsForNextPixel0 = 0;
+				int xorBitsForNextPixel1 = 0;
+				int xorBitsForNextPixel2 = 0;
+				int xorBitsForNextPixel3 = 0;
 
-				for (int xx = 0; xx < loopBytes; xx++, o++, p0++, p1++, p2++, p3++, q0++, q1++, q2++, q3++)
+				var andScan0 = andData.Slice(p0, andBytesPerScan);
+				var andScan1 = andData.Slice(p1, andBytesPerScan);
+				var andScan2 = andData.Slice(p2, andBytesPerScan);
+				var andScan3 = andData.Slice(p3, andBytesPerScan);
+
+				var xorScan0 = xorData.Slice(q0, xorBytesPerScan);
+				var xorScan1 = xorData.Slice(q1, xorBytesPerScan);
+				var xorScan2 = xorData.Slice(q2, xorBytesPerScan);
+				var xorScan3 = xorData.Slice(q3, xorBytesPerScan);
+
+				for (int xx = 0; xx < loopBytes; xx++, o++)
 				{
+					if (xx == andBytesPerScan)
+						andScan0 = andScan1 = andScan2 = andScan3 = onesScan;
+					if (xx == xorBytesPerScan)
+						xorScan0 = xorScan1 = xorScan2 = xorScan3 = zeroesScan;
+
 					int rx = xx + x;
 
 					bool onScreen = (rx >= 0) && (rx < Width);
 
 					{
-						int sample = data[p0];
-						int maskSample = maskData[q0];
-						int spriteByte = bitsForNextPixel0 | ((sample & leftPixelMask) >> leftPixelShift);
-						int spriteMaskByte = maskBitsForNextPixel0 | ((maskSample & leftPixelMask) >> leftPixelShift);
+						int andSample = andScan0[xx];
+						int xorSample = xorScan0[xx];
+						int andByte = andBitsForNextPixel0 | ((andSample & leftPixelMask) >> leftPixelShift);
+						int xorByte = xorBitsForNextPixel0 | ((xorSample & leftPixelMask) >> leftPixelShift);
 
 						if (onScreen)
-							plane0[o] = action.ApplySpriteBits(plane0[o], spriteByte, unrelatedMask | ~spriteMaskByte, spriteMask & spriteMaskByte);
+						{
+							var planeByte = plane0[o];
 
-						bitsForNextPixel0 = (sample & rightPixelMask) << rightPixelShift;
-						maskBitsForNextPixel0 = (maskSample & rightPixelMask) << rightPixelShift;
+							planeByte = andAction.ApplySpriteBits(planeByte, andByte, unrelatedMask, spriteMask);
+							planeByte = xorAction.ApplySpriteBits(planeByte, xorByte, unrelatedMask, spriteMask);
+
+							plane0[o] = planeByte;
+						}
+
+						andBitsForNextPixel0 = (andSample & rightPixelMask) << rightPixelShift;
+						xorBitsForNextPixel0 = (xorSample & rightPixelMask) << rightPixelShift;
 					}
 
 					{
-						int sample = data[p1];
-						int maskSample = maskData[q1];
-						int spriteByte = bitsForNextPixel1 | ((sample & leftPixelMask) >> leftPixelShift);
-						int spriteMaskByte = maskBitsForNextPixel1 | ((maskSample & leftPixelMask) >> leftPixelShift);
+						int andSample = andScan1[xx];
+						int xorSample = xorScan1[xx];
+						int andByte = andBitsForNextPixel1 | ((andSample & leftPixelMask) >> leftPixelShift);
+						int xorByte = xorBitsForNextPixel1 | ((xorSample & leftPixelMask) >> leftPixelShift);
 
 						if (onScreen)
-							plane1[o] = action.ApplySpriteBits(plane1[o], spriteByte, unrelatedMask | ~spriteMaskByte, spriteMask & spriteMaskByte);
+						{
+							var planeByte = plane1[o];
 
-						bitsForNextPixel1 = (sample & rightPixelMask) << rightPixelShift;
-						maskBitsForNextPixel1 = (maskSample & rightPixelMask) << rightPixelShift;
+							planeByte = andAction.ApplySpriteBits(planeByte, andByte, unrelatedMask, spriteMask);
+							planeByte = xorAction.ApplySpriteBits(planeByte, xorByte, unrelatedMask, spriteMask);
+
+							plane1[o] = planeByte;
+						}
+
+						andBitsForNextPixel1 = (andSample & rightPixelMask) << rightPixelShift;
+						xorBitsForNextPixel1 = (xorSample & rightPixelMask) << rightPixelShift;
 					}
 
 					{
-						int sample = data[p2];
-						int maskSample = maskData[q2];
-						int spriteByte = bitsForNextPixel2 | ((sample & leftPixelMask) >> leftPixelShift);
-						int spriteMaskByte = maskBitsForNextPixel2 | ((maskSample & leftPixelMask) >> leftPixelShift);
+						int andSample = andScan2[xx];
+						int xorSample = xorScan2[xx];
+						int andByte = andBitsForNextPixel2 | ((andSample & leftPixelMask) >> leftPixelShift);
+						int xorByte = xorBitsForNextPixel2 | ((xorSample & leftPixelMask) >> leftPixelShift);
 
 						if (onScreen)
-							plane2[o] = action.ApplySpriteBits(plane2[o], spriteByte, unrelatedMask | ~spriteMaskByte, spriteMask & spriteMaskByte);
+						{
+							var planeByte = plane2[o];
 
-						bitsForNextPixel2 = (sample & rightPixelMask) << rightPixelShift;
-						maskBitsForNextPixel2 = (maskSample & rightPixelMask) << rightPixelShift;
+							planeByte = andAction.ApplySpriteBits(planeByte, andByte, unrelatedMask, spriteMask);
+							planeByte = xorAction.ApplySpriteBits(planeByte, xorByte, unrelatedMask, spriteMask);
+
+							plane2[o] = planeByte;
+						}
+
+						andBitsForNextPixel2 = (andSample & rightPixelMask) << rightPixelShift;
+						xorBitsForNextPixel2 = (xorSample & rightPixelMask) << rightPixelShift;
 					}
 
 					{
-						int sample = data[p3];
-						int maskSample = maskData[q3];
-						int spriteByte = bitsForNextPixel3 | ((sample & leftPixelMask) >> leftPixelShift);
-						int spriteMaskByte = maskBitsForNextPixel3 | ((maskSample & leftPixelMask) >> leftPixelShift);
+						int andSample = andScan3[xx];
+						int xorSample = xorScan3[xx];
+						int andByte = andBitsForNextPixel3 | ((andSample & leftPixelMask) >> leftPixelShift);
+						int xorByte = xorBitsForNextPixel3 | ((xorSample & leftPixelMask) >> leftPixelShift);
 
 						if (onScreen)
-							plane3[o] = action.ApplySpriteBits(plane3[o], spriteByte, unrelatedMask | ~spriteMaskByte, spriteMask & spriteMaskByte);
+						{
+							var planeByte = plane3[o];
 
-						bitsForNextPixel3 = (sample & rightPixelMask) << rightPixelShift;
-						maskBitsForNextPixel3 = (maskSample & rightPixelMask) << rightPixelShift;
+							planeByte = andAction.ApplySpriteBits(planeByte, andByte, unrelatedMask, spriteMask);
+							planeByte = xorAction.ApplySpriteBits(planeByte, xorByte, unrelatedMask, spriteMask);
+
+							plane3[o] = planeByte;
+						}
+
+						andBitsForNextPixel3 = (andSample & rightPixelMask) << rightPixelShift;
+						xorBitsForNextPixel3 = (xorSample & rightPixelMask) << rightPixelShift;
 					}
 
 					unrelatedMask = 0;
 					spriteMask = 255;
 				}
 
-				if ((lastByteMask != 0) && (x + w <= Width))
+				if ((lastByteMask != 0) && (x + minW <= Width))
 				{
+					if (loopBytes == andBytesPerScan)
+						andScan0 = andScan1 = andScan2 = andScan3 = onesScan;
+					if (loopBytes == xorBytesPerScan)
+						xorScan0 = xorScan1 = xorScan2 = xorScan3 = zeroesScan;
+
 					unrelatedMask = unchecked((byte)~lastByteMask);
 					spriteMask = lastByteMask;
 
 					if (subByteAlignment != 0)
 					{
-						bitsForNextPixel0 = data[p0] >> subByteAlignment;
-						bitsForNextPixel1 = data[p1] >> subByteAlignment;
-						bitsForNextPixel2 = data[p2] >> subByteAlignment;
-						bitsForNextPixel3 = data[p3] >> subByteAlignment;
+						andBitsForNextPixel0 = (andScan0[loopBytes] & lastAndBytePixels) >> subByteAlignment;
+						andBitsForNextPixel1 = (andScan1[loopBytes] & lastAndBytePixels) >> subByteAlignment;
+						andBitsForNextPixel2 = (andScan2[loopBytes] & lastAndBytePixels) >> subByteAlignment;
+						andBitsForNextPixel3 = (andScan3[loopBytes] & lastAndBytePixels) >> subByteAlignment;
 
-						maskBitsForNextPixel0 = maskData[q0] >> subByteAlignment;
-						maskBitsForNextPixel1 = maskData[q1] >> subByteAlignment;
-						maskBitsForNextPixel2 = maskData[q2] >> subByteAlignment;
-						maskBitsForNextPixel3 = maskData[q3] >> subByteAlignment;
+						xorBitsForNextPixel0 = (xorScan0[loopBytes] & lastXorBytePixels) >> subByteAlignment;
+						xorBitsForNextPixel1 = (xorScan1[loopBytes] & lastXorBytePixels) >> subByteAlignment;
+						xorBitsForNextPixel2 = (xorScan2[loopBytes] & lastXorBytePixels) >> subByteAlignment;
+						xorBitsForNextPixel3 = (xorScan3[loopBytes] & lastXorBytePixels) >> subByteAlignment;
 					}
-					else if (lastDataBytePixels <= lastOutputBytePixels)
+					else
 					{
-						bitsForNextPixel0 |= data[p0] >> leftPixelShift;
-						bitsForNextPixel1 |= data[p1] >> leftPixelShift;
-						bitsForNextPixel2 |= data[p2] >> leftPixelShift;
-						bitsForNextPixel3 |= data[p3] >> leftPixelShift;
+						if (lastAndBytePixels <= lastOutputBytePixels)
+						{
+							andBitsForNextPixel0 |= andScan0[loopBytes] >> leftPixelShift;
+							andBitsForNextPixel1 |= andScan1[loopBytes] >> leftPixelShift;
+							andBitsForNextPixel2 |= andScan2[loopBytes] >> leftPixelShift;
+							andBitsForNextPixel3 |= andScan3[loopBytes] >> leftPixelShift;
+						}
 
-						maskBitsForNextPixel0 |= maskData[q0] >> leftPixelShift;
-						maskBitsForNextPixel1 |= maskData[q1] >> leftPixelShift;
-						maskBitsForNextPixel2 |= maskData[q2] >> leftPixelShift;
-						maskBitsForNextPixel3 |= maskData[q3] >> leftPixelShift;
+						if (lastXorBytePixels <= lastOutputBytePixels)
+						{
+							xorBitsForNextPixel0 |= xorScan0[loopBytes] >> leftPixelShift;
+							xorBitsForNextPixel1 |= xorScan1[loopBytes] >> leftPixelShift;
+							xorBitsForNextPixel2 |= xorScan2[loopBytes] >> leftPixelShift;
+							xorBitsForNextPixel3 |= xorScan3[loopBytes] >> leftPixelShift;
+						}
 					}
 
-					plane0[o] = action.ApplySpriteBits(plane0[o], bitsForNextPixel0, unrelatedMask | ~maskBitsForNextPixel0, spriteMask & maskBitsForNextPixel0);
-					plane1[o] = action.ApplySpriteBits(plane1[o], bitsForNextPixel1, unrelatedMask | ~maskBitsForNextPixel1, spriteMask & maskBitsForNextPixel1);
-					plane2[o] = action.ApplySpriteBits(plane2[o], bitsForNextPixel2, unrelatedMask | ~maskBitsForNextPixel2, spriteMask & maskBitsForNextPixel2);
-					plane3[o] = action.ApplySpriteBits(plane3[o], bitsForNextPixel3, unrelatedMask | ~maskBitsForNextPixel3, spriteMask & maskBitsForNextPixel3);
+					{
+						byte planeByte = plane0[o];
+
+						planeByte = andAction.ApplySpriteBits(planeByte, andBitsForNextPixel0, unrelatedMask, spriteMask);
+						planeByte = xorAction.ApplySpriteBits(planeByte, xorBitsForNextPixel0, unrelatedMask, spriteMask);
+
+						plane0[o] = planeByte;
+					}
+
+					{
+						byte planeByte = plane1[o];
+
+						planeByte = andAction.ApplySpriteBits(planeByte, andBitsForNextPixel1, unrelatedMask, spriteMask);
+						planeByte = xorAction.ApplySpriteBits(planeByte, xorBitsForNextPixel1, unrelatedMask, spriteMask);
+
+						plane1[o] = planeByte;
+					}
+
+					{
+						byte planeByte = plane2[o];
+
+						planeByte = andAction.ApplySpriteBits(planeByte, andBitsForNextPixel2, unrelatedMask, spriteMask);
+						planeByte = xorAction.ApplySpriteBits(planeByte, xorBitsForNextPixel2, unrelatedMask, spriteMask);
+
+						plane2[o] = planeByte;
+					}
+
+					{
+						byte planeByte = plane3[o];
+
+						planeByte = andAction.ApplySpriteBits(planeByte, andBitsForNextPixel3, unrelatedMask, spriteMask);
+						planeByte = xorAction.ApplySpriteBits(planeByte, xorBitsForNextPixel3, unrelatedMask, spriteMask);
+
+						plane3[o] = planeByte;
+					}
 				}
 			}
 		}
@@ -860,27 +976,4 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 			}
 		}
 	}
-
-	protected override byte[] MakePointerSprite() =>
-		[
-			16, 0, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 0, 64, 0, 64, 0, 64, 0, 96, 0,
-			96, 0, 96, 0, 96, 0, 112, 0, 112, 0, 112, 0, 112, 0, 120, 0, 120, 0, 120,
-			0, 120, 0, 124, 0, 124, 0, 124, 0, 124, 0, 126, 0, 126, 0, 126, 0, 126,
-			0, 127, 0, 127, 0, 127, 0, 127, 0, 127, 128, 127, 128, 127, 128, 127,
-			128, 124, 0, 124, 0, 124, 0, 124, 0, 108, 0, 108, 0, 108, 0, 108, 0, 70,
-			0, 70, 0, 70, 0, 70, 0, 6, 0, 6, 0, 6, 0, 6, 0, 3, 0, 3, 0, 3, 0, 3, 0,
-			3, 0, 3, 0, 3, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0
-		];
-
-	protected override byte[] MakePointerMask() =>
-		[
-			16, 0, 16, 0, 192, 0, 192, 0, 192, 0, 192, 0, 224, 0, 224, 0, 224, 0,
-			224, 0, 240, 0, 240, 0, 240, 0, 240, 0, 248, 0, 248, 0, 248, 0, 248,
-			0, 252, 0, 252, 0, 252, 0, 252, 0, 254, 0, 254, 0, 254, 0, 254, 0,
-			255, 0, 255, 0, 255, 0, 255, 0, 255, 128, 255, 128, 255, 128, 255,
-			128, 255, 192, 255, 192, 255, 192, 255, 192, 255, 224, 255, 224, 255,
-			224, 255, 224, 254, 0, 254, 0, 254, 0, 254, 0, 255, 0, 255, 0, 255,
-			0, 255, 0, 207, 0, 207, 0, 207, 0, 207, 0, 7, 128, 7, 128, 7, 128, 7,
-			128, 7, 128, 7, 128, 7, 128, 7, 128, 3, 0, 3, 0, 3, 0, 3, 0
-		];
 }
