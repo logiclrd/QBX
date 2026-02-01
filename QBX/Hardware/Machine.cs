@@ -10,6 +10,7 @@ public class Machine
 	public Adapter Display { get; }
 	public Video VideoFirmware { get; }
 	public Keyboard Keyboard { get; }
+	public Mouse Mouse { get; }
 	public Speaker Speaker { get; }
 	public TimerChip Timer { get; }
 
@@ -26,6 +27,7 @@ public class Machine
 		Display = new Adapter(GraphicsArray);
 		VideoFirmware = new Video(this);
 		Keyboard = new Keyboard(this);
+		Mouse = new Mouse();
 		Speaker = new Speaker(this);
 		Timer = new TimerChip(Speaker);
 

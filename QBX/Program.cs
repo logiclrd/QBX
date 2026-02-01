@@ -92,6 +92,54 @@ class Program
 			if (audioStream != default)
 				SDL.ResumeAudioStreamDevice(audioStream);
 
+			machine.Mouse.WarpMouse +=
+				() =>
+				{
+					try
+					{
+						SDL.WarpMouseInWindow(window, machine.Mouse.X, machine.Mouse.Y);
+					}
+					catch { }
+				};
+
+			machine.Mouse.ResetGeometryOfSpace +=
+				() =>
+				{
+					try
+					{
+						SDL.SetWindowMouseRect(window, 0);
+					}
+					catch { }
+				};
+
+			machine.Mouse.ChangeGeometryOfSpace +=
+				() =>
+				{
+					SDL.Rect mouseRect = new SDL.Rect();
+
+					mouseRect.X = machine.Mouse.Bounds.X1;
+					mouseRect.Y = machine.Mouse.Bounds.Y1;
+					mouseRect.W = machine.Mouse.Bounds.X2 - machine.Mouse.Bounds.X1 + 1;
+					mouseRect.H = machine.Mouse.Bounds.Y2 - machine.Mouse.Bounds.Y1 + 1;
+
+					try
+					{
+						SDL.SetWindowMouseRect(window, mouseRect);
+					}
+					catch { }
+				};
+
+			Action? engageMouse = null;
+
+			engageMouse =
+				() =>
+				{
+					SDL.HideCursor();
+					machine.MouseDriver.Initialized -= engageMouse;
+				};
+
+			machine.MouseDriver.Initialized += engageMouse;
+
 			IntPtr texture = default;
 			int textureWidth = -1;
 			int textureHeight = -1;
@@ -110,8 +158,32 @@ class Program
 						break;
 					}
 
-					if ((eventType == SDL.EventType.KeyDown) || (eventType == SDL.EventType.KeyUp))
-						machine.Keyboard.HandleEvent(evt.Key);
+					switch (eventType)
+					{
+						case SDL.EventType.KeyDown:
+						case SDL.EventType.KeyUp:
+							machine.Keyboard.HandleEvent(evt.Key);
+							break;
+
+						case SDL.EventType.MouseMotion:
+							machine.Mouse.NotifyPositionChanged(evt.Motion.X, evt.Motion.Y);
+							break;
+
+						case SDL.EventType.MouseButtonDown:
+						case SDL.EventType.MouseButtonUp:
+							machine.Mouse.NotifyButtonChanged(
+								evt.Button.Button switch
+								{
+									SDL.ButtonLeft => MouseButton.Left,
+									SDL.ButtonMiddle => MouseButton.Middle,
+									SDL.ButtonRight => MouseButton.Right,
+
+									_ => default
+								},
+								isPressed: evt.Button.Down);
+
+							break;
+					}
 				}
 
 				if (machine.Display.UpdateResolution(ref textureWidth, ref textureHeight, ref physicalWidth, ref physicalHeight))
@@ -124,6 +196,8 @@ class Program
 					SDL.SetTextureScaleMode(texture, SDL.ScaleMode.Nearest);
 
 					SDL.SetWindowSize(window, physicalWidth, physicalHeight);
+
+					machine.Mouse.NotifyPhysicalSizeChanged(physicalWidth, physicalHeight);
 				}
 
 				machine.Display.Render(texture);
