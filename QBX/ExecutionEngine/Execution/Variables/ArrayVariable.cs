@@ -2,7 +2,7 @@
 
 namespace QBX.ExecutionEngine.Execution.Variables;
 
-public class ArrayVariable(DataType type) : Variable(type)
+public class ArrayVariable(DataType type, int fixedStringLength = -1) : Variable(type)
 {
 	public override bool IsZero => false;
 	public override bool IsPositive => false;
@@ -24,6 +24,6 @@ public class ArrayVariable(DataType type) : Variable(type)
 
 	internal void InitializeArray(ArraySubscripts subscripts)
 	{
-		Array = new Array(ElementType, subscripts);
+		Array = new Array(ElementType, subscripts, fixedStringLength);
 	}
 }

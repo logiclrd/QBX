@@ -28,8 +28,11 @@ public abstract class Variable
 		}
 	}
 
-	public static Variable ConstructArray(DataType type)
+	public static ArrayVariable ConstructArray(DataType type)
 		=> new ArrayVariable(type);
+
+	public static ArrayVariable ConstructArrayOfFixedLengthString(int fixedLength)
+		=> new ArrayVariable(DataType.String, fixedStringLength: fixedLength);
 
 	public DataType DataType { get; }
 	

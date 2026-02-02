@@ -62,6 +62,9 @@ public class Compiler
 			routines.Add(routine);
 		}
 
+		if (rootMapper == null)
+			throw new Exception("CompilationUnit does not have any CompilationElements");
+
 		// Second pass: process all TYPE definitions
 		CodeModel.Statements.TypeStatement? typeStatement = null;
 		var typeElementStatements = new List<CodeModel.Statements.TypeElementStatement>();
@@ -82,7 +85,7 @@ public class Compiler
 						break;
 
 					case CodeModel.Statements.EndTypeStatement:
-						TranslateTypeDefinition(typeStatement, typeElementStatements, compilation);
+						TranslateTypeDefinition(typeStatement, typeElementStatements, rootMapper, compilation);
 
 						typeStatement = null;
 						typeElementStatements.Clear();
@@ -234,7 +237,7 @@ public class Compiler
 			compilation);
 	}
 
-	void TranslateTypeDefinition(CodeModel.Statements.TypeStatement typeStatement, List<CodeModel.Statements.TypeElementStatement> elements, Compilation compilation)
+	void TranslateTypeDefinition(CodeModel.Statements.TypeStatement typeStatement, List<CodeModel.Statements.TypeElementStatement> elements, Mapper mapper, Compilation compilation)
 	{
 		var typeRepository = compilation.TypeRepository;
 
@@ -249,10 +252,42 @@ public class Compiler
 				isArray: false,
 				typeElementStatement.TypeToken);
 
+			ArraySubscripts? translatedSubscripts = null;
+
+			if (typeElementStatement.Subscripts != null)
+			{
+				translatedSubscripts = new ArraySubscripts();
+
+				foreach (var subscript in typeElementStatement.Subscripts.Subscripts)
+				{
+					var translatedSubscript = new ArraySubscript();
+
+					var translatedBound1 = TranslateExpression(subscript.Bound1, container: null, mapper, compilation);
+					var translatedBound2 = TranslateExpression(subscript.Bound2, container: null, mapper, compilation);
+
+					if (translatedBound1 == null)
+						throw new Exception("Internal error: Array subscript missing bound");
+
+					if (translatedBound2 == null)
+					{
+						translatedSubscript.LowerBound = 0;
+						translatedSubscript.UpperBound = NumberConverter.ToInteger(translatedBound1.EvaluateConstant());
+					}
+					else
+					{
+						translatedSubscript.LowerBound = NumberConverter.ToInteger(translatedBound1.EvaluateConstant());
+						translatedSubscript.UpperBound = NumberConverter.ToInteger(translatedBound2.EvaluateConstant());
+					}
+
+					translatedSubscripts.Subscripts.Add(translatedSubscript);
+				}
+			}
+
 			udt.Fields.Add(
 				new UserDataTypeField(
 					typeElementStatement.Name,
-					type));
+					type,
+					translatedSubscripts));
 		}
 
 		typeRepository.RegisterType(udt);

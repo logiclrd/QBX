@@ -13,6 +13,8 @@ public class Array
 	public ArraySubscripts Subscripts;
 	public Variable?[] Elements;
 
+	public int FixedStringLength = -1;
+
 	public Span<byte> PackedData => _packedData;
 	public int PackedSize => Elements.Length * ElementType.ByteSize;
 
@@ -37,12 +39,21 @@ public class Array
 			Unpack();
 	}
 
-	public Array(DataType elementType, ArraySubscripts subscripts)
+	public Array(DataType elementType, ArraySubscripts subscripts, int fixedStringLength = -1)
 	{
 		ElementType = elementType;
 		Subscripts = subscripts;
+		FixedStringLength = fixedStringLength;
 
 		Elements = new Variable?[subscripts.ElementCount];
+	}
+
+	Variable ConstructElement()
+	{
+		if ((FixedStringLength >= 0) && ElementType.IsString)
+			return new StringVariable(FixedStringLength);
+		else
+			return Variable.Construct(ElementType);
 	}
 
 	public void RedimensionPreservingData(ArraySubscripts newSubscripts)
@@ -169,7 +180,7 @@ public class Array
 			else
 			{
 				var element =
-					Elements[i] ??= Variable.Construct(ElementType);
+					Elements[i] ??= ConstructElement();
 
 				element.Deserialize(buffer);
 			}
@@ -185,7 +196,7 @@ public class Array
 	{
 		EnsureUnpacked();
 
-		return Elements[index] ??= Variable.Construct(ElementType);
+		return Elements[index] ??= ConstructElement();
 	}
 
 	public Variable GetElement(Variable[] subscripts, IList<Evaluable> expressions) => GetElement(Subscripts.GetElementIndex(subscripts, expressions));
