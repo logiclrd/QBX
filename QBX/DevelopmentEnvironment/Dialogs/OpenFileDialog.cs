@@ -178,6 +178,8 @@ public class OpenFileDialog : DialogWithDirectoryList
 		// - If txtFileName contains any wildcard characters, pass it to SetFilter.
 		// - Else raise main Item Selected event.
 
+		SetFocus(bdrFileName);
+
 		var input = txtFileName.Text.ToString().AsSpan();
 
 		while (true)
@@ -234,6 +236,11 @@ public class OpenFileDialog : DialogWithDirectoryList
 					else
 					{
 						var selectedFilePath = Path.Combine(CurrentDirectory, input.ToString());
+
+						if (!File.Exists(selectedFilePath)
+						 && !Path.GetFileName(selectedFilePath).Contains('.'))
+							selectedFilePath += Path.GetExtension(Filter) ?? ".BAS";
+
 						FileSelected?.Invoke(selectedFilePath);
 
 						RestoreCurrentDirectory = false;
@@ -264,7 +271,7 @@ public class OpenFileDialog : DialogWithDirectoryList
 
 	private void cmdOK_Activated()
 	{
-		txtFileName.Activate();
+		OnActivated();
 	}
 
 	private void cmdCancel_Activated()
