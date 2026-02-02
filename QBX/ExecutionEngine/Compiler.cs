@@ -2174,39 +2174,54 @@ public class Compiler
 				}
 
 				// It's not a function call, so it's an array access.
-				var variableIndex = mapper.ResolveArray(identifier, out bool implicitlyCreated);
+				Evaluable subject;
 
-				if (variableIndex < 0)
+				if (identifier == null)
 				{
-					var type = mapper.GetTypeForIdentifier(identifier);
-
-					return LiteralValue.Construct(0, type, identifierToken);
+					subject = TranslateExpression(
+						callOrIndexExpression.Subject,
+						container,
+						mapper,
+						compilation);
 				}
-
-				if (implicitlyCreated)
+				else
 				{
-					if (container == null)
-						throw new Exception("TranslateExpression needs to create an implicit array but no container was specified");
+					var variableIndex = mapper.ResolveArray(identifier, out bool implicitlyCreated);
 
-					var implicitDimStatement = new DimensionArrayStatement(null);
-
-					implicitDimStatement.CanBreak = false;
-
-					implicitDimStatement.VariableIndex = variableIndex;
-
-					for (int i=0; i < callOrIndexExpression.Arguments.Expressions.Count; i++)
+					if (variableIndex < 0)
 					{
-						implicitDimStatement.Subscripts.Add(
-							new IntegerLiteralValue(0),
-							new IntegerLiteralValue(10));
+						var type = mapper.GetTypeForIdentifier(identifier);
+
+						return LiteralValue.Construct(0, type, identifierToken);
 					}
 
-					container.Inject(implicitDimStatement);
+					if (implicitlyCreated)
+					{
+						if (container == null)
+							throw new Exception("TranslateExpression needs to create an implicit array but no container was specified");
+
+						var implicitDimStatement = new DimensionArrayStatement(null);
+
+						implicitDimStatement.CanBreak = false;
+
+						implicitDimStatement.VariableIndex = variableIndex;
+
+						for (int i = 0; i < callOrIndexExpression.Arguments.Expressions.Count; i++)
+						{
+							implicitDimStatement.Subscripts.Add(
+								new IntegerLiteralValue(0),
+								new IntegerLiteralValue(10));
+						}
+
+						container.Inject(implicitDimStatement);
+					}
+
+					subject = new IdentifierExpression(
+						variableIndex,
+						mapper.GetVariableType(variableIndex));
 				}
 
-				var variableType = mapper.GetVariableType(variableIndex);
-
-				var translatedArrayElementExpression = new ArrayElementExpression(variableIndex, variableType.MakeElementType());
+				var translatedArrayElementExpression = new ArrayElementExpression(subject, subject.Type.MakeElementType());
 
 				foreach (var subscript in callOrIndexExpression.Arguments.Expressions)
 				{

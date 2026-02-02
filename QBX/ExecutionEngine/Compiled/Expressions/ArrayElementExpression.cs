@@ -5,7 +5,7 @@ using QBX.ExecutionEngine.Execution.Variables;
 
 namespace QBX.ExecutionEngine.Compiled.Expressions;
 
-public class ArrayElementExpression(int variableIndex, DataType type) : Evaluable
+public class ArrayElementExpression(Evaluable arrayExpression, DataType type) : Evaluable
 {
 	DataType? _arrayType = null;
 
@@ -34,7 +34,7 @@ public class ArrayElementExpression(int variableIndex, DataType type) : Evaluabl
 
 	public void EvaluateInParts(ExecutionContext context, StackFrame stackFrame, out Execution.Array array, out Variable[] subscripts)
 	{
-		var arrayVariable = (ArrayVariable)stackFrame.Variables[variableIndex];
+		var arrayVariable = (ArrayVariable)arrayExpression.Evaluate(context, stackFrame);
 
 		array = arrayVariable.Array;
 
@@ -47,7 +47,7 @@ public class ArrayElementExpression(int variableIndex, DataType type) : Evaluabl
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (SubscriptExpressions.Count == 0)
-			return stackFrame.Variables[variableIndex];
+			return arrayExpression.Evaluate(context, stackFrame);
 
 		EvaluateInParts(context, stackFrame, out var array, out var subscripts);
 
