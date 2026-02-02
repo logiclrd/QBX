@@ -100,7 +100,8 @@ public class Compiler
 		if (typeStatement != null)
 			throw CompilerException.TypeWithoutEndType(typeStatement);
 
-		// Third pass: process parameters, which requires that we know all the FUNCTIONs and UDTs
+		// Third pass: process parameters, which requires that we know all the FUNCTIONs and UDTs.
+		// We can also match up forward references.
 		foreach (var routine in routines)
 		{
 			if (routine.ReturnType != null)
@@ -108,6 +109,18 @@ public class Compiler
 
 			if (routine.Source.Type != CodeModel.CompilationElementType.Main)
 				routine.TranslateParameters(routine.Mapper, compilation);
+
+			string unqualifiedName = Mapper.UnqualifyIdentifier(routine.Name);
+
+			if (compilation.UnresolvedReferences.TryGetDeclaration(unqualifiedName, out var forwardReference))
+			{
+				routine.ValidateDeclaration(
+					forwardReference.ParameterTypes,
+					forwardReference.ReturnType,
+					routine.OpeningStatement,
+					routine.OpeningStatement?.NameToken,
+					getBlameParameterType: i => routine.OpeningStatement?.Parameters?.Parameters[i].TypeToken);
+			}
 		}
 
 		// Fourth pass: collect line numbers for error reporting.
@@ -680,11 +693,28 @@ public class Compiler
 					}
 					else if (compilation.TryGetRoutine(unqualifiedName, out var routine))
 					{
-						// TODO
+						routine.ValidateDeclaration(
+							parameterTypes,
+							returnType,
+							blameStatement: declareStatement,
+							blameName: declareStatement.NameToken,
+							getBlameParameterType: i => declareStatement.Parameters?.Parameters[i].TypeToken);
 					}
 					else
 					{
-						// TODO
+						compilation.UnresolvedReferences.DeclareSymbol(
+							declareStatement.Name,
+							mapper,
+							declareStatement,
+							declareStatement.DeclarationType.Type switch
+							{
+								TokenType.SUB => RoutineType.Sub,
+								TokenType.FUNCTION => RoutineType.Function,
+
+								_ => throw new Exception("Unrecognized DeclarationType " + declareStatement.DeclarationType)
+							},
+							parameterTypes?.ToArray() ?? System.Array.Empty<DataType>(),
+							returnType);
 					}
 				}
 

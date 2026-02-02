@@ -4,6 +4,7 @@ using System.Linq;
 
 using QBX.CodeModel.Statements;
 using QBX.ExecutionEngine.Compiled.Statements;
+using QBX.LexicalAnalysis;
 
 namespace QBX.ExecutionEngine.Compiled;
 
@@ -215,6 +216,26 @@ public class Routine : Sequence
 					ParameterVariableIndices[i] = mapper.DeclareArray(name, paramType);
 			}
 		}
+	}
+
+	public void ValidateDeclaration(IReadOnlyList<DataType>? declaredParameterTypes, DataType? declaredReturnType, Statement? blameStatement, Token? blameName, Func<int, Token?> getBlameParameterType)
+	{
+		int parameterCount = declaredParameterTypes?.Count ?? 0;
+
+		if (parameterCount != ParameterTypes.Count)
+			throw CompilerException.ArgumentCountMismatch(blameStatement);
+
+		if (declaredParameterTypes != null)
+		{
+			for (int i = 0; i < parameterCount; i++)
+			{
+				if (!declaredParameterTypes[i].Equals(ParameterTypes[i]))
+					throw CompilerException.TypeMismatch(getBlameParameterType(i));
+			}
+		}
+
+		if ((declaredReturnType != null) && !declaredReturnType.Equals(ReturnType))
+			throw CompilerException.TypeMismatch(blameName);
 	}
 
 	Dictionary<string, StatementPath>? _cachedLabels = null;
