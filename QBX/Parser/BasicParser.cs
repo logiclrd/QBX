@@ -644,7 +644,7 @@ public class BasicParser
 
 				var declarationType = tokenHandler.ExpectOneOf(TokenType.SUB, TokenType.FUNCTION);
 
-				var name = tokenHandler.ExpectIdentifier(allowTypeCharacter: true);
+				var name = tokenHandler.ExpectIdentifier(allowTypeCharacter: true, out var nameToken);
 
 				ParameterList? parameters = null;
 
@@ -678,7 +678,7 @@ public class BasicParser
 
 				tokenHandler.ExpectEndOfTokens();
 
-				var declare = new DeclareStatement(declarationType, name, parameters);
+				var declare = new DeclareStatement(declarationType, name, nameToken, parameters);
 
 				declare.IsCDecl = isCDecl;
 				declare.Alias = alias;
@@ -3108,7 +3108,9 @@ public class BasicParser
 						_ => default(SubroutineOpeningStatement) ?? throw new Exception("Internal error")
 					};
 
-				statement.Name = tokenHandler.ExpectIdentifier(allowTypeCharacter: statement is FunctionStatement);
+				statement.Name = tokenHandler.ExpectIdentifier(
+					allowTypeCharacter: statement is FunctionStatement,
+					out statement.NameToken);
 
 				if (tokenHandler.NextTokenIs(TokenType.OpenParenthesis))
 				{

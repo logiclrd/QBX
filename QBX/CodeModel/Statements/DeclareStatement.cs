@@ -16,10 +16,13 @@ public class DeclareStatement : Statement
 	public TypeCharacter? TypeCharacter { get; set; }
 	public ParameterList? Parameters;
 
-	public DeclareStatement(Token declarationType, string name, ParameterList? parameters)
+	public Token? NameToken;
+
+	public DeclareStatement(Token declarationType, string name, Token? nameToken, ParameterList? parameters)
 	{
 		DeclarationType = declarationType;
 		Name = name;
+		NameToken = nameToken;
 		Parameters = parameters;
 
 		char lastChar = name.Last();
