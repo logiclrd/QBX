@@ -55,8 +55,8 @@ public partial class Program
 		catch { }
 	}
 
-	[MemberNotNull(nameof(_executionContext))]
-	public void Restart()
+	[MemberNotNullWhen(true, nameof(_executionContext))]
+	public bool Restart()
 	{
 		Terminate();
 
@@ -67,11 +67,19 @@ public partial class Program
 
 		_compiler.DetectDelayLoops = DetectDelayLoops;
 
-		foreach (var nativeProcedure in QLBs.SelectMany(qlb => qlb.Exports))
-			_compilation.RegisterNativeProcedure(nativeProcedure);
+		try
+		{
+			foreach (var nativeProcedure in QLBs.SelectMany(qlb => qlb.Exports))
+				_compilation.RegisterNativeProcedure(nativeProcedure);
 
-		foreach (var file in LoadedFiles)
-			_compiler.Compile(file, _compilation);
+			foreach (var file in LoadedFiles)
+				_compiler.Compile(file, _compilation);
+		}
+		catch (CompilerException error)
+		{
+			PresentError(error);
+			return false;
+		}
 
 		_compilation.SetDefaultEntrypoint();
 
@@ -99,6 +107,8 @@ public partial class Program
 		_executionThread.Name = "Program Execution Thread";
 
 		_executionThread.Start();
+
+		return true;
 	}
 
 	void UnpauseExecution()
@@ -122,7 +132,10 @@ public partial class Program
 	public void Continue()
 	{
 		if (_executionContext == null)
-			Restart();
+		{
+			if (!Restart())
+				return;
+		}
 		else
 			RestoreOutput();
 
@@ -135,7 +148,8 @@ public partial class Program
 	{
 		if (_executionContext == null)
 		{
-			Restart();
+			if (!Restart())
+				return;
 
 			_executionContext.Controls.WaitForInterruption();
 
