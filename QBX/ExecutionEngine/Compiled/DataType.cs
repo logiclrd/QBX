@@ -154,7 +154,7 @@ public class DataType
 		if (IsPrimitiveType)
 			return PrimitiveType.ToString().ToUpperInvariant() + array;
 		else if (IsUserType)
-			return "TYPE " + UserType + array;
+			return UserType + array;
 		else
 			return "Data Type";
 	}
