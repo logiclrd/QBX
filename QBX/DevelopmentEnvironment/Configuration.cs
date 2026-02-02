@@ -1,4 +1,6 @@
-﻿namespace QBX.DevelopmentEnvironment;
+﻿using System;
+
+namespace QBX.DevelopmentEnvironment;
 
 public class Configuration
 {
@@ -34,6 +36,18 @@ public class Configuration
 		public DisplayAttribute ReferenceBarNormalText = new(0, 3, "Reference Bar Normal Text");
 		public DisplayAttribute ReferenceBarHighlightedText = new(15, 3, "Reference Bar Highlighted Text");
 		public DisplayAttribute ReferenceBarStatusIndicators = new(0, 3, "Reference Bar Status Indicators");
+
+		public void ForceBlackAndWhite()
+		{
+			// TODO
+			// TODO: this and ConfigureForNoHighIntensity also affect the range of
+			// attributes listed by the Options->Display dialog
+		}
+
+		public void ConfigureForNoHighIntensity()
+		{
+			// TODO
+		}
 	}
 
 	public readonly DisplayAttributeConfiguration DisplayAttributes = new DisplayAttributeConfiguration();

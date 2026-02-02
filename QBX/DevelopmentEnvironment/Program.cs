@@ -10,6 +10,7 @@ using QBX.Hardware;
 using QBX.Parser;
 using QBX.ExecutionEngine;
 using QBX.DevelopmentEnvironment.Dialogs;
+using QBX.QuickLibraries;
 
 namespace QBX.DevelopmentEnvironment;
 
@@ -30,6 +31,14 @@ public partial class Program : HostedProgram, IOvertypeFlag
 	public ReferenceBarAction[]? ReferenceBarActions;
 	public int SelectedReferenceBarAction = -1;
 	public string? ReferenceBarText;
+
+	// TODO: disable Utility menu, Options menu and Help menu (and help subsystem)
+	// => error message when accessing a removed feature: "Feature removed"
+	public bool NoFrillsMode;
+
+	public bool Aborted = false;
+
+	public bool AutoRun;
 
 	public Viewport FocusedViewport;
 	public bool EnableOvertype = false;
@@ -96,14 +105,265 @@ public partial class Program : HostedProgram, IOvertypeFlag
 		int space = commandLine.IndexOf(' ');
 
 		if (space >= 0)
-		{
-			string initialFilePath = commandLine.Substring(space + 1).TrimStart();
-
-			if (File.Exists(initialFilePath))
-				LoadFile(initialFilePath, replaceExistingProgram: true);
-		}
+			ProcessCommandLine(commandLine.Substring(space + 1).TrimStart());
 
 		AttachBreakHandler();
+	}
+
+	private void ProcessCommandLine(string commandLine)
+	{
+		string? remainingCommandLine = commandLine;
+
+		string? PullArgument()
+		{
+			if (remainingCommandLine == null)
+				return null;
+
+			string argument;
+
+			int separator = remainingCommandLine.IndexOf(' ');
+
+			if (separator < 0)
+			{
+				argument = remainingCommandLine;
+				remainingCommandLine = null;
+			}
+			else
+			{
+				argument = remainingCommandLine.Substring(0, separator);
+				remainingCommandLine = remainingCommandLine.Substring(separator + 1).TrimStart();
+
+				if (remainingCommandLine.Length == 0)
+					remainingCommandLine = null;
+			}
+
+			return argument;
+		}
+
+		string? loadFilePath = null;
+		bool badArguments = false;
+
+		while (PullArgument() is string argument)
+		{
+			if (argument.Equals("/AH", StringComparison.OrdinalIgnoreCase))
+			{
+				// Allow dynamic arrays to exceed 64KB
+				ExecutionEngine.Execution.Array.MaximumSize = int.MaxValue;
+			}
+			else if (argument.Equals("/B", StringComparison.OrdinalIgnoreCase))
+			{
+				// Force black & white mode
+				Configuration.DisplayAttributes.ForceBlackAndWhite();
+			}
+			else if (argument.StartsWith("/C:", StringComparison.OrdinalIgnoreCase))
+			{
+				// COM buffer size
+			}
+			else if (argument.Equals("/Ea", StringComparison.OrdinalIgnoreCase))
+			{
+				// Arrays in expanded memory
+			}
+			else if (argument.StartsWith("/E:", StringComparison.OrdinalIgnoreCase))
+			{
+				// Expanded memory usage limit
+			}
+			else if (argument.Equals("/Es", StringComparison.OrdinalIgnoreCase))
+			{
+				// Share expanded memory
+			}
+			else if (argument.Equals("/G", StringComparison.OrdinalIgnoreCase))
+			{
+				// CGA direct updates
+			}
+			else if (argument.Equals("/H", StringComparison.OrdinalIgnoreCase))
+			{
+				// Use the highest text resolution available
+				Machine.VideoFirmware.SetCharacterRows(50);
+				TextLibrary.RefreshParameters();
+			}
+			else if (argument.StartsWith("/K:", StringComparison.OrdinalIgnoreCase))
+			{
+				// Key mapping file (*.KEY)
+				// TODO
+			}
+			else if (argument.Equals("/L", StringComparison.OrdinalIgnoreCase))
+			{
+				// Load QuickLibrary
+				string qlbName;
+
+				if (argument.Length > 2)
+					qlbName = argument.Substring(2);
+				else if ((remainingCommandLine != null) && !remainingCommandLine.StartsWith('/'))
+					qlbName = PullArgument() ?? "QBX";
+				else
+					qlbName = "QBX";
+
+				LoadQLB(qlbName);
+			}
+			else if (argument.Equals("/MBF", StringComparison.OrdinalIgnoreCase))
+			{
+				// Use Microsoft Binary Format for floating point
+				// => QBX doesn't try to emulate this 100%. IEEE representation
+				//    is still used for primary storage. But, MKS$(), MKD$(), CVS() and CVD()
+				//    are mapped to MKSMBF$(), MKDMBF$(), CVSMBF() and CVDMBF(),
+				//    respectively.
+				// TODO
+			}
+			else if (argument.Equals("/NOF", StringComparison.OrdinalIgnoreCase)
+			      || argument.Equals("/NOFRILLS", StringComparison.OrdinalIgnoreCase))
+			{
+				// No frills mode
+				NoFrillsMode = true;
+			}
+			else if (argument.Equals("/NOHI", StringComparison.OrdinalIgnoreCase))
+			{
+				// No high-intensity colours
+				Configuration.DisplayAttributes.ConfigureForNoHighIntensity();
+			}
+			else if (argument.Equals("/RUN", StringComparison.OrdinalIgnoreCase))
+			{
+				// Automatically start loaded program
+				loadFilePath = PullArgument();
+
+				if (loadFilePath == null)
+				{
+					badArguments = true;
+					break;
+				}
+
+				AutoRun = true;
+			}
+			else if (argument.Equals("/CMD"))
+			{
+				// COMMAND$ value
+				if (remainingCommandLine == null)
+				{
+					badArguments = true;
+					break;
+				}
+
+				ProgramCommandLine = remainingCommandLine.ToUpperInvariant();
+			}
+			else if (argument.StartsWith('/'))
+			{
+				// Unrecognized
+				badArguments = true;
+			}
+			else
+			{
+				// Bare argument: path to file to load
+				if (loadFilePath != null)
+				{
+					badArguments = true;
+					break;
+				}
+
+				if (!argument.StartsWith('"'))
+					loadFilePath = argument;
+				else
+				{
+					// Extension: support quoted filenames with spaces
+					int endQuote = argument.IndexOf('"', 1);
+
+					if (endQuote >= 0)
+					{
+						if (endQuote + 1 < argument.Length)
+						{
+							badArguments = true;
+							break;
+						}
+
+						loadFilePath = argument.Substring(1, argument.Length - 2);
+					}
+					else
+					{
+						if (remainingCommandLine == null)
+						{
+							badArguments = true;
+							break;
+						}
+
+						endQuote = remainingCommandLine.IndexOf('"');
+
+						if (endQuote < 0)
+							loadFilePath = argument.Substring(1) + ' ' + remainingCommandLine;
+						else
+						{
+							loadFilePath = argument.Substring(1) + ' ' + remainingCommandLine.Substring(0, endQuote);
+
+							remainingCommandLine = remainingCommandLine.Substring(endQuote);
+
+							if (remainingCommandLine[0] != ' ')
+							{
+								badArguments = true;
+								break;
+							}
+
+							remainingCommandLine = remainingCommandLine.TrimStart();
+						}
+					}
+				}
+			}
+		}
+
+		if (loadFilePath != null)
+		{
+			try
+			{
+				loadFilePath = Path.GetFullPath(loadFilePath);
+			}
+			catch
+			{
+				badArguments = true;
+			}
+
+			if (File.Exists(loadFilePath))
+				LoadFile(loadFilePath, replaceExistingProgram: true);
+			else
+				LoadedFiles[0].FilePath = loadFilePath;
+		}
+
+		if (badArguments)
+		{
+			TextLibrary.WriteText("Valid options:");
+			TextLibrary.NewLine();
+			TextLibrary.WriteText("    /AH /B /C:n {/Ea | /Es} /E:n /G /H /K:[file] /L [lib]");
+			TextLibrary.NewLine();
+			TextLibrary.WriteText("    /MBF /NOF[RILLS] /NOHI [/RUN] file /CMD string");
+			TextLibrary.NewLine();
+
+			Aborted = true;
+		}
+	}
+
+	private void LoadQLB(string qlbName)
+	{
+		while (true)
+		{
+			int dotIndex = qlbName.IndexOf('.');
+
+			if (dotIndex < 0)
+				qlbName += ".QLB";
+			else if (dotIndex < qlbName.Length - 4)
+			{
+				qlbName = qlbName.Substring(0, dotIndex + 4);
+
+				dotIndex = qlbName.IndexOf('.', dotIndex + 1);
+
+				if (dotIndex > 0)
+					qlbName = qlbName.Substring(0, dotIndex);
+			}
+
+			if (QuickLibrary.TryGetQuickLibrary(qlbName, Machine, out var qlb))
+			{
+				QLBs.Add(qlb);
+				return;
+			}
+
+			TextLibrary.WriteText("Cannot find file (" + qlbName + ").  Input path: ");
+
+			qlbName = TextLibrary.ReadLine(Machine.Keyboard);
+		}
 	}
 
 	public override bool EnableMainLoop => true;
@@ -131,6 +391,9 @@ public partial class Program : HostedProgram, IOvertypeFlag
 
 	public override void Run(CancellationToken cancellationToken)
 	{
+		if (Aborted)
+			return;
+
 		cancellationToken.Register(
 			() =>
 			{
@@ -139,6 +402,12 @@ public partial class Program : HostedProgram, IOvertypeFlag
 
 		while (Machine.KeepRunning)
 		{
+			if (AutoRun)
+			{
+				AutoRun = false;
+				Run();
+			}
+
 			EvaluateWatches(_watches, out bool @break);
 
 			Render();

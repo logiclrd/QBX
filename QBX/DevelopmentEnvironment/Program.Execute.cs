@@ -22,6 +22,8 @@ public partial class Program
 
 	public bool DetectDelayLoops = new SystemDetector().IsLaptop();
 
+	public string ProgramCommandLine = "";
+
 	[MemberNotNullWhen(true, nameof(_executionContext))]
 	public bool IsExecuting => (_executionContext != null);
 
@@ -60,6 +62,8 @@ public partial class Program
 
 		_compiler = new Compiler();
 		_compilation = new Compilation();
+
+		_compilation.CommandLine.Set(ProgramCommandLine);
 
 		_compiler.DetectDelayLoops = DetectDelayLoops;
 

@@ -19,6 +19,9 @@ public class Compilation
 
 	public Routine? EntrypointRoutine;
 
+	// TODO: COMMAND$ function
+	public StringValue CommandLine = new StringValue();
+
 	public IEnumerable<Routine> AllRegisteredRoutines => Subs.Values.Concat(Functions.Values);
 
 	public Compilation()

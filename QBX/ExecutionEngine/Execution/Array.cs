@@ -9,6 +9,8 @@ namespace QBX.ExecutionEngine.Execution;
 
 public class Array
 {
+	public static int MaximumSize = 65536;
+
 	public DataType ElementType;
 	public ArraySubscripts Subscripts;
 	public Variable?[] Elements;
@@ -44,6 +46,11 @@ public class Array
 		ElementType = elementType;
 		Subscripts = subscripts;
 		FixedStringLength = fixedStringLength;
+
+		int elementSize = fixedStringLength < 0 ? ElementType.ByteSize : fixedStringLength;
+
+		if (subscripts.ElementCount * elementSize > MaximumSize)
+			throw RuntimeException.SubscriptOutOfRange();
 
 		Elements = new Variable?[subscripts.ElementCount];
 	}
@@ -102,6 +109,9 @@ public class Array
 
 		if (newElementCount != newSubscripts.ElementCount)
 			throw new Exception("Sanity check failed");
+
+		if (newElementCount * ElementType.ByteSize > MaximumSize)
+			throw RuntimeException.SubscriptOutOfRange();
 
 		var newElements = new Variable?[newElementCount];
 
