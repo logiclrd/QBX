@@ -22,6 +22,7 @@
 		<PackageReference Include="CSharpTest.Net.Collections" Version="14.906.1403.1082">
 			<NoWarn>NU1701</NoWarn>
 		</PackageReference>
+		<PackageReference Include="System.Management" Version="10.0.*" />
 	</ItemGroup>
 
 	<ItemGroup>

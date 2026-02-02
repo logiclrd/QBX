@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection;
+using System.Management;
 
 namespace QBX.Utility;
 
@@ -25,23 +25,16 @@ public class SystemDetector
 
 	bool WMIIsLaptop()
 	{
+		if (!OperatingSystem.IsWindows())
+			return false;
+
 		try
 		{
-			var managementAssembly = Assembly.Load("System.Management, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
+			var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_SystemEnclosure");
 
-			var searcherType = managementAssembly.GetType("System.Management.ManagementObjectSearcher");
-
-			if (searcherType == null)
-				return false;
-
-			dynamic? searcher = Activator.CreateInstance(searcherType, "SELECT * FROM Win32_SystemEnclosure");
-
-			if (searcher == null)
-				return false;
-
-			foreach (dynamic obj in searcher.Get())
+			foreach (var obj in searcher.Get())
 			{
-				ushort[] chassisTypes = obj["ChassisTypes"];
+				ushort[]? chassisTypes = obj.GetPropertyValue("ChassisTypes") as ushort[];
 
 				if (chassisTypes != null)
 					return chassisTypes.Any(LaptopChassisTypes.Contains);
