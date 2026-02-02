@@ -371,7 +371,7 @@ public class MouseDriver
 	public void ShowPointer()
 	{
 		if (!IsInitialized)
-			return;
+			Reset();
 
 		ClearExclusionArea();
 
