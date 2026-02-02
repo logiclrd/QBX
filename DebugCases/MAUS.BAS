@@ -1,0 +1,29 @@
+TYPE RegTypeX
+  AX AS INTEGER
+  BX AS INTEGER
+  CX AS INTEGER
+  DX AS INTEGER
+  BP AS INTEGER
+  SI AS INTEGER
+  DI AS INTEGER
+  FLAGS AS INTEGER
+  DS AS INTEGER
+  ES AS INTEGER
+END TYPE
+
+DECLARE SUB InterruptX (i%, rin AS RegTypeX, rout AS RegTypeX)
+
+DIM rin AS RegTypeX, rout AS RegTypeX
+
+SCREEN 13
+
+rin.AX = 1
+
+CALL InterruptX(&H33, rin, rout)
+
+DO
+  PSET (RND * 320, RND * 200), RND * 250
+  st# = TIMER
+  WHILE st# = TIMER: WEND
+LOOP
+
