@@ -156,7 +156,7 @@ public class Interrupt0x33(Machine machine) : InterruptHandler
 			}
 			case Function.SetGraphicsPointerShape:
 			{
-				int offset = (input.ES << 4) + input.DX;
+				int offset = (input.AsRegistersEx().ES << 4) + input.DX;
 
 				byte[] data = new byte[64];
 
@@ -224,7 +224,7 @@ public class Interrupt0x33(Machine machine) : InterruptHandler
 			{
 				var state = machine.MouseDriver.SerializeState();
 
-				int offset = (input.ES << 4) + input.DX;
+				int offset = (input.AsRegistersEx().ES << 4) + input.DX;
 
 				for (int i = 0; i < state.Length; i++)
 					machine.MemoryBus[offset + i] = state[i];
@@ -235,7 +235,7 @@ public class Interrupt0x33(Machine machine) : InterruptHandler
 			{
 				var state = machine.MouseDriver.CreateStateBuffer();
 
-				int offset = (input.ES << 4) + input.DX;
+				int offset = (input.AsRegistersEx().ES << 4) + input.DX;
 
 				for (int i = 0; i < state.Length; i++)
 					state[i] = machine.MemoryBus[offset + i];
