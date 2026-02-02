@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 
 using QBX.ExecutionEngine;
 using QBX.ExecutionEngine.Execution;
 using QBX.Firmware;
+using QBX.QuickLibraries;
 using QBX.Utility;
 
 namespace QBX.DevelopmentEnvironment;
@@ -14,6 +17,8 @@ public partial class Program
 	ExecutionContext? _executionContext;
 	Compiler? _compiler;
 	Compilation? _compilation;
+
+	public List<QuickLibrary> QLBs = new List<QuickLibrary>();
 
 	public bool DetectDelayLoops = new SystemDetector().IsLaptop();
 
@@ -57,6 +62,9 @@ public partial class Program
 		_compilation = new Compilation();
 
 		_compiler.DetectDelayLoops = DetectDelayLoops;
+
+		foreach (var nativeProcedure in QLBs.SelectMany(qlb => qlb.Exports))
+			_compilation.RegisterNativeProcedure(nativeProcedure);
 
 		foreach (var file in LoadedFiles)
 			_compiler.Compile(file, _compilation);
