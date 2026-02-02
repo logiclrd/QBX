@@ -159,7 +159,11 @@ public class Clipboard(Viewport owner)
 	{
 		if (_clipboardContentMultiLine != null)
 		{
-			_owner.CommitCurrentLine();
+			try
+			{
+				_owner.CommitCurrentLine();
+			}
+			catch { } // No syntax checking here.
 
 			for (int i = 0; i < _clipboardContentMultiLine.Count; i++)
 				_owner.InsertLine(_owner.CursorY + i, _clipboardContentMultiLine[i]);

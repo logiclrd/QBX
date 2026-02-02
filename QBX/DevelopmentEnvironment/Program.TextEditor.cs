@@ -11,6 +11,8 @@ namespace QBX.DevelopmentEnvironment;
 
 public partial class Program
 {
+	bool _alreadyPresentedError = false;
+
 	void ProcessTextEditorKey(KeyEvent input)
 	{
 		if (input.IsRelease)
@@ -47,6 +49,8 @@ public partial class Program
 						FocusedViewport.RenderLine(newCursorY, writer);
 						FocusedViewport.CurrentLineBuffer = writer.GetStringBuilder();
 					}
+
+					_alreadyPresentedError = false;
 
 					return FocusedViewport.CurrentLineBuffer;
 				});
@@ -95,7 +99,6 @@ public partial class Program
 				{
 					if (Configuration.EnableSyntaxChecking)
 					{
-						// TODO: raise error
 						newCursorY++;
 						throw;
 					}
@@ -130,7 +133,6 @@ public partial class Program
 				{
 					if (Configuration.EnableSyntaxChecking)
 					{
-						// TODO: raise error
 						newCursorY--;
 						throw;
 					}
@@ -228,26 +230,53 @@ public partial class Program
 
 				break;
 			}
+			case ScanCode.F6:
+			{
+				if (input.Modifiers.CtrlKey || input.Modifiers.AltKey)
+					break;
+
+				try
+				{
+					FocusedViewport.CommitCurrentLine();
+				}
+				catch { }
+
+				if (input.Modifiers.ShiftKey == false)
+				{
+					// Forward
+					if (FocusedViewport == HelpViewport)
+						FocusedViewport = PrimaryViewport;
+					else if (FocusedViewport == PrimaryViewport)
+						FocusedViewport = SplitViewport ?? ImmediateViewport;
+					else if (FocusedViewport == SplitViewport)
+						FocusedViewport = ImmediateViewport;
+					else if (FocusedViewport == ImmediateViewport)
+						FocusedViewport = HelpViewport ?? PrimaryViewport;
+				}
+				else
+				{
+					// Backward
+					if (FocusedViewport == HelpViewport)
+						FocusedViewport = ImmediateViewport;
+					else if (FocusedViewport == PrimaryViewport)
+						FocusedViewport = HelpViewport ?? ImmediateViewport;
+					else if (FocusedViewport == SplitViewport)
+						FocusedViewport = PrimaryViewport;
+					else if (FocusedViewport == ImmediateViewport)
+						FocusedViewport = SplitViewport ?? PrimaryViewport;
+				}
+
+				break;
+			}
 			case ScanCode.F8:
 			{
 				Machine.Keyboard.SuppressNextEventIf(isRelease: true, ScanCode.F8);
 
-				try
+				if (CommitViewportsOrPresentError())
 				{
-					PrimaryViewport.CommitCurrentLine();
-					SplitViewport?.CommitCurrentLine();
-
 					Step();
 
 					ReloadViewportParameters();
-				}
-				catch (RuntimeException error)
-				{
-					PresentError(error);
-				}
-				catch
-				{
-					// TODO: present error
 				}
 
 				break;
@@ -320,6 +349,8 @@ public partial class Program
 			{
 				select = false;
 
+				bool savedAlreadyPresentedError = _alreadyPresentedError;
+
 				var buffer = currentLine.Value;
 
 				int indentation = 0;
@@ -345,6 +376,9 @@ public partial class Program
 
 						FocusedViewport.CurrentLineBuffer = buffer;
 						FocusedViewport.CurrentLineChanged = true;
+
+						if (FocusedViewport.CursorX == 0)
+							_alreadyPresentedError = savedAlreadyPresentedError;
 					}
 
 					// Step 1: Try to commit left part
@@ -352,10 +386,31 @@ public partial class Program
 					{
 						FocusedViewport.CommitCurrentLine();
 					}
-					catch
+					catch (SyntaxErrorException error)
 					{
-						// No syntax checking applied in this case
-						FocusedViewport.ReplaceCurrentLine(CodeLine.CreateUnparsed(buffer));
+						// No syntax checking applied when splitting an existing line,
+						// and if the user tries twice in a row without altering the
+						// line, they are allowed to keep it the second time.
+						if ((newLine.Length == 0) && !_alreadyPresentedError
+						 && Configuration.EnableSyntaxChecking)
+						{
+							_alreadyPresentedError = true;
+							PresentError(error);
+							return;
+						}
+					}
+					catch (CompilerException error)
+					{
+						// No syntax checking applied when splitting an existing line,
+						// and if the user tries twice in a row without altering the
+						// line, they are allowed to keep it the second time.
+						if ((newLine.Length == 0) && !_alreadyPresentedError
+						 && Configuration.EnableSyntaxChecking)
+						{
+							_alreadyPresentedError = true;
+							PresentError(error);
+							return;
+						}
 					}
 
 					// Step 2: Insert right part as new line being edited
@@ -394,6 +449,7 @@ public partial class Program
 
 					FocusedViewport.Clipboard.Paste();
 					select = false;
+					_alreadyPresentedError = false;
 				}
 				else
 					EnableOvertype = !EnableOvertype;
@@ -414,6 +470,8 @@ public partial class Program
 
 					newCursorX = FocusedViewport.CursorX;
 					newCursorY = FocusedViewport.CursorY;
+
+					_alreadyPresentedError = false;
 
 					break;
 				}
@@ -443,6 +501,8 @@ public partial class Program
 						FocusedViewport.CurrentLineChanged = true;
 					}
 				}
+
+				_alreadyPresentedError = false;
 
 				break;
 			}
@@ -494,55 +554,14 @@ public partial class Program
 						FocusedViewport.CurrentLineBuffer = buffer;
 						FocusedViewport.CurrentLineChanged = true;
 					}
+
+					_alreadyPresentedError = false;
 				}
 
 				break;
 			}
 			default:
 			{
-				if ((input.ScanCode == ScanCode.N)
-				 && input.Modifiers.CtrlKey)
-				{
-					PrimaryViewport.CancelEdit();
-					SplitViewport?.CancelEdit();
-					StartNewProgram();
-
-					newCursorX = FocusedViewport.CursorX;
-					newCursorY = FocusedViewport.CursorY;
-					newScrollX = FocusedViewport.ScrollX;
-					newScrollY = FocusedViewport.ScrollY;
-				}
-
-				if ((input.ScanCode == ScanCode.S)
-				 && input.Modifiers.CtrlKey)
-				{
-					// HAX: scan until we find the DebugCases folder off of a parent
-					//      folder. only needed until we have a save dialog.
-					string? FindDebugCasesPath()
-					{
-						string? path = Environment.CurrentDirectory;
-
-						while (path != null)
-						{
-							string testPath = Path.Combine(path, "DebugCases");
-
-							if (Directory.Exists(testPath))
-								return testPath;
-
-							path = Path.GetDirectoryName(path);
-						}
-
-						return null;
-					}
-
-					SaveFile(
-						LoadedFiles[0],
-						Path.Combine(
-							FindDebugCasesPath() ?? ".",
-							"NEWCASE.BAS"));
-					break;
-				}
-
 				if (input.IsNormalText && FocusedViewport.IsEditable)
 				{
 					select = false;
@@ -575,6 +594,8 @@ public partial class Program
 
 					FocusedViewport.CurrentLineChanged = true;
 					FocusedViewport.CurrentLineBuffer = buffer;
+
+					_alreadyPresentedError = false;
 				}
 
 				break;
@@ -583,12 +604,17 @@ public partial class Program
 
 		try
 		{
-			FocusedViewport.ScrollCursorIntoView(newCursorX, newCursorY, newScrollX, newScrollY, priority, viewportWidth);
+			FocusedViewport.ScrollCursorIntoView(
+				newCursorX, newCursorY,
+				newScrollX, newScrollY,
+				priority,
+				viewportWidth,
+				ignoreErrors: _alreadyPresentedError || !Configuration.EnableSyntaxChecking);
 		}
 		catch (SyntaxErrorException error)
 		{
-			if (Configuration.EnableSyntaxChecking)
-				PresentError(error);
+			PresentError(error);
+			_alreadyPresentedError = true;
 		}
 
 		if (!select && !input.IsModifierKey)

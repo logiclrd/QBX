@@ -216,7 +216,7 @@ public class Viewport
 		}
 	}
 
-	public void ScrollCursorIntoView(int newCursorX, int newCursorY, int newScrollX, int newScrollY, ViewportPositioningPriority priority, int viewportWidth)
+	public void ScrollCursorIntoView(int newCursorX, int newCursorY, int newScrollX, int newScrollY, ViewportPositioningPriority priority, int viewportWidth, bool ignoreErrors = false)
 	{
 		int contentLineCount = GetContentLineCount();
 
@@ -273,7 +273,15 @@ public class Viewport
 			newScrollY = 0;
 
 		if (newCursorY != CursorY)
-			CommitCurrentLine();
+		{
+			try
+			{
+				CommitCurrentLine();
+			}
+			catch when (ignoreErrors)
+			{
+			}
+		}
 
 		CursorX = newCursorX;
 		CursorY = newCursorY;
