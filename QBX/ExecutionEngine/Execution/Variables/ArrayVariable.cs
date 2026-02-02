@@ -17,9 +17,9 @@ public class ArrayVariable(DataType type, int fixedStringLength = -1) : Variable
 	public override object GetData() => Array;
 	public override void SetData(object value) => Array = (Array)value;
 
-	public override void Serialize(System.Span<byte> buffer)
+	public override int Serialize(System.Span<byte> buffer)
 		=> Array.Serialize(buffer);
-	public override void Deserialize(System.ReadOnlySpan<byte> buffer)
+	public override int Deserialize(System.ReadOnlySpan<byte> buffer)
 		=> Array.Deserialize(buffer);
 
 	internal void InitializeArray(ArraySubscripts subscripts)

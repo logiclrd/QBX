@@ -55,7 +55,7 @@ public class StringVariable : Variable
 	public override int CoerceToInt(Evaluable? context) => throw RuntimeException.TypeMismatch(context?.Source);
 	public override string ToString() => ValueString;
 
-	public override void Serialize(Span<byte> buffer)
+	public override int Serialize(Span<byte> buffer)
 	{
 		if (!RawValue.IsFixedLength)
 			throw new Exception("Serialize called on a variable-length StringVariable");
@@ -66,9 +66,11 @@ public class StringVariable : Variable
 			source = source.Slice(0, buffer.Length);
 
 		source.CopyTo(buffer);
+
+		return source.Length;
 	}
 
-	public override void Deserialize(ReadOnlySpan<byte> buffer)
+	public override int Deserialize(ReadOnlySpan<byte> buffer)
 	{
 		if (!RawValue.IsFixedLength)
 			throw new Exception("Serialize called on a variable-length StringVariable");
@@ -82,6 +84,8 @@ public class StringVariable : Variable
 			buffer.CopyTo(valueSpan);
 			valueSpan.Slice(buffer.Length).Clear();
 		}
+
+		return Math.Min(RawValue.Length, buffer.Length);
 	}
 
 	public override bool IsZero => false;
@@ -133,7 +137,7 @@ public class Substring : StringVariable
 		newValueSpan.CopyTo(targetSpan);
 	}
 
-	public override void Serialize(Span<byte> buffer)
+	public override int Serialize(Span<byte> buffer)
 	{
 		var source = Value.AsSpan().Slice(_start, _length);
 
@@ -141,9 +145,11 @@ public class Substring : StringVariable
 			source = source.Slice(0, buffer.Length);
 
 		source.CopyTo(buffer);
+
+		return source.Length;
 	}
 
-	public override void Deserialize(ReadOnlySpan<byte> buffer)
+	public override int Deserialize(ReadOnlySpan<byte> buffer)
 	{
 		var targetSpan = Value.AsSpan().Slice(_start, _length);
 
@@ -154,5 +160,7 @@ public class Substring : StringVariable
 			buffer.CopyTo(targetSpan);
 			targetSpan.Slice(buffer.Length).Clear();
 		}
+
+		return Math.Min(_length, buffer.Length);
 	}
 }

@@ -27,14 +27,16 @@ public class CurrencyVariable : Variable
 	public override int CoerceToInt(Evaluable? context) => NumberConverter.ToLong(Value, context?.Source?.Token);
 	public override string ToString() => NumberFormatter.Format(Value);
 
-	public override void Serialize(Span<byte> buffer)
+	public override int Serialize(Span<byte> buffer)
 	{
 		BitConverterEx.WriteBytesThatFit(buffer, decimal.ToOACurrency(Value));
+		return 8;
 	}
 
-	public override void Deserialize(ReadOnlySpan<byte> buffer)
+	public override int Deserialize(ReadOnlySpan<byte> buffer)
 	{
 		Value = decimal.FromOACurrency(BitConverterEx.ReadAvailableBytesInt64(buffer));
+		return 8;
 	}
 
 	public override bool IsZero => (Value == 0);

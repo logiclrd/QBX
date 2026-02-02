@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 using QBX.ExecutionEngine.Compiled;
+using QBX.ExecutionEngine.Execution;
 
 namespace QBX.ExecutionEngine;
 
@@ -13,6 +15,7 @@ public class Compilation
 	public UnresolvedReferences UnresolvedReferences;
 	public Dictionary<string, Routine> Subs;
 	public Dictionary<string, Routine> Functions;
+	public Dictionary<string, NativeProcedure> NativeProcedures;
 
 	public Routine? EntrypointRoutine;
 
@@ -23,13 +26,17 @@ public class Compilation
 		Modules = new List<Module>();
 		TypeRepository = new TypeRepository();
 		UnresolvedReferences = new UnresolvedReferences(this);
-		Subs = new Dictionary<string, Routine>();
-		Functions = new Dictionary<string, Routine>();
+		Subs = new Dictionary<string, Routine>(StringComparer.OrdinalIgnoreCase);
+		Functions = new Dictionary<string, Routine>(StringComparer.OrdinalIgnoreCase);
+		NativeProcedures = new Dictionary<string, NativeProcedure>(StringComparer.OrdinalIgnoreCase);
 	}
 
 	public bool IsRegistered(string name)
 	{
-		return Subs.ContainsKey(name) || Functions.ContainsKey(name);
+		return
+			Subs.ContainsKey(name) ||
+			Functions.ContainsKey(name) ||
+			NativeProcedures.ContainsKey(name);
 	}
 
 	public void RegisterSub(Routine routine)
@@ -42,6 +49,11 @@ public class Compilation
 		Functions[Mapper.UnqualifyIdentifier(routine.Name)] = routine;
 	}
 
+	public void RegisterNativeProcedure(NativeProcedure procedure)
+	{
+		NativeProcedures[procedure.Name] = procedure;
+	}
+
 	public bool TryGetSub(string name, [NotNullWhen(true)] out Routine? sub)
 		=> Subs.TryGetValue(name, out sub);
 
@@ -50,6 +62,9 @@ public class Compilation
 
 	public bool TryGetRoutine(string name, [NotNullWhen(true)] out Routine? routine)
 		=> TryGetSub(name, out routine) || TryGetFunction(name, out routine);
+
+	public bool TryGetNativeProcedure(string name, [NotNullWhen(true)] out NativeProcedure? procedure)
+		=> NativeProcedures.TryGetValue(name, out procedure);
 
 	public void SetDefaultEntrypoint()
 	{

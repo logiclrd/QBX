@@ -184,6 +184,18 @@ public class RuntimeException : Exception
 			/* 87 */ "Invalid operation on null index",
 			/* 88 */ "Database needs repair",
 			/* 89 */ "Insufficient ISAM buffers",
+			/* 90 */ "",
+			/* 91 */ "", // unused range
+			/* 92 */ "",
+			/* 93 */ "",
+			/* 94 */ "",
+			/* 95 */ "",
+			/* 96 */ "",
+			/* 97 */ "",
+			/* 98 */ "",
+			/* 99 */ "",
+			/* 100 */ "", // QBX custom errors below
+			/* 101 */ "Argument count mismatch",
 		];
 
 	public static RuntimeException SyntaxError(CodeModel.Expressions.Expression? expression)
@@ -228,4 +240,6 @@ public class RuntimeException : Exception
 		=> ForErrorNumber(68, default(Token));
 	public static RuntimeException PathNotFound()
 		=> ForErrorNumber(76, default(Token));
+	public static RuntimeException ArgumentCountMismatch()
+		=> ForErrorNumber(101, default(Token));
 }

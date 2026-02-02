@@ -98,6 +98,8 @@ public class CompilerException : Exception
 		=> new CompilerException(statement, "Illegal in SUB, FUNCTION or DEF FN");
 	public static CompilerException ElementNotDefined(CodeModel.Expressions.Expression? expression)
 		=> new CompilerException(expression, "Element not defined");
+	public static CompilerException ArgumentCountMismatch(CodeModel.Statements.Statement? statement)
+		=> new CompilerException(statement, "Argument count mismatch");
 	public static CompilerException ArgumentCountMismatch(Token? context)
 		=> new CompilerException(context, "Argument count mismatch");
 	public static CompilerException IdentifierCannotIncludePeriod(Token? context)
@@ -130,4 +132,6 @@ public class CompilerException : Exception
 		=> new CompilerException(context, "Expected: variable");
 	public static CompilerException ArrayNotDefined(Token? context)
 		=> new CompilerException(context, "Array not defined");
+	public static CompilerException AnyIsNotSupported(CodeModel.Statements.Statement? statement)
+		=> new CompilerException(statement, "Parameters declared AS ANY are not supported by QBX");
 }

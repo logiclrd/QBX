@@ -134,8 +134,10 @@ public class Array
 		_packedData = null;
 	}
 
-	void Pack(Span<byte> buffer)
+	int Pack(Span<byte> buffer)
 	{
+		int lengthAtStart = buffer.Length;
+
 		int elementSize = ElementType.ByteSize;
 
 		for (int i = 0; i < Elements.Length; i++)
@@ -158,6 +160,8 @@ public class Array
 
 			buffer = buffer.Slice(elementSize);
 		}
+
+		return lengthAtStart - buffer.Length;
 	}
 
 	[ThreadStatic]
@@ -201,7 +205,7 @@ public class Array
 
 	public Variable GetElement(Variable[] subscripts, IList<Evaluable> expressions) => GetElement(Subscripts.GetElementIndex(subscripts, expressions));
 
-	public void Serialize(Span<byte> buffer)
+	public int Serialize(Span<byte> buffer)
 	{
 		if (_packedData != null)
 		{
@@ -211,19 +215,29 @@ public class Array
 				source = source.Slice(0, buffer.Length);
 
 			source.CopyTo(buffer);
+
+			return source.Length;
 		}
 		else
-			Pack(buffer);
+			return Pack(buffer);
 	}
 
-	public void Deserialize(ReadOnlySpan<byte> buffer)
+	public int Deserialize(ReadOnlySpan<byte> buffer)
 	{
 		Elements.AsSpan().Clear();
 
 		var packedSize = PackedSize;
 
 		if (_packedData == null)
-			_packedData = buffer.Slice(0, packedSize).ToArray();
+		{
+			if (buffer.Length >= packedSize)
+				_packedData = buffer.Slice(0, packedSize).ToArray();
+			else
+			{
+				_packedData = new byte[packedSize];
+				buffer.CopyTo(_packedData);
+			}
+		}
 		else
 		{
 			if (buffer.Length >= packedSize)
@@ -236,5 +250,7 @@ public class Array
 		}
 
 		_packedDataDirty = true;
+
+		return Math.Min(packedSize, buffer.Length);
 	}
 }

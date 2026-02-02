@@ -16,6 +16,8 @@ using QBX.ExecutionEngine.Execution;
 
 using QBX.LexicalAnalysis;
 
+using QBX.Numbers;
+
 namespace QBX.ExecutionEngine;
 
 public class Compiler
@@ -476,45 +478,77 @@ public class Compiler
 			}
 			case CodeModel.Statements.CallStatement callStatement:
 			{
-				var translatedCallStatement = new CallStatement(callStatement);
-
-				if (compilation.TryGetSub(callStatement.TargetName, out var sub))
+				if (compilation.TryGetNativeProcedure(callStatement.TargetName, out var nativeProcedure))
 				{
-					int callArgumentCount = callStatement.Arguments?.Count ?? 0;
+					var translatedCallStatement = new NativeProcedureCallStatement(callStatement);
 
-					if (callArgumentCount != sub.ParameterTypes.Count)
+					int callArgumentCount = callStatement.Arguments?.Count ?? 0;
+					int targetArgumentCount = nativeProcedure.ParameterTypes?.Length ?? 0;
+
+					if (callArgumentCount != targetArgumentCount)
 						throw CompilerException.ArgumentCountMismatch(callStatement.FirstToken);
 
-					translatedCallStatement.Target = sub;
-				}
-				else if (compilation.TryGetFunction(callStatement.TargetName, out var function))
-					throw CompilerException.DuplicateDefinition(callStatement);
-				else if (compilation.UnresolvedReferences.TryGetDeclaration(callStatement.TargetName, out var forwardReference))
-				{
-					if (forwardReference.RoutineType != RoutineType.Sub)
-						throw CompilerException.DuplicateDefinition(callStatement);
+					translatedCallStatement.Target = nativeProcedure;
 
-					translatedCallStatement.UnresolvedTargetName = callStatement.TargetName;
-					forwardReference.UnresolvedCalls.Add(translatedCallStatement);
-				}
-
-				if (callStatement.Arguments != null)
-				{
-					foreach (var argument in callStatement.Arguments.Expressions)
+					if (callStatement.Arguments != null)
 					{
-						var translatedExpression = TranslateExpression(argument, container, mapper, compilation);
+						foreach (var argument in callStatement.Arguments.Expressions)
+						{
+							var translatedExpression = TranslateExpression(argument, container, mapper, compilation);
 
-						if (translatedExpression == null)
-							throw new Exception("Call argument translated to null");
+							if (translatedExpression == null)
+								throw new Exception("Call argument translated to null");
 
-						translatedCallStatement.Arguments.Add(translatedExpression);
+							translatedCallStatement.Arguments.Add(translatedExpression);
+						}
+
+						translatedCallStatement.EnsureParameterTypes();
 					}
 
-					if (translatedCallStatement.Target != null)
-						translatedCallStatement.EnsureParameterTypes();
+					container.Append(translatedCallStatement);
 				}
+				else
+				{
+					var translatedCallStatement = new CallStatement(callStatement);
 
-				container.Append(translatedCallStatement);
+					if (compilation.TryGetSub(callStatement.TargetName, out var sub))
+					{
+						int callArgumentCount = callStatement.Arguments?.Count ?? 0;
+
+						if (callArgumentCount != sub.ParameterTypes.Count)
+							throw CompilerException.ArgumentCountMismatch(callStatement.FirstToken);
+
+						translatedCallStatement.Target = sub;
+					}
+					else if (compilation.TryGetFunction(callStatement.TargetName, out var function))
+						throw CompilerException.DuplicateDefinition(callStatement);
+					else if (compilation.UnresolvedReferences.TryGetDeclaration(callStatement.TargetName, out var forwardReference))
+					{
+						if (forwardReference.RoutineType != RoutineType.Sub)
+							throw CompilerException.DuplicateDefinition(callStatement);
+
+						translatedCallStatement.UnresolvedTargetName = callStatement.TargetName;
+						forwardReference.UnresolvedCalls.Add(translatedCallStatement);
+					}
+
+					if (callStatement.Arguments != null)
+					{
+						foreach (var argument in callStatement.Arguments.Expressions)
+						{
+							var translatedExpression = TranslateExpression(argument, container, mapper, compilation);
+
+							if (translatedExpression == null)
+								throw new Exception("Call argument translated to null");
+
+							translatedCallStatement.Arguments.Add(translatedExpression);
+						}
+
+						if (translatedCallStatement.Target != null)
+							translatedCallStatement.EnsureParameterTypes();
+					}
+
+					container.Append(translatedCallStatement);
+				}
 
 				break;
 			}
@@ -594,6 +628,9 @@ public class Compiler
 			}
 			case CodeModel.Statements.DeclareStatement declareStatement:
 			{
+				// If the name matches a registered NativeProcedure, set up the argument
+				// and return types and generate the thunk.
+				//
 				// If the declared routine is already known, verify that the parameters
 				// and type match.
 				//
@@ -602,7 +639,54 @@ public class Compiler
 				// UnresolvedCallStatements and UnresolvedFunctionCalls to be linked
 				// up later.
 
-				// TODO
+				if ((declareStatement.Parameters != null)
+				 && declareStatement.Parameters.Parameters.Any(definition => definition.AnyType))
+				{
+					string unqualifiedName = Mapper.UnqualifyIdentifier(declareStatement.Name);
+
+					if (compilation.TryGetNativeProcedure(unqualifiedName, out var nativeProcedure)
+					 || !compilation.TryGetRoutine(unqualifiedName, out _))
+						throw CompilerException.AnyIsNotSupported(declareStatement);
+				}
+				else
+				{
+					var parameterTypes = declareStatement.Parameters?.Parameters
+						.Select(parameterDefinition => compilation.TypeRepository.ResolveType(parameterDefinition, mapper))
+						.ToList();
+
+					DataType? returnType = null;
+
+					if (declareStatement.DeclarationType.Type == TokenType.FUNCTION)
+					{
+						if (declareStatement.TypeCharacter != null)
+							returnType = DataType.FromCodeModelDataType(
+								declareStatement.TypeCharacter.Type);
+						else
+							returnType = DataType.ForPrimitiveDataType(
+								mapper.GetTypeForIdentifier(declareStatement.Name));
+					}
+
+					string unqualifiedName = Mapper.UnqualifyIdentifier(declareStatement.Name);
+
+					if (compilation.TryGetNativeProcedure(unqualifiedName, out var nativeProcedure))
+					{
+						if (nativeProcedure.ParameterTypes != null)
+							throw CompilerException.DuplicateDefinition(declareStatement);
+
+						nativeProcedure.ParameterTypes = parameterTypes?.ToArray() ?? System.Array.Empty<DataType>();
+						nativeProcedure.ReturnType = returnType;
+
+						nativeProcedure.BuildThunk();
+					}
+					else if (compilation.TryGetRoutine(unqualifiedName, out var routine))
+					{
+						// TODO
+					}
+					else
+					{
+						// TODO
+					}
+				}
 
 				break;
 			}
@@ -2027,7 +2111,21 @@ public class Compiler
 				if (constantValue)
 					throw CompilerException.InvalidConstant(identifier.Token);
 
-				if (compilation.Functions.TryGetValue(unqualifiedIdentifier, out var function))
+				if (compilation.TryGetNativeProcedure(unqualifiedIdentifier, out var nativeProcedure))
+				{
+					if (nativeProcedure.ParameterTypes == null)
+						throw CompilerException.SubprogramNotDefined(identifier.Token);
+
+					var call = new NativeProcedureCallExpression();
+
+					if (nativeProcedure.ParameterTypes.Length != 0)
+						throw CompilerException.ArgumentCountMismatch(identifier.Token);
+
+					call.Target = nativeProcedure;
+
+					return call;
+				}
+				else if (compilation.Functions.TryGetValue(unqualifiedIdentifier, out var function))
 				{
 					if (forAssignment)
 					{
@@ -2106,16 +2204,16 @@ public class Compiler
 				{
 					identifier = CollapseDottedIdentifierExpression(callOrIndexExpression.Subject, mapper, out int column);
 
-					if (identifier == null)
-						throw new CompilerException("Can't translate Subject expression for CallOrIndexExpression");
+					if (identifier != null)
+					{
+						identifierToken = new Token(
+							callOrIndexExpression.Subject.Token?.Line ?? -1,
+							column,
+							TokenType.Identifier,
+							identifier);
 
-					identifierToken = new Token(
-						callOrIndexExpression.Subject.Token?.Line ?? -1,
-						column,
-						TokenType.Identifier,
-						identifier);
-
-					identifierToken.OwnerStatement = expression.Token?.OwnerStatement;
+						identifierToken.OwnerStatement = expression.Token?.OwnerStatement;
+					}
 				}
 
 				// TODO: standard library functions
@@ -2153,59 +2251,92 @@ public class Compiler
 				// - SLN#()
 				// - SYD#()
 
-				string unqualifiedIdentifier = Mapper.UnqualifyIdentifier(identifier);
-
-				bool isForwardReference = compilation.UnresolvedReferences.TryGetDeclaration(unqualifiedIdentifier, out var forwardReference);
-
-				if (compilation.IsRegistered(unqualifiedIdentifier) || isForwardReference)
+				if (identifier != null)
 				{
-					if (forAssignment)
-						throw CompilerException.DuplicateDefinition(callOrIndexExpression.Subject.Token);
+					string unqualifiedIdentifier = Mapper.UnqualifyIdentifier(identifier);
 
-					if (compilation.Subs.ContainsKey(unqualifiedIdentifier))
-						throw new CompilerException(callOrIndexExpression.Subject.Token, "Cannot invoke a SUB as a function");
-
-					if (!compilation.Functions.TryGetValue(unqualifiedIdentifier, out var function))
+					if (compilation.TryGetNativeProcedure(unqualifiedIdentifier, out var nativeProcedure))
 					{
-						if (!isForwardReference)
-							throw new Exception("Internal error: identifier " + unqualifiedIdentifier + " is registered but is neither a SUB nor a FUNCTION?");
+						var translatedCallExpression = new NativeProcedureCallExpression();
 
-						if (forwardReference!.RoutineType != RoutineType.Function)
-							throw CompilerException.DuplicateDefinition(expression.Token);
-					}
-					else
-					{
-						if (callOrIndexExpression.Arguments.Count != function.ParameterTypes.Count)
-							throw CompilerException.ArgumentCountMismatch(callOrIndexExpression.Subject.Token);
-					}
+						int callArgumentCount = callOrIndexExpression.Arguments?.Count ?? 0;
+						int targetArgumentCount = nativeProcedure.ParameterTypes?.Length ?? 0;
 
-					var translatedCallExpression = new CallExpression();
+						if (callArgumentCount != targetArgumentCount)
+							throw CompilerException.ArgumentCountMismatch(callOrIndexExpression.Token);
 
-					translatedCallExpression.Target = function;
+						translatedCallExpression.Target = nativeProcedure;
 
-					if (function == null)
-					{
-						translatedCallExpression.UnresolvedTargetName = unqualifiedIdentifier;
-						if (forwardReference != null)
-							translatedCallExpression.UnresolvedTargetType = forwardReference.ReturnType;
-						translatedCallExpression.UnresolvedTargetToken = identifierToken;
-						forwardReference!.UnresolvedCalls.Add(translatedCallExpression);
-					}
+						if (callOrIndexExpression.Arguments != null)
+						{
+							foreach (var argument in callOrIndexExpression.Arguments.Expressions)
+							{
+								var translatedExpression = TranslateExpression(argument, container, mapper, compilation);
 
-					foreach (var argument in callOrIndexExpression.Arguments.Expressions)
-					{
-						var translatedArgument = TranslateExpression(argument, container, mapper, compilation);
+								if (translatedExpression == null)
+									throw new Exception("Call argument translated to null");
 
-						if (translatedArgument == null)
-							throw new Exception("Internal error: call argument translated to null");
+								translatedCallExpression.Arguments.Add(translatedExpression);
+							}
 
-						translatedCallExpression.Arguments.Add(translatedArgument);
+							translatedCallExpression.EnsureParameterTypes();
+						}
+
+						return translatedCallExpression;
 					}
 
-					if (translatedCallExpression.Target != null)
-						translatedCallExpression.EnsureParameterTypes();
+					bool isForwardReference = compilation.UnresolvedReferences.TryGetDeclaration(unqualifiedIdentifier, out var forwardReference);
 
-					return translatedCallExpression;
+					if (compilation.IsRegistered(unqualifiedIdentifier) || isForwardReference)
+					{
+						if (forAssignment)
+							throw CompilerException.DuplicateDefinition(callOrIndexExpression.Subject.Token);
+
+						if (compilation.Subs.ContainsKey(unqualifiedIdentifier))
+							throw new CompilerException(callOrIndexExpression.Subject.Token, "Cannot invoke a SUB as a function");
+
+						if (!compilation.Functions.TryGetValue(unqualifiedIdentifier, out var function))
+						{
+							if (!isForwardReference)
+								throw new Exception("Internal error: identifier " + unqualifiedIdentifier + " is registered but is neither a SUB nor a FUNCTION?");
+
+							if (forwardReference!.RoutineType != RoutineType.Function)
+								throw CompilerException.DuplicateDefinition(expression.Token);
+						}
+						else
+						{
+							if (callOrIndexExpression.Arguments.Count != function.ParameterTypes.Count)
+								throw CompilerException.ArgumentCountMismatch(callOrIndexExpression.Subject.Token);
+						}
+
+						var translatedCallExpression = new CallExpression();
+
+						translatedCallExpression.Target = function;
+
+						if (function == null)
+						{
+							translatedCallExpression.UnresolvedTargetName = unqualifiedIdentifier;
+							if (forwardReference != null)
+								translatedCallExpression.UnresolvedTargetType = forwardReference.ReturnType;
+							translatedCallExpression.UnresolvedTargetToken = identifierToken;
+							forwardReference!.UnresolvedCalls.Add(translatedCallExpression);
+						}
+
+						foreach (var argument in callOrIndexExpression.Arguments.Expressions)
+						{
+							var translatedArgument = TranslateExpression(argument, container, mapper, compilation);
+
+							if (translatedArgument == null)
+								throw new Exception("Internal error: call argument translated to null");
+
+							translatedCallExpression.Arguments.Add(translatedArgument);
+						}
+
+						if (translatedCallExpression.Target != null)
+							translatedCallExpression.EnsureParameterTypes();
+
+						return translatedCallExpression;
+					}
 				}
 
 				// It's not a function call, so it's an array access.

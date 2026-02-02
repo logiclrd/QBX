@@ -23,7 +23,7 @@ class BitConverterEx
 			s_buffer = new byte[length * 2];
 	}
 
-	public static void WriteBytesThatFit(Span<byte> destination, short value)
+	public static int WriteBytesThatFit(Span<byte> destination, short value)
 	{
 		if (destination.Length >= 2)
 			BitConverter.TryWriteBytes(destination, value);
@@ -33,9 +33,11 @@ class BitConverterEx
 			BitConverter.TryWriteBytes(s_buffer, value);
 			s_buffer.AsSpan().Slice(0, destination.Length).CopyTo(destination);
 		}
+
+		return Math.Min(2, destination.Length);
 	}
 
-	public static void WriteBytesThatFit(Span<byte> destination, int value)
+	public static int WriteBytesThatFit(Span<byte> destination, int value)
 	{
 		if (destination.Length >= 4)
 			BitConverter.TryWriteBytes(destination, value);
@@ -45,9 +47,11 @@ class BitConverterEx
 			BitConverter.TryWriteBytes(s_buffer, value);
 			s_buffer.AsSpan().Slice(0, destination.Length).CopyTo(destination);
 		}
+
+		return Math.Min(4, destination.Length);
 	}
 
-	public static void WriteBytesThatFit(Span<byte> destination, float value)
+	public static int WriteBytesThatFit(Span<byte> destination, float value)
 	{
 		if (destination.Length >= 4)
 			BitConverter.TryWriteBytes(destination, value);
@@ -57,9 +61,11 @@ class BitConverterEx
 			BitConverter.TryWriteBytes(s_buffer, value);
 			s_buffer.AsSpan().Slice(0, destination.Length).CopyTo(destination);
 		}
+
+		return Math.Min(4, destination.Length);
 	}
 
-	public static void WriteBytesThatFit(Span<byte> destination, double value)
+	public static int WriteBytesThatFit(Span<byte> destination, double value)
 	{
 		if (destination.Length >= 8)
 			BitConverter.TryWriteBytes(destination, value);
@@ -69,9 +75,11 @@ class BitConverterEx
 			BitConverter.TryWriteBytes(s_buffer, value);
 			s_buffer.AsSpan().Slice(0, destination.Length).CopyTo(destination);
 		}
+
+		return Math.Min(8, destination.Length);
 	}
 
-	public static void WriteBytesThatFit(Span<byte> destination, long value)
+	public static int WriteBytesThatFit(Span<byte> destination, long value)
 	{
 		if (destination.Length >= 8)
 			BitConverter.TryWriteBytes(destination, value);
@@ -81,14 +89,18 @@ class BitConverterEx
 			BitConverter.TryWriteBytes(s_buffer, value);
 			s_buffer.AsSpan().Slice(0, destination.Length).CopyTo(destination);
 		}
+
+		return Math.Min(8, destination.Length);
 	}
 
-	public static void WriteBytesThatFit(Span<byte> destination, ReadOnlySpan<byte> source)
+	public static int WriteBytesThatFit(Span<byte> destination, ReadOnlySpan<byte> source)
 	{
 		if (source.Length > destination.Length)
 			source = source.Slice(0, destination.Length);
 
 		source.CopyTo(destination);
+
+		return source.Length;
 	}
 
 	public static short ReadAvailableBytesInteger(ReadOnlySpan<byte> source)

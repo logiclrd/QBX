@@ -27,10 +27,13 @@ public class IntegerVariable : Variable
 	public override int CoerceToInt(Evaluable? context) => NumberConverter.ToLong(Value, context?.Source?.Token);
 	public override string ToString() => NumberFormatter.Format(Value);
 
-	public override void Serialize(Span<byte> buffer)
+	public override int Serialize(Span<byte> buffer)
 		=> BitConverterEx.WriteBytesThatFit(buffer, Value);
-	public override void Deserialize(ReadOnlySpan<byte> buffer)
-		=> Value = BitConverterEx.ReadAvailableBytesInteger(buffer);
+	public override int Deserialize(ReadOnlySpan<byte> buffer)
+	{
+		Value = BitConverterEx.ReadAvailableBytesInteger(buffer);
+		return Math.Min(2, buffer.Length);
+	}
 
 	public override bool IsZero => (Value == 0);
 	public override bool IsPositive => (Value > 0);
