@@ -5,6 +5,7 @@ public enum StatementType
 	Invalid,
 
 	Assignment,
+	Beep,
 	Call,
 	Case,
 	Circle,

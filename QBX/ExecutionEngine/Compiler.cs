@@ -431,6 +431,14 @@ public class Compiler
 
 				break;
 			}
+			case CodeModel.Statements.BeepStatement beepStatement:
+			{
+				var translatedBeepStatement = new BeepStatement(beepStatement);
+
+				container.Append(translatedBeepStatement);
+
+				break;
+			}
 			case CodeModel.Statements.CallStatement callStatement:
 			{
 				var translatedCallStatement = new CallStatement(callStatement);

@@ -393,6 +393,13 @@ public class BasicParser
 				return new CommentStatement(commentType, commentText);
 			}
 
+			case TokenType.BEEP:
+			{
+				tokenHandler.ExpectEndOfTokens();
+
+				return new BeepStatement();
+			}
+
 			case TokenType.CALL:
 			{
 				string targetName = tokenHandler.ExpectIdentifier(allowTypeCharacter: false);

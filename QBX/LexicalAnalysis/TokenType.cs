@@ -18,6 +18,7 @@ public enum TokenType
 	[KeywordFunction]
 	[KeywordToken] ATN,
 	[KeywordToken] BASE,
+	[KeywordToken] BEEP,
 	[KeywordToken] BEGINTRANS,
 	[KeywordToken] BINARY,
 	[KeywordFunction(fileNumberParameter: 0)]
