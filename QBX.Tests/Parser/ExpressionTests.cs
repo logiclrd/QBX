@@ -1,6 +1,7 @@
 ﻿using QBX.CodeModel.Expressions;
 using QBX.LexicalAnalysis;
 using QBX.Parser;
+using QBX.Utility;
 
 namespace QBX.Tests.Parser;
 
@@ -10,7 +11,7 @@ public class ExpressionTests
 	{
 		var list = new List<Token>();
 
-		int line = 1;
+		MutableBox<int> line = new MutableBox<int>(1);
 		int column = 1;
 
 		foreach (var tokenData in tokens)
@@ -25,7 +26,7 @@ public class ExpressionTests
 
 			if (token.Type == TokenType.NewLine)
 			{
-				line++;
+				line = new MutableBox<int>(line.Value + 1);
 				column = 1;
 			}
 		}
@@ -34,7 +35,7 @@ public class ExpressionTests
 	}
 
 	Token MakeEndToken(IEnumerable<Token> tokens)
-		=> new Token(1, tokens.Max(tok => tok.Column + tok.Length), TokenType.Empty, "");
+		=> new Token(new MutableBox<int>(1), tokens.Max(tok => tok.Column + tok.Length), TokenType.Empty, "");
 
 	[Test]
 	public void NumericLiteral()

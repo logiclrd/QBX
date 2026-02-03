@@ -55,6 +55,9 @@ public class CompilationElement(CompilationUnit owner) : IRenderableCode
 	{
 		_lines.Insert(index, line);
 		line.CompilationElement = this;
+
+		for (int lineNumber = index; lineNumber < _lines.Count; lineNumber++)
+			_lines[lineNumber].SourceLineIndex.Value = lineNumber;
 	}
 
 	public void ReplaceLine(int index, CodeLine newLine)
@@ -67,6 +70,7 @@ public class CompilationElement(CompilationUnit owner) : IRenderableCode
 		_lines[index] = newLine;
 
 		newLine.CompilationElement = this;
+		newLine.SourceLineIndex.Value = index;
 	}
 
 	public void RemoveLineAt(int index)
@@ -75,6 +79,9 @@ public class CompilationElement(CompilationUnit owner) : IRenderableCode
 		{
 			_lines[index].CompilationElement = null;
 			_lines.RemoveAt(index);
+
+			for (int lineNumber = index; lineNumber < _lines.Count; lineNumber++)
+				_lines[lineNumber].SourceLineIndex.Value = lineNumber;
 		}
 	}
 

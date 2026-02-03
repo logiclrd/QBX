@@ -13,7 +13,7 @@ public class CompilerTests
 
 		IdentifierExpression Identifier(string identifier)
 		{
-			var ret = new IdentifierExpression(new Token(0, column, TokenType.Identifier, identifier));
+			var ret = new IdentifierExpression(new Token(Token.CreateDummyLine(), column, TokenType.Identifier, identifier));
 
 			column += ret.Token!.Length;
 
@@ -22,7 +22,7 @@ public class CompilerTests
 
 		Token CharacterToken(char ch)
 		{
-			var ret = Token.ForCharacter(0, column, ch);
+			var ret = Token.ForCharacter(Token.CreateDummyLine(), column, ch);
 
 			column++;
 

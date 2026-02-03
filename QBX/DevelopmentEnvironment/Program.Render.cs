@@ -277,7 +277,7 @@ public partial class Program : HostedProgram
 			 && (nextStatement.CodeLine is CodeLine codeLine)
 			 && (viewport.CompilationElement == codeLine.CompilationElement))
 			{
-				nextLineIndex = codeLine.LineIndex;
+				nextLineIndex = codeLine.SourceLineIndex.Value;
 
 				if (_runtimeErrorToken != null)
 				{

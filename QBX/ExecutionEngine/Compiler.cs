@@ -17,6 +17,7 @@ using QBX.ExecutionEngine.Execution;
 using QBX.LexicalAnalysis;
 
 using QBX.Numbers;
+using QBX.Utility;
 
 namespace QBX.ExecutionEngine;
 
@@ -318,10 +319,9 @@ public class Compiler
 
 		var line = element.Lines[lineIndex];
 
-		line.LineIndex = lineIndex;
-
 		if (statementIndex >= line.Statements.Count)
 		{
+			line.SourceLineIndex ??= new MutableBox<int>(lineIndex); // Just in case there are no statements on this line
 			lineIndexRef = lineIndex + 1;
 			statementIndexRef = 0;
 			return;
@@ -330,6 +330,9 @@ public class Compiler
 		try
 		{
 			var statement = line.Statements[statementIndex];
+
+			if (statement.FirstToken != null) // should always be true
+				line.SourceLineIndex = statement.FirstToken.LineNumberBox;
 
 			if (statementIndex == 0)
 			{
@@ -2113,6 +2116,9 @@ public class Compiler
 
 	private Evaluable TranslateExpressionUncollapsed(CodeModel.Expressions.Expression expression, bool forAssignment, Sequence? container, Mapper mapper, Compilation compilation, bool constantValue = false, bool createImplicitArray = false, bool parseIdentifiersAsArrays = false)
 	{
+		MutableBox<int> BlameLineNumber(Token? token)
+			=> token?.LineNumberBox ?? new MutableBox<int>(-1);
+
 		switch (expression)
 		{
 			case CodeModel.Expressions.ParenthesizedExpression parenthesized:
@@ -2237,7 +2243,7 @@ public class Compiler
 					if (identifier != null)
 					{
 						identifierToken = new Token(
-							callOrIndexExpression.Subject.Token?.Line ?? -1,
+							BlameLineNumber(callOrIndexExpression.Subject.Token),
 							column,
 							TokenType.Identifier,
 							identifier);
@@ -2538,7 +2544,7 @@ public class Compiler
 						if (constantValue)
 						{
 							var blameToken = new Token(
-								binaryExpression.Token?.Line ?? -1,
+								BlameLineNumber(binaryExpression.Token),
 								column,
 								TokenType.Identifier,
 								dottedIdentifier);

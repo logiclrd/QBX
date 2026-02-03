@@ -1,6 +1,8 @@
 ﻿using System;
 using System.IO;
 
+using QBX.LexicalAnalysis;
+
 namespace QBX.CodeModel;
 
 public class VariableDeclaration : IRenderableCode
@@ -9,6 +11,9 @@ public class VariableDeclaration : IRenderableCode
 	public VariableDeclarationSubscriptList? Subscripts { get; set; }
 	public DataType? Type { get; set; }
 	public string? UserType { get; set; }
+
+	public Token? NameToken;
+	public Token? TypeToken;
 
 	public void Render(TextWriter writer)
 	{

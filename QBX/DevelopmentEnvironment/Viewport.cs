@@ -198,7 +198,7 @@ public class Viewport
 
 		try
 		{
-			var lexer = new Lexer(new StringBuilderReader(buffer));
+			var lexer = new Lexer(new StringBuilderReader(buffer), startingLineNumber: CursorY);
 
 			var parsedCodeLine = Parser.ParseCodeLines(lexer).SingleOrDefault();
 

@@ -231,9 +231,10 @@ public class BasicParser
 						line.AppendStatement(ParseStatementWithIndentation(buffer, precedingWhitespaceToken ?? token, ignoreErrors));
 						buffer.Clear();
 					}
+					else
+						haveContent = true;
 
 					line.EndOfLineComment = precedingWhitespaceToken?.Value + token.Value;
-					haveContent = true;
 					precedingWhitespaceToken = null;
 				}
 				else if (token.Type == TokenType.Whitespace)
@@ -270,7 +271,7 @@ public class BasicParser
 				throw new Exception("Internal error: Arrived at tail with non-empty buffer and/or haveContent but without seeing any tokens");
 
 			var endToken = new Token(
-				lastToken.Line,
+				lastToken.LineNumberBox,
 				lastToken.Column + lastToken.Length,
 				TokenType.Empty,
 				"");
@@ -377,12 +378,12 @@ public class BasicParser
 
 				if (commentText.StartsWith("'"))
 					commentText = commentText.Substring(1);
-				else if (commentText.StartsWith("REM "))
+				else if (commentText.StartsWith("REM ", StringComparison.OrdinalIgnoreCase))
 				{
 					commentType = CommentStatementType.REM;
 					commentText = commentText.Substring(4);
 				}
-				else if (commentText == "REM")
+				else if (commentText.Equals("REM", StringComparison.OrdinalIgnoreCase))
 				{
 					commentType = CommentStatementType.REM;
 					commentText = commentText.Substring(3);
@@ -3500,7 +3501,7 @@ public class BasicParser
 							{
 								throw new SyntaxErrorException(
 									new Token(
-										fixedStringLength.Line,
+										fixedStringLength.LineNumberBox,
 										fixedStringLength.Column,
 										TokenType.Minus,
 										"-"),
@@ -3527,7 +3528,24 @@ public class BasicParser
 			}
 			else
 			{
-				var targetName = tokenHandler.ExpectIdentifier(allowTypeCharacter: false);
+				// Nothing else matches, so this must be a naked call statement.
+				// But, if identifier has a type character, then the desired
+				// error message is one that assumes this is actually an
+				// assignment statement missing its equals sign.
+				string targetName;
+
+				try
+				{
+					targetName = tokenHandler.ExpectIdentifier(allowTypeCharacter: false);
+				}
+				catch (SyntaxErrorException)
+				{
+					if (tokenHandler.NextTokenIs(TokenType.Identifier)
+					 && char.IsSymbol(tokenHandler.NextToken.Value.Last()))
+						throw new SyntaxErrorException(tokenHandler.NextToken, "Expected: variable=expression");
+
+					throw;
+				}
 
 				ExpressionList? arguments = null;
 
@@ -3617,7 +3635,7 @@ public class BasicParser
 
 		tokenHandler.ExpectMoreTokens("Expected variable declaration");
 
-		declaration.Name = tokenHandler.ExpectIdentifier(allowTypeCharacter: true);
+		declaration.Name = tokenHandler.ExpectIdentifier(allowTypeCharacter: true, out declaration.NameToken);
 
 		if (tokenHandler.NextTokenIs(TokenType.OpenParenthesis))
 		{
@@ -3648,14 +3666,14 @@ public class BasicParser
 			tokenHandler.Advance();
 
 			if (tokenHandler.NextTokenIs(TokenType.Identifier))
-				declaration.UserType = tokenHandler.ExpectIdentifier(allowTypeCharacter: false);
+				declaration.UserType = tokenHandler.ExpectIdentifier(allowTypeCharacter: false, out declaration.TypeToken);
 			else
 			{
 				if (!tokenHandler.NextToken.IsDataType)
 					throw new SyntaxErrorException(tokenHandler.NextToken, "Expected data type");
 
 				declaration.Type = DataTypeConverter.FromToken(tokenHandler.NextToken);
-				//declaration.ActualName = declaration.Name + new TypeCharacter(declaration.Type.Value).Character;
+				declaration.TypeToken = tokenHandler.NextToken;
 
 				tokenHandler.Advance();
 			}
@@ -4013,7 +4031,7 @@ public class BasicParser
 				// Coalesce "-" and a number into a single token for a negative number.
 				return new LiteralExpression(
 					new Token(
-						tokens[0].Line,
+						tokens[0].LineNumberBox,
 						tokens[0].Column,
 						tokens[1].Type,
 						tokens[0].Value + tokens[1].Value,
@@ -4071,13 +4089,13 @@ public class BasicParser
 					}
 
 					reinterpretedTokens[i] = new Token(
-						tokens[i].Line,
+						tokens[i].LineNumberBox,
 						tokens[i].Column,
 						TokenType.Minus,
 						"-");
 
 					reinterpretedTokens[i + 1] = new Token(
-						tokens[i].Line,
+						tokens[i].LineNumberBox,
 						tokens[i].Column + 1,
 						TokenType.Number,
 						tokens[i].Value.Substring(1));

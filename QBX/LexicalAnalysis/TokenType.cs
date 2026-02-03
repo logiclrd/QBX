@@ -347,4 +347,5 @@ public enum TokenType
 	[ValueToken] Identifier,
 	[ValueToken] Whitespace,
 	[ValueToken] NewLine,
+	[ValueToken] StrayCharacter,
 }

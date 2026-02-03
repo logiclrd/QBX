@@ -9,11 +9,11 @@ using QBX.Utility;
 
 namespace QBX.LexicalAnalysis;
 
-public class Lexer(TextReader input) : IEnumerable<Token>
+public class Lexer(TextReader input, int startingLineNumber = 0) : IEnumerable<Token>
 {
 	TextReader _input = input;
 	bool _consumed = false;
-	Token _endToken = new Token(-1, -1, TokenType.Empty, "");
+	Token _endToken = new Token(new MutableBox<int>(-1), -1, TokenType.Empty, "");
 
 	public Token EndToken => _endToken;
 
@@ -51,7 +51,7 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 		var buffer = new StringBuilder();
 		var mode = Mode.Any;
 
-		int line = 0;
+		MutableBox<int> line = new MutableBox<int>(startingLineNumber);
 		int column = 0;
 
 		int tokenStartColumn = column;
@@ -82,7 +82,7 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 						else if (ch == '\n')
 						{
 							yield return new Token(line, tokenStartColumn, TokenType.NewLine, "\n");
-							line++;
+							line = new MutableBox<int>(line.Value + 1);
 							column = 0;
 							tokenStartColumn = column;
 							break;
@@ -112,7 +112,7 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 							break;
 						}
 						else
-							throw new Exception("Couldn't parse file: Unexpected character '" + ch + "'");
+							yield return new Token(line, column, TokenType.StrayCharacter, ch.ToString());
 
 						// TODO: some sort of "ignore errors" mode to allow a .BAS file with
 						//       an invalid token stream to be loaded
@@ -142,7 +142,7 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 						{
 							yield return new Token(line, tokenStartColumn, TokenType.NewLine, "\r\n");
 
-							line++;
+							line = new MutableBox<int>(line.Value + 1);
 							column = 0;
 							tokenStartColumn = 0;
 
@@ -153,7 +153,7 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 						{
 							yield return new Token(line, column, TokenType.NewLine, "\r");
 
-							line++;
+							line = new MutableBox<int>(line.Value + 1);
 							column = 0;
 							tokenStartColumn = 1;
 
@@ -464,6 +464,23 @@ public class Lexer(TextReader input) : IEnumerable<Token>
 						}
 						else
 						{
+							string bufferWithoutCharacter = buffer.ToString();
+							string bufferWithCharacter = bufferWithoutCharacter + ch;
+
+							if (Token.IsKeyword(bufferWithoutCharacter)
+							 && !Token.IsKeyword(bufferWithCharacter))
+							{
+								yield return Token.ForKeyword(line, column, bufferWithoutCharacter);
+								column += buffer.Length;
+
+								buffer.Clear();
+
+								reparse = true;
+								mode = Mode.Any;
+
+								break;
+							}
+
 							var dataType = DataType.Unspecified;
 
 							switch (ch)

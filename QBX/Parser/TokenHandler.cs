@@ -32,12 +32,12 @@ public class TokenHandler(ListRange<Token> tokens)
 		get
 		{
 			if (_tokens.Count == 0)
-				return new Token(0, 0, TokenType.Empty, "");
+				return new Token(Token.CreateDummyLine(), 0, TokenType.Empty, "");
 
 			var lastToken = _tokens.Last();
 
 			return new Token(
-				lastToken.Line,
+				lastToken.LineNumberBox,
 				lastToken.Column + (lastToken.Value?.Length ?? 1),
 				TokenType.Empty,
 				"");
@@ -129,7 +129,7 @@ public class TokenHandler(ListRange<Token> tokens)
 			throw new Exception("Internal error: Identifier token with no value");
 
 		if (!allowTypeCharacter && char.IsSymbol(identifier.Last()))
-			throw new SyntaxErrorException(identifierToken, "Cannot use a type character in this context");
+			throw new SyntaxErrorException(identifierToken, "Identifier cannot end with %, &, !, #, $, or @");
 
 		_tokenIndex++;
 

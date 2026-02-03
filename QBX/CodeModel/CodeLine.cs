@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 
 using QBX.CodeModel.Statements;
+using QBX.Utility;
 
 namespace QBX.CodeModel;
 
@@ -12,7 +13,9 @@ public class CodeLine : IRenderableCode
 	public CompilationElement? CompilationElement { get; set; }
 
 	// Populated by Compiler
-	public int LineIndex;
+	public MutableBox<int> SourceLineIndex = DummySourceLineNumberBox;
+
+	static MutableBox<int> DummySourceLineNumberBox = new MutableBox<int>();
 
 	// Line number must be numeric in format, but in practice is
 	// parsed as any string ###.### with total length <= 40.
