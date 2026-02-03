@@ -53,6 +53,8 @@ public class Routine : Sequence
 
 	public const string MainRoutineName = "@Main";
 
+	public bool IsMainRoutine => (Name == MainRoutineName);
+
 	public bool UseRootFrame = false;
 
 	// SUB or FUNCTION

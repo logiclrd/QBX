@@ -253,6 +253,49 @@ public class Compiler
 			compilation);
 	}
 
+	public void ProcessCommentForDirectives(string commentText, Compilation compilation)
+	{
+		var commentSpan = commentText.AsSpan();
+
+		bool IsSpace(char ch) => (ch == ' ') || (ch == '\t');
+
+		while ((commentSpan.Length > 0) && IsSpace(commentSpan[0]))
+			commentSpan = commentSpan.Slice(1);
+
+		// Metacommand comments must start with $.
+		if ((commentSpan.Length == 0) || (commentSpan[0] != '$'))
+			return;
+
+		int directiveIndex = commentSpan.IndexOf('$');
+
+		while (directiveIndex >= 0)
+		{
+			commentSpan = commentSpan.Slice(directiveIndex);
+
+			int directiveEnd = 1;
+
+			while ((directiveEnd < commentSpan.Length) && char.IsAsciiLetterOrDigit(commentSpan[directiveEnd]))
+				directiveEnd++;
+
+			var directive = commentSpan.Slice(0, directiveEnd);
+
+			commentSpan = commentSpan.Slice(directiveEnd);
+
+			if (directive.Equals("$STATIC", StringComparison.OrdinalIgnoreCase))
+				compilation.UseStaticArrays = true;
+			else if (directive.Equals("$DYNAMIC", StringComparison.OrdinalIgnoreCase))
+				compilation.UseStaticArrays = false;
+			else if (directive.Equals("$INCLUDE", StringComparison.OrdinalIgnoreCase))
+			{
+				// TODO: include file
+
+				break; // $INCLUDE directives consume to the end of the line
+			}
+
+			directiveIndex = commentSpan.IndexOf('$');
+		}
+	}
+
 	void TranslateTypeDefinition(CodeModel.Statements.TypeStatement typeStatement, List<CodeModel.Statements.TypeElementStatement> elements, Mapper mapper, Compilation compilation)
 	{
 		var typeRepository = compilation.TypeRepository;
@@ -359,8 +402,14 @@ public class Compiler
 				lineIndex,
 				statementIndex);
 
+			iterator.Comment +=
+				(commentText) =>
+				{
+					ProcessCommentForDirectives(commentText, compilation);
+				};
+
 			iterator.Advanced +=
-				newStatement =>
+				(newStatement) =>
 				{
 					statement = newStatement;
 				};
@@ -626,6 +675,11 @@ public class Compiler
 
 				container.Append(translatedColorStatement);
 
+				break;
+			}
+			case CodeModel.Statements.CommentStatement commentStatement:
+			{
+				ProcessCommentForDirectives(commentStatement.Comment, compilation);
 				break;
 			}
 			case CodeModel.Statements.ConstStatement constStatement:
@@ -2011,7 +2065,7 @@ public class Compiler
 
 				while (iterator.Advance())
 				{
-					if ((statement is CodeModel.Statements.EmptyStatement) || (statement is CodeModel.Statements.CommentStatement))
+					if ((statement is CodeModel.Statements.EmptyStatement))
 						continue;
 					if (statement is CodeModel.Statements.EndTypeStatement)
 						break;

@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 
 using QBX.CodeModel;
 using QBX.CodeModel.Statements;
@@ -11,12 +12,29 @@ public class CompilationElementStatementIterator(CompilationElement element, Cod
 	public int LineIndex => lineIndex;
 	public int StatementIndex => statementIndex;
 
+	public event Action<string>? Comment;
+
 	public override bool Advance()
 	{
 		statementIndex++;
 
 		while (statementIndex >= line.Statements.Count)
 		{
+			if (line.EndOfLineComment != null)
+			{
+				// EndOfLineComment includes indentation spaces and the
+				// apostrophe that introduces the comment, but our
+				// consumer only wants the comment text.
+				string commentText = line.EndOfLineComment.TrimStart();
+
+				if (commentText[0] != '\'')
+					throw new Exception("Internal error: EndOfLineComment is not formatted as expected");
+
+				commentText = commentText.Substring(1);
+
+				Comment?.Invoke(commentText);
+			}
+
 			lineIndex++;
 			statementIndex = 0;
 
