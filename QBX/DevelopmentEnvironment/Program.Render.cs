@@ -271,7 +271,7 @@ public partial class Program : HostedProgram
 
 		if (IsExecuting && (viewport.CompilationUnit != null))
 		{
-			var nextStatement = _runtimeErrorToken?.OwnerStatement ?? _nextStatement;
+			var nextStatement = _errorToken?.OwnerStatement ?? _nextStatement;
 
 			if ((nextStatement != null)
 			 && (nextStatement.CodeLine is CodeLine codeLine)
@@ -279,10 +279,10 @@ public partial class Program : HostedProgram
 			{
 				nextLineIndex = codeLine.SourceLineIndex.Value;
 
-				if (_runtimeErrorToken != null)
+				if (_errorToken != null)
 				{
-					nextStartColumn = _runtimeErrorToken.Column;
-					nextEndColumn = nextStartColumn + _runtimeErrorToken.Length - 1;
+					nextStartColumn = _errorToken.Column;
+					nextEndColumn = nextStartColumn + _errorToken.Length - 1;
 				}
 				else
 				{
@@ -637,9 +637,20 @@ public partial class Program : HostedProgram
 
 		var (startX, startY, endX, endY) = clipboard.GetSelectionRange();
 
-		// Selection is not rendered when a dialog is active.
+		// When a dialog is active, error context is rendered as selection.
 		if (Dialogs.Count != 0)
-			return (chars, 0, 0);
+		{
+			if (_errorToken == null)
+				return (chars, 0, 0);
+			else
+			{
+				startX = _errorToken.Column;
+				startY = _errorToken.Line;
+
+				endX = startX + _errorToken.Length;
+				endY = startY;
+			}
+		}
 
 		int effectiveStartX = Math.Min(startX, endX);
 		int effectiveEndX = Math.Max(startX, endX);

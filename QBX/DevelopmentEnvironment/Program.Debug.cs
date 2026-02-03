@@ -18,7 +18,7 @@ public partial class Program
 {
 	public Statement? NextStatement => _nextStatement;
 	public Routine? NextStatementRoutine => _nextStatementRoutine;
-	public Token? RuntimeErrorToken => _runtimeErrorToken;
+	public Token? ErrorToken => _errorToken;
 	public IReadOnlySet<CodeLine> Breakpoints => _breakpoints;
 	public IReadOnlyList<Watch> Watches => _watches;
 
@@ -26,7 +26,7 @@ public partial class Program
 
 	Statement? _nextStatement = null;
 	Routine? _nextStatementRoutine = null;
-	Token? _runtimeErrorToken = null;
+	Token? _errorToken = null;
 	HashSet<CodeLine> _breakpoints = new HashSet<CodeLine>();
 	List<Watch> _watches = new List<Watch>();
 
@@ -74,13 +74,15 @@ public partial class Program
 	public void PresentError(CompilerException error)
 	{
 		PresentError(error.Message, error.Context, avoidContext: true);
+
+		_errorToken = error.Context;
 	}
 
 	public void PresentError(RuntimeException error)
 	{
 		PresentError(error.Message, error.Context, avoidContext: true);
 
-		_runtimeErrorToken = error.Context;
+		_errorToken = error.Context;
 	}
 
 	public void PresentError(string errorMessage, Token? context = null, bool avoidContext = false)
