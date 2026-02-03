@@ -91,23 +91,43 @@ public class UserDataTypeMarshaller : Marshaller
 
 	private static void BuildMarshallers(UserDataType userDataType, Type nativeType, List<Func<ReadOnlySpan<byte>, object, int>> marshalOut, List<Func<object, Span<byte>, int>> marshalIn)
 	{
-		foreach (var field in userDataType.Fields)
+		// TODO: support mismatched mappings, just matching up the fields in the order they're in on both sides?
+		//
+		// TYPE a                      class A
+		//   x AS INTEGER              {
+		//   yz AS b                     public B XY;
+		// END TYPE            vs.       public short Z;
+		// TYPE b                      }
+		//   y AS INTEGER              class B
+		//   z AS INTEGER              {
+		// END type                      public short X;
+		//                               public short Y;
+		//                             }
+		//
+		// Because these would match up in a bytewise marshalling operation.
+
+		var nativeMembers = nativeType.GetMembers(BindingFlags.Public | BindingFlags.Instance);
+
+		if (nativeMembers.Length < userDataType.Fields.Count)
+			throw CompilerException.TypeMismatch();
+
+		for (int i=0, j=0; (i < userDataType.Fields.Count) && (j < nativeMembers.Length); i++, j++)
 		{
-			var members = nativeType.GetMember(field.Name, BindingFlags.Public | BindingFlags.Instance);
+			var member = nativeMembers[j];
 
-			if ((members == null) || (members.Length != 1))
-				throw CompilerException.TypeMismatch();
+			Type memberType;
 
-			var member = members[0];
+			switch (member)
+			{
+				case FieldInfo fieldInfo: memberType = fieldInfo.FieldType; break;
+				case PropertyInfo propertyInfo: memberType = propertyInfo.PropertyType; break;
 
-			Type memberType =
-				member switch
-				{
-					FieldInfo fieldInfo => fieldInfo.FieldType,
-					PropertyInfo propertyInfo => propertyInfo.PropertyType,
+				default:
+					i--; // Try the next native member
+					continue;
+			}
 
-					_ => throw CompilerException.TypeMismatch()
-				};
+			var field = userDataType.Fields[i];
 
 			if (field.Type.IsPrimitiveType)
 			{
@@ -145,6 +165,11 @@ public class UserDataTypeMarshaller : Marshaller
 			{
 				if (field.ArraySubscripts == null)
 					throw new Exception("Internal error: User data type array field with no subscripts");
+
+				if (!memberType.IsArray)
+					throw CompilerException.TypeMismatch();
+
+				memberType = memberType.GetElementType() ?? throw new Exception("Sanity failure: Array type has no element type");
 
 				ArrayMarshal.BuildMarshallers(
 					field.Type,
