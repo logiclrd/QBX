@@ -17,6 +17,7 @@ public partial class Program
 	MenuItem mnuFileSaveAll;
 	MenuItem mnuFileOpenProgram;
 	MenuItem mnuFileLoadFile;
+	MenuItem mnuFileExit;
 
 	Menu mnuEdit;
 
@@ -61,6 +62,7 @@ public partial class Program
 		nameof(mnuFileSaveAll),
 		nameof(mnuFileOpenProgram),
 		nameof(mnuFileLoadFile),
+		nameof(mnuFileExit),
 		nameof(mnuEdit),
 		nameof(mnuView),
 		nameof(mnuSearch),
@@ -93,7 +95,7 @@ public partial class Program
 				new MenuItem("&Print..."),
 				new MenuItem("&DOS Shell"),
 				MenuItem.Separator,
-				new MenuItem("E&xit") { Clicked = mnuFileExit_Clicked },
+				(mnuFileExit = new MenuItem("E&xit")),
 			};
 
 		mnuEdit =
@@ -219,6 +221,7 @@ public partial class Program
 		mnuFileSaveAll.Clicked = mnuFileSaveAll_Clicked;
 		mnuFileOpenProgram.Clicked = mnuFileOpenProgram_Clicked;
 		mnuFileLoadFile.Clicked = mnuFileLoadFile_Clicked;
+		mnuFileExit.Clicked += mnuFileExit_Clicked;
 
 		mnuDebugInstantWatch.Clicked = mnuDebugInstantWatch_Clicked;
 		mnuDebugDeleteAllWatch.Clicked = mnuDebugDeleteAllWatch_Clicked;
@@ -516,6 +519,6 @@ public partial class Program
 
 	void mnuFileExit_Clicked()
 	{
-		Machine.KeepRunning = false;
+		ExitWithSavePrompt();
 	}
 }

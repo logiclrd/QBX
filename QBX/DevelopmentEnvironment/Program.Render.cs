@@ -9,7 +9,7 @@ using QBX.Utility;
 
 namespace QBX.DevelopmentEnvironment;
 
-public partial class Program : HostedProgram
+public partial class Program
 {
 	string _spaces = "                                                                                ";
 	string _horizontalRule = "────────────────────────────────────────────────────────────────────────────────";

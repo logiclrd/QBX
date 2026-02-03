@@ -481,6 +481,8 @@ public partial class Program : HostedProgram, IOvertypeFlag
 		}
 	}
 
+	bool _closeRequested;
+
 	public override void Run(CancellationToken cancellationToken)
 	{
 		if (Aborted)
@@ -503,6 +505,12 @@ public partial class Program : HostedProgram, IOvertypeFlag
 			}
 
 			EvaluateWatches(_watches, out bool @break);
+
+			if (_closeRequested)
+			{
+				_closeRequested = false;
+				ExitWithSavePrompt();
+			}
 
 			Render();
 
@@ -549,5 +557,25 @@ public partial class Program : HostedProgram, IOvertypeFlag
 			 && !keyEvent.IsEphemeral)
 				break;
 		}
+	}
+
+	// Comes from another thread
+	public override void RequestClose()
+	{
+		_closeRequested = true;
+
+		_executionContext?.Controls.Break();
+		Machine.Keyboard.InterruptWait();
+	}
+
+	public void Exit()
+	{
+		Machine.KeepRunning = false;
+	}
+
+	public void ExitWithSavePrompt()
+	{
+		if (CommitViewportsOrPresentError())
+			PromptToSaveChanges(continuation: Exit);
 	}
 }
