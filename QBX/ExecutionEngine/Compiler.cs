@@ -2674,8 +2674,9 @@ public class Compiler
 							throw new Exception("Member access expressions require the right-hand operand to be an identifier");
 
 						string identifier = identifierExpression.Identifier;
+						var identifierToken = identifierExpression.Token;
 
-						return FieldAccessExpression.Construct(subjectExpression, identifier);
+						return FieldAccessExpression.Construct(subjectExpression, identifier, identifierToken);
 					}
 				}
 

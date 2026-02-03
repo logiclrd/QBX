@@ -1,7 +1,9 @@
 ﻿using System;
 
+using QBX.CodeModel;
 using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
+using QBX.LexicalAnalysis;
 
 namespace QBX.ExecutionEngine.Compiled.Expressions;
 
@@ -12,7 +14,7 @@ public class FieldAccessExpression(Evaluable expression, int fieldIndex, DataTyp
 		expression.CollapseConstantSubexpressions();
 	}
 
-	public static Evaluable Construct(Evaluable? expression, string fieldName)
+	public static Evaluable Construct(Evaluable? expression, string fieldName, Token? fieldToken)
 	{
 		if (expression == null)
 			throw new Exception("FieldAccessExpression.Construct requires expression");
@@ -24,12 +26,27 @@ public class FieldAccessExpression(Evaluable expression, int fieldIndex, DataTyp
 
 		var userType = dataType.UserType;
 
+		string unqualifiedFieldName = Mapper.UnqualifyIdentifier(fieldName);
+
 		for (int fieldIndex = 0; fieldIndex < userType.Fields.Count; fieldIndex++)
 		{
 			var field = userType.Fields[fieldIndex];
 
-			if (field.Name.Equals(fieldName, StringComparison.Ordinal))
+			if (field.Name.Equals(unqualifiedFieldName, StringComparison.OrdinalIgnoreCase))
+			{
+				if (fieldName != unqualifiedFieldName)
+				{
+					if (!TypeCharacter.TryParse(fieldName[fieldName.Length - 1], out var typeCharacter))
+						throw new Exception("Internal error: name changed when unqualifying but type character unrecognized: " + fieldName);
+
+					var typeFromName = DataType.FromCodeModelDataType(typeCharacter.Type);
+
+					if (!typeFromName.Equals(field.Type))
+						throw CompilerException.TypeMismatch(fieldToken);
+				}
+
 				return new FieldAccessExpression(expression, fieldIndex, field.Type);
+			}
 		}
 
 		throw CompilerException.ElementNotDefined(expression.Source);
