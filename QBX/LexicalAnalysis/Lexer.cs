@@ -464,23 +464,6 @@ public class Lexer(TextReader input, int startingLineNumber = 0) : IEnumerable<T
 						}
 						else
 						{
-							string bufferWithoutCharacter = buffer.ToString();
-							string bufferWithCharacter = bufferWithoutCharacter + ch;
-
-							if (Token.IsKeyword(bufferWithoutCharacter)
-							 && !Token.IsKeyword(bufferWithCharacter))
-							{
-								yield return Token.ForKeyword(line, column, bufferWithoutCharacter);
-								column += buffer.Length;
-
-								buffer.Clear();
-
-								reparse = true;
-								mode = Mode.Any;
-
-								break;
-							}
-
 							var dataType = DataType.Unspecified;
 
 							switch (ch)
