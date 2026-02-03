@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using System.Threading;
 
 using SDL3;
@@ -50,6 +51,30 @@ class Program
 				Console.WriteLine("Failed to create window and/or renderer: {0}", SDL.GetError());
 				return 2;
 			}
+
+			program.WindowIconChanged +=
+				(newIcon) =>
+				{
+					IntPtr translatedIcon = IntPtr.Zero;
+					GCHandle pin = default;
+
+					try
+					{
+						pin = GCHandle.Alloc(newIcon.Pixels, GCHandleType.Pinned);
+
+						translatedIcon = SDL.CreateSurfaceFrom(newIcon.Width, newIcon.Height, SDL.PixelFormat.ARGB8888, pin.AddrOfPinnedObject(), newIcon.Width * 4);
+
+						SDL.SetWindowIcon(window, translatedIcon);
+					}
+					finally
+					{
+						if (translatedIcon != IntPtr.Zero)
+							SDL.DestroySurface(translatedIcon);
+
+						if (pin.IsAllocated)
+							pin.Free();
+					}
+				};
 
 			var audioSpec =
 				new SDL.AudioSpec()

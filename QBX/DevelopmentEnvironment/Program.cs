@@ -389,6 +389,97 @@ public partial class Program : HostedProgram, IOvertypeFlag
 		return dialog;
 	}
 
+	void SetWindowIcon()
+	{
+		using (var stream = typeof(Program).Assembly.GetManifestResourceStream("QBX.DevelopmentEnvironment.WindowIcon.ppm"))
+		{
+			if (stream == null)
+				return;
+
+			var reader = new StreamReader(stream);
+
+			string buffer = "";
+			int bufferIndex = 0;
+
+			int ReadValue()
+			{
+				while (bufferIndex >= buffer.Length)
+				{
+					string? line = reader.ReadLine();
+
+					if (line == null)
+						return -1;
+
+					buffer = line;
+					bufferIndex = 0;
+
+					while ((bufferIndex < buffer.Length) && char.IsWhiteSpace(buffer, bufferIndex))
+						bufferIndex++;
+
+					if ((bufferIndex < buffer.Length) && (buffer[bufferIndex] == '#'))
+						bufferIndex = buffer.Length;
+				}
+
+				int tokenEnd = bufferIndex + 1;
+
+				while ((tokenEnd < buffer.Length) && !char.IsWhiteSpace(buffer, tokenEnd))
+				{
+					if (buffer[tokenEnd] == '#')
+						break;
+
+					tokenEnd++;
+				}
+
+				int value;
+
+				int.TryParse(buffer.Substring(bufferIndex, tokenEnd - bufferIndex), out value);
+
+				bufferIndex = tokenEnd;
+
+				if ((bufferIndex < buffer.Length) && (buffer[bufferIndex] == '#'))
+					bufferIndex = buffer.Length;
+
+				return value;
+			}
+
+			try
+			{
+				string? signature = reader.ReadLine();
+
+				if ((signature == null)
+				 || (signature.Length != 2)
+				 || (signature[0] != 'P')
+				 || !char.IsAscii(signature[1]))
+					return;
+
+				int width = ReadValue();
+				int height = ReadValue();
+
+				int maxColourValue = ReadValue();
+
+				var icon = new Icon(width, height);
+
+				for (int y=0, o=0; y < height; y++)
+					for (int x=0; x < width; x++, o++)
+					{
+						int r = ReadValue() * 255 / maxColourValue;
+						int g = ReadValue() * 255 / maxColourValue;
+						int b = ReadValue() * 255 / maxColourValue;
+
+						icon.Pixels[o] = (0xFF << 24) | (r << 16) | (g << 8) | (b << 0);
+					}
+
+				// Restore transparency -- this particular implementation works because the top-left pixel is transparent.
+				for (int i = icon.Pixels.Length - 1; i >= 0; i--)
+					if (icon.Pixels[i] == icon.Pixels[0])
+						icon.Pixels[i] = 0;
+
+				OnWindowIconChanged(icon);
+			}
+			catch { }
+		}
+	}
+
 	public override void Run(CancellationToken cancellationToken)
 	{
 		if (Aborted)
@@ -399,6 +490,8 @@ public partial class Program : HostedProgram, IOvertypeFlag
 			{
 				Terminate();
 			});
+
+		SetWindowIcon();
 
 		while (Machine.KeepRunning)
 		{

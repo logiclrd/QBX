@@ -26,7 +26,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<EditorConfigFiles Remove="C:\code\QBX\.editorconfig" />
+		<EditorConfigFiles Remove=".editorconfig" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -44,7 +44,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Include="C:\code\QBX\.editorconfig" />
+		<EmbeddedResource Include="DevelopmentEnvironment\WindowIcon.ppm" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include=".editorconfig" />
 	</ItemGroup>
 
 </Project>
