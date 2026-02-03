@@ -134,4 +134,6 @@ public class CompilerException : Exception
 		=> new CompilerException(context, "Array not defined");
 	public static CompilerException AnyIsNotSupported(CodeModel.Statements.Statement? statement)
 		=> new CompilerException(statement, "Parameters declared AS ANY are not supported by QBX");
+	public static CompilerException MetacommandError()
+		=> new CompilerException("$Metacommand error");
 }

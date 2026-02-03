@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -127,7 +128,26 @@ public class CodeLine : IRenderableCode
 			}
 		}
 
-		writer.Write(EndOfLineComment);
+		if (EndOfLineComment != null)
+		{
+			int commentStart = EndOfLineComment.IndexOf('\'');
+
+			if (commentStart < 0) // ?
+				writer.Write(EndOfLineComment);
+			else
+			{
+				var span = EndOfLineComment.AsSpan();
+
+				var commentTextSpan = span.Slice(commentStart + 1);
+
+				var reformattedCommentTextSpan = CommentStatement.FormatCommentText(commentTextSpan);
+
+				if (reformattedCommentTextSpan != commentTextSpan)
+					EndOfLineComment = string.Concat(span.Slice(0, commentStart + 1), reformattedCommentTextSpan);
+
+				writer.Write(EndOfLineComment);
+			}
+		}
 
 		if (includeCRLF)
 			writer.WriteLine();
