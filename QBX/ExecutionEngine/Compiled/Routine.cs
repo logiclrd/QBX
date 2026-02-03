@@ -17,6 +17,7 @@ public class Routine : Sequence
 	public List<DataType> ParameterTypes = new List<DataType>();
 	public List<DataType> VariableTypes = new List<DataType>();
 	public List<VariableLink> LinkedVariables = new List<VariableLink>();
+	public List<DimensionArrayStatement> StaticArrays = new List<DimensionArrayStatement>();
 	public DataType? ReturnType;
 	public int[] ParameterVariableIndices;
 	public int ReturnValueVariableIndex = -1;
@@ -216,6 +217,21 @@ public class Routine : Sequence
 					ParameterVariableIndices[i] = mapper.DeclareArray(name, paramType);
 			}
 		}
+	}
+
+	public void AddStaticArray(DimensionArrayStatement dimStatement)
+	{
+		if (IsStaticArray(dimStatement.VariableIndex))
+			throw new Exception("Internal error: Making the same variable index a static array more than once");
+
+		dimStatement.IsDynamic = false;
+
+		StaticArrays.Add(dimStatement);
+	}
+
+	public bool IsStaticArray(int variableIndex)
+	{
+		return StaticArrays.Any(dimStatement => dimStatement.VariableIndex == variableIndex);
 	}
 
 	public void ValidateDeclaration(IReadOnlyList<DataType>? declaredParameterTypes, DataType? declaredReturnType, Statement? blameStatement, Token? blameName, Func<int, Token?> getBlameParameterType)

@@ -17,6 +17,8 @@ public class Array
 
 	public int FixedStringLength = -1;
 
+	public bool IsDynamic = true;
+
 	public Span<byte> PackedData => _packedData;
 	public int PackedSize => Elements.Length * ElementType.ByteSize;
 
@@ -78,6 +80,9 @@ public class Array
 		//
 		// This copy requires knowing the size of that second-to-last subarray, e.g.
 		// (1 TO 10, 1 TO 5) in the example above.
+
+		if (!IsDynamic)
+			throw RuntimeException.IllegalFunctionCall();
 
 		if (newSubscripts.Dimensions != Subscripts.Dimensions)
 			throw new Exception("Internal error: RedimensionPreservingData called with an ArraySubscripts with a different number of dimensions");

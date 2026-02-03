@@ -16,6 +16,7 @@ public class Compilation
 	public Dictionary<string, Routine> Subs;
 	public Dictionary<string, Routine> Functions;
 	public Dictionary<string, NativeProcedure> NativeProcedures;
+	public bool UseStaticArrays = true;
 
 	public Routine? EntrypointRoutine;
 

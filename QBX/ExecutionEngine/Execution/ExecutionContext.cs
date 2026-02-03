@@ -467,6 +467,11 @@ public class ExecutionContext
 			}
 		}
 
-		return new StackFrame(routine, variables);
+		var stackFrame = new StackFrame(routine, variables);
+
+		foreach (var staticArrayInitializer in routine.StaticArrays)
+			staticArrayInitializer.Execute(this, stackFrame);
+
+		return stackFrame;
 	}
 }

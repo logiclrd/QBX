@@ -7,6 +7,7 @@ public class DimensionArrayStatement(CodeModel.Statements.Statement? source) : E
 {
 	public int VariableIndex;
 	public ArraySubscriptsExpressions Subscripts = new ArraySubscriptsExpressions();
+	public bool IsDynamic = true;
 	public bool IsRedimension;
 	public bool PreserveData;
 
@@ -24,7 +25,10 @@ public class DimensionArrayStatement(CodeModel.Statements.Statement? source) : E
 			if (PreserveData && !variable.Array.IsUninitialized)
 				variable.Array.RedimensionPreservingData(subscripts);
 			else
+			{
 				variable.InitializeArray(subscripts);
+				variable.Array.IsDynamic = IsDynamic;
+			}
 		}
 		catch (RuntimeException ex)
 		{

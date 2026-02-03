@@ -222,7 +222,7 @@ public class Compiler
 			}
 
 			while (lineIndex < element.Lines.Count)
-				TranslateStatement(element, ref lineIndex, ref statementIndex, routine, mapper, compilation, module);
+				TranslateStatement(element, ref lineIndex, ref statementIndex, routine, routine, compilation, module);
 
 			routine.VariableTypes = mapper.GetVariableTypes();
 			routine.LinkedVariables = mapper.GetLinkedVariables();
@@ -309,7 +309,7 @@ public class Compiler
 		typeRepository.RegisterType(udt);
 	}
 
-	void TranslateStatement(CodeModel.CompilationElement element, ref int lineIndexRef, ref int statementIndexRef, Sequence container, Mapper mapper, Compilation compilation, Module module)
+	void TranslateStatement(CodeModel.CompilationElement element, ref int lineIndexRef, ref int statementIndexRef, Sequence container, Routine routine, Compilation compilation, Module module)
 	{
 		int lineIndex = lineIndexRef;
 		int statementIndex = statementIndexRef;
@@ -365,7 +365,7 @@ public class Compiler
 					statement = newStatement;
 				};
 
-			TranslateStatement(element, ref statement, iterator, container, mapper, compilation, module, out var nextStatementInfo);
+			TranslateStatement(element, ref statement, iterator, container, routine, compilation, module, out var nextStatementInfo);
 
 			lineIndex = iterator.LineIndex;
 			statementIndex = iterator.StatementIndex;
@@ -383,7 +383,7 @@ public class Compiler
 		}
 	}
 
-	void TranslateStatement(CodeModel.CompilationElement element, IList<CodeModel.Statements.Statement> statements, ref int statementIndexRef, Sequence container, Mapper mapper, Compilation compilation, Module module)
+	void TranslateStatement(CodeModel.CompilationElement element, IList<CodeModel.Statements.Statement> statements, ref int statementIndexRef, Sequence container, Routine routine, Compilation compilation, Module module)
 	{
 		int statementIndex = statementIndexRef;
 
@@ -402,7 +402,7 @@ public class Compiler
 					statement = newStatement;
 				};
 
-			TranslateStatement(element, ref statement, iterator, container, mapper, compilation, module, out var nextStatementInfo);
+			TranslateStatement(element, ref statement, iterator, container, routine, compilation, module, out var nextStatementInfo);
 
 			statementIndex = iterator.StatementIndex;
 
@@ -424,8 +424,10 @@ public class Compiler
 		public int LoopsMatched = 0;
 	}
 
-	void TranslateStatement(CodeModel.CompilationElement element, ref CodeModel.Statements.Statement statement, StatementIterator iterator, Sequence container, Mapper mapper, Compilation compilation, Module module, out NextStatementInfo? nextStatementInfo)
+	void TranslateStatement(CodeModel.CompilationElement element, ref CodeModel.Statements.Statement statement, StatementIterator iterator, Sequence container, Routine routine, Compilation compilation, Module module, out NextStatementInfo? nextStatementInfo)
 	{
+		var mapper = routine.Mapper;
+
 		var typeRepository = compilation.TypeRepository;
 
 		nextStatementInfo = null;
@@ -694,9 +696,9 @@ public class Compiler
 
 						nativeProcedure.BuildThunk();
 					}
-					else if (compilation.TryGetRoutine(unqualifiedName, out var routine))
+					else if (compilation.TryGetRoutine(unqualifiedName, out var declaredRoutine))
 					{
-						routine.ValidateDeclaration(
+						declaredRoutine.ValidateDeclaration(
 							parameterTypes,
 							returnType,
 							blameStatement: declareStatement,
@@ -733,25 +735,25 @@ public class Compiler
 				//     FNfork = SQR(x%)
 				//   END DEF
 
-				var routine = new Routine(module, mapper, element, defFnStatement, typeRepository);
+				var defFnRoutine = new Routine(module, mapper, element, defFnStatement, typeRepository);
 
-				if (routine.ReturnType == null)
+				if (defFnRoutine.ReturnType == null)
 				{
-					routine.ReturnType = DataType.ForPrimitiveDataType(
-						mapper.GetTypeForIdentifier(routine.Name));
+					defFnRoutine.ReturnType = DataType.ForPrimitiveDataType(
+						mapper.GetTypeForIdentifier(defFnRoutine.Name));
 				}
 
 				mapper.StartSemiscopeSetup();
 
 				string qualifiedName = mapper.QualifyIdentifier(
-					routine.Name,
-					routine.ReturnType);
+					defFnRoutine.Name,
+					defFnRoutine.ReturnType);
 
-				routine.ReturnValueVariableIndex = mapper.DeclareVariable(
+				defFnRoutine.ReturnValueVariableIndex = mapper.DeclareVariable(
 					qualifiedName,
-					routine.ReturnType);
+					defFnRoutine.ReturnType);
 
-				routine.TranslateParameters(mapper, compilation);
+				defFnRoutine.TranslateParameters(mapper, compilation);
 
 				mapper.EnterSemiscope();
 
@@ -759,11 +761,11 @@ public class Compiler
 				{
 					if (defFnStatement.ExpressionBody != null)
 					{
-						routine.Append(
+						defFnRoutine.Append(
 							new AssignmentStatement(defFnStatement)
 							{
 								TargetExpression =
-									new IdentifierExpression(routine.ReturnValueVariableIndex, routine.ReturnType),
+									new IdentifierExpression(defFnRoutine.ReturnValueVariableIndex, defFnRoutine.ReturnType),
 
 								ValueExpression =
 									TranslateExpression(defFnStatement.ExpressionBody, container, mapper, compilation),
@@ -772,7 +774,7 @@ public class Compiler
 					else
 					{
 						iterator.Advance();
-						iterator.ProcessLabels(module.DataParser, routine);
+						iterator.ProcessLabels(module.DataParser, defFnRoutine);
 
 						while (iterator.HaveCurrentStatement)
 						{
@@ -782,7 +784,7 @@ public class Compiler
 							if (statement is CodeModel.Statements.DefFnStatement)
 								throw CompilerException.IllegalInSubFunctionOrDefFn(statement);
 
-							TranslateStatement(element, ref statement, iterator, routine, mapper, compilation, module, out nextStatementInfo);
+							TranslateStatement(element, ref statement, iterator, defFnRoutine, defFnRoutine, compilation, module, out nextStatementInfo);
 
 							if (nextStatementInfo != null)
 							{
@@ -791,7 +793,7 @@ public class Compiler
 							}
 
 							iterator.Advance();
-							iterator.ProcessLabels(module.DataParser, routine);
+							iterator.ProcessLabels(module.DataParser, defFnRoutine);
 						}
 					}
 				}
@@ -800,9 +802,9 @@ public class Compiler
 					mapper.ExitSemiscope();
 				}
 
-				routine.UseRootFrame = true;
+				defFnRoutine.UseRootFrame = true;
 
-				compilation.RegisterFunction(routine);
+				compilation.RegisterFunction(defFnRoutine);
 
 				break;
 			}
@@ -856,10 +858,17 @@ public class Compiler
 					{
 						dataType = dataType.MakeArrayType();
 
+						bool isNewArrayVariable = true;
+
 						if (dimStatement.AlwaysDeclareArrays)
 							variableIndex = mapper.DeclareArray(declaration.Name, dataType);
 						else
-							variableIndex = mapper.ResolveArray(declaration.Name, out _, dataType);
+						{
+							variableIndex = mapper.ResolveArray(declaration.Name, out isNewArrayVariable, dataType);
+
+							if (routine.IsStaticArray(variableIndex))
+								throw CompilerException.ArrayAlreadyDimensioned(declaration.NameToken);
+						}
 
 						if (dimStatement.Shared)
 							mapper.MakeGlobalArray(declaration.Name, dataType);
@@ -870,25 +879,13 @@ public class Compiler
 
 							translatedDimStatement.VariableIndex = variableIndex;
 
-							// TODO: '$STATIC and '$DYNAMIC (can also be used with REM)
-							// => when the following conditions are met, arrays are configured prior to execution commenting:
-							//    - '$STATIC
-							//    - the DIM statement is not in any sort of conditional compilation clause (IF, FOR, etc.)
-							//    - the DIM statement is not inside a SUB, FUNCTION or DEF FN
-							//    - all of the bounds expressions are evaluable at compile time
-							//    - there is no preceding DIM statement for the same identifier
-							// in this instance, we set up the array right here and now
-
-							// TODO: if the array has already been initialized, then:
-							// - if DimStatement then runtime error "Duplicate definition"
-							// - if RedimStatement then dynamically resize
-							// - RedimStatements fail on arrays set up statically (see preceding TODO)
-
 							if (dimStatement is CodeModel.Statements.RedimStatement redimStatement)
 							{
 								translatedDimStatement.IsRedimension = true;
 								translatedDimStatement.PreserveData = redimStatement.Preserve;
 							}
+
+							bool constantBounds = true;
 
 							foreach (var subscript in declaration.Subscripts.Subscripts)
 							{
@@ -898,13 +895,38 @@ public class Compiler
 								if (bound1 == null)
 									throw new Exception("Must specify the first bound for an array subscript");
 
+								if (constantBounds)
+									constantBounds = bound1.IsConstant;
+
 								if (bound2 == null)
 									translatedDimStatement.Subscripts.Add(new IntegerLiteralValue(0), bound1);
 								else
+								{
 									translatedDimStatement.Subscripts.Add(bound1, bound2);
+
+									if (constantBounds)
+										constantBounds = bound2.IsConstant;
+								}
 							}
 
-							container.Append(translatedDimStatement);
+							// When the following conditions are met, arrays are configured prior to execution commenting:
+							// - '$STATIC
+							// - The DIM statement is not in any sort of conditional compilation clause (IF, FOR, etc.)
+							// - The DIM statement is not inside a SUB, FUNCTION or DEF FN
+							// - All of the bounds expressions are evaluable at compile time
+							// - There is no preceding DIM statement for the same identifier
+
+							bool isStatic =
+								compilation.UseStaticArrays &&
+								(container == routine) && // not in any subsequence
+								routine.IsMainRoutine &&
+								constantBounds &&
+								isNewArrayVariable;
+
+							if (isStatic)
+								routine.AddStaticArray(translatedDimStatement);
+							else
+								container.Append(translatedDimStatement);
 						}
 					}
 				}
@@ -963,7 +985,7 @@ public class Compiler
 						break;
 					}
 
-					TranslateStatement(element, ref statement, iterator, body, mapper, compilation, module, out nextStatementInfo);
+					TranslateStatement(element, ref statement, iterator, body, routine, compilation, module, out nextStatementInfo);
 
 					iterator.ProcessLabels(module.DataParser, body);
 				}
@@ -1119,7 +1141,7 @@ public class Compiler
 						break;
 					}
 
-					TranslateStatement(element, ref statement, iterator, body, mapper, compilation, module, out nextStatementInfo);
+					TranslateStatement(element, ref statement, iterator, body, routine, compilation, module, out nextStatementInfo);
 
 					iterator.ProcessLabels(module.DataParser, body);
 
@@ -1296,7 +1318,7 @@ public class Compiler
 									int idx = 0;
 
 									while (idx < elseIfStatement.ThenBody.Count)
-										TranslateStatement(element, elseIfStatement.ThenBody, ref idx, subsequence, mapper, compilation, module);
+										TranslateStatement(element, elseIfStatement.ThenBody, ref idx, subsequence, routine, compilation, module);
 								}
 
 								if (!iterator.Advance())
@@ -1309,7 +1331,7 @@ public class Compiler
 
 							default:
 							{
-								TranslateStatement(element, ref statement, iterator, subsequence, mapper, compilation, module, out nextStatementInfo);
+								TranslateStatement(element, ref statement, iterator, subsequence, routine, compilation, module, out nextStatementInfo);
 
 								if (nextStatementInfo != null)
 								{
@@ -1334,7 +1356,7 @@ public class Compiler
 					int idx = 0;
 
 					while (idx < ifStatement.ThenBody.Count)
-						TranslateStatement(element, ifStatement.ThenBody, ref idx, thenBody, mapper, compilation, module);
+						TranslateStatement(element, ifStatement.ThenBody, ref idx, thenBody, routine, compilation, module);
 
 					translatedIfStatement.ThenBody = thenBody;
 					thenBody.OwnerExecutable = translatedIfStatement;
@@ -1346,7 +1368,7 @@ public class Compiler
 						idx = 0;
 
 						while (idx < ifStatement.ThenBody.Count)
-							TranslateStatement(element, ifStatement.ElseBody, ref idx, elseBody, mapper, compilation, module);
+							TranslateStatement(element, ifStatement.ElseBody, ref idx, elseBody, routine, compilation, module);
 
 						translatedIfStatement.ElseBody = elseBody;
 						elseBody.OwnerExecutable = translatedIfStatement;
@@ -1887,7 +1909,7 @@ public class Compiler
 						if (block == null)
 							throw CompilerException.StatementsAndLabelsIllegalBetweenSelectCaseAndCase(statement);
 
-						TranslateStatement(element, ref statement, iterator, block, mapper, compilation, module, out nextStatementInfo);
+						TranslateStatement(element, ref statement, iterator, block, routine, compilation, module, out nextStatementInfo);
 
 						if (nextStatementInfo != null)
 						{
@@ -2029,7 +2051,7 @@ public class Compiler
 						break;
 					}
 
-					TranslateStatement(element, ref statement, iterator, body, mapper, compilation, module, out nextStatementInfo);
+					TranslateStatement(element, ref statement, iterator, body, routine, compilation, module, out nextStatementInfo);
 
 					iterator.ProcessLabels(module.DataParser, body);
 				}
@@ -2081,7 +2103,7 @@ public class Compiler
 				else
 					throw RuntimeException.TypeMismatch(firstArgumentExpression.Source);
 
-				TranslateStatement(element, ref statement, iterator, container, mapper, compilation, module, out nextStatementInfo);
+				TranslateStatement(element, ref statement, iterator, container, routine, compilation, module, out nextStatementInfo);
 
 				// The recursive TranslateStatement has already advanced the iterator.
 				return;

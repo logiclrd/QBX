@@ -14,6 +14,8 @@ public class ArrayVariable(DataType type, int fixedStringLength = -1) : Variable
 
 	public Array Array = Array.Uninitialized;
 
+	public bool IsDynamic;
+
 	public override object GetData() => Array;
 	public override void SetData(object value) => Array = (Array)value;
 
@@ -22,8 +24,9 @@ public class ArrayVariable(DataType type, int fixedStringLength = -1) : Variable
 	public override int Deserialize(System.ReadOnlySpan<byte> buffer)
 		=> Array.Deserialize(buffer);
 
-	internal void InitializeArray(ArraySubscripts subscripts)
+	internal void InitializeArray(ArraySubscripts subscripts, bool isDynamic = true)
 	{
 		Array = new Array(ElementType, subscripts, fixedStringLength);
+		Array.IsDynamic = IsDynamic;
 	}
 }
