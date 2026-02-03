@@ -171,6 +171,8 @@ class Program
 			int physicalWidth = -1;
 			int physicalHeight = -1;
 
+			SDL.SetHint(SDL.Hints.QuitOnLastWindowClose, "0");
+
 			while (machine.KeepRunning)
 			{
 				while (SDL.PollEvent(out var evt))
@@ -185,6 +187,10 @@ class Program
 
 					switch (eventType)
 					{
+						case SDL.EventType.WindowCloseRequested:
+							program.RequestClose();
+							break;
+
 						case SDL.EventType.KeyDown:
 						case SDL.EventType.KeyUp:
 							machine.Keyboard.HandleEvent(evt.Key);

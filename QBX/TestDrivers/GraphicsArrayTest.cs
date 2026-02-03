@@ -7,7 +7,7 @@ using QBX.Hardware;
 
 namespace QBX.TestDrivers;
 
-public class GraphicsArrayTest(Machine machine) : HostedProgram
+public class GraphicsArrayTest(Machine machine) : HostedProgram(machine)
 {
 	public override bool EnableMainLoop => true;
 
@@ -64,7 +64,7 @@ public class GraphicsArrayTest(Machine machine) : HostedProgram
 
 					int bg = 0;
 
-					while (true)
+					while (machine.KeepRunning)
 					{
 						if (bg == 0)
 						{
@@ -124,7 +124,7 @@ public class GraphicsArrayTest(Machine machine) : HostedProgram
 
 					var rnd = new Random(1234);
 
-					while (true)
+					while (machine.KeepRunning)
 					{
 						for (int i = 0; i < Math.Max(1, 15 / MaxC); i++)
 						{

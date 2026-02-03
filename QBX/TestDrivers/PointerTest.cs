@@ -6,7 +6,7 @@ using QBX.Hardware;
 
 namespace QBX.TestDrivers;
 
-public class PointerTest(Machine machine) : HostedProgram
+public class PointerTest(Machine machine) : HostedProgram(machine)
 {
 	public override bool EnableMainLoop => true;
 
@@ -38,7 +38,7 @@ public class PointerTest(Machine machine) : HostedProgram
 		int dotWidth = machine.GraphicsArray.Sequencer.DotDoubling ? 2 : 1;
 		int scanHeight = machine.GraphicsArray.CRTController.ScanDoubling ? 2 : 1;
 
-		while (true)
+		while (machine.KeepRunning)
 		{
 			a = a + 1;
 

@@ -2,6 +2,7 @@
 using System.IO;
 using System.Threading;
 
+using QBX.Hardware;
 using QBX.LexicalAnalysis;
 using QBX.Parser;
 
@@ -9,7 +10,7 @@ using System.Diagnostics;
 
 namespace QBX.TestDrivers;
 
-public class CodeModelTest : HostedProgram
+public class CodeModelTest(Machine machine) : HostedProgram(machine)
 {
 	public override bool EnableMainLoop => false;
 

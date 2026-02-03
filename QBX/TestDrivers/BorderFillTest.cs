@@ -7,7 +7,7 @@ using QBX.Hardware;
 
 namespace QBX.TestDrivers;
 
-public class BorderFillTest(Machine machine) : HostedProgram
+public class BorderFillTest(Machine machine) : HostedProgram(machine)
 {
 	public override bool EnableMainLoop => true;
 
@@ -220,7 +220,7 @@ public class BorderFillTest(Machine machine) : HostedProgram
 		int count = 5;
 		int mode = 0x13;
 
-		while (true)
+		while (machine.KeepRunning)
 		{
 			if (count == 0)
 			{

@@ -60,6 +60,7 @@ public partial class Program : HostedProgram, IOvertypeFlag
 	void IOvertypeFlag.Toggle() => EnableOvertype = !EnableOvertype;
 
 	public Program(Machine machine)
+		: base(machine)
 	{
 		Machine = machine;
 

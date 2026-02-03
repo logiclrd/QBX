@@ -6,7 +6,7 @@ using QBX.Hardware;
 
 namespace QBX.TestDrivers;
 
-public class SpriteTest(Machine machine) : HostedProgram
+public class SpriteTest(Machine machine) : HostedProgram(machine)
 {
 	public override bool EnableMainLoop => true;
 
