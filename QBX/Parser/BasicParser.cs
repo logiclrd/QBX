@@ -730,9 +730,6 @@ public class BasicParser
 
 			case TokenType.DEF:
 			{
-				if (isNested)
-					throw new SyntaxErrorException(token, "Syntax error: DEF FN may not be nested");
-
 				tokenHandler.ExpectMoreTokens();
 
 				if (tokenHandler.NextToken.Type == TokenType.SEG)
@@ -756,6 +753,9 @@ public class BasicParser
 
 					if (!identifier.StartsWith("FN", StringComparison.OrdinalIgnoreCase))
 						throw new SyntaxErrorException(identifierToken, "DEF function name must begin with FN");
+
+					if (isNested)
+						throw new SyntaxErrorException(token, "Syntax error: DEF FN may not be nested");
 
 					var defFn = new DefFnStatement();
 
