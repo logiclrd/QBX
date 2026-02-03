@@ -9,6 +9,7 @@ namespace QBX.ExecutionEngine.Compiled.Statements;
 public class NativeProcedureCallStatement(CodeModel.Statements.Statement? source) : Executable(source)
 {
 	public NativeProcedure? Target;
+	public Func<Variable[], Variable>? LocalThunk;
 	public readonly List<Evaluable> Arguments = new List<Evaluable>();
 
 	public void EnsureParameterTypes()
@@ -60,7 +61,10 @@ public class NativeProcedureCallStatement(CodeModel.Statements.Statement? source
 
 		try
 		{
-			Target.Invoke(arguments);
+			if (LocalThunk != null)
+				LocalThunk.Invoke(arguments);
+			else
+				Target.Invoke(arguments);
 		}
 		catch (RuntimeException error)
 		{

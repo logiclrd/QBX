@@ -9,6 +9,7 @@ namespace QBX.ExecutionEngine.Compiled.Statements;
 public class NativeProcedureCallExpression : Evaluable
 {
 	public NativeProcedure? Target;
+	public Func<Variable[], Variable>? LocalThunk;
 	public readonly List<Evaluable> Arguments = new List<Evaluable>();
 
 	public override DataType Type => Target?.ReturnType ?? throw new Exception("Internal error: CallExpression has no Type");
@@ -68,7 +69,10 @@ public class NativeProcedureCallExpression : Evaluable
 
 		try
 		{
-			return Target.Invoke(arguments);
+			if (LocalThunk != null)
+				return LocalThunk.Invoke(arguments);
+			else
+				return Target.Invoke(arguments);
 		}
 		catch (RuntimeException error)
 		{

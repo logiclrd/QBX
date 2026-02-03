@@ -24,16 +24,21 @@ public class NativeProcedure(object site, MethodInfo implementation)
 		if (ParameterTypes == null)
 			throw new Exception("Internal error: BuildThunk called with no ParameterTypes");
 
+		Invoke = BuildThunk(ParameterTypes);
+	}
+
+	public Func<Variable[], Variable> BuildThunk(IReadOnlyList<DataType> parameterTypes)
+	{
 		var parameters = implementation.GetParameters();
 
-		if (ParameterTypes.Length != parameters.Length)
-			throw RuntimeException.ArgumentCountMismatch();
+		if (parameterTypes.Count != parameters.Length)
+			throw CompilerException.ArgumentCountMismatch(context: null);
 
 		var marshallers = new Marshaller[parameters.Length];
 
 		for (int i = 0; i < parameters.Length; i++)
 		{
-			var parameterType = ParameterTypes[i];
+			var parameterType = parameterTypes[i];
 
 			var nativeParameterType = parameters[i].ParameterType;
 
@@ -172,7 +177,7 @@ public class NativeProcedure(object site, MethodInfo implementation)
 
 		var thunk = Expression.Lambda<Func<Variable[], Variable>>(thunkExpression, inputParameter);
 
-		this.Invoke = thunk.Compile();
+		return thunk.Compile();
 	}
 
 	Type GetPrimitiveVariableType(DataType type)

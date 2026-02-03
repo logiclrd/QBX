@@ -549,27 +549,48 @@ public class Compiler
 				{
 					var translatedCallStatement = new NativeProcedureCallStatement(callStatement);
 
-					int callArgumentCount = callStatement.Arguments?.Count ?? 0;
-					int targetArgumentCount = nativeProcedure.ParameterTypes?.Length ?? 0;
-
-					if (callArgumentCount != targetArgumentCount)
-						throw CompilerException.ArgumentCountMismatch(callStatement.FirstToken);
-
-					translatedCallStatement.Target = nativeProcedure;
-
-					if (callStatement.Arguments != null)
+					if (nativeProcedure.ParameterTypes == null)
 					{
-						foreach (var argument in callStatement.Arguments.Expressions)
+						if (callStatement.Arguments != null)
 						{
-							var translatedExpression = TranslateExpression(argument, container, mapper, compilation);
+							foreach (var argument in callStatement.Arguments.Expressions)
+							{
+								var translatedExpression = TranslateExpression(argument, container, mapper, compilation);
 
-							if (translatedExpression == null)
-								throw new Exception("Call argument translated to null");
+								if (translatedExpression == null)
+									throw new Exception("Call argument translated to null");
 
-							translatedCallStatement.Arguments.Add(translatedExpression);
+								translatedCallStatement.Arguments.Add(translatedExpression);
+							}
 						}
 
-						translatedCallStatement.EnsureParameterTypes();
+						translatedCallStatement.LocalThunk = nativeProcedure.BuildThunk(
+							translatedCallStatement.Arguments.Select(arg => arg.Type).ToList());
+					}
+					else
+					{
+						int callArgumentCount = callStatement.Arguments?.Count ?? 0;
+						int targetArgumentCount = nativeProcedure.ParameterTypes?.Length ?? 0;
+
+						if (callArgumentCount != targetArgumentCount)
+							throw CompilerException.ArgumentCountMismatch(callStatement.FirstToken);
+
+						translatedCallStatement.Target = nativeProcedure;
+
+						if (callStatement.Arguments != null)
+						{
+							foreach (var argument in callStatement.Arguments.Expressions)
+							{
+								var translatedExpression = TranslateExpression(argument, container, mapper, compilation);
+
+								if (translatedExpression == null)
+									throw new Exception("Call argument translated to null");
+
+								translatedCallStatement.Arguments.Add(translatedExpression);
+							}
+
+							translatedCallStatement.EnsureParameterTypes();
+						}
 					}
 
 					container.Append(translatedCallStatement);
@@ -2248,8 +2269,13 @@ public class Compiler
 
 					var call = new NativeProcedureCallExpression();
 
-					if (nativeProcedure.ParameterTypes.Length != 0)
-						throw CompilerException.ArgumentCountMismatch(identifier.Token);
+					if (nativeProcedure.ParameterTypes == null)
+						call.LocalThunk = nativeProcedure.BuildThunk(System.Array.Empty<DataType>());
+					else
+					{
+						if (nativeProcedure.ParameterTypes.Length != 0)
+							throw CompilerException.ArgumentCountMismatch(identifier.Token);
+					}
 
 					call.Target = nativeProcedure;
 
@@ -2389,27 +2415,48 @@ public class Compiler
 					{
 						var translatedCallExpression = new NativeProcedureCallExpression();
 
-						int callArgumentCount = callOrIndexExpression.Arguments?.Count ?? 0;
-						int targetArgumentCount = nativeProcedure.ParameterTypes?.Length ?? 0;
-
-						if (callArgumentCount != targetArgumentCount)
-							throw CompilerException.ArgumentCountMismatch(callOrIndexExpression.Token);
-
-						translatedCallExpression.Target = nativeProcedure;
-
-						if (callOrIndexExpression.Arguments != null)
+						if (nativeProcedure.ParameterTypes == null)
 						{
-							foreach (var argument in callOrIndexExpression.Arguments.Expressions)
+							if (callOrIndexExpression.Arguments != null)
 							{
-								var translatedExpression = TranslateExpression(argument, container, mapper, compilation);
+								foreach (var argument in callOrIndexExpression.Arguments.Expressions)
+								{
+									var translatedExpression = TranslateExpression(argument, container, mapper, compilation);
 
-								if (translatedExpression == null)
-									throw new Exception("Call argument translated to null");
+									if (translatedExpression == null)
+										throw new Exception("Call argument translated to null");
 
-								translatedCallExpression.Arguments.Add(translatedExpression);
+									translatedCallExpression.Arguments.Add(translatedExpression);
+								}
 							}
 
-							translatedCallExpression.EnsureParameterTypes();
+							translatedCallExpression.LocalThunk = nativeProcedure.BuildThunk(
+								translatedCallExpression.Arguments.Select(arg => arg.Type).ToList());
+						}
+						else
+						{
+							int callArgumentCount = callOrIndexExpression.Arguments?.Count ?? 0;
+							int targetArgumentCount = nativeProcedure.ParameterTypes?.Length ?? 0;
+
+							if (callArgumentCount != targetArgumentCount)
+								throw CompilerException.ArgumentCountMismatch(callOrIndexExpression.Token);
+
+							translatedCallExpression.Target = nativeProcedure;
+
+							if (callOrIndexExpression.Arguments != null)
+							{
+								foreach (var argument in callOrIndexExpression.Arguments.Expressions)
+								{
+									var translatedExpression = TranslateExpression(argument, container, mapper, compilation);
+
+									if (translatedExpression == null)
+										throw new Exception("Call argument translated to null");
+
+									translatedCallExpression.Arguments.Add(translatedExpression);
+								}
+
+								translatedCallExpression.EnsureParameterTypes();
+							}
 						}
 
 						return translatedCallExpression;
