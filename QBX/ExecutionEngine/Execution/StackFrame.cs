@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 using QBX.ExecutionEngine.Compiled;
 using QBX.ExecutionEngine.Execution.Variables;
@@ -34,5 +35,13 @@ public class StackFrame(Routine routine, Variable[] variables)
 			throw RuntimeException.ReturnWithoutGoSub(context);
 
 		return path;
+	}
+
+	public void Reset()
+	{
+		foreach (var variable in Variables)
+			variable.Reset();
+
+		_goSubStack.Clear();
 	}
 }

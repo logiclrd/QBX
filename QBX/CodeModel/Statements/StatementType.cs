@@ -9,6 +9,7 @@ public enum StatementType
 	Call,
 	Case,
 	Circle,
+	Clear,
 	Close,
 	Cls,
 	Color,

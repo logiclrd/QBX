@@ -48,6 +48,8 @@ public abstract class Variable
 	public abstract int Serialize(Span<byte> buffer);
 	public abstract int Deserialize(ReadOnlySpan<byte> buffer);
 
+	public abstract void Reset();
+
 	public abstract bool IsZero { get; }
 	public abstract bool IsPositive { get; }
 	public abstract bool IsNegative { get; }

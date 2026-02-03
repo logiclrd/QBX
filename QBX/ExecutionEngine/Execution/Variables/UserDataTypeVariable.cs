@@ -40,6 +40,12 @@ public class UserDataTypeVariable : Variable
 		}
 	}
 
+	public override void Reset()
+	{
+		foreach (var field in Fields)
+			field.Reset();
+	}
+
 	public override bool IsZero => false;
 	public override bool IsPositive => false;
 	public override bool IsNegative => false;

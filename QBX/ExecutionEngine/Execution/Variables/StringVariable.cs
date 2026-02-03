@@ -88,6 +88,11 @@ public class StringVariable : Variable
 		return Math.Min(RawValue.Length, buffer.Length);
 	}
 
+	public override void Reset()
+	{
+		RawValue.Reset();
+	}
+
 	public override bool IsZero => false;
 	public override bool IsPositive => false;
 	public override bool IsNegative => false;

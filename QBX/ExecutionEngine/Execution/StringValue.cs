@@ -73,6 +73,14 @@ public class StringValue : IComparable<StringValue>, IEquatable<StringValue>
 		set => _bytes[index] = value;
 	}
 
+	public void Reset()
+	{
+		if (_isFixedLength)
+			CollectionsMarshal.AsSpan(_bytes).Clear();
+		else
+			_bytes.Clear();
+	}
+
 	public StringValue Set(string str)
 		=> Set(str.AsSpan());
 

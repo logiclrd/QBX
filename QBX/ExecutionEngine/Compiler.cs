@@ -650,6 +650,24 @@ public class Compiler
 
 				break;
 			}
+			case CodeModel.Statements.ClearStatement clearStatement:
+			{
+				if (!routine.IsMainRoutine)
+					throw CompilerException.IllegalInSubFunctionOrDefFn(clearStatement);
+
+				var translatedClearStatement = new ClearStatement(clearStatement);
+
+				TranslateNumericArgumentExpression(
+					ref translatedClearStatement.StringSpaceExpression, clearStatement.StringSpaceExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedClearStatement.MaximumMemoryAddressExpression, clearStatement.MaximumMemoryAddressExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedClearStatement.StackSpaceExpression, clearStatement.StackSpaceExpression);
+
+				container.Append(translatedClearStatement);
+
+				break;
+			}
 			case CodeModel.Statements.ClsStatement clsStatement:
 			{
 				var translatedClsStatement = new ClsStatement(clsStatement);

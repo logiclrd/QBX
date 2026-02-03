@@ -22,6 +22,8 @@ public class DummyVariable : Variable
 	public override int Serialize(Span<byte> buffer) => throw CreateError();
 	public override int Deserialize(ReadOnlySpan<byte> buffer) => throw CreateError();
 
+	public override void Reset() => throw CreateError();
+
 	public override bool IsZero => throw CreateError();
 	public override bool IsPositive => throw CreateError();
 	public override bool IsNegative => throw CreateError();

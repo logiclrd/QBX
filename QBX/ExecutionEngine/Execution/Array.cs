@@ -126,6 +126,11 @@ public class Array
 		Subscripts = newSubscripts;
 	}
 
+	public void Reset()
+	{
+		Elements.AsSpan().Clear();
+	}
+
 	public void Pack()
 	{
 		if (_packedData != null)

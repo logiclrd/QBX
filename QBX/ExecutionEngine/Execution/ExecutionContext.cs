@@ -474,4 +474,11 @@ public class ExecutionContext
 
 		return stackFrame;
 	}
+
+	public void Reset()
+	{
+		// TODO: close all open files
+
+		_rootFrame?.Reset();
+	}
 }

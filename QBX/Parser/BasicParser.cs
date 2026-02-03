@@ -533,6 +533,47 @@ public class BasicParser
 				return circle;
 			}
 
+			case TokenType.CLEAR:
+			{
+				var clearStatement = new ClearStatement();
+
+				if (tokenHandler.HasMoreTokens)
+				{
+					var endTokenRef = new TokenRef();
+
+					int argumentIndex = 0;
+
+					foreach (var range in SplitCommaDelimitedList(tokenHandler.RemainingTokens, endTokenRef))
+					{
+						if (range.Any())
+						{
+							switch (argumentIndex)
+							{
+								case 0:
+									clearStatement.StringSpaceExpression = ParseExpressionForStatement(clearStatement, range, endTokenRef.Token ?? tokenHandler.EndToken);
+									break;
+								case 1:
+									clearStatement.MaximumMemoryAddressExpression = ParseExpressionForStatement(clearStatement, range, endTokenRef.Token ?? tokenHandler.EndToken);
+									break;
+								case 2:
+									clearStatement.StackSpaceExpression = ParseExpressionForStatement(clearStatement, range, endTokenRef.Token ?? tokenHandler.EndToken);
+									break;
+							}
+						}
+						else if (endTokenRef.Token == null)
+							throw new SyntaxErrorException(tokenHandler.EndToken, "Expected: expression");
+
+						argumentIndex++;
+
+						if ((argumentIndex >= 3)
+						 && (endTokenRef.Token != null))
+							throw new SyntaxErrorException(endTokenRef.Token!, "Expected: end of statement");
+					}
+				}
+
+				return clearStatement;
+			}
+
 			case TokenType.CLOSE:
 			{
 				var closeStatement = new CloseStatement();

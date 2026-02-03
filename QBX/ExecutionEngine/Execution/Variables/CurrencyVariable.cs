@@ -39,6 +39,11 @@ public class CurrencyVariable : Variable
 		return 8;
 	}
 
+	public override void Reset()
+	{
+		Value = 0;
+	}
+
 	public override bool IsZero => (Value == 0);
 	public override bool IsPositive => (Value > 0);
 	public override bool IsNegative => (Value < 0);

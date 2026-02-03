@@ -35,6 +35,11 @@ public class IntegerVariable : Variable
 		return Math.Min(2, buffer.Length);
 	}
 
+	public override void Reset()
+	{
+		Value = 0;
+	}
+
 	public override bool IsZero => (Value == 0);
 	public override bool IsPositive => (Value > 0);
 	public override bool IsNegative => (Value < 0);

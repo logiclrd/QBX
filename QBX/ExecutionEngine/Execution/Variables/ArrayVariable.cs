@@ -16,6 +16,14 @@ public class ArrayVariable(DataType type, int fixedStringLength = -1) : Variable
 
 	public bool IsDynamic;
 
+	public override void Reset()
+	{
+		if (IsDynamic)
+			Array = Array.Uninitialized;
+		else
+			Array.Reset();
+	}
+
 	public override object GetData() => Array;
 	public override void SetData(object value) => Array = (Array)value;
 

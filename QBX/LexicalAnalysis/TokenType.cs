@@ -36,6 +36,7 @@ public enum TokenType
 	[KeywordFunction]
 	[KeywordToken] CINT,
 	[KeywordToken] CIRCLE,
+	[KeywordToken] CLEAR,
 	[KeywordFunction]
 	[KeywordToken] CLNG,
 	[KeywordToken] CLOSE,
