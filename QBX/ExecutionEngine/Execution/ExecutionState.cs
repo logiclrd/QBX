@@ -13,6 +13,8 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 	public RuntimeException? CurrentError => _currentError;
 	public bool IsTerminated => _isTerminated;
 
+	public event Func<StackFrame, bool>? CheckWatchpoints;
+
 	Stack<StackFrame> _stack = new Stack<StackFrame>();
 	RuntimeException? _currentError = null;
 	bool _isTerminated;
@@ -132,8 +134,8 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 
 		if ((statement != null) && statement.IsBreakpoint)
 			_break = true;
-
-		// TODO: watchpoints
+		else if (CheckWatchpoints?.Invoke(currentStackFrame) ?? false)
+			_break = true;
 
 		if (_break)
 		{
@@ -203,7 +205,11 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 			Monitor.PulseAll(_sync);
 
 			while (_break)
+			{
+				DebugOut("PROGRAM: going to sleep");
 				Monitor.Wait(_sync);
+				DebugOut("PROGRAM: woke up");
+			}
 
 			_waiting = 0;
 
@@ -225,11 +231,14 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 
 			_currentWait++;
 
+			DebugOut("DEBUGGER: => _waiting is zero, setting _currentWait to " + _currentWait);
+
 			if (_currentWait == int.MaxValue) // ha ha!
 				_currentWait = 1;
 
 			while ((_waiting != _currentWait) && !_isTerminated)
 			{
+				DebugOut("DEBUGGER: going to sleep");
 				Monitor.Wait(_sync);
 				DebugOut("DEBUGGER: woke up");
 			}

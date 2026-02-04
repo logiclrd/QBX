@@ -106,7 +106,18 @@ public partial class Program
 		_executionThread.IsBackground = false;
 		_executionThread.Name = "Program Execution Thread";
 
+		if (_watches.Any(watch => watch.IsWatchPoint))
+			EnableWatchpointChecks();
+
 		_executionThread.Start();
+
+		if (_executionContext.WaitForRootFrame())
+		{
+			var rootFrame = _executionContext.RootFrame;
+
+			if (rootFrame != null)
+				EvaluateWatches(rootFrame);
+		}
 
 		return true;
 	}
@@ -121,6 +132,8 @@ public partial class Program
 		{
 			SaveOutput();
 			SetIDEVideoMode();
+
+			EvaluateWatches(out _);
 
 			ShowNextStatement(_executionContext.ExecutionState.Stack);
 
@@ -175,6 +188,12 @@ public partial class Program
 
 		if (!Machine.KeepRunning)
 			return;
+
+		foreach (var watch in _watches)
+		{
+			watch.LastValue = null;
+			watch.LastValueFormatted = null;
+		}
 
 		var outputLibrary = _executionContext.VisualLibrary;
 

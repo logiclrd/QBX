@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading;
 
 using QBX.ExecutionEngine.Compiled;
 using QBX.ExecutionEngine.Compiled.Statements;
@@ -31,6 +32,8 @@ public class ExecutionContext
 	public VisualLibrary VisualLibrary;
 	public PlayProcessor PlayProcessor;
 
+	public StackFrame? RootFrame => _rootFrame;
+
 	public IReadOnlyExecutionState ExecutionState => _executionState;
 	public IExecutionControls Controls => _executionState;
 
@@ -40,6 +43,8 @@ public class ExecutionContext
 
 	StackFrame? _rootFrame;
 	StatementPath? _goTo;
+
+	ManualResetEvent _rootFrameEstablished = new ManualResetEvent(initialState: false);
 
 	ErrorHandler? _mainErrorHandler = null;
 	Stack<ErrorHandler> _localErrorHandlers = new Stack<ErrorHandler>();
@@ -146,6 +151,9 @@ public class ExecutionContext
 			_localErrorHandlers.Pop();
 	}
 
+	public bool WaitForRootFrame()
+		=> _rootFrameEstablished.WaitOne(TimeSpan.FromSeconds(5));
+
 	public int Run(Compilation compilation)
 	{
 		var entrypoint = compilation.EntrypointRoutine;
@@ -159,6 +167,8 @@ public class ExecutionContext
 			System.Array.Empty<Variable>());
 
 		_executionState.StartExecution(_rootFrame);
+
+		_rootFrameEstablished.Set();
 
 		try
 		{
@@ -183,6 +193,7 @@ public class ExecutionContext
 		}
 		finally
 		{
+			_rootFrameEstablished.Reset();
 			_rootFrame = null;
 
 			_executionState.EndExecution();

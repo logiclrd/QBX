@@ -504,8 +504,6 @@ public partial class Program : HostedProgram, IOvertypeFlag
 				Run();
 			}
 
-			EvaluateWatches(_watches, out bool @break);
-
 			if (_closeRequested)
 			{
 				_closeRequested = false;

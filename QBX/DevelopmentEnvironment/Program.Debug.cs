@@ -196,6 +196,9 @@ public partial class Program
 		watch.IsWatchPoint = watchPoint;
 
 		_watches.Add(watch);
+
+		if (watchPoint)
+			EnableWatchpointChecks();
 	}
 
 	public void AddWatch(Watch watch)
@@ -220,6 +223,9 @@ public partial class Program
 				mnuDebugDeleteWatch.IsEnabled = false;
 				mnuDebugDeleteAllWatch.IsEnabled = false;
 			}
+
+			if (!_watches.Any(watch => watch.IsWatchPoint))
+				DisableWatchpointChecks();
 		}
 	}
 
@@ -245,22 +251,82 @@ public partial class Program
 			watch.Routine = null;
 	}
 
+	IReadOnlyExecutionState? _hooked = null;
+
+	void EnableWatchpointChecks()
+	{
+		if ((_executionContext != null)
+		 && (_hooked != _executionContext.Controls))
+		{
+			_hooked = _executionContext.ExecutionState;
+			_hooked.CheckWatchpoints += EvaluateWatchPoints;
+		}
+	}
+
+	void DisableWatchpointChecks()
+	{
+		if (_hooked != null)
+		{
+			_hooked.CheckWatchpoints -= EvaluateWatchPoints;
+			_hooked = null;
+		}
+	}
+
 	public bool EvaluateWatch(Watch watch)
 	{
-		EvaluateWatches([watch], out var @break);
+		var stackFrame = _executionContext?.ExecutionState.Stack.FirstOrDefault();
+
+		bool @break = false;
+
+		if (stackFrame != null)
+		{
+			EvaluateWatches(
+				stackFrame,
+				[watch],
+				out @break);
+		}
+
 		return @break;
 	}
 
-	public void EvaluateWatches(out bool @break)
-		=> EvaluateWatches(_watches, out @break);
+	public void EvaluateWatches(StackFrame stackFrame)
+	{
+		EvaluateWatches(
+			stackFrame,
+			_watches,
+			out _);
+	}
 
-	public void EvaluateWatches(IEnumerable<Watch> watches, out bool @break)
+	public void EvaluateWatches(out bool @break)
+	{
+		var stackFrame = _executionContext?.ExecutionState.Stack.FirstOrDefault();
+
+		@break = false;
+
+		if (stackFrame != null)
+		{
+			EvaluateWatches(
+				stackFrame,
+				_watches,
+				out @break);
+		}
+	}
+
+	public bool EvaluateWatchPoints(StackFrame stackFrame)
+	{
+		EvaluateWatches(
+			stackFrame,
+			_watches.Where(watch => watch.IsWatchPoint),
+			out var @break);
+
+		return @break;
+	}
+
+	public void EvaluateWatches(StackFrame stackFrame, IEnumerable<Watch> watches, out bool @break)
 	{
 		@break = false;
 
-		var stackFrame = _executionContext?.ExecutionState.Stack.FirstOrDefault();
-
-		var currentRoutine = stackFrame?.Routine;
+		var currentRoutine = stackFrame.Routine;
 
 		foreach (var watch in _watches)
 			watch.LastValueFormatted = null;
@@ -268,8 +334,7 @@ public partial class Program
 		if ((_compiler != null)
 		 && (_compilation != null)
 		 && (_executionContext != null)
-		 && (currentRoutine != null)
-		 && (stackFrame != null))
+		 && (currentRoutine != null))
 		{
 			foreach (var watch in watches)
 			{
@@ -291,7 +356,9 @@ public partial class Program
 
 						watch.LastValue = evaluable.Evaluate(_executionContext, stackFrame);
 
-						if (!watch.IsWatchPoint)
+						if (watch.IsWatchPoint)
+							@break |= !watch.LastValue.IsZero;
+						else
 						{
 							var emitter = new PrintEmitter(_executionContext);
 
