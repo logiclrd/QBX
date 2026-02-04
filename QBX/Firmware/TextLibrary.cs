@@ -61,10 +61,7 @@ public class TextLibrary : VisualLibrary
 
 	public void ReloadCursorAddress()
 	{
-		int cursorAddress = Array.CRTController.CursorAddress;
-
-		CursorY = cursorAddress / Width;
-		CursorX = cursorAddress % Width;
+		(CursorX, CursorY) = Machine.VideoFirmware.GetCursorPosition();
 	}
 
 	public void SetAttributes(int foreground, int background)
@@ -128,16 +125,7 @@ public class TextLibrary : VisualLibrary
 
 	public void UpdatePhysicalCursor()
 	{
-		int cursorAddress = CursorY * Width + CursorX;
-
-		Array.OutPort2(
-			GraphicsArray.CRTControllerRegisters.IndexPort,
-			GraphicsArray.CRTControllerRegisters.CursorLocationLow,
-			unchecked((byte)(cursorAddress & 0xFF)));
-		Array.OutPort2(
-			GraphicsArray.CRTControllerRegisters.IndexPort,
-			GraphicsArray.CRTControllerRegisters.CursorLocationHigh,
-			unchecked((byte)((cursorAddress >> 8) & 0xFF)));
+		Machine.VideoFirmware.MoveCursor(CursorX, CursorY);
 	}
 
 	class ClipScope(TextLibrary owner, IntegerRect previousRect) : IDisposable

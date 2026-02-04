@@ -458,6 +458,46 @@ public partial class Video(Machine machine)
 	}
 
 	int _visiblePageNumber = 0;
+	int[] _cursorAddressByPageNumber = new int[8];
+
+	public (int X, int Y) GetCursorPosition()
+		=> GetCursorPosition(_visiblePageNumber);
+
+	public (int X, int Y) GetCursorPosition(int pageNumber)
+	{
+		var array = machine.GraphicsArray;
+
+		int width = array.CRTController.Registers.EndHorizontalDisplay + 1;
+
+		int cursorAddress = array.CRTController.CursorAddress;
+
+		return (cursorAddress % width, cursorAddress / width);
+	}
+
+	public void MoveCursor(int x, int y) => MoveCursor(x, y, _visiblePageNumber);
+
+	public void MoveCursor(int x, int y, int pageNumber)
+	{
+		var array = machine.GraphicsArray;
+
+		int width = array.CRTController.Registers.EndHorizontalDisplay + 1;
+
+		int cursorAddress = y * width + x;
+
+		_cursorAddressByPageNumber[pageNumber] = cursorAddress;
+
+		if (pageNumber == _visiblePageNumber)
+		{
+			array.OutPort2(
+				CRTControllerRegisters.IndexPort,
+				CRTControllerRegisters.CursorLocationLow,
+				unchecked((byte)(cursorAddress & 0xFF)));
+			array.OutPort2(
+				CRTControllerRegisters.IndexPort,
+				CRTControllerRegisters.CursorLocationHigh,
+				unchecked((byte)((cursorAddress >> 8) & 0xFF)));
+		}
+	}
 
 	public int ComputePageSize() => ComputePageSize(machine.GraphicsArray);
 
@@ -490,12 +530,25 @@ public partial class Video(Machine machine)
 
 		if ((pageNumber >= 0) && (pageNumber < pageCount))
 		{
+			var array = machine.GraphicsArray;
+
 			int startAddress = pageNumber * pageSize / 4;
 
-			machine.GraphicsArray.CRTController.Registers[CRTControllerRegisters.StartAddressHigh] =
+			array.CRTController.Registers[CRTControllerRegisters.StartAddressHigh] =
 				unchecked((byte)(startAddress >> 8));
-			machine.GraphicsArray.CRTController.Registers[CRTControllerRegisters.StartAddressLow] =
+			array.CRTController.Registers[CRTControllerRegisters.StartAddressLow] =
 				unchecked((byte)(startAddress & 255));
+
+			int cursorAddress = _cursorAddressByPageNumber[pageNumber];
+
+			array.OutPort2(
+				CRTControllerRegisters.IndexPort,
+				CRTControllerRegisters.CursorLocationLow,
+				unchecked((byte)(cursorAddress & 0xFF)));
+			array.OutPort2(
+				CRTControllerRegisters.IndexPort,
+				CRTControllerRegisters.CursorLocationHigh,
+				unchecked((byte)((cursorAddress >> 8) & 0xFF)));
 
 			_visiblePageNumber = pageNumber;
 
