@@ -166,10 +166,15 @@ public partial class Program
 
 			_executionContext.Controls.WaitForInterruption();
 
-			SaveOutput();
-			SetIDEVideoMode();
+			if (_executionContext.ExecutionState.IsTerminated)
+				ExecutionEpilogue();
+			else
+			{
+				SaveOutput();
+				SetIDEVideoMode();
 
-			ShowNextStatement(_executionContext.ExecutionState.Stack);
+				ShowNextStatement(_executionContext.ExecutionState.Stack);
+			}
 		}
 		else
 		{
