@@ -565,7 +565,8 @@ public class Compiler
 						}
 
 						translatedCallStatement.LocalThunk = nativeProcedure.BuildThunk(
-							translatedCallStatement.Arguments.Select(arg => arg.Type).ToList());
+							translatedCallStatement.Arguments.Select(arg => arg.Type).ToList(),
+							compilation.UseDirectMarshalling);
 					}
 					else
 					{
@@ -787,7 +788,7 @@ public class Compiler
 						nativeProcedure.ParameterTypes = parameterTypes?.ToArray() ?? System.Array.Empty<DataType>();
 						nativeProcedure.ReturnType = returnType;
 
-						nativeProcedure.BuildThunk();
+						nativeProcedure.BuildThunk(compilation.UseDirectMarshalling);
 					}
 					else if (compilation.TryGetRoutine(unqualifiedName, out var declaredRoutine))
 					{
@@ -2270,7 +2271,7 @@ public class Compiler
 					var call = new NativeProcedureCallExpression();
 
 					if (nativeProcedure.ParameterTypes == null)
-						call.LocalThunk = nativeProcedure.BuildThunk(System.Array.Empty<DataType>());
+						call.LocalThunk = nativeProcedure.BuildThunk(System.Array.Empty<DataType>(), default);
 					else
 					{
 						if (nativeProcedure.ParameterTypes.Length != 0)
@@ -2428,7 +2429,8 @@ public class Compiler
 							}
 
 							translatedCallExpression.LocalThunk = nativeProcedure.BuildThunk(
-								translatedCallExpression.Arguments.Select(arg => arg.Type).ToList());
+								translatedCallExpression.Arguments.Select(arg => arg.Type).ToList(),
+								compilation.UseDirectMarshalling);
 						}
 						else
 						{

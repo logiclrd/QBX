@@ -19,16 +19,18 @@ public class NativeProcedure(object site, MethodInfo implementation)
 	public DataType[]? ParameterTypes;
 	public DataType? ReturnType = null;
 
-	public void BuildThunk()
+	public void BuildThunk(bool useDirectMarshalling)
 	{
 		if (ParameterTypes == null)
 			throw new Exception("Internal error: BuildThunk called with no ParameterTypes");
 
-		Invoke = BuildThunk(ParameterTypes);
+		Invoke = BuildThunk(ParameterTypes, useDirectMarshalling);
 	}
 
-	public Func<Variable[], Variable> BuildThunk(IReadOnlyList<DataType> parameterTypes)
+	public Func<Variable[], Variable> BuildThunk(IReadOnlyList<DataType> parameterTypes, bool useDirectMarshalling)
 	{
+		bool useIndirectMarshalling = !useDirectMarshalling;
+
 		var parameters = implementation.GetParameters();
 
 		if (parameterTypes.Count != parameters.Length)
@@ -45,18 +47,27 @@ public class NativeProcedure(object site, MethodInfo implementation)
 			if (parameters[i].IsOut)
 				nativeParameterType = nativeParameterType.GetElementType() ?? nativeParameterType;
 
-			if (parameterType.IsPrimitiveType)
+			if (useIndirectMarshalling)
 			{
-				Type variableType = GetPrimitiveVariableType(parameterType);
+				var fixedLengthAttribute = parameters[i].GetCustomAttribute<FixedLengthAttribute>();
 
-				marshallers[i] = PrimitiveMarshaller.Construct(variableType, nativeParameterType);
+				marshallers[i] = IndirectMarshaller.Construct(nativeParameterType, fixedLengthAttribute);
 			}
-			else if (parameterType.IsArray)
-				marshallers[i] = ArrayMarshaller.Construct(parameterType.PrimitiveType);
-			else if (parameterType.IsUserType)
-				marshallers[i] = UserDataTypeMarshaller.Construct(parameterType.UserType, nativeParameterType);
 			else
-				throw new Exception("Internal error: Don't know how to construct marshaller for type");
+			{
+				if (parameterType.IsPrimitiveType)
+				{
+					Type variableType = GetPrimitiveVariableType(parameterType);
+
+					marshallers[i] = PrimitiveMarshaller.Construct(variableType, nativeParameterType);
+				}
+				else if (parameterType.IsArray)
+					marshallers[i] = ArrayMarshaller.Construct(parameterType.PrimitiveType);
+				else if (parameterType.IsUserType)
+					marshallers[i] = UserDataTypeMarshaller.Construct(parameterType.UserType, nativeParameterType);
+				else
+					throw new Exception("Internal error: Don't know how to construct marshaller for type");
+			}
 		}
 
 		Type returnVariableType = ReturnType == null ? typeof(void) : GetPrimitiveVariableType(ReturnType);

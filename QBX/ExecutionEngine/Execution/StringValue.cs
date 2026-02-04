@@ -35,6 +35,11 @@ public class StringValue : IComparable<StringValue>, IEquatable<StringValue>
 		Append(other.AsSpan());
 	}
 
+	public StringValue(byte[] data)
+	{
+		Append(data);
+	}
+
 	public StringValue(ReadOnlySpan<byte> data)
 	{
 		Append(data);

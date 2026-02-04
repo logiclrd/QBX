@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
@@ -106,12 +107,12 @@ public class UserDataTypeMarshaller : Marshaller
 		//
 		// Because these would match up in a bytewise marshalling operation.
 
-		var nativeMembers = nativeType.GetMembers(BindingFlags.Public | BindingFlags.Instance);
+		var nativeMembers = EnumerateDataMembers(nativeType).ToList();
 
-		if (nativeMembers.Length < userDataType.Fields.Count)
+		if (nativeMembers.Count < userDataType.Fields.Count)
 			throw CompilerException.TypeMismatch();
 
-		for (int i=0, j=0; (i < userDataType.Fields.Count) && (j < nativeMembers.Length); i++, j++)
+		for (int i=0, j=0; (i < userDataType.Fields.Count) && (j < nativeMembers.Count); i++, j++)
 		{
 			var member = nativeMembers[j];
 
