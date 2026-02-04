@@ -63,8 +63,6 @@ public partial class Program
 		_compiler = new Compiler();
 		_compilation = new Compilation();
 
-		_compilation.CommandLine.Set(ProgramCommandLine);
-
 		_compiler.DetectDelayLoops = DetectDelayLoops;
 
 		try
@@ -88,6 +86,7 @@ public partial class Program
 		RestoreOutput();
 
 		_executionContext = new ExecutionContext(Machine, PlayProcessor);
+		_executionContext.CommandLine.Set(ProgramCommandLine);
 		_executionContext.Controls.Break();
 
 		_executionThread = new System.Threading.Thread(

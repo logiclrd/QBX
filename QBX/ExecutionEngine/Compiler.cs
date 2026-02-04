@@ -2617,6 +2617,7 @@ public class Compiler
 					case TokenType.CHR: function = new ChrFunction(); break;
 					case TokenType.CINT: function = new CIntFunction(); break;
 					case TokenType.CLNG: function = new CLngFunction(); break;
+					case TokenType.COMMAND: function = new CommandFunction(); break;
 					case TokenType.COS: function = new CosFunction(); break;
 					case TokenType.CSNG: function = new CSngFunction(); break;
 					case TokenType.ERR: function = new ErrFunction(); break;

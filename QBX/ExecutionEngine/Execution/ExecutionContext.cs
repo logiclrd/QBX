@@ -54,6 +54,8 @@ public class ExecutionContext
 	public readonly ErrorNumberVariable ErrVariable = new ErrorNumberVariable();
 	public readonly LongVariable ErlVariable = new LongVariable();
 
+	public readonly StringValue CommandLine = new StringValue();
+
 	public ExecutionContext(Machine machine, PlayProcessor playProcessor)
 	{
 		_executionState = new ExecutionState();
