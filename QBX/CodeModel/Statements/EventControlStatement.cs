@@ -15,13 +15,18 @@ public class EventControlStatement : Statement
 
 	protected override void RenderImplementation(TextWriter writer)
 	{
-		bool needSourceExpression = true;
+		bool needSourceExpression = false;
 
 		switch (EventType)
 		{
-			case EventType.Com: writer.Write("COM"); break;
+			case EventType.Com: writer.Write("COM"); needSourceExpression = true; break;
 			case EventType.Key: writer.Write("KEY"); break;
-			case EventType.Timer: writer.Write("TIMER"); needSourceExpression = false; break;
+			case EventType.Pen: writer.Write("PEN"); break;
+			case EventType.Play: writer.Write("PLAY"); break;
+			case EventType.OS2Signal: writer.Write("SIGNAL"); needSourceExpression = true; break;
+			case EventType.JoystickTrigger: writer.Write("STRIG"); needSourceExpression = true; break;
+			case EventType.Timer: writer.Write("TIMER"); break;
+			case EventType.UserDefinedEvent: writer.Write("UEVENT"); break;
 
 			default: throw new Exception("Internal error: unrecognized EventType");
 		}
