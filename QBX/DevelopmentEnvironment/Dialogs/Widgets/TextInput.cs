@@ -166,6 +166,8 @@ public class TextInput : Widget
 
 			Text.Remove(selectionStartIndex, selectionLength);
 			CursorX = selectionStartIndex;
+
+			SelectionStart = -1;
 		}
 	}
 
