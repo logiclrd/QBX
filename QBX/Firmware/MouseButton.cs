@@ -39,6 +39,8 @@ public class MouseButton(MouseDriver owner)
 			ClickCounter.Count++;
 			ClickCounter.LastX = owner.PointerX;
 			ClickCounter.LastY = owner.PointerY;
+
+			owner.NotifyButtonStateChanged();
 		}
 	}
 
@@ -51,6 +53,8 @@ public class MouseButton(MouseDriver owner)
 			ReleaseCounter.Count++;
 			ReleaseCounter.LastX = owner.PointerX;
 			ReleaseCounter.LastY = owner.PointerY;
+
+			owner.NotifyButtonStateChanged();
 		}
 	}
 }

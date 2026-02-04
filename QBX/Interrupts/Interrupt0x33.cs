@@ -4,7 +4,8 @@ using QBX.Hardware;
 
 namespace QBX.Interrupts;
 
-// Based on the reference information in TECH Help! by Flambeaux Software
+// Based on Microsoft Mouse Programmers Reference from 1989.
+// Originally based on the reference information in TECH Help! by Flambeaux Software
 
 public class Interrupt0x33(Machine machine) : InterruptHandler
 {
@@ -23,8 +24,8 @@ public class Interrupt0x33(Machine machine) : InterruptHandler
 		SetTextPointerMask                  = 0x000A,
 		QueryMotionDistance                 = 0x000B,
 		SetMouseEventHandler                = 0x000C, // not supported
-		EnableLightPenEmulation             = 0x000D, // not supported
-		DisableLightPenEmulation            = 0x000E, // not supported
+		EnableLightPenEmulation             = 0x000D,
+		DisableLightPenEmulation            = 0x000E,
 		SetMouseSpeed                       = 0x000F, // not supported
 		SetExclusionArea                    = 0x0010,
 		SetSpeedDoublingThreshold           = 0x0013, // not supported
@@ -201,6 +202,16 @@ public class Interrupt0x33(Machine machine) : InterruptHandler
 
 				break;
 			}
+			case Function.EnableLightPenEmulation:
+			{
+				machine.MouseDriver.EnableLightPenEmulation();
+				break;
+			}
+			case Function.DisableLightPenEmulation:
+			{
+				machine.MouseDriver.DisableLightPenEmulation();
+				break;
+			}
 			case Function.SetExclusionArea:
 			{
 				machine.MouseDriver.SetExclusionArea(
@@ -269,7 +280,7 @@ public class Interrupt0x33(Machine machine) : InterruptHandler
 			}
 			case Function.QueryMouseAndDriverInformation:
 			{
-				result.BX = 0x1201; // driver version -- "12.01", newer than any actual MOUSE.SYS
+				result.BX = 0x0626; // driver version -- 6.26 corresponds to the set of implemented functions per Ralf Brown's interrupt list
 				result.CX = 0x0400; // mouse type 4 (PS/2), IRQ 0 (PS/2)
 				break;
 			}

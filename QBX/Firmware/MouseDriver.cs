@@ -26,7 +26,22 @@ public class MouseDriver
 
 	public IntegerRect Bounds;
 
-	public bool PointerVisible => (_pointerVisible > 0) && !ExclusionArea.Contains(PointerX, PointerY);
+	public bool LightPenEmulationEnabled => _lightPenEmulationEnabled;
+
+	public bool LightPenIsDown => _lightPenEmulationEnabled && _lightPenCurrentlyDown;
+	public bool LightPenHasBeenDown => _lightPenEmulationEnabled && _lightPenHasBeenDown;
+	public IntegerPoint LightPenStartPosition => _lightPenStartPosition;
+	public IntegerPoint LightPenEndPosition => _lightPenEndPosition;
+
+	public void ClearLightPenHasBeenDown() => _lightPenHasBeenDown = false;
+
+	bool _lightPenEmulationEnabled;
+	bool _lightPenCurrentlyDown;
+	bool _lightPenHasBeenDown;
+	IntegerPoint _lightPenStartPosition;
+	IntegerPoint _lightPenEndPosition;
+
+	public bool PointerVisible => (_pointerVisible >= 0) && !ExclusionArea.Contains(PointerX, PointerY);
 
 	public int DisplayPageNumber => _displayPageNumber;
 
@@ -64,7 +79,7 @@ public class MouseDriver
 
 	int _width;
 	int _height;
-	int _pointerVisible;
+	int _pointerVisible = -1;
 
 	public MouseDriver(Machine machine)
 	{
@@ -102,7 +117,10 @@ public class MouseDriver
 			{
 				if (IsInitialized)
 				{
-					bool newIsExcluded = ExclusionArea.Contains(PointerX, PointerY);
+					int pointerX = PointerX;
+					int pointerY = PointerY;
+
+					bool newIsExcluded = ExclusionArea.Contains(pointerX, pointerY);
 
 					if (newIsExcluded != IsExcluded)
 					{
@@ -111,6 +129,9 @@ public class MouseDriver
 
 						IsExcluded = newIsExcluded;
 					}
+
+					if (_lightPenEmulationEnabled && _lightPenCurrentlyDown)
+						_lightPenEndPosition = (pointerX, pointerY);
 
 					PositionChanged?.Invoke();
 				}
@@ -131,6 +152,43 @@ public class MouseDriver
 			};
 	}
 
+	public void EnableLightPenEmulation()
+	{
+		_lightPenEmulationEnabled = true;
+		_lightPenCurrentlyDown = false;
+		NotifyButtonStateChanged();
+	}
+
+	public void DisableLightPenEmulation()
+	{
+		_lightPenEmulationEnabled = false;
+		_lightPenCurrentlyDown = false;
+		_lightPenStartPosition = default;
+		_lightPenEndPosition = default;
+	}
+
+	internal void NotifyButtonStateChanged()
+	{
+		if (_lightPenEmulationEnabled)
+		{
+			bool newDown = LeftButton.IsPressed && RightButton.IsPressed;
+
+			if (newDown != _lightPenCurrentlyDown)
+			{
+				IntegerPoint pointer = (PointerX, PointerY);
+
+				if (newDown)
+					_lightPenStartPosition = pointer;
+
+				_lightPenEndPosition = pointer;
+
+				_lightPenCurrentlyDown = newDown;
+			}
+
+			_lightPenHasBeenDown |= newDown;
+		}
+	}
+
 	public void SetDisplayPageNumber(int newPageNumber)
 	{
 		_displayPageNumber = newPageNumber;
@@ -141,14 +199,29 @@ public class MouseDriver
 	{
 		ResetBounds();
 		ResetPointerShape();
-
-		_machine.Mouse.PushPositionChange(
-			_machine.Mouse.Width / 2,
-			_machine.Mouse.Height / 2);
+		ResetTextPointerMode();
+		ResetPosition();
+		ResetVisibility();
+		SetDisplayPageNumber(0);
 
 		IsInitialized = true;
 
 		Initialized?.Invoke();
+	}
+
+	public void ResetPosition()
+	{
+		_machine.Mouse.PushPositionChange(
+			_machine.Mouse.Width / 2,
+			_machine.Mouse.Height / 2);
+	}
+
+	public void ResetVisibility()
+	{
+		if (_pointerVisible >= 0)
+			PointerVisibleChanged?.Invoke();
+
+		_pointerVisible = -1;
 	}
 
 	public void ResetBounds()
@@ -297,7 +370,7 @@ public class MouseDriver
 				0b11111100, 0b11111111,
 			],
 			hotSpotX: 0,
-			hotSpotY: 0);
+			hotSpotY: -1);
 	}
 
 	[MemberNotNull(nameof(PointerShape))]
@@ -377,7 +450,7 @@ public class MouseDriver
 
 		_pointerVisible++;
 
-		if (_pointerVisible == 1)
+		if (_pointerVisible == 0)
 		{
 			UpdateHardwareTextPointer();
 			PointerVisibleChanged?.Invoke();
@@ -389,13 +462,10 @@ public class MouseDriver
 		if (!IsInitialized)
 			return;
 
-		if (_pointerVisible > 0)
-		{
-			_pointerVisible--;
+		_pointerVisible--;
 
-			if (_pointerVisible == 0)
-				PointerVisibleChanged?.Invoke();
-		}
+		if (_pointerVisible == -1)
+			PointerVisibleChanged?.Invoke();
 	}
 
 	public void MovePointer(int x, int y)
