@@ -397,6 +397,64 @@ public partial class Video(Machine machine)
 			characterWidth));
 	}
 
+	public void SetCursorScans(int newStart, int newEnd)
+	{
+		var array = machine.GraphicsArray;
+
+		// Read current values
+		byte cursorStart = array.CRTController.Registers.CursorStart;
+		byte cursorEnd = array.CRTController.Registers.CursorEnd;
+
+		// Alter them
+		cursorStart = unchecked((byte)(
+			(cursorStart & ~CRTControllerRegisters.CursorStart_Mask) |
+			(newStart & CRTControllerRegisters.CursorStart_Mask)));
+
+		cursorEnd = unchecked((byte)(
+			(cursorEnd & ~CRTControllerRegisters.CursorEnd_Mask) |
+			(newEnd & CRTControllerRegisters.CursorEnd_Mask)));
+
+		// Write back out
+		array.OutPort2(
+			CRTControllerRegisters.IndexPort,
+			CRTControllerRegisters.CursorStart,
+			cursorStart);
+
+		array.OutPort2(
+			CRTControllerRegisters.IndexPort,
+			CRTControllerRegisters.CursorEnd,
+			cursorEnd);
+	}
+
+	public void SetCursorScans(int newStart, int newEnd, bool newVisible)
+	{
+		var array = machine.GraphicsArray;
+
+		// Read current values
+		byte cursorStart = 0; // This register is completely rewritten.
+		byte cursorEnd = array.CRTController.Registers.CursorEnd;
+
+		// Alter them
+		cursorStart = unchecked((byte)(
+			(newStart & CRTControllerRegisters.CursorStart_Mask) |
+			(newVisible ? default : CRTControllerRegisters.CursorStart_Disable)));
+
+		cursorEnd = unchecked((byte)(
+			(cursorEnd & ~CRTControllerRegisters.CursorEnd_Mask) |
+			(newEnd & CRTControllerRegisters.CursorEnd_Mask)));
+
+		// Write back out
+		array.OutPort2(
+			CRTControllerRegisters.IndexPort,
+			CRTControllerRegisters.CursorStart,
+			cursorStart);
+
+		array.OutPort2(
+			CRTControllerRegisters.IndexPort,
+			CRTControllerRegisters.CursorEnd,
+			cursorEnd);
+	}
+
 	public int ComputePageSize() => ComputePageSize(machine.GraphicsArray);
 
 	public static int ComputePageSize(GraphicsArray array)

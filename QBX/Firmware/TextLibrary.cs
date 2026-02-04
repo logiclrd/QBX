@@ -94,18 +94,11 @@ public class TextLibrary : VisualLibrary
 			|= GraphicsArray.CRTControllerRegisters.CursorStart_Disable;
 	}
 
-	public void SetCursorScans(int start, int end)
-	{
-		Array.CRTController.Registers[GraphicsArray.CRTControllerRegisters.CursorStart] = unchecked((byte)(
-			(Array.CRTController.Registers[GraphicsArray.CRTControllerRegisters.CursorStart]
-				& ~GraphicsArray.CRTControllerRegisters.CursorStart_Mask) |
-			start));
+	public void SetCursorScans(int newStart, int newEnd)
+		=> Machine.VideoFirmware.SetCursorScans(newStart, newEnd);
 
-		Array.CRTController.Registers[GraphicsArray.CRTControllerRegisters.CursorEnd] = unchecked((byte)(
-			(Array.CRTController.Registers[GraphicsArray.CRTControllerRegisters.CursorEnd]
-				& ~GraphicsArray.CRTControllerRegisters.CursorEnd_Mask) |
-			end));
-	}
+	public void SetCursorScans(int newStart, int newEnd, bool newVisible)
+		=> Machine.VideoFirmware.SetCursorScans(newStart, newEnd, newVisible);
 
 	public void MoveCursorWithinClip(int x, int y)
 	{

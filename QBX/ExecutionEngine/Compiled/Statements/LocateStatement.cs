@@ -71,23 +71,8 @@ public class LocateStatement(CodeModel.Statements.Statement? source) : Executabl
 			if (cursorStart > cursorEnd)
 				(cursorStart, cursorEnd) = (cursorEnd, cursorStart);
 
-			byte cursorStartRegisterValue = unchecked((byte)(
-				cursorStart |
-				(array.CRTController.CursorVisible
-				? 0
-				: GraphicsArray.CRTControllerRegisters.CursorStart_Disable)));
-
-			byte cursorEndRegisterValue = unchecked((byte)cursorEnd);
-
-			array.OutPort2(
-				GraphicsArray.CRTControllerRegisters.IndexPort,
-				GraphicsArray.CRTControllerRegisters.CursorStart,
-				cursorStartRegisterValue);
-
-			array.OutPort2(
-				GraphicsArray.CRTControllerRegisters.IndexPort,
-				GraphicsArray.CRTControllerRegisters.CursorEnd,
-				cursorEndRegisterValue);
+			if (context.VisualLibrary is TextLibrary textLibrary)
+				textLibrary.SetCursorScans(cursorStart, cursorEnd);
 		}
 	}
 }
