@@ -550,6 +550,8 @@ public class Video(Machine machine)
 			LoadFontIntoCharacterGenerator(font);
 		}
 
+		array.OutPort(DACRegisters.MaskPort, 0xFF);
+
 		switch (mode.PaletteType)
 		{
 			case PaletteType.CGA: LoadCGAPalette(intensity: true, reloadDAC: true); break;

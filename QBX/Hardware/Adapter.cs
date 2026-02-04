@@ -113,6 +113,7 @@ public class Adapter
 
 			bool enableText = !_array.Graphics.DisableText;
 
+			byte dacMask = _array.DAC.Mask;
 			var palette = MemoryMarshal.Cast<byte, int>(_array.DAC.PaletteBGRA);
 			int fontStartA = 0x20000 + _array.Sequencer.CharacterSetAOffset;
 			int fontStartB = 0x20000 + _array.Sequencer.CharacterSetBOffset;
@@ -291,7 +292,7 @@ public class Adapter
 						paletteIndex = _array.AttributeController.Registers.Attribute[attribute];
 					}
 
-					scanOut[x] = palette[paletteIndex];
+					scanOut[x] = palette[paletteIndex & dacMask];
 
 					characterX++;
 

@@ -12,6 +12,7 @@ public partial class Program
 	byte[] _savedOutput = new byte[262144];
 	byte[] _savedGraphicsRegisters = new byte[9];
 	byte[] _savedSequencerRegisters = new byte[5];
+	byte _savedDACMask;
 	byte[] _savedDACPalette = new byte[768];
 	byte _savedMiscellaneousOutputRegister;
 	byte[] _savedCRTControllerRegisters = new byte[25];
@@ -38,6 +39,9 @@ public partial class Program
 			_savedSequencerRegisters,
 			SequencerRegisters.IndexPort,
 			SequencerRegisters.DataPort);
+
+		_savedDACMask = Machine.GraphicsArray.InPort(
+			DACRegisters.MaskPort);
 
 		SavePalette(_savedDACPalette);
 
@@ -69,6 +73,10 @@ public partial class Program
 			_savedSequencerRegisters,
 			SequencerRegisters.IndexPort,
 			SequencerRegisters.DataPort);
+
+		Machine.GraphicsArray.OutPort(
+			DACRegisters.MaskPort,
+			_savedDACMask);
 
 		RestorePalette(_savedDACPalette);
 

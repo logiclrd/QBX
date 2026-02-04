@@ -263,10 +263,12 @@ public class GraphicsArray : IMemory
 
 	public class DACRegisters
 	{
+		public const int MaskPort = 0x3C6;
 		public const int ReadIndexPort = 0x3C7;
 		public const int WriteIndexPort = 0x3C8;
 		public const int DataPort = 0x3C9;
 
+		public byte Mask = 0xFF;
 		public byte[] Palette = new byte[768];
 		public byte[] PaletteBGRA = new byte[1024];
 
@@ -793,6 +795,11 @@ public class GraphicsArray : IMemory
 
 				break;
 			}
+			case DACRegisters.MaskPort:
+			{
+				DAC.Mask = data;
+				break;
+			}
 			case DACRegisters.ReadIndexPort:
 			{
 				_dacReadIndex = data * 4;
@@ -854,6 +861,9 @@ public class GraphicsArray : IMemory
 			case MiscellaneousOutputRegisters.ReadPort:
 				handled = true;
 				return MiscellaneousOutput.Register;
+			case DACRegisters.MaskPort:
+				handled = true;
+				return DAC.Mask;
 
 			case DACRegisters.DataPort:
 			{
