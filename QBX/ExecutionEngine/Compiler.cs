@@ -2095,8 +2095,8 @@ public class Compiler
 			}
 			case CodeModel.Statements.TypeStatement typeStatement:
 			{
-				// TODO: track whether we are in a DEF FN
-				if (element.Type != CodeModel.CompilationElementType.Main)
+				if ((element.Type != CodeModel.CompilationElementType.Main)
+				 || routine.IsDefFn)
 					throw CompilerException.IllegalInSubFunctionOrDefFn(statement);
 
 				// Types are gathered in a separate pass, since they need to be known before
@@ -2373,9 +2373,6 @@ public class Compiler
 				}
 
 				// TODO: standard library functions
-				// QB:
-				// - Interrupt
-				// - InterruptX
 				// DTFMT:
 				// - Weekday&()
 				// - Day&()

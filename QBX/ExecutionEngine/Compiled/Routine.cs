@@ -55,6 +55,8 @@ public class Routine : Sequence
 
 	public bool IsMainRoutine => (Name == MainRoutineName);
 
+	public bool IsDefFn => (OpeningStatement is DefFnStatement);
+
 	public bool UseRootFrame = false;
 
 	// SUB or FUNCTION
