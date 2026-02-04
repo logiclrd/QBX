@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
@@ -12,6 +13,14 @@ public class CommentStatement(CommentStatementType type, string comment) : State
 
 	public CommentStatementType CommentStatementType { get; set; } = type;
 	public string Comment { get; set; } = comment;
+
+	static readonly Dictionary<string, string> Metacommands =
+		new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+		{
+			{ "$STATIC", "$STATIC" },
+			{ "$DYNAMIC", "$DYNAMIC" },
+			{ "$INCLUDE", "$INCLUDE" },
+		};
 
 	public static ReadOnlySpan<char> FormatCommentText(ReadOnlySpan<char> commentText)
 	{
@@ -48,7 +57,7 @@ public class CommentStatement(CommentStatementType type, string comment) : State
 			else
 				buffer.Append(span.Slice(0, directiveStart));
 
-			var directive = span.Slice(directiveStart, directiveEnd - directiveStart);
+			var directive = span.Slice(directiveStart, directiveEnd - directiveStart).ToString();
 
 			span = span.Slice(directiveEnd);
 
@@ -59,124 +68,83 @@ public class CommentStatement(CommentStatementType type, string comment) : State
 					? commentText[matchPrefixLength - 1]
 					: '\0';
 
-			if (directive.Equals("$STATIC", StringComparison.OrdinalIgnoreCase))
+			if (Metacommands.TryGetValue(directive, out var canonicalDirective))
 			{
 				if (precedingIsDirective)
 				{
-					if (IsSpace(precedingCharacter))
-						matchPrefixLength++;
-					else
+					if (directiveStart == 0)
 					{
 						buffer ??= new StringBuilder().Append(commentText.Slice(0, matchPrefixLength));
 						buffer.Append(' ');
 					}
 				}
 
-				if ((buffer == null) && directive.Equals("$STATIC", StringComparison.Ordinal))
-					matchPrefixLength += 7;
+				if ((buffer == null) && directive.Equals(canonicalDirective, StringComparison.Ordinal))
+					matchPrefixLength += canonicalDirective.Length;
 				else
 				{
 					buffer ??= new StringBuilder().Append(commentText.Slice(0, matchPrefixLength));
-					buffer.Append("$STATIC");
+					buffer.Append(canonicalDirective);
 				}
 
-				precedingIsDirective = true;
-			}
-			else if (directive.Equals("$DYNAMIC", StringComparison.OrdinalIgnoreCase))
-			{
-				if (precedingIsDirective)
+				if (canonicalDirective != "$INCLUDE")
+					precedingIsDirective = true;
+				else
 				{
-					if (IsSpace(precedingCharacter))
+					// Elide spaces between $INCLUDE and :
+					while ((span.Length > 0) && IsSpace(span[0]))
+					{
+						buffer ??= new StringBuilder().Append(commentText.Slice(0, matchPrefixLength));
+						span = span.Slice(1);
+					}
+
+					if ((span.Length == 0) || (span[0] != ':'))
+						throw CompilerException.MetacommandError();
+
+					if (buffer == null)
 						matchPrefixLength++;
+					else
+						buffer.Append(':');
+
+					span = span.Slice(1);
+
+					// Ensure one space between : and filename
+					if ((buffer == null) && (span.Length > 0) && IsSpace(span[0]))
+					{
+						matchPrefixLength++;
+						span = span.Slice(1);
+					}
 					else
 					{
 						buffer ??= new StringBuilder().Append(commentText.Slice(0, matchPrefixLength));
 						buffer.Append(' ');
 					}
-				}
 
-				if ((buffer == null) && directive.Equals("$DYNAMIC", StringComparison.Ordinal))
-					matchPrefixLength += 8;
-				else
-				{
-					buffer ??= new StringBuilder().Append(commentText.Slice(0, matchPrefixLength));
-					buffer.Append("$DYNAMIC");
-				}
+					while ((span.Length > 0) && IsSpace(span[0]))
+					{
+						span = span.Slice(1);
+						buffer ??= new StringBuilder().Append(commentText.Slice(0, matchPrefixLength));
+					}
 
-				precedingIsDirective = true;
-			}
-			else if (directive.Equals("$INCLUDE", StringComparison.OrdinalIgnoreCase))
-			{
-				if ((buffer == null) && IsSpace(precedingCharacter))
-				{
-					if (precedingCharacter != '\0')
+					if ((span.Length == 0) || (span[0] != '\''))
+						throw CompilerException.MetacommandError();
+
+					if (buffer == null)
 						matchPrefixLength++;
-				}
-				else
-				{
-					buffer ??= new StringBuilder().Append(commentText.Slice(0, matchPrefixLength));
-					buffer.Append(' ');
-				}
+					else
+						buffer.Append('\'');
 
-				if ((buffer == null) && directive.Equals("$INCLUDE", StringComparison.Ordinal))
-					matchPrefixLength += 8;
-				else
-				{
-					buffer ??= new StringBuilder().Append(commentText.Slice(0, matchPrefixLength));
-					buffer.Append("$INCLUDE");
-				}
-
-				// Elide spaces between $INCLUDE and :
-				while ((span.Length > 0) && IsSpace(span[0]))
-				{
-					buffer ??= new StringBuilder().Append(commentText.Slice(0, matchPrefixLength));
 					span = span.Slice(1);
+
+					int endQuote = span.IndexOf('\'');
+
+					if (endQuote < 0)
+						throw CompilerException.MetacommandError();
+
+					// As long as we have the quoted string, we're good. Everything
+					// after the end quote is ignored.
+					break;
 				}
-
-				if ((span.Length == 0) || (span[0] != ':'))
-					throw CompilerException.MetacommandError();
-
-				if (buffer == null)
-					matchPrefixLength++;
-				else
-					buffer.Append(':');
-
-				span = span.Slice(1);
-
-				// Ensure one space between : and filename
-				if ((buffer == null) && (span.Length > 0) && IsSpace(span[0]))
-				{
-					matchPrefixLength++;
-					span = span.Slice(1);
-				}
-				else
-				{
-					buffer ??= new StringBuilder().Append(commentText.Slice(0, matchPrefixLength));
-					buffer.Append(' ');
-				}
-
-				while ((span.Length > 0) && IsSpace(span[0]))
-				{
-					span = span.Slice(1);
-					buffer ??= new StringBuilder().Append(commentText.Slice(0, matchPrefixLength));
-				}
-
-				if ((span.Length == 0) || (span[0] != '\''))
-					throw CompilerException.MetacommandError();
-
-				if (buffer == null)
-					matchPrefixLength++;
-				else
-					buffer.Append('\'');
-
-				int endQuote = span.Slice(1).IndexOf('\'');
-
-				if (endQuote < 0)
-					throw CompilerException.MetacommandError();
-
-				// As long as we have the quoted string, we're good. Everything
-				// after the end quote is ignored.
-				break;
 			}
 			else
 			{
