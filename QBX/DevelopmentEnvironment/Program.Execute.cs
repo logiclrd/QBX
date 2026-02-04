@@ -211,8 +211,13 @@ public partial class Program
 				outputTextLibrary.Height - 1);
 
 			if (savedCursorY == outputLibrary.CharacterHeight - 1)
+			{
 				outputLibrary.ScrollText();
+				savedCursorY--;
+			}
 		}
+
+		outputLibrary.MoveCursor(savedCursorX, savedCursorY);
 
 		SaveOutput();
 
