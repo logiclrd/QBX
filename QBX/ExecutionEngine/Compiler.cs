@@ -285,6 +285,10 @@ public class Compiler
 				compilation.UseStaticArrays = true;
 			else if (directive.Equals("$DYNAMIC", StringComparison.OrdinalIgnoreCase))
 				compilation.UseStaticArrays = false;
+			else if (directive.Equals("$DIRECT", StringComparison.OrdinalIgnoreCase))
+				compilation.UseDirectMarshalling = true;
+			else if (directive.Equals("$INDIRECT", StringComparison.OrdinalIgnoreCase))
+				compilation.UseDirectMarshalling = false;
 			else if (directive.Equals("$INCLUDE", StringComparison.OrdinalIgnoreCase))
 			{
 				// TODO: include file

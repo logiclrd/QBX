@@ -20,6 +20,8 @@ public class CommentStatement(CommentStatementType type, string comment) : State
 			{ "$STATIC", "$STATIC" },
 			{ "$DYNAMIC", "$DYNAMIC" },
 			{ "$INCLUDE", "$INCLUDE" },
+			{ "$DIRECT", "$DIRECT" },
+			{ "$INDIRECT", "$INDIRECT" },
 		};
 
 	public static ReadOnlySpan<char> FormatCommentText(ReadOnlySpan<char> commentText)
