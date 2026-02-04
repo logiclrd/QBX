@@ -78,6 +78,14 @@ public class IntegerLiteralValue(short value) : LiteralValue<short>(value)
 {
 	public override DataType Type => DataType.Integer;
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame) => new IntegerVariable(Value);
+
+	public const short True = -1;
+	public const short False = 0;
+
+	public IntegerLiteralValue(bool value)
+		: this(value ? True : False)
+	{
+	}
 }
 
 public class LongLiteralValue(int value) : LiteralValue<int>(value)

@@ -1,6 +1,7 @@
 ﻿using System;
 
 using QBX.ExecutionEngine.Compiled;
+using QBX.ExecutionEngine.Compiled.Expressions;
 using QBX.Numbers;
 using QBX.Utility;
 
@@ -19,6 +20,11 @@ public class IntegerVariable : Variable
 		: this()
 	{
 		Value = value;
+	}
+
+	public IntegerVariable(bool value)
+		: this(value ? IntegerLiteralValue.True : IntegerLiteralValue.False)
+	{
 	}
 
 	public override object GetData() => Value;

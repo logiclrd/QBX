@@ -67,7 +67,7 @@ public class IntegerEquals(Evaluable left, Evaluable right) : BinaryExpression(l
 
 		bool result = leftValue.Value == rightValue.Value;
 
-		return new IntegerVariable(result ? (short)-1 : (short)0);
+		return new IntegerVariable(result);
 	}
 
 	public override LiteralValue EvaluateConstant()
@@ -77,7 +77,7 @@ public class IntegerEquals(Evaluable left, Evaluable right) : BinaryExpression(l
 
 		bool result = leftValue.Value == rightValue.Value;
 
-		return new IntegerLiteralValue(result ? (short)-1 : (short)0);
+		return new IntegerLiteralValue(result);
 	}
 }
 
@@ -92,7 +92,7 @@ public class LongEquals(Evaluable left, Evaluable right) : BinaryExpression(left
 
 		bool result = leftValue.Value == rightValue.Value;
 
-		return new IntegerVariable(result ? (short)-1 : (short)0);
+		return new IntegerVariable(result);
 	}
 
 	public override LiteralValue EvaluateConstant()
@@ -102,7 +102,7 @@ public class LongEquals(Evaluable left, Evaluable right) : BinaryExpression(left
 
 		bool result = leftValue.Value == rightValue.Value;
 
-		return new IntegerLiteralValue(result ? (short)-1 : (short)0);
+		return new IntegerLiteralValue(result);
 	}
 }
 
@@ -117,7 +117,7 @@ public class SingleEquals(Evaluable left, Evaluable right) : BinaryExpression(le
 
 		bool result = leftValue.Value == rightValue.Value;
 
-		return new IntegerVariable(result ? (short)-1 : (short)0);
+		return new IntegerVariable(result);
 	}
 
 	public override LiteralValue EvaluateConstant()
@@ -127,7 +127,7 @@ public class SingleEquals(Evaluable left, Evaluable right) : BinaryExpression(le
 
 		bool result = leftValue.Value == rightValue.Value;
 
-		return new IntegerLiteralValue(result ? (short)-1 : (short)0);
+		return new IntegerLiteralValue(result);
 	}
 }
 
@@ -142,7 +142,7 @@ public class DoubleEquals(Evaluable left, Evaluable right) : BinaryExpression(le
 
 		bool result = leftValue.Value == rightValue.Value;
 
-		return new IntegerVariable(result ? (short)-1 : (short)0);
+		return new IntegerVariable(result);
 	}
 
 	public override LiteralValue EvaluateConstant()
@@ -152,7 +152,7 @@ public class DoubleEquals(Evaluable left, Evaluable right) : BinaryExpression(le
 
 		bool result = leftValue.Value == rightValue.Value;
 
-		return new IntegerLiteralValue(result ? (short)-1 : (short)0);
+		return new IntegerLiteralValue(result);
 	}
 }
 
@@ -167,7 +167,7 @@ public class CurrencyEquals(Evaluable left, Evaluable right) : BinaryExpression(
 
 		bool result = leftValue.Value == rightValue.Value;
 
-		return new IntegerVariable(result ? (short)-1 : (short)0);
+		return new IntegerVariable(result);
 	}
 
 	public override LiteralValue EvaluateConstant()
@@ -177,7 +177,7 @@ public class CurrencyEquals(Evaluable left, Evaluable right) : BinaryExpression(
 
 		bool result = leftValue.Value == rightValue.Value;
 
-		return new IntegerLiteralValue(result ? (short)-1 : (short)0);
+		return new IntegerLiteralValue(result);
 	}
 }
 
@@ -192,7 +192,7 @@ public class StringEquals(Evaluable left, Evaluable right) : BinaryExpression(le
 
 		bool result = StringValue.Compare(leftValue.ValueSpan, rightValue.ValueSpan) == 0;
 
-		return new IntegerVariable(result ? (short)-1 : (short)0);
+		return new IntegerVariable(result);
 	}
 
 	public override LiteralValue EvaluateConstant()
@@ -202,6 +202,6 @@ public class StringEquals(Evaluable left, Evaluable right) : BinaryExpression(le
 
 		bool result = leftValue.Value == rightValue.Value;
 
-		return new IntegerLiteralValue(result ? (short)-1 : (short)0);
+		return new IntegerLiteralValue(result);
 	}
 }

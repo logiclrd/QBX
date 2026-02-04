@@ -66,7 +66,7 @@ public class IntegerLessThan(Evaluable left, Evaluable right) : BinaryExpression
 
 		bool result = leftValue.Value < rightValue.Value;
 
-		return new IntegerVariable(result ? (short)-1 : (short)0);
+		return new IntegerVariable(result);
 	}
 
 	public override LiteralValue EvaluateConstant()
@@ -76,7 +76,7 @@ public class IntegerLessThan(Evaluable left, Evaluable right) : BinaryExpression
 
 		bool result = leftValue.Value < rightValue.Value;
 
-		return new IntegerLiteralValue(result ? (short)-1 : (short)0);
+		return new IntegerLiteralValue(result);
 	}
 }
 
@@ -91,7 +91,7 @@ public class LongLessThan(Evaluable left, Evaluable right) : BinaryExpression(le
 
 		bool result = leftValue.Value < rightValue.Value;
 
-		return new IntegerVariable(result ? (short)-1 : (short)0);
+		return new IntegerVariable(result);
 	}
 
 	public override LiteralValue EvaluateConstant()
@@ -101,7 +101,7 @@ public class LongLessThan(Evaluable left, Evaluable right) : BinaryExpression(le
 
 		bool result = leftValue.Value < rightValue.Value;
 
-		return new IntegerLiteralValue(result ? (short)-1 : (short)0);
+		return new IntegerLiteralValue(result);
 	}
 }
 
@@ -116,7 +116,7 @@ public class SingleLessThan(Evaluable left, Evaluable right) : BinaryExpression(
 
 		bool result = leftValue.Value < rightValue.Value;
 
-		return new IntegerVariable(result ? (short)-1 : (short)0);
+		return new IntegerVariable(result);
 	}
 
 	public override LiteralValue EvaluateConstant()
@@ -126,7 +126,7 @@ public class SingleLessThan(Evaluable left, Evaluable right) : BinaryExpression(
 
 		bool result = leftValue.Value < rightValue.Value;
 
-		return new IntegerLiteralValue(result ? (short)-1 : (short)0);
+		return new IntegerLiteralValue(result);
 	}
 }
 
@@ -141,7 +141,7 @@ public class DoubleLessThan(Evaluable left, Evaluable right) : BinaryExpression(
 
 		bool result = leftValue.Value < rightValue.Value;
 
-		return new IntegerVariable(result ? (short)-1 : (short)0);
+		return new IntegerVariable(result);
 	}
 
 	public override LiteralValue EvaluateConstant()
@@ -151,7 +151,7 @@ public class DoubleLessThan(Evaluable left, Evaluable right) : BinaryExpression(
 
 		bool result = leftValue.Value < rightValue.Value;
 
-		return new IntegerLiteralValue(result ? (short)-1 : (short)0);
+		return new IntegerLiteralValue(result);
 	}
 }
 
@@ -166,7 +166,7 @@ public class CurrencyLessThan(Evaluable left, Evaluable right) : BinaryExpressio
 
 		bool result = leftValue.Value < rightValue.Value;
 
-		return new IntegerVariable(result ? (short)-1 : (short)0);
+		return new IntegerVariable(result);
 	}
 
 	public override LiteralValue EvaluateConstant()
@@ -176,7 +176,7 @@ public class CurrencyLessThan(Evaluable left, Evaluable right) : BinaryExpressio
 
 		bool result = leftValue.Value < rightValue.Value;
 
-		return new IntegerLiteralValue(result ? (short)-1 : (short)0);
+		return new IntegerLiteralValue(result);
 	}
 }
 
@@ -191,7 +191,7 @@ public class StringLessThan(Evaluable left, Evaluable right) : BinaryExpression(
 
 		bool result = StringValue.Compare(leftValue.ValueSpan, rightValue.ValueSpan) < 0;
 
-		return new IntegerVariable(result ? (short)-1 : (short)0);
+		return new IntegerVariable(result);
 	}
 
 	public override LiteralValue EvaluateConstant()
@@ -201,7 +201,7 @@ public class StringLessThan(Evaluable left, Evaluable right) : BinaryExpression(
 
 		bool result = leftValue.Value.CompareTo(rightValue.Value) < 0;
 
-		return new IntegerLiteralValue(result ? (short)-1 : (short)0);
+		return new IntegerLiteralValue(result);
 	}
 }
 
