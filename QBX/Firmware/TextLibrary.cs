@@ -531,6 +531,40 @@ public class TextLibrary : VisualLibrary
 		}
 	}
 
+	public byte GetCharacter(int x, int y)
+	{
+		if ((x < 0) || (x >= CharacterWidth)
+		 || (y < 0) || (y >= CharacterHeight))
+			return 0;
+
+		Span<byte> vramSpan = Array.VRAM;
+
+		vramSpan = vramSpan.Slice(StartAddress);
+
+		var plane0 = vramSpan.Slice(0, CharacterWidth * CharacterHeight);
+
+		int offset = y * CharacterWidth + x;
+
+		return plane0[offset];
+	}
+
+	public byte GetAttribute(int x, int y)
+	{
+		if ((x < 0) || (x >= CharacterWidth)
+		 || (y < 0) || (y >= CharacterHeight))
+			return 0;
+
+		Span<byte> vramSpan = Array.VRAM;
+
+		vramSpan = vramSpan.Slice(StartAddress);
+
+		var plane1 = vramSpan.Slice(0x10000, (CharacterLineWindowEnd + 1) * Width);
+
+		int offset = y * CharacterWidth + x;
+
+		return plane1[offset];
+	}
+
 	public override void ScrollText()
 	{
 		Span<byte> vramSpan = Array.VRAM;
