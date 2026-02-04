@@ -18,7 +18,7 @@ public class Watch(CompilationUnit unit, CompilationElement element, string expr
 
 	public override string ToString() => ToStringValue(out _).ToString();
 
-	static readonly StringValue InternalError = new StringValue("<Internal error>");
+	static readonly StringValue Empty = new StringValue();
 	static readonly StringValue NotWatchable = new StringValue("<Not watchable>");
 	static readonly StringValue TypeMismatch = new StringValue("Type mismatch");
 	static readonly StringValue True = new StringValue("<TRUE>");
@@ -35,14 +35,16 @@ public class Watch(CompilationUnit unit, CompilationElement element, string expr
 			try
 			{
 				if (LastValue == null)
-					return InternalError;
+					return Empty;
 
 				if (!LastValue.DataType.IsNumeric)
 					return TypeMismatch;
 
-				highlight = true;
+				bool @break = !LastValue.IsZero;
 
-				return LastValue.IsZero ? True : False;
+				highlight = @break;
+
+				return @break ? True : False;
 			}
 			catch (RuntimeException error)
 			{
