@@ -69,7 +69,7 @@ public class MidFunction : Function
 		int start = StartExpression.EvaluateAndCoerceToInt(context, stackFrame) - 1;
 		int length = LengthExpression?.EvaluateAndCoerceToInt(context, stackFrame) ?? (stringLength - start);
 
-		if ((start < 0) || (length < 0) || (start + length >= stringLength))
+		if ((start < 0) || (length < 0) || (start + length > stringLength))
 			throw RuntimeException.IllegalFunctionCall(Source);
 
 		return new Substring(stringVariable, start, length);

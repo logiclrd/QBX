@@ -4024,11 +4024,13 @@ public class BasicParser
 
 		level = 0;
 
+		bool isEligible = false;
+
 		for (int i = 0; i < tokens.Count; i++)
 		{
 			if (level == 0)
 			{
-				if (IsOperator(tokens[i], out var op))
+				if (isEligible && IsOperator(tokens[i], out var op))
 				{
 					var precedence = op.GetPrecedence();
 
@@ -4048,6 +4050,8 @@ public class BasicParser
 
 			if (level < 0)
 				throw new SyntaxErrorException(tokens[i], "Expected: end of statement");
+
+			isEligible = (level == 0) && !IsOperator(tokens[i], out _) && (tokens[i].Type != TokenType.OpenParenthesis);
 		}
 
 		if (lastOperatorIndex > 0)

@@ -163,8 +163,12 @@ public class Compiler
 			{
 				switch (statement)
 				{
-					case CodeModel.Statements.DefFnStatement: inDefFn = true; break;
-					case CodeModel.Statements.EndDefStatement: inDefFn = false; break;
+					case CodeModel.Statements.DefFnStatement defFn:
+						inDefFn = (defFn.ExpressionBody == null);
+						break;
+					case CodeModel.Statements.EndDefStatement:
+						inDefFn = false;
+						break;
 
 					case CodeModel.Statements.DefTypeStatement defTypeStatement:
 						mapper.ApplyDefTypeStatement(defTypeStatement);

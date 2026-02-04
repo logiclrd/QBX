@@ -289,7 +289,9 @@ public partial class Program
 
 	public void AssociateWatches(Compilation compilation)
 	{
-		var routines = compilation.AllRegisteredRoutines.ToDictionary(key => key.Source);
+		var routines = compilation.AllRegisteredRoutines
+			.Where(routine => !routine.IsDefFn)
+			.ToDictionary(key => key.Source);
 
 		foreach (var watch in _watches)
 			routines.TryGetValue(watch.CompilationElement, out watch.Routine);
