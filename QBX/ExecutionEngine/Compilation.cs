@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 
 using QBX.ExecutionEngine.Compiled;
 using QBX.ExecutionEngine.Execution;
@@ -24,7 +23,21 @@ public class Compilation
 	// TODO: COMMAND$ function
 	public StringValue CommandLine = new StringValue();
 
-	public IEnumerable<Routine> AllRegisteredRoutines => Subs.Values.Concat(Functions.Values);
+	public IEnumerable<Routine> AllRegisteredRoutines
+	{
+		get
+		{
+			foreach (var module in Modules)
+				if (module.MainRoutine != null)
+					yield return module.MainRoutine;
+
+			foreach (var sub in Subs.Values)
+				yield return sub;
+
+			foreach (var function in Functions.Values)
+				yield return function;
+		}
+	}
 
 	public Compilation()
 	{
