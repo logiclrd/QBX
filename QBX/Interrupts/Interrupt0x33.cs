@@ -9,43 +9,43 @@ namespace QBX.Interrupts;
 
 public class Interrupt0x33(Machine machine) : InterruptHandler
 {
-	enum Function : ushort
+	public enum Function : ushort
 	{
-		ResetQuery                          = 0x0000,
-		ShowMousePointer                    = 0x0001,
-		HideMousePointer                    = 0x0002,
-		QueryPositionAndButtonStatus        = 0x0003,
-		SetMousePointerPosition             = 0x0004,
-		QueryButtonPressedCounter           = 0x0005,
-		QueryButtonReleasedCounter          = 0x0006,
-		SetHorizontalRange                  = 0x0007,
-		SetVerticalRange                    = 0x0008,
-		SetGraphicsPointerShape             = 0x0009,
-		SetTextPointerMask                  = 0x000A,
-		QueryMotionDistance                 = 0x000B,
-		SetMouseEventHandler                = 0x000C, // not supported
-		EnableLightPenEmulation             = 0x000D,
-		DisableLightPenEmulation            = 0x000E,
-		SetMouseSpeed                       = 0x000F, // not supported
-		SetExclusionArea                    = 0x0010,
-		SetSpeedDoublingThreshold           = 0x0013, // not supported
-		ExchangeMouseEventHandler           = 0x0014, // not supported
-		QuerySizeOfMouseStatusBuffer        = 0x0015,
-		SaveMouseStatus                     = 0x0016,
-		RestoreMouseStatus                  = 0x0017,
-		InstallMouseAndKeyEventHandler      = 0x0018, // not supported
-		GetAddressOfMouseAndKeyEventHandler = 0x0019, // not supported
-		SetMouseSensitivity                 = 0x001A, // not supported
-		QueryMouseSensitivity               = 0x001B,
-		SetMouseInterruptRate               = 0x001C, // not supported
-		SetDisplayPage                      = 0x001D,
-		QueryActiveDisplayPage              = 0x001E,
-		DeactivateMouseDriver               = 0x001F,
-		ActivateMouseDriver                 = 0x0020, // no-op
-		ResetMouseDriver                    = 0x0021,
-		SetLanguageForMessages              = 0x0022, // no-op
-		GetLanguageNumber                   = 0x0023,
-		QueryMouseAndDriverInformation      = 0x0024,
+		MouseResetAndStatus                          = 0x0000,
+		ShowCursor                                   = 0x0001,
+		HideCursor                                   = 0x0002,
+		GetButtonStatusAndMousePosition              = 0x0003,
+		SetMouseCursorPosition                       = 0x0004,
+		GetButtonPressInformation                    = 0x0005,
+		GetButtonReleaseInformation                  = 0x0006,
+		SetMinimumAndMaximumHorizontalCursorPosition = 0x0007,
+		SetMinimumAndMaximumVerticalCursorPosition   = 0x0008,
+		SetGraphicsCursorBlock                       = 0x0009,
+		SetTextCursor                                = 0x000A,
+		ReadMouseMotionCounters                      = 0x000B,
+		SetInterruptSubroutineCallMaskAndAddress     = 0x000C, // not supported
+		LightPenEmulationModeOn                      = 0x000D,
+		LightPenEmulationModeOff                     = 0x000E,
+		SetMickeyPixelRatio                          = 0x000F, // not supported
+		ConditionalOff                               = 0x0010,
+		SetDoubleSpeedThreshold                      = 0x0013, // not supported
+		SwapInterruptSubroutines                     = 0x0014, // not supported
+		GetMouseDriverStateStorageRequirements       = 0x0015,
+		SaveMouseDriverState                         = 0x0016,
+		RestoreMouseDriverState                      = 0x0017,
+		SetAlternateSubroutineCallMaskAndAddress     = 0x0018, // not supported
+		GetUserAlternateInterruptAddress             = 0x0019, // not supported
+		SetMouseSensitivity                          = 0x001A, // not supported
+		GetMouseSensitivity                          = 0x001B,
+		SetMouseInterruptRate                        = 0x001C, // not supported
+		SetCRTPageNumber                             = 0x001D,
+		GetCRTPageNumber                             = 0x001E,
+		DisableMouseDriver                           = 0x001F,
+		EnableMouseDriver                            = 0x0020, // no-op
+		SoftwareReset                                = 0x0021,
+		SetLanguageForMessages                       = 0x0022, // no-op
+		GetLanguageNumber                            = 0x0023,
+		GetDriverVersionMouseTypeAndIRQNumber        = 0x0024,
 	}
 
 	public override Registers Execute(Registers input)
@@ -56,8 +56,8 @@ public class Interrupt0x33(Machine machine) : InterruptHandler
 
 		switch (function)
 		{
-			case Function.ResetQuery:
-			case Function.ResetMouseDriver:
+			case Function.MouseResetAndStatus:
+			case Function.SoftwareReset:
 			{
 				machine.MouseDriver.MovePointer(machine.MouseDriver.PointerMaximumX / 2, machine.MouseDriver.PointerMaximumY / 2);
 
@@ -66,9 +66,9 @@ public class Interrupt0x33(Machine machine) : InterruptHandler
 
 				break;
 			}
-			case Function.ShowMousePointer: machine.MouseDriver.ShowPointer(); break;
-			case Function.HideMousePointer: machine.MouseDriver.HidePointer(); break;
-			case Function.QueryPositionAndButtonStatus:
+			case Function.ShowCursor: machine.MouseDriver.ShowPointer(); break;
+			case Function.HideCursor: machine.MouseDriver.HidePointer(); break;
+			case Function.GetButtonStatusAndMousePosition:
 			{
 				result.BX = unchecked((ushort)(
 					(machine.MouseDriver.LeftButton.IsPressed ? 1 : 0) |
@@ -78,12 +78,12 @@ public class Interrupt0x33(Machine machine) : InterruptHandler
 				result.DX = unchecked((ushort)machine.MouseDriver.PointerY);
 				break;
 			}
-			case Function.SetMousePointerPosition:
+			case Function.SetMouseCursorPosition:
 			{
 				machine.MouseDriver.MovePointer(input.CX, input.DX);
 				break;
 			}
-			case Function.QueryButtonPressedCounter:
+			case Function.GetButtonPressInformation:
 			{
 				var button =
 					input.BX switch
@@ -110,7 +110,7 @@ public class Interrupt0x33(Machine machine) : InterruptHandler
 
 				break;
 			}
-			case Function.QueryButtonReleasedCounter:
+			case Function.GetButtonReleaseInformation:
 			{
 				var button =
 					input.BX switch
@@ -137,7 +137,7 @@ public class Interrupt0x33(Machine machine) : InterruptHandler
 
 				break;
 			}
-			case Function.SetHorizontalRange:
+			case Function.SetMinimumAndMaximumHorizontalCursorPosition:
 			{
 				machine.MouseDriver.ConstrainPointer(
 					machine.MouseDriver.Bounds.X1,
@@ -146,7 +146,7 @@ public class Interrupt0x33(Machine machine) : InterruptHandler
 					y2: input.DX);
 				break;
 			}
-			case Function.SetVerticalRange:
+			case Function.SetMinimumAndMaximumVerticalCursorPosition:
 			{
 				machine.MouseDriver.ConstrainPointer(
 					x1: input.CX,
@@ -155,7 +155,7 @@ public class Interrupt0x33(Machine machine) : InterruptHandler
 					machine.MouseDriver.Bounds.Y2);
 				break;
 			}
-			case Function.SetGraphicsPointerShape:
+			case Function.SetGraphicsCursorBlock:
 			{
 				int offset = (input.AsRegistersEx().ES << 4) + input.DX;
 
@@ -174,7 +174,7 @@ public class Interrupt0x33(Machine machine) : InterruptHandler
 
 				break;
 			}
-			case Function.SetTextPointerMask:
+			case Function.SetTextCursor:
 			{
 				if (input.BX == 0)
 				{
@@ -193,7 +193,7 @@ public class Interrupt0x33(Machine machine) : InterruptHandler
 
 				break;
 			}
-			case Function.QueryMotionDistance:
+			case Function.ReadMouseMotionCounters:
 			{
 				var vector = machine.MouseDriver.GetMotionMickeys();
 
@@ -202,17 +202,17 @@ public class Interrupt0x33(Machine machine) : InterruptHandler
 
 				break;
 			}
-			case Function.EnableLightPenEmulation:
+			case Function.LightPenEmulationModeOn:
 			{
 				machine.MouseDriver.EnableLightPenEmulation();
 				break;
 			}
-			case Function.DisableLightPenEmulation:
+			case Function.LightPenEmulationModeOff:
 			{
 				machine.MouseDriver.DisableLightPenEmulation();
 				break;
 			}
-			case Function.SetExclusionArea:
+			case Function.ConditionalOff:
 			{
 				machine.MouseDriver.SetExclusionArea(
 					input.CX,
@@ -222,7 +222,7 @@ public class Interrupt0x33(Machine machine) : InterruptHandler
 
 				break;
 			}
-			case Function.QuerySizeOfMouseStatusBuffer:
+			case Function.GetMouseDriverStateStorageRequirements:
 			{
 				var state = machine.MouseDriver.CreateStateBuffer();
 
@@ -231,7 +231,7 @@ public class Interrupt0x33(Machine machine) : InterruptHandler
 				break;
 
 			}
-			case Function.SaveMouseStatus:
+			case Function.SaveMouseDriverState:
 			{
 				var state = machine.MouseDriver.SerializeState();
 
@@ -242,7 +242,7 @@ public class Interrupt0x33(Machine machine) : InterruptHandler
 
 				break;
 			}
-			case Function.RestoreMouseStatus:
+			case Function.RestoreMouseDriverState:
 			{
 				var state = machine.MouseDriver.CreateStateBuffer();
 
@@ -255,7 +255,7 @@ public class Interrupt0x33(Machine machine) : InterruptHandler
 
 				break;
 			}
-			case Function.QueryMouseSensitivity:
+			case Function.GetMouseSensitivity:
 			{
 				result.BX = Mouse.MickeysPerPixel;
 				result.CX = Mouse.MickeysPerPixel;
@@ -263,22 +263,22 @@ public class Interrupt0x33(Machine machine) : InterruptHandler
 
 				break;
 			}
-			case Function.SetDisplayPage:
+			case Function.SetCRTPageNumber:
 			{
 				machine.MouseDriver.SetDisplayPageNumber(input.BX);
 				break;
 			}
-			case Function.QueryActiveDisplayPage:
+			case Function.GetCRTPageNumber:
 			{
 				result.BX = unchecked((ushort)machine.MouseDriver.DisplayPageNumber);
 				break;
 			}
-			case Function.DeactivateMouseDriver:
+			case Function.DisableMouseDriver:
 			{
 				result.AX = 0xFFFF; // "can't deactivate"
 				break;
 			}
-			case Function.QueryMouseAndDriverInformation:
+			case Function.GetDriverVersionMouseTypeAndIRQNumber:
 			{
 				result.BX = 0x0626; // driver version -- 6.26 corresponds to the set of implemented functions per Ralf Brown's interrupt list
 				result.CX = 0x0400; // mouse type 4 (PS/2), IRQ 0 (PS/2)
