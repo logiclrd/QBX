@@ -176,6 +176,30 @@ public partial class Program
 		}
 	}
 
+	public void InteractiveAddWatch()
+	{
+		var viewport = FocusedViewport;
+
+		if ((FocusedViewport.CompilationUnit == null)
+		 || (FocusedViewport.CompilationElement == null))
+			viewport = PrimaryViewport;
+
+		var dialog = new AddWatchDialog(Machine, Configuration);
+
+		dialog.AddWatch +=
+			() =>
+			{
+				var watchpoint = new Watch(
+					viewport.CompilationUnit!,
+					viewport.CompilationElement!,
+					dialog.WatchExpression);
+
+				AddWatch(watchpoint);
+			};
+
+		ShowDialog(dialog);
+	}
+
 	public void InteractiveAddWatchpoint()
 	{
 		var viewport = FocusedViewport;

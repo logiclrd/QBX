@@ -28,6 +28,7 @@ public partial class Program
 	Menu mnuRun;
 
 	Menu mnuDebug;
+	MenuItem mnuDebugAddWatch;
 	MenuItem mnuDebugInstantWatch;
 	MenuItem mnuDebugWatchpoint;
 	MenuItem mnuDebugDeleteWatch;
@@ -69,6 +70,7 @@ public partial class Program
 		nameof(mnuSearch),
 		nameof(mnuRun),
 		nameof(mnuDebug),
+		nameof(mnuDebugAddWatch),
 		nameof(mnuDebugInstantWatch),
 		nameof(mnuDebugWatchpoint),
 		nameof(mnuDebugDeleteWatch),
@@ -155,7 +157,7 @@ public partial class Program
 		mnuDebug =
 			new Menu("&Debug", 27)
 			{
-				new MenuItem("&Add Watch..."),
+				(mnuDebugAddWatch = new MenuItem("&Add Watch...")),
 				(mnuDebugInstantWatch = new MenuItem("&Instant Watch...   Shift+F9")),
 				(mnuDebugWatchpoint = new MenuItem("&Watchpoint...")),
 				(mnuDebugDeleteWatch = new MenuItem("&Delete Watch...") { IsEnabled = false }),
@@ -225,6 +227,7 @@ public partial class Program
 		mnuFileLoadFile.Clicked = mnuFileLoadFile_Clicked;
 		mnuFileExit.Clicked += mnuFileExit_Clicked;
 
+		mnuDebugAddWatch.Clicked += mnuDebugAddWatch_Clicked;
 		mnuDebugInstantWatch.Clicked = mnuDebugInstantWatch_Clicked;
 		mnuDebugWatchpoint.Clicked = mnuDebugWatchpoint_Clicked;
 		mnuDebugDeleteAllWatch.Clicked = mnuDebugDeleteAllWatch_Clicked;
@@ -272,6 +275,11 @@ public partial class Program
 	{
 		if (CommitViewportsOrPresentError())
 			ShowOpenFileDialog(replaceExistingProgram: false);
+	}
+
+	private void mnuDebugAddWatch_Clicked()
+	{
+		InteractiveAddWatch();
 	}
 
 	private void mnuDebugInstantWatch_Clicked()
