@@ -25,23 +25,6 @@ public class ScreenStatement(CodeModel.Statements.Statement? source) : Executabl
 
 			if (Video.Modes[hardwareMode] is ModeParameters modeParams)
 			{
-				if (!modeParams.IsGraphicsMode)
-				{
-					var textLibrary = new TextLibrary(context.Machine);
-
-					context.VisualLibrary = textLibrary;
-
-					textLibrary.HideCursor();
-				}
-				else if (modeParams.ShiftRegisterInterleave)
-					context.VisualLibrary = new GraphicsLibrary_2bppInterleaved(context.Machine);
-				else if (modeParams.IsMonochrome)
-					context.VisualLibrary = new GraphicsLibrary_1bppPacked(context.Machine);
-				else if (modeParams.Use256Colours)
-					context.VisualLibrary = new GraphicsLibrary_8bppFlat(context.Machine);
-				else
-					context.VisualLibrary = new GraphicsLibrary_4bppPlanar(context.Machine);
-
 				context.RuntimeState.EnablePaletteRemapping = (hardwareMode < 0x12);
 				context.RuntimeState.PaletteMode = modeParams.Use256Colours ? PaletteMode.DAC : PaletteMode.Attribute;
 				context.RuntimeState.MaximumAttribute = modeParams.Use256Colours ? 255 : 15;

@@ -454,6 +454,7 @@ public abstract class VisualLibrary
 	}
 
 	public abstract void ScrollText();
+	public abstract void ScrollTextWindow(int x1, int y1, int x2, int y2, int numLines, int fillAttribute);
 
 	public bool EnablePointerAwareDrawing = false;
 

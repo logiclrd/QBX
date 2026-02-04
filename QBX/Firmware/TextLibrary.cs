@@ -645,6 +645,11 @@ public class TextLibrary : VisualLibrary
 		}
 	}
 
+	public override void ScrollTextWindow(int x1, int y1, int x2, int y2, int numLines, int fillAttribute)
+	{
+		throw new NotImplementedException("TODO");
+	}
+
 	byte _pointerCharacterMask;
 	byte _pointerCharacterInvert;
 	byte _pointerAttributeMask;

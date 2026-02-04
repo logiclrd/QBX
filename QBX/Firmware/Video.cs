@@ -6,8 +6,14 @@ namespace QBX.Firmware;
 
 public partial class Video(Machine machine)
 {
+	public int LastModeNumber = 0;
+
+	public VisualLibrary VisualLibrary => _visualLibrary;
+
 	public event Action<ModeParameters>? ModeChanged;
 
+	// Can't initialize a VisualLibrary at construction time, but will be populated soon.
+	VisualLibrary _visualLibrary = null!;
 
 	public bool SetMode(int modeNumber)
 	{
@@ -18,6 +24,8 @@ public partial class Video(Machine machine)
 
 		if (mode == null)
 			return false;
+
+		LastModeNumber = modeNumber;
 
 		var array = machine.GraphicsArray;
 
@@ -268,9 +276,31 @@ public partial class Video(Machine machine)
 			SequencerRegisters.Reset,
 			0b11);
 
+		InitializeVisualLibrary(mode);
+
 		ModeChanged?.Invoke(mode);
 
 		return true;
+	}
+
+	void InitializeVisualLibrary(ModeParameters modeParams)
+	{
+		if (!modeParams.IsGraphicsMode)
+		{
+			var textLibrary = new TextLibrary(machine);
+
+			_visualLibrary = textLibrary;
+
+			textLibrary.HideCursor();
+		}
+		else if (modeParams.ShiftRegisterInterleave)
+			_visualLibrary = new GraphicsLibrary_2bppInterleaved(machine);
+		else if (modeParams.IsMonochrome)
+			_visualLibrary = new GraphicsLibrary_1bppPacked(machine);
+		else if (modeParams.Use256Colours)
+			_visualLibrary = new GraphicsLibrary_8bppFlat(machine);
+		else
+			_visualLibrary = new GraphicsLibrary_4bppPlanar(machine);
 	}
 
 	public void SetCharacterRows(int rows)
@@ -397,6 +427,39 @@ public partial class Video(Machine machine)
 			(array.Sequencer.Registers[SequencerRegisters.ClockingMode]
 				& ~SequencerRegisters.ClockingMode_CharacterWidthMask) |
 			characterWidth));
+	}
+
+	public bool IsTextMode
+	{
+		get
+		{
+			return !machine.GraphicsArray.Graphics.DisableText;
+		}
+	}
+
+	public bool IsCursorVisible
+	{
+		get
+		{
+			var array = machine.GraphicsArray;
+
+			array.OutPort(
+				CRTControllerRegisters.IndexPort,
+				CRTControllerRegisters.CursorStart);
+
+			byte cursorStart = array.InPort(CRTControllerRegisters.DataPort);
+
+			return ((cursorStart & CRTControllerRegisters.CursorStart_Disable) == 0);
+		}
+	}
+
+	public (int CursorStart, int CursorEnd) GetCursorScans()
+	{
+		return
+			(
+				machine.GraphicsArray.CRTController.CursorScanStart,
+				machine.GraphicsArray.CRTController.CursorScanEnd
+			);
 	}
 
 	public void SetCursorScans(int newStart, int newEnd)

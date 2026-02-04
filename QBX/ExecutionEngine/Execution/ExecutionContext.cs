@@ -29,8 +29,9 @@ namespace QBX.ExecutionEngine.Execution;
 public class ExecutionContext
 {
 	public Machine Machine;
-	public VisualLibrary VisualLibrary;
 	public PlayProcessor PlayProcessor;
+
+	public VisualLibrary VisualLibrary => Machine.VideoFirmware.VisualLibrary;
 
 	public StackFrame? RootFrame => _rootFrame;
 
@@ -61,7 +62,6 @@ public class ExecutionContext
 		_executionState = new ExecutionState();
 
 		Machine = machine;
-		VisualLibrary = new TextLibrary(machine);
 		PlayProcessor = playProcessor;
 	}
 

@@ -2007,6 +2007,11 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	public abstract void ScrollUp(int scanCount, int windowStart, int windowEnd);
 
+	public override void ScrollTextWindow(int x1, int y1, int x2, int y2, int numLines, int fillAttribute)
+	{
+		throw new NotImplementedException("TODO");
+	}
+
 	protected virtual void DrawCharacterScan(int x, int y, int characterWidth, byte glyphScan)
 	{
 		int columnBit = 128;

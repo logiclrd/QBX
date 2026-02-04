@@ -40,7 +40,10 @@ public class Machine
 		VideoFirmware = new Video(this);
 		MouseDriver = new MouseDriver(this);
 
+		InterruptHandlers[0x10] = new Interrupt0x10(this);
 		InterruptHandlers[0x33] = new Interrupt0x33(this);
+
+		VideoFirmware.SetMode(3);
 	}
 
 	public void OutPort(int portNumber, byte data)
