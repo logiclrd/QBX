@@ -1,4 +1,5 @@
 ﻿using QBX.ExecutionEngine;
+using QBX.ExecutionEngine.Marshalling;
 using QBX.Hardware;
 using QBX.Interrupts;
 
@@ -36,7 +37,7 @@ public class QBX(Machine machine) : QuickLibrary
 	}
 
 	[Export]
-	public void Int86Old(short intnum, ushort[] inarray, out ushort[] outarray)
+	public void Int86Old(short intnum, [FixedLength(8)] ushort[] inarray, [FixedLength(8)] out ushort[] outarray)
 	{
 		var registers = new Registers();
 
@@ -64,7 +65,7 @@ public class QBX(Machine machine) : QuickLibrary
 	}
 
 	[Export]
-	public void Int86XOld(short intnum, ushort[] inarray, out ushort[] outarray)
+	public void Int86XOld(short intnum, [FixedLength(10)] ushort[] inarray, [FixedLength(10)] out ushort[] outarray)
 	{
 		var registers = new RegistersEx();
 
