@@ -318,6 +318,7 @@ public enum TokenType
 	[KeywordToken] WRITE,
 	[KeywordToken] XOR,
 
+	[TokenCharacter('?')] QuestionMark,
 	[TokenCharacter('#')] NumberSign,
 	[TokenCharacter('(')] OpenParenthesis,
 	[TokenCharacter(')')] CloseParenthesis,

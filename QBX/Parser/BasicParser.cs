@@ -2690,6 +2690,7 @@ public class BasicParser
 			}
 
 			case TokenType.PRINT:
+			case TokenType.QuestionMark:
 			{
 				var print = new PrintStatement();
 
