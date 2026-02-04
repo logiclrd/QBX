@@ -196,6 +196,8 @@ public partial class Video(Machine machine)
 			CRTControllerRegisters.StartAddressLow,
 			0);
 
+		_visiblePageNumber = 0;
+
 		array.OutPort2(
 			CRTControllerRegisters.IndexPort,
 			CRTControllerRegisters.CursorLocationHigh,
@@ -455,6 +457,8 @@ public partial class Video(Machine machine)
 			cursorEnd);
 	}
 
+	int _visiblePageNumber = 0;
+
 	public int ComputePageSize() => ComputePageSize(machine.GraphicsArray);
 
 	public static int ComputePageSize(GraphicsArray array)
@@ -492,6 +496,8 @@ public partial class Video(Machine machine)
 				unchecked((byte)(startAddress >> 8));
 			machine.GraphicsArray.CRTController.Registers[CRTControllerRegisters.StartAddressLow] =
 				unchecked((byte)(startAddress & 255));
+
+			_visiblePageNumber = pageNumber;
 
 			return true;
 		}
