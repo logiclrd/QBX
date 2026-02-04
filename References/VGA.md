@@ -2059,4 +2059,40 @@ This index lists the VGA's I/O ports in numerical order, making looking up a spe
 * 3DAh Write -- [Feature Control Register](#3CAR3xAW)
 
 Notice: All trademarks used or referred to on this page are the property of their respective owners.  
-All pages are Copyright © 1997, 1998, J. D. Neal, except where noted. Permission for utilization and distribution is subject to the terms of the [FreeVGA Project Copyright License](../license.htm).
+All pages are Copyright © 1997, 1998, J. D. Neal, except where noted. Permission for utilization and distribution is subject to the terms of the [FreeVGA Project Copyright License](#freevga-project-copyright-license).
+
+# FreeVGA Project Copyright License
+
+## Introduction
+
+This document contains the FreeVGA Copyright License which states the conditions under which the FreeVGA Project's Copyrighted information may be used and distributed.  The conditions of this license ensure that all parties with a need for this information have the same availability, to the maximum extent possible as well as ensure the integrity of the documentation.
+
+## Disclaimer
+
+The author presents this information as-is without any warranty, including suitability for intended purpose. The author is not responsible for damages resulting by the use of the information, incidental or otherwise. By utilizing this information, you as the programmer take full liability for any damages caused by your use of this information. If you are not satisfied with these terms, then your only recourse is to not use this information. While every reasonable effort is made to ensure that this information is correct, the possibility exists for error and is not guaranteed for accuracy, and disclaims liability for any changes, errors or omissions and is not responsible for any damages that may arise from the use or misuse of this information.  License to use this information is only granted where this disclaimer applies in whole.
+
+## License
+
+The following copyright license applies to all works by the FreeVGA Project. All of the FreeVGA Project's documentation is copyrighted by its author, Joshua Neal.
+
+License to utilize the FreeVGA Project documentation is subject to the following conditions:
+
+* The copyright notice and this permission notice must be preserved complete on all copies, complete or partial.
+* Duplication is permitted only for personal purposes.  Reduplication is permitted only under the FreeVGA Project documentation's redistribution license.
+* The use of the FreeVGA Project documentation to produce translations or derivative works must be approved specifically by the author.
+* All warnings and disclaimers present in the complete documentation must apply to the licensee and may not be restricted by locality.  These must be read before use, and determined to be applicable to the licensee before the material may be utilized.
+* It is forbidden to represent the FreeVGA Project or to use the FreeVGA Project's name to solicit or obtain information, services, product, or endorsements from another party, commercial or otherwise.
+
+If all of the previous conditions are not met, then permission to utilize the FreeVGA Project's documentation is not granted, and all rights are reserved.
+
+License to distribute the FreeVGA Project documentation is subject to the following conditions:
+
+* The copyright notice and this permission notice must be preserved complete on all copies, complete or partial.
+* An archive of the FreeVGA Project documentation may be distributed in electronic form only in its entirety, without adding or removing any material, notices, advertisement, or other information.  Only exact copies of archives produced or specifically approved by the author may be distributed, and at the time of distribution, the most recent archive must be distributed.  The FreeVGA Project documentation must be excluded from any compilation copyright or other restrictions.  No fee other than the cost of transmission or the physical media containing the archive may be charged without prior approval by the author.  The documentation may not be distributed electronically in part, which includes mirroring in html format on the internet, unless specific permission is granted by the author.
+* The FreeVGA Project documentation may be distributed in non-electronic form to students or members of a programming team subject to the condition that it be provided free of charge.  The documentation may not be included with or within other copyrighted works unless the other copyrighted works are also provided free of charge.
+* Small portions may be reproduced as illustrations for reviews or quotes in other works without this permission notice if proper citation is given (including URL if the work is online).
+* Only the current documentation may be distributed.  The URL of the FreeVGA project online documentation must be provided.  The author reserves the right to limit distribution by any parties at any time.
+
+If all of the previous conditions are not met, then permission to redistribute the FreeVGA Project's documentation is not granted, and all distribution rights are reserved.
+
+Notice: All trademarks used or referred to on this page are the property of their respective owners.
