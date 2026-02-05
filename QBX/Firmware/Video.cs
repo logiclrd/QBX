@@ -863,4 +863,38 @@ public partial class Video(Machine machine)
 				machine.GraphicsArray.VRAM[FontPlane + baseOffset + y] = glyph[y];
 		}
 	}
+
+	public void DisableBlink()
+	{
+		SetBlinkEnable(false);
+	}
+
+	public void EnableBlikn()
+	{
+		SetBlinkEnable(true);
+	}
+
+	void SetBlinkEnable(bool enableBlink)
+	{
+		var array = machine.GraphicsArray;
+
+		// reset the AttributeController port mode
+		array.InPort(InputStatusRegisters.InputStatus1Port);
+
+		array.OutPort(
+			AttributeControllerRegisters.IndexAndDataWritePort,
+			AttributeControllerRegisters.ModeControl);
+
+		byte attributeMode = array.InPort(
+			AttributeControllerRegisters.DataReadPort);
+
+		if (enableBlink)
+			attributeMode |= AttributeControllerRegisters.ModeControl_BlinkEnable;
+		else
+			attributeMode &= unchecked((byte)~AttributeControllerRegisters.ModeControl_BlinkEnable);
+
+		array.OutPort(
+			AttributeControllerRegisters.IndexAndDataWritePort,
+			attributeMode);
+	}
 }

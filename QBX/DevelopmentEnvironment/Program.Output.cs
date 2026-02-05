@@ -22,6 +22,8 @@ public partial class Program
 	{
 		Machine.VideoFirmware.SetMode(3);
 
+		Machine.VideoFirmware.DisableBlink();
+
 		if (Machine.GraphicsArray.Sequencer.CharacterWidth == 9)
 			Machine.VideoFirmware.SetCharacterWidth(8);
 	}
