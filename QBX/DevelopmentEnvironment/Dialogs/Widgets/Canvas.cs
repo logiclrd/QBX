@@ -158,4 +158,9 @@ public class Canvas : Widget, IFocusContext
 
 		return false;
 	}
+
+	public override void AccessKeyUsed(IFocusContext focusContext)
+	{
+		FocusedChild?.AccessKeyUsed(this);
+	}
 }

@@ -51,4 +51,9 @@ public class RadioButton : Widget
 
 		return false;
 	}
+
+	public override void AccessKeyUsed(IFocusContext focusContext)
+	{
+		RadioButtonGroup?.Select(this, focusContext);
+	}
 }

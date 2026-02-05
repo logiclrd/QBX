@@ -123,4 +123,8 @@ public abstract class Widget
 	{
 		return false;
 	}
+
+	public virtual void AccessKeyUsed(IFocusContext focusContext)
+	{
+	}
 }

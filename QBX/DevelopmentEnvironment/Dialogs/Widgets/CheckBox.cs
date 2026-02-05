@@ -46,4 +46,9 @@ public class CheckBox : Widget
 
 		return false;
 	}
+
+	public override void AccessKeyUsed(IFocusContext focusContext)
+	{
+		Toggle();
+	}
 }

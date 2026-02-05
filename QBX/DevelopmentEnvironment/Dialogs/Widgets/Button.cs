@@ -97,4 +97,9 @@ public class Button : Widget
 			bounds.X1 + X + 1 + textOffset,
 			bounds.Y1 + Y);
 	}
+
+	public override void AccessKeyUsed(IFocusContext focusContext)
+	{
+		Activate();
+	}
 }

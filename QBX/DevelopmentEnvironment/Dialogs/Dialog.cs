@@ -165,8 +165,8 @@ public abstract class Dialog(Machine machine, Configuration configuration) : IFo
 				{
 					byte accessKey = CP437Encoding.GetByteSemantic(input.ScanCode.ToCharacter());
 
-					if (TrySetFocus(accessKey) && (FocusedWidget is Button focusedButton))
-						focusedButton.Activate();
+					if (TrySetFocus(accessKey))
+						FocusedWidget?.AccessKeyUsed(this);
 				}
 
 				break;

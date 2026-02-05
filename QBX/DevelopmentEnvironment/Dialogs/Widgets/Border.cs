@@ -98,4 +98,9 @@ public class Border : Widget, IWrapperWidget
 	{
 		return Child?.ProcessKey(input, focusContext, overtypeFlag) ?? false;
 	}
+
+	public override void AccessKeyUsed(IFocusContext focusContext)
+	{
+		Child?.AccessKeyUsed(focusContext);
+	}
 }
