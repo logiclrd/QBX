@@ -15,6 +15,11 @@ public class CheckBox : Widget
 		IsTabStop = true;
 	}
 
+	public void Toggle()
+	{
+		IsChecked = !IsChecked;
+	}
+
 	public override void Render(TextLibrary visual, IntegerRect bounds, Configuration configuration)
 	{
 		visual.WriteTextAt(
@@ -35,7 +40,7 @@ public class CheckBox : Widget
 		switch (input.ScanCode)
 		{
 			case ScanCode.Space:
-				IsChecked = !IsChecked;
+				Toggle();
 				return true;
 		}
 
