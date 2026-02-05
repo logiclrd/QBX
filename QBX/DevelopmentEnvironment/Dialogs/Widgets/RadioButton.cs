@@ -9,6 +9,12 @@ public class RadioButton : Widget
 	public bool IsSelected;
 	public RadioButtonGroup? RadioButtonGroup;
 
+	public RadioButton()
+	{
+		Width = 3;
+		Height = 1;
+	}
+
 	internal override void NotifyGotFocus(IFocusContext focusContext)
 	{
 		RadioButtonGroup?.Select(this, focusContext);
