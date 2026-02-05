@@ -154,7 +154,7 @@ public partial class Program : HostedProgram, IOvertypeFlag
 			else if (argument.Equals("/B", StringComparison.OrdinalIgnoreCase))
 			{
 				// Force black & white mode
-				Configuration.DisplayAttributes.ForceBlackAndWhite();
+				Configuration.DisplayAttributes.LoadBlackAndWhiteConfiguration();
 			}
 			else if (argument.StartsWith("/C:", StringComparison.OrdinalIgnoreCase))
 			{
@@ -219,7 +219,7 @@ public partial class Program : HostedProgram, IOvertypeFlag
 			else if (argument.Equals("/NOHI", StringComparison.OrdinalIgnoreCase))
 			{
 				// No high-intensity colours
-				Configuration.DisplayAttributes.ConfigureForNoHighIntensity();
+				Configuration.DisplayAttributes.LoadNoHighIntensityConfiguration();
 			}
 			else if (argument.Equals("/RUN", StringComparison.OrdinalIgnoreCase))
 			{
