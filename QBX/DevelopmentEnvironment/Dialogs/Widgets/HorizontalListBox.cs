@@ -8,25 +8,9 @@ using QBX.Utility;
 
 namespace QBX.DevelopmentEnvironment.Dialogs.Widgets;
 
-public class HorizontalListBox : Widget
+public class HorizontalListBox<TValue> : ListBox<TValue>
+	where TValue : notnull
 {
-	public readonly List<ListBoxItem> Items = new List<ListBoxItem>();
-
-	public int SelectedIndex => _selectedIndex;
-
-	public Action? SelectionChanged;
-
-	public string SelectedValue
-	{
-		get
-		{
-			if ((_selectedIndex < 0) || (_selectedIndex >= Items.Count))
-				throw new InvalidOperationException();
-
-			return Items[_selectedIndex].Value;
-		}
-	}
-
 	public HorizontalListBox()
 	{
 		IsTabStop = true;
@@ -36,15 +20,36 @@ public class HorizontalListBox : Widget
 	int[] _columnOffsets = Array.Empty<int>();
 	int _maxScrollColumnIndex;
 
-	int _selectedIndex;
-	int _scrollColumnIndex;
-
-	public void Clear()
+	public override void EnsureVisible(int index)
 	{
-		Items.Clear();
-		_selectedIndex = -1;
-		_scrollColumnIndex = 0;
-		SelectionChanged?.Invoke();
+		if (index >= 0)
+		{
+			int innerWidth = Width - 2;
+			int innerHeight = Height - 2;
+
+			int selectionColumn = index / innerHeight;
+
+			int columnLeft = _columnOffsets[selectionColumn] - _columnOffsets[ScrollPosition];
+			int columnRight = columnLeft + _columnWidths[selectionColumn] - 1;
+
+			while (columnRight >= innerWidth)
+			{
+				if (ScrollPosition + 1 >= _columnWidths.Length)
+					break;
+
+				columnLeft -= _columnWidths[ScrollPosition];
+				columnRight = columnLeft + _columnWidths[selectionColumn] - 1;
+
+				ScrollPosition++;
+			}
+
+			while (columnLeft < 0)
+			{
+				ScrollPosition--;
+
+				columnLeft += _columnWidths[ScrollPosition];
+			}
+		}
 	}
 
 	[ThreadStatic]
@@ -55,7 +60,7 @@ public class HorizontalListBox : Widget
 		int innerWidth = Width - 2;
 		int innerHeight = Height - 2;
 
-		int newSelectedIndex = Math.Max(0, _selectedIndex);
+		int newSelectedIndex = Math.Max(0, SelectedIndex);
 
 		switch (input.ScanCode)
 		{
@@ -65,8 +70,8 @@ public class HorizontalListBox : Widget
 			case ScanCode.Left: newSelectedIndex -= innerHeight; break;
 			case ScanCode.Right: newSelectedIndex += innerHeight; break;
 
-			case ScanCode.Up: newSelectedIndex = _selectedIndex - 1; break;
-			case ScanCode.Down: newSelectedIndex = _selectedIndex + 1; break;
+			case ScanCode.Up: newSelectedIndex = SelectedIndex - 1; break;
+			case ScanCode.Down: newSelectedIndex = SelectedIndex + 1; break;
 
 			default:
 				if (input.IsNormalText)
@@ -96,34 +101,13 @@ public class HorizontalListBox : Widget
 		if (newSelectedIndex < 0)
 			newSelectedIndex = 0;
 
-		if (newSelectedIndex != _selectedIndex)
+		if (newSelectedIndex != SelectedIndex)
 		{
-			_selectedIndex = newSelectedIndex;
+			SelectedIndex = newSelectedIndex;
+
+			EnsureVisible(SelectedIndex);
 
 			SelectionChanged?.Invoke();
-
-			int selectionColumn = _selectedIndex / innerHeight;
-
-			int columnLeft = _columnOffsets[selectionColumn] - _columnOffsets[_scrollColumnIndex];
-			int columnRight = columnLeft + _columnWidths[selectionColumn] - 1;
-
-			while (columnRight >= innerWidth)
-			{
-				if (_scrollColumnIndex + 1 >= _columnWidths.Length)
-					break;
-
-				columnLeft -= _columnWidths[_scrollColumnIndex];
-				columnRight = columnLeft + _columnWidths[selectionColumn] - 1;
-
-				_scrollColumnIndex++;
-			}
-
-			while (columnLeft < 0)
-			{
-				_scrollColumnIndex--;
-
-				columnLeft += _columnWidths[_scrollColumnIndex];
-			}
 		}
 
 		return true;
@@ -136,12 +120,12 @@ public class HorizontalListBox : Widget
 		int innerX1 = bounds.X1 + X + 1;
 		int innerY1 = bounds.Y1 + Y + 1;
 
-		int selectionIndex = Math.Max(0, _selectedIndex);
+		int selectionIndex = Math.Max(0, SelectedIndex);
 
 		int selectionColumn = selectionIndex / columnHeight;
 		int selectionRow = selectionIndex % columnHeight;
 
-		int scrollOffset = (_scrollColumnIndex >= _columnOffsets.Length) ? 0 : _columnOffsets[_scrollColumnIndex];
+		int scrollOffset = (ScrollPosition >= _columnOffsets.Length) ? 0 : _columnOffsets[ScrollPosition];
 		int selectionOffset = (selectionColumn >= _columnOffsets.Length) ? 0 : _columnOffsets[selectionColumn];
 
 		int selectionX = innerX1 + selectionOffset - scrollOffset;
@@ -193,7 +177,7 @@ public class HorizontalListBox : Widget
 			x, y, Width, Height,
 			title: "",
 			configuration, visual,
-			horizontalScrollValue: _scrollColumnIndex,
+			horizontalScrollValue: ScrollPosition,
 			horizontalScrollMax: _maxScrollColumnIndex + 1);
 
 		int innerX1 = x + 1;
@@ -202,12 +186,12 @@ public class HorizontalListBox : Widget
 		int innerY2 = innerY1 + Height - 3;
 
 		int columnHeight = Height - 2;
-		int scrollOffsetX = _scrollColumnIndex >= _columnOffsets.Length ? 0 : -_columnOffsets[_scrollColumnIndex];
+		int scrollOffsetX = ScrollPosition >= _columnOffsets.Length ? 0 : -_columnOffsets[ScrollPosition];
 
 		using (visual.PushClipRect(bounds))
 		using (visual.PushClipRect(innerX1, innerY1, innerX2, innerY2))
 		{
-			for (int i = _scrollColumnIndex * columnHeight, columnIndex = _scrollColumnIndex; i < Items.Count; i += columnHeight, columnIndex++)
+			for (int i = ScrollPosition * columnHeight, columnIndex = ScrollPosition; i < Items.Count; i += columnHeight, columnIndex++)
 			{
 				int columnX = _columnOffsets[columnIndex] + scrollOffsetX;
 				int w = _columnWidths[columnIndex];
@@ -234,8 +218,8 @@ public class HorizontalListBox : Widget
 
 			if (IsFocused && (_selectedIndex >= 0) && (_selectedIndex < Items.Count))
 			{
-				int selectionColumn = _selectedIndex / columnHeight;
-				int selectionRow = _selectedIndex % columnHeight;
+				int selectionColumn = SelectedIndex / columnHeight;
+				int selectionRow = SelectedIndex % columnHeight;
 
 				int selectionX = innerX1 + _columnOffsets[selectionColumn] + scrollOffsetX;
 				int selectionY = innerY1 + selectionRow;

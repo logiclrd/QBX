@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 
 using QBX.Firmware;
 using QBX.Hardware;
@@ -7,39 +6,25 @@ using QBX.Utility;
 
 namespace QBX.DevelopmentEnvironment.Dialogs.Widgets;
 
-public class VerticalListBox : Widget
+public class VerticalListBox<TValue> : ListBox<TValue>
+	where TValue : notnull
 {
-	public readonly List<ListBoxItem> Items = new List<ListBoxItem>();
-
-	public int SelectedIndex => _selectedIndex;
-
-	public Action? SelectionChanged;
-
-	public string SelectedValue
-	{
-		get
-		{
-			if ((_selectedIndex < 0) || (_selectedIndex >= Items.Count))
-				throw new InvalidOperationException();
-
-			return Items[_selectedIndex].Value;
-		}
-	}
-
 	public VerticalListBox()
 	{
 		IsTabStop = true;
 	}
 
-	int _selectedIndex;
-	int _scrollTop;
-
-	public void Clear()
+	public override void EnsureVisible(int index)
 	{
-		Items.Clear();
-		_selectedIndex = -1;
-		_scrollTop = 0;
-		SelectionChanged?.Invoke();
+		if (index >= 0)
+		{
+			int innerHeight = Height - 2;
+
+			if (index >= ScrollPosition + innerHeight)
+				ScrollPosition = index - innerHeight + 1;
+			if (index < ScrollPosition)
+				ScrollPosition = index;
+		}
 	}
 
 	[ThreadStatic]
@@ -49,7 +34,7 @@ public class VerticalListBox : Widget
 	{
 		int innerHeight = Height - 2;
 
-		int newSelectedIndex = _selectedIndex;
+		int newSelectedIndex = SelectedIndex;
 
 		switch (input.ScanCode)
 		{
@@ -69,18 +54,18 @@ public class VerticalListBox : Widget
 				break;
 
 			case ScanCode.PageUp:
-				_scrollTop -= innerHeight;
-				if (_scrollTop < 0)
-					_scrollTop = 0;
-				if (newSelectedIndex >= _scrollTop + innerHeight)
-					newSelectedIndex = _scrollTop + innerHeight - 1;
+				ScrollPosition -= innerHeight;
+				if (ScrollPosition < 0)
+					ScrollPosition = 0;
+				if (newSelectedIndex >= ScrollPosition + innerHeight)
+					newSelectedIndex = ScrollPosition + innerHeight - 1;
 				break;
 			case ScanCode.PageDown:
-				_scrollTop += innerHeight;
-				if (_scrollTop > Items.Count - innerHeight)
-					_scrollTop = Items.Count - innerHeight;
-				if (newSelectedIndex < _scrollTop)
-					newSelectedIndex = _scrollTop;
+				ScrollPosition += innerHeight;
+				if (ScrollPosition > Items.Count - innerHeight)
+					ScrollPosition = Items.Count - innerHeight;
+				if (newSelectedIndex < ScrollPosition)
+					newSelectedIndex = ScrollPosition;
 				break;
 
 			default:
@@ -111,20 +96,12 @@ public class VerticalListBox : Widget
 		if (newSelectedIndex >= Items.Count)
 			newSelectedIndex = Items.Count - 1;
 
-		if (newSelectedIndex != _selectedIndex)
+		if (newSelectedIndex != SelectedIndex)
 		{
-			_selectedIndex = newSelectedIndex;
+			EnsureVisible(newSelectedIndex);
 
+			SelectedIndex = newSelectedIndex;
 			SelectionChanged?.Invoke();
-
-			if (_selectedIndex >= 0)
-			{
-				if (_selectedIndex < _scrollTop)
-					_scrollTop = _selectedIndex;
-
-				if (_selectedIndex >= _scrollTop + innerHeight)
-					_scrollTop = _selectedIndex - innerHeight + 1;
-			}
 		}
 
 		return true;
@@ -139,7 +116,7 @@ public class VerticalListBox : Widget
 
 		using (visual.PushClipRect(bounds))
 		using (visual.PushClipRect(innerX1, innerY1, innerX2, innerY2))
-			visual.MoveCursorWithinClip(innerX1 + 1, innerY1 + Math.Max(_selectedIndex, 0) - _scrollTop);
+			visual.MoveCursorWithinClip(innerX1 + 1, innerY1 + Math.Max(SelectedIndex, 0) - ScrollPosition);
 	}
 
 	public override void Render(TextLibrary visual, IntegerRect bounds, Configuration configuration)
@@ -159,7 +136,7 @@ public class VerticalListBox : Widget
 			x, y, Width, Height,
 			title: "",
 			configuration, visual,
-			verticalScrollValue: _scrollTop,
+			verticalScrollValue: ScrollPosition,
 			verticalScrollMax: Math.Max(1, Items.Count - innerHeight));
 
 		using (visual.PushClipRect(bounds))
@@ -167,7 +144,7 @@ public class VerticalListBox : Widget
 		{
 			int availableChars = innerWidth - 1; // we always add a space on the left, but not on the right.
 
-			for (int idx = _scrollTop, itemY = innerY1; itemY <= innerY2; idx++, itemY++)
+			for (int idx = ScrollPosition, itemY = innerY1; itemY <= innerY2; idx++, itemY++)
 			{
 				bool highlight = IsFocused && (idx == _selectedIndex);
 

@@ -13,7 +13,7 @@ public abstract class DialogWithDirectoryList : Dialog
 {
 	protected Label lblCurrentDirectory;
 	protected Label lblDirectories;
-	protected VerticalListBox lstDirectories;
+	protected VerticalListBox<string> lstDirectories;
 
 	protected string CurrentDirectory = "C:\\";
 
@@ -63,7 +63,7 @@ public abstract class DialogWithDirectoryList : Dialog
 	{
 		lblCurrentDirectory = new Label();
 		lblDirectories = new Label();
-		lstDirectories = new VerticalListBox();
+		lstDirectories = new VerticalListBox<string>();
 
 		lblCurrentDirectory.Text = "C:\\";
 
@@ -122,20 +122,20 @@ public abstract class DialogWithDirectoryList : Dialog
 				if (entry is FileInfo fileInfo)
 					enumeratedFile?.Invoke(fileInfo);
 				else
-					lstDirectories.Items.Add(new ListBoxItem(entry.Name, entry.Name + Path.DirectorySeparatorChar));
+					lstDirectories.Items.Add(ListBoxItem.Create(entry.Name, entry.Name + Path.DirectorySeparatorChar));
 			}
 
 			lstDirectories.Items.Sort();
 
 			if (Path.GetDirectoryName(CurrentDirectory) != null)
-				lstDirectories.Items.Insert(0, new ListBoxItem("..", ".." + Path.DirectorySeparatorChar));
+				lstDirectories.Items.Insert(0, ListBoxItem.Create("..", ".." + Path.DirectorySeparatorChar));
 
 			foreach (var driveInfo in DriveInfo.GetDrives())
 			{
 				string name = driveInfo.Name;
 
 				if ((name.Length >= 2) && (name[1] == ':'))
-					lstDirectories.Items.Add(new ListBoxItem($"[-{name[0]}-]", driveInfo.RootDirectory.FullName.TrimEnd('\\')));
+					lstDirectories.Items.Add(ListBoxItem.Create($"[-{name[0]}-]", driveInfo.RootDirectory.FullName.TrimEnd('\\')));
 				else
 				{
 					if (!HideDrive(driveInfo))
@@ -143,7 +143,7 @@ public abstract class DialogWithDirectoryList : Dialog
 						if (name.Length + 2 > maxDirectoryWidth)
 							name = ".." + name.Substring(name.Length - maxDirectoryWidth + 2);
 
-						lstDirectories.Items.Add(new ListBoxItem($"[{name}]", driveInfo.RootDirectory.FullName));
+						lstDirectories.Items.Add(ListBoxItem.Create($"[{name}]", driveInfo.RootDirectory.FullName));
 					}
 				}
 			}

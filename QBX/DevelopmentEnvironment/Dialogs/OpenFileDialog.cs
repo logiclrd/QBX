@@ -18,7 +18,7 @@ public class OpenFileDialog : DialogWithDirectoryList
 	// from base: Label lblCurrentDirectory;
 
 	Label lblFiles;
-	HorizontalListBox lstFiles;
+	HorizontalListBox<string> lstFiles;
 
 	// from base: Label lblDirectories;
 	// from base: VerticalListBox lstDirectories;
@@ -61,7 +61,7 @@ public class OpenFileDialog : DialogWithDirectoryList
 		bdrFileName = new Border();
 		txtFileName = new TextInput();
 		lblFiles = new Label();
-		lstFiles = new HorizontalListBox();
+		lstFiles = new HorizontalListBox<string>();
 		cmdOK = new Button();
 		cmdCancel = new Button();
 		cmdHelp = new Button();
@@ -157,7 +157,7 @@ public class OpenFileDialog : DialogWithDirectoryList
 				fileEntry =>
 				{
 					if (FilterExpression.IsMatch(fileEntry.Name))
-						lstFiles.Items.Add(new ListBoxItem(fileEntry.Name));
+						lstFiles.Items.Add(ListBoxItem.Create(fileEntry.Name, fileEntry.Name));
 				});
 
 			lstFiles.Items.Sort();
