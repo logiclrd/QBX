@@ -73,6 +73,7 @@ public partial class Program : HostedProgram, IOvertypeFlag
 
 		TextLibrary = new TextLibrary(machine);
 		TextLibrary.MovePhysicalCursor = false;
+		TextLibrary.ProcessControlCharacters = false;
 
 		TextLibrary.Clear();
 		TextLibrary.HideCursor();

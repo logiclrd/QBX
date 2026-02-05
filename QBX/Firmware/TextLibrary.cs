@@ -249,6 +249,8 @@ public class TextLibrary : VisualLibrary
 
 	static byte[] ControlCharacters = [7, 9, 10, 11, 12, 13, 28, 29, 30, 31];
 
+	public bool ProcessControlCharacters = true;
+
 	public override void WriteText(ReadOnlySpan<byte> buffer)
 	{
 		if (buffer.Length == 0)
@@ -320,101 +322,107 @@ public class TextLibrary : VisualLibrary
 
 			while (!buffer.IsEmpty)
 			{
-				switch (buffer[0])
+				if (ProcessControlCharacters)
 				{
-					case 7: // BEL
-						Machine.Speaker.ChangeSound(true, false, frequency: 1000, false, hold: TimeSpan.FromMilliseconds(200));
-						Machine.Speaker.ChangeSound(false, false, frequency: 1000, false);
+					switch (buffer[0])
+					{
+						case 7: // BEL
+							Machine.Speaker.ChangeSound(true, false, frequency: 1000, false, hold: TimeSpan.FromMilliseconds(200));
+							Machine.Speaker.ChangeSound(false, false, frequency: 1000, false);
 
-						buffer = buffer.Slice(1);
-						continue;
-					case 9: // TAB
-						do
-						{
-							plane0[o] = 32;
-							if (EnableWriteAttributes)
-								plane1[o] = attributes;
-							cursorX++;
-						} while ((cursorX < CharacterWidth) && ((cursorX & 7) != 0));
+							buffer = buffer.Slice(1);
+							continue;
+						case 9: // TAB
+							do
+							{
+								plane0[o] = 32;
+								if (EnableWriteAttributes)
+									plane1[o] = attributes;
+								cursorX++;
+							} while ((cursorX < CharacterWidth) && ((cursorX & 7) != 0));
 
-						if (cursorX == CharacterWidth)
+							if (cursorX == CharacterWidth)
+								BeginNewLine();
+
+							buffer = buffer.Slice(1);
+							continue;
+						case 10: // LF
+						case 13: // CR
 							BeginNewLine();
 
-						buffer = buffer.Slice(1);
-						continue;
-					case 10: // LF
-					case 13: // CR
-						BeginNewLine();
+							buffer = buffer.Slice(1);
+							continue;
+						case 11: // VT (Vertical Tab)
+							cursorX = 0;
+							cursorY = CharacterLineWindowStart;
+							o = cursorY * CharacterWidth;
 
-						buffer = buffer.Slice(1);
-						continue;
-					case 11: // VT (Vertical Tab)
-						cursorX = 0;
-						cursorY = CharacterLineWindowStart;
-						o = cursorY * CharacterWidth;
+							buffer = buffer.Slice(1);
+							continue;
+						case 12: // FF (Form Food)
+							Clear();
+							cursorX = 0;
+							cursorY = CharacterLineWindowStart;
+							o = cursorY * CharacterWidth;
 
-						buffer = buffer.Slice(1);
-						continue;
-					case 12: // FF (Form Food)
-						Clear();
-						cursorX = 0;
-						cursorY = CharacterLineWindowStart;
-						o = cursorY * CharacterWidth;
-
-						buffer = buffer.Slice(1);
-						continue;
-					case 28: // cursor right
-						if (cursorX + 1 < windowEndOffset)
-						{
-							cursorX++;
-							o++;
-						}
-
-						buffer = buffer.Slice(1);
-						continue;
-					case 29: // cursor left
-						if ((cursorX > 0) || (cursorY > CharacterLineWindowStart))
-						{
-							cursorX--;
-
-							if (cursorX < 0)
+							buffer = buffer.Slice(1);
+							continue;
+						case 28: // cursor right
+							if (cursorX + 1 < windowEndOffset)
 							{
-								cursorX += CharacterWidth;
-								cursorY--;
+								cursorX++;
+								o++;
 							}
 
-							o--;
-						}
+							buffer = buffer.Slice(1);
+							continue;
+						case 29: // cursor left
+							if ((cursorX > 0) || (cursorY > CharacterLineWindowStart))
+							{
+								cursorX--;
 
-						buffer = buffer.Slice(1);
-						continue;
-					case 30: // up
-						if (cursorY > CharacterLineWindowStart)
-						{
-							cursorY--;
-							o -= CharacterWidth;
-						}
+								if (cursorX < 0)
+								{
+									cursorX += CharacterWidth;
+									cursorY--;
+								}
 
-						buffer = buffer.Slice(1);
-						continue;
-					case 31: // down
-						if (cursorY < CharacterLineWindowEnd)
-							cursorY++;
-						else
-							ScrollText();
+								o--;
+							}
 
-						buffer = buffer.Slice(1);
-						continue;
+							buffer = buffer.Slice(1);
+							continue;
+						case 30: // up
+							if (cursorY > CharacterLineWindowStart)
+							{
+								cursorY--;
+								o -= CharacterWidth;
+							}
+
+							buffer = buffer.Slice(1);
+							continue;
+						case 31: // down
+							if (cursorY < CharacterLineWindowEnd)
+								cursorY++;
+							else
+								ScrollText();
+
+							buffer = buffer.Slice(1);
+							continue;
+					}
 				}
 
 				int remainingChars = Width - cursorX;
 
 				int spanLength = Math.Min(buffer.Length, remainingChars);
 
-				int controlCharacterOffset = buffer.Slice(0, spanLength).IndexOfAny(ControlCharacters);
+				if (ProcessControlCharacters)
+				{
+					int controlCharacterOffset = buffer.Slice(0, spanLength).IndexOfAny(ControlCharacters);
 
-				if (controlCharacterOffset >= 0)
-					spanLength = controlCharacterOffset;
+					if (controlCharacterOffset >= 0)
+						spanLength = controlCharacterOffset;
+				}
 
 				for (int i = 0; i < spanLength; i++)
 				{
