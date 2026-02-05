@@ -146,7 +146,9 @@ public class VerticalListBox<TValue> : ListBox<TValue>
 
 			for (int idx = ScrollPosition, itemY = innerY1; itemY <= innerY2; idx++, itemY++)
 			{
-				bool highlight = IsFocused && (idx == _selectedIndex);
+				bool highlight =
+					(IsFocused || ShowSelectionWhenUnfocused) &&
+					(idx == SelectedIndex);
 
 				string label = ((idx >= 0) && (idx < Items.Count)) ? Items[idx].Label : "";
 

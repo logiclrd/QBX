@@ -216,7 +216,8 @@ public class HorizontalListBox<TValue> : ListBox<TValue>
 				}
 			}
 
-			if (IsFocused && (_selectedIndex >= 0) && (_selectedIndex < Items.Count))
+			if ((IsFocused || ShowSelectionWhenUnfocused)
+			 && (SelectedIndex >= 0) && (SelectedIndex < Items.Count))
 			{
 				int selectionColumn = SelectedIndex / columnHeight;
 				int selectionRow = SelectedIndex % columnHeight;

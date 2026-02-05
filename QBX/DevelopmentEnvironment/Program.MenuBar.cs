@@ -2,6 +2,7 @@
 using System.Linq;
 
 using QBX.CodeModel;
+using QBX.DevelopmentEnvironment.Dialogs;
 using QBX.Hardware;
 
 namespace QBX.DevelopmentEnvironment;
@@ -39,6 +40,7 @@ public partial class Program
 	Menu mnuUtility;
 
 	Menu mnuOptions;
+	MenuItem mnuOptionsDisplay;
 	MenuItem mnuOptionsDetectDelayLoops;
 
 	Menu mnuHelp;
@@ -78,6 +80,7 @@ public partial class Program
 		nameof(mnuCalls),
 		nameof(mnuUtility),
 		nameof(mnuOptions),
+		nameof(mnuOptionsDisplay),
 		nameof(mnuOptionsDetectDelayLoops),
 		nameof(mnuHelp))]
 	void InitializeMenuBar()
@@ -188,7 +191,7 @@ public partial class Program
 		mnuOptions =
 			new Menu("&Options", 18)
 			{
-				new MenuItem("&Display..."),
+				(mnuOptionsDisplay = new MenuItem("&Display...")),
 				new MenuItem("Set &Paths..."),
 				new MenuItem("Right &Mouse..."),
 				new MenuItem("&Syntax Checking") { IsChecked = true },
@@ -232,6 +235,7 @@ public partial class Program
 		mnuDebugWatchpoint.Clicked = mnuDebugWatchpoint_Clicked;
 		mnuDebugDeleteAllWatch.Clicked = mnuDebugDeleteAllWatch_Clicked;
 
+		mnuOptionsDisplay.Clicked = mnuOptionsDisplay_Clicked;
 		mnuOptionsDetectDelayLoops.Clicked = mnuOptionsDetectDelayLoops_Clicked;
 	}
 
@@ -295,6 +299,11 @@ public partial class Program
 	private void mnuDebugDeleteAllWatch_Clicked()
 	{
 		ClearWatches();
+	}
+
+	private void mnuOptionsDisplay_Clicked()
+	{
+		ShowDialog(new DisplayDialog(Machine, Configuration));
 	}
 
 	private void mnuOptionsDetectDelayLoops_Clicked()

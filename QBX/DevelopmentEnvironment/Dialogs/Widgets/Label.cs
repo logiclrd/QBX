@@ -9,6 +9,7 @@ public class Label : Widget
 {
 	public string Text = "";
 	public int AccessKeyIndex = -1;
+	public DisplayAttribute? DisplayAttribute;
 
 	public override char AccessKeyCharacter
 		=> ((AccessKeyIndex >= 0) && (AccessKeyIndex < Text.Length))
@@ -63,6 +64,7 @@ public class Label : Widget
 			textOffset: 0,
 			chars,
 			AccessKeyIndex,
+			DisplayAttribute ??
 			configuration.DisplayAttributes.DialogBoxNormalText,
 			configuration.DisplayAttributes.DialogBoxAccessKeys);
 	}

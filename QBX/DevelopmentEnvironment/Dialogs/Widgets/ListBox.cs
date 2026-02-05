@@ -38,6 +38,8 @@ public abstract class ListBox<TValue> : Widget
 		IsTabStop = true;
 	}
 
+	public bool ShowSelectionWhenUnfocused = false;
+
 	int _selectedIndex;
 	int _scrollPosition;
 
