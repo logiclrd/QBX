@@ -39,7 +39,7 @@ public static class DialogPaint
 	{
 		int midX = visual.CharacterWidth / 2;
 
-		int x1 = midX - width / 2;
+		int x1 = midX - width / 2 - 1;
 		int x2 = x1 + width - 1;
 
 		int y1 = y;

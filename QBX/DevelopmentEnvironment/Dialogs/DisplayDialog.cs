@@ -92,12 +92,13 @@ public class DisplayDialog : Dialog
 		cmdCancel = new Button();
 		cmdHelp = new Button();
 
-		Width = 61;
+		Width = 62;
 		Height = 22;
+		Title = "Display";
 
 		bdrColour.X = 0;
 		bdrColour.Y = 0;
-		bdrColour.Width = 59;
+		bdrColour.Width = 60;
 		bdrColour.Height = 14;
 		bdrColour.Title = "Color";
 
@@ -108,9 +109,10 @@ public class DisplayDialog : Dialog
 		lblUserInterfaceElement.FocusTarget = lstUserInterfaceElement;
 		lblUserInterfaceElement.AutoSize();
 
+		// TODO: render border and unselected items using the pull-down menu normal text attribute
 		lstUserInterfaceElement.X = 1;
 		lstUserInterfaceElement.Y = 2;
-		lstUserInterfaceElement.Width = 57;
+		lstUserInterfaceElement.Width = 58;
 		lstUserInterfaceElement.Height = 5;
 		lstUserInterfaceElement.ShowSelectionWhenUnfocused = true;
 		lstUserInterfaceElement.SelectionChanged += lstUserInterfaceElement_SelectionChanged;
