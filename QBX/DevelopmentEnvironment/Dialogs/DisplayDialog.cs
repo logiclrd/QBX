@@ -161,6 +161,7 @@ public class DisplayDialog : Dialog
 		lblScrollBarsLabel.Y = 16;
 		lblScrollBarsLabel.Text = "Scroll Bars";
 		lblScrollBarsLabel.AccessKeyIndex = 0;
+		lblScrollBarsLabel.FocusTarget = chkScrollBars;
 		lblScrollBarsLabel.AutoSize();
 
 		lblTabStops.X = 37;
