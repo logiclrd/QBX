@@ -269,6 +269,12 @@ public partial class Program
 		int nextStartColumn = -1;
 		int nextEndColumn = -1;
 
+		if (!Configuration.ShowScrollBars)
+		{
+			verticalScrollBar = false;
+			horizontalScrollBar = false;
+		}
+
 		if (IsExecuting && (viewport.CompilationUnit != null))
 		{
 			var nextStatement = _errorToken?.OwnerStatement ?? _nextStatement;
