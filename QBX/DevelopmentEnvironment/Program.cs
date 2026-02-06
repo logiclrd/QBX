@@ -208,7 +208,8 @@ public partial class Program : HostedProgram, IOvertypeFlag
 				// => QBX doesn't try to emulate this 100%. IEEE representation
 				//    is still used for primary storage. But, MKS$(), MKD$(), CVS() and CVD()
 				//    are mapped to MKSMBF$(), MKDMBF$(), CVSMBF() and CVDMBF(),
-				//    respectively.
+				//    respectively, and MBF representation is used for marshalling to
+				//    NativeProcedures.
 				// TODO
 			}
 			else if (argument.Equals("/NOF", StringComparison.OrdinalIgnoreCase)
