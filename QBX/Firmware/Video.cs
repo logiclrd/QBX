@@ -1,5 +1,7 @@
-﻿using QBX.Hardware;
-using System;
+﻿using System;
+
+using QBX.Hardware;
+
 using static QBX.Hardware.GraphicsArray;
 
 namespace QBX.Firmware;
@@ -15,7 +17,13 @@ public partial class Video(Machine machine)
 	// Can't initialize a VisualLibrary at construction time, but will be populated soon.
 	VisualLibrary _visualLibrary = null!;
 
+	public int DesiredTextModeScanLines = 400;
+	public bool LoadPaletteOnModeChange = true;
+
 	public bool SetMode(int modeNumber)
+		=> SetMode(modeNumber, clearVRAM: true);
+
+	public bool SetMode(int modeNumber, bool clearVRAM)
 	{
 		if ((modeNumber < 0) && (modeNumber >= Modes.Length))
 			return false;
@@ -29,7 +37,8 @@ public partial class Video(Machine machine)
 
 		var array = machine.GraphicsArray;
 
-		array.VRAM.AsSpan().Clear();
+		if (clearVRAM)
+			array.VRAM.AsSpan().Clear();
 
 		array.OutPort2(
 			SequencerRegisters.IndexPort,
@@ -141,10 +150,37 @@ public partial class Video(Machine machine)
 			CRTControllerRegisters.StartHorizontalBlanking,
 			unchecked((byte)(mode.Characters.Width)));
 
-		int numScanLines =
-			(mode.IsGraphicsMode
-			? mode.Pixels.Height
-			: (mode.Characters.Height * mode.CharacterHeight));
+		int numScanLines;
+		int characterHeight;
+
+		if (mode.IsGraphicsMode)
+		{
+			numScanLines = mode.Pixels.Height;
+			characterHeight = mode.CharacterHeight;
+		}
+		else
+		{
+			switch (DesiredTextModeScanLines)
+			{
+				case 200:
+					numScanLines = 200;
+					characterHeight = 8;
+					break;
+				case 350:
+					numScanLines = 344;
+					characterHeight = 14;
+					break;
+				case 400:
+					numScanLines = 400;
+					characterHeight = 16;
+					break;
+
+				default:
+					characterHeight = mode.CharacterHeight;
+					numScanLines = mode.Characters.Height * characterHeight;
+					break;
+			}
+		}
 
 		int displayEnd = numScanLines - 1;
 
@@ -178,7 +214,7 @@ public partial class Video(Machine machine)
 			CRTControllerRegisters.IndexPort,
 			CRTControllerRegisters.MaximumScanLine,
 			unchecked((byte)(
-			(mode.IsGraphicsMode ? 0 : (mode.CharacterHeight - 1)) |
+			(mode.IsGraphicsMode ? 0 : (characterHeight - 1)) |
 			(mode.ScanDoubling ? CRTControllerRegisters.MaximumScanLine_ScanDoubling : 0))));
 
 		array.OutPort2(
@@ -187,12 +223,12 @@ public partial class Video(Machine machine)
 			unchecked((byte)(
 			(mode.IsGraphicsMode
 			? CRTControllerRegisters.CursorStart_Disable
-			: mode.CharacterHeight - 2))));
+			: characterHeight - 2))));
 
 		array.OutPort2(
 			CRTControllerRegisters.IndexPort,
 			CRTControllerRegisters.CursorEnd,
-			unchecked((byte)(mode.CharacterHeight - 1)));
+			unchecked((byte)(characterHeight - 1)));
 
 		array.OutPort2(
 			CRTControllerRegisters.IndexPort,
@@ -247,7 +283,7 @@ public partial class Video(Machine machine)
 
 		array.OutPort(
 			AttributeControllerRegisters.IndexAndDataWritePort,
-			AttributeControllerRegisters.ModeControl);
+			AttributeControllerRegisters.ModeControl | AttributeControllerRegisters.Index_PaletteAddressSourceBit);
 		array.OutPort(
 			AttributeControllerRegisters.IndexAndDataWritePort,
 			attributeMode);
@@ -264,11 +300,14 @@ public partial class Video(Machine machine)
 
 		array.OutPort(DACRegisters.MaskPort, 0xFF);
 
-		switch (mode.PaletteType)
+		if (LoadPaletteOnModeChange)
 		{
-			case PaletteType.CGA: LoadCGAPalette(intensity: true, reloadDAC: true); break;
-			case PaletteType.EGA: LoadEGAPalette(); break;
-			case PaletteType.VGA: LoadVGAPalette(); break;
+			switch (mode.PaletteType)
+			{
+				case PaletteType.CGA: LoadCGAPalette(intensity: true, reloadDAC: true); break;
+				case PaletteType.EGA: LoadEGAPalette(); break;
+				case PaletteType.VGA: LoadVGAPalette(); break;
+			}
 		}
 
 		array.OutPort2(
@@ -277,6 +316,12 @@ public partial class Video(Machine machine)
 			0b11);
 
 		InitializeVisualLibrary(mode);
+
+		array.InPort(InputStatusRegisters.InputStatus1Port);
+
+		array.OutPort(
+			AttributeControllerRegisters.IndexAndDataWritePort,
+			AttributeControllerRegisters.Index_PaletteAddressSourceBit);
 
 		ModeChanged?.Invoke(mode);
 
@@ -316,8 +361,10 @@ public partial class Video(Machine machine)
 		switch (rows)
 		{
 			case 25:
-				if ((array.CRTController.NumScanLines >= 344)
-				 && (array.CRTController.NumScanLines <= 350))
+				if (array.CRTController.NumScanLines == 200)
+					maximumScanLineValue = 7; // 8x8 font
+				else if ((array.CRTController.NumScanLines >= 344)
+				      && (array.CRTController.NumScanLines <= 350))
 				{
 					forceNumScanLines = 350;
 					maximumScanLineValue = 13; // 8x14 font
@@ -847,8 +894,22 @@ public partial class Video(Machine machine)
 	}
 
 	public void LoadFontIntoCharacterGenerator(byte[][] font)
+		=> LoadFontIntoCharacterGenerator(font, 0, 0);
+
+	public void LoadFontIntoCharacterGenerator(byte[][] font, int firstCharacter, int fontBlockIndex)
 	{
 		const int FontPlane = 0x20000;
+
+		// The font blocks are arranged a bit weirdly, because pre-VGA, they were spaced by 16KB,
+		// which meant there were 4 of them, and with the VGA, they decided to double the number
+		// of them, squeezing the additional 4 of them into the space between the original 4.
+		// So, the high bit actually counts for the smallest change in the address; the address
+		// is bits01 * 16384 + bit2 * 8192. Effectively, bit 2 just needs to be rotated into the
+		// least significant position.
+		fontBlockIndex = ((fontBlockIndex << 1) | (fontBlockIndex >> 2)) & 7;
+
+		Span<byte> map = machine.GraphicsArray.VRAM.AsSpan()
+			.Slice(FontPlane + fontBlockIndex * 8192, 8192);
 
 		for (int ch = 0; ch < 256; ch++)
 		{
@@ -860,7 +921,7 @@ public partial class Video(Machine machine)
 				glyph = glyph.Slice(0, 32);
 
 			for (int y = 0; y < glyph.Length; y++)
-				machine.GraphicsArray.VRAM[FontPlane + baseOffset + y] = glyph[y];
+				map[baseOffset + y] = glyph[y];
 		}
 	}
 
@@ -869,7 +930,7 @@ public partial class Video(Machine machine)
 		SetBlinkEnable(false);
 	}
 
-	public void EnableBlikn()
+	public void EnableBlink()
 	{
 		SetBlinkEnable(true);
 	}
@@ -883,7 +944,7 @@ public partial class Video(Machine machine)
 
 		array.OutPort(
 			AttributeControllerRegisters.IndexAndDataWritePort,
-			AttributeControllerRegisters.ModeControl);
+			AttributeControllerRegisters.ModeControl | AttributeControllerRegisters.Index_PaletteAddressSourceBit);
 
 		byte attributeMode = array.InPort(
 			AttributeControllerRegisters.DataReadPort);

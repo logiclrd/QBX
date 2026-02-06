@@ -59,6 +59,12 @@ public class TextLibrary : VisualLibrary
 		ReloadCursorAddress();
 	}
 
+	public override byte CurrentAttributeByte
+	{
+		get => Attributes;
+		set => Attributes = value;
+	}
+
 	public void ReloadCursorAddress()
 	{
 		(CursorX, CursorY) = Machine.VideoFirmware.GetCursorPosition();
@@ -248,8 +254,6 @@ public class TextLibrary : VisualLibrary
 	}
 
 	static byte[] ControlCharacters = [7, 9, 10, 11, 12, 13, 28, 29, 30, 31];
-
-	public bool ProcessControlCharacters = true;
 
 	public override void WriteText(ReadOnlySpan<byte> buffer)
 	{
@@ -520,7 +524,7 @@ public class TextLibrary : VisualLibrary
 		}
 	}
 
-	public byte GetCharacter(int x, int y)
+	public override byte GetCharacter(int x, int y)
 	{
 		if ((x < 0) || (x >= CharacterWidth)
 		 || (y < 0) || (y >= CharacterHeight))
@@ -537,7 +541,7 @@ public class TextLibrary : VisualLibrary
 		return plane0[offset];
 	}
 
-	public byte GetAttribute(int x, int y)
+	public override byte GetAttribute(int x, int y)
 	{
 		if ((x < 0) || (x >= CharacterWidth)
 		 || (y < 0) || (y >= CharacterHeight))
@@ -653,9 +657,134 @@ public class TextLibrary : VisualLibrary
 		}
 	}
 
-	public override void ScrollTextWindow(int x1, int y1, int x2, int y2, int numLines, int fillAttribute)
+	public override void ScrollTextWindow(int x1, int y1, int x2, int y2, int numLines, byte fillAttribute)
 	{
-		throw new NotImplementedException("TODO");
+		// numLines < 0 => scroll up
+		// numLines > 0 => scroll down
+
+		if (numLines == 0)
+			return;
+
+		if (x1 > x2)
+			(x1, x2) = (x2, x1);
+		if (y1 > y2)
+			(y1, y2) = (y2, y1);
+
+		var scrollRect = new IntegerRect(x1, y1, x2, y2);
+
+		if (!scrollRect.Intersects(_clipRect))
+			return;
+
+		(scrollRect.X1, scrollRect.Y1) = _clipRect.Constrain(x1, y1);
+		(scrollRect.X2, scrollRect.Y2) = _clipRect.Constrain(x2, y2);
+
+		if ((scrollRect.Y2 < CharacterLineWindowStart) || (scrollRect.Y1 > CharacterLineWindowEnd))
+			return;
+
+		if (scrollRect.Y1 < CharacterLineWindowStart)
+			scrollRect.Y1 = CharacterLineWindowStart;
+		if (scrollRect.Y2 > CharacterLineWindowEnd)
+			scrollRect.Y2 = CharacterLineWindowEnd;
+
+		using (HidePointerForOperationIfPointerAware())
+		{
+			int constrainedWidth = scrollRect.X2 - scrollRect.X1 + 1;
+			int constrainedHeight = scrollRect.Y2 - scrollRect.Y1 + 1;
+
+			int totalLines = y2 - y1 + 1;
+
+			int fillLines = Math.Min(totalLines, Math.Abs(numLines));
+			int keepLines = totalLines - fillLines;
+
+			int firstBlitLineY = y1 + Math.Max(numLines, 0);
+			int lastBlitLineY = firstBlitLineY + keepLines - 1;
+
+			Span<byte> vramSpan = Array.VRAM;
+
+			vramSpan = vramSpan.Slice(StartAddress);
+
+			var plane0 = vramSpan.Slice(0x00000, 0x10000);
+			var plane1 = vramSpan.Slice(0x10000, 0x10000);
+
+			plane0 = plane0.Slice(scrollRect.Y1 * Width);
+			plane1 = plane1.Slice(scrollRect.Y1 * Width);
+
+			if (constrainedWidth == Width)
+			{
+				int actualFirstBlitLineY = Math.Max(scrollRect.Y1, firstBlitLineY);
+				int actualLastBlitLineY = Math.Min(scrollRect.Y2, lastBlitLineY);
+
+				int actualBlitLines = actualLastBlitLineY - actualFirstBlitLineY + 1;
+
+				int offset = fillLines * Width;
+				int length = actualBlitLines * Width;
+
+				int fromOffset = (numLines < 0) ? offset : 0;
+				int toOffset = (numLines > 0) ? offset : 0;
+
+				if (fromOffset > 0)
+				{
+					plane0.Slice(fromOffset, length).CopyTo(plane0);
+					plane1.Slice(fromOffset, length).CopyTo(plane1);
+				}
+				else
+				{
+					for (int y = actualLastBlitLineY; y >= actualFirstBlitLineY; y--)
+					{
+						int o = y * Width;
+
+						plane0.Slice(o, constrainedWidth).CopyTo(plane0.Slice(o + toOffset));
+						plane1.Slice(o, constrainedWidth).CopyTo(plane1.Slice(o + toOffset));
+					}
+				}
+
+				if (actualFirstBlitLineY > scrollRect.Y1)
+				{
+					int actualFillLines = actualFirstBlitLineY - scrollRect.Y1;
+
+					length = actualFillLines * Width;
+
+					plane0.Slice(scrollRect.Y1 * Width, length).Fill(32);
+					plane1.Slice(scrollRect.Y1 * Width, length).Fill(fillAttribute);
+				}
+
+				if (actualLastBlitLineY > scrollRect.Y2)
+				{
+					int actualFillLines = scrollRect.Y2 - actualLastBlitLineY;
+
+					length = actualFillLines * Width;
+
+					plane0.Slice((actualLastBlitLineY + 1) * Width, length).Fill(32);
+					plane1.Slice((actualLastBlitLineY + 1) * Width, length).Fill(fillAttribute);
+				}
+			}
+			else
+			{
+				int loopY1 = numLines > 0 ? scrollRect.Y2 : scrollRect.Y1;
+				int loopY2 = numLines > 0 ? scrollRect.Y1 : scrollRect.Y2;
+				int loopDY = numLines > 0 ? -1 : +1;
+				int loopDO = loopDY * Width;
+
+				int blitOffset = -numLines * Width;
+
+				int loopOStart = loopY1 * Width + scrollRect.X1;
+				int loopYEnd = loopY2 + loopDY;
+
+				for (int y = loopY1, o = loopOStart; y != loopYEnd; y += loopDY, o += loopDO)
+				{
+					if ((y >= firstBlitLineY) && (y <= lastBlitLineY))
+					{
+						plane0.Slice(o + blitOffset, constrainedWidth).CopyTo(plane0.Slice(o));
+						plane1.Slice(o + blitOffset, constrainedWidth).CopyTo(plane1.Slice(o));
+					}
+					else
+					{
+						plane0.Slice(o, constrainedWidth).Fill(32);
+						plane1.Slice(o, constrainedWidth).Fill(fillAttribute);
+					}
+				}
+			}
+		}
 	}
 
 	byte _pointerCharacterMask;

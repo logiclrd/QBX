@@ -70,6 +70,8 @@ public abstract class VisualLibrary
 		(CursorX, CursorY) = Machine.VideoFirmware.GetCursorPosition(ActivePageNumber);
 	}
 
+	public abstract byte CurrentAttributeByte { get; set; }
+
 	public void Clear()
 	{
 		ClearImplementation();
@@ -140,6 +142,8 @@ public abstract class VisualLibrary
 
 		MoveCursorHandlePhysicalCursor();
 	}
+
+	public bool ProcessControlCharacters = true;
 
 	public void WriteTextAt(int x, int y, byte ch)
 	{
@@ -453,8 +457,11 @@ public abstract class VisualLibrary
 			NewLine();
 	}
 
+	public abstract byte GetCharacter(int x, int y);
+	public abstract byte GetAttribute(int x, int y);
+
 	public abstract void ScrollText();
-	public abstract void ScrollTextWindow(int x1, int y1, int x2, int y2, int numLines, int fillAttribute);
+	public abstract void ScrollTextWindow(int x1, int y1, int x2, int y2, int numLines, byte fillAttribute);
 
 	public bool EnablePointerAwareDrawing = false;
 

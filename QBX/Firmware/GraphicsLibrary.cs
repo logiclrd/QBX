@@ -76,6 +76,12 @@ public abstract class GraphicsLibrary : VisualLibrary
 		base.RefreshParameters();
 	}
 
+	public override byte CurrentAttributeByte
+	{
+		get => unchecked((byte)DrawingAttribute);
+		set => DrawingAttribute = value;
+	}
+
 	public bool SetCharacterScans(int newScans)
 	{
 		var font = Machine.VideoFirmware.TryGetFont(newScans);
@@ -2007,25 +2013,173 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	public abstract void ScrollUp(int scanCount, int windowStart, int windowEnd);
 
-	public override void ScrollTextWindow(int x1, int y1, int x2, int y2, int numLines, int fillAttribute)
+	[ThreadStatic]
+	static byte[]? s_scrollSpriteBuffer;
+
+	public override void ScrollTextWindow(int x1, int y1, int x2, int y2, int numLines, byte fillAttribute)
 	{
-		throw new NotImplementedException("TODO");
+		// numLines < 0 => scroll up
+		// numLines > 0 => scroll down
+
+		if (numLines == 0)
+			return;
+
+		if (x1 > x2)
+			(x1, x2) = (x2, x1);
+		if (y1 > y2)
+			(y1, y2) = (y2, y1);
+
+		var scrollRect = new IntegerRect(x1, y1, x2, y2);
+
+		if ((scrollRect.Y2 < CharacterLineWindowStart) || (scrollRect.Y1 > CharacterLineWindowEnd))
+			return;
+
+		int characterWidth = Array.Sequencer.CharacterWidth;
+		int characterHeight = CharacterScans;
+
+		int numScans = numLines * characterHeight;
+
+		CalculateSpriteParameters(
+			Width,
+			characterHeight,
+			out _, out _, out _, out _, out _, out _,
+			out var totalSize);
+
+		if ((s_scrollSpriteBuffer == null) || (s_scrollSpriteBuffer.Length < totalSize))
+			s_scrollSpriteBuffer = new byte[totalSize];
+
+		using (HidePointerForOperationIfPointerAware())
+		{
+			int constrainedWidth = scrollRect.X2 - scrollRect.X1 + 1;
+			int constrainedHeight = scrollRect.Y2 - scrollRect.Y1 + 1;
+
+			int totalLines = y2 - y1 + 1;
+
+			int fillLines = Math.Min(totalLines, Math.Abs(numLines));
+			int keepLines = totalLines - fillLines;
+
+			int firstBlitLineY = y1 + Math.Max(numLines, 0);
+			int lastBlitLineY = firstBlitLineY + keepLines - 1;
+
+			Span<byte> vramSpan = Array.VRAM;
+
+			vramSpan = vramSpan.Slice(StartAddress);
+
+			var plane0 = vramSpan.Slice(0x00000, 0x10000);
+			var plane1 = vramSpan.Slice(0x10000, 0x10000);
+
+			plane0 = plane0.Slice(scrollRect.Y1 * Width);
+			plane1 = plane1.Slice(scrollRect.Y1 * Width);
+
+			int loopY1 = numLines > 0 ? scrollRect.Y2 : scrollRect.Y1;
+			int loopY2 = numLines > 0 ? scrollRect.Y1 : scrollRect.Y2;
+			int loopDY = numLines > 0 ? -1 : +1;
+			int loopDO = loopDY * Width;
+
+			int blitOffset = -numLines * Width;
+
+			int loopYEnd = loopY2 + loopDY;
+
+			int pixelX1 = scrollRect.X1 * characterWidth;
+			int pixelX2 = (scrollRect.X2 + 1) * characterWidth - 1;
+
+			Span<byte> buffer = s_scrollSpriteBuffer;
+
+			for (int y = loopY1; y != loopYEnd; y += loopDY)
+			{
+				if ((y >= firstBlitLineY) && (y <= lastBlitLineY))
+				{
+					int pixelY1 = (y + blitOffset) * characterHeight;
+					int pixelY2 = pixelY1 + characterHeight - 1;
+
+					GetSprite(
+						pixelX1, pixelY1,
+						pixelX2, pixelY2,
+						buffer);
+
+					pixelY1 = y * characterHeight;
+
+					PutSprite(
+						buffer, PutSpriteAction.PixelSet,
+						pixelX1, pixelY1);
+				}
+				else
+				{
+					int pixelY1 = y * characterHeight;
+					int pixelY2 = pixelY1 + characterHeight - 1;
+
+					FillBox(pixelX1, pixelY1, pixelX2, pixelY2, fillAttribute);
+				}
+			}
+		}
 	}
 
 	protected virtual void DrawCharacterScan(int x, int y, int characterWidth, byte glyphScan)
 	{
 		int columnBit = 128;
 
-		for (int xx = 0; xx < characterWidth; xx++)
+		if ((DrawingAttribute & 0x80) != 0) // incompatible with 256-colour modes
 		{
-			int attribute = (glyphScan & columnBit) != 0
-				? DrawingAttribute
-				: 0;
+			for (int xx = 0; xx < characterWidth; xx++)
+			{
+				if ((glyphScan & columnBit) != 0)
+					PixelSet(x + xx, y, ~PixelGet(x + xx, y));
 
-			PixelSet(x + xx, y, attribute);
-
-			columnBit >>= 1;
+				columnBit >>= 1;
+			}
 		}
+		else
+		{
+			for (int xx = 0; xx < characterWidth; xx++)
+			{
+				int attribute = (glyphScan & columnBit) != 0
+					? DrawingAttribute
+					: 0;
+
+				PixelSet(x + xx, y, attribute);
+
+				columnBit >>= 1;
+			}
+		}
+	}
+
+	[ThreadStatic]
+	static byte[]? s_characterPixels;
+
+	public override byte GetCharacter(int x, int y)
+	{
+		int characterWidth = Array.Sequencer.CharacterWidth;
+		int characterHeight = CharacterScans;
+
+		int px = x * CharacterWidth;
+		int py = y * characterHeight;
+
+		s_characterPixels ??= new byte[32];
+
+		var pixels = s_characterPixels;
+
+		// TODO: Come up with a faster way to do this. Could use GetSprite.
+		for (int yy = 0; yy < pixels.Length; yy++)
+		{
+			int pixelValue = 0;
+
+			for (int xx = 0; xx < 8; xx++)
+				pixelValue = (pixelValue << 1) | (PixelGet(px + xx, py + yy) != 0 ? 1 : 0);
+
+			pixels[yy] = unchecked((byte)pixelValue);
+		}
+
+		for (int i = 1; i < Font.Length; i++)
+			if (Font[i].SequenceEqual(pixels))
+				return (byte)i;
+
+		return 0;
+	}
+
+	public override byte GetAttribute(int x, int y)
+	{
+		// Not supported in graphics mode.
+		return 0;
 	}
 	#endregion Text
 

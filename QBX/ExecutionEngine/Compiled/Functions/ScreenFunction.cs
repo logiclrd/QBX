@@ -2,7 +2,6 @@
 
 using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
-using QBX.Firmware;
 
 namespace QBX.ExecutionEngine.Compiled.Functions;
 
@@ -82,43 +81,27 @@ public class ScreenFunction : Function
 			colourFlag = !colourFlagValue.IsZero;
 		}
 
-		if (context.VisualLibrary is TextLibrary textLibrary)
+		if (colourFlag)
 		{
 			// SCREEN is documented to return just the foreground attribute, but in practice
 			// it just returns the whole attribute byte.
-			if (colourFlag)
-				return new IntegerVariable(textLibrary.GetAttribute(column - 1, line - 1));
-			else
-				return new IntegerVariable(textLibrary.GetCharacter(column - 1, line - 1));
-		}
-		else if (context.VisualLibrary is GraphicsLibrary graphicsLibrary)
-		{
-			if (colourFlag)
-				return new IntegerVariable(0);
-
-			int x = (column - 1) * 8;
-			int y = (line - 1) * graphicsLibrary.CharacterScans;
-
-			byte[] pixels = new byte[graphicsLibrary.CharacterScans];
-
-			// TODO: Come up with a faster way to do this. Could use GetSprite.
-			for (int yy = 0; yy < pixels.Length; yy++)
-			{
-				int pixelValue = 0;
-
-				for (int xx = 0; xx < 8; xx++)
-					pixelValue = (pixelValue << 1) | (graphicsLibrary.PixelGet(x + xx, y + yy) != 0 ? 1 : 0);
-
-				pixels[yy] = unchecked((byte)pixelValue);
-			}
-
-			for (int i = 1; i < graphicsLibrary.Font.Length; i++)
-				if (graphicsLibrary.Font[i].SequenceEqual(pixels))
-					return new IntegerVariable((short)i);
-
-			return new IntegerVariable(32);
+			return new IntegerVariable(context.VisualLibrary.GetAttribute(column - 1, line - 1));
 		}
 		else
-			throw new Exception("Internal error");
+		{
+			// Undocumented: SCREEN will not return NUL characters. A character value of 0
+			// gets returned as 32 (space).
+			//
+			// Documented: In graphics mode, an unrecognized character will be returned as
+			// 32 (space). This happens automatically because the underlying graphics
+			// library returns 0, but then the previous undocumented function converts the
+			// 0 to a 32.
+			short ch = context.VisualLibrary.GetCharacter(column - 1, line - 1);
+
+			if (ch == 0)
+				ch = 32;
+
+			return new IntegerVariable(ch);
+		}
 	}
 }
