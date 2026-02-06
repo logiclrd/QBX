@@ -148,6 +148,8 @@ public class Adapter
 			// In theory this value is derived from the CRT Controller's Offset register.
 			int stride = _width / (_array.Graphics.Shift256 ? 1 : characterWidth);
 
+			bool paletteAddressSource = _array.AttributeController.PaletteAddressSource;
+
 			int attributeBits76 = _array.AttributeController.AttributeBits76;
 			int attributeBits54 = _array.AttributeController.AttributeBits54;
 			bool overrideAttributeBits54 = _array.AttributeController.OverrideAttributeBits54;
@@ -291,6 +293,9 @@ public class Adapter
 
 						paletteIndex = _array.AttributeController.Registers.Attribute[attribute];
 					}
+
+					if (!paletteAddressSource)
+						paletteIndex = 0;
 
 					scanOut[x] = palette[paletteIndex & dacMask];
 

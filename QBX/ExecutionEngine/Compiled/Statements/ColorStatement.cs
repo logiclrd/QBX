@@ -78,6 +78,7 @@ public class ColorStatement(CodeModel.Statements.Statement? source) : Executable
 					context.Machine.InPort(InputStatusRegisters.InputStatus1Port);
 					context.Machine.OutPort(AttributeControllerRegisters.IndexAndDataWritePort, AttributeControllerRegisters.OverscanPaletteIndex);
 					context.Machine.OutPort(AttributeControllerRegisters.IndexAndDataWritePort, unchecked((byte)newOverscanAttribute));
+					context.Machine.OutPort(AttributeControllerRegisters.IndexAndDataWritePort, AttributeControllerRegisters.Index_PaletteAddressSourceBit);
 				}
 			}
 		}
@@ -96,6 +97,7 @@ public class ColorStatement(CodeModel.Statements.Statement? source) : Executable
 				context.Machine.InPort(InputStatusRegisters.InputStatus1Port);
 				context.Machine.OutPort(AttributeControllerRegisters.IndexAndDataWritePort, 0);
 				context.Machine.OutPort(AttributeControllerRegisters.IndexAndDataWritePort, unchecked((byte)newBackgroundAttribute));
+				context.Machine.OutPort(AttributeControllerRegisters.IndexAndDataWritePort, AttributeControllerRegisters.Index_PaletteAddressSourceBit);
 			}
 
 			if (Argument2Expression != null)

@@ -579,6 +579,9 @@ public class GraphicsArray : IMemory
 		public const int IndexAndDataWritePort = 0x3C0;
 		public const int DataReadPort = 0x3C1;
 
+		public const byte Index_PaletteAddressSourceBit = 0x20;
+		public const byte IndexMask = 0x1F;
+
 		public const int Attribute0 = 0;
 		public const int Attribute1 = 1;
 		public const int Attribute2 = 2;
@@ -621,6 +624,7 @@ public class GraphicsArray : IMemory
 		public const byte ColourSelect_Bits54 = 2 | 1;
 		public const int ColourSelect_Bits54Shift = 0;
 
+		public bool PaletteAddressSource;
 		public bool LineGraphics;
 		public bool Use256Colours;
 		public bool EnableBlinking;
@@ -784,7 +788,8 @@ public class GraphicsArray : IMemory
 				switch (_attributeControllerPortMode)
 				{
 					case AddressAndDataPortMode.Address:
-						_attributeControllerIndex = data;
+						_attributeControllerIndex = data & AttributeControllerRegisters.IndexMask;
+						AttributeController.PaletteAddressSource = ((data & AttributeControllerRegisters.Index_PaletteAddressSourceBit) != 0);
 						_attributeControllerPortMode = AddressAndDataPortMode.Data;
 						break;
 					case AddressAndDataPortMode.Data:

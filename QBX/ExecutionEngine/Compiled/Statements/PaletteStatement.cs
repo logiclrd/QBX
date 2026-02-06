@@ -62,6 +62,7 @@ public class PaletteStatement(CodeModel.Statements.Statement source) : Executabl
 				machine.InPort(InputStatusRegisters.InputStatus1Port);
 				machine.OutPort(AttributeControllerRegisters.IndexAndDataWritePort, unchecked((byte)attribute));
 				machine.OutPort(AttributeControllerRegisters.IndexAndDataWritePort, unchecked((byte)colour));
+				machine.OutPort(AttributeControllerRegisters.IndexAndDataWritePort, AttributeControllerRegisters.Index_PaletteAddressSourceBit);
 
 				break;
 			case PaletteMode.DAC:
