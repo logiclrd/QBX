@@ -1,5 +1,6 @@
 ﻿using QBX.ExecutionEngine.Execution;
 using QBX.Hardware;
+using QBX.OperatingSystem;
 
 namespace QBX.Interrupts;
 
@@ -10,11 +11,11 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	public enum Function : byte
 	{
 		TerminateProgram = 0x00,
-		ReadCharacterFromStandardInputWithEcho = 0x01,
-		WriteCharacterToStandardOutput = 0x02,
-		ReadCharacterFromStdAux = 0x03,
-		WriteCharacterToStdAux = 0x04,
-		WriteCharacterToPrinter = 0x05,
+		ReadKeyboardWithEcho = 0x01,
+		DisplayCharacter = 0x02,
+		AuxiliaryInput = 0x03,
+		AuxiliaryOutput = 0x04,
+		PrintCharacter = 0x05,
 	}
 
 	public override Registers Execute(Registers input)
@@ -33,26 +34,26 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				machine.DOS.TerminateProgram();
 				throw new TerminatedException();
 			}
-			case Function.ReadCharacterFromStandardInputWithEcho:
+			case Function.ReadKeyboardWithEcho:
 			{
 				result.AX &= 0xFF00;
-				result.AX |= machine.DOS.ReadByte(fd: 0, echo: true);
+				result.AX |= machine.DOS.ReadByte(DOS.StandardInput, echo: true);
 				break;
 			}
-			case Function.WriteCharacterToStandardOutput:
+			case Function.DisplayCharacter:
 			{
 				byte ch = unchecked((byte)input.DX);
 
-				machine.DOS.WriteByte(fd: 1, ch, out byte lastCharacterWritten);
+				machine.DOS.WriteByte(DOS.StandardOutput, ch, out byte lastCharacterWritten);
 
 				result.AX &= 0xFF00;
 				result.AX |= lastCharacterWritten;
 
 				break;
 			}
-			case Function.ReadCharacterFromStdAux:
-			case Function.WriteCharacterToStdAux:
-			case Function.WriteCharacterToPrinter:
+			case Function.AuxiliaryInput:
+			case Function.AuxiliaryOutput:
+			case Function.PrintCharacter:
 			{
 				// If you don't have a serial port/printer, it appears DOS simply hangs. I'm not going to do that. :-)
 				result.AX &= 0xFF00;

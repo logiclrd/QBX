@@ -9,16 +9,43 @@ public class DOS
 {
 	public bool IsTerminated = false;
 
-	public List<FileDescriptor> Files = new List<FileDescriptor>();
+	public List<FileDescriptor?> Files = new List<FileDescriptor?>();
 
 	Machine _machine;
+
+	public const int StandardInput = 0;
+	public const int StandardOutput = 1;
 
 	public DOS(Machine machine)
 	{
 		_machine = machine;
 
-		Files.Add(new FileDescriptor(ReadStandardInput, null));
-		Files.Add(new FileDescriptor(null, WriteStandardOutput) { WriteThrough = true });
+		InitializeStandardInputAndOutput();
+	}
+
+	void InitializeStandardInputAndOutput()
+	{
+		while (Files.Count < 2)
+			Files.Add(null);
+
+		Files[0] = new FileDescriptor(ReadStandardInput, null);
+		Files[1] = new FileDescriptor(null, WriteStandardOutput) { WriteThrough = true };
+	}
+
+	public void Reset()
+	{
+		// Keep FDs 0 and 1, stdin and stdout.
+		for (int i = 0; i < Files.Count; i++)
+		{
+			if (Files[i] != null)
+			{
+				// TODO: CloseFile(Files[i]);
+			}
+		}
+
+		InitializeStandardInputAndOutput();
+
+		// TODO: reset memory allocator
 	}
 
 	void ReadStandardInput(FileBuffer readBuffer)
@@ -63,15 +90,15 @@ public class DOS
 
 	public void TerminateProgram()
 	{
+		Reset();
 		IsTerminated = true;
 	}
 
 	public byte ReadByte(int fd, bool echo = false)
 	{
-		if ((fd < 0) || (fd >= Files.Count))
+		if ((fd < 0) || (fd >= Files.Count)
+		 || (Files[fd] is not FileDescriptor fileDescriptor))
 			throw new ArgumentException("Invalid file descriptor");
-
-		var fileDescriptor = Files[fd];
 
 		byte b = fileDescriptor.ReadByte();
 
@@ -81,17 +108,16 @@ public class DOS
 			fileDescriptor.Column++;
 
 		if (echo)
-			_machine.VideoFirmware.VisualLibrary.WriteText(b);
+			WriteByte(StandardOutput, b, out _);
 
 		return b;
 	}
 
 	public void WriteByte(int fd, byte b, out byte lastByteWritten)
 	{
-		if ((fd < 0) || (fd >= Files.Count))
+		if ((fd < 0) || (fd >= Files.Count)
+		 || (Files[fd] is not FileDescriptor fileDescriptor))
 			throw new ArgumentException("Invalid file descriptor");
-
-		var fileDescriptor = Files[fd];
 
 		lastByteWritten = b;
 
@@ -119,10 +145,9 @@ public class DOS
 
 	public void Write(int fd, ReadOnlySpan<byte> bytes, out byte lastByteWritten)
 	{
-		if ((fd < 0) || (fd >= Files.Count))
+		if ((fd < 0) || (fd >= Files.Count)
+		 || (Files[fd] is not FileDescriptor fileDescriptor))
 			throw new ArgumentException("Invalid file descriptor");
-
-		var fileDescriptor = Files[fd];
 
 		lastByteWritten = 0;
 
