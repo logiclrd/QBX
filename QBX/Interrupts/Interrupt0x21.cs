@@ -11,6 +11,10 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	{
 		TerminateProgram = 0x00,
 		ReadCharacterFromStandardInputWithEcho = 0x01,
+		WriteCharacterToStandardOutput = 0x02,
+		ReadCharacterFromStdAux = 0x03,
+		WriteCharacterToStdAux = 0x04,
+		WriteCharacterToPrinter = 0x05,
 	}
 
 	public override Registers Execute(Registers input)
@@ -25,12 +29,35 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		switch (function)
 		{
 			case Function.TerminateProgram:
+			{
 				machine.DOS.TerminateProgram();
 				throw new TerminatedException();
+			}
 			case Function.ReadCharacterFromStandardInputWithEcho:
+			{
 				result.AX &= 0xFF00;
 				result.AX |= machine.DOS.ReadByte(fd: 0, echo: true);
 				break;
+			}
+			case Function.WriteCharacterToStandardOutput:
+			{
+				byte ch = unchecked((byte)input.DX);
+
+				machine.DOS.WriteByte(fd: 1, ch, out byte lastCharacterWritten);
+
+				result.AX &= 0xFF00;
+				result.AX |= lastCharacterWritten;
+
+				break;
+			}
+			case Function.ReadCharacterFromStdAux:
+			case Function.WriteCharacterToStdAux:
+			case Function.WriteCharacterToPrinter:
+			{
+				// If you don't have a serial port/printer, it appears DOS simply hangs. I'm not going to do that. :-)
+				result.AX &= 0xFF00;
+				break;
+			}
 		}
 
 		return result;
@@ -38,9 +65,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	/*
 TODO:
 
-Int 21/AH=02h - DOS 1+ - WRITE CHARACTER TO STANDARD OUTPUT
-Int 21/AH=04h - DOS 1+ - WRITE CHARACTER TO STDAUX
-Int 21/AH=05h - DOS 1+ - WRITE CHARACTER TO PRINTER
 Int 21/AH=06h/DL=FFh - DOS 1+ - DIRECT CONSOLE INPUT
 Int 21/AH=07h - DOS 1+ - DIRECT CHARACTER INPUT, WITHOUT ECHO
 Int 21/AH=11h - DOS 1+ - FIND FIRST MATCHING FILE USING FCB

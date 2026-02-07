@@ -13,6 +13,9 @@ public class FileDescriptor
 	public FileBuffer ReadBuffer = new FileBuffer(512);
 	public FileBuffer WriteBuffer = new FileBuffer(512);
 
+	public int Column;
+	public bool WriteThrough;
+
 	public FileDescriptor()
 	{
 	}
@@ -80,5 +83,30 @@ public class FileDescriptor
 			FillReadBuffer();
 
 		return ReadBuffer.Pull(buffer);
+	}
+
+	public void WriteByte(byte b)
+	{
+		WriteBuffer.Push(b);
+
+		if (WriteThrough || WriteBuffer.IsFull)
+			FlushWriteBuffer();
+	}
+
+	public void Write(ReadOnlySpan<byte> buffer)
+	{
+		while (buffer.Length > 0)
+		{
+			int available = WriteBuffer.Available;
+
+			int writeSize = Math.Min(available, buffer.Length);
+
+			WriteBuffer.Push(buffer.Slice(0, writeSize));
+
+			buffer = buffer.Slice(writeSize);
+
+			if (WriteThrough || WriteBuffer.IsFull)
+				FlushWriteBuffer();
+		}
 	}
 }
