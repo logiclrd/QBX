@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -25,7 +24,7 @@ public class SystemDetector
 
 	bool WMIIsLaptop()
 	{
-		if (!OperatingSystem.IsWindows())
+		if (!System.OperatingSystem.IsWindows())
 			return false;
 
 		try

@@ -498,7 +498,7 @@ public partial class Program : HostedProgram, IOvertypeFlag
 
 		SetWindowIcon();
 
-		while (Machine.KeepRunning)
+		while (Machine.KeepRunning && !Machine.DOS.IsTerminated)
 		{
 			if (AutoRun)
 			{

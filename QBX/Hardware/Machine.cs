@@ -1,4 +1,5 @@
-﻿using QBX.Firmware;
+﻿using QBX.OperatingSystem;
+using QBX.Firmware;
 using QBX.Interrupts;
 
 namespace QBX.Hardware;
@@ -14,6 +15,8 @@ public class Machine
 	public Mouse Mouse { get; }
 	public Speaker Speaker { get; }
 	public TimerChip Timer { get; }
+
+	public DOS DOS { get; }
 
 	public MemoryBus MemoryBus { get; }
 	public InterruptHandler?[] InterruptHandlers { get; } = new InterruptHandler[256];
@@ -41,9 +44,12 @@ public class Machine
 		MouseDriver = new MouseDriver(this);
 
 		InterruptHandlers[0x10] = new Interrupt0x10(this);
+		InterruptHandlers[0x21] = new Interrupt0x21(this);
 		InterruptHandlers[0x33] = new Interrupt0x33(this);
 
 		VideoFirmware.SetMode(3);
+
+		DOS = new DOS(this);
 	}
 
 	public void OutPort(int portNumber, byte data)
