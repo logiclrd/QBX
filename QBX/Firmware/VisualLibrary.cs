@@ -155,8 +155,7 @@ public abstract class VisualLibrary
 		switch (buffer[0])
 		{
 			case 7: // BEL
-				Machine.Speaker.ChangeSound(true, false, frequency: 1000, false, hold: TimeSpan.FromMilliseconds(200));
-				Machine.Speaker.ChangeSound(false, false, frequency: 1000, false);
+				Machine.DOS.Beep();
 
 				buffer = buffer.Slice(1);
 				return true;

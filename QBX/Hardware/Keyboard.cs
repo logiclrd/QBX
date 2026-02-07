@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 
 using SDL3;
@@ -135,6 +136,17 @@ public class Keyboard(Machine machine)
 			queue.Dequeue();
 	}
 
+	public void DiscardQueueudInput()
+	{
+		lock (_sync)
+		{
+			if ((_waitCount > 0) && !_divertEvents) // Don't interfere with ongoing waits
+				return;
+
+			_inputQueue.Clear();
+		}
+	}
+
 	public bool WaitForInput(int timeoutMilliseconds = Timeout.Infinite)
 	{
 		if (timeoutMilliseconds != Timeout.Infinite)
@@ -171,6 +183,15 @@ public class Keyboard(Machine machine)
 			}
 
 			return machine.KeepRunning;
+		}
+	}
+
+	public bool HasQueuedTangibleInput
+	{
+		get
+		{
+			lock (_sync)
+				return _inputQueue.Any(item => !item.IsEphemeral);
 		}
 	}
 

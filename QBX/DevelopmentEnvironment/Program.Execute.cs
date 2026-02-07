@@ -29,7 +29,7 @@ public partial class Program
 
 	void AttachBreakHandler()
 	{
-		Machine.Keyboard.Break +=
+		Machine.DOS.Break +=
 			() =>
 			{
 				_executionContext?.Controls.Break();

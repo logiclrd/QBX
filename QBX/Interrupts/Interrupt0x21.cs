@@ -16,6 +16,13 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		AuxiliaryInput = 0x03,
 		AuxiliaryOutput = 0x04,
 		PrintCharacter = 0x05,
+		DirectConsoleIO = 0x06,
+		DirectConsoleInput = 0x07,
+		ReadKeyboardWithoutEcho = 0x08,
+		DisplayString = 0x09,
+		BufferedKeyboardInput = 0x0A,
+		CheckKeyboardStatus = 0x0B,
+		FlushBufferReadKeyboard = 0x0C,
 	}
 
 	public override Registers Execute(Registers input)
@@ -36,8 +43,17 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 			}
 			case Function.ReadKeyboardWithEcho:
 			{
-				result.AX &= 0xFF00;
-				result.AX |= machine.DOS.ReadByte(DOS.StandardInput, echo: true);
+				using (machine.DOS.EnableBreak())
+				{
+					try
+					{
+						byte b = machine.DOS.ReadByte(DOS.StandardInput, echo: true);
+
+						result.AX &= 0xFF00;
+						result.AX |= b;
+					}
+					catch (Break) { }
+				}
 				break;
 			}
 			case Function.DisplayCharacter:
@@ -59,6 +75,125 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				result.AX &= 0xFF00;
 				break;
 			}
+			case Function.DirectConsoleIO:
+			{
+				byte dl = unchecked((byte)input.DX);
+
+				if (dl != 0xFF)
+					machine.DOS.WriteByte(DOS.StandardOutput, dl, out _);
+				else
+				{
+					result.AX &= 0xFF00;
+
+					if (machine.DOS.TryReadByte(DOS.StandardInput, out byte b))
+					{
+						result.AX |= b;
+						result.FLAGS &= ~Flags.Zero;
+					}
+					else
+						result.FLAGS |= Flags.Zero;
+				}
+
+				break;
+			}
+			case Function.DirectConsoleInput:
+			{
+				result.AX &= 0xFF00;
+				result.AX |= machine.DOS.ReadByte(DOS.StandardInput, echo: false);
+				break;
+			}
+			case Function.ReadKeyboardWithoutEcho:
+			{
+				using (machine.DOS.EnableBreak())
+				{
+					try
+					{
+						result.AX &= 0xFF00;
+						result.AX |= machine.DOS.ReadByte(DOS.StandardInput, echo: false);
+					}
+					catch (Break) { }
+				}
+				break;
+			}
+			case Function.DisplayString:
+			{
+				int o = input.AsRegistersEx().DS * 0x10 + result.DX;
+
+				while (true)
+				{
+					byte b = machine.SystemMemory[o++];
+
+					if (b == (byte)'$')
+						break;
+
+					machine.DOS.WriteByte(DOS.StandardOutput, b, out _);
+				}
+
+				result.AX &= 0xFF00;
+				result.AX |= (byte)'$';
+
+				break;
+			}
+			case Function.BufferedKeyboardInput:
+			{
+				int o = input.AsRegistersEx().DS * 0x10 + result.DX;
+
+				int numBytesDesired = machine.SystemMemory[o];
+
+				o += 2;
+
+				int numBytesRead = 0;
+
+				while (numBytesRead < numBytesDesired)
+				{
+					byte b = machine.DOS.ReadByte(DOS.StandardInput, echo: false);
+
+					if ((numBytesRead + 1 == numBytesDesired) && (b != 13))
+					{
+						machine.DOS.Beep();
+						continue;
+					}
+
+					machine.DOS.WriteByte(DOS.StandardOutput, b, out _);
+
+					machine.SystemMemory[o + numBytesRead] = b;
+					numBytesRead++;
+
+					if (b == 13)
+						break;
+				}
+
+				machine.SystemMemory[o - 1] = (byte)(numBytesRead - 1);
+
+				break;
+			}
+			case Function.CheckKeyboardStatus:
+			{
+				result.AX &= 0xFF00;
+
+				if ((machine.DOS.Files[0]?.ReadBuffer.IsEmpty == false)
+				 || machine.Keyboard.HasQueuedTangibleInput)
+					result.AX |= 0xFF;
+
+				break;
+			}
+			case Function.FlushBufferReadKeyboard:
+			{
+				machine.DOS.FlushStandardInput();
+
+				result.AX &= 0xFF00;
+
+				if (al == 1)
+					goto case Function.ReadKeyboardWithEcho;
+				else if ((al == 6) && ((input.DX & 0xFF) == 0xFF))
+					goto case Function.DirectConsoleIO;
+				else if (al == 7)
+					goto case Function.DirectConsoleInput;
+				else if (al == 8)
+					goto case Function.ReadKeyboardWithoutEcho;
+
+				break;
+			}
 		}
 
 		return result;
@@ -66,8 +201,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	/*
 TODO:
 
-Int 21/AH=06h/DL=FFh - DOS 1+ - DIRECT CONSOLE INPUT
-Int 21/AH=07h - DOS 1+ - DIRECT CHARACTER INPUT, WITHOUT ECHO
 Int 21/AH=11h - DOS 1+ - FIND FIRST MATCHING FILE USING FCB
 Int 21/AH=12h - DOS 1+ - FIND NEXT MATCHING FILE USING FCB
 Int 21/AH=13h - DOS 1+ - DELETE FILE USING FCB

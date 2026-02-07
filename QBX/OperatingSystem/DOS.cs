@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 
 using QBX.Hardware;
 
@@ -8,6 +9,8 @@ namespace QBX.OperatingSystem;
 public class DOS
 {
 	public bool IsTerminated = false;
+
+	public event Action? Break;
 
 	public List<FileDescriptor?> Files = new List<FileDescriptor?>();
 
@@ -20,8 +23,62 @@ public class DOS
 	{
 		_machine = machine;
 
+		_machine.Keyboard.Break += OnBreak;
+
 		InitializeStandardInputAndOutput();
 	}
+
+	bool _enableBreak = false;
+
+	void OnBreak()
+	{
+		if (_enableBreak)
+			Break?.Invoke();
+	}
+
+	class BreakScope(DOS owner) : IDisposable
+	{
+		bool saved = Interlocked.Exchange(ref owner._enableBreak, true);
+		public void Dispose() { owner._enableBreak = saved; }
+	}
+
+	public IDisposable EnableBreak() => new BreakScope(this);
+
+	class CancellationScope : IDisposable
+	{
+		DOS _owner;
+		CancellationTokenSource _cancellationTokenSource;
+		bool _breakReceived;
+
+		public CancellationToken Token => _cancellationTokenSource.Token;
+		public bool BreakReceived => _breakReceived;
+
+		public CancellationScope(DOS owner)
+		{
+			_cancellationTokenSource = new CancellationTokenSource();
+
+			_owner = owner;
+			_owner.Break += owner_Break;
+		}
+
+		public void Dispose()
+		{
+			_owner.Break -= owner_Break;
+		}
+
+		private void owner_Break()
+		{
+			_breakReceived = true;
+
+			try
+			{
+				_cancellationTokenSource.Cancel();
+			}
+			catch { }
+		}
+	}
+
+	CancellationScope CancelOnBreak() => new CancellationScope(this);
 
 	void InitializeStandardInputAndOutput()
 	{
@@ -48,11 +105,42 @@ public class DOS
 		// TODO: reset memory allocator
 	}
 
+	public void Beep()
+	{
+		_machine.Speaker.ChangeSound(true, false, frequency: 1000, false, hold: TimeSpan.FromMilliseconds(200));
+		_machine.Speaker.ChangeSound(false, false, frequency: 1000, false);
+	}
+
+	bool _blockingInput = true;
+	bool _wouldHaveBlocked = false;
+
+	class NonBlockingScope(DOS owner) : IDisposable
+	{
+		bool saved = Interlocked.Exchange(ref owner._blockingInput, false);
+		public void Dispose() => owner._blockingInput = saved;
+	}
+
+	IDisposable StandardInputNonBlocking() => new NonBlockingScope(this);
+
 	void ReadStandardInput(FileBuffer readBuffer)
 	{
-		while (true)
+		do
 		{
-			_machine.Keyboard.WaitForInput();
+			if (_blockingInput)
+			{
+				if (!_enableBreak)
+					_machine.Keyboard.WaitForInput();
+				else
+				{
+					using (var scope = CancelOnBreak())
+					{
+						_machine.Keyboard.WaitForInput(scope.Token);
+
+						if (scope.BreakReceived)
+							throw new Break();
+					}
+				}
+			}
 
 			var evt = _machine.Keyboard.GetNextEvent();
 
@@ -65,8 +153,12 @@ public class DOS
 					readBuffer.Push(0);
 					readBuffer.Push(unchecked((byte)evt.ScanCode));
 				}
+
+				return;
 			}
-		}
+		} while (_blockingInput);
+
+		_wouldHaveBlocked = true;
 	}
 
 	int WriteStandardOutput(ReadOnlySpan<byte> buffer)
@@ -94,6 +186,14 @@ public class DOS
 		IsTerminated = true;
 	}
 
+	public void FlushStandardInput()
+	{
+		if (Files[StandardInput] is FileDescriptor fileDescriptor)
+			fileDescriptor.ReadBuffer.Free(fileDescriptor.ReadBuffer.NumUsed);
+
+		_machine.Keyboard.DiscardQueueudInput();
+	}
+
 	public byte ReadByte(int fd, bool echo = false)
 	{
 		if ((fd < 0) || (fd >= Files.Count)
@@ -102,7 +202,9 @@ public class DOS
 
 		byte b = fileDescriptor.ReadByte();
 
-		if (b == 13)
+		if (_enableBreak && (fd == StandardInput) && (b == 3))
+			throw new Break();
+		else if (b == 13)
 			fileDescriptor.Column = 0;
 		else
 			fileDescriptor.Column++;
@@ -111,6 +213,30 @@ public class DOS
 			WriteByte(StandardOutput, b, out _);
 
 		return b;
+	}
+
+	public bool TryReadByte(int fd, out byte b)
+	{
+		if ((fd < 0) || (fd >= Files.Count)
+		 || (Files[fd] is not FileDescriptor fileDescriptor))
+			throw new ArgumentException("Invalid file descriptor");
+
+		_wouldHaveBlocked = false;
+
+		using (StandardInputNonBlocking())
+			b = fileDescriptor.ReadByte();
+
+		if (_wouldHaveBlocked)
+			return false;
+		else
+		{
+			if (b == 13)
+				fileDescriptor.Column = 0;
+			else
+				fileDescriptor.Column++;
+
+			return true;
+		}
 	}
 
 	public void WriteByte(int fd, byte b, out byte lastByteWritten)
