@@ -145,6 +145,127 @@ public abstract class VisualLibrary
 
 	public bool ProcessControlCharacters = true;
 
+	protected bool ProcessControlCharacter(
+		ref ReadOnlySpan<byte> buffer,
+		ref int cursorX, ref int cursorY,
+		Action updateOffset,
+		Action<Span<byte>, Span<byte>> writeSpace, Action beginNewLine,
+		Span<byte> plane0, Span<byte> plane1)
+	{
+		switch (buffer[0])
+		{
+			case 7: // BEL
+				Machine.Speaker.ChangeSound(true, false, frequency: 1000, false, hold: TimeSpan.FromMilliseconds(200));
+				Machine.Speaker.ChangeSound(false, false, frequency: 1000, false);
+
+				buffer = buffer.Slice(1);
+				return true;
+			case 8: // BS
+				cursorX--;
+				updateOffset();
+
+				buffer = buffer.Slice(1);
+				return true;
+			case 9: // TAB
+				do
+				{
+					writeSpace(plane0, plane1);
+					cursorX++;
+				} while ((cursorX < CharacterWidth) && ((cursorX & 7) != 0));
+
+				if (cursorX == CharacterWidth)
+				{
+					beginNewLine();
+					updateOffset();
+				}
+
+				buffer = buffer.Slice(1);
+				return true;
+			case 10: // LF
+			case 13: // CR
+				beginNewLine();
+				updateOffset();
+
+				buffer = buffer.Slice(1);
+				return true;
+			case 11: // VT (Vertical Tab)
+				cursorX = 0;
+				cursorY = CharacterLineWindowStart;
+				updateOffset();
+
+				buffer = buffer.Slice(1);
+				return true;
+			case 12: // FF (Form Food)
+				Clear();
+				cursorX = 0;
+				cursorY = CharacterLineWindowStart;
+				updateOffset();
+
+				buffer = buffer.Slice(1);
+				return true;
+			case 28: // cursor right
+				cursorX++;
+
+				if (cursorX >= CharacterWidth)
+				{
+					if (cursorY < CharacterLineWindowEnd)
+					{
+						cursorX = 0;
+						cursorY++;
+					}
+					else
+						cursorX--;
+				}
+
+				updateOffset();
+
+				buffer = buffer.Slice(1);
+				return true;
+			case 29: // cursor left
+				if ((cursorX > 0) || (cursorY > CharacterLineWindowStart))
+				{
+					cursorX--;
+
+					if (cursorX < 0)
+					{
+						if (cursorY > 0)
+						{
+							cursorX += CharacterWidth;
+							cursorY--;
+						}
+						else
+							cursorX = 0;
+					}
+
+					updateOffset();
+				}
+
+				buffer = buffer.Slice(1);
+				return true;
+			case 30: // up
+				if (cursorY > CharacterLineWindowStart)
+				{
+					cursorY--;
+					updateOffset();
+				}
+
+				buffer = buffer.Slice(1);
+				return true;
+			case 31: // down
+				if (cursorY < CharacterLineWindowEnd)
+					cursorY++;
+				else
+					ScrollText();
+
+				updateOffset();
+
+				buffer = buffer.Slice(1);
+				return true;
+		}
+
+		return false;
+	}
+
 	public void WriteTextAt(int x, int y, byte ch)
 	{
 		MoveCursor(x, y);

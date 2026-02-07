@@ -1967,8 +1967,33 @@ public abstract class GraphicsLibrary : VisualLibrary
 			int characterWidth = Array.Sequencer.CharacterWidth;
 			int characterHeight = CharacterScans;
 
+			Action beginNewLine =
+				() =>
+				{
+					CursorX = 0;
+
+					if (CursorY < CharacterLineWindowEnd)
+						CursorY++;
+					else
+						ScrollText();
+				};
+
+			Action updateOffset = () => { };
+
+			Action<Span<byte>, Span<byte>> writeSpace =
+				(_, _) =>
+				{
+					WriteCharacterAt(CursorX * characterWidth, CursorY * characterHeight, (byte)' ');
+				};
+
 			while (!buffer.IsEmpty)
 			{
+				if (ProcessControlCharacters)
+				{
+					if (ProcessControlCharacter(ref buffer, ref CursorX, ref CursorY, updateOffset, writeSpace, beginNewLine, default, default)) 
+						continue;
+				}
+
 				byte character = buffer[0];
 
 				WriteCharacterAt(CursorX * characterWidth, CursorY * characterHeight, character);

@@ -324,96 +324,26 @@ public class TextLibrary : VisualLibrary
 				}
 			}
 
+			Action updateOffset =
+				() =>
+				{
+					o = cursorY * CharacterWidth + cursorX;
+				};
+
+			Action<Span<byte>, Span<byte>> writeSpace =
+				(plane0, plane1) =>
+				{
+					plane0[o] = 32;
+					if (EnableWriteAttributes)
+						plane1[o] = attributes;
+				};
+
 			while (!buffer.IsEmpty)
 			{
 				if (ProcessControlCharacters)
 				{
-					switch (buffer[0])
-					{
-						case 7: // BEL
-							Machine.Speaker.ChangeSound(true, false, frequency: 1000, false, hold: TimeSpan.FromMilliseconds(200));
-							Machine.Speaker.ChangeSound(false, false, frequency: 1000, false);
-
-							buffer = buffer.Slice(1);
-							continue;
-						case 9: // TAB
-							do
-							{
-								plane0[o] = 32;
-								if (EnableWriteAttributes)
-									plane1[o] = attributes;
-								cursorX++;
-							} while ((cursorX < CharacterWidth) && ((cursorX & 7) != 0));
-
-							if (cursorX == CharacterWidth)
-								BeginNewLine();
-
-							buffer = buffer.Slice(1);
-							continue;
-						case 10: // LF
-						case 13: // CR
-							BeginNewLine();
-
-							buffer = buffer.Slice(1);
-							continue;
-						case 11: // VT (Vertical Tab)
-							cursorX = 0;
-							cursorY = CharacterLineWindowStart;
-							o = cursorY * CharacterWidth;
-
-							buffer = buffer.Slice(1);
-							continue;
-						case 12: // FF (Form Food)
-							Clear();
-							cursorX = 0;
-							cursorY = CharacterLineWindowStart;
-							o = cursorY * CharacterWidth;
-
-							buffer = buffer.Slice(1);
-							continue;
-						case 28: // cursor right
-							if (cursorX + 1 < windowEndOffset)
-							{
-								cursorX++;
-								o++;
-							}
-
-							buffer = buffer.Slice(1);
-							continue;
-						case 29: // cursor left
-							if ((cursorX > 0) || (cursorY > CharacterLineWindowStart))
-							{
-								cursorX--;
-
-								if (cursorX < 0)
-								{
-									cursorX += CharacterWidth;
-									cursorY--;
-								}
-
-								o--;
-							}
-
-							buffer = buffer.Slice(1);
-							continue;
-						case 30: // up
-							if (cursorY > CharacterLineWindowStart)
-							{
-								cursorY--;
-								o -= CharacterWidth;
-							}
-
-							buffer = buffer.Slice(1);
-							continue;
-						case 31: // down
-							if (cursorY < CharacterLineWindowEnd)
-								cursorY++;
-							else
-								ScrollText();
-
-							buffer = buffer.Slice(1);
-							continue;
-					}
+					if (ProcessControlCharacter(ref buffer, ref cursorX, ref cursorY, updateOffset, writeSpace, BeginNewLine, plane0, plane1))
+						continue;
 				}
 
 				int remainingChars = Width - cursorX;
