@@ -378,6 +378,8 @@ public partial class DOS
 
 				try
 				{
+					fileName = ShortFileNames.Unmap(Path.GetFullPath(fileName));
+
 					var fileInfo = new FileInfo(fileName);
 
 					if (fileInfo.Length <= uint.MaxValue)
