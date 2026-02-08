@@ -70,6 +70,16 @@ public partial class DOS
 		LastError = DOSError.None;
 	}
 
+	bool _suppressExceptions = false;
+
+	class SuppressExceptionsScope(DOS owner) : IDisposable
+	{
+		bool saved = Interlocked.Exchange(ref owner._suppressExceptions, true);
+		public void Dispose() { owner._suppressExceptions = saved; }
+	}
+
+	public IDisposable SuppressExceptionsInScope() => new SuppressExceptionsScope(this);
+
 	void TranslateError(Action action)
 	{
 		try
@@ -81,7 +91,8 @@ public partial class DOS
 		catch (Exception e)
 		{
 			LastError = e.ToDOSError();
-			throw;
+			if (!_suppressExceptions)
+				throw;
 		}
 	}
 
@@ -96,7 +107,8 @@ public partial class DOS
 		catch (Exception e)
 		{
 			LastError = e.ToDOSError();
-			throw;
+			if (!_suppressExceptions)
+				throw;
 		}
 	}
 

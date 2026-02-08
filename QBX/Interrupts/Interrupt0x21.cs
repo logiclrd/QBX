@@ -45,6 +45,8 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 		var result = input.AsRegistersEx();
 
+		using var suppressionScope = machine.DOS.SuppressExceptionsInScope();
+
 		switch (function)
 		{
 			case Function.TerminateProgram:
