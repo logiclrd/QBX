@@ -458,4 +458,27 @@ public partial class DOS
 			return true;
 		});
 	}
+
+	public void DeleteFile(FileControlBlock fcb)
+	{
+		string fileName = fcb.GetFileName();
+
+		if (!string.IsNullOrWhiteSpace(fileName))
+		{
+			if (fcb.DriveIdentifier != 0)
+				fileName = fcb.GetDriveLetter() + fileName;
+
+			DeleteFile(Path.GetFullPath(fileName));
+		}
+	}
+
+	public void DeleteFile(string fileName)
+	{
+		TranslateError(() =>
+		{
+			fileName = ShortFileNames.Unmap(fileName);
+
+			File.Delete(fileName);
+		});
+	}
 }
