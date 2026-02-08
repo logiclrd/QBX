@@ -1,6 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
+using System.IO;
 
 using QBX.Firmware.Fonts;
 using QBX.Hardware;
@@ -77,8 +76,6 @@ public class FileControlBlock
 
 	public int MemoryAddress;
 
-	[ThreadStatic]
-	static byte[]? s_data;
 
 	public static FileControlBlock Deserialize(SystemMemory memory, int address)
 	{
@@ -104,7 +101,7 @@ public class FileControlBlock
 				};
 		}
 
-		fcb.Deserialize(memory);
+		fcb.DeserializeCore(memory, address);
 
 		return fcb;
 	}
@@ -114,91 +111,44 @@ public class FileControlBlock
 
 	protected void Serialize(SystemMemory memory, int address)
 	{
-		s_data ??= new byte[36];
+		var stream = new SystemMemoryStream(memory, address, 36);
 
-		var dataSpan = s_data.AsSpan();
+		stream.WriteByte(DriveIdentifier);
+		stream.Write(FileNameBytes);
 
-		dataSpan[0] = DriveIdentifier;
-		dataSpan = dataSpan.Slice(1);
+		var writer = new BinaryWriter(stream);
 
-		FileNameBytes.CopyTo(dataSpan);
-		dataSpan = dataSpan.Slice(11);
+		writer.Write(CurrentBlockNumber);
+		writer.Write(RecordSize);
+		writer.Write(FileSize);
+		writer.Write(DateStamp.Raw);
+		writer.Write(TimeStamp.Raw);
+		writer.Write(FileHandle);
+		writer.Write(SearchID);
 
-		var ushortSpan = MemoryMarshal.Cast<byte, ushort>(dataSpan);
-
-		ushortSpan[0] = CurrentBlockNumber;
-		ushortSpan[1] = RecordSize;
-		ushortSpan = ushortSpan.Slice(2);
-
-		var uintSpan = MemoryMarshal.Cast<ushort, uint>(ushortSpan);
-
-		uintSpan[0] = FileSize;
-		uintSpan = uintSpan.Slice(1);
-
-		ushortSpan = MemoryMarshal.Cast<uint, ushort>(uintSpan);
-
-		ushortSpan[0] = DateStamp.Raw;
-		ushortSpan[1] = TimeStamp.Raw;
-		ushortSpan = ushortSpan.Slice(2);
-
-		var intSpan = MemoryMarshal.Cast<ushort, int>(ushortSpan);
-
-		intSpan[0] = FileHandle;
-		intSpan[1] = Reserved;
-		intSpan = intSpan.Slice(2);
-
-		dataSpan = MemoryMarshal.Cast<int, byte>(intSpan);
-
-		dataSpan[0] = CurrentRecordNumber;
-		dataSpan[1] = unchecked((byte)RandomRecordNumber);
-		dataSpan[2] = unchecked((byte)(RandomRecordNumber >> 8));
-		dataSpan[3] = unchecked((byte)(RandomRecordNumber >> 16));
-
-		for (int i = 0; i < 36; i++)
-			memory[address + i] = dataSpan[i];
+		writer.Write(CurrentRecordNumber);
+		writer.Write(unchecked((byte)RandomRecordNumber));
+		writer.Write(unchecked((byte)(RandomRecordNumber >> 8)));
+		writer.Write(unchecked((byte)(RandomRecordNumber >> 16)));
 	}
 
-	void Deserialize(SystemMemory memory)
+	protected void DeserializeCore(SystemMemory memory, int address)
 	{
-		s_data ??= new byte[36];
+		var stream = new SystemMemoryStream(memory, address, 36);
 
-		var dataSpan = s_data.AsSpan();
+		DriveIdentifier = (byte)stream.ReadByte();
+		stream.ReadExactly(FileNameBytes);
 
-		for (int i = 0; i < 36; i++)
-			dataSpan[i] = memory[MemoryAddress + i];
+		var reader = new BinaryReader(stream);
 
-		DriveIdentifier = dataSpan[0];
-		dataSpan = dataSpan.Slice(1);
-
-		dataSpan.Slice(0, 11).CopyTo(FileNameBytes);
-		dataSpan = dataSpan.Slice(11);
-
-		var ushortSpan = MemoryMarshal.Cast<byte, ushort>(dataSpan);
-
-		CurrentBlockNumber = ushortSpan[0];
-		RecordSize = ushortSpan[1];
-		ushortSpan = ushortSpan.Slice(2);
-
-		var uintSpan = MemoryMarshal.Cast<ushort, uint>(ushortSpan);
-
-		FileSize = uintSpan[0];
-		uintSpan = uintSpan.Slice(1);
-
-		ushortSpan = MemoryMarshal.Cast<uint, ushort>(uintSpan);
-
-		DateStamp.Raw = ushortSpan[0];
-		TimeStamp.Raw = ushortSpan[1];
-		ushortSpan = ushortSpan.Slice(2);
-
-		var intSpan = MemoryMarshal.Cast<ushort, int>(ushortSpan);
-
-		FileHandle = intSpan[0];
-		Reserved = intSpan[1];
-		intSpan = intSpan.Slice(2);
-
-		uintSpan = MemoryMarshal.Cast<int, uint>(intSpan);
-
-		RandomRecordNumber = uintSpan[0];
+		CurrentBlockNumber = reader.ReadUInt16();
+		RecordSize = reader.ReadUInt16();
+		FileSize = reader.ReadUInt32();
+		DateStamp.Raw = reader.ReadUInt16();
+		TimeStamp.Raw = reader.ReadUInt16();
+		FileHandle = reader.ReadInt32();
+		SearchID = reader.ReadInt32();
+		RandomRecordNumber = reader.ReadUInt32();
 
 		// Unpack final fields, separating a byte and a 24-bit integer.
 		CurrentRecordNumber = unchecked((byte)RandomRecordNumber);
