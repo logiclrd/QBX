@@ -9,6 +9,7 @@ public abstract class FileDescriptor
 {
 	protected virtual void ReadCore(FileBuffer buffer) { }
 	protected virtual int WriteCore(ReadOnlySpan<byte> buffer) => 0;
+	protected virtual void CloseCore() { }
 
 	protected virtual bool CanRead => false;
 	protected virtual bool CanWrite => false;
@@ -109,5 +110,10 @@ public abstract class FileDescriptor
 			if (WriteThrough || WriteBuffer.IsFull)
 				FlushWriteBuffer();
 		}
+	}
+
+	public void Close()
+	{
+		CloseCore();
 	}
 }

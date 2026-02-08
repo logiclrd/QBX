@@ -11,6 +11,8 @@ public struct FileBuffer(int size)
 	public bool IsEmpty => NumUsed == 0;
 	public bool IsFull => NumUsed == size;
 
+	public int ContiguousAvailable => Math.Min(Available, size - NextFree);
+
 	byte[] _data = new byte[size];
 
 	public int Size => size;

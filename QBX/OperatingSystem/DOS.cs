@@ -17,6 +17,8 @@ public partial class DOS
 
 	public event Action? Break;
 
+	public DOSError LastError = DOSError.None;
+
 	public const int StandardInput = 0;
 	public const int StandardOutput = 1;
 
@@ -58,18 +60,59 @@ public partial class DOS
 
 	internal CancellationScope CancelOnBreak() => new CancellationScope(this);
 
+	public void ClearLastError()
+	{
+		LastError = DOSError.None;
+	}
+
+	void TranslateError(Action action)
+	{
+		try
+		{
+			ClearLastError();
+
+			action();
+		}
+		catch (Exception e)
+		{
+			LastError = e.ToDOSError();
+			throw;
+		}
+	}
+
+	TReturn TranslateError<TReturn>(Func<TReturn> action)
+	{
+		try
+		{
+			ClearLastError();
+
+			return action();
+		}
+		catch (Exception e)
+		{
+			LastError = e.ToDOSError();
+			throw;
+		}
+	}
+
 	public void TerminateProgram()
 	{
-		Reset();
-		IsTerminated = true;
+		TranslateError(() =>
+		{
+			Reset();
+			IsTerminated = true;
+		});
 	}
 
 	public void Reset()
 	{
-		CloseAllFiles(keepStandardHandles: false);
-		InitializeStandardInputAndOutput();
+		TranslateError(() =>
+		{
+			CloseAllFiles(keepStandardHandles: false);
+			InitializeStandardInputAndOutput();
 
-		// TODO: reset memory allocator
+			// TODO: reset memory allocator
+		});
 	}
 
 	[MemberNotNull(nameof(_stdin)), MemberNotNull(nameof(_stdout))]
@@ -84,25 +127,29 @@ public partial class DOS
 
 	public void CloseAllFiles(bool keepStandardHandles)
 	{
-		int targetCount = keepStandardHandles ? 2 : 0;
-
-		while (Files.Count > targetCount)
+		TranslateError(() =>
 		{
-			int fd = Files.Count - 1;
+			int targetCount = keepStandardHandles ? 2 : 0;
 
-			if (Files[fd] != null)
+			while (Files.Count > targetCount)
 			{
-				// TODO: CloseFile(Files[fd]);
-			}
+				int fileHandle = Files.Count - 1;
 
-			Files.RemoveAt(Files.Count - 1);
-		}
+				if (Files[fileHandle] is FileDescriptor fileDescriptor)
+					fileDescriptor.Close();
+
+				Files.RemoveAt(Files.Count - 1);
+			}
+		});
 	}
 
 	public void FlushAllBuffers()
 	{
-		foreach (var file in Files.OfType<FileDescriptor>())
-			file.FlushWriteBuffer();
+		TranslateError(() =>
+		{
+			foreach (var file in Files.OfType<FileDescriptor>())
+				file.FlushWriteBuffer();
+		});
 	}
 
 	public void Beep()
@@ -113,92 +160,122 @@ public partial class DOS
 
 	public void FlushStandardInput()
 	{
-		if (Files[StandardInput] is FileDescriptor fileDescriptor)
-			fileDescriptor.ReadBuffer.Free(fileDescriptor.ReadBuffer.NumUsed);
-
-		_machine.Keyboard.DiscardQueueudInput();
-	}
-
-	public byte ReadByte(int fd, bool echo = false)
-	{
-		if ((fd < 0) || (fd >= Files.Count)
-		 || (Files[fd] is not FileDescriptor fileDescriptor))
-			throw new ArgumentException("Invalid file descriptor");
-
-		byte b = fileDescriptor.ReadByte();
-
-		if (_enableBreak && (fd == StandardInput) && (b == 3))
-			throw new Break();
-		else if (b == 13)
-			fileDescriptor.Column = 0;
-		else
-			fileDescriptor.Column++;
-
-		if (echo)
-			WriteByte(StandardOutput, b, out _);
-
-		return b;
-	}
-
-	public bool TryReadByte(int fd, out byte b)
-	{
-		if ((fd < 0) || (fd >= Files.Count)
-		 || (Files[fd] is not FileDescriptor fileDescriptor))
-			throw new ArgumentException("Invalid file descriptor");
-
-		_stdin.WouldHaveBlocked = false;
-
-		using (fileDescriptor.NonBlocking())
-			b = fileDescriptor.ReadByte();
-
-		if (fileDescriptor.WouldHaveBlocked)
-			return false;
-		else
+		TranslateError(() =>
 		{
-			if (b == 13)
+			if (Files[StandardInput] is FileDescriptor fileDescriptor)
+				fileDescriptor.ReadBuffer.Free(fileDescriptor.ReadBuffer.NumUsed);
+
+			_machine.Keyboard.DiscardQueueudInput();
+		});
+	}
+
+	public byte ReadByte(int fileHandle, bool echo = false)
+	{
+		if ((fileHandle < 0) || (fileHandle >= Files.Count)
+			|| (Files[fileHandle] is not FileDescriptor fileDescriptor))
+		{
+			LastError = DOSError.InvalidHandle;
+			throw new ArgumentException("Invalid file descriptor");
+		}
+
+		return TranslateError(() =>
+		{
+			byte b = fileDescriptor.ReadByte();
+
+			if (_enableBreak && (fileHandle == StandardInput) && (b == 3))
+				throw new Break();
+			else if (b == 13)
 				fileDescriptor.Column = 0;
 			else
 				fileDescriptor.Column++;
 
-			return true;
-		}
+			if (echo)
+				WriteByte(StandardOutput, b, out _);
+
+			return b;
+		});
 	}
 
-	public void WriteByte(int fd, byte b, out byte lastByteWritten)
+	public bool TryReadByte(int fileHandle, out byte byteValue)
 	{
-		if ((fd < 0) || (fd >= Files.Count)
-		 || (Files[fd] is not FileDescriptor fileDescriptor))
+		byte b = default;
+
+		if ((fileHandle < 0) || (fileHandle >= Files.Count)
+			|| (Files[fileHandle] is not FileDescriptor fileDescriptor))
+		{
+			LastError = DOSError.InvalidHandle;
 			throw new ArgumentException("Invalid file descriptor");
-
-		lastByteWritten = b;
-
-		if (b != 9)
-		{
-			fileDescriptor.WriteByte(b);
-			if (b == 13)
-				fileDescriptor.Column = 0;
-			else
-				fileDescriptor.Column++;
 		}
-		else
-		{
-			lastByteWritten = 32;
 
-			do
+		bool ret = TranslateError(() =>
+		{
+			_stdin.WouldHaveBlocked = false;
+
+			using (fileDescriptor.NonBlocking())
+				b = fileDescriptor.ReadByte();
+
+			if (fileDescriptor.WouldHaveBlocked)
+				return false;
+			else
 			{
-				fileDescriptor.WriteByte(32);
-				fileDescriptor.Column++;
-			} while ((fileDescriptor.Column & 7) != 0);
+				if (b == 13)
+					fileDescriptor.Column = 0;
+				else
+					fileDescriptor.Column++;
+
+				return true;
+			}
+		});
+
+		byteValue = b;
+
+		return ret;
+	}
+
+	public void WriteByte(int fileHandle, byte b, out byte lastByteWritten)
+	{
+		lastByteWritten = (b == 9) ? (byte)32 : b; // Tabs get expanded to spaces.
+
+		if ((fileHandle < 0) || (fileHandle >= Files.Count)
+			|| (Files[fileHandle] is not FileDescriptor fileDescriptor))
+		{
+			LastError = DOSError.InvalidHandle;
+			throw new ArgumentException("Invalid file descriptor");
 		}
+
+		TranslateError(() =>
+		{
+			if (b != 9)
+			{
+				fileDescriptor.WriteByte(b);
+				if (b == 13)
+					fileDescriptor.Column = 0;
+				else
+					fileDescriptor.Column++;
+			}
+			else
+			{
+				do
+				{
+					fileDescriptor.WriteByte(32);
+					fileDescriptor.Column++;
+				} while ((fileDescriptor.Column & 7) != 0);
+			}
+		});
 	}
 
 	readonly byte[] ControlCharacters = [9, 13];
 
-	public void Write(int fd, ReadOnlySpan<byte> bytes, out byte lastByteWritten)
+	public void Write(int fileHandle, ReadOnlySpan<byte> bytes, out byte lastByteWritten)
 	{
-		if ((fd < 0) || (fd >= Files.Count)
-		 || (Files[fd] is not FileDescriptor fileDescriptor))
+		byte b = default;
+
+		if ((fileHandle < 0) || (fileHandle >= Files.Count)
+			|| (Files[fileHandle] is not FileDescriptor fileDescriptor))
+		{
+			LastError = DOSError.InvalidHandle;
 			throw new ArgumentException("Invalid file descriptor");
+		}
 
 		lastByteWritten = 0;
 
@@ -211,15 +288,22 @@ public partial class DOS
 
 			if (controlCharacterIndex > 0)
 			{
-				fileDescriptor.Write(bytes.Slice(0, controlCharacterIndex));
-				fileDescriptor.Column += controlCharacterIndex;
+				try
+				{
+					fileDescriptor.Write(bytes.Slice(0, controlCharacterIndex));
+					fileDescriptor.Column += controlCharacterIndex;
 
-				bytes = bytes.Slice(controlCharacterIndex);
+					bytes = bytes.Slice(controlCharacterIndex);
+				}
+				catch (Exception e)
+				{
+					LastError = e.ToDOSError();
+				}
 			}
 
 			if (bytes.Length > 0)
 			{
-				WriteByte(fd, bytes[0], out lastByteWritten);
+				WriteByte(fileHandle, bytes[0], out b);
 				bytes = bytes.Slice(1);
 			}
 		}
@@ -227,11 +311,130 @@ public partial class DOS
 
 	public void SetDefaultDrive(char driveLetter)
 	{
-		Directory.SetCurrentDirectory(driveLetter + ":");
+		TranslateError(() =>
+		{
+			Directory.SetCurrentDirectory(driveLetter + ":");
+		});
 	}
 
 	public int GetLogicalDriveCount()
 	{
-		return DriveInfo.GetDrives().Length;
+		return TranslateError(() =>
+		{
+			return DriveInfo.GetDrives().Length;
+		});
+	}
+
+	int GetFreeFileHandle()
+	{
+		for (int i = 2; i < Files.Count; i++)
+			if (Files[i] is null)
+				return i;
+
+		Files.Add(null);
+
+		return Files.Count - 1;
+	}
+
+	int AllocateFileHandleForOpenFile(FileStream stream)
+	{
+		int fileHandle = GetFreeFileHandle();
+
+		if (fileHandle < 0)
+			return fileHandle;
+
+		Files[fileHandle] = new RegularFileDescriptor(stream);
+
+		return fileHandle;
+	}
+
+	public int OpenFile(FileControlBlock fcb, FileMode openMode)
+	{
+		return TranslateError(() =>
+		{
+			string fileName = fcb.GetFileName();
+
+			if (!string.IsNullOrWhiteSpace(fileName))
+			{
+				if (fcb.DriveIdentifier != 0)
+					fileName = fcb.GetDriveLetter() + fileName;
+
+				try
+				{
+					var fileInfo = new FileInfo(fileName);
+
+					if (fileInfo.Length <= uint.MaxValue)
+					{
+						var dateTime = fileInfo.LastWriteTime;
+
+						fcb.DriveIdentifier = (byte)(fileInfo.FullName[0] - 64);
+						fcb.FileSize = (uint)fileInfo.Length;
+						fcb.DateStamp.Set(dateTime.Year, dateTime.Month, dateTime.Day);
+						fcb.TimeStamp.Set(dateTime.Hour, dateTime.Minute, dateTime.Second);
+						fcb.RecordSize = 128;
+
+						var stream = fileInfo.Open(openMode);
+
+						return AllocateFileHandleForOpenFile(stream);
+					}
+				}
+				catch { }
+			}
+
+			return -1;
+		});
+	}
+
+	public int OpenFile(string fileName, FileMode openMode)
+	{
+		try
+		{
+			return TranslateError(() =>
+			{
+				var stream = new FileStream(fileName, openMode, FileAccess.ReadWrite, FileShare.ReadWrite);
+
+				return AllocateFileHandleForOpenFile(stream);
+			});
+		}
+		catch
+		{
+			return -1;
+		}
+	}
+
+	public bool CloseFile(FileControlBlock fcb)
+	{
+		return TranslateError(() =>
+		{
+			if (fcb.FileHandle != 0)
+			{
+				bool result = CloseFile(fcb.FileHandle);
+
+				fcb.FileHandle = 0;
+
+				return result;
+			}
+
+			return false;
+		});
+	}
+
+	public bool CloseFile(int fileHandle)
+	{
+		if ((fileHandle < 0) || (fileHandle >= Files.Count)
+		 || (Files[fileHandle] is not FileDescriptor fileDescriptor))
+		{
+			LastError = DOSError.InvalidHandle;
+			return false;
+		}
+
+		return TranslateError(() =>
+		{
+			fileDescriptor.Close();
+
+			Files[fileHandle] = null;
+
+			return true;
+		});
 	}
 }

@@ -1,4 +1,6 @@
-﻿using QBX.ExecutionEngine.Execution;
+﻿using System.IO;
+
+using QBX.ExecutionEngine.Execution;
 using QBX.Hardware;
 using QBX.OperatingSystem;
 using QBX.OperatingSystem.Breaks;
@@ -26,6 +28,8 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		FlushBufferReadKeyboard = 0x0C,
 		ResetDrive = 0x0D, // does not reset any drives, but does flush all write buffers
 		SetDefaultDrive = 0x0E,
+		OpenFileWithFCB = 0x0F,
+		CloseFileWithFCB = 0x10,
 	}
 
 	public override Registers Execute(Registers input)
@@ -211,6 +215,36 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 				result.AX &= 0xFF00;
 				result.AX |= (byte)machine.DOS.GetLogicalDriveCount();
+
+				break;
+			}
+			case Function.OpenFileWithFCB:
+			{
+				int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+
+				var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+
+				int fd = machine.DOS.OpenFile(fcb, FileMode.Open);
+
+				fcb.Serialize(machine.SystemMemory);
+
+				result.AX &= 0xFF00;
+
+				if (fd < 0)
+					result.AX |= 0xFF;
+
+				break;
+			}
+			case Function.CloseFileWithFCB:
+			{
+				int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+
+				var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+
+				result.AX &= 0xFF00;
+
+				if (!machine.DOS.CloseFile(fcb.FileHandle))
+					result.AX |= 0xFF;
 
 				break;
 			}
