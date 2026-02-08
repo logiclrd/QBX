@@ -30,6 +30,8 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		SetDefaultDrive = 0x0E,
 		OpenFileWithFCB = 0x0F,
 		CloseFileWithFCB = 0x10,
+		FindFirstFileWithFCB = 0x11,
+		FindNextFileWithFCB = 0x12,
 		SetDiskTransferAddress = 0x1A,
 		GetDiskTransferAddress = 0x2F,
 	}
@@ -246,6 +248,32 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				result.AX &= 0xFF00;
 
 				if (!machine.DOS.CloseFile(fcb.FileHandle))
+					result.AX |= 0xFF;
+
+				break;
+			}
+			case Function.FindFirstFileWithFCB:
+			{
+				int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+
+				var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+
+				result.AX &= 0xFF00;
+
+				if (!machine.DOS.FindFirst(fcb))
+					result.AX |= 0xFF;
+
+				break;
+			}
+			case Function.FindNextFileWithFCB:
+			{
+				int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+
+				var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+
+				result.AX &= 0xFF00;
+
+				if (!machine.DOS.FindNext(fcb))
 					result.AX |= 0xFF;
 
 				break;
