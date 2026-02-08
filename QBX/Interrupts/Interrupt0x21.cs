@@ -30,6 +30,8 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		SetDefaultDrive = 0x0E,
 		OpenFileWithFCB = 0x0F,
 		CloseFileWithFCB = 0x10,
+		SetDiskTransferAddress = 0x1A,
+		GetDiskTransferAddress = 0x2F,
 	}
 
 	public override Registers Execute(Registers input)
@@ -246,6 +248,18 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				if (!machine.DOS.CloseFile(fcb.FileHandle))
 					result.AX |= 0xFF;
 
+				break;
+			}
+			case Function.SetDiskTransferAddress:
+			{
+				machine.DOS.DataTransferAddressSegment = result.DS;
+				machine.DOS.DataTransferAddressOffset = result.DX;
+				break;
+			}
+			case Function.GetDiskTransferAddress:
+			{
+				result.ES = machine.DOS.DataTransferAddressSegment;
+				result.BX = machine.DOS.DataTransferAddressOffset;
 				break;
 			}
 		}

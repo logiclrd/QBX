@@ -19,6 +19,11 @@ public partial class DOS
 
 	public DOSError LastError = DOSError.None;
 
+	public ushort DataTransferAddressSegment;
+	public ushort DataTransferAddressOffset;
+
+	public int DataTransferAddress => DataTransferAddressSegment * 0x10 + DataTransferAddressOffset;
+
 	public const int StandardInput = 0;
 	public const int StandardOutput = 1;
 
