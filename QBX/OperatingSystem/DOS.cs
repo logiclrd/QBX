@@ -396,6 +396,8 @@ public partial class DOS
 		{
 			return TranslateError(() =>
 			{
+				fileName = ShortFileNames.Unmap(fileName);
+
 				var stream = new FileStream(fileName, openMode, FileAccess.ReadWrite, FileShare.ReadWrite);
 
 				return AllocateFileHandleForOpenFile(stream);

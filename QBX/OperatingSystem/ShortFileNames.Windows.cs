@@ -11,6 +11,8 @@ public partial class ShortFileNames
 		StringBuilder lpszShortPath,
 		int cchBuffer);
 
+	static string UnmapWindows(string path) => path; // No unmapping needed; the filesystem accepts short paths directly.
+
 	static bool TryMapWindows(string path, out string shortPath)
 	{
 		var shortPathBuffer = new StringBuilder(path.Length);

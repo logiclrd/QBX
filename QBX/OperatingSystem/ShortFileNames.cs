@@ -13,4 +13,12 @@ public partial class ShortFileNames
 		else
 			return TryMapEmulated(path, out shortPath);
 	}
+
+	public static string Unmap(string shortPath)
+	{
+		if (System.OperatingSystem.IsWindows())
+			return UnmapWindows(shortPath);
+		else
+			return UnmapEmulated(shortPath);
+	}
 }

@@ -42,6 +42,14 @@ public partial class ShortFileNames
 	static Dictionary<string, string> s_longToShort = new Dictionary<string, string>();
 	static Dictionary<string, string> s_shortToLong = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
+	static string UnmapEmulated(string possibleShortPath)
+	{
+		if (s_shortToLong.TryGetValue(GetCanonicalPath(possibleShortPath), out var longPath))
+			return longPath;
+		else
+			return possibleShortPath;
+	}
+
 	static bool TryMapEmulated(string path, out string shortPath)
 	{
 		var builder = new StringBuilder();
@@ -102,6 +110,8 @@ public partial class ShortFileNames
 				CreateMapping(longName, containerShortPath, out var shortName);
 
 				var shortPath = containerShortPath + Path.PathSeparator + shortName;
+
+				shortPath = GetCanonicalPath(shortPath);
 
 				s_longToShort[longPath] = shortPath;
 				s_shortToLong[shortPath] = longPath;
@@ -255,5 +265,15 @@ public partial class ShortFileNames
 
 			return checksum.ToString("X4");
 		}
+	}
+
+	static string GetCanonicalPath(string path)
+	{
+		var components = path.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries);
+
+		if (!Path.IsPathRooted(path))
+			return Path.PathSeparator + string.Join(Path.PathSeparator, components);
+		else
+			return string.Join(Path.PathSeparator, components);
 	}
 }
