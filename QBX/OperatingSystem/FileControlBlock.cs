@@ -90,7 +90,7 @@ public class FileControlBlock
 				new ExtendedFileControlBlock()
 				{
 					MemoryAddress = address,
-					AttributeByte = memory[address + 6]
+					Attributes = (FileAttributes)memory[address + 6]
 				};
 
 			address += 7;

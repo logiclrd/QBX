@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
-
-using QBX.Firmware.Fonts;
-using QBX.Hardware;
+﻿using QBX.Hardware;
 
 namespace QBX.OperatingSystem;
 
@@ -11,7 +6,7 @@ public class ExtendedFileControlBlock : FileControlBlock
 {
 	public const byte Signature = 0xFF;
 	// 5 reserved bytes
-	public byte AttributeByte;
+	public FileAttributes Attributes;
 
 	public override void Serialize(SystemMemory memory)
 	{
@@ -21,7 +16,7 @@ public class ExtendedFileControlBlock : FileControlBlock
 		memory[MemoryAddress + 3] = 0;
 		memory[MemoryAddress + 4] = 0;
 		memory[MemoryAddress + 5] = 0;
-		memory[MemoryAddress + 6] = AttributeByte;
+		memory[MemoryAddress + 6] = (byte)Attributes;
 
 		Serialize(memory, MemoryAddress + 7);
 	}
