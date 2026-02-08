@@ -1,23 +1,33 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.IO;
+using System.Linq;
 using System.Threading;
 
 using QBX.Hardware;
+using QBX.OperatingSystem.Breaks;
+using QBX.OperatingSystem.FileDescriptors;
 
 namespace QBX.OperatingSystem;
 
-public class DOS
+public partial class DOS
 {
 	public bool IsTerminated = false;
 
 	public event Action? Break;
 
-	public List<FileDescriptor?> Files = new List<FileDescriptor?>();
-
-	Machine _machine;
-
 	public const int StandardInput = 0;
 	public const int StandardOutput = 1;
+
+	public List<FileDescriptor?> Files = new List<FileDescriptor?>();
+
+	StandardInputFileDescriptor _stdin;
+	StandardOutputFileDescriptor _stdout;
+
+	public Machine Machine => _machine;
+
+	Machine _machine;
 
 	public DOS(Machine machine)
 	{
@@ -27,6 +37,8 @@ public class DOS
 
 		InitializeStandardInputAndOutput();
 	}
+
+	public bool BreakEnabled => _enableBreak;
 
 	bool _enableBreak = false;
 
@@ -44,146 +56,59 @@ public class DOS
 
 	public IDisposable EnableBreak() => new BreakScope(this);
 
-	class CancellationScope : IDisposable
+	internal CancellationScope CancelOnBreak() => new CancellationScope(this);
+
+	public void TerminateProgram()
 	{
-		DOS _owner;
-		CancellationTokenSource _cancellationTokenSource;
-		bool _breakReceived;
-
-		public CancellationToken Token => _cancellationTokenSource.Token;
-		public bool BreakReceived => _breakReceived;
-
-		public CancellationScope(DOS owner)
-		{
-			_cancellationTokenSource = new CancellationTokenSource();
-
-			_owner = owner;
-			_owner.Break += owner_Break;
-		}
-
-		public void Dispose()
-		{
-			_owner.Break -= owner_Break;
-		}
-
-		private void owner_Break()
-		{
-			_breakReceived = true;
-
-			try
-			{
-				_cancellationTokenSource.Cancel();
-			}
-			catch { }
-		}
+		Reset();
+		IsTerminated = true;
 	}
 
-	CancellationScope CancelOnBreak() => new CancellationScope(this);
+	public void Reset()
+	{
+		CloseAllFiles(keepStandardHandles: false);
+		InitializeStandardInputAndOutput();
 
+		// TODO: reset memory allocator
+	}
+
+	[MemberNotNull(nameof(_stdin)), MemberNotNull(nameof(_stdout))]
 	void InitializeStandardInputAndOutput()
 	{
 		while (Files.Count < 2)
 			Files.Add(null);
 
-		Files[0] = new FileDescriptor(ReadStandardInput, null);
-		Files[1] = new FileDescriptor(null, WriteStandardOutput) { WriteThrough = true };
+		Files[0] = _stdin = new StandardInputFileDescriptor(this);
+		Files[1] = _stdout = new StandardOutputFileDescriptor(this);
 	}
 
-	public void Reset()
+	public void CloseAllFiles(bool keepStandardHandles)
 	{
-		// Keep FDs 0 and 1, stdin and stdout.
-		for (int i = 0; i < Files.Count; i++)
+		int targetCount = keepStandardHandles ? 2 : 0;
+
+		while (Files.Count > targetCount)
 		{
-			if (Files[i] != null)
+			int fd = Files.Count - 1;
+
+			if (Files[fd] != null)
 			{
-				// TODO: CloseFile(Files[i]);
+				// TODO: CloseFile(Files[fd]);
 			}
+
+			Files.RemoveAt(Files.Count - 1);
 		}
+	}
 
-		InitializeStandardInputAndOutput();
-
-		// TODO: reset memory allocator
+	public void FlushAllBuffers()
+	{
+		foreach (var file in Files.OfType<FileDescriptor>())
+			file.FlushWriteBuffer();
 	}
 
 	public void Beep()
 	{
 		_machine.Speaker.ChangeSound(true, false, frequency: 1000, false, hold: TimeSpan.FromMilliseconds(200));
 		_machine.Speaker.ChangeSound(false, false, frequency: 1000, false);
-	}
-
-	bool _blockingInput = true;
-	bool _wouldHaveBlocked = false;
-
-	class NonBlockingScope(DOS owner) : IDisposable
-	{
-		bool saved = Interlocked.Exchange(ref owner._blockingInput, false);
-		public void Dispose() => owner._blockingInput = saved;
-	}
-
-	IDisposable StandardInputNonBlocking() => new NonBlockingScope(this);
-
-	void ReadStandardInput(FileBuffer readBuffer)
-	{
-		do
-		{
-			if (_blockingInput)
-			{
-				if (!_enableBreak)
-					_machine.Keyboard.WaitForInput();
-				else
-				{
-					using (var scope = CancelOnBreak())
-					{
-						_machine.Keyboard.WaitForInput(scope.Token);
-
-						if (scope.BreakReceived)
-							throw new Break();
-					}
-				}
-			}
-
-			var evt = _machine.Keyboard.GetNextEvent();
-
-			if ((evt != null) && !evt.IsEphemeral)
-			{
-				if (evt.IsNormalText)
-					readBuffer.Push(unchecked((byte)evt.TextCharacter));
-				else
-				{
-					readBuffer.Push(0);
-					readBuffer.Push(unchecked((byte)evt.ScanCode));
-				}
-
-				return;
-			}
-		} while (_blockingInput);
-
-		_wouldHaveBlocked = true;
-	}
-
-	int WriteStandardOutput(ReadOnlySpan<byte> buffer)
-	{
-		var visual = _machine.VideoFirmware.VisualLibrary;
-
-		bool savedControlCharacterFlag = visual.ProcessControlCharacters;
-
-		try
-		{
-			visual.ProcessControlCharacters = true;
-			visual.WriteText(buffer);
-
-			return buffer.Length;
-		}
-		finally
-		{
-			visual.ProcessControlCharacters = savedControlCharacterFlag;
-		}
-	}
-
-	public void TerminateProgram()
-	{
-		Reset();
-		IsTerminated = true;
 	}
 
 	public void FlushStandardInput()
@@ -221,12 +146,12 @@ public class DOS
 		 || (Files[fd] is not FileDescriptor fileDescriptor))
 			throw new ArgumentException("Invalid file descriptor");
 
-		_wouldHaveBlocked = false;
+		_stdin.WouldHaveBlocked = false;
 
-		using (StandardInputNonBlocking())
+		using (fileDescriptor.NonBlocking())
 			b = fileDescriptor.ReadByte();
 
-		if (_wouldHaveBlocked)
+		if (fileDescriptor.WouldHaveBlocked)
 			return false;
 		else
 		{
@@ -298,5 +223,15 @@ public class DOS
 				bytes = bytes.Slice(1);
 			}
 		}
+	}
+
+	public void SetDefaultDrive(char driveLetter)
+	{
+		Directory.SetCurrentDirectory(driveLetter + ":");
+	}
+
+	public int GetLogicalDriveCount()
+	{
+		return DriveInfo.GetDrives().Length;
 	}
 }

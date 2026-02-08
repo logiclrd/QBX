@@ -1,43 +1,44 @@
 ﻿using System;
 
-namespace QBX.OperatingSystem;
+namespace QBX.OperatingSystem.FileDescriptors;
 
 public delegate void FileReadFunctor(FileBuffer buffer);
 public delegate int FileWriteFunctor(ReadOnlySpan<byte> buffer);
 
-public class FileDescriptor
+public abstract class FileDescriptor
 {
-	public FileReadFunctor? ReadFunctor;
-	public FileWriteFunctor? WriteFunctor;
+	protected virtual void ReadCore(FileBuffer buffer) { }
+	protected virtual int WriteCore(ReadOnlySpan<byte> buffer) => 0;
+
+	protected virtual bool CanRead => false;
+	protected virtual bool CanWrite => false;
 
 	public FileBuffer ReadBuffer = new FileBuffer(512);
 	public FileBuffer WriteBuffer = new FileBuffer(512);
 
 	public int Column;
-	public bool WriteThrough;
+	public virtual bool WriteThrough { get; }
 
 	public FileDescriptor()
 	{
 	}
 
-	public FileDescriptor(FileReadFunctor? readFunctor, FileWriteFunctor? writeFunctor)
-	{
-		ReadFunctor = readFunctor;
-		WriteFunctor = writeFunctor;
-	}
+	public virtual IDisposable? NonBlocking() => null;
+
+	public bool WouldHaveBlocked = false;
 
 	void FillReadBuffer()
 	{
-		if (ReadFunctor != null)
+		if (CanRead)
 		{
 			if (!ReadBuffer.IsFull)
-				ReadFunctor(ReadBuffer);
+				ReadCore(ReadBuffer);
 		}
 	}
 
 	public void FlushWriteBuffer()
 	{
-		if (WriteFunctor != null)
+		if (CanWrite)
 		{
 			int firstUsed = WriteBuffer.NextFree - WriteBuffer.NumUsed;
 
@@ -47,7 +48,7 @@ public class FileDescriptor
 			{
 				int firstPart = -firstUsed;
 
-				numWritten = WriteFunctor(WriteBuffer.GetBufferSpan(firstUsed, firstPart));
+				numWritten = WriteCore(WriteBuffer.GetBufferSpan(firstUsed, firstPart));
 
 				if (numWritten <= 0)
 					throw new Exception("Write failed"); // TODO: proper type
@@ -60,7 +61,7 @@ public class FileDescriptor
 				firstUsed = 0;
 			}
 
-			numWritten = WriteFunctor(WriteBuffer.GetBufferSpan(firstUsed, WriteBuffer.NumUsed));
+			numWritten = WriteCore(WriteBuffer.GetBufferSpan(firstUsed, WriteBuffer.NumUsed));
 
 			if (numWritten <= 0)
 				throw new Exception("Write failed"); // TODO: proper type

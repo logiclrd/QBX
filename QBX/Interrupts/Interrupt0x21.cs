@@ -1,6 +1,7 @@
 ﻿using QBX.ExecutionEngine.Execution;
 using QBX.Hardware;
 using QBX.OperatingSystem;
+using QBX.OperatingSystem.Breaks;
 
 namespace QBX.Interrupts;
 
@@ -23,6 +24,8 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		BufferedKeyboardInput = 0x0A,
 		CheckKeyboardStatus = 0x0B,
 		FlushBufferReadKeyboard = 0x0C,
+		ResetDrive = 0x0D, // does not reset any drives, but does flush all write buffers
+		SetDefaultDrive = 0x0E,
 	}
 
 	public override Registers Execute(Registers input)
@@ -191,6 +194,23 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 					goto case Function.DirectConsoleInput;
 				else if (al == 8)
 					goto case Function.ReadKeyboardWithoutEcho;
+
+				break;
+			}
+			case Function.ResetDrive: // does not reset any drives, but does flush all write buffers
+			{
+				machine.DOS.FlushAllBuffers();
+				break;
+			}
+			case Function.SetDefaultDrive:
+			{
+				char drive = (char)('A' + (input.DX & 0xFF));
+
+				if (char.IsAsciiLetterUpper(drive))
+					machine.DOS.SetDefaultDrive(drive);
+
+				result.AX &= 0xFF00;
+				result.AX |= (byte)machine.DOS.GetLogicalDriveCount();
 
 				break;
 			}
