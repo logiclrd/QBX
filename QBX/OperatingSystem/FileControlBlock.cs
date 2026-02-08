@@ -16,7 +16,7 @@ public class FileControlBlock
 	public FileDate DateStamp;
 	public FileTime TimeStamp;
 	public int FileHandle; // "Reserved 1"
-	public int Reserved;   // "Reserved 2"
+	public int SearchID;   // "Reserved 2"
 	public byte CurrentRecordNumber;
 	public uint RandomRecordNumber;
 
@@ -72,10 +72,36 @@ public class FileControlBlock
 		return new string(s_fileNameBuffer, 0, offset);
 	}
 
+	public void SetFileName(string fileName)
+	{
+		int dot = fileName.LastIndexOf('.');
+
+		int extraDot = fileName.IndexOf('.');
+
+		if (extraDot != dot)
+			throw new Exception("Invalid filename");
+
+		FileNameBytes.AsSpan().Clear();
+
+		int nameLength = Math.Min(dot, 8);
+		int extLength = Math.Min(fileName.Length - dot - 1, 3);
+
+		var inSpan = fileName.AsSpan();
+		var outSpan = FileNameBytes.AsSpan();
+
+		for (int i = 0; i < nameLength; i++)
+			outSpan[i] = CP437Encoding.GetByteSemantic(inSpan[i]);
+
+		inSpan = inSpan.Slice(dot + 1);
+		outSpan = outSpan.Slice(8);
+
+		for (int i = 0; i < extLength; i++)
+			outSpan[i] = CP437Encoding.GetByteSemantic(inSpan[i]);
+	}
+
 	public int RecordPointer => CurrentBlockNumber * RecordSize + RecordPointer;
 
 	public int MemoryAddress;
-
 
 	public static FileControlBlock Deserialize(SystemMemory memory, int address)
 	{

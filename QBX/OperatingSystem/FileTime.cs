@@ -1,4 +1,6 @@
-﻿namespace QBX.OperatingSystem;
+﻿using System;
+
+namespace QBX.OperatingSystem;
 
 public struct FileTime
 {
@@ -22,11 +24,16 @@ public struct FileTime
 		set => Raw = unchecked((ushort)((Raw & 0xFFE0) | ((value >> 1) & 0x1F)));
 	}
 
-	public void Set(int hour, int minute, int second)
+	public FileTime Set(int hour, int minute, int second)
 	{
 		Raw = unchecked((ushort)(
 			((hour & 0x1F) << 11) |
 			((minute & 0x3F) << 5) |
 			((second >> 1) & 0x1F)));
+
+		return this;
 	}
+
+	public FileTime Set(DateTime dateTime)
+		=> Set(dateTime.Hour, dateTime.Minute, dateTime.Second);
 }

@@ -1,4 +1,6 @@
-﻿namespace QBX.OperatingSystem;
+﻿using System;
+
+namespace QBX.OperatingSystem;
 
 public struct FileDate
 {
@@ -22,11 +24,16 @@ public struct FileDate
 		set => Raw = unchecked((ushort)((Raw & 0xFFE0) | (value & 0x1F)));
 	}
 
-	public void Set(int year, int month, int day)
+	public FileDate Set(int year, int month, int day)
 	{
 		Raw = unchecked((ushort)(
 			(((year - 1980) & 0x7F) << 9) |
 			((month & 0x0F) << 5) |
 			(day & 0x1F)));
+
+		return this;
 	}
+
+	public FileDate Set(DateTime dateTime)
+		=> Set(dateTime.Year, dateTime.Month,	dateTime.Day);
 }
