@@ -109,6 +109,8 @@ public partial class DOS
 			LastError = e.ToDOSError();
 			if (!_suppressExceptions)
 				throw;
+
+			return default!;
 		}
 	}
 
