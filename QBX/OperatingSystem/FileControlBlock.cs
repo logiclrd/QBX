@@ -99,7 +99,7 @@ public class FileControlBlock
 			outSpan[i] = CP437Encoding.GetByteSemantic(inSpan[i]);
 	}
 
-	public int RecordPointer => CurrentBlockNumber * RecordSize + RecordPointer;
+	public int RecordPointer => CurrentBlockNumber * 128 + RecordPointer;
 
 	public int MemoryAddress;
 

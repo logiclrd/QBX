@@ -8,6 +8,11 @@ public class StandardOutputFileDescriptor(DOS owner) : FileDescriptor
 
 	protected override bool CanWrite => true;
 
+	protected override void SeekCore(int offset)
+	{
+		throw new DOSException(DOSError.InvalidFunction);
+	}
+
 	protected override int WriteCore(ReadOnlySpan<byte> buffer)
 	{
 		var visual = owner.Machine.VideoFirmware.VisualLibrary;

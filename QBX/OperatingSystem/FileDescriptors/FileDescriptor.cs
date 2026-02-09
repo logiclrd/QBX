@@ -1,5 +1,7 @@
 ﻿using System;
 
+using QBX.Hardware;
+
 namespace QBX.OperatingSystem.FileDescriptors;
 
 public delegate void FileReadFunctor(FileBuffer buffer);
@@ -27,6 +29,17 @@ public abstract class FileDescriptor
 	public virtual IDisposable? NonBlocking() => null;
 
 	public bool WouldHaveBlocked = false;
+
+	public void Seek(int offset)
+	{
+		FlushWriteBuffer();
+
+		ReadBuffer.NumUsed = 0;
+
+		SeekCore(offset);
+	}
+
+	protected abstract void SeekCore(int offset);
 
 	void FillReadBuffer()
 	{
@@ -87,6 +100,38 @@ public abstract class FileDescriptor
 		return ReadBuffer.Pull(buffer);
 	}
 
+	public int Read(int readSize, SystemMemory systemMemory, int address)
+	{
+		if (ReadBuffer.IsEmpty)
+			FillReadBuffer();
+
+		int count = 0;
+
+		while ((readSize > 0) && !ReadBuffer.IsEmpty)
+		{
+			systemMemory[address++] = ReadBuffer.Pull();
+			count++;
+		}
+
+		return count;
+	}
+
+	public bool ReadExactly(int readSize, SystemMemory systemMemory, int address)
+	{
+		while (readSize > 0)
+		{
+			int chunkSize = Read(readSize, systemMemory, address);
+
+			if (chunkSize == 0)
+				return false;
+
+			readSize -= chunkSize;
+			address += chunkSize;
+		}
+
+		return true;
+	}
+
 	public void WriteByte(byte b)
 	{
 		WriteBuffer.Push(b);
@@ -109,6 +154,17 @@ public abstract class FileDescriptor
 
 			if (WriteThrough || WriteBuffer.IsFull)
 				FlushWriteBuffer();
+		}
+	}
+
+	public void Write(int writeSize, SystemMemory systemMemory, int address)
+	{
+		while (writeSize > 0)
+		{
+			if (WriteBuffer.IsFull)
+				FlushWriteBuffer();
+
+			WriteBuffer.Push(systemMemory[address++]);
 		}
 	}
 

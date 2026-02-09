@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 
 using QBX.ExecutionEngine.Execution;
 using QBX.Hardware;
@@ -33,6 +34,8 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		FindFirstFileWithFCB = 0x11,
 		FindNextFileWithFCB = 0x12,
 		DeleteFileWithFCB = 0x13,
+		SequentialRead = 0x14,
+		SequentialWrite = 0x15,
 		SetDiskTransferAddress = 0x1A,
 		GetDiskTransferAddress = 0x2F,
 	}
@@ -293,6 +296,55 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 				if (machine.DOS.LastError != DOSError.None)
 					result.AX |= 0xFF;
+
+				break;
+			}
+			case Function.SequentialRead:
+			{
+				int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+
+				var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+
+				result.AX &= 0xFF00;
+
+				try
+				{
+					machine.DOS.ReadRecord(fcb);
+
+					if (machine.DOS.LastError != DOSError.None)
+						result.AX |= 0xFF;
+				}
+				catch (OperationCanceledException)
+				{
+					result.AX |= 0x02;
+				}
+
+				break;
+			}
+			case Function.SequentialWrite:
+			{
+				int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+
+				var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+
+				result.AX &= 0xFF00;
+
+				try
+				{
+					machine.DOS.WriteRecord(fcb);
+
+					if (machine.DOS.LastError != DOSError.None)
+					{
+						if (machine.DOS.LastError == DOSError.HandleDiskFull)
+							result.AX |= 0x01;
+						else
+							result.AX |= 0xFF;
+					}
+				}
+				catch (OperationCanceledException)
+				{
+					result.AX |= 0x02;
+				}
 
 				break;
 			}

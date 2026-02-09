@@ -8,6 +8,9 @@ public static class ExceptionExtensions
 {
 	public static DOSError ToDOSError(this Exception exception)
 	{
+		if (exception is DOSException dosException)
+			return dosException.Error;
+
 		if (exception is Win32Exception win32Exception)
 		{
 			if (Enum.IsDefined(typeof(DOSError), win32Exception.NativeErrorCode))

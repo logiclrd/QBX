@@ -423,6 +423,85 @@ public partial class DOS
 		}
 	}
 
+	public int ReadRecord(FileControlBlock fcb)
+	{
+		return TranslateError(() =>
+		{
+			int offset = fcb.RecordPointer * fcb.RecordSize;
+
+			if (offset >= fcb.FileSize)
+				return 0;
+			else
+			{
+				if (0x10000 - DataTransferAddressOffset < fcb.RecordSize)
+					throw new OperationCanceledException("DTA overlaps segment boundary");
+
+				if (Files[fcb.FileHandle] is not FileDescriptor fileDescriptor)
+				{
+					LastError = DOSError.InvalidHandle;
+					return -1;
+				}
+
+				int readSize = fcb.RecordSize;
+
+				if (offset + readSize > fcb.FileSize)
+					readSize = (int)(fcb.FileSize - offset);
+
+				fileDescriptor.Seek(offset);
+
+				if (fileDescriptor.ReadExactly(readSize, Machine.SystemMemory, DataTransferAddress))
+				{
+					fcb.CurrentRecordNumber++;
+
+					if (fcb.CurrentRecordNumber == 128)
+					{
+						fcb.CurrentRecordNumber = 0;
+						fcb.CurrentBlockNumber++;
+					}
+				}
+
+				return readSize;
+			}
+		});
+	}
+
+
+	public int WriteRecord(FileControlBlock fcb)
+	{
+		return TranslateError(() =>
+		{
+			int offset = fcb.RecordPointer * fcb.RecordSize;
+
+			if (offset >= fcb.FileSize)
+				return 0;
+			else
+			{
+				if (0x10000 - DataTransferAddressOffset < fcb.RecordSize)
+					throw new OperationCanceledException("DTA overlaps segment boundary");
+
+				if (Files[fcb.FileHandle] is not FileDescriptor fileDescriptor)
+				{
+					LastError = DOSError.InvalidHandle;
+					return -1;
+				}
+
+				fileDescriptor.Seek(offset);
+
+				fileDescriptor.Write(fcb.RecordSize, Machine.SystemMemory, DataTransferAddress);
+
+				fcb.CurrentRecordNumber++;
+
+				if (fcb.CurrentRecordNumber == 128)
+				{
+					fcb.CurrentRecordNumber = 0;
+					fcb.CurrentBlockNumber++;
+				}
+
+				return fcb.RecordSize;
+			}
+		});
+	}
+
 	public bool CloseFile(FileControlBlock fcb)
 	{
 		return TranslateError(() =>

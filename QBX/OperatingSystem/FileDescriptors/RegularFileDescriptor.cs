@@ -8,6 +8,11 @@ public class RegularFileDescriptor(FileStream stream) : FileDescriptor
 	protected override bool CanRead => stream.CanRead;
 	protected override bool CanWrite => stream.CanWrite;
 
+	protected override void SeekCore(int offset)
+	{
+		stream.Position = offset;
+	}
+
 	protected override void ReadCore(FileBuffer buffer)
 	{
 		int readSize = buffer.ContiguousAvailable;
