@@ -33,37 +33,39 @@ public class FileControlBlock
 		return new string(s_fileNameBuffer, 0, 2);
 	}
 
-	public string GetFileName()
+	public string GetFileName() => GetFileName(FileNameBytes);
+
+	public static string GetFileName(byte[] fileNameBytes)
 	{
 		s_fileNameBuffer ??= new char[12];
 
 		int length = 8;
 
-		while ((length > 0) && PathCharacter.IsSpace(FileNameBytes[length - 1]))
+		while ((length > 0) && PathCharacter.IsSpace(fileNameBytes[length - 1]))
 			length--;
 
 		int offset = 0;
 
-		while ((offset < length) && PathCharacter.IsValid(FileNameBytes[offset]))
+		while ((offset < length) && PathCharacter.IsValid(fileNameBytes[offset]))
 		{
-			s_fileNameBuffer[offset] = CP437Encoding.GetCharSemantic(FileNameBytes[offset]);
+			s_fileNameBuffer[offset] = CP437Encoding.GetCharSemantic(fileNameBytes[offset]);
 			offset++;
 		}
 
 		length = 3;
 
-		while ((length > 0) && PathCharacter.IsSpace(FileNameBytes[8 + length - 1]))
+		while ((length > 0) && PathCharacter.IsSpace(fileNameBytes[8 + length - 1]))
 			length--;
 
-		if ((length > 0) && PathCharacter.IsValid(FileNameBytes[8]))
+		if ((length > 0) && PathCharacter.IsValid(fileNameBytes[8]))
 		{
 			s_fileNameBuffer[offset++] = '.';
 
 			int extensionOffset = 0;
 
-			while ((extensionOffset < length) && PathCharacter.IsValid(FileNameBytes[8 + extensionOffset]))
+			while ((extensionOffset < length) && PathCharacter.IsValid(fileNameBytes[8 + extensionOffset]))
 			{
-				s_fileNameBuffer[offset] = CP437Encoding.GetCharSemantic(FileNameBytes[8 + extensionOffset]);
+				s_fileNameBuffer[offset] = CP437Encoding.GetCharSemantic(fileNameBytes[8 + extensionOffset]);
 				offset++;
 				extensionOffset++;
 			}
@@ -72,7 +74,9 @@ public class FileControlBlock
 		return new string(s_fileNameBuffer, 0, offset);
 	}
 
-	public void SetFileName(string fileName)
+	public void SetFileName(string fileName) => SetFileName(fileName, FileNameBytes);
+
+	public static void SetFileName(string fileName, byte[] fileNameBytes)
 	{
 		int dot = fileName.LastIndexOf('.');
 
@@ -81,13 +85,13 @@ public class FileControlBlock
 		if (extraDot != dot)
 			throw new Exception("Invalid filename");
 
-		FileNameBytes.AsSpan().Clear();
+		fileNameBytes.AsSpan().Clear();
 
 		int nameLength = Math.Min(dot, 8);
 		int extLength = Math.Min(fileName.Length - dot - 1, 3);
 
 		var inSpan = fileName.AsSpan();
-		var outSpan = FileNameBytes.AsSpan();
+		var outSpan = fileNameBytes.AsSpan();
 
 		for (int i = 0; i < nameLength; i++)
 			outSpan[i] = CP437Encoding.GetByteSemantic(inSpan[i]);

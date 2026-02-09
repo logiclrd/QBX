@@ -21,4 +21,12 @@ public partial class ShortFileNames
 		else
 			return UnmapEmulated(shortPath);
 	}
+
+	public static void Forget(string longPath)
+	{
+		if (System.OperatingSystem.IsWindows())
+			ForgetWindows(longPath);
+		else
+			ForgetEmulated(longPath);
+	}
 }

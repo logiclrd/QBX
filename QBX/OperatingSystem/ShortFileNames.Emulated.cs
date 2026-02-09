@@ -42,6 +42,15 @@ public partial class ShortFileNames
 	static Dictionary<string, string> s_longToShort = new Dictionary<string, string>();
 	static Dictionary<string, string> s_shortToLong = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
+	static void ForgetEmulated(string longPath)
+	{
+		if (s_longToShort.TryGetValue(longPath, out var shortPath))
+		{
+			s_longToShort.Remove(longPath);
+			s_shortToLong.Remove(shortPath);
+		}
+	}
+
 	static string UnmapEmulated(string possibleShortPath)
 	{
 		if (s_shortToLong.TryGetValue(GetCanonicalPath(possibleShortPath), out var longPath))

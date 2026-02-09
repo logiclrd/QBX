@@ -562,4 +562,66 @@ public partial class DOS
 			File.Delete(fileName);
 		});
 	}
+
+	public void RenameFiles(RenameFileControlBlock rfcb)
+	{
+		TranslateError(() =>
+		{
+			string fileNamePattern = rfcb.GetOldFileName();
+
+			string fileNamePart = Path.GetFileNameWithoutExtension(fileNamePattern);
+			string extensionPart = Path.GetExtension(fileNamePattern);
+
+			string collapsedFileNamePart = NormalizeFileSearchPattern(ref fileNamePart, 8);
+			string collapsedExtensionPart = NormalizeFileSearchPattern(ref extensionPart, 3);
+
+			fileNamePattern = fileNamePart + "." + extensionPart;
+
+			rfcb.SetOldFileName(fileNamePattern);
+
+			string collapsedFileNamePattern = collapsedFileNamePart + "." + collapsedExtensionPart;
+
+			RenameFileControlBlock rename = new RenameFileControlBlock();
+
+			void PerformRename(FileSystemInfo fileSystemInfo, string shortName, byte searchAttributeByte)
+			{
+				rename.SetOldFileName(shortName);
+
+				for (int i = 0; i < 11; i++)
+				{
+					if (rfcb.NewFileNameBytes[i] == '?')
+						rename.NewFileNameBytes[i] = rename.OldFileNameBytes[i];
+					else
+						rename.NewFileNameBytes[i] = rfcb.NewFileNameBytes[i];
+				}
+
+				string oldFullPath = fileSystemInfo.FullName;
+
+				ShortFileNames.Forget(oldFullPath);
+
+				string newFullPath = Path.Combine(
+					Path.GetDirectoryName(oldFullPath) ?? ".",
+					rename.GetNewFileName());
+
+				if (fileSystemInfo is FileInfo fileInfo)
+					fileInfo.MoveTo(newFullPath);
+				else if (fileSystemInfo is DirectoryInfo dirInfo)
+					dirInfo.MoveTo(newFullPath);
+				else
+					throw new FileNotFoundException();
+			}
+
+			bool success = FindFirst(
+				collapsedFileNamePattern,
+				default,
+				PerformRename,
+				out var search);
+
+			if (success)
+			{
+				while (FindNext(search, default, PerformRename))
+					;
+			}
+		});
+	}
 }

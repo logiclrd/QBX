@@ -37,6 +37,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		SequentialRead = 0x14,
 		SequentialWrite = 0x15,
 		CreateFileWithFCB = 0x16,
+		RenameFileWithFCB = 0x17,
 		SetDiskTransferAddress = 0x1A,
 		GetDiskTransferAddress = 0x2F,
 	}
@@ -362,6 +363,21 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				result.AX &= 0xFF00;
 
 				if (fd < 0)
+					result.AX |= 0xFF;
+
+				break;
+			}
+			case Function.RenameFileWithFCB:
+			{
+				int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+
+				var rfcb = RenameFileControlBlock.Deserialize(machine.SystemMemory, offset);
+
+				machine.DOS.RenameFiles(rfcb);
+
+				result.AX &= 0xFF00;
+
+				if (machine.DOS.LastError != DOSError.None)
 					result.AX |= 0xFF;
 
 				break;

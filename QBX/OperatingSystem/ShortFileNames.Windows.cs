@@ -13,6 +13,8 @@ public partial class ShortFileNames
 
 	static string UnmapWindows(string path) => path; // No unmapping needed; the filesystem accepts short paths directly.
 
+	static void ForgetWindows(string longPath) { } // No action needed on Windows.
+
 	static bool TryMapWindows(string path, out string shortPath)
 	{
 		var shortPathBuffer = new StringBuilder(path.Length);

@@ -205,7 +205,7 @@ public partial class DOS
 
 		fcb.SetFileName(fileNamePattern);
 
-		string collapsedFileNamePattern = collapsedFileNamePart + "." + collapsedExtensionPart; ;
+		string collapsedFileNamePattern = collapsedFileNamePart + "." + collapsedExtensionPart;
 
 		bool success;
 		IEnumerator<FileSystemInfo> search;
