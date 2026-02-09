@@ -36,6 +36,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		DeleteFileWithFCB = 0x13,
 		SequentialRead = 0x14,
 		SequentialWrite = 0x15,
+		CreateFileWithFCB = 0x16,
 		SetDiskTransferAddress = 0x1A,
 		GetDiskTransferAddress = 0x2F,
 	}
@@ -345,6 +346,23 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					result.AX |= 0x02;
 				}
+
+				break;
+			}
+			case Function.CreateFileWithFCB:
+			{
+				int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+
+				var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+
+				int fd = machine.DOS.OpenFile(fcb, FileMode.Create);
+
+				fcb.Serialize(machine.SystemMemory);
+
+				result.AX &= 0xFF00;
+
+				if (fd < 0)
+					result.AX |= 0xFF;
 
 				break;
 			}
