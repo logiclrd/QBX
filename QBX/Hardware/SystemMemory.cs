@@ -1,4 +1,6 @@
-﻿namespace QBX.Hardware;
+﻿using System;
+
+namespace QBX.Hardware;
 
 public class SystemMemory : IMemory
 {
@@ -39,6 +41,8 @@ public class SystemMemory : IMemory
 			capsLock: (bits & KeyboardStatus_CapsLockBit) != 0,
 			numLock: (bits & KeyboardStatus_NumLockBit) != 0);
 	}
+
+	public Span<byte> AsSpan() => _ram;
 
 	public byte this[int address]
 	{

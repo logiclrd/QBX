@@ -3,6 +3,7 @@ using System.IO;
 
 using QBX.Firmware;
 using QBX.Hardware;
+using QBX.OperatingSystem.Memory;
 
 using static QBX.Hardware.GraphicsArray;
 
@@ -118,6 +119,7 @@ public class Interrupt0x10(Machine machine) : InterruptHandler
 
 	bool _enableGrayscaleSumming = false;
 	ushort _displayCombinationCodes = 0x0008; // VGA with colour display, no secondary
+	(int Address, int Length)[] _fontAddresses = new (int Address, int Length)[8];
 
 	readonly int StateBufferSize = machine.VideoFirmware.GetStateBufferLength();
 
@@ -864,12 +866,7 @@ public class Interrupt0x10(Machine machine) : InterruptHandler
 					{
 						if (visual is GraphicsLibrary graphics)
 						{
-							// I have arbitrarily decided to store the font information at 8KB intervals in segment 0x1000.
-							// At the time of writing this, there is not (yet?) any memory allocator or allocation scheme. :-)
-
 							int fontSpecifier = (result.BX >> 8);
-
-							int offset = 0x10000 + fontSpecifier * 8192;
 
 							byte[][] font;
 							int firstCharacter = 0;
@@ -911,6 +908,28 @@ public class Interrupt0x10(Machine machine) : InterruptHandler
 									goto UnknownFontSpecifier; // I wish C# had "break break" to exit 2 level of nesting :-)
 							}
 
+							int fontBytes = length * font[0].Length; // Assumption: font is well-formed and all glyphs are the same length
+
+							if (_fontAddresses[fontSpecifier].Length < fontBytes)
+							{
+								try
+								{
+									if (_fontAddresses[fontSpecifier].Address != 0)
+										machine.DOS.MemoryManager.FreeMemory(_fontAddresses[fontSpecifier].Address);
+
+									_fontAddresses[fontSpecifier].Address = machine.DOS.MemoryManager.AllocateMemory(fontBytes, machine.DOS.CurrentPSPSegment);
+									_fontAddresses[fontSpecifier].Length = fontBytes;
+								}
+								catch
+								{
+									// No way to return an error, just tell the caller there isn't any data.
+									result.CX = 0; // 0 scans per character
+									break;
+								}
+							}
+
+							int offset = _fontAddresses[fontSpecifier].Address;
+
 							for (int i = 0, o = 0; i < length; i++)
 							{
 								int ch = firstCharacter + i;
@@ -919,8 +938,8 @@ public class Interrupt0x10(Machine machine) : InterruptHandler
 									machine.SystemMemory[offset + o++] = font[ch][j];
 							}
 
-							result.ES = 0x1000;
-							result.BP = unchecked((ushort)(offset - 0x10000));
+							result.ES = (ushort)(offset / MemoryManager.ParagraphSize);
+							result.BP = 0;
 
 							// Some misc extra data:
 							// - Scans/character of on-screen font (not the requested font!)

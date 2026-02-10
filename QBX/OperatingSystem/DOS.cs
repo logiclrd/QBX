@@ -1,13 +1,16 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 
 using QBX.Hardware;
 using QBX.OperatingSystem.Breaks;
 using QBX.OperatingSystem.FileDescriptors;
+using QBX.OperatingSystem.Memory;
 
 namespace QBX.OperatingSystem;
 
@@ -18,6 +21,12 @@ public partial class DOS
 	public event Action? Break;
 
 	public DOSError LastError = DOSError.None;
+
+	public const int ManagedMemoryStart = 0x10000;
+
+	public MemoryManager MemoryManager;
+
+	public ushort CurrentPSPSegment;
 
 	public ushort DataTransferAddressSegment;
 	public ushort DataTransferAddressOffset;
@@ -41,6 +50,13 @@ public partial class DOS
 		_machine = machine;
 
 		_machine.Keyboard.Break += OnBreak;
+
+		MemoryManager = new MemoryManager(
+			machine.SystemMemory,
+			ManagedMemoryStart,
+			machine.SystemMemory.Length - ManagedMemoryStart);
+
+		CurrentPSPSegment = MemoryManager.RootPSPSegment;
 
 		InitializeStandardInputAndOutput();
 	}

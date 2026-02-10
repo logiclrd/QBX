@@ -76,7 +76,7 @@ public class FileControlBlock
 
 	public void SetFileName(string fileName) => SetFileName(fileName, FileNameBytes);
 
-	public static void SetFileName(string fileName, byte[] fileNameBytes)
+	public static void SetFileName(ReadOnlySpan<char> fileName, Span<byte> fileNameBytes)
 	{
 		int dot = fileName.LastIndexOf('.');
 
@@ -85,13 +85,13 @@ public class FileControlBlock
 		if (extraDot != dot)
 			throw new Exception("Invalid filename");
 
-		fileNameBytes.AsSpan().Clear();
+		fileNameBytes.Clear();
 
 		int nameLength = Math.Min(dot, 8);
 		int extLength = Math.Min(fileName.Length - dot - 1, 3);
 
-		var inSpan = fileName.AsSpan();
-		var outSpan = fileNameBytes.AsSpan();
+		var inSpan = fileName;
+		var outSpan = fileNameBytes;
 
 		for (int i = 0; i < nameLength; i++)
 			outSpan[i] = CP437Encoding.GetByteSemantic(inSpan[i]);
@@ -101,6 +101,26 @@ public class FileControlBlock
 
 		for (int i = 0; i < extLength; i++)
 			outSpan[i] = CP437Encoding.GetByteSemantic(inSpan[i]);
+	}
+
+	public static void SetFileName(ReadOnlySpan<byte> fileName, Span<byte> fileNameBytes)
+	{
+		int dot = fileName.LastIndexOf((byte)'.');
+
+		int extraDot = fileName.IndexOf((byte)'.');
+
+		if (extraDot != dot)
+			throw new Exception("Invalid filename");
+
+		fileNameBytes.Clear();
+
+		int nameLength = Math.Min(dot, 8);
+
+		var inSpan = fileName;
+		var outSpan = fileNameBytes;
+
+		inSpan.Slice(0, nameLength).CopyTo(outSpan);
+		inSpan.Slice(dot + 1).CopyTo(outSpan.Slice(8));
 	}
 
 	public int RecordPointer => CurrentBlockNumber * 128 + RecordPointer;
