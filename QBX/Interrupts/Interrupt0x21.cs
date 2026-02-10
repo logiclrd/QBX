@@ -38,7 +38,10 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		SequentialWrite = 0x15,
 		CreateFileWithFCB = 0x16,
 		RenameFileWithFCB = 0x17,
+		GetDefaultDrive = 0x19,
 		SetDiskTransferAddress = 0x1A,
+		GetDefaultDriveData = 0x1B,
+		GetDriveData = 0x1C,
 		GetDiskTransferAddress = 0x2F,
 	}
 
@@ -382,6 +385,77 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 				break;
 			}
+			case Function.GetDefaultDrive:
+			{
+				try
+				{
+					int defaultDrive = Environment.CurrentDirectory[0] - 'A';
+
+					if ((defaultDrive >= 0) && (defaultDrive <= 25))
+					{
+						result.AX &= 0xFF00;
+						result.AX |= (byte)defaultDrive;
+					}
+				}
+				catch
+				{
+					result.AX |= 0xFF;
+				}
+
+				break;
+			}
+			case Function.GetDefaultDriveData:
+			{
+				input.DX = 0;
+				goto case Function.GetDriveData;
+			}
+			case Function.GetDriveData:
+			{
+				try
+				{
+					char driveLetter = (char)((input.DX & 0xFF) + 64);
+
+					if (driveLetter == '@')
+						driveLetter = Environment.CurrentDirectory[0];
+
+					var driveInfo = new DriveInfo(driveLetter.ToString());
+
+					// No way to sensibly map modern numbers into the return from this
+					// call, so we just fake a 100MB hard drive or a 1.44MB floppy.
+
+					if (driveInfo.DriveType == DriveType.Removable)
+					{
+						// TODO: use memory allocator to properly reserve permanent space for this function
+						machine.SystemMemory[0x20000 + (driveLetter - 'A')] = 0xF0;
+
+						result.AX = 1; // sectors per cluster
+						result.CX = 512; // bytes per sector
+						result.DX = 2880; // number of clusters
+
+						result.DS = 0x2000;
+						result.BX = (ushort)(driveLetter - 'A');
+					}
+					else
+					{
+						// TODO: use memory allocator to properly reserve permanent space for this function
+						machine.SystemMemory[0x20000 + (driveLetter - 'A')] = 0xF8;
+
+						result.AX = 4; // sectors per cluster
+						result.CX = 512; // bytes per sector
+						result.DX = 51200; // number of clusters
+
+						result.DS = 0x2000;
+						result.BX = (ushort)(driveLetter - 'A');
+					}
+				}
+				catch
+				{
+					result.AX |= 0xFF;
+				}
+
+
+				break;
+			}
 			case Function.SetDiskTransferAddress:
 			{
 				machine.DOS.DataTransferAddressSegment = result.DS;
@@ -401,22 +475,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	/*
 TODO:
 
-Int 21/AH=11h - DOS 1+ - FIND FIRST MATCHING FILE USING FCB
-Int 21/AH=12h - DOS 1+ - FIND NEXT MATCHING FILE USING FCB
-Int 21/AH=13h - DOS 1+ - DELETE FILE USING FCB
-Int 21/AH=14h - DOS 1+ - SEQUENTIAL READ FROM FCB FILE
-Int 21/AH=15h - DOS 1+ - SEQUENTIAL WRITE TO FCB FILE
-Int 21/AH=16h - DOS 1+ - CREATE OR TRUNCATE FILE USING FCB
-Int 21/AH=17h - DOS 1+ - RENAME FILE USING FCB
-Int 21/AH=18h - DOS 1+ - NULL FUNCTION FOR CP/M COMPATIBILITY
-Int 21/AH=19h - DOS 1+ - GET CURRENT DEFAULT DRIVE
-Int 21/AH=1Ah - DOS 1+ - SET DISK TRANSFER AREA ADDRESS
-Int 21/AH=1Bh - DOS 1+ - GET ALLOCATION INFORMATION FOR DEFAULT DRIVE
-Int 21/AH=1Ch - DOS 1+ - GET ALLOCATION INFORMATION FOR SPECIFIC DRIVE
-Int 21/AH=1Dh - DOS 1+ - NULL FUNCTION FOR CP/M COMPATIBILITY
-Int 21/AH=1Eh - DOS 1+ - NULL FUNCTION FOR CP/M COMPATIBILITY
 Int 21/AH=1Fh - DOS 1+ - GET DRIVE PARAMETER BLOCK FOR DEFAULT DRIVE
-Int 21/AH=20h - DOS 1+ - NULL FUNCTION FOR CP/M COMPATIBILITY
 Int 21/AH=21h - DOS 1+ - READ RANDOM RECORD FROM FCB FILE
 Int 21/AH=22h - DOS 1+ - WRITE RANDOM RECORD TO FCB FILE
 Int 21/AH=23h - DOS 1+ - GET FILE SIZE FOR FCB
