@@ -45,6 +45,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		GetDriveData = 0x1C,
 		GetDefaultDPB = 0x1F,
 		RandomRead = 0x21,
+		RandomWrite = 0x22,
 		GetDiskTransferAddress = 0x2F,
 	}
 
@@ -327,6 +328,8 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 					result.AX |= 0x02;
 				}
 
+				fcb.Serialize(machine.SystemMemory);
+
 				break;
 			}
 			case Function.SequentialWrite:
@@ -353,6 +356,8 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					result.AX |= 0x02;
 				}
+
+				fcb.Serialize(machine.SystemMemory);
 
 				break;
 			}
@@ -456,7 +461,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 					result.AX |= 0xFF;
 				}
 
-
 				break;
 			}
 			case Function.SetDiskTransferAddress:
@@ -471,6 +475,81 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 				result.DS = address.Segment;
 				result.BX = address.Offset;
+
+				break;
+			}
+			case Function.RandomRead:
+			{
+				int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+
+				var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+
+				if (fcb.RandomRecordNumber > 8388607) // maximum addressible record number
+					result.AX |= 0xFF;
+				else
+				{
+					result.AX &= 0xFF00;
+
+					try
+					{
+						unchecked
+						{
+							fcb.CurrentBlockNumber = (ushort)(fcb.RandomRecordNumber / 128);
+							fcb.CurrentRecordNumber = (byte)(fcb.RandomRecordNumber & 127);
+						}
+
+						machine.DOS.ReadRecord(fcb, advance: false);
+
+						if (machine.DOS.LastError != DOSError.None)
+							result.AX |= 0xFF;
+					}
+					catch (OperationCanceledException)
+					{
+						result.AX |= 0x02;
+					}
+
+					fcb.Serialize(machine.SystemMemory);
+				}
+
+				break;
+			}
+			case Function.RandomWrite:
+			{
+				int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+
+				var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+
+				if (fcb.RandomRecordNumber > 8388607) // maximum addressible record number
+					result.AX |= 0xFF;
+				else
+				{
+					result.AX &= 0xFF00;
+
+					try
+					{
+						unchecked
+						{
+							fcb.CurrentBlockNumber = (ushort)(fcb.RandomRecordNumber / 128);
+							fcb.CurrentRecordNumber = (byte)(fcb.RandomRecordNumber & 127);
+						}
+
+						machine.DOS.WriteRecord(fcb, advance: false);
+
+						if (machine.DOS.LastError != DOSError.None)
+						{
+							if (machine.DOS.LastError == DOSError.HandleDiskFull)
+								result.AX |= 0x01;
+							else
+								result.AX |= 0xFF;
+						}
+					}
+					catch (OperationCanceledException)
+					{
+						result.AX |= 0x02;
+					}
+
+					fcb.Serialize(machine.SystemMemory);
+				}
 
 				break;
 			}
