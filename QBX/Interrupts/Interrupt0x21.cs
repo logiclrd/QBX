@@ -47,6 +47,8 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		RandomRead = 0x21,
 		RandomWrite = 0x22,
 		GetFileSize = 0x23,
+		SetRandomRecordNumber = 0x24,
+		SetInterruptVector = 0x25, // not implemented
 		GetDiskTransferAddress = 0x2F,
 	}
 
@@ -560,7 +562,27 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 				var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
 
-				machine.DOS.PopulateFileInfo(fcb);
+				result.AX &= 0xFF00;
+
+				if (!machine.DOS.PopulateFileInfo(fcb))
+					result.AX |= 0xFF;
+
+				fcb.Serialize(machine.SystemMemory);
+
+				break;
+			}
+			case Function.SetRandomRecordNumber:
+			{
+				int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+
+				var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+
+				result.AX &= 0xFF00;
+
+				if ((fcb.FileHandle == 0) || (fcb.RecordPointer != 0))
+					result.AX |= 0xFF;
+				else
+					fcb.RandomRecordNumber = unchecked((uint)fcb.RecordPointer);
 
 				fcb.Serialize(machine.SystemMemory);
 
