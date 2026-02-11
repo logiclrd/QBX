@@ -37,8 +37,8 @@ public struct ProgramSegmentPrefix
 
 	public static ref ProgramSegmentPrefix CreateReference(SystemMemory systemMemory, int offset)
 	{
-		var mcbBytes = systemMemory.AsSpan().Slice(offset, ProgramSegmentPrefix.Size);
+		var pspBytes = systemMemory.AsSpan().Slice(offset, Size);
 
-		return ref MemoryMarshal.Cast<byte, ProgramSegmentPrefix>(mcbBytes)[0];
+		return ref MemoryMarshal.Cast<byte, ProgramSegmentPrefix>(pspBytes)[0];
 	}
 }
