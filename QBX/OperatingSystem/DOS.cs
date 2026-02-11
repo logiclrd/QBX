@@ -10,6 +10,7 @@ using System.Threading;
 using QBX.Hardware;
 using QBX.OperatingSystem.Breaks;
 using QBX.OperatingSystem.FileDescriptors;
+using QBX.OperatingSystem.FileStructures;
 using QBX.OperatingSystem.Memory;
 
 namespace QBX.OperatingSystem;

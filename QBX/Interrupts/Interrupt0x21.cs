@@ -5,6 +5,7 @@ using QBX.ExecutionEngine.Execution;
 using QBX.Hardware;
 using QBX.OperatingSystem;
 using QBX.OperatingSystem.Breaks;
+using QBX.OperatingSystem.FileStructures;
 
 namespace QBX.Interrupts;
 

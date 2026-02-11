@@ -1,6 +1,8 @@
 using System;
 using System.Runtime.InteropServices;
 
+using QBX.OperatingSystem.FileStructures;
+
 namespace QBX.OperatingSystem.Memory;
 
 [StructLayout(LayoutKind.Explicit, Size = 16)]

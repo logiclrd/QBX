@@ -1,10 +1,9 @@
 ﻿using System;
 using System.IO;
-
 using QBX.Firmware.Fonts;
 using QBX.Hardware;
 
-namespace QBX.OperatingSystem;
+namespace QBX.OperatingSystem.FileStructures;
 
 public class FileControlBlock
 {
@@ -123,7 +122,7 @@ public class FileControlBlock
 		inSpan.Slice(dot + 1).CopyTo(outSpan.Slice(8));
 	}
 
-	public int RecordPointer => CurrentBlockNumber * 128 + RecordPointer;
+	public int RecordPointer => CurrentBlockNumber * 128 + CurrentRecordNumber;
 
 	public int MemoryAddress;
 

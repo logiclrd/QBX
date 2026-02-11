@@ -1,10 +1,9 @@
 ﻿using System;
 using System.IO;
-
 using QBX.Firmware.Fonts;
 using QBX.Hardware;
 
-namespace QBX.OperatingSystem;
+namespace QBX.OperatingSystem.FileStructures;
 
 public class RenameFileControlBlock
 {

@@ -1,4 +1,4 @@
-﻿namespace QBX.OperatingSystem;
+﻿namespace QBX.OperatingSystem.FileStructures;
 
 public static class FileAttributesExtensions
 {

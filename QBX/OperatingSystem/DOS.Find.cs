@@ -6,6 +6,9 @@ using System.Linq;
 
 using QBX.Firmware.Fonts;
 using QBX.Hardware;
+using QBX.OperatingSystem.FileStructures;
+
+using FileAttributes = QBX.OperatingSystem.FileStructures.FileAttributes;
 
 namespace QBX.OperatingSystem;
 

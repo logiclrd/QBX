@@ -1,6 +1,6 @@
 ﻿using QBX.Hardware;
 
-namespace QBX.OperatingSystem;
+namespace QBX.OperatingSystem.FileStructures;
 
 public class ExtendedFileControlBlock : FileControlBlock
 {
