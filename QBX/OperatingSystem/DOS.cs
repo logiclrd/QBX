@@ -35,6 +35,8 @@ public partial class DOS
 	public const int StandardInput = 0;
 	public const int StandardOutput = 1;
 
+	public SegmentedAddress FirstDriveParameterBlockAddress;
+
 	public List<FileDescriptor?> Files = new List<FileDescriptor?>();
 
 	StandardInputFileDescriptor _stdin;
@@ -57,7 +59,72 @@ public partial class DOS
 
 		CurrentPSPSegment = MemoryManager.RootPSPSegment;
 
+		GenerateDiskParameterBlocks();
+
 		InitializeStandardInputAndOutput();
+	}
+
+	private void GenerateDiskParameterBlocks()
+	{
+		var drives = DriveInfo.GetDrives();
+
+		int bytesNeeded = drives.Length * DriveParameterBlock.Size;
+
+		int linearAddress = MemoryManager.AllocateMemory(bytesNeeded, MemoryManager.RootPSPSegment);
+
+		FirstDriveParameterBlockAddress = new SegmentedAddress(linearAddress);
+
+		var nextDPBAddress = FirstDriveParameterBlockAddress;
+
+		foreach (var drive in drives)
+		{
+			ref DriveParameterBlock dpb = ref DriveParameterBlock.CreateReference(_machine.SystemMemory, nextDPBAddress.ToLinearAddress());
+
+			// This is all nonsense data, because modern drives don't
+			// fit into the fields described by a DPB at all. :-P
+			dpb.DriveIdentifier = (byte)(char.ToUpperInvariant(drive.RootDirectory.FullName[0]) - 'A');
+			dpb.SectorSize = 512;
+			dpb.ClusterMask = 255; // ClusterMask == (1 << ClusterShift) - 1
+			dpb.ClusterShift = 8;
+			dpb.FirstFAT = 1;
+			dpb.FATCount = 2;
+			dpb.RootEntries = 2;
+			dpb.FirstSector = 256;
+			dpb.MaxCluster = 0xFFFF;
+			dpb.SectorsPerFAT = 0xFFFF;
+			dpb.DirectorySector = 256;
+			dpb.DeviceDriverAddress = 0xFFFFFFFF;
+			dpb.MediaDescriptor = drive.DriveType == DriveType.Removable ? (byte)0xF0 : (byte)0xF8;
+			dpb.FirstAccess = 0;
+			dpb.NextFreeCluster = 0xFFFF;
+			dpb.FreeClusterCount = 0xFFFF;
+
+			nextDPBAddress.Offset += DriveParameterBlock.Size;
+
+			if (nextDPBAddress.Offset >= bytesNeeded)
+				nextDPBAddress = 0;
+
+			dpb.NextDPBAddress = nextDPBAddress;
+		}
+	}
+
+	delegate bool EnumerateDPBCallback(SegmentedAddress segmentedAddress, ref DriveParameterBlock dpb);
+
+	void EnumerateDriveParameterBlocks(EnumerateDPBCallback callback)
+	{
+		var address = FirstDriveParameterBlockAddress;
+
+		while (address != 0)
+		{
+			ref var dpb = ref DriveParameterBlock.CreateReference(_machine.SystemMemory, address.ToLinearAddress());
+
+			bool @continue = callback(address, ref dpb);
+
+			if (!@continue)
+				break;
+
+			address = dpb.NextDPBAddress;
+		}
 	}
 
 	public bool BreakEnabled => _enableBreak;
@@ -357,6 +424,32 @@ public partial class DOS
 		{
 			return DriveInfo.GetDrives().Length;
 		});
+	}
+
+	public SegmentedAddress GetDriveParameterBlock(int driveIdentifier)
+	{
+		SegmentedAddress ret = 0;
+
+		EnumerateDriveParameterBlocks(
+			(address, ref dpb) =>
+			{
+				if (dpb.DriveIdentifier == driveIdentifier)
+				{
+					ret = address;
+					return false;
+				}
+
+				return true;
+			});
+
+		return ret;
+	}
+
+	public SegmentedAddress GetDefaultDriveParameterBlock()
+	{
+		int defaultDrive = char.ToUpperInvariant(Environment.CurrentDirectory[0]) - 'A';
+
+		return GetDriveParameterBlock(defaultDrive);
 	}
 
 	int GetFreeFileHandle()
