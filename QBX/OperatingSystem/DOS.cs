@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 
 using QBX.Hardware;
@@ -442,10 +440,23 @@ public partial class DOS
 		}
 	}
 
-	public int ReadRecord(FileControlBlock fcb)
+	void Advance(FileControlBlock fcb)
+	{
+		fcb.CurrentRecordNumber++;
+
+		if (fcb.CurrentRecordNumber == 128)
+		{
+			fcb.CurrentRecordNumber = 0;
+			fcb.CurrentBlockNumber = unchecked((ushort)(fcb.CurrentBlockNumber + 1));
+		}
+	}
+
+	public int ReadRecord(FileControlBlock fcb, bool advance = false)
 	{
 		return TranslateError(() =>
 		{
+			fcb.CurrentRecordNumber &= 127;
+
 			int offset = fcb.RecordPointer * fcb.RecordSize;
 
 			if (offset >= fcb.FileSize)
@@ -470,13 +481,8 @@ public partial class DOS
 
 				if (fileDescriptor.ReadExactly(readSize, Machine.SystemMemory, DataTransferAddress))
 				{
-					fcb.CurrentRecordNumber++;
-
-					if (fcb.CurrentRecordNumber == 128)
-					{
-						fcb.CurrentRecordNumber = 0;
-						fcb.CurrentBlockNumber++;
-					}
+					if (advance)
+						Advance(fcb);
 				}
 
 				return readSize;
@@ -485,7 +491,7 @@ public partial class DOS
 	}
 
 
-	public int WriteRecord(FileControlBlock fcb)
+	public int WriteRecord(FileControlBlock fcb, bool advance = false)
 	{
 		return TranslateError(() =>
 		{
@@ -508,13 +514,8 @@ public partial class DOS
 
 				fileDescriptor.Write(fcb.RecordSize, Machine.SystemMemory, DataTransferAddress);
 
-				fcb.CurrentRecordNumber++;
-
-				if (fcb.CurrentRecordNumber == 128)
-				{
-					fcb.CurrentRecordNumber = 0;
-					fcb.CurrentBlockNumber++;
-				}
+				if (advance)
+					Advance(fcb);
 
 				return fcb.RecordSize;
 			}

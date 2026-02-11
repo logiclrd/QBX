@@ -43,6 +43,8 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		SetDiskTransferAddress = 0x1A,
 		GetDefaultDriveData = 0x1B,
 		GetDriveData = 0x1C,
+		GetDefaultDPB = 0x1F,
+		RandomRead = 0x21,
 		GetDiskTransferAddress = 0x2F,
 	}
 
@@ -315,7 +317,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 				try
 				{
-					machine.DOS.ReadRecord(fcb);
+					machine.DOS.ReadRecord(fcb, advance: true);
 
 					if (machine.DOS.LastError != DOSError.None)
 						result.AX |= 0xFF;
@@ -337,7 +339,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 				try
 				{
-					machine.DOS.WriteRecord(fcb);
+					machine.DOS.WriteRecord(fcb, advance: true);
 
 					if (machine.DOS.LastError != DOSError.None)
 					{
