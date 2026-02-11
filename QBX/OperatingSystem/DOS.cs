@@ -475,6 +475,37 @@ public partial class DOS
 		return fileHandle;
 	}
 
+	public bool PopulateFileInfo(FileControlBlock fcb)
+	{
+		return TranslateError(() =>
+		{
+			string fileName = fcb.GetFileName();
+
+			if (!File.Exists(fileName))
+			{
+				LastError = DOSError.FileNotFound;
+				return false;
+			}
+
+			var info = new FileInfo(fileName);
+
+			if (info.Length > uint.MaxValue)
+			{
+				LastError = DOSError.InvalidFunction;
+				return false;
+			}
+
+			var numRecords = info.Length / fcb.RecordSize;
+
+			fcb.FileSize = unchecked((uint)info.Length);
+			fcb.RandomRecordNumber = unchecked((uint)numRecords);
+			fcb.DateStamp.Set(info.LastWriteTime);
+			fcb.TimeStamp.Set(info.LastWriteTime);
+
+			return true;
+		});
+	}
+
 	public int OpenFile(FileControlBlock fcb, FileMode openMode)
 	{
 		return TranslateError(() =>

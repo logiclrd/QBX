@@ -46,6 +46,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		GetDefaultDPB = 0x1F,
 		RandomRead = 0x21,
 		RandomWrite = 0x22,
+		GetFileSize = 0x23,
 		GetDiskTransferAddress = 0x2F,
 	}
 
@@ -550,6 +551,18 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 					fcb.Serialize(machine.SystemMemory);
 				}
+
+				break;
+			}
+			case Function.GetFileSize:
+			{
+				int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+
+				var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+
+				machine.DOS.PopulateFileInfo(fcb);
+
+				fcb.Serialize(machine.SystemMemory);
 
 				break;
 			}
