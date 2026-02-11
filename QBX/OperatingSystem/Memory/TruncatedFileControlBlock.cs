@@ -17,7 +17,7 @@ public struct TruncatedFileControlBlock
 	{
 		if ((bytes.Length >= 2) && (bytes[1] == (byte)':'))
 		{
-			DriveIdentifier = (byte)(bytes[0] - 'A' + 1);
+			DriveIdentifier = (byte)(PathCharacter.ToUpper(bytes[0]) - 'A' + 1);
 			bytes = bytes.Slice(2);
 		}
 

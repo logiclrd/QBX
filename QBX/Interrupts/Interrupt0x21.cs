@@ -392,7 +392,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 			{
 				try
 				{
-					int defaultDrive = Environment.CurrentDirectory[0] - 'A';
+					int defaultDrive = char.ToUpperInvariant(Environment.CurrentDirectory[0]) - 'A';
 
 					if ((defaultDrive >= 0) && (defaultDrive <= 25))
 					{
@@ -419,7 +419,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 					char driveLetter = (char)((input.DX & 0xFF) + 64);
 
 					if (driveLetter == '@')
-						driveLetter = Environment.CurrentDirectory[0];
+						driveLetter = char.ToUpperInvariant(Environment.CurrentDirectory[0]);
 
 					var driveInfo = new DriveInfo(driveLetter.ToString());
 
