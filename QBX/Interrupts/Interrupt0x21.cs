@@ -465,6 +465,15 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				machine.DOS.DataTransferAddressOffset = result.DX;
 				break;
 			}
+			case Function.GetDefaultDPB:
+			{
+				var address = machine.DOS.GetDefaultDriveParameterBlock();
+
+				result.DS = address.Segment;
+				result.BX = address.Offset;
+
+				break;
+			}
 			case Function.GetDiskTransferAddress:
 			{
 				result.ES = machine.DOS.DataTransferAddressSegment;
@@ -478,7 +487,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	/*
 TODO:
 
-Int 21/AH=1Fh - DOS 1+ - GET DRIVE PARAMETER BLOCK FOR DEFAULT DRIVE
 Int 21/AH=21h - DOS 1+ - READ RANDOM RECORD FROM FCB FILE
 Int 21/AH=22h - DOS 1+ - WRITE RANDOM RECORD TO FCB FILE
 Int 21/AH=23h - DOS 1+ - GET FILE SIZE FOR FCB
