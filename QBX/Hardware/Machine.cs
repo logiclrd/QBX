@@ -6,6 +6,7 @@ namespace QBX.Hardware;
 
 public class Machine
 {
+	public SystemClock SystemClock { get; }
 	public SystemMemory SystemMemory { get; }
 	public GraphicsArray GraphicsArray { get; }
 	public Adapter Display { get; }
@@ -26,6 +27,8 @@ public class Machine
 
 	public Machine()
 	{
+		SystemClock = new SystemClock();
+
 		SystemMemory = new SystemMemory();
 
 		MemoryBus = new MemoryBus();

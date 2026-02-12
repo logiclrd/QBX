@@ -54,6 +54,10 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		RandomBlockRead = 0x27,
 		RandomBlockWrite = 0x28,
 		ParseFilename = 0x29,
+		GetDate = 0x2A,
+		SetDate = 0x2B,
+		GetTime = 0x2C,
+		SetTime = 0x2D,
 		GetDiskTransferAddress = 0x2F,
 	}
 
@@ -699,6 +703,56 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 				result.DS = inputPointer.Segment;
 				result.SI = inputPointer.Offset;
+
+				break;
+			}
+			case Function.GetDate:
+			{
+				var date = machine.SystemClock.Now;
+
+				result.AX &= 0xFF00;
+				result.AX |= (byte)date.DayOfWeek;
+
+				result.CX = (ushort)date.Year;
+
+				result.DX = unchecked((ushort)((date.Month << 8) | date.Day));
+
+				break;
+			}
+			case Function.SetDate:
+			{
+				var now = new DateTime(
+					year: input.CX,
+					month: input.DX >> 8,
+					day: input.DX & 0xFF);
+
+				now += machine.SystemClock.Now.TimeOfDay;
+
+				machine.SystemClock.SetCurrentTime(now);
+
+				break;
+			}
+			case Function.GetTime:
+			{
+				var time = machine.SystemClock.Now;
+
+				result.CX = unchecked((ushort)((time.Hour << 8) | time.Minute));
+				result.DX = unchecked((ushort)((time.Second << 8) | (time.Millisecond / 10)));
+
+				break;
+			}
+			case Function.SetTime:
+			{
+				var timeOfDay = new TimeSpan(
+					days: 0,
+					hours: input.CX >> 8,
+					minutes: input.CX & 0xFF,
+					seconds: input.DX >> 8,
+					milliseconds: (input.DX & 0xFF) * 10);
+
+				var now = machine.SystemClock.Now.Date + timeOfDay;
+
+				machine.SystemClock.SetCurrentTime(now);
 
 				break;
 			}
