@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 
+using QBX.ExecutionEngine.Execution;
 using QBX.Hardware;
 using QBX.OperatingSystem.Breaks;
 using QBX.OperatingSystem.FileDescriptors;
@@ -488,6 +489,39 @@ public partial class DOS
 		int defaultDrive = char.ToUpperInvariant(Environment.CurrentDirectory[0]) - 'A';
 
 		return GetDriveParameterBlock(defaultDrive);
+	}
+
+	public void CreateDirectory(StringValue directoryName)
+		=> CreateDirectory(directoryName.ToString());
+
+	public void CreateDirectory(string directoryName)
+	{
+		TranslateError(() =>
+		{
+			Directory.CreateDirectory(directoryName);
+		});
+	}
+
+	public void RemoveDirectory(StringValue directoryName)
+		=> RemoveDirectory(directoryName.ToString());
+
+	public void RemoveDirectory(string directoryName)
+	{
+		TranslateError(() =>
+		{
+			Directory.Delete(directoryName, recursive: false);
+		});
+	}
+
+	public void ChangeCurrentDirectory(StringValue directoryName)
+		=> ChangeCurrentDirectory(directoryName.ToString());
+
+	public void ChangeCurrentDirectory(string directoryName)
+	{
+		TranslateError(() =>
+		{
+			Environment.CurrentDirectory = directoryName;
+		});
 	}
 
 	int GetFreeFileHandle()

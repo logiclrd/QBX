@@ -71,6 +71,9 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		GetInterruptVector = 0x35, // not implemented
 		GetDiskFreeSpace = 0x36,
 		GetSetCountryInformation = 0x38,
+		CreateDirectory = 0x39,
+		RemoveDirectory = 0x3A,
+		ChangeCurrentDirectory = 0x3B,
 	}
 
 	public enum Function33 : byte
@@ -913,17 +916,54 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 					break;
 				}
+				case Function.CreateDirectory:
+				case Function.RemoveDirectory:
+				case Function.ChangeCurrentDirectory:
+				{
+					int address = input.AsRegistersEx().DS * 0x10 + input.DX;
+
+					var directoryName = ReadStringZ(machine.MemoryBus, address);
+
+					result.AX &= 0xFF00;
+
+					switch (function)
+					{
+						case Function.CreateDirectory: machine.DOS.CreateDirectory(directoryName); break;
+						case Function.RemoveDirectory: machine.DOS.RemoveDirectory(directoryName); break;
+						case Function.ChangeCurrentDirectory: machine.DOS.ChangeCurrentDirectory(directoryName); break;
+					}
+
+					if (machine.DOS.LastError != DOSError.None)
+						result.AX |= 0xFF;
+
+					break;
+				}
 			}
 
 			return result;
 		}
 	}
+
+	const int MaximumNullTerminatedStringLength = 2048;
+
+	StringValue ReadStringZ(IMemory memory, int address)
+	{
+		var ret = new StringValue();
+
+		while (memory[address] != 0)
+		{
+			if (ret.Length == MaximumNullTerminatedStringLength)
+				throw new DOSException(DOSError.InvalidData);
+
+			ret.Append(memory[address]);
+			address++;
+		}
+
+		return ret;
+	}
 	/*
 TODO:
 
-Int 21/AH=39h - DOS 2+ - MKDIR - CREATE SUBDIRECTORY
-Int 21/AH=3Ah - DOS 2+ - RMDIR - REMOVE SUBDIRECTORY
-Int 21/AH=3Bh - DOS 2+ - CHDIR - SET CURRENT DIRECTORY
 Int 21/AH=3Ch - DOS 2+ - CREAT - CREATE OR TRUNCATE FILE
 Int 21/AH=3Dh - DOS 2+ - OPEN - OPEN EXISTING FILE
 Int 21/AH=3Eh - DOS 2+ - CLOSE - CLOSE FILE
