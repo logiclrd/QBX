@@ -49,6 +49,9 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		GetFileSize = 0x23,
 		SetRandomRecordNumber = 0x24,
 		SetInterruptVector = 0x25, // not implemented
+		CreateNewPSP = 0x26, // not implemented
+		RandomBlockRead = 0x27,
+		RandomBlockWrite = 0x28,
 		GetDiskTransferAddress = 0x2F,
 	}
 
@@ -585,6 +588,85 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 					fcb.RandomRecordNumber = unchecked((uint)fcb.RecordPointer);
 
 				fcb.Serialize(machine.SystemMemory);
+
+				break;
+			}
+			case Function.RandomBlockRead:
+			{
+				int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+
+				var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+
+				if (fcb.RandomRecordNumber > 8388607) // maximum addressible record number
+					result.AX |= 0xFF;
+				else
+				{
+					result.AX &= 0xFF00;
+
+					try
+					{
+						unchecked
+						{
+							fcb.CurrentBlockNumber = (ushort)(fcb.RandomRecordNumber / 128);
+							fcb.CurrentRecordNumber = (byte)(fcb.RandomRecordNumber & 127);
+						}
+
+						int recordCount = input.CX;
+
+						machine.DOS.ReadRecords(fcb, recordCount);
+
+						if (machine.DOS.LastError != DOSError.None)
+							result.AX |= 0xFF;
+					}
+					catch (OperationCanceledException)
+					{
+						result.AX |= 0x02;
+					}
+
+					fcb.Serialize(machine.SystemMemory);
+				}
+
+				break;
+			}
+			case Function.RandomBlockWrite:
+			{
+				int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+
+				var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+
+				if (fcb.RandomRecordNumber > 8388607) // maximum addressible record number
+					result.AX |= 0xFF;
+				else
+				{
+					result.AX &= 0xFF00;
+
+					try
+					{
+						unchecked
+						{
+							fcb.CurrentBlockNumber = (ushort)(fcb.RandomRecordNumber / 128);
+							fcb.CurrentRecordNumber = (byte)(fcb.RandomRecordNumber & 127);
+						}
+
+						int recordCount = input.CX;
+
+						machine.DOS.WriteRecords(fcb, recordCount);
+
+						if (machine.DOS.LastError != DOSError.None)
+						{
+							if (machine.DOS.LastError == DOSError.HandleDiskFull)
+								result.AX |= 0x01;
+							else
+								result.AX |= 0xFF;
+						}
+					}
+					catch (OperationCanceledException)
+					{
+						result.AX |= 0x02;
+					}
+
+					fcb.Serialize(machine.SystemMemory);
+				}
 
 				break;
 			}

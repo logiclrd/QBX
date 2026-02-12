@@ -8,7 +8,7 @@ public class StandardOutputFileDescriptor(DOS owner) : FileDescriptor
 
 	protected override bool CanWrite => true;
 
-	protected override void SeekCore(int offset)
+	protected override void SeekCore(uint offset)
 	{
 		throw new DOSException(DOSError.InvalidFunction);
 	}

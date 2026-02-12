@@ -11,10 +11,10 @@ public struct SegmentedAddress
 
 	public SegmentedAddress() { }
 
-	public SegmentedAddress(ushort segment, ushort address)
+	public SegmentedAddress(ushort segment, ushort offset)
 	{
 		Segment = segment;
-		Offset = address;
+		Offset = offset;
 	}
 
 	public SegmentedAddress(int linearAddress)

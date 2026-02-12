@@ -22,7 +22,7 @@ public class StandardInputFileDescriptor(DOS owner) : FileDescriptor
 
 	public override IDisposable? NonBlocking() => new NonBlockingScope(this);
 
-	protected override void SeekCore(int offset)
+	protected override void SeekCore(uint offset)
 	{
 		throw new DOSException(DOSError.InvalidFunction);
 	}

@@ -30,7 +30,7 @@ public abstract class FileDescriptor
 
 	public bool WouldHaveBlocked = false;
 
-	public void Seek(int offset)
+	public void Seek(uint offset)
 	{
 		FlushWriteBuffer();
 
@@ -39,7 +39,7 @@ public abstract class FileDescriptor
 		SeekCore(offset);
 	}
 
-	protected abstract void SeekCore(int offset);
+	protected abstract void SeekCore(uint offset);
 
 	void FillReadBuffer()
 	{

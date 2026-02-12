@@ -122,7 +122,7 @@ public class FileControlBlock
 		inSpan.Slice(dot + 1).CopyTo(outSpan.Slice(8));
 	}
 
-	public int RecordPointer => CurrentBlockNumber * 128 + CurrentRecordNumber;
+	public uint RecordPointer => CurrentBlockNumber * 128u + CurrentRecordNumber;
 
 	public int MemoryAddress;
 

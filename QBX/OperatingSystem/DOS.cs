@@ -576,18 +576,26 @@ public partial class DOS
 	}
 
 	public int ReadRecord(FileControlBlock fcb, bool advance = false)
+		=> ReadRecords(fcb, recordCount: 1, advance, updateRandomRecordNumber: false);
+
+	public int ReadRecords(FileControlBlock fcb, int recordCount)
+		=> ReadRecords(fcb, recordCount, advance: true, updateRandomRecordNumber: true);
+
+	public int ReadRecords(FileControlBlock fcb, int recordCount, bool advance, bool updateRandomRecordNumber)
 	{
 		return TranslateError(() =>
 		{
 			fcb.CurrentRecordNumber &= 127;
 
-			int offset = fcb.RecordPointer * fcb.RecordSize;
+			uint offset = fcb.RecordPointer * fcb.RecordSize;
 
 			if (offset >= fcb.FileSize)
 				return 0;
 			else
 			{
-				if (0x10000 - DataTransferAddressOffset < fcb.RecordSize)
+				int readSize = fcb.RecordSize * recordCount;
+
+				if (0x10000 - DataTransferAddressOffset < readSize)
 					throw new OperationCanceledException("DTA overlaps segment boundary");
 
 				if (Files[fcb.FileHandle] is not FileDescriptor fileDescriptor)
@@ -595,8 +603,6 @@ public partial class DOS
 					LastError = DOSError.InvalidHandle;
 					return -1;
 				}
-
-				int readSize = fcb.RecordSize;
 
 				if (offset + readSize > fcb.FileSize)
 					readSize = (int)(fcb.FileSize - offset);
@@ -606,7 +612,12 @@ public partial class DOS
 				if (fileDescriptor.ReadExactly(readSize, Machine.SystemMemory, DataTransferAddress))
 				{
 					if (advance)
+					{
 						Advance(fcb);
+
+						if (updateRandomRecordNumber)
+							fcb.RandomRecordNumber = fcb.RecordPointer;
+					}
 				}
 
 				return readSize;
@@ -614,18 +625,25 @@ public partial class DOS
 		});
 	}
 
-
 	public int WriteRecord(FileControlBlock fcb, bool advance = false)
+		=> WriteRecords(fcb, recordCount: 1, advance, updateRandomRecordNumber: false);
+
+	public int WriteRecords(FileControlBlock fcb, int recordCount)
+		=> WriteRecords(fcb, recordCount, advance: true, updateRandomRecordNumber: true);
+
+	public int WriteRecords(FileControlBlock fcb, int recordCount, bool advance, bool updateRandomRecordNumber)
 	{
 		return TranslateError(() =>
 		{
-			int offset = fcb.RecordPointer * fcb.RecordSize;
+			uint offset = fcb.RecordPointer * fcb.RecordSize;
 
 			if (offset >= fcb.FileSize)
 				return 0;
 			else
 			{
-				if (0x10000 - DataTransferAddressOffset < fcb.RecordSize)
+				int writeSize = fcb.RecordSize * recordCount;
+
+				if (0x10000 - DataTransferAddressOffset < writeSize)
 					throw new OperationCanceledException("DTA overlaps segment boundary");
 
 				if (Files[fcb.FileHandle] is not FileDescriptor fileDescriptor)
@@ -636,12 +654,20 @@ public partial class DOS
 
 				fileDescriptor.Seek(offset);
 
-				fileDescriptor.Write(fcb.RecordSize, Machine.SystemMemory, DataTransferAddress);
+				for (int i = 0; i < recordCount; i++)
+				{
+					fileDescriptor.Write(fcb.RecordSize, Machine.SystemMemory, DataTransferAddress);
 
-				if (advance)
-					Advance(fcb);
+					if (advance)
+					{
+						Advance(fcb);
 
-				return fcb.RecordSize;
+						if (updateRandomRecordNumber)
+							fcb.RandomRecordNumber = fcb.RecordPointer;
+					}
+				}
+
+				return writeSize;
 			}
 		});
 	}
