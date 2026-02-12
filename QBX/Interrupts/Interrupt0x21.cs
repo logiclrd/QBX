@@ -65,6 +65,8 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		GetDPB = 0x32,
 		Function33 = 0x33,
 		GetInDOSFlagAddress = 0x34,
+		GetInterruptVector = 0x35, // not implemented
+		GetDiskFreeSpace = 0x36,
 	}
 
 	public enum Function33 : byte
@@ -859,6 +861,26 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 					break;
 				}
+				case Function.GetDiskFreeSpace:
+				{
+					int driveIdentifier = input.DX & 0xFF;
+
+					var dpbAddress = machine.DOS.GetDriveParameterBlock(driveIdentifier);
+
+					if (dpbAddress == 0)
+						result.AX = 0xFFFF;
+					else
+					{
+						ref DriveParameterBlock dpb = ref DriveParameterBlock.CreateReference(machine.SystemMemory, dpbAddress.ToLinearAddress());
+
+						result.AX = unchecked((ushort)(65536 / dpb.SectorSize));
+						result.BX = 0xFFFF;
+						result.CX = dpb.SectorSize;
+						result.DX = 0xFFFF;
+					}
+
+					break;
+				}
 			}
 
 			return result;
@@ -867,33 +889,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	/*
 TODO:
 
-Int 21/AH=21h - DOS 1+ - READ RANDOM RECORD FROM FCB FILE
-Int 21/AH=22h - DOS 1+ - WRITE RANDOM RECORD TO FCB FILE
-Int 21/AH=23h - DOS 1+ - GET FILE SIZE FOR FCB
-Int 21/AH=24h - DOS 1+ - SET RANDOM RECORD NUMBER FOR FCB
-Int 21/AH=25h - DOS 1+ - SET INTERRUPT VECTOR
-Int 21/AH=26h - DOS 1+ - CREATE NEW PROGRAM SEGMENT PREFIX
-Int 21/AH=27h - DOS 1+ - RANDOM BLOCK READ FROM FCB FILE
-Int 21/AH=28h - DOS 1+ - RANDOM BLOCK WRITE TO FCB FILE
-Int 21/AH=29h - DOS 1+ - PARSE FILENAME INTO FCB
-Int 21/AH=2Ah - DOS 1+ - GET SYSTEM DATE
-Int 21/AH=2Bh - DOS 1+ - SET SYSTEM DATE
-Int 21/AH=2Ch - DOS 1+ - GET SYSTEM TIME
-Int 21/AH=2Dh - DOS 1+ - SET SYSTEM TIME
-Int 21/AH=2Eh/DL=00h - DOS 1+ - SET VERIFY FLAG
-Int 21/AH=2Fh - DOS 2+ - GET DISK TRANSFER AREA ADDRESS
-Int 21/AH=30h - DOS 2+ - GET DOS VERSION
-Int 21/AH=31h - DOS 2+ - TERMINATE AND STAY RESIDENT
-Int 21/AH=32h - DOS 2+ - GET DOS DRIVE PARAMETER BLOCK FOR SPECIFIC DRIVE
-Int 21/AH=33h - DOS 2+ - EXTENDED BREAK CHECKING
-Int 21/AX=3302h - DOS 3.x+ internal - GET AND SET EXTENDED CONTROL-BREAK CHECKING STATE
-Int 21/AX=3303h - DOS 3.4/4.0 - GET CURRENT CPSW STATE
-Int 21/AX=3304h - DOS 3.4/4.0 - SET CPSW STATE
-Int 21/AX=3305h - DOS 4.0+ - GET BOOT DRIVE
-Int 21/AX=3306h - DOS 5+ - GET TRUE VERSION NUMBER
-Int 21/AX=3307h - Windows95 - SET/CLEAR DOS_FLAG
-Int 21/AH=34h - DOS 2+ - GET ADDRESS OF INDOS FLAG
-Int 21/AH=35h - DOS 2+ - GET INTERRUPT VECTOR
 Int 21/AH=36h - DOS 2+ - GET FREE DISK SPACE
 Int 21/AH=37h - DOS 2.x and 3.3+ only - AVAILDEV - SPECIFY \DEV\ PREFIX USE
 Int 21/AH=38h - DOS 2+ - GET COUNTRY-SPECIFIC INFORMATION
