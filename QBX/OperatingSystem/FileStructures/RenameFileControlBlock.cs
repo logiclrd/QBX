@@ -30,7 +30,7 @@ public class RenameFileControlBlock
 	public void SetOldFileName(string newValue) => FileControlBlock.SetFileName(newValue, OldFileNameBytes);
 	public void SetNewFileName(string newValue) => FileControlBlock.SetFileName(newValue, NewFileNameBytes);
 
-	public static RenameFileControlBlock Deserialize(SystemMemory memory, int address)
+	public static RenameFileControlBlock Deserialize(IMemory memory, int address)
 	{
 		var rfcb = new RenameFileControlBlock();
 

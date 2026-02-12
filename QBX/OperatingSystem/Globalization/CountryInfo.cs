@@ -45,7 +45,7 @@ public class CountryInfo
 		DataSeparator.Set(cultureInfo.TextInfo.ListSeparator);
 	}
 
-	public void Serialize(SystemMemory memory, int address)
+	public void Serialize(IMemory memory, int address)
 	{
 		var stream = new SystemMemoryStream(memory, address, 36);
 
@@ -66,7 +66,7 @@ public class CountryInfo
 		writer.Write(Reserved);
 	}
 
-	public void Deserialize(SystemMemory memory, int address)
+	public void Deserialize(IMemory memory, int address)
 	{
 		var stream = new SystemMemoryStream(memory, address, 36);
 

@@ -1,12 +1,9 @@
-﻿using QBX.Interrupts;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.IO;
-using System.Text;
 
 namespace QBX.Hardware;
 
-public class SystemMemoryStream(SystemMemory memory, int memoryOffset, int length) : Stream
+public class SystemMemoryStream(IMemory memory, int memoryOffset, int length) : Stream
 {
 	public override bool CanRead => true;
 	public override bool CanSeek => true;

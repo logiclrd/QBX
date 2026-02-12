@@ -297,7 +297,7 @@ public class FileControlBlock
 
 	public int MemoryAddress;
 
-	public static FileControlBlock Deserialize(SystemMemory memory, int address)
+	public static FileControlBlock Deserialize(IMemory memory, int address)
 	{
 		FileControlBlock fcb;
 
@@ -326,10 +326,10 @@ public class FileControlBlock
 		return fcb;
 	}
 
-	public virtual void Serialize(SystemMemory memory)
+	public virtual void Serialize(IMemory memory)
 		=> Serialize(memory, MemoryAddress);
 
-	protected void Serialize(SystemMemory memory, int address)
+	protected void Serialize(IMemory memory, int address)
 	{
 		var stream = new SystemMemoryStream(memory, address, 36);
 
@@ -352,7 +352,7 @@ public class FileControlBlock
 		writer.Write(unchecked((byte)(RandomRecordNumber >> 16)));
 	}
 
-	protected void DeserializeCore(SystemMemory memory, int address)
+	protected void DeserializeCore(IMemory memory, int address)
 	{
 		var stream = new SystemMemoryStream(memory, address, 36);
 

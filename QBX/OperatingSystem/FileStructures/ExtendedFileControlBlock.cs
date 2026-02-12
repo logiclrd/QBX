@@ -8,7 +8,7 @@ public class ExtendedFileControlBlock : FileControlBlock
 	// 5 reserved bytes
 	public FileAttributes Attributes;
 
-	public override void Serialize(SystemMemory memory)
+	public override void Serialize(IMemory memory)
 	{
 		memory[MemoryAddress] = Signature;
 		memory[MemoryAddress + 1] = 0;

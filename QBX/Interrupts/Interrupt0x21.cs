@@ -276,11 +276,11 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
 
-					var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
 
 					int fd = machine.DOS.OpenFile(fcb, FileMode.Open);
 
-					fcb.Serialize(machine.SystemMemory);
+					fcb.Serialize(machine.MemoryBus);
 
 					result.AX &= 0xFF00;
 
@@ -293,7 +293,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
 
-					var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
 
 					result.AX &= 0xFF00;
 
@@ -306,7 +306,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
 
-					var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
 
 					result.AX &= 0xFF00;
 
@@ -319,7 +319,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
 
-					var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
 
 					result.AX &= 0xFF00;
 
@@ -332,7 +332,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
 
-					var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
 
 					result.AX &= 0xFF00;
 
@@ -347,7 +347,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
 
-					var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
 
 					result.AX &= 0xFF00;
 
@@ -363,7 +363,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 						result.AX |= 0x02;
 					}
 
-					fcb.Serialize(machine.SystemMemory);
+					fcb.Serialize(machine.MemoryBus);
 
 					break;
 				}
@@ -371,7 +371,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
 
-					var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
 
 					result.AX &= 0xFF00;
 
@@ -392,7 +392,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 						result.AX |= 0x02;
 					}
 
-					fcb.Serialize(machine.SystemMemory);
+					fcb.Serialize(machine.MemoryBus);
 
 					break;
 				}
@@ -400,11 +400,11 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
 
-					var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
 
 					int fd = machine.DOS.OpenFile(fcb, FileMode.Create);
 
-					fcb.Serialize(machine.SystemMemory);
+					fcb.Serialize(machine.MemoryBus);
 
 					result.AX &= 0xFF00;
 
@@ -417,7 +417,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
 
-					var rfcb = RenameFileControlBlock.Deserialize(machine.SystemMemory, offset);
+					var rfcb = RenameFileControlBlock.Deserialize(machine.MemoryBus, offset);
 
 					machine.DOS.RenameFiles(rfcb);
 
@@ -517,7 +517,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
 
-					var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
 
 					if (fcb.RandomRecordNumber > 8388607) // maximum addressible record number
 						result.AX |= 0xFF;
@@ -543,7 +543,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 							result.AX |= 0x02;
 						}
 
-						fcb.Serialize(machine.SystemMemory);
+						fcb.Serialize(machine.MemoryBus);
 					}
 
 					break;
@@ -552,7 +552,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
 
-					var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
 
 					if (fcb.RandomRecordNumber > 8388607) // maximum addressible record number
 						result.AX |= 0xFF;
@@ -583,7 +583,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 							result.AX |= 0x02;
 						}
 
-						fcb.Serialize(machine.SystemMemory);
+						fcb.Serialize(machine.MemoryBus);
 					}
 
 					break;
@@ -592,14 +592,14 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
 
-					var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
 
 					result.AX &= 0xFF00;
 
 					if (!machine.DOS.PopulateFileInfo(fcb))
 						result.AX |= 0xFF;
 
-					fcb.Serialize(machine.SystemMemory);
+					fcb.Serialize(machine.MemoryBus);
 
 					break;
 				}
@@ -607,7 +607,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
 
-					var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
 
 					result.AX &= 0xFF00;
 
@@ -616,7 +616,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 					else
 						fcb.RandomRecordNumber = unchecked((uint)fcb.RecordPointer);
 
-					fcb.Serialize(machine.SystemMemory);
+					fcb.Serialize(machine.MemoryBus);
 
 					break;
 				}
@@ -624,7 +624,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
 
-					var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
 
 					if (fcb.RandomRecordNumber > 8388607) // maximum addressible record number
 						result.AX |= 0xFF;
@@ -652,7 +652,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 							result.AX |= 0x02;
 						}
 
-						fcb.Serialize(machine.SystemMemory);
+						fcb.Serialize(machine.MemoryBus);
 					}
 
 					break;
@@ -661,7 +661,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
 
-					var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
 
 					if (fcb.RandomRecordNumber > 8388607) // maximum addressible record number
 						result.AX |= 0xFF;
@@ -694,7 +694,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 							result.AX |= 0x02;
 						}
 
-						fcb.Serialize(machine.SystemMemory);
+						fcb.Serialize(machine.MemoryBus);
 					}
 
 					break;
@@ -703,7 +703,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					int offset = input.AsRegistersEx().ES * 0x10 + input.DI;
 
-					var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
 
 					var flags = unchecked((ParseFlags)input.AX);
 
@@ -896,7 +896,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 						countryInfo.Import(machine.DOS.CurrentCulture);
 
-						countryInfo.Serialize(machine.SystemMemory, offset);
+						countryInfo.Serialize(machine.MemoryBus, offset);
 					}
 					else
 					{
