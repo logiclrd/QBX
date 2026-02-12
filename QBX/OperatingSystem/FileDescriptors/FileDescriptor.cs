@@ -50,7 +50,7 @@ public abstract class FileDescriptor
 		}
 	}
 
-	public void FlushWriteBuffer()
+	public void FlushWriteBuffer(bool flushToDisk = false)
 	{
 		if (CanWrite)
 		{
@@ -81,8 +81,13 @@ public abstract class FileDescriptor
 				throw new Exception("Write failed"); // TODO: proper type
 
 			WriteBuffer.Free(numWritten);
+
+			if (flushToDisk)
+				FlushToDisk();
 		}
 	}
+
+	protected virtual void FlushToDisk() { }
 
 	public byte ReadByte()
 	{

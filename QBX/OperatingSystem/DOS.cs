@@ -39,6 +39,8 @@ public partial class DOS
 
 	public List<FileDescriptor?> Files = new List<FileDescriptor?>();
 
+	public bool VerifyWrites = false;
+
 	StandardInputFileDescriptor _stdin;
 	StandardOutputFileDescriptor _stdout;
 
@@ -362,6 +364,9 @@ public partial class DOS
 					fileDescriptor.Column++;
 				} while ((fileDescriptor.Column & 7) != 0);
 			}
+
+			if (VerifyWrites)
+				fileDescriptor.FlushWriteBuffer(true);
 		});
 	}
 
@@ -407,6 +412,9 @@ public partial class DOS
 				WriteByte(fileHandle, bytes[0], out b);
 				bytes = bytes.Slice(1);
 			}
+
+			if (VerifyWrites)
+				fileDescriptor.FlushWriteBuffer(true);
 		}
 	}
 
@@ -666,6 +674,9 @@ public partial class DOS
 							fcb.RandomRecordNumber = fcb.RecordPointer;
 					}
 				}
+
+				if (VerifyWrites)
+					fileDescriptor.FlushWriteBuffer(true);
 
 				return writeSize;
 			}

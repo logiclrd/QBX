@@ -8,6 +8,11 @@ public class RegularFileDescriptor(FileStream stream) : FileDescriptor
 	protected override bool CanRead => stream.CanRead;
 	protected override bool CanWrite => stream.CanWrite;
 
+	protected override void FlushToDisk()
+	{
+		stream.Flush(flushToDisk: true);
+	}
+
 	protected override void SeekCore(uint offset)
 	{
 		stream.Position = offset;

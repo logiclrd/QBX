@@ -58,6 +58,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		SetDate = 0x2B,
 		GetTime = 0x2C,
 		SetTime = 0x2D,
+		SetResetVerifyFlag = 0x2E,
 		GetDiskTransferAddress = 0x2F,
 	}
 
@@ -754,6 +755,11 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 				machine.SystemClock.SetCurrentTime(now);
 
+				break;
+			}
+			case Function.SetResetVerifyFlag:
+			{
+				machine.DOS.VerifyWrites = (input.AX & 0xFF) != 0;
 				break;
 			}
 			case Function.GetDiskTransferAddress:
