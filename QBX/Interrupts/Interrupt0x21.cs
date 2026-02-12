@@ -6,6 +6,7 @@ using QBX.Hardware;
 using QBX.OperatingSystem;
 using QBX.OperatingSystem.Breaks;
 using QBX.OperatingSystem.FileStructures;
+using QBX.OperatingSystem.Memory;
 
 namespace QBX.Interrupts;
 
@@ -52,6 +53,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		CreateNewPSP = 0x26, // not implemented
 		RandomBlockRead = 0x27,
 		RandomBlockWrite = 0x28,
+		ParseFilename = 0x29,
 		GetDiskTransferAddress = 0x2F,
 	}
 
@@ -667,6 +669,36 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 					fcb.Serialize(machine.SystemMemory);
 				}
+
+				break;
+			}
+			case Function.ParseFilename:
+			{
+				int offset = input.AsRegistersEx().ES * 0x10 + input.DI;
+
+				var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+
+				var flags = unchecked((ParseFlags)input.AX);
+
+				var inputPointer = new SegmentedAddress(result.DS, result.SI);
+				int inputLinearAddress = inputPointer.ToLinearAddress();
+
+				FileControlBlock.ParseFileName(
+					readInputChar: (idx) => machine.MemoryBus[inputLinearAddress + idx],
+					lengthIsAtLeast: (testLength) => (65536 - inputPointer.Offset >= testLength),
+					advanceInput: (numBytes) => inputPointer.Offset += (ushort)numBytes,
+					ref fcb.DriveIdentifier, fcb.FileNameBytes,
+					out bool containsWildcards,
+					out bool invalidDriveLetter,
+					flags);
+
+				result.AX &= 0xFF00;
+
+				if (containsWildcards)
+					result.AX |= 0x0001;
+
+				result.DS = inputPointer.Segment;
+				result.SI = inputPointer.Offset;
 
 				break;
 			}

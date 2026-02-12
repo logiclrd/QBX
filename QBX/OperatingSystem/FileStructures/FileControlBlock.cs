@@ -73,33 +73,204 @@ public class FileControlBlock
 		return new string(s_fileNameBuffer, 0, offset);
 	}
 
-	public void SetFileName(string fileName) => SetFileName(fileName, FileNameBytes);
+	public void SetFileName(string fileName) => SetFileName(fileName, ref DriveIdentifier, FileNameBytes);
 
-	public static void SetFileName(ReadOnlySpan<char> fileName, Span<byte> fileNameBytes)
+	public static void SetFileName(string fileName, Span<byte> fileNameBytes)
 	{
-		int dot = fileName.LastIndexOf('.');
+		int offset = 0;
 
-		int extraDot = fileName.IndexOf('.');
+		byte driveIdentifierIgnored = 0;
 
-		if (extraDot != dot)
-			throw new Exception("Invalid filename");
+		ParseFileName(
+			(idx) => (offset + idx >= fileName.Length) ? (byte)0 : CP437Encoding.GetByteSemantic(fileName[offset + idx]),
+			(testLength) => fileName.Length > offset + testLength,
+			(numCh) => offset += numCh,
+			ref driveIdentifierIgnored, fileNameBytes,
+			out _, out _,
+			ParseFlags.DoNotSetDefaultDriveIdentifier);
+	}
 
-		fileNameBytes.Clear();
+	public static void SetFileName(string fileName, ref byte driveIdentifier, Span<byte> fileNameBytes)
+	{
+		int offset = 0;
+
+		ParseFileName(
+			(idx) => (offset + idx >= fileName.Length) ? (byte)0 : CP437Encoding.GetByteSemantic(fileName[offset + idx]),
+			(testLength) => fileName.Length > testLength + offset,
+			(numCh) => offset += numCh,
+			ref driveIdentifier, fileNameBytes,
+			out _, out _,
+			ParseFlags.DoNotSetDefaultDriveIdentifier);
+	}
+
+	public static void ParseFileName(
+		Func<int, byte> readInputChar, Func<int, bool> lengthIsAtLeast, Action<int> advanceInput,
+		ref byte driveIdentifier, Span<byte> fileNameBytes,
+		out bool containsWildcards, out bool invalidDriveLetter,
+		ParseFlags flags)
+	{
+		containsWildcards = false;
+		invalidDriveLetter = false;
+
+		int i;
+
+		// Parse Filename fills the fcbDriveId, fcbFileName, and fcbExtent fields of the
+		// specified FCB structure unless the ParseControl parameter specifies otherwise.
+		// To fill these fields, the function strips any leading white-space characters (spaces)
+		// and tabs) from the string pointed to by ParseInput, then uses the remaining char-
+		// acters to create the drive number, filename, and filename extension.
+		while (lengthIsAtLeast(1))
+		{
+			byte ch = readInputChar(0);
+
+			if ((ch == (byte)' ') || (ch == (byte)'\t'))
+				advanceInput(1);
+			else
+				break;
+		}
+
+		//                                                                      If bit 0 in
+		// ParseControl is set, the function also strips exactly one filename separator if
+		// one appears before the first non-white-space character. The following are valid
+		// filename separators:
+		//
+		// : . ; , = +
+		if ((flags & ParseFlags.IgnoreLeadingSeparators) != 0)
+		{
+			if (lengthIsAtLeast(1))
+			{
+				switch (readInputChar(0))
+				{
+					case (byte)':':
+					case (byte)'.':
+					case (byte)';':
+					case (byte)',':
+					case (byte)'=':
+					case (byte)'+':
+						advanceInput(1);
+						break;
+				}
+			}
+		}
+
+		if (readInputChar(1) == (byte)':')
+		{
+			driveIdentifier = unchecked((byte)(readInputChar(0) - 64));
+			advanceInput(2);
+
+			invalidDriveLetter = (driveIdentifier < 1) || (driveIdentifier > 26);
+		}
+		else
+		{
+			if ((flags & ParseFlags.DoNotSetDefaultDriveIdentifier) == 0)
+				driveIdentifier = 0;
+		}
+
+		// Once Parse Filename begins to convert a filename, it continues to read charac-
+		// ters from the string until it encounters a white-space character, a filename sep-
+		// arator, a control character (ASCII 01h through 1Fh), or one of the following
+		// characters:
+		//
+		// / " [ ] < > |
+		int inputLength = 0;
+
+		bool haveDot = false;
+
+		for (i = 1; lengthIsAtLeast(i); i++)
+		{
+			byte b = readInputChar(i);
+
+			bool atEnd = (b < 0x20);
+
+			if (!atEnd)
+			{
+				switch (b)
+				{
+					case (byte)' ': case (byte)'\t':
+					case (byte)':': /*case (byte)'.':*/ case (byte)';': case (byte)',': case (byte)'=': case (byte)'+':
+					case (byte)'/': case (byte)'"': case (byte)'[': case (byte)']': case (byte)'<': case (byte)'>': case (byte)'|':
+						atEnd = true;
+						break;
+					case (byte)'.':
+						atEnd = haveDot;
+						haveDot = true;
+						break;
+				}
+			}
+
+			if (atEnd)
+			{
+				inputLength = i;
+				break;
+			}
+		}
+
+		int dot = inputLength - 1;
+
+		for (i = inputLength - 1; i >= 0; i--)
+		{
+			if (readInputChar(i) == (byte)'.')
+				break;
+
+			dot = i - 1;
+		}
+
+		if (dot < 0)
+			dot = inputLength;
 
 		int nameLength = Math.Min(dot, 8);
-		int extLength = Math.Min(fileName.Length - dot - 1, 3);
+		int extLength = Math.Min(inputLength - dot - 1, 3);
 
-		var inSpan = fileName;
 		var outSpan = fileNameBytes;
 
-		for (int i = 0; i < nameLength; i++)
-			outSpan[i] = CP437Encoding.GetByteSemantic(inSpan[i]);
+		for (i = 0; i < nameLength; i++)
+		{
+			outSpan[i] = readInputChar(i);
 
-		inSpan = inSpan.Slice(dot + 1);
+			if (outSpan[i] == (byte)'*')
+			{
+				while (i < 8)
+					outSpan[i++] = (byte)'?';
+
+				containsWildcards = true;
+
+				break;
+			}
+		}
+
+		// If the filename has fewer than eight characters, the function fills the
+		// remaining bytes in the fcbFileName field with space characters (ASCII 20h).
+		if ((nameLength > 0) || ((flags & ParseFlags.DoNotClearOnInvalidFileName) == 0))
+			while (i < 8)
+				outSpan[i++] = (byte)' ';
+
+		advanceInput(nameLength + 1);
+
 		outSpan = outSpan.Slice(8);
 
-		for (int i = 0; i < extLength; i++)
-			outSpan[i] = CP437Encoding.GetByteSemantic(inSpan[i]);
+		for (i = 0; i < extLength; i++)
+		{
+			outSpan[i] = readInputChar(i);
+
+			if (outSpan[i] == (byte)'*')
+			{
+				while (i < 3)
+					outSpan[i++] = (byte)'?';
+
+				containsWildcards = true;
+
+				break;
+			}
+		}
+
+		//                                                                             If
+		// the filename extension has fewer than three characters, the function fills the
+		// remaining bytes in the fcbExtent field with space characters.
+		if ((extLength > 0) || ((flags & ParseFlags.DoNotClearOnInvalidExtension) == 0))
+			while (i < 3)
+				outSpan[i++] = (byte)' ';
+
+		advanceInput(extLength);
 	}
 
 	public static void SetFileName(ReadOnlySpan<byte> fileName, Span<byte> fileNameBytes)
