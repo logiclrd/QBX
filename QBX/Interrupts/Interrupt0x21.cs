@@ -62,7 +62,17 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		GetDiskTransferAddress = 0x2F,
 		GetVersionNumber = 0x30,
 		KeepProgram = 0x31,
+		GetDPB = 0x32,
+		Function33 = 0x33,
 		GetInDOSFlagAddress = 0x34,
+	}
+
+	public enum Function33 : byte
+	{
+		GetCtrlCCheckFlag = 0x00,
+		SetCtrlCCheckFlag = 0x01, // not implemented
+		GetStartupDrive = 0x05,
+		GetMSDOSVersion = 0x06,
 	}
 
 	public override Registers Execute(Registers input)
@@ -784,14 +794,64 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 					break;
 				}
+				case Function.GetDPB:
+				{
+					int driveNumber = input.DX & 0xFF;
 
+					if (driveNumber == 0)
+						goto case Function.GetDefaultDPB;
 
+					result.AX &= 0xFF00;
 
+					if (driveNumber > 26)
+						result.AX |= 0xFF;
+					else
+					{
+						var address = machine.DOS.GetDriveParameterBlock(driveNumber);
 
+						result.DS = address.Segment;
+						result.BX = address.Offset;
+					}
 
+					break;
+				}
+				case Function.Function33:
+				{
+					var subfunction = (Function33)al;
 
+					switch (subfunction)
+					{
+						case Function33.GetCtrlCCheckFlag:
+						{
+							result.DX = 0; // always off
+							break;
+						}
+						case Function33.GetStartupDrive:
+						{
+							try
+							{
+								string binaryPath = Path.GetFullPath(typeof(DOS).Assembly.Location);
 
+								result.DX = (ushort)(char.ToUpper(binaryPath[0]) - 'A' + 1);
+							}
+							catch
+							{
+								result.DX = 2; // C:\, if something goes wrong
+							}
 
+							break;
+						}
+						case Function33.GetMSDOSVersion:
+						{
+							result.BX = 5; // MS-DOS version 5.0, which is the MS-DOS Programmer's Reference this code was based on
+							result.DX = 0x800; // revision 0, version flag 8: DOS is running from ROM
+
+							break;
+						}
+					}
+
+					break;
+				}
 				case Function.GetInDOSFlagAddress:
 				{
 					result.ES = machine.DOS.InDOSFlagAddress.Segment;
