@@ -78,6 +78,12 @@ public class StringValue : IComparable<StringValue>, IEquatable<StringValue>
 		set => _bytes[index] = value;
 	}
 
+	public int Capacity
+	{
+		get => _bytes.Capacity;
+		set => _bytes.Capacity = value;
+	}
+
 	public void Reset()
 	{
 		if (_isFixedLength)
