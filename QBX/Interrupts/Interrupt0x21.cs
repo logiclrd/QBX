@@ -60,6 +60,8 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		SetTime = 0x2D,
 		SetResetVerifyFlag = 0x2E,
 		GetDiskTransferAddress = 0x2F,
+		GetVersionNumber = 0x30,
+		KeepProgram = 0x31,
 	}
 
 	public override Registers Execute(Registers input)
@@ -76,6 +78,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		switch (function)
 		{
 			case Function.TerminateProgram:
+			case Function.KeepProgram:
 			{
 				machine.DOS.TerminateProgram();
 				throw new TerminatedException();
@@ -766,6 +769,16 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 			{
 				result.ES = machine.DOS.DataTransferAddressSegment;
 				result.BX = machine.DOS.DataTransferAddressOffset;
+				break;
+			}
+			case Function.GetVersionNumber:
+			{
+				bool oemNumber = (input.AX & 0xFF) == 0;
+
+				result.AX = 5; // version 5.0, which is the MS-DOS Programmer's Reference this code was based on
+				result.BX = oemNumber ? (ushort)0 : (ushort)0x800; // DOS version flag 8: DOS is running from ROM
+				result.CX = 0; // BL:CX: serial number (0 if not used)
+
 				break;
 			}
 		}
