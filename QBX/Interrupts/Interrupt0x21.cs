@@ -62,728 +62,747 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		GetDiskTransferAddress = 0x2F,
 		GetVersionNumber = 0x30,
 		KeepProgram = 0x31,
+		GetInDOSFlagAddress = 0x34,
 	}
 
 	public override Registers Execute(Registers input)
 	{
-		byte ah = unchecked((byte)(input.AX >> 8));
-		byte al = unchecked((byte)input.AX);
-
-		var function = (Function)ah;
-
-		var result = input.AsRegistersEx();
-
-		using var suppressionScope = machine.DOS.SuppressExceptionsInScope();
-
-		switch (function)
+		using (machine.DOS.InDOS())
 		{
-			case Function.TerminateProgram:
-			case Function.KeepProgram:
+			byte ah = unchecked((byte)(input.AX >> 8));
+			byte al = unchecked((byte)input.AX);
+
+			var function = (Function)ah;
+
+			var result = input.AsRegistersEx();
+
+			using var suppressionScope = machine.DOS.SuppressExceptionsInScope();
+
+			switch (function)
 			{
-				machine.DOS.TerminateProgram();
-				throw new TerminatedException();
-			}
-			case Function.ReadKeyboardWithEcho:
-			{
-				using (machine.DOS.EnableBreak())
+				case Function.TerminateProgram:
+				case Function.KeepProgram:
 				{
-					try
-					{
-						byte b = machine.DOS.ReadByte(DOS.StandardInput, echo: true);
-
-						result.AX &= 0xFF00;
-						result.AX |= b;
-					}
-					catch (Break) { }
+					machine.DOS.TerminateProgram();
+					throw new TerminatedException();
 				}
-				break;
-			}
-			case Function.DisplayCharacter:
-			{
-				byte ch = unchecked((byte)input.DX);
+				case Function.ReadKeyboardWithEcho:
+				{
+					using (machine.DOS.EnableBreak())
+					{
+						try
+						{
+							byte b = machine.DOS.ReadByte(DOS.StandardInput, echo: true);
 
-				machine.DOS.WriteByte(DOS.StandardOutput, ch, out byte lastCharacterWritten);
+							result.AX &= 0xFF00;
+							result.AX |= b;
+						}
+						catch (Break) { }
+					}
+					break;
+				}
+				case Function.DisplayCharacter:
+				{
+					byte ch = unchecked((byte)input.DX);
 
-				result.AX &= 0xFF00;
-				result.AX |= lastCharacterWritten;
+					machine.DOS.WriteByte(DOS.StandardOutput, ch, out byte lastCharacterWritten);
 
-				break;
-			}
-			case Function.AuxiliaryInput:
-			case Function.AuxiliaryOutput:
-			case Function.PrintCharacter:
-			{
-				// If you don't have a serial port/printer, it appears DOS simply hangs. I'm not going to do that. :-)
-				result.AX &= 0xFF00;
-				break;
-			}
-			case Function.DirectConsoleIO:
-			{
-				byte dl = unchecked((byte)input.DX);
+					result.AX &= 0xFF00;
+					result.AX |= lastCharacterWritten;
 
-				if (dl != 0xFF)
-					machine.DOS.WriteByte(DOS.StandardOutput, dl, out _);
-				else
+					break;
+				}
+				case Function.AuxiliaryInput:
+				case Function.AuxiliaryOutput:
+				case Function.PrintCharacter:
+				{
+					// If you don't have a serial port/printer, it appears DOS simply hangs. I'm not going to do that. :-)
+					result.AX &= 0xFF00;
+					break;
+				}
+				case Function.DirectConsoleIO:
+				{
+					byte dl = unchecked((byte)input.DX);
+
+					if (dl != 0xFF)
+						machine.DOS.WriteByte(DOS.StandardOutput, dl, out _);
+					else
+					{
+						result.AX &= 0xFF00;
+
+						if (machine.DOS.TryReadByte(DOS.StandardInput, out byte b))
+						{
+							result.AX |= b;
+							result.FLAGS &= ~Flags.Zero;
+						}
+						else
+							result.FLAGS |= Flags.Zero;
+					}
+
+					break;
+				}
+				case Function.DirectConsoleInput:
+				{
+					result.AX &= 0xFF00;
+					result.AX |= machine.DOS.ReadByte(DOS.StandardInput, echo: false);
+					break;
+				}
+				case Function.ReadKeyboardWithoutEcho:
+				{
+					using (machine.DOS.EnableBreak())
+					{
+						try
+						{
+							result.AX &= 0xFF00;
+							result.AX |= machine.DOS.ReadByte(DOS.StandardInput, echo: false);
+						}
+						catch (Break) { }
+					}
+					break;
+				}
+				case Function.DisplayString:
+				{
+					int o = input.AsRegistersEx().DS * 0x10 + result.DX;
+
+					while (true)
+					{
+						byte b = machine.SystemMemory[o++];
+
+						if (b == (byte)'$')
+							break;
+
+						machine.DOS.WriteByte(DOS.StandardOutput, b, out _);
+					}
+
+					result.AX &= 0xFF00;
+					result.AX |= (byte)'$';
+
+					break;
+				}
+				case Function.BufferedKeyboardInput:
+				{
+					int o = input.AsRegistersEx().DS * 0x10 + result.DX;
+
+					int numBytesDesired = machine.SystemMemory[o];
+
+					o += 2;
+
+					int numBytesRead = 0;
+
+					while (numBytesRead < numBytesDesired)
+					{
+						byte b = machine.DOS.ReadByte(DOS.StandardInput, echo: false);
+
+						if ((numBytesRead + 1 == numBytesDesired) && (b != 13))
+						{
+							machine.DOS.Beep();
+							continue;
+						}
+
+						machine.DOS.WriteByte(DOS.StandardOutput, b, out _);
+
+						machine.SystemMemory[o + numBytesRead] = b;
+						numBytesRead++;
+
+						if (b == 13)
+							break;
+					}
+
+					machine.SystemMemory[o - 1] = (byte)(numBytesRead - 1);
+
+					break;
+				}
+				case Function.CheckKeyboardStatus:
 				{
 					result.AX &= 0xFF00;
 
-					if (machine.DOS.TryReadByte(DOS.StandardInput, out byte b))
-					{
-						result.AX |= b;
-						result.FLAGS &= ~Flags.Zero;
-					}
-					else
-						result.FLAGS |= Flags.Zero;
+					if ((machine.DOS.Files[0]?.ReadBuffer.IsEmpty == false)
+					 || machine.Keyboard.HasQueuedTangibleInput)
+						result.AX |= 0xFF;
+
+					break;
 				}
-
-				break;
-			}
-			case Function.DirectConsoleInput:
-			{
-				result.AX &= 0xFF00;
-				result.AX |= machine.DOS.ReadByte(DOS.StandardInput, echo: false);
-				break;
-			}
-			case Function.ReadKeyboardWithoutEcho:
-			{
-				using (machine.DOS.EnableBreak())
+				case Function.FlushBufferReadKeyboard:
 				{
-					try
-					{
-						result.AX &= 0xFF00;
-						result.AX |= machine.DOS.ReadByte(DOS.StandardInput, echo: false);
-					}
-					catch (Break) { }
+					machine.DOS.FlushStandardInput();
+
+					result.AX &= 0xFF00;
+
+					if (al == 1)
+						goto case Function.ReadKeyboardWithEcho;
+					else if ((al == 6) && ((input.DX & 0xFF) == 0xFF))
+						goto case Function.DirectConsoleIO;
+					else if (al == 7)
+						goto case Function.DirectConsoleInput;
+					else if (al == 8)
+						goto case Function.ReadKeyboardWithoutEcho;
+
+					break;
 				}
-				break;
-			}
-			case Function.DisplayString:
-			{
-				int o = input.AsRegistersEx().DS * 0x10 + result.DX;
-
-				while (true)
+				case Function.ResetDrive: // does not reset any drives, but does flush all write buffers
 				{
-					byte b = machine.SystemMemory[o++];
-
-					if (b == (byte)'$')
-						break;
-
-					machine.DOS.WriteByte(DOS.StandardOutput, b, out _);
+					machine.DOS.FlushAllBuffers();
+					break;
 				}
-
-				result.AX &= 0xFF00;
-				result.AX |= (byte)'$';
-
-				break;
-			}
-			case Function.BufferedKeyboardInput:
-			{
-				int o = input.AsRegistersEx().DS * 0x10 + result.DX;
-
-				int numBytesDesired = machine.SystemMemory[o];
-
-				o += 2;
-
-				int numBytesRead = 0;
-
-				while (numBytesRead < numBytesDesired)
+				case Function.SetDefaultDrive:
 				{
-					byte b = machine.DOS.ReadByte(DOS.StandardInput, echo: false);
+					char drive = (char)('A' + (input.DX & 0xFF));
 
-					if ((numBytesRead + 1 == numBytesDesired) && (b != 13))
-					{
-						machine.DOS.Beep();
-						continue;
-					}
+					if (char.IsAsciiLetterUpper(drive))
+						machine.DOS.SetDefaultDrive(drive);
 
-					machine.DOS.WriteByte(DOS.StandardOutput, b, out _);
+					result.AX &= 0xFF00;
+					result.AX |= (byte)machine.DOS.GetLogicalDriveCount();
 
-					machine.SystemMemory[o + numBytesRead] = b;
-					numBytesRead++;
-
-					if (b == 13)
-						break;
+					break;
 				}
-
-				machine.SystemMemory[o - 1] = (byte)(numBytesRead - 1);
-
-				break;
-			}
-			case Function.CheckKeyboardStatus:
-			{
-				result.AX &= 0xFF00;
-
-				if ((machine.DOS.Files[0]?.ReadBuffer.IsEmpty == false)
-				 || machine.Keyboard.HasQueuedTangibleInput)
-					result.AX |= 0xFF;
-
-				break;
-			}
-			case Function.FlushBufferReadKeyboard:
-			{
-				machine.DOS.FlushStandardInput();
-
-				result.AX &= 0xFF00;
-
-				if (al == 1)
-					goto case Function.ReadKeyboardWithEcho;
-				else if ((al == 6) && ((input.DX & 0xFF) == 0xFF))
-					goto case Function.DirectConsoleIO;
-				else if (al == 7)
-					goto case Function.DirectConsoleInput;
-				else if (al == 8)
-					goto case Function.ReadKeyboardWithoutEcho;
-
-				break;
-			}
-			case Function.ResetDrive: // does not reset any drives, but does flush all write buffers
-			{
-				machine.DOS.FlushAllBuffers();
-				break;
-			}
-			case Function.SetDefaultDrive:
-			{
-				char drive = (char)('A' + (input.DX & 0xFF));
-
-				if (char.IsAsciiLetterUpper(drive))
-					machine.DOS.SetDefaultDrive(drive);
-
-				result.AX &= 0xFF00;
-				result.AX |= (byte)machine.DOS.GetLogicalDriveCount();
-
-				break;
-			}
-			case Function.OpenFileWithFCB:
-			{
-				int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
-
-				var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
-
-				int fd = machine.DOS.OpenFile(fcb, FileMode.Open);
-
-				fcb.Serialize(machine.SystemMemory);
-
-				result.AX &= 0xFF00;
-
-				if (fd < 0)
-					result.AX |= 0xFF;
-
-				break;
-			}
-			case Function.CloseFileWithFCB:
-			{
-				int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
-
-				var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
-
-				result.AX &= 0xFF00;
-
-				if (!machine.DOS.CloseFile(fcb.FileHandle))
-					result.AX |= 0xFF;
-
-				break;
-			}
-			case Function.FindFirstFileWithFCB:
-			{
-				int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
-
-				var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
-
-				result.AX &= 0xFF00;
-
-				if (!machine.DOS.FindFirst(fcb))
-					result.AX |= 0xFF;
-
-				break;
-			}
-			case Function.FindNextFileWithFCB:
-			{
-				int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
-
-				var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
-
-				result.AX &= 0xFF00;
-
-				if (!machine.DOS.FindNext(fcb))
-					result.AX |= 0xFF;
-
-				break;
-			}
-			case Function.DeleteFileWithFCB:
-			{
-				int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
-
-				var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
-
-				result.AX &= 0xFF00;
-
-				machine.DOS.DeleteFile(fcb);
-
-				if (machine.DOS.LastError != DOSError.None)
-					result.AX |= 0xFF;
-
-				break;
-			}
-			case Function.SequentialRead:
-			{
-				int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
-
-				var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
-
-				result.AX &= 0xFF00;
-
-				try
+				case Function.OpenFileWithFCB:
 				{
-					machine.DOS.ReadRecord(fcb, advance: true);
+					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+
+					var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+
+					int fd = machine.DOS.OpenFile(fcb, FileMode.Open);
+
+					fcb.Serialize(machine.SystemMemory);
+
+					result.AX &= 0xFF00;
+
+					if (fd < 0)
+						result.AX |= 0xFF;
+
+					break;
+				}
+				case Function.CloseFileWithFCB:
+				{
+					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+
+					var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+
+					result.AX &= 0xFF00;
+
+					if (!machine.DOS.CloseFile(fcb.FileHandle))
+						result.AX |= 0xFF;
+
+					break;
+				}
+				case Function.FindFirstFileWithFCB:
+				{
+					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+
+					var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+
+					result.AX &= 0xFF00;
+
+					if (!machine.DOS.FindFirst(fcb))
+						result.AX |= 0xFF;
+
+					break;
+				}
+				case Function.FindNextFileWithFCB:
+				{
+					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+
+					var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+
+					result.AX &= 0xFF00;
+
+					if (!machine.DOS.FindNext(fcb))
+						result.AX |= 0xFF;
+
+					break;
+				}
+				case Function.DeleteFileWithFCB:
+				{
+					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+
+					var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+
+					result.AX &= 0xFF00;
+
+					machine.DOS.DeleteFile(fcb);
 
 					if (machine.DOS.LastError != DOSError.None)
 						result.AX |= 0xFF;
+
+					break;
 				}
-				catch (OperationCanceledException)
+				case Function.SequentialRead:
 				{
-					result.AX |= 0x02;
+					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+
+					var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+
+					result.AX &= 0xFF00;
+
+					try
+					{
+						machine.DOS.ReadRecord(fcb, advance: true);
+
+						if (machine.DOS.LastError != DOSError.None)
+							result.AX |= 0xFF;
+					}
+					catch (OperationCanceledException)
+					{
+						result.AX |= 0x02;
+					}
+
+					fcb.Serialize(machine.SystemMemory);
+
+					break;
 				}
-
-				fcb.Serialize(machine.SystemMemory);
-
-				break;
-			}
-			case Function.SequentialWrite:
-			{
-				int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
-
-				var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
-
-				result.AX &= 0xFF00;
-
-				try
+				case Function.SequentialWrite:
 				{
-					machine.DOS.WriteRecord(fcb, advance: true);
+					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+
+					var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+
+					result.AX &= 0xFF00;
+
+					try
+					{
+						machine.DOS.WriteRecord(fcb, advance: true);
+
+						if (machine.DOS.LastError != DOSError.None)
+						{
+							if (machine.DOS.LastError == DOSError.HandleDiskFull)
+								result.AX |= 0x01;
+							else
+								result.AX |= 0xFF;
+						}
+					}
+					catch (OperationCanceledException)
+					{
+						result.AX |= 0x02;
+					}
+
+					fcb.Serialize(machine.SystemMemory);
+
+					break;
+				}
+				case Function.CreateFileWithFCB:
+				{
+					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+
+					var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+
+					int fd = machine.DOS.OpenFile(fcb, FileMode.Create);
+
+					fcb.Serialize(machine.SystemMemory);
+
+					result.AX &= 0xFF00;
+
+					if (fd < 0)
+						result.AX |= 0xFF;
+
+					break;
+				}
+				case Function.RenameFileWithFCB:
+				{
+					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+
+					var rfcb = RenameFileControlBlock.Deserialize(machine.SystemMemory, offset);
+
+					machine.DOS.RenameFiles(rfcb);
+
+					result.AX &= 0xFF00;
 
 					if (machine.DOS.LastError != DOSError.None)
+						result.AX |= 0xFF;
+
+					break;
+				}
+				case Function.GetDefaultDrive:
+				{
+					try
 					{
-						if (machine.DOS.LastError == DOSError.HandleDiskFull)
-							result.AX |= 0x01;
+						int defaultDrive = char.ToUpperInvariant(Environment.CurrentDirectory[0]) - 'A';
+
+						if ((defaultDrive >= 0) && (defaultDrive <= 25))
+						{
+							result.AX &= 0xFF00;
+							result.AX |= (byte)defaultDrive;
+						}
+					}
+					catch
+					{
+						result.AX |= 0xFF;
+					}
+
+					break;
+				}
+				case Function.GetDefaultDriveData:
+				{
+					input.DX = 0;
+					goto case Function.GetDriveData;
+				}
+				case Function.GetDriveData:
+				{
+					try
+					{
+						char driveLetter = (char)((input.DX & 0xFF) + 64);
+
+						if (driveLetter == '@')
+							driveLetter = char.ToUpperInvariant(Environment.CurrentDirectory[0]);
+
+						var driveInfo = new DriveInfo(driveLetter.ToString());
+
+						// No way to sensibly map modern numbers into the return from this
+						// call, so we just fake a 100MB hard drive or a 1.44MB floppy.
+
+						if (driveInfo.DriveType == DriveType.Removable)
+						{
+							// TODO: use memory allocator to properly reserve permanent space for this function
+							machine.SystemMemory[0x20000 + (driveLetter - 'A')] = 0xF0;
+
+							result.AX = 1; // sectors per cluster
+							result.CX = 512; // bytes per sector
+							result.DX = 2880; // number of clusters
+
+							result.DS = 0x2000;
+							result.BX = (ushort)(driveLetter - 'A');
+						}
 						else
-							result.AX |= 0xFF;
+						{
+							// TODO: use memory allocator to properly reserve permanent space for this function
+							machine.SystemMemory[0x20000 + (driveLetter - 'A')] = 0xF8;
+
+							result.AX = 4; // sectors per cluster
+							result.CX = 512; // bytes per sector
+							result.DX = 51200; // number of clusters
+
+							result.DS = 0x2000;
+							result.BX = (ushort)(driveLetter - 'A');
+						}
 					}
-				}
-				catch (OperationCanceledException)
-				{
-					result.AX |= 0x02;
-				}
-
-				fcb.Serialize(machine.SystemMemory);
-
-				break;
-			}
-			case Function.CreateFileWithFCB:
-			{
-				int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
-
-				var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
-
-				int fd = machine.DOS.OpenFile(fcb, FileMode.Create);
-
-				fcb.Serialize(machine.SystemMemory);
-
-				result.AX &= 0xFF00;
-
-				if (fd < 0)
-					result.AX |= 0xFF;
-
-				break;
-			}
-			case Function.RenameFileWithFCB:
-			{
-				int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
-
-				var rfcb = RenameFileControlBlock.Deserialize(machine.SystemMemory, offset);
-
-				machine.DOS.RenameFiles(rfcb);
-
-				result.AX &= 0xFF00;
-
-				if (machine.DOS.LastError != DOSError.None)
-					result.AX |= 0xFF;
-
-				break;
-			}
-			case Function.GetDefaultDrive:
-			{
-				try
-				{
-					int defaultDrive = char.ToUpperInvariant(Environment.CurrentDirectory[0]) - 'A';
-
-					if ((defaultDrive >= 0) && (defaultDrive <= 25))
+					catch
 					{
-						result.AX &= 0xFF00;
-						result.AX |= (byte)defaultDrive;
+						result.AX |= 0xFF;
 					}
+
+					break;
 				}
-				catch
+				case Function.SetDiskTransferAddress:
 				{
-					result.AX |= 0xFF;
+					machine.DOS.DataTransferAddressSegment = result.DS;
+					machine.DOS.DataTransferAddressOffset = result.DX;
+					break;
 				}
-
-				break;
-			}
-			case Function.GetDefaultDriveData:
-			{
-				input.DX = 0;
-				goto case Function.GetDriveData;
-			}
-			case Function.GetDriveData:
-			{
-				try
+				case Function.GetDefaultDPB:
 				{
-					char driveLetter = (char)((input.DX & 0xFF) + 64);
+					var address = machine.DOS.GetDefaultDriveParameterBlock();
 
-					if (driveLetter == '@')
-						driveLetter = char.ToUpperInvariant(Environment.CurrentDirectory[0]);
+					result.DS = address.Segment;
+					result.BX = address.Offset;
 
-					var driveInfo = new DriveInfo(driveLetter.ToString());
+					break;
+				}
+				case Function.RandomRead:
+				{
+					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
 
-					// No way to sensibly map modern numbers into the return from this
-					// call, so we just fake a 100MB hard drive or a 1.44MB floppy.
+					var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
 
-					if (driveInfo.DriveType == DriveType.Removable)
-					{
-						// TODO: use memory allocator to properly reserve permanent space for this function
-						machine.SystemMemory[0x20000 + (driveLetter - 'A')] = 0xF0;
-
-						result.AX = 1; // sectors per cluster
-						result.CX = 512; // bytes per sector
-						result.DX = 2880; // number of clusters
-
-						result.DS = 0x2000;
-						result.BX = (ushort)(driveLetter - 'A');
-					}
+					if (fcb.RandomRecordNumber > 8388607) // maximum addressible record number
+						result.AX |= 0xFF;
 					else
 					{
-						// TODO: use memory allocator to properly reserve permanent space for this function
-						machine.SystemMemory[0x20000 + (driveLetter - 'A')] = 0xF8;
+						result.AX &= 0xFF00;
 
-						result.AX = 4; // sectors per cluster
-						result.CX = 512; // bytes per sector
-						result.DX = 51200; // number of clusters
-
-						result.DS = 0x2000;
-						result.BX = (ushort)(driveLetter - 'A');
-					}
-				}
-				catch
-				{
-					result.AX |= 0xFF;
-				}
-
-				break;
-			}
-			case Function.SetDiskTransferAddress:
-			{
-				machine.DOS.DataTransferAddressSegment = result.DS;
-				machine.DOS.DataTransferAddressOffset = result.DX;
-				break;
-			}
-			case Function.GetDefaultDPB:
-			{
-				var address = machine.DOS.GetDefaultDriveParameterBlock();
-
-				result.DS = address.Segment;
-				result.BX = address.Offset;
-
-				break;
-			}
-			case Function.RandomRead:
-			{
-				int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
-
-				var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
-
-				if (fcb.RandomRecordNumber > 8388607) // maximum addressible record number
-					result.AX |= 0xFF;
-				else
-				{
-					result.AX &= 0xFF00;
-
-					try
-					{
-						unchecked
+						try
 						{
-							fcb.CurrentBlockNumber = (ushort)(fcb.RandomRecordNumber / 128);
-							fcb.CurrentRecordNumber = (byte)(fcb.RandomRecordNumber & 127);
-						}
+							unchecked
+							{
+								fcb.CurrentBlockNumber = (ushort)(fcb.RandomRecordNumber / 128);
+								fcb.CurrentRecordNumber = (byte)(fcb.RandomRecordNumber & 127);
+							}
 
-						machine.DOS.ReadRecord(fcb, advance: false);
+							machine.DOS.ReadRecord(fcb, advance: false);
 
-						if (machine.DOS.LastError != DOSError.None)
-							result.AX |= 0xFF;
-					}
-					catch (OperationCanceledException)
-					{
-						result.AX |= 0x02;
-					}
-
-					fcb.Serialize(machine.SystemMemory);
-				}
-
-				break;
-			}
-			case Function.RandomWrite:
-			{
-				int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
-
-				var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
-
-				if (fcb.RandomRecordNumber > 8388607) // maximum addressible record number
-					result.AX |= 0xFF;
-				else
-				{
-					result.AX &= 0xFF00;
-
-					try
-					{
-						unchecked
-						{
-							fcb.CurrentBlockNumber = (ushort)(fcb.RandomRecordNumber / 128);
-							fcb.CurrentRecordNumber = (byte)(fcb.RandomRecordNumber & 127);
-						}
-
-						machine.DOS.WriteRecord(fcb, advance: false);
-
-						if (machine.DOS.LastError != DOSError.None)
-						{
-							if (machine.DOS.LastError == DOSError.HandleDiskFull)
-								result.AX |= 0x01;
-							else
+							if (machine.DOS.LastError != DOSError.None)
 								result.AX |= 0xFF;
 						}
-					}
-					catch (OperationCanceledException)
-					{
-						result.AX |= 0x02;
-					}
-
-					fcb.Serialize(machine.SystemMemory);
-				}
-
-				break;
-			}
-			case Function.GetFileSize:
-			{
-				int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
-
-				var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
-
-				result.AX &= 0xFF00;
-
-				if (!machine.DOS.PopulateFileInfo(fcb))
-					result.AX |= 0xFF;
-
-				fcb.Serialize(machine.SystemMemory);
-
-				break;
-			}
-			case Function.SetRandomRecordNumber:
-			{
-				int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
-
-				var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
-
-				result.AX &= 0xFF00;
-
-				if ((fcb.FileHandle == 0) || (fcb.RecordPointer != 0))
-					result.AX |= 0xFF;
-				else
-					fcb.RandomRecordNumber = unchecked((uint)fcb.RecordPointer);
-
-				fcb.Serialize(machine.SystemMemory);
-
-				break;
-			}
-			case Function.RandomBlockRead:
-			{
-				int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
-
-				var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
-
-				if (fcb.RandomRecordNumber > 8388607) // maximum addressible record number
-					result.AX |= 0xFF;
-				else
-				{
-					result.AX &= 0xFF00;
-
-					try
-					{
-						unchecked
+						catch (OperationCanceledException)
 						{
-							fcb.CurrentBlockNumber = (ushort)(fcb.RandomRecordNumber / 128);
-							fcb.CurrentRecordNumber = (byte)(fcb.RandomRecordNumber & 127);
+							result.AX |= 0x02;
 						}
 
-						int recordCount = input.CX;
-
-						machine.DOS.ReadRecords(fcb, recordCount);
-
-						if (machine.DOS.LastError != DOSError.None)
-							result.AX |= 0xFF;
-					}
-					catch (OperationCanceledException)
-					{
-						result.AX |= 0x02;
+						fcb.Serialize(machine.SystemMemory);
 					}
 
-					fcb.Serialize(machine.SystemMemory);
+					break;
 				}
-
-				break;
-			}
-			case Function.RandomBlockWrite:
-			{
-				int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
-
-				var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
-
-				if (fcb.RandomRecordNumber > 8388607) // maximum addressible record number
-					result.AX |= 0xFF;
-				else
+				case Function.RandomWrite:
 				{
-					result.AX &= 0xFF00;
+					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
 
-					try
+					var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+
+					if (fcb.RandomRecordNumber > 8388607) // maximum addressible record number
+						result.AX |= 0xFF;
+					else
 					{
-						unchecked
+						result.AX &= 0xFF00;
+
+						try
 						{
-							fcb.CurrentBlockNumber = (ushort)(fcb.RandomRecordNumber / 128);
-							fcb.CurrentRecordNumber = (byte)(fcb.RandomRecordNumber & 127);
+							unchecked
+							{
+								fcb.CurrentBlockNumber = (ushort)(fcb.RandomRecordNumber / 128);
+								fcb.CurrentRecordNumber = (byte)(fcb.RandomRecordNumber & 127);
+							}
+
+							machine.DOS.WriteRecord(fcb, advance: false);
+
+							if (machine.DOS.LastError != DOSError.None)
+							{
+								if (machine.DOS.LastError == DOSError.HandleDiskFull)
+									result.AX |= 0x01;
+								else
+									result.AX |= 0xFF;
+							}
+						}
+						catch (OperationCanceledException)
+						{
+							result.AX |= 0x02;
 						}
 
-						int recordCount = input.CX;
+						fcb.Serialize(machine.SystemMemory);
+					}
 
-						machine.DOS.WriteRecords(fcb, recordCount);
+					break;
+				}
+				case Function.GetFileSize:
+				{
+					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
 
-						if (machine.DOS.LastError != DOSError.None)
+					var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+
+					result.AX &= 0xFF00;
+
+					if (!machine.DOS.PopulateFileInfo(fcb))
+						result.AX |= 0xFF;
+
+					fcb.Serialize(machine.SystemMemory);
+
+					break;
+				}
+				case Function.SetRandomRecordNumber:
+				{
+					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+
+					var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+
+					result.AX &= 0xFF00;
+
+					if ((fcb.FileHandle == 0) || (fcb.RecordPointer != 0))
+						result.AX |= 0xFF;
+					else
+						fcb.RandomRecordNumber = unchecked((uint)fcb.RecordPointer);
+
+					fcb.Serialize(machine.SystemMemory);
+
+					break;
+				}
+				case Function.RandomBlockRead:
+				{
+					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+
+					var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+
+					if (fcb.RandomRecordNumber > 8388607) // maximum addressible record number
+						result.AX |= 0xFF;
+					else
+					{
+						result.AX &= 0xFF00;
+
+						try
 						{
-							if (machine.DOS.LastError == DOSError.HandleDiskFull)
-								result.AX |= 0x01;
-							else
+							unchecked
+							{
+								fcb.CurrentBlockNumber = (ushort)(fcb.RandomRecordNumber / 128);
+								fcb.CurrentRecordNumber = (byte)(fcb.RandomRecordNumber & 127);
+							}
+
+							int recordCount = input.CX;
+
+							machine.DOS.ReadRecords(fcb, recordCount);
+
+							if (machine.DOS.LastError != DOSError.None)
 								result.AX |= 0xFF;
 						}
-					}
-					catch (OperationCanceledException)
-					{
-						result.AX |= 0x02;
+						catch (OperationCanceledException)
+						{
+							result.AX |= 0x02;
+						}
+
+						fcb.Serialize(machine.SystemMemory);
 					}
 
-					fcb.Serialize(machine.SystemMemory);
+					break;
+				}
+				case Function.RandomBlockWrite:
+				{
+					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+
+					var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+
+					if (fcb.RandomRecordNumber > 8388607) // maximum addressible record number
+						result.AX |= 0xFF;
+					else
+					{
+						result.AX &= 0xFF00;
+
+						try
+						{
+							unchecked
+							{
+								fcb.CurrentBlockNumber = (ushort)(fcb.RandomRecordNumber / 128);
+								fcb.CurrentRecordNumber = (byte)(fcb.RandomRecordNumber & 127);
+							}
+
+							int recordCount = input.CX;
+
+							machine.DOS.WriteRecords(fcb, recordCount);
+
+							if (machine.DOS.LastError != DOSError.None)
+							{
+								if (machine.DOS.LastError == DOSError.HandleDiskFull)
+									result.AX |= 0x01;
+								else
+									result.AX |= 0xFF;
+							}
+						}
+						catch (OperationCanceledException)
+						{
+							result.AX |= 0x02;
+						}
+
+						fcb.Serialize(machine.SystemMemory);
+					}
+
+					break;
+				}
+				case Function.ParseFilename:
+				{
+					int offset = input.AsRegistersEx().ES * 0x10 + input.DI;
+
+					var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
+
+					var flags = unchecked((ParseFlags)input.AX);
+
+					var inputPointer = new SegmentedAddress(result.DS, result.SI);
+					int inputLinearAddress = inputPointer.ToLinearAddress();
+
+					FileControlBlock.ParseFileName(
+						readInputChar: (idx) => machine.MemoryBus[inputLinearAddress + idx],
+						lengthIsAtLeast: (testLength) => (65536 - inputPointer.Offset >= testLength),
+						advanceInput: (numBytes) => inputPointer.Offset += (ushort)numBytes,
+						ref fcb.DriveIdentifier, fcb.FileNameBytes,
+						out bool containsWildcards,
+						out bool invalidDriveLetter,
+						flags);
+
+					result.AX &= 0xFF00;
+
+					if (containsWildcards)
+						result.AX |= 0x0001;
+
+					result.DS = inputPointer.Segment;
+					result.SI = inputPointer.Offset;
+
+					break;
+				}
+				case Function.GetDate:
+				{
+					var date = machine.SystemClock.Now;
+
+					result.AX &= 0xFF00;
+					result.AX |= (byte)date.DayOfWeek;
+
+					result.CX = (ushort)date.Year;
+
+					result.DX = unchecked((ushort)((date.Month << 8) | date.Day));
+
+					break;
+				}
+				case Function.SetDate:
+				{
+					var now = new DateTime(
+						year: input.CX,
+						month: input.DX >> 8,
+						day: input.DX & 0xFF);
+
+					now += machine.SystemClock.Now.TimeOfDay;
+
+					machine.SystemClock.SetCurrentTime(now);
+
+					break;
+				}
+				case Function.GetTime:
+				{
+					var time = machine.SystemClock.Now;
+
+					result.CX = unchecked((ushort)((time.Hour << 8) | time.Minute));
+					result.DX = unchecked((ushort)((time.Second << 8) | (time.Millisecond / 10)));
+
+					break;
+				}
+				case Function.SetTime:
+				{
+					var timeOfDay = new TimeSpan(
+						days: 0,
+						hours: input.CX >> 8,
+						minutes: input.CX & 0xFF,
+						seconds: input.DX >> 8,
+						milliseconds: (input.DX & 0xFF) * 10);
+
+					var now = machine.SystemClock.Now.Date + timeOfDay;
+
+					machine.SystemClock.SetCurrentTime(now);
+
+					break;
+				}
+				case Function.SetResetVerifyFlag:
+				{
+					machine.DOS.VerifyWrites = (input.AX & 0xFF) != 0;
+					break;
+				}
+				case Function.GetDiskTransferAddress:
+				{
+					result.ES = machine.DOS.DataTransferAddressSegment;
+					result.BX = machine.DOS.DataTransferAddressOffset;
+					break;
+				}
+				case Function.GetVersionNumber:
+				{
+					bool oemNumber = (input.AX & 0xFF) == 0;
+
+					result.AX = 5; // version 5.0, which is the MS-DOS Programmer's Reference this code was based on
+					result.BX = oemNumber ? (ushort)0 : (ushort)0x800; // DOS version flag 8: DOS is running from ROM
+					result.CX = 0; // BL:CX: serial number (0 if not used)
+
+					break;
 				}
 
-				break;
+
+
+
+
+
+
+
+				case Function.GetInDOSFlagAddress:
+				{
+					result.ES = machine.DOS.InDOSFlagAddress.Segment;
+					result.BX = machine.DOS.InDOSFlagAddress.Offset;
+
+					break;
+				}
 			}
-			case Function.ParseFilename:
-			{
-				int offset = input.AsRegistersEx().ES * 0x10 + input.DI;
 
-				var fcb = FileControlBlock.Deserialize(machine.SystemMemory, offset);
-
-				var flags = unchecked((ParseFlags)input.AX);
-
-				var inputPointer = new SegmentedAddress(result.DS, result.SI);
-				int inputLinearAddress = inputPointer.ToLinearAddress();
-
-				FileControlBlock.ParseFileName(
-					readInputChar: (idx) => machine.MemoryBus[inputLinearAddress + idx],
-					lengthIsAtLeast: (testLength) => (65536 - inputPointer.Offset >= testLength),
-					advanceInput: (numBytes) => inputPointer.Offset += (ushort)numBytes,
-					ref fcb.DriveIdentifier, fcb.FileNameBytes,
-					out bool containsWildcards,
-					out bool invalidDriveLetter,
-					flags);
-
-				result.AX &= 0xFF00;
-
-				if (containsWildcards)
-					result.AX |= 0x0001;
-
-				result.DS = inputPointer.Segment;
-				result.SI = inputPointer.Offset;
-
-				break;
-			}
-			case Function.GetDate:
-			{
-				var date = machine.SystemClock.Now;
-
-				result.AX &= 0xFF00;
-				result.AX |= (byte)date.DayOfWeek;
-
-				result.CX = (ushort)date.Year;
-
-				result.DX = unchecked((ushort)((date.Month << 8) | date.Day));
-
-				break;
-			}
-			case Function.SetDate:
-			{
-				var now = new DateTime(
-					year: input.CX,
-					month: input.DX >> 8,
-					day: input.DX & 0xFF);
-
-				now += machine.SystemClock.Now.TimeOfDay;
-
-				machine.SystemClock.SetCurrentTime(now);
-
-				break;
-			}
-			case Function.GetTime:
-			{
-				var time = machine.SystemClock.Now;
-
-				result.CX = unchecked((ushort)((time.Hour << 8) | time.Minute));
-				result.DX = unchecked((ushort)((time.Second << 8) | (time.Millisecond / 10)));
-
-				break;
-			}
-			case Function.SetTime:
-			{
-				var timeOfDay = new TimeSpan(
-					days: 0,
-					hours: input.CX >> 8,
-					minutes: input.CX & 0xFF,
-					seconds: input.DX >> 8,
-					milliseconds: (input.DX & 0xFF) * 10);
-
-				var now = machine.SystemClock.Now.Date + timeOfDay;
-
-				machine.SystemClock.SetCurrentTime(now);
-
-				break;
-			}
-			case Function.SetResetVerifyFlag:
-			{
-				machine.DOS.VerifyWrites = (input.AX & 0xFF) != 0;
-				break;
-			}
-			case Function.GetDiskTransferAddress:
-			{
-				result.ES = machine.DOS.DataTransferAddressSegment;
-				result.BX = machine.DOS.DataTransferAddressOffset;
-				break;
-			}
-			case Function.GetVersionNumber:
-			{
-				bool oemNumber = (input.AX & 0xFF) == 0;
-
-				result.AX = 5; // version 5.0, which is the MS-DOS Programmer's Reference this code was based on
-				result.BX = oemNumber ? (ushort)0 : (ushort)0x800; // DOS version flag 8: DOS is running from ROM
-				result.CX = 0; // BL:CX: serial number (0 if not used)
-
-				break;
-			}
+			return result;
 		}
-
-		return result;
 	}
 	/*
 TODO:

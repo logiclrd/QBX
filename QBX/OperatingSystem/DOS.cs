@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 
 using QBX.Hardware;
@@ -35,6 +36,7 @@ public partial class DOS
 	public const int StandardInput = 0;
 	public const int StandardOutput = 1;
 
+	public SegmentedAddress InDOSFlagAddress;
 	public SegmentedAddress FirstDriveParameterBlockAddress;
 
 	public List<FileDescriptor?> Files = new List<FileDescriptor?>();
@@ -60,6 +62,8 @@ public partial class DOS
 			machine.SystemMemory.Length - ManagedMemoryStart);
 
 		CurrentPSPSegment = MemoryManager.RootPSPSegment;
+
+		InDOSFlagAddress = MemoryManager.AllocateMemory(length: 4, MemoryManager.RootPSPSegment);
 
 		GenerateDiskParameterBlocks();
 
@@ -128,6 +132,29 @@ public partial class DOS
 			address = dpb.NextDPBAddress;
 		}
 	}
+
+	class InDOSScope : IDisposable
+	{
+		DOS _owner;
+
+		ref int InDOSFlag => ref MemoryMarshal.Cast<byte, int>(
+			_owner.Machine.SystemMemory.AsSpan().Slice(
+				_owner.InDOSFlagAddress.ToLinearAddress(), sizeof(int)))[0];
+
+		public InDOSScope(DOS owner)
+		{
+			_owner = owner;
+
+			Interlocked.Increment(ref InDOSFlag);
+		}
+
+		public void Dispose()
+		{
+			Interlocked.Decrement(ref InDOSFlag);
+		}
+	}
+
+	public IDisposable InDOS() => new InDOSScope(this);
 
 	public bool BreakEnabled => _enableBreak;
 
