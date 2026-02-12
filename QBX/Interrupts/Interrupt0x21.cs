@@ -12,7 +12,8 @@ using QBX.OperatingSystem.Memory;
 
 namespace QBX.Interrupts;
 
-// Based on Ralf Brown's Interrupt List: https://www.ctyme.com/intr/int-21.htm
+// Based on the MS-DOS Programmer's Reference manual for MS-DOS 5.0
+// with gaps filled in by Ralf Brown's Interrupt List: https://www.ctyme.com/intr/int-21.htm
 
 public class Interrupt0x21(Machine machine) : InterruptHandler
 {
