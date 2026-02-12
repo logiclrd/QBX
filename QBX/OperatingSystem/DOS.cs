@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -27,6 +28,8 @@ public partial class DOS
 	public MemoryManager MemoryManager;
 
 	public ushort CurrentPSPSegment;
+
+	public CultureInfo CurrentCulture = CultureInfo.CurrentCulture;
 
 	public ushort DataTransferAddressSegment;
 	public ushort DataTransferAddressOffset;

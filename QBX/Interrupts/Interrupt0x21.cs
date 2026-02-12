@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.IO;
 
 using QBX.ExecutionEngine.Execution;
@@ -6,6 +7,7 @@ using QBX.Hardware;
 using QBX.OperatingSystem;
 using QBX.OperatingSystem.Breaks;
 using QBX.OperatingSystem.FileStructures;
+using QBX.OperatingSystem.Globalization;
 using QBX.OperatingSystem.Memory;
 
 namespace QBX.Interrupts;
@@ -67,6 +69,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		GetInDOSFlagAddress = 0x34,
 		GetInterruptVector = 0x35, // not implemented
 		GetDiskFreeSpace = 0x36,
+		GetSetCountryInformation = 0x38,
 	}
 
 	public enum Function33 : byte
@@ -881,6 +884,34 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 					break;
 				}
+				case Function.GetSetCountryInformation:
+				{
+					if (input.DX != 0xFFFF)
+					{
+						// Get
+						int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+
+						var countryInfo = new CountryInfo();
+
+						countryInfo.Import(machine.DOS.CurrentCulture);
+
+						countryInfo.Serialize(machine.SystemMemory, offset);
+					}
+					else
+					{
+						// Set
+						int countryCodeValue = input.AX & 0xFF;
+
+						if (countryCodeValue == 0xFF)
+							countryCodeValue = input.BX;
+
+						var countryCode = (CountryCode)countryCodeValue;
+
+						machine.DOS.CurrentCulture = CultureInfo.GetCultureInfo(countryCode.ToCultureName());
+					}
+
+					break;
+				}
 			}
 
 			return result;
@@ -889,10 +920,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	/*
 TODO:
 
-Int 21/AH=36h - DOS 2+ - GET FREE DISK SPACE
-Int 21/AH=37h - DOS 2.x and 3.3+ only - AVAILDEV - SPECIFY \DEV\ PREFIX USE
-Int 21/AH=38h - DOS 2+ - GET COUNTRY-SPECIFIC INFORMATION
-Int 21/AH=38h/DX=FFFFh - DOS 3.0+ - SET COUNTRY CODE
 Int 21/AH=39h - DOS 2+ - MKDIR - CREATE SUBDIRECTORY
 Int 21/AH=3Ah - DOS 2+ - RMDIR - REMOVE SUBDIRECTORY
 Int 21/AH=3Bh - DOS 2+ - CHDIR - SET CURRENT DIRECTORY
