@@ -5,6 +5,8 @@ namespace QBX.OperatingSystem.FileStructures;
 [Flags]
 public enum FileAttributes : byte
 {
+	Normal = 0,
+
 	ReadOnly = 1,
 	Hidden = 2,
 	System = 4,
