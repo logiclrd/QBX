@@ -14,6 +14,9 @@ using QBX.OperatingSystem.FileDescriptors;
 using QBX.OperatingSystem.FileStructures;
 using QBX.OperatingSystem.Memory;
 
+using FileMode = QBX.OperatingSystem.FileStructures.FileMode;
+using FileAttributes = QBX.OperatingSystem.FileStructures.FileAttributes;
+
 namespace QBX.OperatingSystem;
 
 public partial class DOS
@@ -605,7 +608,7 @@ public partial class DOS
 						fcb.TimeStamp.Set(dateTime.Hour, dateTime.Minute, dateTime.Second);
 						fcb.RecordSize = 128;
 
-						var stream = fileInfo.Open(openMode);
+						var stream = fileInfo.Open(openMode.ToSystemFileMode());
 
 						return AllocateFileHandleForOpenFile(stream);
 					}
@@ -625,7 +628,7 @@ public partial class DOS
 			{
 				fileName = ShortFileNames.Unmap(fileName);
 
-				var stream = new FileStream(fileName, openMode, FileAccess.ReadWrite, FileShare.ReadWrite);
+				var stream = new FileStream(fileName, openMode.ToSystemFileMode(), FileAccess.ReadWrite, FileShare.ReadWrite);
 
 				return AllocateFileHandleForOpenFile(stream);
 			});
