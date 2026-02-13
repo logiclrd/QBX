@@ -1,6 +1,7 @@
 ﻿using System;
 
 using QBX.Hardware;
+using QBX.OperatingSystem.FileStructures;
 
 namespace QBX.OperatingSystem.FileDescriptors;
 
@@ -29,6 +30,11 @@ public abstract class FileDescriptor
 	public virtual IDisposable? NonBlocking() => null;
 
 	public bool WouldHaveBlocked = false;
+
+	public virtual void SetAttributes(FileAttributes attributes)
+	{
+		throw new DOSException(DOSError.InvalidFunction);
+	}
 
 	public void Seek(uint offset)
 	{

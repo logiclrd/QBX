@@ -636,6 +636,21 @@ public partial class DOS
 		}
 	}
 
+	public void SetFileAttributes(int fileHandle, FileAttributes attributes)
+	{
+		if ((fileHandle < 0) || (fileHandle >= Files.Count)
+		 || (Files[fileHandle] is not FileDescriptor fileDescriptor))
+		{
+			LastError = DOSError.InvalidHandle;
+			return;
+		}
+
+		TranslateError(() =>
+		{
+			fileDescriptor.SetAttributes(attributes);
+		});
+	}
+
 	void Advance(FileControlBlock fcb)
 	{
 		fcb.CurrentRecordNumber++;

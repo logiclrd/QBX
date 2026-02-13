@@ -1,12 +1,19 @@
 ﻿using System;
 using System.IO;
 
+using QBX.OperatingSystem.FileStructures;
+
 namespace QBX.OperatingSystem.FileDescriptors;
 
 public class RegularFileDescriptor(FileStream stream) : FileDescriptor
 {
 	protected override bool CanRead => stream.CanRead;
 	protected override bool CanWrite => stream.CanWrite;
+
+	public override void SetAttributes(FileStructures.FileAttributes attributes)
+	{
+		File.SetAttributes(stream.SafeFileHandle, attributes.ToSystemFileAttributes());
+	}
 
 	protected override void FlushToDisk()
 	{

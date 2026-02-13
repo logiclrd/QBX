@@ -22,4 +22,22 @@ public static class FileAttributesExtensions
 
 		return result;
 	}
+
+	public static System.IO.FileAttributes ToSystemFileAttributes(this FileAttributes bits)
+	{
+		var result = default(System.IO.FileAttributes);
+
+		if ((bits & FileAttributes.ReadOnly) != 0)
+			result |= System.IO.FileAttributes.ReadOnly;
+		if ((bits & FileAttributes.Hidden) != 0)
+			result |= System.IO.FileAttributes.Hidden;
+		if ((bits & FileAttributes.System) != 0)
+			result |= System.IO.FileAttributes.System;
+		if ((bits & FileAttributes.Directory) != 0)
+			result |= System.IO.FileAttributes.Directory;
+		if ((bits & FileAttributes.Archive) != 0)
+			result |= System.IO.FileAttributes.Archive;
+
+		return result;
+	}
 }
