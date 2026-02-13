@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Globalization;
-using System.IO;
 
 using QBX.ExecutionEngine.Execution;
 using QBX.Hardware;
@@ -9,6 +8,8 @@ using QBX.OperatingSystem.Breaks;
 using QBX.OperatingSystem.FileStructures;
 using QBX.OperatingSystem.Globalization;
 using QBX.OperatingSystem.Memory;
+
+using Path = System.IO.Path;
 
 namespace QBX.Interrupts;
 
@@ -459,39 +460,31 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					try
 					{
-						char driveLetter = (char)((input.DX & 0xFF) + 64);
+						int driveIndicator = input.DX & 0xFF;
 
-						if (driveLetter == '@')
-							driveLetter = char.ToUpperInvariant(Environment.CurrentDirectory[0]);
+						var dpbAddress = (driveIndicator != 0)
+							? machine.DOS.GetDriveParameterBlock(driveIndicator)
+							: machine.DOS.GetDefaultDriveParameterBlock();
 
-						var driveInfo = new DriveInfo(driveLetter.ToString());
+						ref var dpb = ref DriveParameterBlock.CreateReference(machine.SystemMemory, dpbAddress.ToLinearAddress());
 
 						// No way to sensibly map modern numbers into the return from this
 						// call, so we just fake a 100MB hard drive or a 1.44MB floppy.
 
-						if (driveInfo.DriveType == DriveType.Removable)
-						{
-							// TODO: use memory allocator to properly reserve permanent space for this function
-							machine.SystemMemory[0x20000 + (driveLetter - 'A')] = 0xF0;
+						result.DS = dpbAddress.Segment;
+						result.BX = dpbAddress.Offset;
 
+						if (dpb.MediaDescriptor == MediaDescriptor.FloppyDisk)
+						{
 							result.AX = 1; // sectors per cluster
 							result.CX = 512; // bytes per sector
 							result.DX = 2880; // number of clusters
-
-							result.DS = 0x2000;
-							result.BX = (ushort)(driveLetter - 'A');
 						}
 						else
 						{
-							// TODO: use memory allocator to properly reserve permanent space for this function
-							machine.SystemMemory[0x20000 + (driveLetter - 'A')] = 0xF8;
-
 							result.AX = 4; // sectors per cluster
 							result.CX = 512; // bytes per sector
 							result.DX = 51200; // number of clusters
-
-							result.DS = 0x2000;
-							result.BX = (ushort)(driveLetter - 'A');
 						}
 					}
 					catch
