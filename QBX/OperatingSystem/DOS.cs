@@ -104,7 +104,7 @@ public partial class DOS
 			dpb.SectorsPerFAT = 0xFFFF;
 			dpb.DirectorySector = 256;
 			dpb.DeviceDriverAddress = 0xFFFFFFFF;
-			dpb.MediaDescriptor = drive.DriveType == DriveType.Removable ? (byte)0xF0 : (byte)0xF8;
+			dpb.MediaDescriptor = drive.DriveType == DriveType.Removable ? MediaDescriptor.FloppyDisk : MediaDescriptor.FixedDisk;
 			dpb.FirstAccess = 0;
 			dpb.NextFreeCluster = 0xFFFF;
 			dpb.FreeClusterCount = 0xFFFF;

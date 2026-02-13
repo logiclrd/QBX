@@ -22,7 +22,7 @@ public struct DriveParameterBlock
 	[FieldOffset(15)] public ushort SectorsPerFAT;
 	[FieldOffset(17)] public ushort DirectorySector;
 	[FieldOffset(19)] public uint DeviceDriverAddress;
-	[FieldOffset(23)] public byte MediaDescriptor;
+	[FieldOffset(23)] public MediaDescriptor MediaDescriptor;
 	[FieldOffset(24)] public byte FirstAccess;
 	[FieldOffset(25)] public SegmentedAddress NextDPBAddress;
 	[FieldOffset(29)] public ushort NextFreeCluster;
