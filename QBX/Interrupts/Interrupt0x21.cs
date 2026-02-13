@@ -75,6 +75,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		CreateDirectory = 0x39,
 		RemoveDirectory = 0x3A,
 		ChangeCurrentDirectory = 0x3B,
+		CreateFileWithHandle = 0x3C,
 	}
 
 	public enum Function33 : byte
@@ -931,6 +932,38 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 					break;
 				}
+				case Function.CreateFileWithHandle:
+				{
+					int address = input.AsRegistersEx().DS * 0x10 + input.DX;
+
+					var relativePath = ReadStringZ(machine.MemoryBus, address);
+
+					var attributes = (FileAttributes)input.CX;
+
+					if ((attributes & FileAttributes.Directory) != 0)
+					{
+						result.FLAGS |= Flags.Carry;
+						result.AX = (ushort)DOSError.InvalidParameter;
+						break;
+					}
+
+					result.FLAGS &= ~Flags.Carry;
+
+					int fileHandle = machine.DOS.OpenFile(relativePath.ToString(), FileMode.Create);
+
+					result.AX = (ushort)fileHandle;
+
+					if (machine.DOS.LastError == DOSError.None)
+						machine.DOS.SetFileAttributes(fileHandle, attributes);
+
+					if (machine.DOS.LastError != DOSError.None)
+					{
+						result.FLAGS |= Flags.Carry;
+						result.AX = (ushort)machine.DOS.LastError;
+					}
+
+					break;
+				}
 			}
 
 			return result;
@@ -957,7 +990,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	/*
 TODO:
 
-Int 21/AH=3Ch - DOS 2+ - CREAT - CREATE OR TRUNCATE FILE
 Int 21/AH=3Dh - DOS 2+ - OPEN - OPEN EXISTING FILE
 Int 21/AH=3Eh - DOS 2+ - CLOSE - CLOSE FILE
 Int 21/AH=3Fh - DOS 2+ - READ - READ FROM FILE OR DEVICE
