@@ -56,8 +56,7 @@ public partial class DOS
 
 	public bool VerifyWrites = false;
 
-	StandardInputFileDescriptor _stdin;
-	StandardOutputFileDescriptor _stdout;
+	public Devices Devices;
 
 	public Machine Machine => _machine;
 
@@ -80,7 +79,7 @@ public partial class DOS
 
 		GenerateDiskParameterBlocks();
 
-		InitializeStandardInputAndOutput();
+		InitializeDevices();
 	}
 
 	private void GenerateDiskParameterBlocks()
@@ -252,20 +251,21 @@ public partial class DOS
 		TranslateError(() =>
 		{
 			CloseAllFiles(keepStandardHandles: false);
-			InitializeStandardInputAndOutput();
+			InitializeDevices();
 
 			// TODO: reset memory allocator
 		});
 	}
 
-	[MemberNotNull(nameof(_stdin)), MemberNotNull(nameof(_stdout))]
-	void InitializeStandardInputAndOutput()
+	[MemberNotNull(nameof(Devices))]
+	void InitializeDevices()
 	{
+		Devices = new Devices(this);
+
 		while (Files.Count < 2)
 			Files.Add(null);
 
-		Files[0] = _stdin = new StandardInputFileDescriptor(this);
-		Files[1] = _stdout = new StandardOutputFileDescriptor(this);
+		Files[0] = Files[1] = Devices.Console;
 	}
 
 	public void CloseAllFiles(bool keepStandardHandles)
@@ -352,7 +352,7 @@ public partial class DOS
 
 		bool ret = TranslateError(() =>
 		{
-			_stdin.WouldHaveBlocked = false;
+			fileDescriptor.WouldHaveBlocked = false;
 
 			using (fileDescriptor.NonBlocking())
 				b = fileDescriptor.ReadByte();

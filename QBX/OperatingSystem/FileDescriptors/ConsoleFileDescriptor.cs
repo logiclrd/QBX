@@ -7,15 +7,18 @@ using QBX.OperatingSystem.FileStructures;
 
 namespace QBX.OperatingSystem.FileDescriptors;
 
-public class StandardInputFileDescriptor(DOS owner) : FileDescriptor
+public class ConsoleFileDescriptor(DOS owner) : FileDescriptor
 {
+	public override bool WriteThrough => true;
+
 	protected override bool CanRead => base.CanRead;
+	protected override bool CanWrite => true;
 
 	Machine _machine = owner.Machine;
 
 	bool _blockingInput = true;
 
-	class NonBlockingScope(StandardInputFileDescriptor owner) : IDisposable
+	class NonBlockingScope(ConsoleFileDescriptor owner) : IDisposable
 	{
 		bool saved = Interlocked.Exchange(ref owner._blockingInput, false);
 		public void Dispose() => owner._blockingInput = saved;
@@ -70,5 +73,24 @@ public class StandardInputFileDescriptor(DOS owner) : FileDescriptor
 		} while (_blockingInput);
 
 		WouldHaveBlocked = true;
+	}
+
+	protected override int WriteCore(ReadOnlySpan<byte> buffer)
+	{
+		var visual = owner.Machine.VideoFirmware.VisualLibrary;
+
+		bool savedControlCharacterFlag = visual.ProcessControlCharacters;
+
+		try
+		{
+			visual.ProcessControlCharacters = true;
+			visual.WriteText(buffer);
+
+			return buffer.Length;
+		}
+		finally
+		{
+			visual.ProcessControlCharacters = savedControlCharacterFlag;
+		}
 	}
 }
