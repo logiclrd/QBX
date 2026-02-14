@@ -3,6 +3,7 @@ using System.Threading;
 
 using QBX.Hardware;
 using QBX.OperatingSystem.Breaks;
+using QBX.OperatingSystem.FileStructures;
 
 namespace QBX.OperatingSystem.FileDescriptors;
 
@@ -22,7 +23,12 @@ public class StandardInputFileDescriptor(DOS owner) : FileDescriptor
 
 	public override IDisposable? NonBlocking() => new NonBlockingScope(this);
 
-	protected override void SeekCore(uint offset)
+	protected override uint SeekCore(int offset, MoveMethod moveMethod)
+	{
+		throw new DOSException(DOSError.InvalidFunction);
+	}
+
+	protected override uint SeekCore(uint offset, MoveMethod moveMethod)
 	{
 		throw new DOSException(DOSError.InvalidFunction);
 	}

@@ -20,9 +20,14 @@ public class RegularFileDescriptor(FileStream stream) : FileDescriptor
 		stream.Flush(flushToDisk: true);
 	}
 
-	protected override void SeekCore(uint offset)
+	protected override uint SeekCore(int offset, MoveMethod moveMethod)
 	{
-		stream.Position = offset;
+		return unchecked((uint)stream.Seek(offset, moveMethod.ToSeekOrigin()));
+	}
+
+	protected override uint SeekCore(uint offset, MoveMethod moveMethod)
+	{
+		return unchecked((uint)stream.Seek(offset, moveMethod.ToSeekOrigin()));
 	}
 
 	protected override void ReadCore(FileBuffer buffer)

@@ -36,16 +36,26 @@ public abstract class FileDescriptor
 		throw new DOSException(DOSError.InvalidFunction);
 	}
 
-	public void Seek(uint offset)
+	public uint Seek(int offset, MoveMethod moveMethod)
 	{
 		FlushWriteBuffer();
 
 		ReadBuffer.NumUsed = 0;
 
-		SeekCore(offset);
+		return SeekCore(offset, moveMethod);
 	}
 
-	protected abstract void SeekCore(uint offset);
+	public uint Seek(uint offset, MoveMethod moveMethod)
+	{
+		FlushWriteBuffer();
+
+		ReadBuffer.NumUsed = 0;
+
+		return SeekCore(offset, moveMethod);
+	}
+
+	protected abstract uint SeekCore(int offset, MoveMethod moveMethod);
+	protected abstract uint SeekCore(uint offset, MoveMethod moveMethod);
 
 	void FillReadBuffer()
 	{

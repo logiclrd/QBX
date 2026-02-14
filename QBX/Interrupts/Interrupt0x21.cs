@@ -81,6 +81,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		ReadFileOrDevice = 0x3F,
 		WriteFileOrDevice = 0x40,
 		DeleteFile = 0x41,
+		MoveFilePointer = 0x42,
 	}
 
 	public enum Function33 : byte
@@ -1047,12 +1048,40 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 					var relativePath = ReadStringZ(machine.MemoryBus, address);
 
-					result.AX &= 0xFF00;
+					result.FLAGS &= Flags.Carry;
 
 					machine.DOS.DeleteFile(relativePath.ToString());
 
 					if (machine.DOS.LastError != DOSError.None)
-						result.AX |= 0xFF;
+					{
+						result.FLAGS |= Flags.Carry;
+						result.AX = (ushort)machine.DOS.LastError;
+					}
+
+					break;
+				}
+				case Function.MoveFilePointer:
+				{
+					int fileHandle = input.BX;
+					int offset = (input.CX << 16) | input.DX;
+					MoveMethod moveMethod = (MoveMethod)(input.AX & 0xFF);
+
+					result.FLAGS &= Flags.Carry;
+
+					uint newPosition = (moveMethod == MoveMethod.FromBeginning)
+						? machine.DOS.SeekFile(fileHandle, unchecked((uint)offset), moveMethod)
+						: machine.DOS.SeekFile(fileHandle, offset, moveMethod);
+
+					if (machine.DOS.LastError == DOSError.None)
+					{
+						result.DX = unchecked((ushort)(newPosition >> 16));
+						result.AX = unchecked((ushort)newPosition);
+					}
+					else
+					{
+						result.FLAGS |= Flags.Carry;
+						result.AX = (ushort)machine.DOS.LastError;
+					}
 
 					break;
 				}

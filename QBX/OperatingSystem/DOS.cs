@@ -773,7 +773,7 @@ public partial class DOS
 				if (offset + readSize > fcb.FileSize)
 					readSize = (int)(fcb.FileSize - offset);
 
-				fileDescriptor.Seek(offset);
+				fileDescriptor.Seek(offset, MoveMethod.FromBeginning);
 
 				if (fileDescriptor.ReadExactly(readSize, Machine.MemoryBus, DataTransferAddress))
 				{
@@ -818,7 +818,7 @@ public partial class DOS
 					return -1;
 				}
 
-				fileDescriptor.Seek(offset);
+				fileDescriptor.Seek(offset, MoveMethod.FromBeginning);
 
 				for (int i = 0; i < recordCount; i++)
 				{
@@ -838,6 +838,36 @@ public partial class DOS
 
 				return writeSize;
 			}
+		});
+	}
+
+	public uint SeekFile(int fileHandle, int offset, MoveMethod moveMethod)
+	{
+		if ((fileHandle < 0) || (fileHandle >= Files.Count)
+		 || (Files[fileHandle] is not FileDescriptor fileDescriptor))
+		{
+			LastError = DOSError.InvalidHandle;
+			return uint.MaxValue;
+		}
+
+		return TranslateError(() =>
+		{
+			return fileDescriptor.Seek(offset, moveMethod);
+		});
+	}
+
+	public uint SeekFile(int fileHandle, uint offset, MoveMethod moveMethod)
+	{
+		if ((fileHandle < 0) || (fileHandle >= Files.Count)
+		 || (Files[fileHandle] is not FileDescriptor fileDescriptor))
+		{
+			LastError = DOSError.InvalidHandle;
+			return uint.MaxValue;
+		}
+
+		return TranslateError(() =>
+		{
+			return fileDescriptor.Seek(offset, moveMethod);
 		});
 	}
 

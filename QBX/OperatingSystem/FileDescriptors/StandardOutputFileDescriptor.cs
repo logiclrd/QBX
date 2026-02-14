@@ -1,5 +1,7 @@
 ﻿using System;
 
+using QBX.OperatingSystem.FileStructures;
+
 namespace QBX.OperatingSystem.FileDescriptors;
 
 public class StandardOutputFileDescriptor(DOS owner) : FileDescriptor
@@ -8,7 +10,12 @@ public class StandardOutputFileDescriptor(DOS owner) : FileDescriptor
 
 	protected override bool CanWrite => true;
 
-	protected override void SeekCore(uint offset)
+	protected override uint SeekCore(int offset, MoveMethod moveMethod)
+	{
+		throw new DOSException(DOSError.InvalidFunction);
+	}
+
+	protected override uint SeekCore(uint offset, MoveMethod moveMethod)
 	{
 		throw new DOSException(DOSError.InvalidFunction);
 	}
