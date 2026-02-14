@@ -80,6 +80,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		CloseFileWithHandle = 0x3E,
 		ReadFileOrDevice = 0x3F,
 		WriteFileOrDevice = 0x40,
+		DeleteFile = 0x41,
 	}
 
 	public enum Function33 : byte
@@ -1037,6 +1038,21 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 						result.FLAGS |= Flags.Carry;
 						result.AX = (ushort)machine.DOS.LastError;
 					}
+
+					break;
+				}
+				case Function.DeleteFile:
+				{
+					int address = input.AsRegistersEx().DS * 0x10 + input.DX;
+
+					var relativePath = ReadStringZ(machine.MemoryBus, address);
+
+					result.AX &= 0xFF00;
+
+					machine.DOS.DeleteFile(relativePath.ToString());
+
+					if (machine.DOS.LastError != DOSError.None)
+						result.AX |= 0xFF;
 
 					break;
 				}

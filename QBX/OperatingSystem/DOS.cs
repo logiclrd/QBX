@@ -897,6 +897,8 @@ public partial class DOS
 			fileName = ShortFileNames.Unmap(fileName);
 
 			File.Delete(fileName);
+
+			ShortFileNames.Forget(fileName);
 		});
 	}
 
