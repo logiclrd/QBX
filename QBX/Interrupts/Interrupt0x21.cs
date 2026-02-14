@@ -113,6 +113,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		CheckDeviceInputStatus = 0x06,
 		CheckDeviceOutputStatus = 0x07,
 		DoesDeviceUseRemovableMedia = 0x08,
+		IsDriveRemote = 0x09,
 	}
 
 	public override Registers Execute(Registers input)
@@ -1347,6 +1348,37 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 							{
 								result.FLAGS |= Flags.Carry;
 								result.AX |= (ushort)machine.DOS.LastError;
+							}
+
+							break;
+						}
+						case Function44.IsDriveRemote:
+						{
+							try
+							{
+								result.FLAGS &= ~Flags.Carry;
+
+								int driveIndicator = input.DX & 0xFF;
+
+								string path = driveIndicator > 0 ? ((char)(driveIndicator + 'A' - 1)).ToString() : "";
+
+								// TODO: SUBST drives
+
+								if (machine.DOS.IsRemoteDrive(path))
+									result.DX = 0b0001000000000000; // bit 12: is network drive
+								else
+									result.DX = 0b0000100000000000; // bit 11: can query whether drive uses removable media
+							}
+							catch
+							{
+								if (machine.DOS.LastError == DOSError.None)
+									machine.DOS.LastError = DOSError.InvalidFunction;
+							}
+
+							if (machine.DOS.LastError != DOSError.None)
+							{
+								result.FLAGS |= Flags.Carry;
+								result.AX = (ushort)machine.DOS.LastError;
 							}
 
 							break;

@@ -562,6 +562,19 @@ public partial class DOS
 		return GetDriveParameterBlock(defaultDrive);
 	}
 
+	public bool IsRemoteDrive(string path)
+	{
+		return TranslateError(() =>
+		{
+			if (string.IsNullOrEmpty(path))
+				path = Environment.CurrentDirectory;
+
+			var driveInfo = new DriveInfo(path);
+
+			return driveInfo.DriveType == DriveType.Network;
+		});
+	}
+
 	public void CreateDirectory(StringValue directoryName)
 		=> CreateDirectory(directoryName.ToString());
 
