@@ -97,6 +97,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	{
 		GetFileAttributes = 0x00,
 		SetFileAttributes = 0x01,
+		ExtendedLengthFileNameOperations = 0xFF, // per Ralf Brown's Interrupt List
 	}
 
 	public override Registers Execute(Registers input)
@@ -1096,6 +1097,19 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					var subfunction = (Function43)al;
 
+					if (subfunction == Function43.ExtendedLengthFileNameOperations)
+					{
+						input.AX = input.CX;
+						input.AX <<= 8;
+
+						switch (input.AX)
+						{
+							case 0x3900:
+							case 0x5600:
+								return Execute(input);
+						}
+					}
+
 					switch (subfunction)
 					{
 						case Function43.GetFileAttributes:
@@ -1150,7 +1164,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	/*
 TODO:
 
-Int 21/AX=4302h - MS-DOS 7 - GET COMPRESSED FILE SIZE
 Int 21/AX=43FFh/BP=5053h - MS-DOS 7.20 (Win98) - EXTENDED-LENGTH FILENAME OPERATIONS
 Int 21/AX=4401h - DOS 2+ - IOCTL - SET DEVICE INFORMATION
 Int 21/AX=4403h - DOS 2+ - IOCTL - WRITE TO CHARACTER DEVICE CONTROL CHANNEL
