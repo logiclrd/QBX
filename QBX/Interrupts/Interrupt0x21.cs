@@ -106,6 +106,10 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	{
 		GetDeviceData = 0x00,
 		SetDeviceData = 0x01,
+		ReceiveControlDataFromCharacterDevice = 0x02,
+		SendControlDataToCharacterDevice = 0x03,
+		ReceiveControlDataFromBlockDevice = 0x04,
+		SendControlDataToBlockDevice = 0x05,
 	}
 
 	public override Registers Execute(Registers input)
@@ -1239,6 +1243,15 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 								result.AX = (ushort)machine.DOS.LastError;
 							}
 
+							break;
+						}
+						case Function44.ReceiveControlDataFromCharacterDevice:
+						case Function44.SendControlDataToCharacterDevice:
+						case Function44.ReceiveControlDataFromBlockDevice:
+						case Function44.SendControlDataToBlockDevice:
+						{
+							result.FLAGS |= Flags.Carry;
+							result.AX = (ushort)DOSError.InvalidFunction;
 							break;
 						}
 					}
