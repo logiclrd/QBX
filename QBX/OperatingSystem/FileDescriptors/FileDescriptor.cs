@@ -14,6 +14,17 @@ public abstract class FileDescriptor
 	protected virtual int WriteCore(ReadOnlySpan<byte> buffer) => 0;
 	protected virtual void CloseCore() { }
 
+	public IOMode IOMode { set; private get; }
+	public bool AtSoftEOF;
+
+	public void SetIOMode(IOMode ioMode)
+	{
+		IOMode = ioMode;
+
+		if (ioMode == IOMode.Binary)
+			AtSoftEOF = false;
+	}
+
 	protected virtual bool CanRead => false;
 	protected virtual bool CanWrite => false;
 
@@ -42,6 +53,9 @@ public abstract class FileDescriptor
 
 		ReadBuffer.NumUsed = 0;
 
+		if (offset != 0)
+			AtSoftEOF = false;
+
 		return SeekCore(offset, moveMethod);
 	}
 
@@ -50,6 +64,9 @@ public abstract class FileDescriptor
 		FlushWriteBuffer();
 
 		ReadBuffer.NumUsed = 0;
+
+		if (offset != 0)
+			AtSoftEOF = false;
 
 		return SeekCore(offset, moveMethod);
 	}
@@ -115,10 +132,24 @@ public abstract class FileDescriptor
 
 	public bool TryReadByte(out byte b)
 	{
+		if (AtSoftEOF)
+		{
+			b = 0;
+			return false;
+		}
+
 		while (ReadBuffer.IsEmpty)
 			FillReadBuffer();
 
-		return ReadBuffer.TryPull(out b);
+		bool ret = ReadBuffer.TryPull(out b);
+
+		if (ret && (b == 26) && (IOMode == IOMode.ASCII))
+		{
+			AtSoftEOF = true;
+			return false;
+		}
+
+		return ret;
 	}
 
 	public int Read(Span<byte> buffer)
