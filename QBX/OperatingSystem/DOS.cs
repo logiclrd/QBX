@@ -715,6 +715,26 @@ public partial class DOS
 		}
 	}
 
+	public FileAttributes GetFileAttributes(string relativePath)
+	{
+		return TranslateError(() =>
+		{
+			relativePath = ShortFileNames.Unmap(relativePath);
+
+			return File.GetAttributes(relativePath).ToDOSFileAttributes();
+		});
+	}
+
+	public void SetFileAttributes(string relativePath, FileAttributes attributes)
+	{
+		TranslateError(() =>
+		{
+			relativePath = ShortFileNames.Unmap(relativePath);
+
+			File.SetAttributes(relativePath, attributes.ToSystemFileAttributes());
+		});
+	}
+
 	public void SetFileAttributes(int fileHandle, FileAttributes attributes)
 	{
 		if ((fileHandle < 0) || (fileHandle >= Files.Count)

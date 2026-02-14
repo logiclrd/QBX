@@ -82,6 +82,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		WriteFileOrDevice = 0x40,
 		DeleteFile = 0x41,
 		MoveFilePointer = 0x42,
+		Function43 = 0x43,
 	}
 
 	public enum Function33 : byte
@@ -90,6 +91,12 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		SetCtrlCCheckFlag = 0x01, // not implemented
 		GetStartupDrive = 0x05,
 		GetMSDOSVersion = 0x06,
+	}
+
+	public enum Function43 : byte
+	{
+		GetFileAttributes = 0x00,
+		SetFileAttributes = 0x01,
 	}
 
 	public override Registers Execute(Registers input)
@@ -1085,6 +1092,38 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 					break;
 				}
+				case Function.Function43:
+				{
+					var subfunction = (Function43)al;
+
+					switch (subfunction)
+					{
+						case Function43.GetFileAttributes:
+						case Function43.SetFileAttributes:
+						{
+							int address = input.AsRegistersEx().DS * 0x10 + input.DX;
+
+							var relativePath = ReadStringZ(machine.MemoryBus, address);
+
+							result.FLAGS &= ~Flags.Carry;
+
+							if (subfunction == Function43.GetFileAttributes)
+								result.CX = (ushort)machine.DOS.GetFileAttributes(relativePath.ToString());
+							else
+								machine.DOS.SetFileAttributes(relativePath.ToString(), (FileAttributes)input.CX);
+
+							if (machine.DOS.LastError != DOSError.None)
+							{
+								result.FLAGS |= Flags.Carry;
+								result.AX = (ushort)machine.DOS.LastError;
+							}
+
+							break;
+						}
+					}
+
+					break;
+				}
 			}
 
 			return result;
@@ -1111,9 +1150,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	/*
 TODO:
 
-Int 21/AH=41h - DOS 2+ - UNLINK - DELETE FILE
-Int 21/AH=42h - DOS 2+ - LSEEK - SET CURRENT FILE POSITION
-Int 21/AX=4301h - DOS 2+ - CHMOD - SET FILE ATTRIBUTES
 Int 21/AX=4302h - MS-DOS 7 - GET COMPRESSED FILE SIZE
 Int 21/AX=43FFh/BP=5053h - MS-DOS 7.20 (Win98) - EXTENDED-LENGTH FILENAME OPERATIONS
 Int 21/AX=4401h - DOS 2+ - IOCTL - SET DEVICE INFORMATION
