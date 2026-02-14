@@ -27,8 +27,11 @@ public abstract class FileDescriptor
 			AtSoftEOF = false;
 	}
 
-	protected virtual bool CanRead => false;
-	protected virtual bool CanWrite => false;
+	public virtual bool CanRead => false;
+	public virtual bool CanWrite => false;
+
+	public virtual bool ReadyToRead => false;
+	public virtual bool ReadyToWrite => false;
 
 	public FileBuffer ReadBuffer = new FileBuffer(512);
 	public FileBuffer WriteBuffer = new FileBuffer(512);

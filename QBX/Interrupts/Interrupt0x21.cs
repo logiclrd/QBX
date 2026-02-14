@@ -110,6 +110,8 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		SendControlDataToCharacterDevice = 0x03,
 		ReceiveControlDataFromBlockDevice = 0x04,
 		SendControlDataToBlockDevice = 0x05,
+		CheckDeviceInputStatus = 0x06,
+		CheckDeviceOutputStatus = 0x07,
 	}
 
 	public override Registers Execute(Registers input)
@@ -1252,6 +1254,60 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 						{
 							result.FLAGS |= Flags.Carry;
 							result.AX = (ushort)DOSError.InvalidFunction;
+							break;
+						}
+						case Function44.CheckDeviceInputStatus:
+						{
+							int fileHandle = input.BX;
+
+							if ((fileHandle < 0) || (fileHandle >= machine.DOS.Files.Count)
+							 || (machine.DOS.Files[fileHandle] is not FileDescriptor fileDescriptor))
+							{
+								result.FLAGS |= Flags.Carry;
+								result.AX = (ushort)DOSError.InvalidHandle;
+							}
+							else if (!fileDescriptor.CanRead)
+							{
+								result.FLAGS |= Flags.Carry;
+								result.AX = (ushort)DOSError.AccessDenied;
+							}
+							else
+							{
+								result.FLAGS &= ~Flags.Carry;
+
+								result.AX &= 0xFF00;
+
+								if (fileDescriptor.ReadyToRead)
+									result.AX |= 0xFF;
+							}
+
+							break;
+						}
+						case Function44.CheckDeviceOutputStatus:
+						{
+							int fileHandle = input.BX;
+
+							if ((fileHandle < 0) || (fileHandle >= machine.DOS.Files.Count)
+							 || (machine.DOS.Files[fileHandle] is not FileDescriptor fileDescriptor))
+							{
+								result.FLAGS |= Flags.Carry;
+								result.AX = (ushort)DOSError.InvalidHandle;
+							}
+							else if (!fileDescriptor.CanWrite)
+							{
+								result.FLAGS |= Flags.Carry;
+								result.AX = (ushort)DOSError.AccessDenied;
+							}
+							else
+							{
+								result.FLAGS &= ~Flags.Carry;
+
+								result.AX &= 0xFF00;
+
+								if (fileDescriptor.ReadyToWrite)
+									result.AX |= 0xFF;
+							}
+
 							break;
 						}
 					}

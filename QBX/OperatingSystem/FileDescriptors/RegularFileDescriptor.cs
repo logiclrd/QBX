@@ -7,8 +7,11 @@ namespace QBX.OperatingSystem.FileDescriptors;
 
 public class RegularFileDescriptor(string path, FileStream stream) : FileDescriptor(path)
 {
-	protected override bool CanRead => stream.CanRead;
-	protected override bool CanWrite => stream.CanWrite;
+	public override bool CanRead => stream.CanRead;
+	public override bool CanWrite => stream.CanWrite;
+
+	public override bool ReadyToRead => !AtSoftEOF && (stream.Position < stream.Length);
+	public override bool ReadyToWrite => true;
 
 	public bool IsPristine = true;
 
