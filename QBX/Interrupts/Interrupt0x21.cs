@@ -5,6 +5,7 @@ using QBX.ExecutionEngine.Execution;
 using QBX.Hardware;
 using QBX.OperatingSystem;
 using QBX.OperatingSystem.Breaks;
+using QBX.OperatingSystem.FileDescriptors;
 using QBX.OperatingSystem.FileStructures;
 using QBX.OperatingSystem.Globalization;
 using QBX.OperatingSystem.Memory;
@@ -83,6 +84,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		DeleteFile = 0x41,
 		MoveFilePointer = 0x42,
 		Function43 = 0x43,
+		Function44 = 0x44,
 	}
 
 	public enum Function33 : byte
@@ -98,6 +100,12 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		GetFileAttributes = 0x00,
 		SetFileAttributes = 0x01,
 		ExtendedLengthFileNameOperations = 0xFF, // per Ralf Brown's Interrupt List
+	}
+
+	public enum Function44 : byte
+	{
+		GetDeviceData = 0x00,
+		SetDeviceData = 0x01,
 	}
 
 	public override Registers Execute(Registers input)
@@ -1138,6 +1146,105 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 					break;
 				}
+				case Function.Function44:
+				{
+					var subfunction = (Function44)al;
+
+					switch (subfunction)
+					{
+						case Function44.GetDeviceData:
+						{
+							int fileHandle = input.BX;
+
+							result.FLAGS &= ~Flags.Carry;
+
+							if ((fileHandle < 0) || (fileHandle >= machine.DOS.Files.Count)
+							 || (machine.DOS.Files[fileHandle] is not FileDescriptor fileDescriptor))
+							{
+								result.FLAGS |= Flags.Carry;
+								result.AX = (ushort)DOSError.InvalidHandle;
+							}
+							else if (fileDescriptor is RegularFileDescriptor regularFile)
+							{
+								result.DX = unchecked((ushort)(
+									(char.ToUpperInvariant(regularFile.Path[0]) - 'A') |
+									(regularFile.IsPristine ? 64 : 0)));
+							}
+							else
+							{
+								result.DX = 0;
+
+								switch (fileDescriptor)
+								{
+									case ConsoleFileDescriptor: result.DX |= 3; break;
+									case NullFileDescriptor: result.DX |= 4; break;
+									case ClockFileDescriptor: result.DX |= 8; break;
+								}
+
+								if (fileDescriptor.IOMode == IOMode.Binary)
+									result.DX |= 32;
+							}
+
+							break;
+						}
+						case Function44.SetDeviceData:
+						{
+							int fileHandle = input.BX;
+
+							result.FLAGS &= ~Flags.Carry;
+
+							if ((fileHandle < 0) || (fileHandle >= machine.DOS.Files.Count)
+							 || (machine.DOS.Files[fileHandle] is not FileDescriptor fileDescriptor))
+							{
+								result.FLAGS |= Flags.Carry;
+								result.AX = (ushort)DOSError.InvalidHandle;
+							}
+							else if ((fileDescriptor is RegularFileDescriptor) || ((input.DX & 128) == 0))
+							{
+								result.FLAGS |= Flags.Carry;
+								result.AX = (ushort)DOSError.InvalidFunction;
+							}
+							else
+							{
+								bool isConsole = (fileDescriptor is ConsoleFileDescriptor);
+								bool isNull = (fileDescriptor is NullFileDescriptor);
+								bool isClock = (fileDescriptor is ClockFileDescriptor);
+
+								int consoleBits = isConsole ? 3 : 0;
+								int nullBits = isNull ? 4 : 0;
+								int clockBits = isClock ? 8 : 0;
+
+								if (((input.DX & 3) != consoleBits)
+								 || ((input.DX & 4) != nullBits)
+								 || ((input.DX & 8) != clockBits)
+								 || ((input.DX & 16) != 0)) // "special device"
+								{
+									result.FLAGS |= Flags.Carry;
+									result.AX = (ushort)DOSError.InvalidFunction;
+								}
+								else
+								{
+									fileDescriptor.SetIOMode(
+										((input.DX & 32) == 0)
+										? IOMode.ASCII
+										: IOMode.Binary);
+
+									fileDescriptor.AtSoftEOF = ((input.DX & 64) != 0);
+								}
+							}
+
+							if (machine.DOS.LastError != DOSError.None)
+							{
+								result.FLAGS |= Flags.Carry;
+								result.AX = (ushort)machine.DOS.LastError;
+							}
+
+							break;
+						}
+					}
+
+					break;
+				}
 			}
 
 			return result;
@@ -1164,8 +1271,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	/*
 TODO:
 
-Int 21/AX=43FFh/BP=5053h - MS-DOS 7.20 (Win98) - EXTENDED-LENGTH FILENAME OPERATIONS
-Int 21/AX=4401h - DOS 2+ - IOCTL - SET DEVICE INFORMATION
 Int 21/AX=4403h - DOS 2+ - IOCTL - WRITE TO CHARACTER DEVICE CONTROL CHANNEL
 Int 21/AX=4404h - DOS 2+ - IOCTL - READ FROM BLOCK DEVICE CONTROL CHANNEL
 Int 21/AX=4405h - DOS 2+ - IOCTL - WRITE TO BLOCK DEVICE CONTROL CHANNEL
