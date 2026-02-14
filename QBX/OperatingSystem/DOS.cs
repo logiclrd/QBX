@@ -595,12 +595,17 @@ public partial class DOS
 
 	int AllocateFileHandleForOpenFile(FileStream stream)
 	{
+		return AllocateFileHandleForFileDescriptor(new RegularFileDescriptor(stream));
+	}
+
+	int AllocateFileHandleForFileDescriptor(FileDescriptor fileDescriptor)
+	{
 		int fileHandle = GetFreeFileHandle();
 
 		if (fileHandle < 0)
 			return fileHandle;
 
-		Files[fileHandle] = new RegularFileDescriptor(stream);
+		Files[fileHandle] = fileDescriptor;
 
 		return fileHandle;
 	}
@@ -651,21 +656,36 @@ public partial class DOS
 				{
 					fileName = ShortFileNames.Unmap(Path.GetFullPath(fileName));
 
-					var fileInfo = new FileInfo(fileName);
-
-					if (fileInfo.Length <= uint.MaxValue)
+					if (Devices.TryGetDeviceByName(Path.GetFileNameWithoutExtension(fileName), out var device))
 					{
-						var dateTime = fileInfo.LastWriteTime;
-
-						fcb.DriveIdentifier = (byte)(fileInfo.FullName[0] - 64);
-						fcb.FileSize = (uint)fileInfo.Length;
-						fcb.DateStamp.Set(dateTime.Year, dateTime.Month, dateTime.Day);
-						fcb.TimeStamp.Set(dateTime.Hour, dateTime.Minute, dateTime.Second);
+						fcb.FileSize = 0;
+						fcb.DateStamp = default;
+						fcb.TimeStamp = default;
 						fcb.RecordSize = 128;
+						fcb.FileHandle = AllocateFileHandleForFileDescriptor(device);
 
-						var stream = fileInfo.Open(openMode.ToSystemFileMode());
+						return fcb.FileHandle;
+					}
+					else
+					{
+						var fileInfo = new FileInfo(fileName);
 
-						return AllocateFileHandleForOpenFile(stream);
+						if (fileInfo.Length <= uint.MaxValue)
+						{
+							var dateTime = fileInfo.LastWriteTime;
+
+							fcb.DriveIdentifier = (byte)(fileInfo.FullName[0] - 64);
+							fcb.FileSize = (uint)fileInfo.Length;
+							fcb.DateStamp.Set(dateTime.Year, dateTime.Month, dateTime.Day);
+							fcb.TimeStamp.Set(dateTime.Hour, dateTime.Minute, dateTime.Second);
+							fcb.RecordSize = 128;
+
+							var stream = fileInfo.Open(openMode.ToSystemFileMode());
+
+							fcb.FileHandle = AllocateFileHandleForOpenFile(stream);
+
+							return fcb.FileHandle;
+						}
 					}
 				}
 				catch { }
@@ -704,9 +724,14 @@ public partial class DOS
 				if ((accessModes & FileAccess.Flags_NoInherit) == 0)
 					systemFileShare |= SystemFileShare.Inheritable;
 
-				var stream = new FileStream(fileName, openMode.ToSystemFileMode(), systemFileAccess, systemFileShare);
+				if (Devices.TryGetDeviceByName(Path.GetFileNameWithoutExtension(fileName), out var device))
+					return AllocateFileHandleForFileDescriptor(device);
+				else
+				{
+					var stream = new FileStream(fileName, openMode.ToSystemFileMode(), systemFileAccess, systemFileShare);
 
-				return AllocateFileHandleForOpenFile(stream);
+					return AllocateFileHandleForOpenFile(stream);
+				}
 			});
 		}
 		catch
