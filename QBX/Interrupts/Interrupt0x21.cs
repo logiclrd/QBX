@@ -112,6 +112,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		SendControlDataToBlockDevice = 0x05,
 		CheckDeviceInputStatus = 0x06,
 		CheckDeviceOutputStatus = 0x07,
+		DoesDeviceUseRemovableMedia = 0x08,
 	}
 
 	public override Registers Execute(Registers input)
@@ -495,31 +496,37 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 							? machine.DOS.GetDriveParameterBlock(driveIndicator)
 							: machine.DOS.GetDefaultDriveParameterBlock();
 
-						ref var dpb = ref DriveParameterBlock.CreateReference(machine.SystemMemory, dpbAddress.ToLinearAddress());
-
-						// No way to sensibly map modern numbers into the return from this
-						// call, so we just fake a 100MB hard drive or a 1.44MB floppy.
-
-						result.DS = dpbAddress.Segment;
-						result.BX = dpbAddress.Offset;
-
-						if (dpb.MediaDescriptor == MediaDescriptor.FloppyDisk)
+						if (dpbAddress != 0)
 						{
-							result.AX = 1; // sectors per cluster
-							result.CX = 512; // bytes per sector
-							result.DX = 2880; // number of clusters
-						}
-						else
-						{
-							result.AX = 4; // sectors per cluster
-							result.CX = 512; // bytes per sector
-							result.DX = 51200; // number of clusters
+							ref var dpb = ref DriveParameterBlock.CreateReference(machine.SystemMemory, dpbAddress.ToLinearAddress());
+
+							// No way to sensibly map modern numbers into the return from this
+							// call, so we just fake a 100MB hard drive or a 1.44MB floppy.
+
+							result.DS = dpbAddress.Segment;
+							result.BX = dpbAddress.Offset;
+
+							if (dpb.MediaDescriptor == MediaDescriptor.FloppyDisk)
+							{
+								result.AX = 1; // sectors per cluster
+								result.CX = 512; // bytes per sector
+								result.DX = 2880; // number of clusters
+							}
+							else
+							{
+								result.AX = 4; // sectors per cluster
+								result.CX = 512; // bytes per sector
+								result.DX = 51200; // number of clusters
+							}
 						}
 					}
 					catch
 					{
-						result.AX |= 0xFF;
+						machine.DOS.LastError = DOSError.InvalidFunction;
 					}
+
+					if (machine.DOS.LastError != DOSError.None)
+						result.AX |= 0xFF;
 
 					break;
 				}
@@ -834,15 +841,13 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 					result.AX &= 0xFF00;
 
-					if (driveNumber > 26)
-						result.AX |= 0xFF;
-					else
-					{
-						var address = machine.DOS.GetDriveParameterBlock(driveNumber);
+					var address = machine.DOS.GetDriveParameterBlock(driveNumber);
 
-						result.DS = address.Segment;
-						result.BX = address.Offset;
-					}
+					result.DS = address.Segment;
+					result.BX = address.Offset;
+
+					if (machine.DOS.LastError != DOSError.None)
+						result.AX |= 0xFF;
 
 					break;
 				}
@@ -1310,6 +1315,42 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 							break;
 						}
+						case Function44.DoesDeviceUseRemovableMedia:
+						{
+							result.FLAGS &= ~Flags.Carry;
+
+							try
+							{
+								int driveIndicator = input.DX & 0xFF;
+
+								var dpbAddress = (driveIndicator != 0)
+									? machine.DOS.GetDriveParameterBlock(driveIndicator)
+									: machine.DOS.GetDefaultDriveParameterBlock();
+
+								if (dpbAddress != 0)
+								{
+									ref var dpb = ref DriveParameterBlock.CreateReference(machine.SystemMemory, dpbAddress.ToLinearAddress());
+
+									if (dpb.MediaDescriptor == MediaDescriptor.FloppyDisk)
+										result.AX = 0x0000;
+									else
+										result.AX = 0x0001;
+								}
+							}
+							catch
+							{
+								if (machine.DOS.LastError == DOSError.None)
+									machine.DOS.LastError = DOSError.InvalidFunction;
+							}
+
+							if (machine.DOS.LastError != DOSError.None)
+							{
+								result.FLAGS |= Flags.Carry;
+								result.AX |= (ushort)machine.DOS.LastError;
+							}
+
+							break;
+						}
 					}
 
 					break;
@@ -1340,12 +1381,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	/*
 TODO:
 
-Int 21/AX=4403h - DOS 2+ - IOCTL - WRITE TO CHARACTER DEVICE CONTROL CHANNEL
-Int 21/AX=4404h - DOS 2+ - IOCTL - READ FROM BLOCK DEVICE CONTROL CHANNEL
-Int 21/AX=4405h - DOS 2+ - IOCTL - WRITE TO BLOCK DEVICE CONTROL CHANNEL
-Int 21/AX=4406h - DOS 2+ - IOCTL - GET INPUT STATUS
-Int 21/AX=4407h - DOS 2+ - IOCTL - GET OUTPUT STATUS
-Int 21/AX=4408h - DOS 3.0+ - IOCTL - CHECK IF BLOCK DEVICE REMOVABLE
 Int 21/AX=4409h - DOS 3.1+ - IOCTL - CHECK IF BLOCK DEVICE REMOTE
 Int 21/AX=440Ah - DOS 3.1+ - IOCTL - CHECK IF HANDLE IS REMOTE
 Int 21/AX=440Bh - DOS 3.1+ - IOCTL - SET SHARING RETRY COUNT

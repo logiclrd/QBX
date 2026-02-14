@@ -525,6 +525,17 @@ public partial class DOS
 
 	public SegmentedAddress GetDriveParameterBlock(int driveIdentifier)
 	{
+		return TranslateError(() =>
+		{
+			if (!TryGetDriveParameterBlock(driveIdentifier, out var address))
+				throw new DOSException(DOSError.InvalidDrive);
+
+			return address;
+		});
+	}
+
+	public bool TryGetDriveParameterBlock(int driveIdentifier, out SegmentedAddress address)
+	{
 		SegmentedAddress ret = 0;
 
 		EnumerateDriveParameterBlocks(
@@ -539,7 +550,9 @@ public partial class DOS
 				return true;
 			});
 
-		return ret;
+		address = ret;
+
+		return true;
 	}
 
 	public SegmentedAddress GetDefaultDriveParameterBlock()
