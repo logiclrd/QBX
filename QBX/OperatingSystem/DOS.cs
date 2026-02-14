@@ -593,9 +593,9 @@ public partial class DOS
 		return Files.Count - 1;
 	}
 
-	int AllocateFileHandleForOpenFile(FileStream stream)
+	int AllocateFileHandleForOpenFile(string path, FileStream stream)
 	{
-		return AllocateFileHandleForFileDescriptor(new RegularFileDescriptor(stream));
+		return AllocateFileHandleForFileDescriptor(new RegularFileDescriptor(path, stream));
 	}
 
 	int AllocateFileHandleForFileDescriptor(FileDescriptor fileDescriptor)
@@ -656,6 +656,9 @@ public partial class DOS
 				{
 					fileName = ShortFileNames.Unmap(Path.GetFullPath(fileName));
 
+					if (!ShortFileNames.TryMap(fileName, out var shortPath))
+						return -1;
+
 					if (Devices.TryGetDeviceByName(Path.GetFileNameWithoutExtension(fileName), out var device))
 					{
 						fcb.FileSize = 0;
@@ -682,7 +685,7 @@ public partial class DOS
 
 							var stream = fileInfo.Open(openMode.ToSystemFileMode());
 
-							fcb.FileHandle = AllocateFileHandleForOpenFile(stream);
+							fcb.FileHandle = AllocateFileHandleForOpenFile(shortPath, stream);
 
 							return fcb.FileHandle;
 						}
@@ -702,6 +705,9 @@ public partial class DOS
 			return TranslateError(() =>
 			{
 				fileName = ShortFileNames.Unmap(fileName);
+
+				if (!ShortFileNames.TryMap(fileName, out var shortPath))
+					return -1;
 
 				var systemFileMode = openMode.ToSystemFileMode();
 				var systemFileAccess = default(SystemFileAccess);
@@ -730,7 +736,7 @@ public partial class DOS
 				{
 					var stream = new FileStream(fileName, openMode.ToSystemFileMode(), systemFileAccess, systemFileShare);
 
-					return AllocateFileHandleForOpenFile(stream);
+					return AllocateFileHandleForOpenFile(shortPath, stream);
 				}
 			});
 		}

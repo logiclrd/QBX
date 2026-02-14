@@ -4,7 +4,7 @@ using QBX.OperatingSystem.FileStructures;
 
 namespace QBX.OperatingSystem.FileDescriptors;
 
-public class NullFileDescriptor : FileDescriptor
+public class NullFileDescriptor() : FileDescriptor("NUL")
 {
 	protected override bool CanRead => true;
 	protected override bool CanWrite => true;

@@ -10,11 +10,13 @@ public delegate int FileWriteFunctor(ReadOnlySpan<byte> buffer);
 
 public abstract class FileDescriptor
 {
+	public string Path { get; private set; }
+
 	protected virtual void ReadCore(FileBuffer buffer) { }
 	protected virtual int WriteCore(ReadOnlySpan<byte> buffer) => 0;
 	protected virtual void CloseCore() { }
 
-	public IOMode IOMode { set; private get; }
+	public IOMode IOMode { get; private set; }
 	public bool AtSoftEOF;
 
 	public void SetIOMode(IOMode ioMode)
@@ -34,8 +36,9 @@ public abstract class FileDescriptor
 	public int Column;
 	public virtual bool WriteThrough { get; }
 
-	public FileDescriptor()
+	public FileDescriptor(string path)
 	{
+		Path = path;
 	}
 
 	public virtual IDisposable? NonBlocking() => null;

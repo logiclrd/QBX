@@ -5,10 +5,12 @@ using QBX.OperatingSystem.FileStructures;
 
 namespace QBX.OperatingSystem.FileDescriptors;
 
-public class RegularFileDescriptor(FileStream stream) : FileDescriptor
+public class RegularFileDescriptor(string path, FileStream stream) : FileDescriptor(path)
 {
 	protected override bool CanRead => stream.CanRead;
 	protected override bool CanWrite => stream.CanWrite;
+
+	public bool IsPristine = true;
 
 	public override void SetAttributes(FileStructures.FileAttributes attributes)
 	{
@@ -44,6 +46,7 @@ public class RegularFileDescriptor(FileStream stream) : FileDescriptor
 
 	protected override int WriteCore(ReadOnlySpan<byte> buffer)
 	{
+		IsPristine = false;
 		stream.Write(buffer);
 		return buffer.Length;
 	}

@@ -5,7 +5,7 @@ using QBX.Parser;
 
 namespace QBX.OperatingSystem.FileDescriptors;
 
-public class ClockFileDescriptor : FileDescriptor
+public class ClockFileDescriptor() : FileDescriptor("CLOCK$")
 {
 	protected override bool CanRead => true;
 	protected override bool CanWrite => true;

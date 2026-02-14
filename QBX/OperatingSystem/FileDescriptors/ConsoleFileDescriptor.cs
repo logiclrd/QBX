@@ -7,7 +7,7 @@ using QBX.OperatingSystem.FileStructures;
 
 namespace QBX.OperatingSystem.FileDescriptors;
 
-public class ConsoleFileDescriptor(DOS owner) : FileDescriptor
+public class ConsoleFileDescriptor(DOS owner) : FileDescriptor("CON")
 {
 	public override bool WriteThrough => true;
 
