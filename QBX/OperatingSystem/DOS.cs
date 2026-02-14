@@ -410,6 +410,30 @@ public partial class DOS
 		});
 	}
 
+	public int Read(int fileHandle, IMemory systemMemory, int address, int count)
+	{
+		if ((fileHandle < 0) || (fileHandle >= Files.Count)
+			|| (Files[fileHandle] is not FileDescriptor fileDescriptor))
+		{
+			LastError = DOSError.InvalidHandle;
+			throw new ArgumentException("Invalid file descriptor");
+		}
+
+		int numRead = 0;
+
+		try
+		{
+			while (numRead < count)
+			{
+				systemMemory[address++] = fileDescriptor.ReadByte();
+				numRead++;
+			}
+		}
+		catch (EndOfStreamException) { }
+
+		return numRead;
+	}
+
 	readonly byte[] ControlCharacters = [9, 13];
 
 	public void Write(int fileHandle, ReadOnlySpan<byte> bytes, out byte lastByteWritten)
@@ -456,6 +480,31 @@ public partial class DOS
 			if (VerifyWrites)
 				fileDescriptor.FlushWriteBuffer(true);
 		}
+	}
+
+	public int Write(int fileHandle, IMemory systemMemory, int address, int count)
+	{
+		byte b = default;
+
+		if ((fileHandle < 0) || (fileHandle >= Files.Count)
+			|| (Files[fileHandle] is not FileDescriptor fileDescriptor))
+		{
+			LastError = DOSError.InvalidHandle;
+			throw new ArgumentException("Invalid file descriptor");
+		}
+
+		int numWritten = 0;
+
+		while (numWritten < count)
+		{
+			WriteByte(fileHandle, systemMemory[address++], out b);
+			count--;
+		}
+
+		if (VerifyWrites)
+			fileDescriptor.FlushWriteBuffer(true);
+
+		return numWritten;
 	}
 
 	public void SetDefaultDrive(char driveLetter)
@@ -726,7 +775,7 @@ public partial class DOS
 
 				fileDescriptor.Seek(offset);
 
-				if (fileDescriptor.ReadExactly(readSize, Machine.SystemMemory, DataTransferAddress))
+				if (fileDescriptor.ReadExactly(readSize, Machine.MemoryBus, DataTransferAddress))
 				{
 					if (advance)
 					{
@@ -773,7 +822,7 @@ public partial class DOS
 
 				for (int i = 0; i < recordCount; i++)
 				{
-					fileDescriptor.Write(fcb.RecordSize, Machine.SystemMemory, DataTransferAddress);
+					fileDescriptor.Write(fcb.RecordSize, Machine.MemoryBus, DataTransferAddress);
 
 					if (advance)
 					{

@@ -64,16 +64,27 @@ public struct FileBuffer(int size)
 
 	public byte Pull()
 	{
-		if (NumUsed == 0)
+		if (!TryPull(out var b))
 			throw new InvalidOperationException("Buffer is empty");
+
+		return b;
+	}
+
+	public bool TryPull(out byte b)
+	{
+		if (NumUsed == 0)
+		{
+			b = default;
+			return false;
+		}
 
 		int firstUsed = (NextFree + size - NumUsed) % size;
 
-		byte ret = _data[firstUsed];
+		b = _data[firstUsed];
 
 		Free(1);
 
-		return ret;
+		return true;
 	}
 
 	public int Pull(Span<byte> buffer)

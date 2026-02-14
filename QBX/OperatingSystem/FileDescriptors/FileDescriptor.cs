@@ -97,10 +97,18 @@ public abstract class FileDescriptor
 
 	public byte ReadByte()
 	{
+		if (!TryReadByte(out var b))
+			throw new System.IO.EndOfStreamException();
+
+		return b;
+	}
+
+	public bool TryReadByte(out byte b)
+	{
 		while (ReadBuffer.IsEmpty)
 			FillReadBuffer();
 
-		return ReadBuffer.Pull();
+		return ReadBuffer.TryPull(out b);
 	}
 
 	public int Read(Span<byte> buffer)
@@ -111,7 +119,7 @@ public abstract class FileDescriptor
 		return ReadBuffer.Pull(buffer);
 	}
 
-	public int Read(int readSize, SystemMemory systemMemory, int address)
+	public int Read(int readSize, IMemory systemMemory, int address)
 	{
 		if (ReadBuffer.IsEmpty)
 			FillReadBuffer();
@@ -127,7 +135,7 @@ public abstract class FileDescriptor
 		return count;
 	}
 
-	public bool ReadExactly(int readSize, SystemMemory systemMemory, int address)
+	public bool ReadExactly(int readSize, IMemory systemMemory, int address)
 	{
 		while (readSize > 0)
 		{
@@ -168,7 +176,7 @@ public abstract class FileDescriptor
 		}
 	}
 
-	public void Write(int writeSize, SystemMemory systemMemory, int address)
+	public void Write(int writeSize, IMemory systemMemory, int address)
 	{
 		while (writeSize > 0)
 		{

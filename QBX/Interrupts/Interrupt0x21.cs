@@ -78,6 +78,8 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		CreateFileWithHandle = 0x3C,
 		OpenFileWithHandle = 0x3D,
 		CloseFileWithHandle = 0x3E,
+		ReadFileOrDevice = 0x3F,
+		WriteFileOrDevice = 0x40,
 	}
 
 	public enum Function33 : byte
@@ -1002,6 +1004,42 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 					break;
 				}
+				case Function.ReadFileOrDevice:
+				{
+					int fileHandle = input.BX;
+					int numBytes = input.CX;
+					var bufferAddress = new SegmentedAddress(input.AsRegistersEx().DS, input.DX);
+
+					result.FLAGS &= ~Flags.Carry;
+
+					result.AX = (ushort)machine.DOS.Read(fileHandle, machine.MemoryBus, bufferAddress.ToLinearAddress(), numBytes);
+
+					if (machine.DOS.LastError != DOSError.None)
+					{
+						result.FLAGS |= Flags.Carry;
+						result.AX = (ushort)machine.DOS.LastError;
+					}
+
+					break;
+				}
+				case Function.WriteFileOrDevice:
+				{
+					int fileHandle = input.BX;
+					int numBytes = input.CX;
+					var bufferAddress = new SegmentedAddress(input.AsRegistersEx().DS, input.DX);
+
+					result.FLAGS &= ~Flags.Carry;
+
+					result.AX = (ushort)machine.DOS.Write(fileHandle, machine.MemoryBus, bufferAddress.ToLinearAddress(), numBytes);
+
+					if (machine.DOS.LastError != DOSError.None)
+					{
+						result.FLAGS |= Flags.Carry;
+						result.AX = (ushort)machine.DOS.LastError;
+					}
+
+					break;
+				}
 			}
 
 			return result;
@@ -1028,7 +1066,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	/*
 TODO:
 
-Int 21/AH=3Fh - DOS 2+ - READ - READ FROM FILE OR DEVICE
 Int 21/AH=41h - DOS 2+ - UNLINK - DELETE FILE
 Int 21/AH=42h - DOS 2+ - LSEEK - SET CURRENT FILE POSITION
 Int 21/AX=4301h - DOS 2+ - CHMOD - SET FILE ATTRIBUTES
