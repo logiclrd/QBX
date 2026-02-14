@@ -15,7 +15,13 @@ using QBX.OperatingSystem.FileStructures;
 using QBX.OperatingSystem.Memory;
 
 using FileMode = QBX.OperatingSystem.FileStructures.FileMode;
+using FileAccess = QBX.OperatingSystem.FileStructures.FileAccess;
 using FileAttributes = QBX.OperatingSystem.FileStructures.FileAttributes;
+
+using SystemFileMode = System.IO.FileMode;
+using SystemFileAccess = System.IO.FileAccess;
+using SystemFileShare = System.IO.FileShare;
+using SystemFileAttributes = System.IO.FileAttributes;
 
 namespace QBX.OperatingSystem;
 
@@ -620,7 +626,7 @@ public partial class DOS
 		});
 	}
 
-	public int OpenFile(string fileName, FileMode openMode)
+	public int OpenFile(string fileName, FileMode openMode, FileAccess accessModes)
 	{
 		try
 		{
@@ -628,7 +634,28 @@ public partial class DOS
 			{
 				fileName = ShortFileNames.Unmap(fileName);
 
-				var stream = new FileStream(fileName, openMode.ToSystemFileMode(), FileAccess.ReadWrite, FileShare.ReadWrite);
+				var systemFileMode = openMode.ToSystemFileMode();
+				var systemFileAccess = default(SystemFileAccess);
+				var systemFileShare = default(SystemFileShare);
+
+				switch (accessModes & FileAccess.AccessMask)
+				{
+					case FileAccess.Access_ReadWrite: systemFileAccess = SystemFileAccess.ReadWrite; break;
+					case FileAccess.Access_WriteOnly: systemFileAccess = SystemFileAccess.Read; break;
+					case FileAccess.Access_ReadOnly: systemFileAccess = SystemFileAccess.Write; break;
+				}
+
+				switch (accessModes & FileAccess.ShareMask)
+				{
+					case FileAccess.Share_DenyReadWrite: systemFileShare = SystemFileShare.None; break;
+					case FileAccess.Share_DenyRead: systemFileShare = SystemFileShare.Write; break;
+					case FileAccess.Share_DenyWrite: systemFileShare = SystemFileShare.Read; break;
+				}
+
+				if ((accessModes & FileAccess.Flags_NoInherit) == 0)
+					systemFileShare |= SystemFileShare.Inheritable;
+
+				var stream = new FileStream(fileName, openMode.ToSystemFileMode(), systemFileAccess, systemFileShare);
 
 				return AllocateFileHandleForOpenFile(stream);
 			});

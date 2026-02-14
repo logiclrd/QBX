@@ -76,6 +76,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		RemoveDirectory = 0x3A,
 		ChangeCurrentDirectory = 0x3B,
 		CreateFileWithHandle = 0x3C,
+		OpenFileWithHandle = 0x3D,
 	}
 
 	public enum Function33 : byte
@@ -949,12 +950,34 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 					result.FLAGS &= ~Flags.Carry;
 
-					int fileHandle = machine.DOS.OpenFile(relativePath.ToString(), FileMode.Create);
+					int fileHandle = machine.DOS.OpenFile(relativePath.ToString(), FileMode.Create, default);
 
 					result.AX = (ushort)fileHandle;
 
 					if (machine.DOS.LastError == DOSError.None)
 						machine.DOS.SetFileAttributes(fileHandle, attributes);
+
+					if (machine.DOS.LastError != DOSError.None)
+					{
+						result.FLAGS |= Flags.Carry;
+						result.AX = (ushort)machine.DOS.LastError;
+					}
+
+					break;
+				}
+				case Function.OpenFileWithHandle:
+				{
+					int address = input.AsRegistersEx().DS * 0x10 + input.DX;
+
+					var relativePath = ReadStringZ(machine.MemoryBus, address);
+
+					var accessModes = (FileAccess)(input.AX & 0xFF);
+
+					result.FLAGS &= ~Flags.Carry;
+
+					int fileHandle = machine.DOS.OpenFile(relativePath.ToString(), FileMode.Open, accessModes);
+
+					result.AX = (ushort)fileHandle;
 
 					if (machine.DOS.LastError != DOSError.None)
 					{
