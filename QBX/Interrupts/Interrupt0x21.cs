@@ -77,6 +77,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		ChangeCurrentDirectory = 0x3B,
 		CreateFileWithHandle = 0x3C,
 		OpenFileWithHandle = 0x3D,
+		CloseFileWithHandle = 0x3E,
 	}
 
 	public enum Function33 : byte
@@ -987,6 +988,20 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 					break;
 				}
+				case Function.CloseFileWithHandle:
+				{
+					result.FLAGS &= ~Flags.Carry;
+
+					machine.DOS.CloseFile(fileHandle: input.BX);
+
+					if (machine.DOS.LastError != DOSError.None)
+					{
+						result.FLAGS |= Flags.Carry;
+						result.AX = (ushort)machine.DOS.LastError;
+					}
+
+					break;
+				}
 			}
 
 			return result;
@@ -1013,8 +1028,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	/*
 TODO:
 
-Int 21/AH=3Dh - DOS 2+ - OPEN - OPEN EXISTING FILE
-Int 21/AH=3Eh - DOS 2+ - CLOSE - CLOSE FILE
 Int 21/AH=3Fh - DOS 2+ - READ - READ FROM FILE OR DEVICE
 Int 21/AH=41h - DOS 2+ - UNLINK - DELETE FILE
 Int 21/AH=42h - DOS 2+ - LSEEK - SET CURRENT FILE POSITION
