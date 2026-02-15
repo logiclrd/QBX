@@ -85,6 +85,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		MoveFilePointer = 0x42,
 		Function43 = 0x43,
 		Function44 = 0x44,
+		DuplicateFileHandle = 0x45,
 	}
 
 	public enum Function33 : byte
@@ -1465,6 +1466,20 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 					break;
 				}
+				case Function.DuplicateFileHandle:
+				{
+					int fileHandle = input.BX;
+
+					result.AX = (ushort)machine.DOS.DuplicateHandle(fileHandle);
+
+					if (machine.DOS.LastError != DOSError.None)
+					{
+						result.FLAGS |= Flags.Carry;
+						result.AX = (ushort)machine.DOS.LastError;
+					}
+
+					break;
+				}
 			}
 
 			return result;
@@ -1491,11 +1506,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	/*
 TODO:
 
-Int 21/AX=440Eh - DOS 3.2+ - IOCTL - GET LOGICAL DRIVE MAP
-Int 21/AX=440Fh - DOS 3.2+ - IOCTL - SET LOGICAL DRIVE MAP
-Int 21/AX=4410h - DOS 5+ - IOCTL - QUERY GENERIC IOCTL CAPABILITY (HANDLE)
-Int 21/AX=4411h - DOS 5+ - IOCTL - QUERY GENERIC IOCTL CAPABILITY (DRIVE)
-Int 21/AH=45h - DOS 2+ - DUP - DUPLICATE FILE HANDLE
 Int 21/AH=46h - DOS 2+ - DUP2, FORCEDUP - FORCE DUPLICATE FILE HANDLE
 Int 21/AH=47h - DOS 2+ - CWD - GET CURRENT DIRECTORY
 Int 21/AH=48h - DOS 2+ - ALLOCATE MEMORY

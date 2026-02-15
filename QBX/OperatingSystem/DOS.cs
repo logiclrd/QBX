@@ -948,6 +948,21 @@ public partial class DOS
 		});
 	}
 
+	public int DuplicateHandle(int fileHandle)
+	{
+		if ((fileHandle < 0) || (fileHandle >= Files.Count)
+		 || (Files[fileHandle] is not FileDescriptor fileDescriptor))
+		{
+			LastError = DOSError.InvalidHandle;
+			return -1;
+		}
+
+		return TranslateError(() =>
+		{
+			return AllocateFileHandleForFileDescriptor(fileDescriptor);
+		});
+	}
+
 	public bool CloseFile(FileControlBlock fcb)
 	{
 		return TranslateError(() =>
