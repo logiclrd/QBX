@@ -1,8 +1,8 @@
-﻿using QBX.ExecutionEngine.Execution;
-using QBX.Hardware;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Text;
+
+using QBX.ExecutionEngine.Execution;
+using QBX.Hardware;
 
 namespace QBX.OperatingSystem.Processes;
 
@@ -21,6 +21,15 @@ public class EnvironmentBlock : Dictionary<string, string>
 		}
 
 		return ret;
+	}
+
+	public StringValue Encode()
+	{
+		var buffer = new StringValue();
+
+		EncodeTo(buffer);
+
+		return buffer;
 	}
 
 	public void EncodeTo(StringValue buffer)

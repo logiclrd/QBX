@@ -64,6 +64,15 @@ public partial class Program : HostedProgram, IOvertypeFlag
 	{
 		Machine = machine;
 
+		string commandTail = Environment.CommandLine;
+
+		int space = commandTail.IndexOf(' ');
+
+		if (space >= 0)
+			commandTail = commandTail.Substring(space + 1).TrimStart();
+
+		Machine.DOS.SetUpRunningProgramSegmentPrefix(commandTail);
+
 		PlayProcessor = new PlayProcessor(machine);
 		PlayProcessor.StartProcessingThread();
 
@@ -102,12 +111,8 @@ public partial class Program : HostedProgram, IOvertypeFlag
 
 		StartNewProgram();
 
-		string commandLine = Environment.CommandLine;
-
-		int space = commandLine.IndexOf(' ');
-
-		if (space >= 0)
-			ProcessCommandLine(commandLine.Substring(space + 1).TrimStart());
+		if (commandTail.Length > 0)
+			ProcessCommandLine(commandTail);
 
 		AttachBreakHandler();
 	}

@@ -229,6 +229,22 @@ public class MemoryManager
 		mcb.OwnerPSPSegment = _rootPSPSegment;
 	}
 
+	public ushort CreatePSP(EnvironmentBlock environment, StringValue commandLine)
+	{
+		var environmentBytes = environment.Encode();
+
+		if (environmentBytes.Length > 32768)
+			throw new DOSException(DOSError.BadEnvironment);
+
+		int allocation = AllocateMemory(environmentBytes.Length, RootPSPSegment);
+
+		environmentBytes.AsSpan().CopyTo(_systemMemory.AsSpan().Slice(allocation));
+
+		ushort allocationSegment = (ushort)(allocation / ParagraphSize);
+
+		return CreatePSP(allocationSegment, commandLine);
+	}
+
 	public ushort CreatePSP(ushort environmentSegment, StringValue commandLine)
 	{
 		int address = AllocateMemory(length: 256, ownerPSPSegment: _rootPSPSegment);
@@ -251,7 +267,11 @@ public class MemoryManager
 
 		if (firstArgumentStart < commandLine.Length)
 		{
-			psp.FCB1.ParseFileName(commandLine.AsSpan().Slice(firstArgumentStart, firstArgumentEnd - firstArgumentStart + 1));
+			try
+			{
+				psp.FCB1.ParseFileName(commandLine.AsSpan().Slice(firstArgumentStart, firstArgumentEnd - firstArgumentStart + 1));
+			}
+			catch { }
 
 			int secondArgumentStart = firstArgumentStart + 1;
 
@@ -264,7 +284,13 @@ public class MemoryManager
 				secondArgumentEnd++;
 
 			if (secondArgumentStart < commandLine.Length)
-				psp.FCB2.ParseFileName(commandLine.AsSpan().Slice(secondArgumentStart, secondArgumentEnd - secondArgumentStart + 1));
+			{
+				try
+				{
+					psp.FCB2.ParseFileName(commandLine.AsSpan().Slice(secondArgumentStart, secondArgumentEnd - secondArgumentStart + 1));
+				}
+				catch { }
+			}
 		}
 
 		var commandLineBytes = commandLine.AsSpan();

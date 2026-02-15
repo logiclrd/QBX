@@ -149,6 +149,21 @@ public partial class DOS
 		}
 	}
 
+	public ushort SetUpRunningProgramSegmentPrefix(string commandTail, EnvironmentBlock? environment = null)
+	{
+		var pspAddress = MemoryManager.CreatePSP(
+			environment ?? EnvironmentBlock.FromAmbientEnvironment(),
+			new StringValue(commandTail));
+
+		ushort pspSegment = (ushort)(pspAddress / MemoryManager.ParagraphSize);
+
+		// Default DTA: use the last 128 bytes of the PSP, overwriting the command-line argument data.
+		DataTransferAddressSegment = pspSegment;
+		DataTransferAddressOffset = 128;
+
+		return pspSegment;
+	}
+
 	class InDOSScope : IDisposable
 	{
 		DOS _owner;
