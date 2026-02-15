@@ -18,9 +18,18 @@ public abstract class FileDescriptor
 
 	public IOMode IOMode { get; private set; }
 	public bool AtSoftEOF;
+	public bool IsClosed;
+
+	public void VerifyOpen()
+	{
+		if (IsClosed)
+			throw new DOSException(DOSError.InvalidFunction);
+	}
 
 	public void SetIOMode(IOMode ioMode)
 	{
+		VerifyOpen();
+
 		IOMode = ioMode;
 
 		if (ioMode == IOMode.Binary)
@@ -55,6 +64,8 @@ public abstract class FileDescriptor
 
 	public uint Seek(int offset, MoveMethod moveMethod)
 	{
+		VerifyOpen();
+
 		FlushWriteBuffer();
 
 		ReadBuffer.NumUsed = 0;
@@ -67,6 +78,8 @@ public abstract class FileDescriptor
 
 	public uint Seek(uint offset, MoveMethod moveMethod)
 	{
+		VerifyOpen();
+
 		FlushWriteBuffer();
 
 		ReadBuffer.NumUsed = 0;
@@ -82,6 +95,8 @@ public abstract class FileDescriptor
 
 	void FillReadBuffer()
 	{
+		VerifyOpen();
+
 		if (CanRead)
 		{
 			if (!ReadBuffer.IsFull)
@@ -91,6 +106,8 @@ public abstract class FileDescriptor
 
 	public void FlushWriteBuffer(bool flushToDisk = false)
 	{
+		VerifyOpen();
+
 		if (CanWrite)
 		{
 			int firstUsed = WriteBuffer.NextFree - WriteBuffer.NumUsed;
@@ -126,10 +143,12 @@ public abstract class FileDescriptor
 		}
 	}
 
-	protected virtual void FlushToDisk() { }
+	protected virtual void FlushToDisk() { VerifyOpen(); }
 
 	public byte ReadByte()
 	{
+		VerifyOpen();
+
 		if (!TryReadByte(out var b))
 			throw new System.IO.EndOfStreamException();
 
@@ -138,6 +157,8 @@ public abstract class FileDescriptor
 
 	public bool TryReadByte(out byte b)
 	{
+		VerifyOpen();
+
 		if (AtSoftEOF)
 		{
 			b = 0;
@@ -160,6 +181,8 @@ public abstract class FileDescriptor
 
 	public int Read(Span<byte> buffer)
 	{
+		VerifyOpen();
+
 		while (ReadBuffer.IsEmpty)
 			FillReadBuffer();
 
@@ -168,6 +191,8 @@ public abstract class FileDescriptor
 
 	public int Read(int readSize, IMemory systemMemory, int address)
 	{
+		VerifyOpen();
+
 		if (ReadBuffer.IsEmpty)
 			FillReadBuffer();
 
@@ -184,6 +209,8 @@ public abstract class FileDescriptor
 
 	public bool ReadExactly(int readSize, IMemory systemMemory, int address)
 	{
+		VerifyOpen();
+
 		while (readSize > 0)
 		{
 			int chunkSize = Read(readSize, systemMemory, address);
@@ -200,6 +227,8 @@ public abstract class FileDescriptor
 
 	public void WriteByte(byte b)
 	{
+		VerifyOpen();
+
 		WriteBuffer.Push(b);
 
 		if (WriteThrough || WriteBuffer.IsFull)
@@ -208,6 +237,8 @@ public abstract class FileDescriptor
 
 	public void Write(ReadOnlySpan<byte> buffer)
 	{
+		VerifyOpen();
+
 		while (buffer.Length > 0)
 		{
 			int available = WriteBuffer.Available;
@@ -225,6 +256,8 @@ public abstract class FileDescriptor
 
 	public void Write(int writeSize, IMemory systemMemory, int address)
 	{
+		VerifyOpen();
+
 		while (writeSize > 0)
 		{
 			if (WriteBuffer.IsFull)
@@ -236,6 +269,10 @@ public abstract class FileDescriptor
 
 	public void Close()
 	{
-		CloseCore();
+		if (!IsClosed)
+		{
+			CloseCore();
+			IsClosed = true;
+		}
 	}
 }

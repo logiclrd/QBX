@@ -17,11 +17,15 @@ public class RegularFileDescriptor(string path, FileStream stream) : FileDescrip
 
 	public override void SetAttributes(FileStructures.FileAttributes attributes)
 	{
+		VerifyOpen();
+
 		File.SetAttributes(stream.SafeFileHandle, attributes.ToSystemFileAttributes());
 	}
 
 	protected override void FlushToDisk()
 	{
+		VerifyOpen();
+
 		stream.Flush(flushToDisk: true);
 	}
 
