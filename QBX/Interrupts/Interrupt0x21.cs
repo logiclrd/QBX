@@ -102,6 +102,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		GetPSPAddress = 0x51,
 		GetVerifyState = 0x52,
 		RenameFile = 0x53,
+		Function57 = 0x57,
 	}
 
 	public enum Function33 : byte
@@ -173,6 +174,16 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		LoadProgram = 0x01, // not implemented
 		LoadOverlay = 0x03, // not implemented
 		SetExecutionState = 0x05, // not implemented
+	}
+
+	public enum Function57 : byte
+	{
+		GetFileDateAndTime = 0x00,
+		SetFileDateAndTime = 0x01,
+		GetFileLastAccessDateAndTime = 0x04,
+		SetFileLastAccessDateAndTime = 0x05,
+		GetFileCreationDateAndTime = 0x06,
+		SetFileCreationDateAndTime = 0x07,
 	}
 
 	public override Registers Execute(Registers input)
@@ -1775,6 +1786,84 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 					break;
 				}
+				case Function.Function57:
+				{
+					int fileHandle = input.BX;
+
+					if ((fileHandle < 0) || (fileHandle >= machine.DOS.Files.Count)
+						|| (machine.DOS.Files[fileHandle] is not FileDescriptor fileDescriptor))
+					{
+						result.FLAGS |= Flags.Carry;
+						result.AX = (ushort)DOSError.InvalidHandle;
+					}
+					else if (fileDescriptor is not RegularFileDescriptor regularFileDescriptor)
+					{
+						result.FLAGS |= Flags.Carry;
+						result.AX = (ushort)DOSError.InvalidFunction;
+					}
+					else
+					{
+						result.FLAGS &= ~Flags.Carry;
+
+						var subfunction = (Function57)al;
+
+						FileTime fileTime = new FileTime() { Raw = input.CX };
+						FileDate fileDate = new FileDate() { Raw = input.DX };
+
+						Lazy<DateTime> suppliedDateTime = new Lazy<DateTime>(
+							new DateTime(
+								fileDate.Year, fileDate.Month, fileDate.Day,
+								fileTime.Hour, fileTime.Minute, fileTime.Second));
+
+						DateTime returnDateTime = default;
+
+						machine.DOS.TranslateError(() =>
+						{
+							switch (subfunction)
+							{
+								case Function57.GetFileDateAndTime:
+									returnDateTime = System.IO.File.GetLastWriteTime(regularFileDescriptor.Handle);
+									break;
+								case Function57.SetFileDateAndTime:
+									System.IO.File.SetLastWriteTime(regularFileDescriptor.Handle, suppliedDateTime.Value);
+									break;
+
+								case Function57.GetFileLastAccessDateAndTime:
+									returnDateTime = System.IO.File.GetLastAccessTime(regularFileDescriptor.Handle);
+									break;
+								case Function57.SetFileLastAccessDateAndTime:
+									System.IO.File.SetLastAccessTime(regularFileDescriptor.Handle, suppliedDateTime.Value);
+									break;
+
+								case Function57.GetFileCreationDateAndTime:
+									returnDateTime = System.IO.File.GetCreationTime(regularFileDescriptor.Handle);
+									break;
+								case Function57.SetFileCreationDateAndTime:
+									System.IO.File.SetCreationTime(regularFileDescriptor.Handle, suppliedDateTime.Value);
+									break;
+							}
+						});
+
+						if (machine.DOS.LastError != DOSError.None)
+						{
+							result.FLAGS |= Flags.Carry;
+							result.AX = (ushort)machine.DOS.LastError;
+						}
+						else
+						{
+							if (returnDateTime != default)
+							{
+								fileTime.Set(returnDateTime);
+								fileDate.Set(returnDateTime);
+
+								result.CX = fileTime.Raw;
+								result.DX = fileDate.Raw;
+							}
+						}
+					}
+
+					break;
+				}
 			}
 
 			return result;
@@ -1784,15 +1873,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	/*
 TODO:
 
-Int 21/AX=5700h - DOS 2+ - GET FILE'S LAST-WRITTEN DATE AND TIME
-Int 21/AX=5701h - DOS 2+ - SET FILE'S LAST-WRITTEN DATE AND TIME
-Int 21/AX=5702h - DOS 4.x only - GET EXTENDED ATTRIBUTES FOR FILE
-Int 21/AX=5703h - DOS 4.x only - GET EXTENDED ATTRIBUTE PROPERTIES
-Int 21/AX=5704h - DOS 4.x only - SET EXTENDED ATTRIBUTES
-Int 21/AX=5704h - MS-DOS 7/Windows95 - GET LAST ACCESS DATE AND TIME
-Int 21/AX=5705h - MS-DOS 7/Windows95 - SET LAST ACCESS DATE AND TIME
-Int 21/AX=5706h - MS-DOS 7/Windows95 - GET CREATION DATE AND TIME
-Int 21/AX=5707h - MS-DOS 7/Windows95 - SET CREATION DATE AND TIME
 Int 21/AH=58h - DOS 2.11+ - GET OR SET MEMORY ALLOCATION STRATEGY
 Int 21/AH=58h - DOS 5+ - GET OR SET UMB LINK STATE
 Int 21/AH=59h/BX=0000h - DOS 3.0+ - GET EXTENDED ERROR INFORMATION

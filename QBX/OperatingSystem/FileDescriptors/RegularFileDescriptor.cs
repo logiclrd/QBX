@@ -3,6 +3,8 @@ using System.IO;
 
 using QBX.OperatingSystem.FileStructures;
 
+using Microsoft.Win32.SafeHandles;
+
 namespace QBX.OperatingSystem.FileDescriptors;
 
 public class RegularFileDescriptor(string path, FileStream stream) : FileDescriptor(path)
@@ -12,6 +14,8 @@ public class RegularFileDescriptor(string path, FileStream stream) : FileDescrip
 
 	public override bool ReadyToRead => !AtSoftEOF && (stream.Position < stream.Length);
 	public override bool ReadyToWrite => true;
+
+	public SafeFileHandle Handle => stream.SafeFileHandle;
 
 	public bool IsPristine = true;
 
