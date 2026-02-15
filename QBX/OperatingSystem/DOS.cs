@@ -237,6 +237,27 @@ public partial class DOS
 		}
 	}
 
+	internal const int MaximumNullTerminatedStringLength = 2048;
+
+	internal StringValue ReadStringZ(IMemory memory, int address)
+	{
+		var ret = new StringValue();
+
+		while (memory[address] != 0)
+		{
+			if (ret.Length == MaximumNullTerminatedStringLength)
+			{
+				LastError = DOSError.InvalidData;
+				break;
+			}
+
+			ret.Append(memory[address]);
+			address++;
+		}
+
+		return ret;
+	}
+
 	public void TerminateProgram()
 	{
 		TranslateError(() =>

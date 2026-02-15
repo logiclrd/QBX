@@ -258,6 +258,9 @@ public class StringValue : IComparable<StringValue>, IEquatable<StringValue>
 	public override string ToString()
 		=> s_cp437.GetString(AsSpan());
 
+	public string ToString(int index)
+		=> s_cp437.GetString(AsSpan().Slice(index));
+
 	public string ToString(int index, int length)
 		=> s_cp437.GetString(AsSpan().Slice(index, length));
 
@@ -301,6 +304,11 @@ public class StringValue : IComparable<StringValue>, IEquatable<StringValue>
 			return 1;
 
 		return CompareTo(other);
+	}
+
+	public int IndexOf(byte searchFor, int start = 0)
+	{
+		return AsSpan().Slice(start).IndexOf(searchFor) + start;
 	}
 
 	public int IndexOf(StringValue searchFor, int start = 0)

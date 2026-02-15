@@ -10,6 +10,7 @@ using QBX.OperatingSystem.FileDescriptors;
 using QBX.OperatingSystem.FileStructures;
 using QBX.OperatingSystem.Globalization;
 using QBX.OperatingSystem.Memory;
+using QBX.OperatingSystem.Processes;
 
 using Path = System.IO.Path;
 
@@ -1005,7 +1006,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					int address = inputEx.DS * 0x10 + input.DX;
 
-					var directoryName = ReadStringZ(machine.MemoryBus, address);
+					var directoryName = machine.DOS.ReadStringZ(machine.MemoryBus, address);
 
 					if (machine.DOS.LastError != DOSError.None)
 					{
@@ -1031,7 +1032,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					int address = inputEx.DS * 0x10 + input.DX;
 
-					var relativePath = ReadStringZ(machine.MemoryBus, address);
+					var relativePath = machine.DOS.ReadStringZ(machine.MemoryBus, address);
 
 					if (machine.DOS.LastError != DOSError.None)
 					{
@@ -1068,7 +1069,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					int address = inputEx.DS * 0x10 + input.DX;
 
-					var relativePath = ReadStringZ(machine.MemoryBus, address);
+					var relativePath = machine.DOS.ReadStringZ(machine.MemoryBus, address);
 
 					if (machine.DOS.LastError != DOSError.None)
 					{
@@ -1139,7 +1140,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					int address = inputEx.DS * 0x10 + input.DX;
 
-					var relativePath = ReadStringZ(machine.MemoryBus, address);
+					var relativePath = machine.DOS.ReadStringZ(machine.MemoryBus, address);
 
 					if (machine.DOS.LastError != DOSError.None)
 					{
@@ -1209,7 +1210,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 						{
 							int address = inputEx.DS * 0x10 + input.DX;
 
-							var relativePath = ReadStringZ(machine.MemoryBus, address);
+							var relativePath = machine.DOS.ReadStringZ(machine.MemoryBus, address);
 
 							if (machine.DOS.LastError != DOSError.None)
 							{
@@ -1662,26 +1663,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		}
 	}
 
-	const int MaximumNullTerminatedStringLength = 2048;
-
-	StringValue ReadStringZ(IMemory memory, int address)
-	{
-		var ret = new StringValue();
-
-		while (memory[address] != 0)
-		{
-			if (ret.Length == MaximumNullTerminatedStringLength)
-			{
-				machine.DOS.LastError = DOSError.InvalidData;
-				break;
-			}
-
-			ret.Append(memory[address]);
-			address++;
-		}
-
-		return ret;
-	}
 	/*
 TODO:
 

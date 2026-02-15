@@ -2,6 +2,7 @@ using System;
 
 using QBX.ExecutionEngine.Execution;
 using QBX.Hardware;
+using QBX.OperatingSystem.Processes;
 
 namespace QBX.OperatingSystem.Memory;
 
@@ -28,22 +29,11 @@ public class MemoryManager
 		mcb.OwnerPSPSegment = 0;
 		mcb.ProgramName.Clear();
 
+		var rootEnvironmentBlock = EnvironmentBlock.FromAmbientEnvironment();
+
 		var rootEnvironment = new StringValue();
 
-		foreach (System.Collections.DictionaryEntry variable in Environment.GetEnvironmentVariables(EnvironmentVariableTarget.Process))
-		{
-			if (variable.Key?.ToString() is string key)
-			{
-				rootEnvironment.Append(key).Append('=');
-
-				if (variable.Value?.ToString() is string value)
-					rootEnvironment.Append(value);
-
-				rootEnvironment.Append(0);
-			}
-		}
-
-		rootEnvironment.Append(0);
+		rootEnvironmentBlock.EncodeTo(rootEnvironment);
 
 		_rootPSPSegment = MemoryControlBlock.FreeBlockOwner;
 		_rootPSPSegment ^= 0x0101; // just need a value that won't be mistaken for a free block in the chain

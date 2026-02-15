@@ -1,8 +1,8 @@
 using System.Runtime.InteropServices;
-
 using QBX.Hardware;
+using QBX.OperatingSystem.Memory;
 
-namespace QBX.OperatingSystem.Memory;
+namespace QBX.OperatingSystem.Processes;
 
 [StructLayout(LayoutKind.Explicit, Size = Size)]
 public struct ProgramSegmentPrefix

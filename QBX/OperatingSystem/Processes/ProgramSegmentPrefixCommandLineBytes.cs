@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-namespace QBX.OperatingSystem.Memory;
+namespace QBX.OperatingSystem.Processes;
 
 [InlineArray(length: 127)]
 public struct ProgramSegmentPrefixCommandLineBytes
