@@ -95,6 +95,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		SetMemoryBlockSize = 0x4A,
 		Function4B = 0x4B,
 		EndProgram = 0x4C,
+		GetChildProgramReturnValue = 0x4D,
 	}
 
 	public enum Function33 : byte
@@ -1689,6 +1690,12 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 					machine.KeepRunning = false;
 					break;
 				}
+				case Function.GetChildProgramReturnValue:
+				{
+					// AH is exit reason, but the DOS reasons don't really apply, so leave at 0x00.
+					result.AX = unchecked((ushort)(machine.DOS.LastChildProcessExitCode & 0xFF));
+					break;
+				}
 			}
 
 			return result;
@@ -1698,8 +1705,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	/*
 TODO:
 
-Int 21/AH=4Ch - DOS 2+ - EXIT - TERMINATE WITH RETURN CODE
-Int 21/AH=4Dh - DOS 2+ - GET RETURN CODE (ERRORLEVEL)
 Int 21/AH=4Eh - DOS 2+ - FINDFIRST - FIND FIRST MATCHING FILE
 Int 21/AH=4Fh - DOS 2+ - FINDNEXT - FIND NEXT MATCHING FILE
 Int 21/AH=54h - DOS 2+ - GET VERIFY FLAG
