@@ -34,7 +34,10 @@ public partial class DOS
 
 	public event Action? Break;
 
-	public DOSError LastError = DOSError.None;
+	public DOSError LastError { get; private set; } = DOSError.None;
+	public DOSErrorClass LastErrorClass = DOSErrorClass.None;
+	public DOSErrorAction LastErrorAction = DOSErrorAction.None;
+	public DOSErrorLocation LastErrorLocation = DOSErrorLocation.None;
 
 	public const int ManagedMemoryStart = 0x10000;
 
@@ -152,6 +155,23 @@ public partial class DOS
 		}
 	}
 
+	void SetLastError(Exception e)
+	{
+		// TODO: translate extended error info
+		LastError = e.ToDOSError();
+	}
+
+	public void SetLastError(DOSError error)
+		=> SetExtendedError(error, DOSErrorClass.Unknown, DOSErrorAction.None, DOSErrorLocation.Unknown);
+
+	public void SetExtendedError(DOSError error, DOSErrorClass @class, DOSErrorAction action, DOSErrorLocation location)
+	{
+		LastError = error;
+		LastErrorClass = @class;
+		LastErrorAction = action;
+		LastErrorLocation = location;
+	}
+
 	public ushort SetUpRunningProgramSegmentPrefix(string commandTail, EnvironmentBlock? environment = null)
 	{
 		var pspAddress = MemoryManager.CreatePSP(
@@ -212,7 +232,7 @@ public partial class DOS
 
 	public void ClearLastError()
 	{
-		LastError = DOSError.None;
+		SetLastError(DOSError.None);
 	}
 
 	bool _suppressExceptions = false;
@@ -235,7 +255,10 @@ public partial class DOS
 		}
 		catch (Exception e)
 		{
+			SetLastError(e);
+
 			LastError = e.ToDOSError();
+
 			if (!_suppressExceptions)
 				throw;
 		}
@@ -251,7 +274,8 @@ public partial class DOS
 		}
 		catch (Exception e)
 		{
-			LastError = e.ToDOSError();
+			SetLastError(e);
+
 			if (!_suppressExceptions)
 				throw;
 

@@ -104,6 +104,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		RenameFile = 0x53,
 		Function57 = 0x57,
 		Function58 = 0x58,
+		GetExtendedError = 0x59,
 	}
 
 	public enum Function33 : byte
@@ -606,7 +607,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 					}
 					catch
 					{
-						machine.DOS.LastError = DOSError.InvalidFunction;
+						machine.DOS.SetLastError(DOSError.InvalidFunction);
 					}
 
 					if (machine.DOS.LastError != DOSError.None)
@@ -1071,7 +1072,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 					var attributes = (FileAttributes)input.CX;
 
 					if ((attributes & FileAttributes.Directory) != 0)
-						machine.DOS.LastError = DOSError.InvalidParameter;
+						machine.DOS.SetLastError(DOSError.InvalidParameter);
 					else
 					{
 						int fileHandle = machine.DOS.OpenFile(relativePath.ToString(), FileMode.Create, default);
@@ -1273,7 +1274,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 							if ((fileHandle < 0) || (fileHandle >= machine.DOS.Files.Count)
 							 || (machine.DOS.Files[fileHandle] is not FileDescriptor fileDescriptor))
-								machine.DOS.LastError = DOSError.InvalidHandle;
+								machine.DOS.SetLastError(DOSError.InvalidHandle);
 							else if (fileDescriptor is RegularFileDescriptor regularFile)
 							{
 								result.DX = unchecked((ushort)(
@@ -1314,9 +1315,9 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 							if ((fileHandle < 0) || (fileHandle >= machine.DOS.Files.Count)
 							 || (machine.DOS.Files[fileHandle] is not FileDescriptor fileDescriptor))
-								machine.DOS.LastError = DOSError.InvalidHandle;
+								machine.DOS.SetLastError(DOSError.InvalidHandle);
 							else if ((fileDescriptor is RegularFileDescriptor) || ((input.DX & 128) == 0))
-								machine.DOS.LastError = DOSError.InvalidFunction;
+								machine.DOS.SetLastError(DOSError.InvalidFunction);
 							else
 							{
 								bool isConsole = (fileDescriptor is ConsoleFileDescriptor);
@@ -1331,7 +1332,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 								 || ((input.DX & 4) != nullBits)
 								 || ((input.DX & 8) != clockBits)
 								 || ((input.DX & 16) != 0)) // "special device"
-									machine.DOS.LastError = DOSError.InvalidFunction;
+									machine.DOS.SetLastError(DOSError.InvalidFunction);
 								else
 								{
 									fileDescriptor.SetIOMode(
@@ -1356,7 +1357,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 						case Function44.ReceiveControlDataFromBlockDevice:
 						case Function44.SendControlDataToBlockDevice:
 						{
-							machine.DOS.LastError = DOSError.NotSupported;
+							machine.DOS.SetLastError(DOSError.NotSupported);
 
 							result.FLAGS |= Flags.Carry;
 							result.AX = (ushort)machine.DOS.LastError;
@@ -1370,9 +1371,9 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 							if ((fileHandle < 0) || (fileHandle >= machine.DOS.Files.Count)
 							 || (machine.DOS.Files[fileHandle] is not FileDescriptor fileDescriptor))
-								machine.DOS.LastError = DOSError.InvalidHandle;
+								machine.DOS.SetLastError(DOSError.InvalidHandle);
 							else if (!fileDescriptor.CanRead)
-								machine.DOS.LastError = DOSError.AccessDenied;
+								machine.DOS.SetLastError(DOSError.AccessDenied);
 							else
 							{
 								result.AX &= 0xFF00;
@@ -1397,9 +1398,9 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 							if ((fileHandle < 0) || (fileHandle >= machine.DOS.Files.Count)
 							 || (machine.DOS.Files[fileHandle] is not FileDescriptor fileDescriptor))
-								machine.DOS.LastError = DOSError.InvalidHandle;
+								machine.DOS.SetLastError(DOSError.InvalidHandle);
 							else if (!fileDescriptor.CanWrite)
-								machine.DOS.LastError = DOSError.AccessDenied;
+								machine.DOS.SetLastError(DOSError.AccessDenied);
 							else
 							{
 								result.AX &= 0xFF00;
@@ -1439,7 +1440,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 							catch
 							{
 								if (machine.DOS.LastError == DOSError.None)
-									machine.DOS.LastError = DOSError.InvalidFunction;
+									machine.DOS.SetLastError(DOSError.InvalidFunction);
 							}
 
 							if (machine.DOS.LastError != DOSError.None)
@@ -1468,7 +1469,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 							catch
 							{
 								if (machine.DOS.LastError == DOSError.None)
-									machine.DOS.LastError = DOSError.InvalidFunction;
+									machine.DOS.SetLastError(DOSError.InvalidFunction);
 							}
 
 							if (machine.DOS.LastError != DOSError.None)
@@ -1489,7 +1490,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 								if ((fileHandle < 0) || (fileHandle >= machine.DOS.Files.Count)
 									|| (machine.DOS.Files[fileHandle] is not FileDescriptor fileDescriptor))
-									machine.DOS.LastError = DOSError.InvalidHandle;
+									machine.DOS.SetLastError(DOSError.InvalidHandle);
 								else
 								{
 									// TODO: SUBST drives
@@ -1536,7 +1537,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 							catch
 							{
 								if (machine.DOS.LastError == DOSError.None)
-									machine.DOS.LastError = DOSError.InvalidFunction;
+									machine.DOS.SetLastError(DOSError.InvalidFunction);
 							}
 
 							if (machine.DOS.LastError != DOSError.None)
@@ -1589,7 +1590,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 					string path = machine.DOS.GetCurrentDirectoryUnrooted(driveIdentifier);
 
 					if (path.Length > 63)
-						machine.DOS.LastError = DOSError.InvalidFunction;
+						machine.DOS.SetLastError(DOSError.InvalidFunction);
 
 					int address = buffer.ToLinearAddress();
 					int i;
@@ -1690,7 +1691,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 							break;
 
 						default:
-							machine.DOS.LastError = DOSError.NotSupported;
+							machine.DOS.SetLastError(DOSError.NotSupported);
 							break;
 					}
 
@@ -1789,9 +1790,9 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 					if ((fileHandle < 0) || (fileHandle >= machine.DOS.Files.Count)
 						|| (machine.DOS.Files[fileHandle] is not FileDescriptor fileDescriptor))
-						machine.DOS.LastError = DOSError.InvalidHandle;
+						machine.DOS.SetLastError(DOSError.InvalidHandle);
 					else if (fileDescriptor is not RegularFileDescriptor regularFileDescriptor)
-						machine.DOS.LastError = DOSError.InvalidFunction;
+						machine.DOS.SetLastError(DOSError.InvalidFunction);
 					else
 					{
 						var subfunction = (Function57)al;
@@ -1870,7 +1871,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 							var newStrategy = (MemoryAllocationStrategy)input.BX;
 
 							if (!Enum.IsDefined(newStrategy))
-								machine.DOS.LastError = DOSError.InvalidFunction;
+								machine.DOS.SetLastError(DOSError.InvalidFunction);
 
 							if (machine.DOS.LastError == DOSError.None)
 								machine.DOS.MemoryManager.AllocationStrategy = newStrategy;
@@ -1889,7 +1890,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 						}
 						case Function58.SetUpperMemoryLink:
 						{
-							machine.DOS.LastError = DOSError.NotSupported;
+							machine.DOS.SetLastError(DOSError.NotSupported);
 
 							result.FLAGS |= Flags.Carry;
 							result.AX = (ushort)machine.DOS.LastError;
@@ -1897,6 +1898,16 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 							break;
 						}
 					}
+
+					break;
+				}
+				case Function.GetExtendedError:
+				{
+					result.AX = (ushort)machine.DOS.LastError;
+					result.BX = unchecked((ushort)(
+						((int)machine.DOS.LastErrorClass << 8) |
+						((int)machine.DOS.LastErrorAction)));
+					result.CX = (ushort)((int)machine.DOS.LastErrorLocation << 8);
 
 					break;
 				}
@@ -1909,8 +1920,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	/*
 TODO:
 
-Int 21/AH=58h - DOS 5+ - GET OR SET UMB LINK STATE
-Int 21/AH=59h/BX=0000h - DOS 3.0+ - GET EXTENDED ERROR INFORMATION
 Int 21/AH=5Ah - DOS 3.0+ - CREATE TEMPORARY FILE
 Int 21/AH=5Bh - DOS 3.0+ - CREATE NEW FILE
 Int 21/AH=5Ch - DOS 3.0+ - FLOCK - RECORD LOCKING
