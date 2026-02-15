@@ -93,6 +93,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		FreeAllocatedMemory = 0x49,
 		SetMemoryBlockSize = 0x4A,
 		Function4B = 0x4B,
+		EndProgram = 0x4C,
 	}
 
 	public enum Function33 : byte
@@ -1611,6 +1612,12 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					result.FLAGS |= Flags.Carry;
 					result.AX = (ushort)DOSError.NotSupported;
+					break;
+				}
+				case Function.EndProgram:
+				{
+					machine.ExitCode = result.AX & 0xFF;
+					machine.KeepRunning = false;
 					break;
 				}
 			}
