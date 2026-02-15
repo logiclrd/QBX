@@ -106,15 +106,44 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	{
 		GetDeviceData = 0x00,
 		SetDeviceData = 0x01,
-		ReceiveControlDataFromCharacterDevice = 0x02,
-		SendControlDataToCharacterDevice = 0x03,
-		ReceiveControlDataFromBlockDevice = 0x04,
-		SendControlDataToBlockDevice = 0x05,
+		ReceiveControlDataFromCharacterDevice = 0x02, // not implemented
+		SendControlDataToCharacterDevice = 0x03, // not implemented
+		ReceiveControlDataFromBlockDevice = 0x04, // not implemented
+		SendControlDataToBlockDevice = 0x05, // not implemented
 		CheckDeviceInputStatus = 0x06,
 		CheckDeviceOutputStatus = 0x07,
 		DoesDeviceUseRemovableMedia = 0x08,
 		IsDriveRemote = 0x09,
 		IsFileOrDeviceRemote = 0x0A,
+		SetSharingRetryCount = 0x0B, // not implemented
+		Function440C = 0x0C,
+		Function440D = 0x0D,
+	}
+
+	public enum Function440CMinorCode
+	{
+		SetIterationCount = 0x45, // not implemented
+		SelectCodePage = 0x4A, // not implemented
+		StartCodePagePrepare = 0x4C, // not implemented
+		EndCodePagePrepare = 0x4D, // not implemented
+		SetDisplayMode = 0x5F, // not implemented
+		GetIterationCount = 0x65, // not implemented
+		QuerySelectedCodePage = 0x6A, // not implemented
+		QueryCodePagePrepareList = 0x6B, // not implemented
+		GetDisplayMode = 0x7F, // not implemented
+	}
+
+	public enum Function440DMinorCode
+	{
+		SetDeviceParameters = 0x40, // not implemented
+		WriteTrackOnLogicalDrive = 0x41, // not implemented
+		FormatTrackOnLogicalDrive = 0x42, // not implemented
+		SetMediaID = 0x46, // not implemented
+		GetDeviceParameters = 0x60, // not implemented
+		ReadTrackOnLogicalDrive = 0x61, // not implemented
+		VerifyTrackOnLogicalDrive = 0x62, // not implemented
+		GetMediaID = 0x66, // not implemented
+		SenseMediaType = 0x68, // not implemented
 	}
 
 	public override Registers Execute(Registers input)
@@ -1458,20 +1487,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	/*
 TODO:
 
-Int 21/AX=4409h - DOS 3.1+ - IOCTL - CHECK IF BLOCK DEVICE REMOTE
-Int 21/AX=440Ah - DOS 3.1+ - IOCTL - CHECK IF HANDLE IS REMOTE
-Int 21/AX=440Bh - DOS 3.1+ - IOCTL - SET SHARING RETRY COUNT
-Int 21/AX=440Ch - DOS 3.2+ - IOCTL - GENERIC CHARACTER DEVICE REQUEST
-Int 21/AX=440Dh - DOS 3.2+ - IOCTL - GENERIC BLOCK DEVICE REQUEST
-Int 21/AX=440Dh/CX=084Ah - MS-DOS 7.0+ - GENERIC IOCTL - LOCK LOGICAL VOLUME
-Int 21/AX=440Dh/CX=084Bh - MS-DOS 7.0+ - GENERIC IOCTL - LOCK PHYSICAL VOLUME
-Int 21/AX=440Dh/CX=086Ah - MS-DOS 7.0+ - GENERIC IOCTL - UNLOCK LOGICAL VOLUME
-Int 21/AX=440Dh/CX=086Bh - MS-DOS 7.0+ - GENERIC IOCTL - UNLOCK PHYSICAL VOLUME
-Int 21/AX=440Dh/CX=086Ch - MS-DOS 7.0+ - GENERIC IOCTL - GET LOCK FLAG STATE
-Int 21/AX=440Dh/CX=086Dh - MS-DOS 7.0+ - GENERIC IOCTL - ENUMERATE OPEN FILES
-Int 21/AX=440Dh/CX=086Eh - MS-DOS 7.0+ - GENERIC IOCTL - FIND SWAP FILE
-Int 21/AX=440Dh/CX=0870h - MS-DOS 7.0+ - GENERIC IOCTL - GET CURRENT LOCK STATE
-Int 21/AX=440Dh/CX=0871h - MS-DOS 7.0+ - GENERIC IOCTL - GET FIRST CLUSTER
 Int 21/AX=440Eh - DOS 3.2+ - IOCTL - GET LOGICAL DRIVE MAP
 Int 21/AX=440Fh - DOS 3.2+ - IOCTL - SET LOGICAL DRIVE MAP
 Int 21/AX=4410h - DOS 5+ - IOCTL - QUERY GENERIC IOCTL CAPABILITY (HANDLE)
