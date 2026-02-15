@@ -22,12 +22,13 @@ public partial class DOS
 	// if the emulated code abandons a search, we place an upper limit on how many
 	// we'll remember. We'll probably never hit it, but just in case.
 
-	class ActiveSearch(int searchID, IEnumerator<FileSystemInfo> search, FileAttributes searchAttributes)
+	class ActiveSearch(int searchID, IEnumerator<FileSystemInfo> search, FileAttributes searchAttributes, ReadOnlySpan<byte> searchPatternBytes)
 	{
 		public readonly int SearchID = searchID;
 		public readonly IEnumerator<FileSystemInfo> Search = search;
 		public readonly LinkedListNode<int> SearchSequence = new LinkedListNode<int>(searchID);
-		public readonly byte SearchAttributesByte = (byte)searchAttributes;
+		public readonly FileAttributes SearchAttributes = searchAttributes;
+		public readonly byte[] SearchPattern = searchPatternBytes.Slice(0, 11).ToArray();
 	}
 
 	int _nextSearchID = 1;
@@ -36,12 +37,12 @@ public partial class DOS
 
 	const int MaxActiveSearches = 128;
 
-	void AddActiveSearch(int searchID, IEnumerator<FileSystemInfo> search, FileAttributes searchAttributes)
+	void AddActiveSearch(int searchID, IEnumerator<FileSystemInfo> search, FileAttributes searchAttributes, ReadOnlySpan<byte> searchPatternBytes)
 	{
 		while (_activeSearches.Count > MaxActiveSearches)
 			DiscardOldestSearch();
 
-		var activeSearch = new ActiveSearch(searchID, search, searchAttributes);
+		var activeSearch = new ActiveSearch(searchID, search, searchAttributes, searchPatternBytes);
 
 		_activeSearches[searchID] = activeSearch;
 		_activeSearchRecency.AddLast(activeSearch.SearchSequence);
@@ -127,7 +128,9 @@ public partial class DOS
 			writer.Write((int)0);
 	}
 
-	void FormatFindResultAsDirEntry(FileSystemInfo info, string shortName, byte searchAttributesByte)
+	delegate void FindResultFormatter(FileSystemInfo fileInfo, string shortName, FileAttributes searchAttributes, ReadOnlySpan<byte> searchPattern, int searchID);
+
+	void FormatFindResultAsDirEntry(FileSystemInfo info, string shortName, FileAttributes searchAttributes, ReadOnlySpan<byte> searchPattern, int searchID)
 	{
 		// DIRENTRY    STRUC
 		//     deName         db '????????'   ;name
@@ -140,13 +143,13 @@ public partial class DOS
 		//     deFileSize     dd ?            ;file size
 		// DIRENTRY    ENDS
 
-		var stream = new SystemMemoryStream(Machine.SystemMemory, DataTransferAddress, 32);
+		var stream = new SystemMemoryStream(Machine.MemoryBus, DataTransferAddress, 32);
 		var writer = new BinaryWriter(stream);
 
 		FormatAsDirEntry(info, shortName, writer);
 	}
 
-	void FormatFindResultAsDirEntryEx(FileSystemInfo info, string shortName, byte searchAttributesByte)
+	void FormatFindResultAsDirEntryEx(FileSystemInfo info, string shortName, FileAttributes searchAttributes, ReadOnlySpan<byte> searchPattern, int searchID)
 	{
 		// EXTHEADER STRUC
 		//     ehSignature     db 0ffh         ;extended signature
@@ -155,43 +158,36 @@ public partial class DOS
 		// EXTHEADER ENDS
 		// ;followed by DIRENTRY
 
-		var stream = new SystemMemoryStream(Machine.SystemMemory, DataTransferAddress, 7 + 32);
+		var stream = new SystemMemoryStream(Machine.MemoryBus, DataTransferAddress, 7 + 32);
 		var writer = new BinaryWriter(stream);
 
 		writer.Write((byte)0xFF);
 		writer.Write(stackalloc byte[5]);
-		writer.Write(searchAttributesByte);
+		writer.Write(unchecked((byte)searchAttributes));
 
 		FormatAsDirEntry(info, shortName, writer);
 	}
 
-	void FormatFindResultAsFileInfo(FileSystemInfo info, string shortName, byte searchAttributesByte)
+	void FormatFindResultAsFileInfo(FileSystemInfo info, string shortName, FileAttributes searchAttributes, ReadOnlySpan<byte> searchPattern, int searchID)
 	{
-		// FILEINFO    STRUC
-		//     fiReserved     db  21 dup (?)  ;reserved
-		//     fiAttribute    db  ?           ;attributes of file found
-		//     fiFileTime     dw  ?           ;time of last write
-		//     fiFileDate     dw  ?           ;date of last write
-		//     fiSize         dd  ?           ;file size
-		//     fiFileName     db  13 dup (?)  ;filename and extension
-		// FILEINFO    ENDS
+		var dosFileInfo = new DOSFileInfo();
 
-		var stream = new SystemMemoryStream(Machine.SystemMemory, DataTransferAddress, 43);
-		var writer = new BinaryWriter(stream);
+		dosFileInfo.Reserved_SearchAttributes = searchAttributes;
+		searchPattern.Slice(0, Math.Min(11, searchPattern.Length)).CopyTo(dosFileInfo.Reserved_SearchPattern);
+		dosFileInfo.Reserved_SearchID = searchID;
 
 		var timestamp = info.LastWriteTime;
 
-		writer.Write(stackalloc byte[21]);
-		writer.Write(info.Attributes.ToDOSFileAttributesByte());
-		writer.Write(new FileTime().Set(timestamp).Raw);
-		writer.Write(new FileDate().Set(timestamp).Raw);
+		dosFileInfo.Attributes = info.Attributes.ToDOSFileAttributes();
+		dosFileInfo.FileTime.Set(timestamp);
+		dosFileInfo.FileDate.Set(timestamp);
 
 		if (info is FileInfo fileInfo)
-			writer.Write((int)fileInfo.Length);
-		else
-			writer.Write((int)0);
+			dosFileInfo.Size = (uint)fileInfo.Length;
 
-		FormatName8_3(shortName, writer);
+		dosFileInfo.FileName.Set(shortName);
+
+		dosFileInfo.Serialize(Machine.MemoryBus, DataTransferAddress);
 	}
 
 	public bool FindFirst(FileControlBlock fcb)
@@ -209,24 +205,30 @@ public partial class DOS
 		fcb.SetFileName(fileNamePattern);
 
 		string collapsedFileNamePattern = collapsedFileNamePart + "." + collapsedExtensionPart;
+		string rawFileNamePattern = collapsedFileNamePart + collapsedExtensionPart;
 
 		bool success;
 		IEnumerator<FileSystemInfo> search;
 		FileAttributes searchAttributes = default;
+		byte[] searchPatternBytes = s_cp437.GetBytes(rawFileNamePattern);
+
+		int searchID = _nextSearchID;
 
 		if (fcb is ExtendedFileControlBlock fcbEx)
 		{
 			searchAttributes = fcbEx.Attributes;
-			success = FindFirst(collapsedFileNamePattern, searchAttributes, FormatFindResultAsDirEntryEx, out search);
+			success = FindFirst(collapsedFileNamePattern, searchAttributes, searchPatternBytes, searchID, FormatFindResultAsDirEntryEx, out search);
 		}
 		else
-			success = FindFirst(collapsedFileNamePattern, default, FormatFindResultAsDirEntry, out search);
+			success = FindFirst(collapsedFileNamePattern, default, searchPatternBytes, searchID, FormatFindResultAsDirEntry, out search);
 
 		if (success)
 		{
-			fcb.SearchID = _nextSearchID++;
+			_nextSearchID++;
 
-			AddActiveSearch(fcb.SearchID, search, searchAttributes);
+			fcb.SearchID = searchID;
+
+			AddActiveSearch(fcb.SearchID, search, searchAttributes, searchPatternBytes);
 		}
 
 		return success;
@@ -234,7 +236,7 @@ public partial class DOS
 
 	ActiveSearch? _activeSearch = null;
 
-	public bool FindFirst(string fileNamePattern, FileAttributes attributes)
+	public bool FindFirstCentralized(string fileNamePattern, FileAttributes attributes)
 	{
 		return TranslateError(() =>
 		{
@@ -244,12 +246,21 @@ public partial class DOS
 			string collapsedFileNamePart = NormalizeFileSearchPattern(ref fileNamePart, 8);
 			string collapsedExtensionPart = NormalizeFileSearchPattern(ref extensionPart, 3);
 
-			string collapsedFileNamePattern = collapsedFileNamePart + "." + collapsedExtensionPart; ;
+			string collapsedFileNamePattern = collapsedFileNamePart + "." + collapsedExtensionPart;
+			string rawFileNamePattern = collapsedFileNamePart + collapsedExtensionPart;
 
-			var result = FindFirst(collapsedFileNamePattern, attributes, FormatFindResultAsFileInfo, out var search);
+			byte[] searchPatternBytes = s_cp437.GetBytes(rawFileNamePattern);
+
+			int searchID = _nextSearchID;
+
+			var result = FindFirst(collapsedFileNamePattern, attributes, searchPatternBytes, searchID, FormatFindResultAsFileInfo, out var search);
 
 			if (result)
-				_activeSearch = new ActiveSearch(_nextSearchID++, search, attributes);
+			{
+				_nextSearchID++;
+
+				_activeSearch = new ActiveSearch(searchID, search, attributes, searchPatternBytes);
+			}
 			else
 			{
 				_activeSearch = null;
@@ -273,7 +284,7 @@ public partial class DOS
 		public override void Delete() { }
 	}
 
-	bool FindFirst(string fileNamePattern, FileAttributes attributes, Action<FileSystemInfo, string, byte> formatResult, out IEnumerator<FileSystemInfo> search)
+	bool FindFirst(string fileNamePattern, FileAttributes attributes, ReadOnlySpan<byte> searchPattern, int searchID, FindResultFormatter formatResult, out IEnumerator<FileSystemInfo> search)
 	{
 		string containerPath = Path.GetDirectoryName(fileNamePattern) ?? ".";
 
@@ -320,7 +331,7 @@ public partial class DOS
 
 			search = searchPrototype.GetEnumerator();
 
-			return FindNext(search, (byte)attributes, formatResult);
+			return FindNext(search, attributes, searchPattern, searchID, formatResult);
 		}
 	}
 
@@ -334,9 +345,9 @@ public partial class DOS
 			bool result;
 
 			if (fcb is ExtendedFileControlBlock fcbEx)
-				result = FindNext(activeSearch.Search, activeSearch.SearchAttributesByte, FormatFindResultAsDirEntryEx);
+				result = FindNext(activeSearch.Search, activeSearch.SearchAttributes, activeSearch.SearchPattern, activeSearch.SearchID, FormatFindResultAsDirEntryEx);
 			else
-				result = FindNext(activeSearch.Search, activeSearch.SearchAttributesByte, FormatFindResultAsDirEntry);
+				result = FindNext(activeSearch.Search, activeSearch.SearchAttributes, activeSearch.SearchPattern, activeSearch.SearchID, FormatFindResultAsDirEntry);
 
 			if (result)
 				RecordSearchActivity(activeSearch);
@@ -347,7 +358,7 @@ public partial class DOS
 		});
 	}
 
-	public bool FindNext()
+	public bool FindNextCentralized()
 	{
 		return TranslateError(() =>
 		{
@@ -357,7 +368,10 @@ public partial class DOS
 				return false;
 			}
 
-			bool result = FindNext(_activeSearch.Search, _activeSearch.SearchAttributesByte, FormatFindResultAsFileInfo);
+			bool result = FindNext(
+				_activeSearch.Search,
+				_activeSearch.SearchAttributes, _activeSearch.SearchPattern, _activeSearch.SearchID,
+				FormatFindResultAsFileInfo);
 
 			if (!result)
 				_activeSearch = null;
@@ -366,7 +380,7 @@ public partial class DOS
 		});
 	}
 
-	bool FindNext(IEnumerator<FileSystemInfo> search, byte searchAttributesByte, Action<FileSystemInfo, string, byte> formatResult)
+	bool FindNext(IEnumerator<FileSystemInfo> search, FileAttributes searchAttributes, ReadOnlySpan<byte> searchPattern, int searchID, FindResultFormatter formatResult)
 	{
 		string shortPath;
 
@@ -379,7 +393,10 @@ public partial class DOS
 			}
 		} while (!ShortFileNames.TryMap(search.Current.FullName, out shortPath));
 
-		formatResult(search.Current, Path.GetFileName(shortPath), searchAttributesByte);
+		formatResult(
+			search.Current, Path.GetFileName(shortPath),
+			searchAttributes, searchPattern, searchID);
+
 		return true;
 	}
 }

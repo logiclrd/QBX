@@ -9,6 +9,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 
 using QBX.ExecutionEngine.Execution;
+using QBX.Firmware.Fonts;
 using QBX.Hardware;
 using QBX.OperatingSystem.Breaks;
 using QBX.OperatingSystem.FileDescriptors;
@@ -65,6 +66,8 @@ public partial class DOS
 	public Machine Machine => _machine;
 
 	Machine _machine;
+
+	static CP437Encoding s_cp437 = new CP437Encoding(ControlCharacterInterpretation.Semantic);
 
 	public DOS(Machine machine)
 	{
@@ -1140,7 +1143,7 @@ public partial class DOS
 
 			RenameFileControlBlock rename = new RenameFileControlBlock();
 
-			void PerformRename(FileSystemInfo fileSystemInfo, string shortName, byte searchAttributeByte)
+			void PerformRename(FileSystemInfo fileSystemInfo, string shortName, FileAttributes searchAttributes, ReadOnlySpan<byte> searchPattern, int searchID)
 			{
 				rename.SetOldFileName(shortName);
 
@@ -1171,12 +1174,18 @@ public partial class DOS
 			bool success = FindFirst(
 				collapsedFileNamePattern,
 				default,
+				stackalloc byte[11],
+				default,
 				PerformRename,
 				out var search);
 
 			if (success)
 			{
-				while (FindNext(search, default, PerformRename))
+				string rawFileNamePattern = collapsedFileNamePart + collapsedExtensionPart;
+
+				byte[] searchPatternBytes = s_cp437.GetBytes(rawFileNamePattern);
+
+				while (FindNext(search, default, searchPatternBytes, default, PerformRename))
 					;
 			}
 		});
