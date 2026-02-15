@@ -203,7 +203,7 @@ public partial class DOS
 
 	public IDisposable SuppressExceptionsInScope() => new SuppressExceptionsScope(this);
 
-	void TranslateError(Action action)
+	public void TranslateError(Action action)
 	{
 		try
 		{
@@ -219,7 +219,7 @@ public partial class DOS
 		}
 	}
 
-	TReturn TranslateError<TReturn>(Func<TReturn> action)
+	public TReturn TranslateError<TReturn>(Func<TReturn> action)
 	{
 		try
 		{

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Globalization;
 
 using QBX.ExecutionEngine.Execution;
@@ -90,6 +89,9 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		DuplicateFileHandle = 0x45,
 		ForceDuplicateFileHandle = 0x46,
 		GetCurrentDirectory = 0x47,
+		AllocateMemory = 0x48,
+		FreeAllocatedMemory = 0x49,
+		SetMemoryBlockSize = 0x4A,
 	}
 
 	public enum Function33 : byte
@@ -1527,6 +1529,75 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 					break;
 				}
+				case Function.AllocateMemory:
+				{
+					int requestedParagraphs = input.BX;
+
+					int requestedBytes = requestedParagraphs * MemoryManager.ParagraphSize;
+
+					result.FLAGS &= ~Flags.Carry;
+
+					int largestBlockSize = 0;
+
+					var address =
+						machine.DOS.TranslateError(() =>
+						{
+							return machine.DOS.MemoryManager.AllocateMemory(requestedBytes, machine.DOS.CurrentPSPSegment, out largestBlockSize);
+						});
+
+					result.BX = unchecked((ushort)(largestBlockSize / MemoryManager.ParagraphSize));
+
+					if (machine.DOS.LastError == DOSError.None)
+						result.AX = unchecked((ushort)(address / MemoryManager.ParagraphSize));
+					else
+					{
+						result.FLAGS |= Flags.Carry;
+						result.AX = (ushort)machine.DOS.LastError;
+					}
+
+					break;
+				}
+				case Function.FreeAllocatedMemory:
+				{
+					int address = input.AsRegistersEx().ES * 0x10;
+
+					result.FLAGS &= ~Flags.Carry;
+
+					machine.DOS.TranslateError(() =>
+					{
+						machine.DOS.MemoryManager.FreeMemory(address);
+					});
+
+					if (machine.DOS.LastError != DOSError.None)
+					{
+						result.FLAGS |= Flags.Carry;
+						result.AX = (ushort)machine.DOS.LastError;
+					}
+
+					break;
+				}
+				case Function.SetMemoryBlockSize:
+				{
+					int address = input.AsRegistersEx().ES * 0x10;
+					int newSize = input.BX * MemoryManager.ParagraphSize;
+
+					result.FLAGS &= ~Flags.Carry;
+
+					int largestBlockSize = 0;
+
+					machine.DOS.TranslateError(() =>
+					{
+						machine.DOS.MemoryManager.ResizeAllocation(address, newSize, out largestBlockSize);
+					});
+
+					if (machine.DOS.LastError != DOSError.None)
+					{
+						result.FLAGS |= Flags.Carry;
+						result.AX = (ushort)machine.DOS.LastError;
+					}
+
+					break;
+				}
 			}
 
 			return result;
@@ -1553,11 +1624,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	/*
 TODO:
 
-Int 21/AH=46h - DOS 2+ - DUP2, FORCEDUP - FORCE DUPLICATE FILE HANDLE
-Int 21/AH=47h - DOS 2+ - CWD - GET CURRENT DIRECTORY
-Int 21/AH=48h - DOS 2+ - ALLOCATE MEMORY
-Int 21/AH=49h - DOS 2+ - FREE MEMORY
-Int 21/AH=4Ah - DOS 2+ - RESIZE MEMORY BLOCK
 Int 21/AH=4Bh - DOS 2+ - EXEC - LOAD AND/OR EXECUTE PROGRAM
 Int 21/AX=4B05h - DOS 5+ - SET EXECUTION STATE
 Int 21/AH=4Ch - DOS 2+ - EXIT - TERMINATE WITH RETURN CODE

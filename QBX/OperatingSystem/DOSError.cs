@@ -11,7 +11,7 @@ public enum DOSError
 	AccessDenied = 5,
 	InvalidHandle = 6,
 	ArenaTrashed = 7,
-	QueueFull = 8,
+	NotEnoughMemory = 8,
 	InvalidBlock = 9,
 	BadEnvironment = 10,
 	BadFormat = 11,
