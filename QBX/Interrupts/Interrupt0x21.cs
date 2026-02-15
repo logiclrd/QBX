@@ -112,6 +112,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		Function5E = 0x5E,
 		Function5F = 0x5F, // network operations -- not supported
 		TrueName = 0x60, // undocumented
+		GetCurrentPSPAddress = 0x62,
 	}
 
 	public enum Function33 : byte
@@ -1792,6 +1793,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 					break;
 				}
 				case Function.GetPSPAddress:
+				case Function.GetCurrentPSPAddress:
 				{
 					result.BX = machine.DOS.CurrentPSPSegment;
 					break;
