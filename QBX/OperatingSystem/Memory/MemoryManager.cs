@@ -13,6 +13,8 @@ public class MemoryManager
 	SystemMemory _systemMemory;
 	int _offset;
 
+	public MemoryAllocationStrategy AllocationStrategy = MemoryAllocationStrategy.FirstFitLow;
+
 	ushort _rootPSPSegment;
 
 	public ushort RootPSPSegment => _rootPSPSegment;
@@ -63,9 +65,21 @@ public class MemoryManager
 
 		int scanOffset = _offset;
 
-		ref ProgramSegmentPrefix psp = ref ProgramSegmentPrefix.CreateReference(_systemMemory, ownerPSPSegment * ParagraphSize);
+		var strategy = AllocationStrategy & MemoryAllocationStrategy.StrategyMask;
 
 		largestBlockSize = 0;
+
+		int allocatedAddress = ScanForFreeBlockAndAllocate(_offset, length, ownerPSPSegment, strategy, bestFitSoFar: int.MaxValue, ref largestBlockSize);
+
+		if (allocatedAddress < 0)
+			throw new OutOfMemoryException();
+
+		return allocatedAddress;
+	}
+
+	int ScanForFreeBlockAndAllocate(int scanOffset, int length, ushort ownerPSPSegment, MemoryAllocationStrategy strategy, int bestFitSoFar, ref int largestBlockSize)
+	{
+		int lengthInParagraphs = (length + ParagraphSize - 1) / ParagraphSize;
 
 		while (true)
 		{
@@ -78,35 +92,67 @@ public class MemoryManager
 			{
 				largestBlockSize = Math.Max(largestBlockSize, mcb.SizeInBytes);
 
-				if (mcb.SizeInBytes >= length)
+				if ((mcb.SizeInBytes >= length) && (mcb.SizeInBytes < bestFitSoFar))
 				{
-					mcb.OwnerPSPSegment = ownerPSPSegment;
-					mcb.ProgramName.Set(psp.Reserved_ProgramName);
+					if (((strategy == MemoryAllocationStrategy.LastFit) && (mcb.Type == MemoryControlBlockType.HasNextNode))
+					 || ((strategy == MemoryAllocationStrategy.BestFit) && (mcb.SizeInParagraphs > lengthInParagraphs)))
+					{
+						int nextBlockAddress = scanOffset + ParagraphSize + mcb.SizeInBytes;
+
+						int laterMatch = ScanForFreeBlockAndAllocate(nextBlockAddress, length, ownerPSPSegment, strategy, bestFitSoFar: mcb.SizeInBytes, ref largestBlockSize);
+
+						if (laterMatch >= 0)
+							return laterMatch;
+					}
 
 					int remainingBytes = mcb.SizeInBytes - length;
 
 					// Split the control block if there are enough bytes for a subsequent allocation.
 					if (remainingBytes >= 32)
 					{
-						var nodeType = mcb.Type;
+						if (strategy == MemoryAllocationStrategy.FirstFit)
+						{
+							var nodeType = mcb.Type;
 
-						mcb.SizeInParagraphs = (ushort)((length + ParagraphSize - 1) / ParagraphSize);
-						mcb.Type = MemoryControlBlockType.HasNextNode;
+							mcb.SizeInParagraphs = (ushort)((length + ParagraphSize - 1) / ParagraphSize);
+							mcb.Type = MemoryControlBlockType.HasNextNode;
 
-						ref MemoryControlBlock mcbNext = ref mcb.Next();
+							ref MemoryControlBlock mcbNext = ref mcb.Next();
 
-						mcbNext.Type = nodeType;
-						mcbNext.OwnerPSPSegment = MemoryControlBlock.FreeBlockOwner;
-						mcbNext.SizeInParagraphs = (ushort)((remainingBytes - 1) / ParagraphSize);
-						mcbNext.ProgramName.Clear();
+							mcbNext.Type = nodeType;
+							mcbNext.OwnerPSPSegment = MemoryControlBlock.FreeBlockOwner;
+							mcbNext.SizeInParagraphs = (ushort)((remainingBytes - 1) / ParagraphSize);
+							mcbNext.ProgramName.Clear();
+						}
+						else
+						{
+							// Last fit; keep unallocated space at the start of this chunk.
+							var nodeType = mcb.Type;
+
+							mcb.OwnerPSPSegment = MemoryControlBlock.FreeBlockOwner;
+							mcb.SizeInParagraphs = (ushort)((remainingBytes - 1) / ParagraphSize);
+							mcb.ProgramName.Clear();
+							mcb.Type = MemoryControlBlockType.HasNextNode;
+
+							scanOffset = scanOffset + ParagraphSize + mcb.SizeInBytes;
+							mcb = ref mcb.Next();
+
+							mcb.Type = nodeType;
+							mcb.SizeInParagraphs = (ushort)((length + ParagraphSize - 1) / ParagraphSize);
+						}
 					}
+
+					ref ProgramSegmentPrefix psp = ref ProgramSegmentPrefix.CreateReference(_systemMemory, ownerPSPSegment * ParagraphSize);
+
+					mcb.OwnerPSPSegment = ownerPSPSegment;
+					mcb.ProgramName.Set(psp.Reserved_ProgramName);
 
 					return scanOffset + ParagraphSize;
 				}
 			}
 
 			if (mcb.Type == MemoryControlBlockType.LastNode)
-				throw new OutOfMemoryException();
+				return -1;
 
 			scanOffset = scanOffset + ParagraphSize + mcb.SizeInBytes;
 		}

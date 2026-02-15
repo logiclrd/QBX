@@ -103,6 +103,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		GetVerifyState = 0x52,
 		RenameFile = 0x53,
 		Function57 = 0x57,
+		Function58 = 0x58,
 	}
 
 	public enum Function33 : byte
@@ -184,6 +185,12 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		SetFileLastAccessDateAndTime = 0x05,
 		GetFileCreationDateAndTime = 0x06,
 		SetFileCreationDateAndTime = 0x07,
+	}
+
+	public enum Function58 : byte
+	{
+		GetAllocationStrategy = 0x00,
+		SetAllocationStrategy = 0x01,
 	}
 
 	public override Registers Execute(Registers input)
@@ -1842,6 +1849,39 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 						result.FLAGS |= Flags.Carry;
 						result.AX = (ushort)machine.DOS.LastError;
 					}
+
+					break;
+				}
+				case Function.Function58:
+				{
+					var subfunction = (Function58)al;
+
+					switch (subfunction)
+					{
+						case Function58.GetAllocationStrategy:
+						{
+							result.AX = (ushort)machine.DOS.MemoryManager.AllocationStrategy;
+							break;
+						}
+						case Function58.SetAllocationStrategy:
+						{
+							var newStrategy = (MemoryAllocationStrategy)input.BX;
+
+							if (!Enum.IsDefined(newStrategy))
+								machine.DOS.LastError = DOSError.InvalidFunction;
+
+							if (machine.DOS.LastError == DOSError.None)
+								machine.DOS.MemoryManager.AllocationStrategy = newStrategy;
+							else
+							{
+								result.FLAGS |= Flags.Carry;
+								result.AX = (ushort)machine.DOS.LastError;
+							}
+
+							break;
+						}
+					}
+
 					break;
 				}
 			}
@@ -1853,7 +1893,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	/*
 TODO:
 
-Int 21/AH=58h - DOS 2.11+ - GET OR SET MEMORY ALLOCATION STRATEGY
 Int 21/AH=58h - DOS 5+ - GET OR SET UMB LINK STATE
 Int 21/AH=59h/BX=0000h - DOS 3.0+ - GET EXTENDED ERROR INFORMATION
 Int 21/AH=5Ah - DOS 3.0+ - CREATE TEMPORARY FILE
