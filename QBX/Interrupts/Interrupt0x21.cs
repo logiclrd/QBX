@@ -96,6 +96,8 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		Function4B = 0x4B,
 		EndProgram = 0x4C,
 		GetChildProgramReturnValue = 0x4D,
+		FindFirstFile = 0x4E,
+		FindNextFile = 0x4F,
 	}
 
 	public enum Function33 : byte
@@ -1694,6 +1696,40 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					// AH is exit reason, but the DOS reasons don't really apply, so leave at 0x00.
 					result.AX = unchecked((ushort)(machine.DOS.LastChildProcessExitCode & 0xFF));
+					break;
+				}
+				case Function.FindFirstFile:
+				{
+					var searchPatternAddress = new SegmentedAddress(inputEx.DS, input.DX);
+
+					var searchPattern = machine.DOS.ReadStringZ(machine.MemoryBus, searchPatternAddress.ToLinearAddress()).ToString();
+
+					FileAttributes attributes = (FileAttributes)input.CX;
+
+					result.FLAGS &= ~Flags.Carry;
+
+					bool success = machine.DOS.FindFirst(searchPattern, attributes);
+
+					if (!success)
+					{
+						result.FLAGS |= Flags.Carry;
+						result.AX = (ushort)machine.DOS.LastError;
+					}
+
+					break;
+				}
+				case Function.FindNextFile:
+				{
+					result.FLAGS &= ~Flags.Carry;
+
+					bool success = machine.DOS.FindNext();
+
+					if (!success)
+					{
+						result.FLAGS |= Flags.Carry;
+						result.AX = (ushort)machine.DOS.LastError;
+					}
+
 					break;
 				}
 			}

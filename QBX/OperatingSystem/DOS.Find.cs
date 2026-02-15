@@ -236,7 +236,7 @@ public partial class DOS
 
 	ActiveSearch? _activeSearch = null;
 
-	public bool FindFirstCentralized(string fileNamePattern, FileAttributes attributes)
+	public bool FindFirst(string fileNamePattern, FileAttributes attributes)
 	{
 		return TranslateError(() =>
 		{
@@ -358,7 +358,7 @@ public partial class DOS
 		});
 	}
 
-	public bool FindNextCentralized()
+	public bool FindNext()
 	{
 		return TranslateError(() =>
 		{
