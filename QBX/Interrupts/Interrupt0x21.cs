@@ -1062,18 +1062,16 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 					var attributes = (FileAttributes)input.CX;
 
 					if ((attributes & FileAttributes.Directory) != 0)
+						machine.DOS.LastError = DOSError.InvalidParameter;
+					else
 					{
-						result.FLAGS |= Flags.Carry;
-						result.AX = (ushort)DOSError.InvalidParameter;
-						break;
+						int fileHandle = machine.DOS.OpenFile(relativePath.ToString(), FileMode.Create, default);
+
+						result.AX = (ushort)fileHandle;
+
+						if (machine.DOS.LastError == DOSError.None)
+							machine.DOS.SetFileAttributes(fileHandle, attributes);
 					}
-
-					int fileHandle = machine.DOS.OpenFile(relativePath.ToString(), FileMode.Create, default);
-
-					result.AX = (ushort)fileHandle;
-
-					if (machine.DOS.LastError == DOSError.None)
-						machine.DOS.SetFileAttributes(fileHandle, attributes);
 
 					if (machine.DOS.LastError != DOSError.None)
 					{
@@ -1185,8 +1183,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 					int offset = (input.CX << 16) | input.DX;
 					MoveMethod moveMethod = (MoveMethod)(input.AX & 0xFF);
 
-					result.FLAGS &= Flags.Carry;
-
 					uint newPosition = (moveMethod == MoveMethod.FromBeginning)
 						? machine.DOS.SeekFile(fileHandle, unchecked((uint)offset), moveMethod)
 						: machine.DOS.SeekFile(fileHandle, offset, moveMethod);
@@ -1264,12 +1260,11 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 						{
 							int fileHandle = input.BX;
 
+							machine.DOS.ClearLastError();
+
 							if ((fileHandle < 0) || (fileHandle >= machine.DOS.Files.Count)
 							 || (machine.DOS.Files[fileHandle] is not FileDescriptor fileDescriptor))
-							{
-								result.FLAGS |= Flags.Carry;
-								result.AX = (ushort)DOSError.InvalidHandle;
-							}
+								machine.DOS.LastError = DOSError.InvalidHandle;
 							else if (fileDescriptor is RegularFileDescriptor regularFile)
 							{
 								result.DX = unchecked((ushort)(
@@ -1294,23 +1289,25 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 									result.DX |= 1 << 6;
 							}
 
+							if (machine.DOS.LastError != DOSError.None)
+							{
+								result.FLAGS |= Flags.Carry;
+								result.AX = (ushort)machine.DOS.LastError;
+							}
+
 							break;
 						}
 						case Function44.SetDeviceData:
 						{
 							int fileHandle = input.BX;
 
+							machine.DOS.ClearLastError();
+
 							if ((fileHandle < 0) || (fileHandle >= machine.DOS.Files.Count)
 							 || (machine.DOS.Files[fileHandle] is not FileDescriptor fileDescriptor))
-							{
-								result.FLAGS |= Flags.Carry;
-								result.AX = (ushort)DOSError.InvalidHandle;
-							}
+								machine.DOS.LastError = DOSError.InvalidHandle;
 							else if ((fileDescriptor is RegularFileDescriptor) || ((input.DX & 128) == 0))
-							{
-								result.FLAGS |= Flags.Carry;
-								result.AX = (ushort)DOSError.InvalidFunction;
-							}
+								machine.DOS.LastError = DOSError.InvalidFunction;
 							else
 							{
 								bool isConsole = (fileDescriptor is ConsoleFileDescriptor);
@@ -1325,10 +1322,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 								 || ((input.DX & 4) != nullBits)
 								 || ((input.DX & 8) != clockBits)
 								 || ((input.DX & 16) != 0)) // "special device"
-								{
-									result.FLAGS |= Flags.Carry;
-									result.AX = (ushort)DOSError.InvalidFunction;
-								}
+									machine.DOS.LastError = DOSError.InvalidFunction;
 								else
 								{
 									fileDescriptor.SetIOMode(
@@ -1353,25 +1347,23 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 						case Function44.ReceiveControlDataFromBlockDevice:
 						case Function44.SendControlDataToBlockDevice:
 						{
+							machine.DOS.LastError = DOSError.NotSupported;
+
 							result.FLAGS |= Flags.Carry;
-							result.AX = (ushort)DOSError.NotSupported;
+							result.AX = (ushort)machine.DOS.LastError;
 							break;
 						}
 						case Function44.CheckDeviceInputStatus:
 						{
 							int fileHandle = input.BX;
 
+							machine.DOS.ClearLastError();
+
 							if ((fileHandle < 0) || (fileHandle >= machine.DOS.Files.Count)
 							 || (machine.DOS.Files[fileHandle] is not FileDescriptor fileDescriptor))
-							{
-								result.FLAGS |= Flags.Carry;
-								result.AX = (ushort)DOSError.InvalidHandle;
-							}
+								machine.DOS.LastError = DOSError.InvalidHandle;
 							else if (!fileDescriptor.CanRead)
-							{
-								result.FLAGS |= Flags.Carry;
-								result.AX = (ushort)DOSError.AccessDenied;
-							}
+								machine.DOS.LastError = DOSError.AccessDenied;
 							else
 							{
 								result.AX &= 0xFF00;
@@ -1380,29 +1372,37 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 									result.AX |= 0xFF;
 							}
 
+							if (machine.DOS.LastError != DOSError.None)
+							{
+								result.FLAGS |= Flags.Carry;
+								result.AX = (ushort)machine.DOS.LastError;
+							}
+
 							break;
 						}
 						case Function44.CheckDeviceOutputStatus:
 						{
 							int fileHandle = input.BX;
 
+							machine.DOS.ClearLastError();
+
 							if ((fileHandle < 0) || (fileHandle >= machine.DOS.Files.Count)
 							 || (machine.DOS.Files[fileHandle] is not FileDescriptor fileDescriptor))
-							{
-								result.FLAGS |= Flags.Carry;
-								result.AX = (ushort)DOSError.InvalidHandle;
-							}
+								machine.DOS.LastError = DOSError.InvalidHandle;
 							else if (!fileDescriptor.CanWrite)
-							{
-								result.FLAGS |= Flags.Carry;
-								result.AX = (ushort)DOSError.AccessDenied;
-							}
+								machine.DOS.LastError = DOSError.AccessDenied;
 							else
 							{
 								result.AX &= 0xFF00;
 
 								if (fileDescriptor.ReadyToWrite)
 									result.AX |= 0xFF;
+							}
+
+							if (machine.DOS.LastError != DOSError.None)
+							{
+								result.FLAGS |= Flags.Carry;
+								result.AX = (ushort)machine.DOS.LastError;
 							}
 
 							break;
@@ -1476,12 +1476,11 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 							{
 								int fileHandle = input.BX;
 
+								machine.DOS.ClearLastError();
+
 								if ((fileHandle < 0) || (fileHandle >= machine.DOS.Files.Count)
 									|| (machine.DOS.Files[fileHandle] is not FileDescriptor fileDescriptor))
-								{
-									result.FLAGS |= Flags.Carry;
-									result.AX = (ushort)DOSError.InvalidHandle;
-								}
+									machine.DOS.LastError = DOSError.InvalidHandle;
 								else
 								{
 									// TODO: SUBST drives
@@ -1517,6 +1516,12 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 										if (isRemote)
 											result.DX |= 1 << 15;
 									}
+								}
+
+								if (machine.DOS.LastError != DOSError.None)
+								{
+									result.FLAGS |= Flags.Carry;
+									result.AX = (ushort)machine.DOS.LastError;
 								}
 							}
 							catch
@@ -1575,9 +1580,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 					string path = machine.DOS.GetCurrentDirectoryUnrooted(driveIdentifier);
 
 					if (path.Length > 63)
-					{
 						machine.DOS.LastError = DOSError.InvalidFunction;
-					}
 
 					int address = buffer.ToLinearAddress();
 					int i;
@@ -1599,8 +1602,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 					int requestedParagraphs = input.BX;
 
 					int requestedBytes = requestedParagraphs * MemoryManager.ParagraphSize;
-
-					result.FLAGS &= ~Flags.Carry;
 
 					int largestBlockSize = 0;
 
@@ -1626,8 +1627,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					int address = inputEx.ES * 0x10;
 
-					result.FLAGS &= ~Flags.Carry;
-
 					machine.DOS.TranslateError(() =>
 					{
 						machine.DOS.MemoryManager.FreeMemory(address);
@@ -1645,8 +1644,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					int address = inputEx.ES * 0x10;
 					int newSize = input.BX * MemoryManager.ParagraphSize;
-
-					result.FLAGS &= ~Flags.Carry;
 
 					int largestBlockSize = 0;
 
@@ -1677,26 +1674,21 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 							var parameters = LoadExec.Deserialize(machine.MemoryBus, argsAddress.ToLinearAddress(), machine.DOS);
 
 							if (machine.DOS.LastError != DOSError.None)
-							{
-								result.FLAGS |= Flags.Carry;
-								result.AX = (ushort)machine.DOS.LastError;
 								break;
-							}
 
 							machine.DOS.ExecuteChildProcess(fileName, parameters);
-
-							if (machine.DOS.LastError != DOSError.None)
-							{
-								result.FLAGS |= Flags.Carry;
-								result.AX = (ushort)machine.DOS.LastError;
-							}
 
 							break;
 
 						default:
-							result.FLAGS |= Flags.Carry;
-							result.AX = (ushort)DOSError.NotSupported;
+							machine.DOS.LastError = DOSError.NotSupported;
 							break;
+					}
+
+					if (machine.DOS.LastError != DOSError.None)
+					{
+						result.FLAGS |= Flags.Carry;
+						result.AX = (ushort)machine.DOS.LastError;
 					}
 
 					break;
@@ -1721,8 +1713,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 					FileAttributes attributes = (FileAttributes)input.CX;
 
-					result.FLAGS &= ~Flags.Carry;
-
 					bool success = machine.DOS.FindFirst(searchPattern, attributes);
 
 					if (!success)
@@ -1735,8 +1725,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.FindNextFile:
 				{
-					result.FLAGS &= ~Flags.Carry;
-
 					bool success = machine.DOS.FindNext();
 
 					if (!success)
@@ -1774,8 +1762,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 					var oldName = machine.DOS.ReadStringZ(machine.MemoryBus, oldNameAddress.ToLinearAddress());
 					var newName = machine.DOS.ReadStringZ(machine.MemoryBus, newNameAddress.ToLinearAddress());
 
-					result.FLAGS &= ~Flags.Carry;
-
 					machine.DOS.RenameFile(oldName, newName);
 
 					if (machine.DOS.LastError != DOSError.None)
@@ -1790,21 +1776,15 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					int fileHandle = input.BX;
 
+					machine.DOS.ClearLastError();
+
 					if ((fileHandle < 0) || (fileHandle >= machine.DOS.Files.Count)
 						|| (machine.DOS.Files[fileHandle] is not FileDescriptor fileDescriptor))
-					{
-						result.FLAGS |= Flags.Carry;
-						result.AX = (ushort)DOSError.InvalidHandle;
-					}
+						machine.DOS.LastError = DOSError.InvalidHandle;
 					else if (fileDescriptor is not RegularFileDescriptor regularFileDescriptor)
-					{
-						result.FLAGS |= Flags.Carry;
-						result.AX = (ushort)DOSError.InvalidFunction;
-					}
+						machine.DOS.LastError = DOSError.InvalidFunction;
 					else
 					{
-						result.FLAGS &= ~Flags.Carry;
-
 						var subfunction = (Function57)al;
 
 						FileTime fileTime = new FileTime() { Raw = input.CX };
@@ -1844,12 +1824,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 							}
 						});
 
-						if (machine.DOS.LastError != DOSError.None)
-						{
-							result.FLAGS |= Flags.Carry;
-							result.AX = (ushort)machine.DOS.LastError;
-						}
-						else
+						if (machine.DOS.LastError == DOSError.None)
 						{
 							if (returnDateTime != default)
 							{
@@ -1862,6 +1837,11 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 						}
 					}
 
+					if (machine.DOS.LastError != DOSError.None)
+					{
+						result.FLAGS |= Flags.Carry;
+						result.AX = (ushort)machine.DOS.LastError;
+					}
 					break;
 				}
 			}
