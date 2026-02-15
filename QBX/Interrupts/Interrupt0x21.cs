@@ -108,6 +108,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		CreateTemporaryFile = 0x5A,
 		CreateNewFile = 0x5B,
 		LockUnlockFile = 0x5C,
+		SetExtendedError = 0x5D,
 	}
 
 	public enum Function33 : byte
@@ -2003,6 +2004,30 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 					{
 						result.FLAGS |= Flags.Carry;
 						result.AX = (ushort)machine.DOS.LastError;
+					}
+
+					break;
+				}
+				case Function.SetExtendedError:
+				{
+					if (al != 0x0A)
+						machine.DOS.SetLastError(DOSError.InvalidFunction);
+					else
+					{
+						// This points at an ERROR struct, which is actually a register dump. We only
+						// need the AX, BX and CX values, the actual parameters to this function.
+
+						var address = new SegmentedAddress(inputEx.DS, input.SI);
+
+						var stream = new SystemMemoryStream(machine.MemoryBus, address.ToLinearAddress(), 6);
+						var reader = new System.IO.BinaryReader(stream);
+
+						var error = (DOSError)reader.ReadUInt16(); // AX
+						var action = (DOSErrorAction)reader.ReadByte(); // BL
+						var @class = (DOSErrorClass)reader.ReadByte(); // BH
+						var location = (DOSErrorLocation)reader.ReadUInt16(); // CX
+
+						machine.DOS.SetExtendedError(error, @class, action, location);
 					}
 
 					break;
