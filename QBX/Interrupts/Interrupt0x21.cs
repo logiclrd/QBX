@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Globalization;
 
 using QBX.ExecutionEngine.Execution;
+using QBX.Firmware.Fonts;
 using QBX.Hardware;
 using QBX.OperatingSystem;
 using QBX.OperatingSystem.Breaks;
@@ -87,6 +89,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		Function44 = 0x44,
 		DuplicateFileHandle = 0x45,
 		ForceDuplicateFileHandle = 0x46,
+		GetCurrentDirectory = 0x47,
 	}
 
 	public enum Function33 : byte
@@ -1487,6 +1490,34 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 					int toFileHandle = input.CX;
 
 					result.AX = (ushort)machine.DOS.DuplicateHandle(fileHandle, toFileHandle );
+
+					if (machine.DOS.LastError != DOSError.None)
+					{
+						result.FLAGS |= Flags.Carry;
+						result.AX = (ushort)machine.DOS.LastError;
+					}
+
+					break;
+				}
+				case Function.GetCurrentDirectory:
+				{
+					var buffer = new SegmentedAddress(input.AsRegistersEx().DS, input.SI);
+
+					int driveIdentifier = input.DX & 0xFF;
+
+					string path = machine.DOS.GetCurrentDirectoryUnrooted(driveIdentifier);
+
+					if (path.Length > 63)
+					{
+						machine.DOS.LastError = DOSError.InvalidFunction;
+					}
+
+					int address = buffer.ToLinearAddress();
+					int i;
+
+					for (i = 0; path[i] != 0; i++)
+						machine.MemoryBus[address + i] = CP437Encoding.GetByteSemantic(path[i]);
+					machine.MemoryBus[address + i] = 0;
 
 					if (machine.DOS.LastError != DOSError.None)
 					{

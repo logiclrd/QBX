@@ -608,6 +608,36 @@ public partial class DOS
 		});
 	}
 
+	public string GetCurrentDirectoryUnrooted()
+		=> GetCurrentDirectoryUnrooted(Environment.CurrentDirectory);
+
+	public string GetCurrentDirectoryUnrooted(int driveIdentifier)
+	{
+		return TranslateError(() =>
+		{
+			if ((driveIdentifier < 1) || (driveIdentifier > 26))
+				throw new DOSException(DOSError.InvalidParameter);
+
+			return GetCurrentDirectoryUnrooted((char)(driveIdentifier + 'A' - 1) + ":");
+		});
+	}
+
+	string GetCurrentDirectoryUnrooted(string path)
+	{
+		return TranslateError(() =>
+		{
+			path = Path.GetFullPath(path);
+
+			if (!ShortFileNames.TryMap(path, out var shortPath))
+				throw new DOSException(DOSError.GeneralFailure);
+
+			if (shortPath.AsSpan().Slice(1, 2).SequenceEqual(":\\"))
+				shortPath = shortPath.Substring(3);
+
+			return shortPath;
+		});
+	}
+
 	int GetFreeFileHandle()
 	{
 		for (int i = 2; i < Files.Count; i++)
