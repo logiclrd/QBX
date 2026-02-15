@@ -306,6 +306,12 @@ public class StringValue : IComparable<StringValue>, IEquatable<StringValue>
 		return CompareTo(other);
 	}
 
+	public bool StartsWith(byte searchFor) => AsSpan().StartsWith(searchFor);
+	public bool StartsWith(ReadOnlySpan<byte> searchFor) => AsSpan().StartsWith(searchFor);
+
+	public bool EndsWith(byte searchFor) => AsSpan().EndsWith(searchFor);
+	public bool EndsWith(ReadOnlySpan<byte> searchFor) => AsSpan().EndsWith(searchFor);
+
 	public int IndexOf(byte searchFor, int start = 0)
 	{
 		return AsSpan().Slice(start).IndexOf(searchFor) + start;

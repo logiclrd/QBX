@@ -869,6 +869,55 @@ public partial class DOS
 		}
 	}
 
+	static string GetTemporaryFileName()
+	{
+		static void BinToASCII(int value, Span<char> buffer)
+		{
+			int o = buffer.Length - 1;
+
+			while (o >= 0)
+			{
+				buffer[o --] = unchecked((char)((value & 0xF) + 'A'));
+				value >>= 4;
+			}
+		}
+
+		var now = DateTime.Now;
+
+		int cx = (now.Hour << 8) | now.Minute;
+		int dx = (now.Second << 8) | (now.Millisecond / 10);
+
+		Span<char> buffer = stackalloc char[8];
+
+		BinToASCII(cx, buffer.Slice(0, 4));
+		BinToASCII(dx, buffer.Slice(4, 4));
+
+		return new string(buffer);
+	}
+
+	public int CreateTemporaryFile(string directoryPath, FileAttributes attributes)
+	{
+		return TranslateError(() =>
+		{
+			while (true)
+			{
+				string probeFileName = GetTemporaryFileName();
+
+				int handle = OpenFile(Path.Combine(directoryPath, probeFileName), FileMode.CreateNew, FileAccess.Access_ReadWrite | FileAccess.Share_Compatibility);
+
+				if (LastError == DOSError.FileExists)
+				{
+					Thread.Sleep(10); // GetTemporaryFileName is based on time to a resolution of 10ms
+					continue;
+				}
+
+				SetFileAttributes(handle, attributes);
+
+				return handle;
+			}
+		});
+	}
+
 	public FileAttributes GetFileAttributes(string relativePath)
 	{
 		return TranslateError(() =>

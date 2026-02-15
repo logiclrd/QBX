@@ -105,6 +105,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		Function57 = 0x57,
 		Function58 = 0x58,
 		GetExtendedError = 0x59,
+		CreateTemporaryFile = 0x5A,
 	}
 
 	public enum Function33 : byte
@@ -1908,6 +1909,48 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 						((int)machine.DOS.LastErrorClass << 8) |
 						((int)machine.DOS.LastErrorAction)));
 					result.CX = (ushort)((int)machine.DOS.LastErrorLocation << 8);
+
+					break;
+				}
+				case Function.CreateTemporaryFile:
+				{
+					var pathBufferAddress = new SegmentedAddress(inputEx.DS, input.DX);
+
+					var attributes = (FileAttributes)input.CX;
+
+					var directory = machine.DOS.ReadStringZ(machine.MemoryBus, pathBufferAddress.ToLinearAddress());
+
+					if (machine.DOS.LastError == DOSError.None)
+					{
+						if (!directory.EndsWith((byte)'\\'))
+							machine.DOS.SetLastError(DOSError.InvalidParameter);
+						else
+						{
+							int fileHandle = machine.DOS.CreateTemporaryFile(directory.ToString(), attributes);
+
+							result.AX = (ushort)fileHandle;
+
+							if (machine.DOS.Files[fileHandle] is RegularFileDescriptor regularFile)
+							{
+								// Append filename onto the caller-supplied buffer.
+
+								string fileName = Path.GetFileName(regularFile.Path);
+
+								int offset = pathBufferAddress.ToLinearAddress() + directory.Length;
+
+								for (int i = 0; i < fileName.Length; i++)
+									machine.MemoryBus[offset++] = CP437Encoding.GetByteSemantic(fileName[i]);
+
+								machine.MemoryBus[offset] = 0;
+							}
+						}
+					}
+
+					if (machine.DOS.LastError != DOSError.None)
+					{
+						result.FLAGS |= Flags.Carry;
+						result.AX = (ushort)machine.DOS.LastError;
+					}
 
 					break;
 				}
