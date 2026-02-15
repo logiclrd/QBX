@@ -963,6 +963,32 @@ public partial class DOS
 		});
 	}
 
+	public int DuplicateHandle(int fileHandle, int toFileHandle)
+	{
+		if ((fileHandle < 0) || (fileHandle >= Files.Count)
+		 || (Files[fileHandle] is not FileDescriptor fileDescriptor))
+		{
+			LastError = DOSError.InvalidHandle;
+			return -1;
+		}
+
+		if ((toFileHandle < 0) || (toFileHandle >= Files.Count))
+		{
+			LastError = DOSError.InvalidHandle;
+			return -1;
+		}
+
+		if (Files[toFileHandle] is FileDescriptor existingFileDescriptor)
+			existingFileDescriptor.Close();
+
+		Files[toFileHandle] = fileDescriptor;
+
+		return TranslateError(() =>
+		{
+			return AllocateFileHandleForFileDescriptor(fileDescriptor);
+		});
+	}
+
 	public bool CloseFile(FileControlBlock fcb)
 	{
 		return TranslateError(() =>

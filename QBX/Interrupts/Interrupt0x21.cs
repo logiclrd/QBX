@@ -86,6 +86,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		Function43 = 0x43,
 		Function44 = 0x44,
 		DuplicateFileHandle = 0x45,
+		ForceDuplicateFileHandle = 0x46,
 	}
 
 	public enum Function33 : byte
@@ -1471,6 +1472,21 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 					int fileHandle = input.BX;
 
 					result.AX = (ushort)machine.DOS.DuplicateHandle(fileHandle);
+
+					if (machine.DOS.LastError != DOSError.None)
+					{
+						result.FLAGS |= Flags.Carry;
+						result.AX = (ushort)machine.DOS.LastError;
+					}
+
+					break;
+				}
+				case Function.ForceDuplicateFileHandle:
+				{
+					int fileHandle = input.BX;
+					int toFileHandle = input.CX;
+
+					result.AX = (ushort)machine.DOS.DuplicateHandle(fileHandle, toFileHandle );
 
 					if (machine.DOS.LastError != DOSError.None)
 					{
