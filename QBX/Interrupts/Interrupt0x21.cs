@@ -92,6 +92,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		AllocateMemory = 0x48,
 		FreeAllocatedMemory = 0x49,
 		SetMemoryBlockSize = 0x4A,
+		Function4B = 0x4B,
 	}
 
 	public enum Function33 : byte
@@ -131,7 +132,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		QueryIOCTLDevice = 0x11, // not implemented
 	}
 
-	public enum Function440CMinorCode
+	public enum Function440CMinorCode : byte
 	{
 		SetIterationCount = 0x45, // not implemented
 		SelectCodePage = 0x4A, // not implemented
@@ -144,7 +145,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		GetDisplayMode = 0x7F, // not implemented
 	}
 
-	public enum Function440DMinorCode
+	public enum Function440DMinorCode : byte
 	{
 		SetDeviceParameters = 0x40, // not implemented
 		WriteTrackOnLogicalDrive = 0x41, // not implemented
@@ -155,6 +156,14 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		VerifyTrackOnLogicalDrive = 0x62, // not implemented
 		GetMediaID = 0x66, // not implemented
 		SenseMediaType = 0x68, // not implemented
+	}
+
+	public enum Function4B : byte
+	{
+		LoadAndExecuteProgram = 0x00, // not implemented
+		LoadProgram = 0x01, // not implemented
+		LoadOverlay = 0x03, // not implemented
+		SetExecutionState = 0x05, // not implemented
 	}
 
 	public override Registers Execute(Registers input)
@@ -1289,7 +1298,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 						case Function44.SendControlDataToBlockDevice:
 						{
 							result.FLAGS |= Flags.Carry;
-							result.AX = (ushort)DOSError.InvalidFunction;
+							result.AX = (ushort)DOSError.NotSupported;
 							break;
 						}
 						case Function44.CheckDeviceInputStatus:
@@ -1598,6 +1607,12 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 					break;
 				}
+				case Function.Function4B:
+				{
+					result.FLAGS |= Flags.Carry;
+					result.AX = (ushort)DOSError.NotSupported;
+					break;
+				}
 			}
 
 			return result;
@@ -1624,8 +1639,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	/*
 TODO:
 
-Int 21/AH=4Bh - DOS 2+ - EXEC - LOAD AND/OR EXECUTE PROGRAM
-Int 21/AX=4B05h - DOS 5+ - SET EXECUTION STATE
 Int 21/AH=4Ch - DOS 2+ - EXIT - TERMINATE WITH RETURN CODE
 Int 21/AH=4Dh - DOS 2+ - GET RETURN CODE (ERRORLEVEL)
 Int 21/AH=4Eh - DOS 2+ - FINDFIRST - FIND FIRST MATCHING FILE
