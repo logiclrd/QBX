@@ -111,6 +111,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		SetExtendedError = 0x5D,
 		Function5E = 0x5E,
 		Function5F = 0x5F, // network operations -- not supported
+		TrueName = 0x60, // undocumented
 	}
 
 	public enum Function33 : byte
@@ -2137,6 +2138,39 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 					break;
 				}
+				case Function.TrueName:
+				{
+					var inputAddress = new SegmentedAddress(inputEx.DS, input.SI);
+
+					var inputPath = machine.DOS.ReadStringZ(machine.MemoryBus, inputAddress.ToLinearAddress());
+
+					if (machine.DOS.LastError == DOSError.None)
+					{
+						var outputPath = machine.DOS.GetCanonicalName(inputPath);
+
+						var outputAddress = new SegmentedAddress(inputEx.ES, input.SI);
+
+						int address = outputAddress.ToLinearAddress();
+
+						var outputSpan = outputPath.AsSpan();
+
+						if (outputSpan.Length > 127)
+							outputSpan = outputSpan.Slice(0, 127);
+
+						for (int i = 0; i < outputSpan.Length; i++)
+							machine.MemoryBus[address + i] = outputSpan[i];
+
+						machine.MemoryBus[address + outputSpan.Length] = 0;
+					}
+
+					if (machine.DOS.LastError != DOSError.None)
+					{
+						result.FLAGS |= Flags.Carry;
+						result.AX = (ushort)machine.DOS.LastError;
+					}
+
+					break;
+				}
 			}
 
 			return result;
@@ -2146,12 +2180,8 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	/*
 TODO:
 
-Int 21/AX=5D0Ah - DOS 3.1+ - SET EXTENDED ERROR INFORMATION
-Int 21/AX=5F07h - DOS 5+ - ENABLE DRIVE
-Int 21/AX=5F08h - DOS 5+ - DISABLE DRIVE
 Int 21/AH=60h - DOS 3.0+ - TRUENAME - CANONICALIZE FILENAME OR PATH
 Int 21/AH=62h - DOS 3.0+ - GET CURRENT PSP ADDRESS
-Int 21/AH=64h - DOS 3.2+ internal - SET DEVICE DRIVER LOOKAHEAD FLAG
 Int 21/AX=6500h - Windows95 (OSR2) - SET GENERAL INTERNATIONALIZATION INFO
 Int 21/AH=65h - DOS 3.3+ - GET EXTENDED COUNTRY INFORMATION
 Int 21/AH=65h - DOS 4.0+ - COUNTRY-DEPENDENT CHARACTER CAPITALIZATION

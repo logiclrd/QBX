@@ -248,6 +248,16 @@ public class StringValue : IComparable<StringValue>, IEquatable<StringValue>
 		return this;
 	}
 
+	public StringValue Clear()
+	{
+		if (_isFixedLength)
+			AsSpan().Clear();
+		else
+			_bytes.Clear();
+
+		return this;
+	}
+
 	public StringValue LeftSubstring(int length)
 		=> new StringValue().Append(AsSpan().Slice(0, length));
 	public StringValue RightSubstring(int length)
