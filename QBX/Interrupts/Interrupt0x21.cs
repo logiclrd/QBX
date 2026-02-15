@@ -109,6 +109,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		CreateNewFile = 0x5B,
 		LockUnlockFile = 0x5C,
 		SetExtendedError = 0x5D,
+		Function5E = 0x5E,
 	}
 
 	public enum Function33 : byte
@@ -198,6 +199,11 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		SetAllocationStrategy = 0x01,
 		GetUpperMemoryLink = 0x02,
 		SetUpperMemoryLink = 0x03,
+	}
+
+	public enum Function5E : byte
+	{
+		GetMachineName = 0x00,
 	}
 
 	public override Registers Execute(Registers input)
@@ -2028,6 +2034,38 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 						var location = (DOSErrorLocation)reader.ReadUInt16(); // CX
 
 						machine.DOS.SetExtendedError(error, @class, action, location);
+					}
+
+					break;
+				}
+				case Function.Function5E:
+				{
+					var subfunction = (Function5E)al;
+
+					switch (subfunction)
+					{
+						case Function5E.GetMachineName:
+						{
+							var address = new SegmentedAddress(inputEx.DS, input.DX);
+
+							var machineName = Environment.MachineName.AsSpan();
+
+							int dot = machineName.IndexOf('.');
+
+							if (dot >= 0)
+								machineName = machineName.Slice(0, dot);
+
+							if (machineName.Length > 15)
+								machineName = machineName.Slice(0, 15);
+
+							int offset = address.ToLinearAddress();
+
+							for (int i=0; i < machineName.Length; i++)
+								machine.MemoryBus[offset++] = CP437Encoding.GetByteSemantic(machineName[i]);
+							machine.MemoryBus[offset] = 0;
+
+							break;
+						}
 					}
 
 					break;
