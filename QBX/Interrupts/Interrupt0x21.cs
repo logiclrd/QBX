@@ -106,6 +106,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		Function58 = 0x58,
 		GetExtendedError = 0x59,
 		CreateTemporaryFile = 0x5A,
+		CreateNewFile = 0x5B,
 	}
 
 	public enum Function33 : byte
@@ -1954,6 +1955,35 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 					break;
 				}
+				case Function.CreateNewFile:
+				{
+					int address = inputEx.DS * 0x10 + input.DX;
+
+					var relativePath = machine.DOS.ReadStringZ(machine.MemoryBus, address);
+
+					if (machine.DOS.LastError != DOSError.None)
+					{
+						result.FLAGS |= Flags.Carry;
+						result.AX = (ushort)machine.DOS.LastError;
+						break;
+					}
+
+					var attributes = (FileAttributes)input.CX;
+
+					int fileHandle = machine.DOS.OpenFile(relativePath.ToString(), FileMode.CreateNew, FileAccess.Access_ReadWrite | FileAccess.Share_Compatibility);
+
+					result.AX = (ushort)fileHandle;
+
+					if (machine.DOS.LastError == DOSError.None)
+						machine.DOS.SetFileAttributes(fileHandle, attributes);
+					else
+					{
+						result.FLAGS |= Flags.Carry;
+						result.AX = (ushort)machine.DOS.LastError;
+					}
+
+					break;
+				}
 			}
 
 			return result;
@@ -1963,8 +1993,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	/*
 TODO:
 
-Int 21/AH=5Ah - DOS 3.0+ - CREATE TEMPORARY FILE
-Int 21/AH=5Bh - DOS 3.0+ - CREATE NEW FILE
 Int 21/AH=5Ch - DOS 3.0+ - FLOCK - RECORD LOCKING
 Int 21/AX=5D0Ah - DOS 3.1+ - SET EXTENDED ERROR INFORMATION
 Int 21/AX=5F07h - DOS 5+ - ENABLE DRIVE
