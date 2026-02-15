@@ -118,6 +118,10 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		SetSharingRetryCount = 0x0B, // not implemented
 		Function440C = 0x0C,
 		Function440D = 0x0D,
+		GetLogicalDriveMap = 0x0E, // not implemented
+		SetLogicalDriveMap = 0x0F, // not implemented
+		QueryIOCTLHandle = 0x10, // not implemented
+		QueryIOCTLDevice = 0x11, // not implemented
 	}
 
 	public enum Function440CMinorCode
