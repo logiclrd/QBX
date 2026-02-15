@@ -1007,6 +1007,12 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 					var directoryName = ReadStringZ(machine.MemoryBus, address);
 
+					if (machine.DOS.LastError != DOSError.None)
+					{
+						result.AX |= 0xFF;
+						break;
+					}
+
 					result.AX &= 0xFF00;
 
 					switch (function)
@@ -1026,6 +1032,13 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 					int address = inputEx.DS * 0x10 + input.DX;
 
 					var relativePath = ReadStringZ(machine.MemoryBus, address);
+
+					if (machine.DOS.LastError != DOSError.None)
+					{
+						result.FLAGS |= Flags.Carry;
+						result.AX = (ushort)machine.DOS.LastError;
+						break;
+					}
 
 					var attributes = (FileAttributes)input.CX;
 
@@ -1056,6 +1069,13 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 					int address = inputEx.DS * 0x10 + input.DX;
 
 					var relativePath = ReadStringZ(machine.MemoryBus, address);
+
+					if (machine.DOS.LastError != DOSError.None)
+					{
+						result.FLAGS |= Flags.Carry;
+						result.AX = (ushort)machine.DOS.LastError;
+						break;
+					}
 
 					var accessModes = (FileAccess)(input.AX & 0xFF);
 
@@ -1121,6 +1141,13 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 					var relativePath = ReadStringZ(machine.MemoryBus, address);
 
+					if (machine.DOS.LastError != DOSError.None)
+					{
+						result.FLAGS |= Flags.Carry;
+						result.AX = (ushort)machine.DOS.LastError;
+						break;
+					}
+
 					result.FLAGS &= Flags.Carry;
 
 					machine.DOS.DeleteFile(relativePath.ToString());
@@ -1183,6 +1210,13 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 							int address = inputEx.DS * 0x10 + input.DX;
 
 							var relativePath = ReadStringZ(machine.MemoryBus, address);
+
+							if (machine.DOS.LastError != DOSError.None)
+							{
+								result.FLAGS |= Flags.Carry;
+								result.AX = (ushort)machine.DOS.LastError;
+								break;
+							}
 
 							if (subfunction == Function43.GetFileAttributes)
 								result.CX = (ushort)machine.DOS.GetFileAttributes(relativePath.ToString());
@@ -1637,7 +1671,10 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		while (memory[address] != 0)
 		{
 			if (ret.Length == MaximumNullTerminatedStringLength)
-				throw new DOSException(DOSError.InvalidData);
+			{
+				machine.DOS.LastError = DOSError.InvalidData;
+				break;
+			}
 
 			ret.Append(memory[address]);
 			address++;
