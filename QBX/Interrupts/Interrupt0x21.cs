@@ -176,7 +176,9 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 			var function = (Function)ah;
 
-			var result = input.AsRegistersEx();
+			var inputEx = input.AsRegistersEx();
+
+			var result = inputEx;
 
 			result.FLAGS &= ~Flags.Carry;
 
@@ -266,7 +268,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.DisplayString:
 				{
-					int o = input.AsRegistersEx().DS * 0x10 + result.DX;
+					int o = inputEx.DS * 0x10 + result.DX;
 
 					while (true)
 					{
@@ -285,7 +287,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.BufferedKeyboardInput:
 				{
-					int o = input.AsRegistersEx().DS * 0x10 + result.DX;
+					int o = inputEx.DS * 0x10 + result.DX;
 
 					int numBytesDesired = machine.SystemMemory[o];
 
@@ -362,7 +364,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.OpenFileWithFCB:
 				{
-					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+					int offset = inputEx.DS * 0x10 + input.DX;
 
 					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
 
@@ -379,7 +381,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.CloseFileWithFCB:
 				{
-					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+					int offset = inputEx.DS * 0x10 + input.DX;
 
 					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
 
@@ -392,7 +394,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.FindFirstFileWithFCB:
 				{
-					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+					int offset = inputEx.DS * 0x10 + input.DX;
 
 					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
 
@@ -405,7 +407,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.FindNextFileWithFCB:
 				{
-					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+					int offset = inputEx.DS * 0x10 + input.DX;
 
 					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
 
@@ -418,7 +420,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.DeleteFileWithFCB:
 				{
-					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+					int offset = inputEx.DS * 0x10 + input.DX;
 
 					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
 
@@ -433,7 +435,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.SequentialRead:
 				{
-					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+					int offset = inputEx.DS * 0x10 + input.DX;
 
 					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
 
@@ -457,7 +459,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.SequentialWrite:
 				{
-					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+					int offset = inputEx.DS * 0x10 + input.DX;
 
 					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
 
@@ -486,7 +488,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.CreateFileWithFCB:
 				{
-					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+					int offset = inputEx.DS * 0x10 + input.DX;
 
 					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
 
@@ -503,7 +505,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.RenameFileWithFCB:
 				{
-					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+					int offset = inputEx.DS * 0x10 + input.DX;
 
 					var rfcb = RenameFileControlBlock.Deserialize(machine.MemoryBus, offset);
 
@@ -601,7 +603,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.RandomRead:
 				{
-					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+					int offset = inputEx.DS * 0x10 + input.DX;
 
 					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
 
@@ -636,7 +638,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.RandomWrite:
 				{
-					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+					int offset = inputEx.DS * 0x10 + input.DX;
 
 					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
 
@@ -676,7 +678,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.GetFileSize:
 				{
-					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+					int offset = inputEx.DS * 0x10 + input.DX;
 
 					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
 
@@ -691,7 +693,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.SetRandomRecordNumber:
 				{
-					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+					int offset = inputEx.DS * 0x10 + input.DX;
 
 					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
 
@@ -708,7 +710,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.RandomBlockRead:
 				{
-					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+					int offset = inputEx.DS * 0x10 + input.DX;
 
 					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
 
@@ -745,7 +747,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.RandomBlockWrite:
 				{
-					int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+					int offset = inputEx.DS * 0x10 + input.DX;
 
 					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
 
@@ -787,7 +789,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.ParseFilename:
 				{
-					int offset = input.AsRegistersEx().ES * 0x10 + input.DI;
+					int offset = inputEx.ES * 0x10 + input.DI;
 
 					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
 
@@ -974,7 +976,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 					if (input.DX != 0xFFFF)
 					{
 						// Get
-						int offset = input.AsRegistersEx().DS * 0x10 + input.DX;
+						int offset = inputEx.DS * 0x10 + input.DX;
 
 						var countryInfo = new CountryInfo();
 
@@ -1001,7 +1003,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				case Function.RemoveDirectory:
 				case Function.ChangeCurrentDirectory:
 				{
-					int address = input.AsRegistersEx().DS * 0x10 + input.DX;
+					int address = inputEx.DS * 0x10 + input.DX;
 
 					var directoryName = ReadStringZ(machine.MemoryBus, address);
 
@@ -1021,7 +1023,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.CreateFileWithHandle:
 				{
-					int address = input.AsRegistersEx().DS * 0x10 + input.DX;
+					int address = inputEx.DS * 0x10 + input.DX;
 
 					var relativePath = ReadStringZ(machine.MemoryBus, address);
 
@@ -1051,7 +1053,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.OpenFileWithHandle:
 				{
-					int address = input.AsRegistersEx().DS * 0x10 + input.DX;
+					int address = inputEx.DS * 0x10 + input.DX;
 
 					var relativePath = ReadStringZ(machine.MemoryBus, address);
 
@@ -1085,7 +1087,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					int fileHandle = input.BX;
 					int numBytes = input.CX;
-					var bufferAddress = new SegmentedAddress(input.AsRegistersEx().DS, input.DX);
+					var bufferAddress = new SegmentedAddress(inputEx.DS, input.DX);
 
 					result.AX = (ushort)machine.DOS.Read(fileHandle, machine.MemoryBus, bufferAddress.ToLinearAddress(), numBytes);
 
@@ -1101,7 +1103,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					int fileHandle = input.BX;
 					int numBytes = input.CX;
-					var bufferAddress = new SegmentedAddress(input.AsRegistersEx().DS, input.DX);
+					var bufferAddress = new SegmentedAddress(inputEx.DS, input.DX);
 
 					result.AX = (ushort)machine.DOS.Write(fileHandle, machine.MemoryBus, bufferAddress.ToLinearAddress(), numBytes);
 
@@ -1115,7 +1117,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.DeleteFile:
 				{
-					int address = input.AsRegistersEx().DS * 0x10 + input.DX;
+					int address = inputEx.DS * 0x10 + input.DX;
 
 					var relativePath = ReadStringZ(machine.MemoryBus, address);
 
@@ -1178,7 +1180,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 						case Function43.GetFileAttributes:
 						case Function43.SetFileAttributes:
 						{
-							int address = input.AsRegistersEx().DS * 0x10 + input.DX;
+							int address = inputEx.DS * 0x10 + input.DX;
 
 							var relativePath = ReadStringZ(machine.MemoryBus, address);
 
@@ -1513,7 +1515,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.GetCurrentDirectory:
 				{
-					var buffer = new SegmentedAddress(input.AsRegistersEx().DS, input.SI);
+					var buffer = new SegmentedAddress(inputEx.DS, input.SI);
 
 					int driveIdentifier = input.DX & 0xFF;
 
@@ -1569,7 +1571,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.FreeAllocatedMemory:
 				{
-					int address = input.AsRegistersEx().ES * 0x10;
+					int address = inputEx.ES * 0x10;
 
 					result.FLAGS &= ~Flags.Carry;
 
@@ -1588,7 +1590,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.SetMemoryBlockSize:
 				{
-					int address = input.AsRegistersEx().ES * 0x10;
+					int address = inputEx.ES * 0x10;
 					int newSize = input.BX * MemoryManager.ParagraphSize;
 
 					result.FLAGS &= ~Flags.Carry;
