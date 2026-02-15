@@ -99,6 +99,8 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		FindFirstFile = 0x4E,
 		FindNextFile = 0x4F,
 		SetPSPAddress = 0x50,
+		GetPSPAddress = 0x51,
+		GetVerifyState = 0x52,
 	}
 
 	public enum Function33 : byte
@@ -1736,6 +1738,20 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				case Function.SetPSPAddress:
 				{
 					machine.DOS.CurrentPSPSegment = input.BX;
+					break;
+				}
+				case Function.GetPSPAddress:
+				{
+					result.BX = machine.DOS.CurrentPSPSegment;
+					break;
+				}
+				case Function.GetVerifyState:
+				{
+					result.AX &= 0xFF00;
+
+					if (machine.DOS.VerifyWrites)
+						result.AX |= 0x01;
+
 					break;
 				}
 			}
