@@ -204,6 +204,8 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	public enum Function5E : byte
 	{
 		GetMachineName = 0x00,
+		SetPrinterSetup = 0x02,
+		GetPrinterSetup = 0x03,
 	}
 
 	public override Registers Execute(Registers input)
@@ -979,6 +981,15 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 							break;
 						}
+						default:
+						{
+							machine.DOS.SetLastError(DOSError.InvalidFunction);
+
+							result.FLAGS |= Flags.Carry;
+							result.AX = (ushort)machine.DOS.LastError;
+
+							break;
+						}
 					}
 
 					break;
@@ -1263,6 +1274,15 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 								result.FLAGS |= Flags.Carry;
 								result.AX = (ushort)machine.DOS.LastError;
 							}
+
+							break;
+						}
+						default:
+						{
+							machine.DOS.SetLastError(DOSError.InvalidFunction);
+
+							result.FLAGS |= Flags.Carry;
+							result.AX = (ushort)machine.DOS.LastError;
 
 							break;
 						}
@@ -1558,6 +1578,15 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 							break;
 						}
+						default:
+						{
+							machine.DOS.SetLastError(DOSError.InvalidFunction);
+
+							result.FLAGS |= Flags.Carry;
+							result.AX = (ushort)machine.DOS.LastError;
+
+							break;
+						}
 					}
 
 					break;
@@ -1841,6 +1870,16 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 								case Function57.SetFileCreationDateAndTime:
 									System.IO.File.SetCreationTime(regularFileDescriptor.Handle, suppliedDateTime.Value);
 									break;
+
+								default:
+								{
+									machine.DOS.SetLastError(DOSError.InvalidFunction);
+
+									result.FLAGS |= Flags.Carry;
+									result.AX = (ushort)machine.DOS.LastError;
+
+									break;
+								}
 							}
 						});
 
@@ -1901,6 +1940,15 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 						case Function58.SetUpperMemoryLink:
 						{
 							machine.DOS.SetLastError(DOSError.NotSupported);
+
+							result.FLAGS |= Flags.Carry;
+							result.AX = (ushort)machine.DOS.LastError;
+
+							break;
+						}
+						default:
+						{
+							machine.DOS.SetLastError(DOSError.InvalidFunction);
 
 							result.FLAGS |= Flags.Carry;
 							result.AX = (ushort)machine.DOS.LastError;
@@ -2063,6 +2111,15 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 							for (int i=0; i < machineName.Length; i++)
 								machine.MemoryBus[offset++] = CP437Encoding.GetByteSemantic(machineName[i]);
 							machine.MemoryBus[offset] = 0;
+
+							break;
+						}
+						default:
+						{
+							machine.DOS.SetLastError(DOSError.InvalidFunction);
+
+							result.FLAGS |= Flags.Carry;
+							result.AX = (ushort)machine.DOS.LastError;
 
 							break;
 						}
