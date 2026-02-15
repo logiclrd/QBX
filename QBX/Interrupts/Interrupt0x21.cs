@@ -107,6 +107,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		GetExtendedError = 0x59,
 		CreateTemporaryFile = 0x5A,
 		CreateNewFile = 0x5B,
+		LockUnlockFile = 0x5C,
 	}
 
 	public enum Function33 : byte
@@ -1984,6 +1985,28 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 					break;
 				}
+				case Function.LockUnlockFile:
+				{
+					int fileHandle = input.BX;
+
+					uint offset = unchecked((uint)((input.CX << 16) | input.DX));
+					uint length = unchecked((uint)((input.SI << 16) | input.DI));
+
+					bool @lock = (input.AX & 0xFF) == 0;
+
+					if (@lock)
+						machine.DOS.LockFile(fileHandle, offset, length);
+					else
+						machine.DOS.UnlockFile(fileHandle, offset, length);
+
+					if (machine.DOS.LastError != DOSError.None)
+					{
+						result.FLAGS |= Flags.Carry;
+						result.AX = (ushort)machine.DOS.LastError;
+					}
+
+					break;
+				}
 			}
 
 			return result;
@@ -1993,7 +2016,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	/*
 TODO:
 
-Int 21/AH=5Ch - DOS 3.0+ - FLOCK - RECORD LOCKING
 Int 21/AX=5D0Ah - DOS 3.1+ - SET EXTENDED ERROR INFORMATION
 Int 21/AX=5F07h - DOS 5+ - ENABLE DRIVE
 Int 21/AX=5F08h - DOS 5+ - DISABLE DRIVE

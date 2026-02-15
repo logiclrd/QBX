@@ -62,6 +62,16 @@ public abstract class FileDescriptor
 		throw new DOSException(DOSError.InvalidFunction);
 	}
 
+	public virtual void Lock(uint offset, uint length)
+	{
+		throw new DOSException(DOSError.InvalidFunction);
+	}
+
+	public virtual void Unlock(uint offset, uint length)
+	{
+		throw new DOSException(DOSError.InvalidFunction);
+	}
+
 	public uint Seek(int offset, MoveMethod moveMethod)
 	{
 		VerifyOpen();

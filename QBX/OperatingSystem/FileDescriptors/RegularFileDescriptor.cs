@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.InteropServices;
 
 using QBX.OperatingSystem.FileStructures;
 
@@ -24,6 +25,26 @@ public class RegularFileDescriptor(string path, FileStream stream) : FileDescrip
 		VerifyOpen();
 
 		File.SetAttributes(stream.SafeFileHandle, attributes.ToSystemFileAttributes());
+	}
+
+	public override void Lock(uint offset, uint length)
+	{
+		VerifyOpen();
+
+		if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+			throw new DOSException(DOSError.NotSupported);
+
+		stream.Lock(offset, length);
+	}
+
+	public override void Unlock(uint offset, uint length)
+	{
+		VerifyOpen();
+
+		if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+			throw new DOSException(DOSError.NotSupported);
+
+		stream.Unlock(offset, length);
 	}
 
 	protected override void FlushToDisk()

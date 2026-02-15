@@ -953,6 +953,36 @@ public partial class DOS
 		});
 	}
 
+	public void LockFile(int fileHandle, uint offset, uint length)
+	{
+		if ((fileHandle < 0) || (fileHandle >= Files.Count)
+		 || (Files[fileHandle] is not FileDescriptor fileDescriptor))
+		{
+			LastError = DOSError.InvalidHandle;
+			return;
+		}
+
+		TranslateError(() =>
+		{
+			fileDescriptor.Lock(offset, length);
+		});
+	}
+
+	public void UnlockFile(int fileHandle, uint offset, uint length)
+	{
+		if ((fileHandle < 0) || (fileHandle >= Files.Count)
+		 || (Files[fileHandle] is not FileDescriptor fileDescriptor))
+		{
+			LastError = DOSError.InvalidHandle;
+			return;
+		}
+
+		TranslateError(() =>
+		{
+			fileDescriptor.Unlock(offset, length);
+		});
+	}
+
 	void Advance(FileControlBlock fcb)
 	{
 		fcb.CurrentRecordNumber++;
