@@ -69,12 +69,33 @@ public partial class ShortFileNames
 			{
 				if (builder.Length > 0)
 					MapLastComponent(builder);
-
-				builder.Append(path[i]);
 			}
+
+			builder.Append(path[i]);
 		}
 
 		MapLastComponent(builder);
+
+		shortPath = builder.ToString();
+		return true;
+	}
+
+	static bool TryMapEmulated(string path, string shortPath)
+	{
+		var builder = new StringBuilder();
+
+		for (int i = 0; i < path.Length; i++)
+		{
+			if (path[i] == Path.PathSeparator)
+			{
+				if (builder.Length > 0)
+					MapLastComponent(builder);
+			}
+
+			builder.Append(path[i]);
+		}
+
+		MapLastComponent(builder, shortPath);
 
 		shortPath = builder.ToString();
 		return true;
@@ -128,6 +149,54 @@ public partial class ShortFileNames
 				builder.Remove(builder.Length - componentLength, componentLength);
 				builder.Append(shortName);
 			}
+		}
+	}
+
+	static void MapLastComponent(StringBuilder builder, string shortName)
+	{
+		int componentLength = 0;
+
+		while ((componentLength < builder.Length)
+		    && (builder[builder.Length - componentLength - 1] != Path.PathSeparator))
+			componentLength++;
+
+		if (componentLength > 0)
+		{
+			string component = builder.ToString(builder.Length - componentLength, componentLength);
+
+			int containerLength = builder.Length - componentLength;
+
+			while ((containerLength > 0) && (builder[containerLength - 1] == Path.PathSeparator))
+				containerLength--;
+
+			string containerShortPath = "";
+			string containerLongPath = "";
+
+			if (containerLength > 0)
+			{
+				containerShortPath = builder.ToString(0, containerLength);
+
+				if (s_shortToLong.TryGetValue(containerShortPath, out var existingContainerLongPath))
+					containerLongPath = existingContainerLongPath;
+				else
+					containerLongPath = containerShortPath;
+			}
+
+			var longName = component;
+
+			var longPath = containerLongPath + Path.PathSeparator + longName;
+			var shortPath = containerShortPath + Path.PathSeparator + shortName;
+
+			shortPath = GetCanonicalPath(shortPath);
+
+			if (s_shortToLong.ContainsKey(shortPath))
+				throw new DOSException(DOSError.FileExists);
+
+			s_longToShort[longPath] = shortPath;
+			s_shortToLong[shortPath] = longPath;
+
+			builder.Remove(builder.Length - componentLength, componentLength);
+			builder.Append(shortName);
 		}
 	}
 

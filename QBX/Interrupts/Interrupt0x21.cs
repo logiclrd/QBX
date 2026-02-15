@@ -101,6 +101,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		SetPSPAddress = 0x50,
 		GetPSPAddress = 0x51,
 		GetVerifyState = 0x52,
+		RenameFile = 0x53,
 	}
 
 	public enum Function33 : byte
@@ -1754,6 +1755,26 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 					break;
 				}
+				case Function.RenameFile:
+				{
+					var oldNameAddress = new SegmentedAddress(inputEx.DS, input.DX);
+					var newNameAddress = new SegmentedAddress(inputEx.ES, input.DI);
+
+					var oldName = machine.DOS.ReadStringZ(machine.MemoryBus, oldNameAddress.ToLinearAddress());
+					var newName = machine.DOS.ReadStringZ(machine.MemoryBus, newNameAddress.ToLinearAddress());
+
+					result.FLAGS &= ~Flags.Carry;
+
+					machine.DOS.RenameFile(oldName, newName);
+
+					if (machine.DOS.LastError != DOSError.None)
+					{
+						result.FLAGS |= Flags.Carry;
+						result.AX = (ushort)machine.DOS.LastError;
+					}
+
+					break;
+				}
 			}
 
 			return result;
@@ -1763,10 +1784,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	/*
 TODO:
 
-Int 21/AH=4Eh - DOS 2+ - FINDFIRST - FIND FIRST MATCHING FILE
-Int 21/AH=4Fh - DOS 2+ - FINDNEXT - FIND NEXT MATCHING FILE
-Int 21/AH=54h - DOS 2+ - GET VERIFY FLAG
-Int 21/AH=56h - DOS 2+ - RENAME - RENAME FILE
 Int 21/AX=5700h - DOS 2+ - GET FILE'S LAST-WRITTEN DATE AND TIME
 Int 21/AX=5701h - DOS 2+ - SET FILE'S LAST-WRITTEN DATE AND TIME
 Int 21/AX=5702h - DOS 4.x only - GET EXTENDED ATTRIBUTES FOR FILE

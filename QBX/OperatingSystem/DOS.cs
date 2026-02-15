@@ -1123,6 +1123,30 @@ public partial class DOS
 		});
 	}
 
+	public void RenameFile(StringValue oldName, StringValue newName)
+	{
+		TranslateError(() =>
+		{
+			string oldShortPath = oldName.ToString();
+			string newShortPath = newName.ToString();
+
+			string oldPath = ShortFileNames.Unmap(oldShortPath);
+			string newPath = ShortFileNames.Unmap(newShortPath);
+
+			if (File.Exists(newPath))
+				LastError = DOSError.FileExists;
+			else
+			{
+				File.Move(oldPath, newPath);
+
+				ShortFileNames.Forget(oldPath);
+
+				if (!ShortFileNames.TryMap(newPath, Path.GetFileName(newShortPath)))
+					LastError = DOSError.GeneralFailure;
+			}
+		});
+	}
+
 	public void RenameFiles(RenameFileControlBlock rfcb)
 	{
 		TranslateError(() =>
