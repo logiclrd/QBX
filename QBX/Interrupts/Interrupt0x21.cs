@@ -114,6 +114,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		CheckDeviceOutputStatus = 0x07,
 		DoesDeviceUseRemovableMedia = 0x08,
 		IsDriveRemote = 0x09,
+		IsFileOrDeviceRemote = 0x0A,
 	}
 
 	public override Registers Execute(Registers input)
@@ -1184,7 +1185,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 							}
 							else
 							{
-								result.DX = 0;
+								result.DX = 128;
 
 								switch (fileDescriptor)
 								{
@@ -1195,6 +1196,9 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 								if (fileDescriptor.IOMode == IOMode.Binary)
 									result.DX |= 32;
+
+								if (fileDescriptor.CanRead && !fileDescriptor.AtSoftEOF)
+									result.DX |= 1 << 6;
 							}
 
 							break;
@@ -1368,6 +1372,71 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 									result.DX = 0b0001000000000000; // bit 12: is network drive
 								else
 									result.DX = 0b0000100000000000; // bit 11: can query whether drive uses removable media
+							}
+							catch
+							{
+								if (machine.DOS.LastError == DOSError.None)
+									machine.DOS.LastError = DOSError.InvalidFunction;
+							}
+
+							if (machine.DOS.LastError != DOSError.None)
+							{
+								result.FLAGS |= Flags.Carry;
+								result.AX = (ushort)machine.DOS.LastError;
+							}
+
+							break;
+						}
+						case Function44.IsFileOrDeviceRemote:
+						{
+							try
+							{
+								int fileHandle = input.BX;
+
+								result.FLAGS &= ~Flags.Carry;
+
+								if ((fileHandle < 0) || (fileHandle >= machine.DOS.Files.Count)
+									|| (machine.DOS.Files[fileHandle] is not FileDescriptor fileDescriptor))
+								{
+									result.FLAGS |= Flags.Carry;
+									result.AX = (ushort)DOSError.InvalidHandle;
+								}
+								else
+								{
+									// TODO: SUBST drives
+									bool isRemote = machine.DOS.IsRemoteDrive(fileDescriptor.Path);
+
+									if (fileDescriptor is RegularFileDescriptor regularFileDescriptor)
+									{
+										result.DX = unchecked((ushort)(
+											(char.ToUpperInvariant(fileDescriptor.Path[0]) - 'A') |
+											(regularFileDescriptor.IsPristine ? (1 << 6) : 0) |
+											(1 << 12) | /* no inherit */
+											(isRemote ? (1 << 15) : 0)));
+									}
+									else
+									{
+										result.DX = 128;
+
+										switch (fileDescriptor)
+										{
+											case ConsoleFileDescriptor: result.DX |= 3; break;
+											case NullFileDescriptor: result.DX |= 4; break;
+											case ClockFileDescriptor: result.DX |= 8; break;
+										}
+
+										if (fileDescriptor.IOMode == IOMode.Binary)
+											result.DX |= 32;
+
+										if (fileDescriptor.CanRead && !fileDescriptor.AtSoftEOF)
+											result.DX |= 1 << 6;
+
+										result.DX |= 1 << 12; // no inherit
+
+										if (isRemote)
+											result.DX |= 1 << 15;
+									}
+								}
 							}
 							catch
 							{
