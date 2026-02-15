@@ -110,6 +110,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		LockUnlockFile = 0x5C,
 		SetExtendedError = 0x5D,
 		Function5E = 0x5E,
+		Function5F = 0x5F, // network operations -- not supported
 	}
 
 	public enum Function33 : byte
@@ -2124,6 +2125,15 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 							break;
 						}
 					}
+
+					break;
+				}
+				case Function.Function5F:
+				{
+					machine.DOS.SetLastError(DOSError.NotSupported);
+
+					result.FLAGS |= Flags.Carry;
+					result.AX = (ushort)machine.DOS.LastError;
 
 					break;
 				}
