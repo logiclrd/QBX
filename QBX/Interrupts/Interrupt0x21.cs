@@ -128,6 +128,8 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 			var result = input.AsRegistersEx();
 
+			result.FLAGS &= ~Flags.Carry;
+
 			using var suppressionScope = machine.DOS.SuppressExceptionsInScope();
 
 			switch (function)
@@ -982,8 +984,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 						break;
 					}
 
-					result.FLAGS &= ~Flags.Carry;
-
 					int fileHandle = machine.DOS.OpenFile(relativePath.ToString(), FileMode.Create, default);
 
 					result.AX = (ushort)fileHandle;
@@ -1007,8 +1007,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 					var accessModes = (FileAccess)(input.AX & 0xFF);
 
-					result.FLAGS &= ~Flags.Carry;
-
 					int fileHandle = machine.DOS.OpenFile(relativePath.ToString(), FileMode.Open, accessModes);
 
 					result.AX = (ushort)fileHandle;
@@ -1023,8 +1021,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.CloseFileWithHandle:
 				{
-					result.FLAGS &= ~Flags.Carry;
-
 					machine.DOS.CloseFile(fileHandle: input.BX);
 
 					if (machine.DOS.LastError != DOSError.None)
@@ -1041,8 +1037,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 					int numBytes = input.CX;
 					var bufferAddress = new SegmentedAddress(input.AsRegistersEx().DS, input.DX);
 
-					result.FLAGS &= ~Flags.Carry;
-
 					result.AX = (ushort)machine.DOS.Read(fileHandle, machine.MemoryBus, bufferAddress.ToLinearAddress(), numBytes);
 
 					if (machine.DOS.LastError != DOSError.None)
@@ -1058,8 +1052,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 					int fileHandle = input.BX;
 					int numBytes = input.CX;
 					var bufferAddress = new SegmentedAddress(input.AsRegistersEx().DS, input.DX);
-
-					result.FLAGS &= ~Flags.Carry;
 
 					result.AX = (ushort)machine.DOS.Write(fileHandle, machine.MemoryBus, bufferAddress.ToLinearAddress(), numBytes);
 
@@ -1140,8 +1132,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 							var relativePath = ReadStringZ(machine.MemoryBus, address);
 
-							result.FLAGS &= ~Flags.Carry;
-
 							if (subfunction == Function43.GetFileAttributes)
 								result.CX = (ushort)machine.DOS.GetFileAttributes(relativePath.ToString());
 							else
@@ -1168,8 +1158,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 						case Function44.GetDeviceData:
 						{
 							int fileHandle = input.BX;
-
-							result.FLAGS &= ~Flags.Carry;
 
 							if ((fileHandle < 0) || (fileHandle >= machine.DOS.Files.Count)
 							 || (machine.DOS.Files[fileHandle] is not FileDescriptor fileDescriptor))
@@ -1206,8 +1194,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 						case Function44.SetDeviceData:
 						{
 							int fileHandle = input.BX;
-
-							result.FLAGS &= ~Flags.Carry;
 
 							if ((fileHandle < 0) || (fileHandle >= machine.DOS.Files.Count)
 							 || (machine.DOS.Files[fileHandle] is not FileDescriptor fileDescriptor))
@@ -1283,8 +1269,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 							}
 							else
 							{
-								result.FLAGS &= ~Flags.Carry;
-
 								result.AX &= 0xFF00;
 
 								if (fileDescriptor.ReadyToRead)
@@ -1310,8 +1294,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 							}
 							else
 							{
-								result.FLAGS &= ~Flags.Carry;
-
 								result.AX &= 0xFF00;
 
 								if (fileDescriptor.ReadyToWrite)
@@ -1322,8 +1304,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 						}
 						case Function44.DoesDeviceUseRemovableMedia:
 						{
-							result.FLAGS &= ~Flags.Carry;
-
 							try
 							{
 								int driveIndicator = input.DX & 0xFF;
@@ -1360,8 +1340,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 						{
 							try
 							{
-								result.FLAGS &= ~Flags.Carry;
-
 								int driveIndicator = input.DX & 0xFF;
 
 								string path = driveIndicator > 0 ? ((char)(driveIndicator + 'A' - 1)).ToString() : "";
@@ -1392,8 +1370,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 							try
 							{
 								int fileHandle = input.BX;
-
-								result.FLAGS &= ~Flags.Carry;
 
 								if ((fileHandle < 0) || (fileHandle >= machine.DOS.Files.Count)
 									|| (machine.DOS.Files[fileHandle] is not FileDescriptor fileDescriptor))
