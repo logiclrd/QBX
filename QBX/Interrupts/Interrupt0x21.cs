@@ -1647,8 +1647,40 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.Function4B:
 				{
-					result.FLAGS |= Flags.Carry;
-					result.AX = (ushort)DOSError.NotSupported;
+					var subfunction = (Function4B)al;
+
+					switch (subfunction)
+					{
+						case Function4B.LoadAndExecuteProgram:
+							var fileNameAddress = new SegmentedAddress(inputEx.DS, input.DX);
+							var argsAddress = new SegmentedAddress(inputEx.ES, input.BX);
+
+							string fileName = machine.DOS.ReadStringZ(machine.MemoryBus, fileNameAddress.ToLinearAddress()).ToString();
+							var parameters = LoadExec.Deserialize(machine.MemoryBus, argsAddress.ToLinearAddress(), machine.DOS);
+
+							if (machine.DOS.LastError != DOSError.None)
+							{
+								result.FLAGS |= Flags.Carry;
+								result.AX = (ushort)machine.DOS.LastError;
+								break;
+							}
+
+							machine.DOS.ExecuteChildProcess(fileName, parameters);
+
+							if (machine.DOS.LastError != DOSError.None)
+							{
+								result.FLAGS |= Flags.Carry;
+								result.AX = (ushort)machine.DOS.LastError;
+							}
+
+							break;
+
+						default:
+							result.FLAGS |= Flags.Carry;
+							result.AX = (ushort)DOSError.NotSupported;
+							break;
+					}
+
 					break;
 				}
 				case Function.EndProgram:

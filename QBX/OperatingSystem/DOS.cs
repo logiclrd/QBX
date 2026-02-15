@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
@@ -13,6 +14,7 @@ using QBX.OperatingSystem.Breaks;
 using QBX.OperatingSystem.FileDescriptors;
 using QBX.OperatingSystem.FileStructures;
 using QBX.OperatingSystem.Memory;
+using QBX.OperatingSystem.Processes;
 
 using FileMode = QBX.OperatingSystem.FileStructures.FileMode;
 using FileAccess = QBX.OperatingSystem.FileStructures.FileAccess;
@@ -57,6 +59,8 @@ public partial class DOS
 	public bool VerifyWrites = false;
 
 	public Devices Devices;
+
+	public int LastChildProcessExitCode;
 
 	public Machine Machine => _machine;
 
@@ -1159,6 +1163,33 @@ public partial class DOS
 			{
 				while (FindNext(search, default, PerformRename))
 					;
+			}
+		});
+	}
+
+	public void ExecuteChildProcess(string fileName, LoadExec parameters)
+	{
+		TranslateError(() =>
+		{
+			var psi = new ProcessStartInfo(fileName);
+
+			psi.Arguments = parameters.CommandTail;
+
+			foreach (var variable in parameters.Environment)
+				psi.Environment[variable.Key] = variable.Value;
+
+			psi.UseShellExecute = false;
+
+			using (var childProcess = Process.Start(psi))
+			{
+				if (childProcess == null)
+					LastChildProcessExitCode = -1;
+				else
+				{
+					childProcess.WaitForExit();
+
+					LastChildProcessExitCode = childProcess.ExitCode;
+				}
 			}
 		});
 	}
