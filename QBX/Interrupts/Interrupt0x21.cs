@@ -191,6 +191,8 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	{
 		GetAllocationStrategy = 0x00,
 		SetAllocationStrategy = 0x01,
+		GetUpperMemoryLink = 0x02,
+		SetUpperMemoryLink = 0x03,
 	}
 
 	public override Registers Execute(Registers input)
@@ -1877,6 +1879,20 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 								result.FLAGS |= Flags.Carry;
 								result.AX = (ushort)machine.DOS.LastError;
 							}
+
+							break;
+						}
+						case Function58.GetUpperMemoryLink:
+						{
+							result.AX &= 0xFF00;
+							break;
+						}
+						case Function58.SetUpperMemoryLink:
+						{
+							machine.DOS.LastError = DOSError.NotSupported;
+
+							result.FLAGS |= Flags.Carry;
+							result.AX = (ushort)machine.DOS.LastError;
 
 							break;
 						}
