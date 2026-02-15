@@ -158,13 +158,13 @@ public partial class DOS
 			environment ?? EnvironmentBlock.FromAmbientEnvironment(),
 			new StringValue(commandTail));
 
-		ushort pspSegment = (ushort)(pspAddress / MemoryManager.ParagraphSize);
+		CurrentPSPSegment = (ushort)(pspAddress / MemoryManager.ParagraphSize);
 
 		// Default DTA: use the last 128 bytes of the PSP, overwriting the command-line argument data.
-		DataTransferAddressSegment = pspSegment;
+		DataTransferAddressSegment = CurrentPSPSegment;
 		DataTransferAddressOffset = 128;
 
-		return pspSegment;
+		return CurrentPSPSegment;
 	}
 
 	class InDOSScope : IDisposable

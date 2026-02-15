@@ -98,6 +98,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		GetChildProgramReturnValue = 0x4D,
 		FindFirstFile = 0x4E,
 		FindNextFile = 0x4F,
+		SetPSPAddress = 0x50,
 	}
 
 	public enum Function33 : byte
@@ -1730,6 +1731,11 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 						result.AX = (ushort)machine.DOS.LastError;
 					}
 
+					break;
+				}
+				case Function.SetPSPAddress:
+				{
+					machine.DOS.CurrentPSPSegment = input.BX;
 					break;
 				}
 			}
