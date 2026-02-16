@@ -16,9 +16,19 @@ public class Keyboard(Machine machine)
 
 	public event Action? Break;
 
+	internal event Func<SDL.Keymod>? GetModStateTestHook;
+
+	SDL.Keymod GetModState()
+	{
+		if (GetModStateTestHook != null)
+			return GetModStateTestHook();
+		else
+			return SDL.GetModState();
+	}
+
 	void UpdateModifiers(SDL.KeyboardEvent evt)
 	{
-		var mods = SDL.GetModState();
+		var mods = GetModState();
 
 		int keyboardStatus = machine.SystemMemory[SystemMemory.KeyboardStatusAddress];
 
@@ -183,6 +193,15 @@ public class Keyboard(Machine machine)
 			}
 
 			return machine.KeepRunning;
+		}
+	}
+
+	public bool HasQueuedInput
+	{
+		get
+		{
+			lock (_sync)
+				return _inputQueue.Count > 0;
 		}
 	}
 

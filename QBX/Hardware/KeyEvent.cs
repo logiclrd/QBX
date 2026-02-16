@@ -16,6 +16,7 @@ public class KeyEvent
 
 	public bool IsEmpty => (TextCharacter == default) && (ScanCode == 0);
 	public bool IsNormalText => (TextCharacter >= 32);
+	public bool HasTextCharacter => (TextCharacter > 0);
 
 	public bool IsBreak => Modifiers.CtrlKey && (SDLScanCode == SDL.Scancode.Pause);
 
@@ -85,6 +86,7 @@ public class KeyEvent
 			case SDL.Scancode.Capslock:
 			case SDL.Scancode.NumLockClear:
 			case SDL.Scancode.Scrolllock:
+			case SDL.Scancode.Pause:
 			{
 				switch (sdlScanCode)
 				{

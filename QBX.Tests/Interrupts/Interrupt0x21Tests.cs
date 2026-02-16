@@ -1,9 +1,11 @@
-﻿using QBX.ExecutionEngine.Compiled.Statements;
-using QBX.ExecutionEngine.Execution;
+﻿using QBX.ExecutionEngine.Execution;
+using QBX.Firmware.Fonts;
 using QBX.Hardware;
 using QBX.Interrupts;
 
 using SDL3;
+
+using CapturingTextLibrary = QBX.ExecutionEngine.Compiled.Statements.CapturingTextLibrary;
 
 namespace QBX.Tests.Interrupts;
 
@@ -34,74 +36,13 @@ public class Interrupt0x21Tests
 	[Test]
 	public void ReadKeyboardWithEcho_should_receive_queued_events()
 	{
-		ReadKeyboardWithEchoTest(prequeueEvent: true);
+		DOSReadTest(Interrupt0x21.Function.ReadKeyboardWithEcho, prequeueEvent: true, shouldEcho: true);
 	}
 
 	[Test]
 	public void ReadKeyboardWithEcho_should_receive_new_events()
 	{
-		ReadKeyboardWithEchoTest(prequeueEvent: false);
-	}
-
-	void ReadKeyboardWithEchoTest(bool prequeueEvent)
-	{
-		// Arrange
-		var machine = new Machine();
-
-		var captureBuffer = new StringValue();
-
-		var capture = new CapturingTextLibrary(machine, captureBuffer);
-
-		machine.VideoFirmware.SetTestingVisualLibrary(capture);
-
-		bool eventQueued = false;
-
-		void QueueEvent()
-		{
-			machine.Keyboard.HandleEvent(
-				new SDL.KeyboardEvent()
-				{
-					Down = true,
-					Scancode = SDL.Scancode.Q,
-				});
-
-			eventQueued = true;
-		}
-
-		if (prequeueEvent)
-			QueueEvent();
-
-		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
-
-		var rin = new Registers();
-
-		rin.AX = (int)Interrupt0x21.Function.ReadKeyboardWithEcho << 8;
-
-		if (!prequeueEvent)
-		{
-			var queueThread = new Thread(
-				() =>
-				{
-					Thread.Sleep(100);
-					QueueEvent();
-				});
-
-			queueThread.IsBackground = true;
-			queueThread.Start();
-		}
-
-		// Act
-		var rout = sut.Execute(rin);
-
-		bool eventQueuedOnReturn = eventQueued;
-
-		// Assert
-		byte characterRead = (byte)(rout.AX & 0xFF);
-
-		eventQueuedOnReturn.Should().BeTrue();
-		captureBuffer.ToString().Should().Be("q");
-		characterRead.Should().Be((byte)'q');
-		machine.DOS.LastError.Should().Be(OperatingSystem.DOSError.None);
+		DOSReadTest(Interrupt0x21.Function.ReadKeyboardWithEcho, prequeueEvent: false, shouldEcho: true);
 	}
 
 	[Test]
@@ -296,12 +237,138 @@ public class Interrupt0x21Tests
 		machine.DOS.LastError.Should().Be(OperatingSystem.DOSError.None);
 	}
 
+	[Test]
+	public void DirectConsoleIO_should_not_break_on_CtrlC()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var captureBuffer = new StringValue();
+
+		var capture = new CapturingTextLibrary(machine, captureBuffer);
+
+		machine.VideoFirmware.SetTestingVisualLibrary(capture);
+
+		SDL.Keymod modState = 0;
+
+		machine.Keyboard.GetModStateTestHook += () => modState;
+
+		modState = SDL.Keymod.LCtrl;
+
+		machine.Keyboard.HandleEvent(
+			new SDL.KeyboardEvent()
+			{
+				Down = true,
+				Scancode = SDL.Scancode.LCtrl,
+			});
+
+		machine.Keyboard.HandleEvent(
+			new SDL.KeyboardEvent()
+			{
+				Down = true,
+				Scancode = SDL.Scancode.C,
+				Mod = SDL.Keymod.LCtrl,
+			});
+
+		machine.Keyboard.HandleEvent(
+			new SDL.KeyboardEvent()
+			{
+				Down = false,
+				Scancode = SDL.Scancode.C,
+				Mod = SDL.Keymod.LCtrl,
+			});
+
+		modState = 0;
+
+		machine.Keyboard.HandleEvent(
+			new SDL.KeyboardEvent()
+			{
+				Down = false,
+				Scancode = SDL.Scancode.LCtrl,
+			});
+
+		machine.Keyboard.HandleEvent(
+			new SDL.KeyboardEvent()
+			{
+				Down = true,
+				Scancode = SDL.Scancode.B,
+			});
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new Registers();
+
+		rin.AX = (int)Interrupt0x21.Function.DirectConsoleIO << 8;
+		rin.DX = 0xFF;
+
+		Registers? rout = null;
+
+		// Act & Assert
+		Action action = () => rout = sut.Execute(rin);
+
+		action.ExecutionTime().Should().BeLessThan(TimeSpan.FromSeconds(0.5));
+
+		rout.Should().NotBeNull();
+		rout.FLAGS.Should().NotHaveFlag(Flags.Zero);
+
+		byte characterRead = (byte)(rout.AX & 0xFF);
+
+		captureBuffer.ToString().Should().Be("");
+		characterRead.Should().Be((byte)3);
+		machine.DOS.LastError.Should().Be(OperatingSystem.DOSError.None);
+	}
+
+	[Test]
+	public void DirectConsoleInput_should_receive_queued_events()
+	{
+		DOSReadTest(Interrupt0x21.Function.DirectConsoleInput, prequeueEvent: true);
+	}
+
+	[Test]
+	public void DirectConsoleInput_should_receive_new_events()
+	{
+		DOSReadTest(Interrupt0x21.Function.DirectConsoleInput, prequeueEvent: false);
+	}
+
+	[Test]
+	public void DirectConsoleInput_should_not_break_on_CtrlC()
+	{
+		DOSReadTest(Interrupt0x21.Function.DirectConsoleInput, prequeueEvent: false, DOSReadInputType.CtrlC, shouldBreak: false);
+	}
+
+	[Test]
+	public void DirectConsoleInput_should_not_break_on_CtrlBreak()
+	{
+		DOSReadTest(Interrupt0x21.Function.DirectConsoleInput, prequeueEvent: false, DOSReadInputType.CtrlBreak, shouldBreak: false);
+	}
+
+		[Test]
+	public void ReadKeyboardWithoutEcho_should_receive_queued_events()
+	{
+		DOSReadTest(Interrupt0x21.Function.ReadKeyboardWithoutEcho, prequeueEvent: true);
+	}
+
+	[Test]
+	public void ReadKeyboardWithoutEcho_should_receive_new_events()
+	{
+		DOSReadTest(Interrupt0x21.Function.ReadKeyboardWithoutEcho, prequeueEvent: false);
+	}
+
+	[Test]
+	public void ReadKeyboardWithoutEcho_should_break_on_CtrlC()
+	{
+		DOSReadTest(Interrupt0x21.Function.ReadKeyboardWithoutEcho, prequeueEvent: false, inputType: DOSReadInputType.CtrlC, shouldBreak: true);
+	}
+
+	[Test]
+	public void ReadKeyboardWithoutEcho_should_break_on_CtrlBreak()
+	{
+		DOSReadTest(Interrupt0x21.Function.ReadKeyboardWithoutEcho, prequeueEvent: false, inputType: DOSReadInputType.CtrlBreak, shouldBreak: true);
+	}
+
 	/*
 	public enum Function : byte
 	{
-		DirectConsoleIO = 0x06,
-		DirectConsoleInput = 0x07,
-		ReadKeyboardWithoutEcho = 0x08,
 		DisplayString = 0x09,
 		BufferedKeyboardInput = 0x0A,
 		CheckKeyboardStatus = 0x0B,
@@ -507,4 +574,152 @@ public class Interrupt0x21Tests
 		SetGlobalCodePage = 0x02,
 	}
 	 */
+
+	enum DOSReadInputType
+	{
+		Character,
+		CtrlC,
+		CtrlBreak,
+	}
+
+	void DOSReadTest(Interrupt0x21.Function function, bool prequeueEvent, DOSReadInputType inputType = DOSReadInputType.Character, bool shouldBreak = false, bool shouldEcho = false)
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var captureBuffer = new StringValue();
+
+		var capture = new CapturingTextLibrary(machine, captureBuffer);
+
+		machine.VideoFirmware.SetTestingVisualLibrary(capture);
+
+		bool breakEventOccurred = false;
+
+		machine.DOS.Break += () => breakEventOccurred = true;
+
+		bool eventQueued = false;
+
+		SDL.Keymod modState = 0;
+
+		machine.Keyboard.GetModStateTestHook += () => modState;
+
+		void QueueEvent()
+		{
+			if (inputType != DOSReadInputType.Character)
+			{
+				var action =
+					inputType switch
+					{
+						DOSReadInputType.CtrlC => SDL.Scancode.C,
+						DOSReadInputType.CtrlBreak => SDL.Scancode.Pause,
+
+						_ => throw new Exception("Internal error")
+					};
+
+				modState = SDL.Keymod.LCtrl;
+
+				machine.Keyboard.HandleEvent(
+					new SDL.KeyboardEvent()
+					{
+						Down = true,
+						Scancode = SDL.Scancode.LCtrl,
+					});
+
+				machine.Keyboard.HandleEvent(
+					new SDL.KeyboardEvent()
+					{
+						Down = true,
+						Scancode = action,
+						Mod = SDL.Keymod.LCtrl,
+					});
+
+				machine.Keyboard.HandleEvent(
+					new SDL.KeyboardEvent()
+					{
+						Down = false,
+						Scancode = action,
+						Mod = SDL.Keymod.LCtrl,
+					});
+
+				modState = 0;
+
+				machine.Keyboard.HandleEvent(
+					new SDL.KeyboardEvent()
+					{
+						Down = false,
+						Scancode = SDL.Scancode.LCtrl,
+					});
+			}
+
+			// Also send the character, in case break is disabled or doesn't work.
+			machine.Keyboard.HandleEvent(
+				new SDL.KeyboardEvent()
+				{
+					Down = true,
+					Scancode = SDL.Scancode.A,
+				});
+
+			machine.Keyboard.HandleEvent(
+				new SDL.KeyboardEvent()
+				{
+					Down = false,
+					Scancode = SDL.Scancode.A,
+				});
+
+			eventQueued = true;
+		}
+
+		byte expectedCharacterRead;
+
+		if (shouldBreak)
+			expectedCharacterRead = 0;
+		else if (inputType == DOSReadInputType.CtrlC)
+			expectedCharacterRead = 3;
+		else
+			expectedCharacterRead = (byte)'a';
+
+		string expectedOutput = shouldEcho ? CP437Encoding.GetCharSemantic(expectedCharacterRead).ToString() : "";
+
+		if (prequeueEvent)
+			QueueEvent();
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new Registers();
+
+		rin.AX = (ushort)((int)function << 8);
+
+		if (!prequeueEvent)
+		{
+			var queueThread = new Thread(
+				() =>
+				{
+					Thread.Sleep(100);
+					QueueEvent();
+				});
+
+			queueThread.IsBackground = true;
+			queueThread.Start();
+		}
+
+		Registers? rout = null;
+
+		// Act
+		Action action = () => rout = sut.Execute(rin);
+
+		action.ExecutionTime().Should().BeLessThan(TimeSpan.FromSeconds(0.25));
+
+		bool eventQueuedOnReturn = eventQueued;
+
+		// Assert
+		rout.Should().NotBeNull();
+
+		byte characterRead = (byte)(rout.AX & 0xFF);
+
+		eventQueuedOnReturn.Should().BeTrue();
+		captureBuffer.ToString().Should().Be(expectedOutput);
+		breakEventOccurred.Should().Be(shouldBreak);
+		characterRead.Should().Be(expectedCharacterRead);
+		machine.DOS.LastError.Should().Be(OperatingSystem.DOSError.None);
+	}
 }

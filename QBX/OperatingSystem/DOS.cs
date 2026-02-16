@@ -81,7 +81,7 @@ public partial class DOS
 	{
 		_machine = machine;
 
-		_machine.Keyboard.Break += OnBreak;
+		_machine.Keyboard.Break += OnExternalBreak;
 
 		MemoryManager = new MemoryManager(
 			machine.SystemMemory,
@@ -219,10 +219,16 @@ public partial class DOS
 
 	bool _enableBreak = false;
 
-	void OnBreak()
+	void OnExternalBreak()
 	{
 		if (_enableBreak)
 			Break?.Invoke();
+	}
+
+	void OnInternalBreak()
+	{
+		Break?.Invoke();
+		throw new Break();
 	}
 
 	class BreakScope(DOS owner) : IDisposable
@@ -258,6 +264,10 @@ public partial class DOS
 
 			action();
 		}
+		catch (Break) when (_enableBreak)
+		{
+			throw;
+		}
 		catch (Exception e)
 		{
 			SetLastError(e);
@@ -276,6 +286,10 @@ public partial class DOS
 			ClearLastError();
 
 			return action();
+		}
+		catch (Break) when (_enableBreak)
+		{
+			throw;
 		}
 		catch (Exception e)
 		{
@@ -398,7 +412,7 @@ public partial class DOS
 			byte b = fileDescriptor.ReadByte();
 
 			if (_enableBreak && (fileHandle == StandardInput) && (b == 3))
-				throw new Break();
+				OnInternalBreak();
 			else if (b == 13)
 				fileDescriptor.Column = 0;
 			else

@@ -63,7 +63,7 @@ public class ConsoleFileDescriptor(DOS owner) : FileDescriptor("CON")
 
 			if ((evt != null) && !evt.IsEphemeral)
 			{
-				if (evt.IsNormalText)
+				if (evt.HasTextCharacter)
 					ReadBuffer.Push(unchecked((byte)evt.TextCharacter));
 				else
 				{
@@ -73,7 +73,7 @@ public class ConsoleFileDescriptor(DOS owner) : FileDescriptor("CON")
 
 				return;
 			}
-		} while (_blockingInput);
+		} while (_blockingInput || _machine.Keyboard.HasQueuedInput);
 
 		WouldHaveBlocked = true;
 	}
