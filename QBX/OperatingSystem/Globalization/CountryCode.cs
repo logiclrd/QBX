@@ -1,7 +1,7 @@
 namespace QBX.OperatingSystem.Globalization;
 
 // Most of these are numerically just international telephone dialing codes.
-public enum CountryCode
+public enum CountryCode : ushort
 {
 	[CultureName("en-US")] UnitedStates            =   1,
 	[CultureName("fr-CA")] CanadianFrench          =   2,
@@ -15,7 +15,7 @@ public enum CountryCode
 	[CultureName("fr-FR")] France                  =  33,
 	[CultureName("es-ES")] Spain                   =  34,
 	[CultureName("hu-HU")] Hungary                 =  36,
-	[CultureName("Lt-sr")] SerbiaYugoslavia        =  38,
+	[CultureName("sr-SP")] SerbiaYugoslavia        =  38,
 	[CultureName("it-IT")] Italy                   =  39,
 	[CultureName("ro-RO")] Romania                 =  40,
 	[CultureName("fr-CH")] Switzerland             =  41,

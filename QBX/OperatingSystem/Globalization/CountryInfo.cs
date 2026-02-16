@@ -9,6 +9,8 @@ namespace QBX.OperatingSystem.Globalization;
 
 public class CountryInfo
 {
+	public const int Size = 34;
+
 	public DateFormat DateFormat;
 	public StringValue CurrencySymbol = StringValue.CreateFixedLength(5);
 	public StringValue ThousandsSeparator = StringValue.CreateFixedLength(2);
@@ -22,7 +24,7 @@ public class CountryInfo
 	public StringValue DataSeparator = StringValue.CreateFixedLength(2);
 	public byte[] Reserved = new byte[10];
 
-	public void Import(CultureInfo cultureInfo)
+	public virtual void Import(CultureInfo cultureInfo)
 	{
 		switch (cultureInfo.DateTimeFormat.ShortDatePattern[0])
 		{
@@ -45,7 +47,7 @@ public class CountryInfo
 		DataSeparator.Set(cultureInfo.TextInfo.ListSeparator);
 	}
 
-	public void Serialize(IMemory memory, int address)
+	public virtual void Serialize(IMemory memory, int address)
 	{
 		var stream = new SystemMemoryStream(memory, address, 36);
 
@@ -66,7 +68,7 @@ public class CountryInfo
 		writer.Write(Reserved);
 	}
 
-	public void Deserialize(IMemory memory, int address)
+	public virtual void Deserialize(IMemory memory, int address)
 	{
 		var stream = new SystemMemoryStream(memory, address, 36);
 

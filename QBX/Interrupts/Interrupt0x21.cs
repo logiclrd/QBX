@@ -113,6 +113,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		Function5F = 0x5F, // network operations -- not supported
 		TrueName = 0x60, // undocumented
 		GetCurrentPSPAddress = 0x62,
+		Function65 = 0x65,
 	}
 
 	public enum Function33 : byte
@@ -209,6 +210,11 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		GetMachineName = 0x00,
 		SetPrinterSetup = 0x02,
 		GetPrinterSetup = 0x03,
+	}
+
+	public enum Function65 : byte
+	{
+		GetExtendedCountryInformation = 0x01,
 	}
 
 	public override Registers Execute(Registers input)
@@ -2173,6 +2179,64 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 					break;
 				}
+				case Function.Function65:
+				{
+					var subfunction = (Function65)al;
+
+					switch (subfunction)
+					{
+						case Function65.GetExtendedCountryInformation:
+						{
+							int bufferAddress = inputEx.ES * 0x10 + input.DI;
+
+							int codePage = input.BX;
+
+							CountryCode countryCode = (input.DX == 0xFFFF)
+								? machine.DOS.CurrentCulture.ToCountryCode()
+								: (CountryCode)input.DX;
+
+							int bufferSize = input.CX;
+
+							var countryInfo = new ExtendedCountryInfo();
+
+							var cultureInfo = (input.BX == 0xFFFF)
+								? machine.DOS.CurrentCulture
+								: CultureUtility.GetCultureInfoForCodePageAndCountry(codePage, countryCode);
+
+							if (cultureInfo == null)
+								machine.DOS.SetLastError(DOSError.FileNotFound);
+							else if (bufferSize < ExtendedCountryInfo.Size)
+								machine.DOS.SetLastError(DOSError.InvalidFunction);
+							else
+							{
+								machine.DOS.TranslateError(() =>
+								{
+									countryInfo.Import(machine.DOS.CurrentCulture);
+									countryInfo.Serialize(machine.MemoryBus, bufferAddress);
+								});
+							}
+
+							if (machine.DOS.LastError != DOSError.None)
+							{
+								result.FLAGS |= Flags.Carry;
+								result.AX = (ushort)machine.DOS.LastError;
+							}
+
+							break;
+						}
+						default:
+						{
+							machine.DOS.SetLastError(DOSError.InvalidFunction);
+
+							result.FLAGS |= Flags.Carry;
+							result.AX = (ushort)machine.DOS.LastError;
+
+							break;
+						}
+					}
+
+					break;
+				}
 			}
 
 			return result;
@@ -2182,10 +2246,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	/*
 TODO:
 
-Int 21/AH=60h - DOS 3.0+ - TRUENAME - CANONICALIZE FILENAME OR PATH
-Int 21/AH=62h - DOS 3.0+ - GET CURRENT PSP ADDRESS
-Int 21/AX=6500h - Windows95 (OSR2) - SET GENERAL INTERNATIONALIZATION INFO
-Int 21/AH=65h - DOS 3.3+ - GET EXTENDED COUNTRY INFORMATION
 Int 21/AH=65h - DOS 4.0+ - COUNTRY-DEPENDENT CHARACTER CAPITALIZATION
 Int 21/AX=6523h - DOS 4.0+ - DETERMINE IF CHARACTER REPRESENTS YES/NO RESPONSE
 Int 21/AX=6601h - DOS 3.3+ - GET GLOBAL CODE PAGE TABLE
