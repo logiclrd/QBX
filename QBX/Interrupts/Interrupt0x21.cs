@@ -121,6 +121,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		SetMaximumHandleCount = 0x67,
 		CommitFile = 0x68,
 		CommitFile2 = 0x6A,
+		NullFunction = 0x6B,
 	}
 
 	public enum Function33 : byte
@@ -2472,6 +2473,11 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 					break;
 				}
+				case Function.NullFunction:
+				{
+					result.AX &= 0xFF00;
+					break;
+				}
 			}
 
 			return result;
@@ -2481,9 +2487,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	/*
 TODO:
 
-Int 21/AH=69h - DOS 4.0+ internal - GET/SET DISK SERIAL NUMBER
-Int 21/AH=6Ah - DOS 4.0+ - COMMIT FILE
-Int 21/AH=6Bh - DOS 5+ - NULL FUNCTION
 Int 21/AX=6C00h - DOS 4.0+ - EXTENDED OPEN/CREATE
 Int 21/AH=6Dh - DOS 5+ ROM - FIND FIRST ROM PROGRAM
 Int 21/AH=6Eh - DOS 5+ ROM - FIND NEXT ROM PROGRAM
