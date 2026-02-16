@@ -345,7 +345,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 					while (true)
 					{
-						byte b = machine.SystemMemory[o++];
+						byte b = machine.MemoryBus[o++];
 
 						if (b == (byte)'$')
 							break;
