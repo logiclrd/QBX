@@ -19,6 +19,11 @@ public class CharacterTables
 		return GetCollateSequenceTable(culture.TextInfo.OEMCodePage, culture.Name);
 	}
 
+	public static byte[] GetDoubleByteCharacterSet(CultureInfo culture)
+	{
+		return GetDoubleByteCharacterSet(culture.TextInfo.OEMCodePage, culture.Name);
+	}
+
 	public static byte[] GetUppercaseTable(int codePage, string cultureName)
 	{
 		string[] cultureNameParts = cultureName.ToLowerInvariant().Split('-');
@@ -256,6 +261,19 @@ public class CharacterTables
 		}
 
 		return CollateSequence.General437;
+	}
+
+	public static byte[] GetDoubleByteCharacterSet(int codePage, string cultureName)
+	{
+		switch (codePage)
+		{
+			case 932: return DoubleByteCharacterSet.Japan932;
+			case 934: return DoubleByteCharacterSet.Korea934;
+			case 936: return DoubleByteCharacterSet.China936;
+			case 938: return DoubleByteCharacterSet.Taiwan938;
+		}
+
+		return DoubleByteCharacterSet.Empty;
 	}
 
 	class Uppercase
@@ -1801,5 +1819,31 @@ public class CharacterTables
 				240,241,242,243,244,245,246,247, // sp32
 				248,249,250,251,252,253,254,255, // overcircle
 			];
+	}
+
+	class DoubleByteCharacterSet
+	{
+		public static readonly byte[] Empty = [0, 0];
+
+		public static readonly byte[] Japan932 =
+			[
+				0x81, 0x9F,
+				0xE0, 0xFC,
+				0, 0
+			];
+
+		public static readonly byte[] Korea934 =
+			[
+				0x81, 0xBF,
+				0, 0
+			];
+
+		public static readonly byte[] Taiwan938 =
+			[
+				0x81, 0xFC,
+				0, 0
+			];
+
+		public static readonly byte[] China936 = Taiwan938;
 	}
 }

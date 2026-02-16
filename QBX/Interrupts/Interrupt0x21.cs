@@ -222,6 +222,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		GetFilenameUppercaseTable = 0x04,
 		GetFilenameCharacterTable = 0x05,
 		GetCollateSequenceTable = 0x06,
+		GetDoubleByteCharacterSet = 0x07,
 	}
 
 	public override Registers Execute(Registers input)
@@ -2235,6 +2236,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 						case Function65.GetFilenameUppercaseTable:
 						case Function65.GetFilenameCharacterTable:
 						case Function65.GetCollateSequenceTable:
+						case Function65.GetDoubleByteCharacterSet:
 						{
 							int bufferAddress = inputEx.ES * 0x10 + input.DI;
 
@@ -2265,6 +2267,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 											Function65.GetFilenameUppercaseTable => CharacterTables.GetFilenameUppercaseTable(cultureInfo),
 											Function65.GetFilenameCharacterTable => FileCharTable.Default.ToByteArray(),
 											Function65.GetCollateSequenceTable => CharacterTables.GetCollateSequenceTable(cultureInfo),
+											Function65.GetDoubleByteCharacterSet => CharacterTables.GetDoubleByteCharacterSet(cultureInfo),
 
 											_ => throw new Exception("Internal error")
 										};
