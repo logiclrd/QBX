@@ -117,6 +117,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		TrueName = 0x60, // undocumented
 		GetCurrentPSPAddress = 0x62,
 		Function65 = 0x65,
+		Function66 = 0x66,
 	}
 
 	public enum Function33 : byte
@@ -226,6 +227,12 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		ConvertCharacter = 0x20,
 		ConvertString = 0x21,
 		ConvertASCIIZString = 0x22,
+	}
+
+	public enum Function66 : byte
+	{
+		GetGlobalCodePage = 0x01,
+		SetGlobalCodePage = 0x02,
 	}
 
 	public override Registers Execute(Registers input)
@@ -2371,6 +2378,62 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 					break;
 				}
+				case Function.Function66:
+				{
+					var subfunction = (Function66)al;
+
+					switch (subfunction)
+					{
+						case Function66.GetGlobalCodePage:
+						{
+							ushort codePage = (ushort)machine.DOS.CurrentCulture.TextInfo.OEMCodePage;
+
+							result.BX = codePage;
+							result.DX = codePage;
+
+							break;
+						}
+						case Function66.SetGlobalCodePage:
+						{
+							int codePage = input.BX;
+
+							var country = machine.DOS.CurrentCulture.ToCountryCode();
+
+							try
+							{
+								var newCulture = CultureUtility.GetCultureInfoForCodePageAndCountry(codePage, country);
+
+								if (newCulture != null)
+									machine.DOS.CurrentCulture = newCulture;
+								else
+									machine.DOS.SetLastError(DOSError.FileNotFound);
+							}
+							catch
+							{
+								machine.DOS.SetLastError(DOSError.FileNotFound);
+							}
+
+							if (machine.DOS.LastError != DOSError.None)
+							{
+								result.FLAGS |= Flags.Carry;
+								result.AX = (ushort)machine.DOS.LastError;
+							}
+
+							break;
+						}
+						default:
+						{
+							machine.DOS.SetLastError(DOSError.InvalidFunction);
+
+							result.FLAGS |= Flags.Carry;
+							result.AX = (ushort)machine.DOS.LastError;
+
+							break;
+						}
+					}
+
+					break;
+				}
 			}
 
 			return result;
@@ -2380,10 +2443,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	/*
 TODO:
 
-Int 21/AH=65h - DOS 4.0+ - COUNTRY-DEPENDENT CHARACTER CAPITALIZATION
-Int 21/AX=6523h - DOS 4.0+ - DETERMINE IF CHARACTER REPRESENTS YES/NO RESPONSE
-Int 21/AX=6601h - DOS 3.3+ - GET GLOBAL CODE PAGE TABLE
-Int 21/AX=6602h - DOS 3.3+ - SET GLOBAL CODE PAGE TABLE
 Int 21/AH=67h - DOS 3.3+ - SET HANDLE COUNT
 Int 21/AH=68h - DOS 3.3+ - FFLUSH - COMMIT FILE
 Int 21/AH=69h - DOS 4.0+ internal - GET/SET DISK SERIAL NUMBER
