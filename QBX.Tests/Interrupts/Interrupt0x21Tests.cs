@@ -2,7 +2,9 @@
 using QBX.Firmware.Fonts;
 using QBX.Hardware;
 using QBX.Interrupts;
+using QBX.OperatingSystem.FileStructures;
 using QBX.OperatingSystem.Memory;
+using QBX.Tests.Utility;
 
 using SDL3;
 
@@ -580,10 +582,62 @@ public class Interrupt0x21Tests
 		machine.DOS.LastError.Should().Be(OperatingSystem.DOSError.None);
 	}
 
+	[Test]
+	public void ResetDrive_should_flush_write_buffers()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			const string TestFileName = "TESTFILE.TXT";
+
+			int fileHandle = machine.DOS.OpenFile(
+				TestFileName,
+				OperatingSystem.FileStructures.FileMode.Create,
+				OpenMode.Access_ReadWrite | OpenMode.Share_DenyNone);
+
+			try
+			{
+				string testFileActualPath = machine.DOS.Files[fileHandle]!.Path;
+
+				byte[] testData = s_cp437.GetBytes("test");
+
+				machine.DOS.Write(
+					fileHandle,
+					testData,
+					out _);
+
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new Registers();
+
+				rin.AX = (int)Interrupt0x21.Function.ResetDrive << 8;
+
+				// Act
+				byte[] contentBefore = FileUtility.ReadAllBytes(testFileActualPath);
+
+				sut.Execute(rin);
+
+				byte[] contentAfter = FileUtility.ReadAllBytes(testFileActualPath);
+
+				// Assert
+				contentBefore.Should().BeEmpty();
+				contentAfter.Should().BeEquivalentTo(testData);
+				machine.DOS.LastError.Should().Be(OperatingSystem.DOSError.None);
+			}
+			finally
+			{
+				machine.DOS.CloseAllFiles(keepStandardHandles: false);
+			}
+		}
+	}
+
 	/*
 	public enum Function : byte
 	{
-		ResetDrive = 0x0D, // does not reset any drives, but does flush all write buffers
 		SetDefaultDrive = 0x0E,
 		OpenFileWithFCB = 0x0F,
 		CloseFileWithFCB = 0x10,

@@ -141,12 +141,15 @@ public abstract class FileDescriptor
 				firstUsed = 0;
 			}
 
-			numWritten = WriteCore(WriteBuffer.GetBufferSpan(firstUsed, WriteBuffer.NumUsed));
+			if (WriteBuffer.NumUsed > 0)
+			{
+				numWritten = WriteCore(WriteBuffer.GetBufferSpan(firstUsed, WriteBuffer.NumUsed));
 
-			if (numWritten <= 0)
-				throw new Exception("Write failed"); // TODO: proper type
+				if (numWritten <= 0)
+					throw new Exception("Write failed"); // TODO: proper type
 
-			WriteBuffer.Free(numWritten);
+				WriteBuffer.Free(numWritten);
+			}
 
 			if (flushToDisk)
 				FlushToDisk();

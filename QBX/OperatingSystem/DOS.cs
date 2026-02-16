@@ -377,7 +377,7 @@ public partial class DOS
 		TranslateError(() =>
 		{
 			foreach (var file in Files.OfType<FileDescriptor>())
-				file.FlushWriteBuffer();
+				file.FlushWriteBuffer(flushToDisk: true);
 		});
 	}
 
@@ -1013,14 +1013,32 @@ public partial class DOS
 
 			var fileHandle = TranslateError(() =>
 			{
+				bool needLateMap = false;
+
+				string? containerPath = Path.GetDirectoryName(fileName);
+
+				if (string.IsNullOrEmpty(containerPath))
+					containerPath = Environment.CurrentDirectory;
+				else
+					containerPath = Path.GetFullPath(containerPath);
+
+				fileName = Path.Combine(
+					containerPath ?? "",
+					Path.GetFileName(fileName));
+
 				fileName = ShortFileNames.Unmap(fileName);
 
 				if (!ShortFileNames.TryMap(fileName, out var shortPath))
-					return -1;
+				{
+					if (!File.Exists(fileName))
+						needLateMap = true;
+					else
+						return -1;
+				}
 
 				var systemFileMode = openMode.ToSystemFileMode();
 				var systemFileAccess = default(SystemFileAccess);
-				var systemFileShare = default(SystemFileShare);
+				var systemFileShare = SystemFileShare.ReadWrite;
 
 				switch (accessModes & OpenMode.AccessMask)
 				{
@@ -1058,6 +1076,12 @@ public partial class DOS
 
 						if (attributes != 0)
 							File.SetAttributes(fileName, attributes.ToSystemFileAttributes());
+					}
+
+					if (needLateMap)
+					{
+						if (!ShortFileNames.TryMap(fileName, out shortPath))
+							return -1;
 					}
 
 					return AllocateFileHandleForOpenFile(shortPath, stream);
