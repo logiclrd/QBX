@@ -2,6 +2,7 @@
 using QBX.Firmware.Fonts;
 using QBX.Hardware;
 using QBX.Interrupts;
+using QBX.OperatingSystem.Memory;
 
 using SDL3;
 
@@ -11,6 +12,8 @@ namespace QBX.Tests.Interrupts;
 
 public class Interrupt0x21Tests
 {
+	static CP437Encoding s_cp437 = new CP437Encoding(ControlCharacterInterpretation.Semantic);
+
 	[Test]
 	public void TerminateProgram_should_mark_DOS_as_terminated()
 	{
@@ -318,11 +321,149 @@ public class Interrupt0x21Tests
 		DOSReadTest(Interrupt0x21.Function.ReadKeyboardWithoutEcho, prequeueEvent: false, inputType: DOSReadInputType.CtrlBreak, shouldBreak: true);
 	}
 
+	[Test]
+	public void DisplayString_should_send_string_to_output()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var captureBuffer = new StringValue();
+
+		var capture = new CapturingTextLibrary(machine, captureBuffer);
+
+		machine.VideoFirmware.SetTestingVisualLibrary(capture);
+
+		string message = "QuickBASIC";
+
+		var messageWithTerminator = new StringValue(message + "$");
+
+		int messageAddress = machine.DOS.MemoryManager.AllocateMemory(messageWithTerminator.Length, machine.DOS.MemoryManager.RootPSPSegment);
+
+		messageWithTerminator.AsSpan().CopyTo(machine.SystemMemory.AsSpan().Slice(messageAddress));
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.DisplayString << 8;
+		rin.DS = (ushort)(messageAddress / MemoryManager.ParagraphSize);
+		rin.DX = (ushort)(messageAddress - rin.DS * MemoryManager.ParagraphSize);
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		captureBuffer.ToString().Should().Be(message);
+		machine.DOS.LastError.Should().Be(OperatingSystem.DOSError.None);
+	}
+
+	[Test]
+	public void BufferedKeyboardInput_should_return_on_Enter()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var captureBuffer = new StringValue();
+
+		var capture = new CapturingTextLibrary(machine, captureBuffer);
+
+		machine.VideoFirmware.SetTestingVisualLibrary(capture);
+
+		string message = "Quick";
+
+		string messageWithCarriageReturn = message + "\r";
+
+		SimulateTyping(messageWithCarriageReturn, ControlCharacterHandling.SemanticKey, machine);
+
+		byte bufferLength = 8;
+
+		int bufferAddress = machine.DOS.MemoryManager.AllocateMemory(bufferLength + 2, machine.DOS.MemoryManager.RootPSPSegment);
+
+		var bufferHeader = machine.SystemMemory.AsSpan().Slice(bufferAddress, 2);
+		var bufferData = machine.SystemMemory.AsSpan().Slice(bufferAddress + 2, bufferLength);
+
+		bufferHeader[0] = bufferLength;
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.BufferedKeyboardInput << 8;
+		rin.DS = (ushort)(bufferAddress / MemoryManager.ParagraphSize);
+		rin.DX = (ushort)(bufferAddress - rin.DS * MemoryManager.ParagraphSize);
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		captureBuffer.ToString().Should().Be(messageWithCarriageReturn);
+		bufferHeader[0].Should().Be(bufferLength);
+		bufferHeader[1].Should().Be((byte)message.Length);
+
+		string bufferContent = s_cp437.GetString(bufferData.Slice(0, message.Length));
+
+		bufferContent.Should().Be(message);
+
+		machine.DOS.LastError.Should().Be(OperatingSystem.DOSError.None);
+	}
+
+	[Test]
+	public void BufferedKeyboardInput_should_emit_bell_and_ignore_extra_input_when_too_long()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var captureBuffer = new StringValue();
+
+		var capture = new CapturingTextLibrary(machine, captureBuffer);
+
+		machine.VideoFirmware.SetTestingVisualLibrary(capture);
+
+		string message = "Quick";
+
+		string messageWithCarriageReturn = message + "\r";
+
+		SimulateTyping(messageWithCarriageReturn, ControlCharacterHandling.SemanticKey, machine);
+
+		byte bufferLength = 4;
+
+		int bufferAddress = machine.DOS.MemoryManager.AllocateMemory(bufferLength + 2, machine.DOS.MemoryManager.RootPSPSegment);
+
+		var bufferHeader = machine.SystemMemory.AsSpan().Slice(bufferAddress, 2);
+		var bufferData = machine.SystemMemory.AsSpan().Slice(bufferAddress + 2, bufferLength);
+
+		bufferHeader[0] = bufferLength;
+
+		string truncatedMessage = message.Substring(0, bufferLength - 1);
+		string truncatedMessageWithAlerts = truncatedMessage + new string((char)7, message.Length - (bufferLength - 1));
+		string truncatedMessageWithAlertsAndCarriageReturn = truncatedMessageWithAlerts + '\r';
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.BufferedKeyboardInput << 8;
+		rin.DS = (ushort)(bufferAddress / MemoryManager.ParagraphSize);
+		rin.DX = (ushort)(bufferAddress - rin.DS * MemoryManager.ParagraphSize);
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		captureBuffer.ToString().Should().Be(truncatedMessageWithAlertsAndCarriageReturn);
+		bufferHeader[0].Should().Be(bufferLength);
+		bufferHeader[1].Should().Be((byte)truncatedMessage.Length);
+
+		string bufferContent = s_cp437.GetString(bufferData.Slice(0, bufferHeader[1]));
+
+		bufferContent.Should().Be(truncatedMessage);
+
+		machine.DOS.LastError.Should().Be(OperatingSystem.DOSError.None);
+	}
+
 	/*
 	public enum Function : byte
 	{
-		DisplayString = 0x09,
-		BufferedKeyboardInput = 0x0A,
 		CheckKeyboardStatus = 0x0B,
 		FlushBufferReadKeyboard = 0x0C,
 		ResetDrive = 0x0D, // does not reset any drives, but does flush all write buffers

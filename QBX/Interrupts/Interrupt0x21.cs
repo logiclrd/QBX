@@ -362,7 +362,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					int o = inputEx.DS * 0x10 + result.DX;
 
-					int numBytesDesired = machine.SystemMemory[o];
+					int numBytesDesired = machine.MemoryBus[o];
 
 					o += 2;
 
@@ -374,20 +374,21 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 						if ((numBytesRead + 1 == numBytesDesired) && (b != 13))
 						{
-							machine.DOS.Beep();
+							// Emit BEL character.
+							machine.DOS.WriteByte(DOS.StandardOutput, 7, out _);
 							continue;
 						}
 
 						machine.DOS.WriteByte(DOS.StandardOutput, b, out _);
 
-						machine.SystemMemory[o + numBytesRead] = b;
+						machine.MemoryBus[o + numBytesRead] = b;
 						numBytesRead++;
 
 						if (b == 13)
 							break;
 					}
 
-					machine.SystemMemory[o - 1] = (byte)(numBytesRead - 1);
+					machine.MemoryBus[o - 1] = (byte)(numBytesRead - 1);
 
 					break;
 				}
