@@ -219,6 +219,8 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	{
 		GetExtendedCountryInformation = 0x01,
 		GetUppercaseTable = 0x02,
+		GetFilenameUppercaseTable = 0x04,
+		GetFilenameCharacterTable = 0x05,
 	}
 
 	public override Registers Execute(Registers input)
@@ -2229,6 +2231,8 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 							break;
 						}
 						case Function65.GetUppercaseTable:
+						case Function65.GetFilenameUppercaseTable:
+						case Function65.GetFilenameCharacterTable:
 						{
 							int bufferAddress = inputEx.ES * 0x10 + input.DI;
 
@@ -2252,7 +2256,15 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 							{
 								machine.DOS.TranslateError(() =>
 								{
-									var table = UpperCaseTables.GetTable(cultureInfo);
+									var table =
+										subfunction switch
+										{
+											Function65.GetUppercaseTable => UpperCaseTables.GetTable(cultureInfo),
+											Function65.GetFilenameUppercaseTable => UpperCaseTables.GetFilenamesTable(cultureInfo),
+											Function65.GetFilenameCharacterTable => FileCharTable.Default.ToByteArray(),
+
+											_ => throw new Exception("Internal error")
+										};
 
 									var presentedTableAddress = machine.DOS.PresentData(table);
 
