@@ -23,11 +23,12 @@ public class Interrupt0x21Tests
 
 		Assume.That(machine.DOS.IsTerminated == false);
 
+		// Act & Assert
 		var action = () => sut.Execute(rin);
 
-		// Act & Assert
 		action.Should().Throw<TerminatedException>();
 		machine.DOS.IsTerminated.Should().BeTrue();
+		machine.DOS.LastError.Should().Be(OperatingSystem.DOSError.None);
 	}
 
 	[Test]
@@ -100,14 +101,101 @@ public class Interrupt0x21Tests
 		eventQueuedOnReturn.Should().BeTrue();
 		captureBuffer.ToString().Should().Be("q");
 		characterRead.Should().Be((byte)'q');
+		machine.DOS.LastError.Should().Be(OperatingSystem.DOSError.None);
 	}
+
+	[Test]
+	public void DisplayCharacter_should_send_character_to_display()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var captureBuffer = new StringValue();
+
+		var capture = new CapturingTextLibrary(machine, captureBuffer);
+
+		machine.VideoFirmware.SetTestingVisualLibrary(capture);
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new Registers();
+
+		rin.AX = (int)Interrupt0x21.Function.DisplayCharacter << 8;
+		rin.DX = 'U';
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		captureBuffer.ToString().Should().Be("U");
+		machine.DOS.LastError.Should().Be(OperatingSystem.DOSError.None);
+	}
+
+	[Test]
+	public void AuxiliaryInput_should_not_hang()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new Registers();
+
+		rin.AX = (int)Interrupt0x21.Function.AuxiliaryInput << 8;
+
+		Registers rout;
+
+		// Act & Assert
+		Action action = () => rout = sut.Execute(rin);
+
+		action.ExecutionTime().Should().BeLessThan(TimeSpan.FromSeconds(0.25));
+	}
+
+	[Test]
+	public void AuxiliaryOutput_should_not_hang()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new Registers();
+
+		rin.AX = (int)Interrupt0x21.Function.AuxiliaryOutput << 8;
+		rin.DX = 'I';
+
+		Registers rout;
+
+		// Act & Assert
+		Action action = () => rout = sut.Execute(rin);
+
+		action.ExecutionTime().Should().BeLessThan(TimeSpan.FromSeconds(0.25));
+	}
+
+	[Test]
+	public void PrintCharacter_should_not_hang()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new Registers();
+
+		rin.AX = (int)Interrupt0x21.Function.PrintCharacter << 8;
+		rin.DX = 'c';
+
+		Registers rout;
+
+		// Act & Assert
+		Action action = () => rout = sut.Execute(rin);
+
+		action.ExecutionTime().Should().BeLessThan(TimeSpan.FromSeconds(0.25));
+	}
+
 	/*
 	public enum Function : byte
 	{
-		DisplayCharacter = 0x02,
-		AuxiliaryInput = 0x03,
-		AuxiliaryOutput = 0x04,
-		PrintCharacter = 0x05,
 		DirectConsoleIO = 0x06,
 		DirectConsoleInput = 0x07,
 		ReadKeyboardWithoutEcho = 0x08,
