@@ -122,6 +122,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		CommitFile = 0x68,
 		CommitFile2 = 0x6A,
 		NullFunction = 0x6B,
+		ExtendedOpenCreate = 0x6C,
 	}
 
 	public enum Function33 : byte
@@ -1156,7 +1157,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 						break;
 					}
 
-					var accessModes = (FileAccess)(input.AX & 0xFF);
+					var accessModes = (OpenMode)(input.AX & 0xFF);
 
 					int fileHandle = machine.DOS.OpenFile(relativePath.ToString(), FileMode.Open, accessModes);
 
@@ -2058,7 +2059,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 					var attributes = (FileAttributes)input.CX;
 
-					int fileHandle = machine.DOS.OpenFile(relativePath.ToString(), FileMode.CreateNew, FileAccess.Access_ReadWrite | FileAccess.Share_Compatibility);
+					int fileHandle = machine.DOS.OpenFile(relativePath.ToString(), FileMode.CreateNew, OpenMode.Access_ReadWrite | OpenMode.Share_Compatibility);
 
 					result.AX = (ushort)fileHandle;
 
@@ -2476,6 +2477,65 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				case Function.NullFunction:
 				{
 					result.AX &= 0xFF00;
+					break;
+				}
+				case Function.ExtendedOpenCreate:
+				{
+					int address = inputEx.DS * 0x10 + input.SI;
+
+					var relativePath = machine.DOS.ReadStringZ(machine.MemoryBus, address);
+
+					if (machine.DOS.LastError != DOSError.None)
+					{
+						result.FLAGS |= Flags.Carry;
+						result.AX = (ushort)machine.DOS.LastError;
+						break;
+					}
+
+					var openMode = (OpenMode)input.BX;
+
+					var attributes = (FileAttributes)input.CX;
+
+					var openAction = (OpenAction)input.DX;
+
+					var fileMode = default(FileMode);
+
+					if ((openAction & OpenAction.Truncate) != 0)
+					{
+						if ((openAction & OpenAction.Create) != 0)
+							fileMode = FileMode.Create; // create if doesn't exist, truncate if does
+						else
+							fileMode = FileMode.Truncate; // error if doesn't exist, truncate if does
+					}
+					else if ((openAction & OpenAction.Open) != 0)
+					{
+						if ((openAction & OpenAction.Create) != 0)
+							fileMode = FileMode.OpenOrCreate; // create if doesn't exist, open if does
+						else
+							fileMode = FileMode.Open; // error if doesn't exist, open if does
+					}
+					else
+					{
+						if ((openAction & OpenAction.Create) != 0)
+							fileMode = FileMode.CreateNew; // create if doesn't exist, error if does
+						else
+							machine.DOS.SetLastError(DOSError.InvalidParameter); // no action specified
+					}
+
+					if (machine.DOS.LastError == DOSError.None)
+					{
+						int fileHandle = machine.DOS.OpenFile(relativePath.ToString(), fileMode, openMode, attributes, out var actionTaken);
+
+						result.AX = (ushort)fileHandle;
+						result.CX = (ushort)actionTaken;
+					}
+
+					if (machine.DOS.LastError != DOSError.None)
+					{
+						result.FLAGS |= Flags.Carry;
+						result.AX = (ushort)machine.DOS.LastError;
+					}
+
 					break;
 				}
 			}

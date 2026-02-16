@@ -19,7 +19,7 @@ using QBX.OperatingSystem.Memory;
 using QBX.OperatingSystem.Processes;
 
 using FileMode = QBX.OperatingSystem.FileStructures.FileMode;
-using FileAccess = QBX.OperatingSystem.FileStructures.FileAccess;
+using OpenMode = QBX.OperatingSystem.FileStructures.OpenMode;
 using FileAttributes = QBX.OperatingSystem.FileStructures.FileAttributes;
 
 using SystemFileMode = System.IO.FileMode;
@@ -985,11 +985,16 @@ public partial class DOS
 		});
 	}
 
-	public int OpenFile(string fileName, FileMode openMode, FileAccess accessModes)
+	public int OpenFile(string fileName, FileMode openMode, OpenMode accessModes, FileAttributes attributes = default)
+		=> OpenFile(fileName, openMode, accessModes, attributes, out _);
+
+	public int OpenFile(string fileName, FileMode openMode, OpenMode accessModes, FileAttributes attributes, out OpenActionTaken actionTaken)
 	{
 		try
 		{
-			return TranslateError(() =>
+			var actionTakenValue = OpenActionTaken.Opened;
+
+			var fileHandle = TranslateError(() =>
 			{
 				fileName = ShortFileNames.Unmap(fileName);
 
@@ -1000,21 +1005,21 @@ public partial class DOS
 				var systemFileAccess = default(SystemFileAccess);
 				var systemFileShare = default(SystemFileShare);
 
-				switch (accessModes & FileAccess.AccessMask)
+				switch (accessModes & OpenMode.AccessMask)
 				{
-					case FileAccess.Access_ReadWrite: systemFileAccess = SystemFileAccess.ReadWrite; break;
-					case FileAccess.Access_WriteOnly: systemFileAccess = SystemFileAccess.Read; break;
-					case FileAccess.Access_ReadOnly: systemFileAccess = SystemFileAccess.Write; break;
+					case OpenMode.Access_ReadWrite: systemFileAccess = SystemFileAccess.ReadWrite; break;
+					case OpenMode.Access_WriteOnly: systemFileAccess = SystemFileAccess.Read; break;
+					case OpenMode.Access_ReadOnly: systemFileAccess = SystemFileAccess.Write; break;
 				}
 
-				switch (accessModes & FileAccess.ShareMask)
+				switch (accessModes & OpenMode.ShareMask)
 				{
-					case FileAccess.Share_DenyReadWrite: systemFileShare = SystemFileShare.None; break;
-					case FileAccess.Share_DenyRead: systemFileShare = SystemFileShare.Write; break;
-					case FileAccess.Share_DenyWrite: systemFileShare = SystemFileShare.Read; break;
+					case OpenMode.Share_DenyReadWrite: systemFileShare = SystemFileShare.None; break;
+					case OpenMode.Share_DenyRead: systemFileShare = SystemFileShare.Write; break;
+					case OpenMode.Share_DenyWrite: systemFileShare = SystemFileShare.Read; break;
 				}
 
-				if ((accessModes & FileAccess.Flags_NoInherit) == 0)
+				if ((accessModes & OpenMode.Flags_NoInherit) == 0)
 					systemFileShare |= SystemFileShare.Inheritable;
 
 				if (Devices.TryGetDeviceByName(Path.GetFileNameWithoutExtension(fileName), out var device))
@@ -1023,12 +1028,33 @@ public partial class DOS
 				{
 					var stream = new FileStream(fileName, openMode.ToSystemFileMode(), systemFileAccess, systemFileShare);
 
+					const int AlreadyExists = 183;
+
+					if (Marshal.GetLastWin32Error() == AlreadyExists)
+					{
+						if (openMode == FileMode.Create)
+							actionTakenValue = OpenActionTaken.Replaced;
+					}
+					else if ((openMode == FileMode.Create) || (openMode == FileMode.CreateNew))
+					{
+						actionTakenValue = OpenActionTaken.Created;
+
+						if (attributes != 0)
+							File.SetAttributes(fileName, attributes.ToSystemFileAttributes());
+					}
+
 					return AllocateFileHandleForOpenFile(shortPath, stream);
 				}
 			});
+
+			actionTaken = actionTakenValue;
+
+			return fileHandle;
 		}
 		catch
 		{
+			actionTaken = default;
+
 			return -1;
 		}
 	}
@@ -1067,7 +1093,7 @@ public partial class DOS
 			{
 				string probeFileName = GetTemporaryFileName();
 
-				int handle = OpenFile(Path.Combine(directoryPath, probeFileName), FileMode.CreateNew, FileAccess.Access_ReadWrite | FileAccess.Share_Compatibility);
+				int handle = OpenFile(Path.Combine(directoryPath, probeFileName), FileMode.CreateNew, OpenMode.Access_ReadWrite | OpenMode.Share_Compatibility);
 
 				if (LastError == DOSError.FileExists)
 				{
