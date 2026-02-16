@@ -2259,8 +2259,8 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 									var table =
 										subfunction switch
 										{
-											Function65.GetUppercaseTable => UpperCaseTables.GetTable(cultureInfo),
-											Function65.GetFilenameUppercaseTable => UpperCaseTables.GetFilenamesTable(cultureInfo),
+											Function65.GetUppercaseTable => CharacterTables.GetUppercaseTable(cultureInfo),
+											Function65.GetFilenameUppercaseTable => CharacterTables.GetFilenameUppercaseTable(cultureInfo),
 											Function65.GetFilenameCharacterTable => FileCharTable.Default.ToByteArray(),
 
 											_ => throw new Exception("Internal error")

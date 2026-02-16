@@ -645,7 +645,7 @@ public partial class DOS
 
 	public StringValue GetCanonicalName(StringValue inputPath)
 	{
-		var upperCaseTable = UpperCaseTables.GetFilenamesTable(CurrentCulture);
+		var upperCaseTable = CharacterTables.GetFilenameUppercaseTable(CurrentCulture);
 
 		byte ToUpper(byte b)
 		{
