@@ -461,11 +461,128 @@ public class Interrupt0x21Tests
 		machine.DOS.LastError.Should().Be(OperatingSystem.DOSError.None);
 	}
 
+	[Test]
+	public void CheckKeyboardStatus_should_report_not_ready_correctly()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var captureBuffer = new StringValue();
+
+		var capture = new CapturingTextLibrary(machine, captureBuffer);
+
+		machine.VideoFirmware.SetTestingVisualLibrary(capture);
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.CheckKeyboardStatus << 8;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		int al = rout.AX & 0xFF;
+
+		al.Should().Be(0);
+		machine.DOS.LastError.Should().Be(OperatingSystem.DOSError.None);
+	}
+
+	[Test]
+	public void CheckKeyboardStatus_should_report_ready_correctly()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var captureBuffer = new StringValue();
+
+		var capture = new CapturingTextLibrary(machine, captureBuffer);
+
+		machine.VideoFirmware.SetTestingVisualLibrary(capture);
+
+		SimulateTyping("Foo", default, machine);
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.CheckKeyboardStatus << 8;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		int al = rout.AX & 0xFF;
+
+		al.Should().Be(0xFF);
+		machine.DOS.LastError.Should().Be(OperatingSystem.DOSError.None);
+	}
+
+	[Test]
+	public void FlushBufferReadKeyboard_should_discard_existing_input()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var captureBuffer = new StringValue();
+
+		var capture = new CapturingTextLibrary(machine, captureBuffer);
+
+		machine.VideoFirmware.SetTestingVisualLibrary(capture);
+
+		SimulateTyping("ignore me", default, machine);
+
+		bool eventQueued = false;
+
+		SDL.Keymod modState = 0;
+
+		machine.Keyboard.GetModStateTestHook += () => modState;
+
+		byte expectedCharacterRead = (byte)'a';
+		string expectedOutput = "a";
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new Registers();
+
+		rin.AX = (int)Interrupt0x21.Function.FlushBufferReadKeyboard << 8; // main function in ah
+		rin.AX |= (int)Interrupt0x21.Function.ReadKeyboardWithEcho; // subfunction in al
+
+		var queueThread = new Thread(
+			() =>
+			{
+				Thread.Sleep(100);
+				SimulateTyping("a", default, machine);
+				eventQueued = true;
+			});
+
+		queueThread.IsBackground = true;
+		queueThread.Start();
+
+		Registers? rout = null;
+
+		// Act
+		Action action = () => rout = sut.Execute(rin);
+
+		action.ExecutionTime().Should().BeLessThan(TimeSpan.FromSeconds(0.25));
+
+		bool eventQueuedOnReturn = eventQueued;
+
+		// Assert
+		rout.Should().NotBeNull();
+
+		byte characterRead = (byte)(rout.AX & 0xFF);
+
+		eventQueuedOnReturn.Should().BeTrue();
+		captureBuffer.ToString().Should().Be(expectedOutput);
+		characterRead.Should().Be(expectedCharacterRead);
+		machine.DOS.LastError.Should().Be(OperatingSystem.DOSError.None);
+	}
+
 	/*
 	public enum Function : byte
 	{
-		CheckKeyboardStatus = 0x0B,
-		FlushBufferReadKeyboard = 0x0C,
 		ResetDrive = 0x0D, // does not reset any drives, but does flush all write buffers
 		SetDefaultDrive = 0x0E,
 		OpenFileWithFCB = 0x0F,
