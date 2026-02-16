@@ -120,6 +120,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		Function66 = 0x66,
 		SetMaximumHandleCount = 0x67,
 		CommitFile = 0x68,
+		CommitFile2 = 0x6A,
 	}
 
 	public enum Function33 : byte
@@ -2448,6 +2449,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 					break;
 				}
 				case Function.CommitFile:
+				case Function.CommitFile2:
 				{
 					int fileHandle = input.BX;
 
