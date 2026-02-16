@@ -119,6 +119,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		Function65 = 0x65,
 		Function66 = 0x66,
 		SetMaximumHandleCount = 0x67,
+		CommitFile = 0x68,
 	}
 
 	public enum Function33 : byte
@@ -1857,7 +1858,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 					machine.DOS.ClearLastError();
 
 					if ((fileHandle < 0) || (fileHandle >= machine.DOS.Files.Count)
-						|| (machine.DOS.Files[fileHandle] is not FileDescriptor fileDescriptor))
+					 || (machine.DOS.Files[fileHandle] is not FileDescriptor fileDescriptor))
 						machine.DOS.SetLastError(DOSError.InvalidHandle);
 					else if (fileDescriptor is not RegularFileDescriptor regularFileDescriptor)
 						machine.DOS.SetLastError(DOSError.InvalidFunction);
@@ -2446,6 +2447,29 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 					break;
 				}
+				case Function.CommitFile:
+				{
+					int fileHandle = input.BX;
+
+					if ((fileHandle < 0) || (fileHandle >= machine.DOS.Files.Count)
+					 || (machine.DOS.Files[fileHandle] is not FileDescriptor fileDescriptor))
+						machine.DOS.SetLastError(DOSError.InvalidHandle);
+					else
+					{
+						machine.DOS.TranslateError(() =>
+						{
+							fileDescriptor.FlushWriteBuffer(flushToDisk: true);
+						});
+					}
+
+					if (machine.DOS.LastError != DOSError.None)
+					{
+						result.FLAGS |= Flags.Carry;
+						result.AX = (ushort)machine.DOS.LastError;
+					}
+
+					break;
+				}
 			}
 
 			return result;
@@ -2455,8 +2479,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	/*
 TODO:
 
-Int 21/AH=67h - DOS 3.3+ - SET HANDLE COUNT
-Int 21/AH=68h - DOS 3.3+ - FFLUSH - COMMIT FILE
 Int 21/AH=69h - DOS 4.0+ internal - GET/SET DISK SERIAL NUMBER
 Int 21/AH=6Ah - DOS 4.0+ - COMMIT FILE
 Int 21/AH=6Bh - DOS 5+ - NULL FUNCTION
