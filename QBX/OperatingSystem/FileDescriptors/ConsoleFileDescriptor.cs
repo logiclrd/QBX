@@ -11,7 +11,7 @@ public class ConsoleFileDescriptor(DOS owner) : FileDescriptor("CON")
 {
 	public override bool WriteThrough => true;
 
-	public override bool CanRead => base.CanRead;
+	public override bool CanRead => true;
 	public override bool CanWrite => true;
 
 	public override bool ReadyToRead => owner.Machine.Keyboard.HasQueuedTangibleInput;

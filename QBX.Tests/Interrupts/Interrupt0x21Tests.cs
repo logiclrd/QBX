@@ -1,6 +1,9 @@
-﻿using QBX.ExecutionEngine.Execution;
+﻿using QBX.ExecutionEngine.Compiled.Statements;
+using QBX.ExecutionEngine.Execution;
 using QBX.Hardware;
 using QBX.Interrupts;
+
+using SDL3;
 
 namespace QBX.Tests.Interrupts;
 
@@ -26,10 +29,81 @@ public class Interrupt0x21Tests
 		action.Should().Throw<TerminatedException>();
 		machine.DOS.IsTerminated.Should().BeTrue();
 	}
+
+	[Test]
+	public void ReadKeyboardWithEcho_should_receive_queued_events()
+	{
+		ReadKeyboardWithEchoTest(prequeueEvent: true);
+	}
+
+	[Test]
+	public void ReadKeyboardWithEcho_should_receive_new_events()
+	{
+		ReadKeyboardWithEchoTest(prequeueEvent: false);
+	}
+
+	void ReadKeyboardWithEchoTest(bool prequeueEvent)
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var captureBuffer = new StringValue();
+
+		var capture = new CapturingTextLibrary(machine, captureBuffer);
+
+		machine.VideoFirmware.SetTestingVisualLibrary(capture);
+
+		bool eventQueued = false;
+
+		void QueueEvent()
+		{
+			machine.Keyboard.HandleEvent(
+				new SDL.KeyboardEvent()
+				{
+					Down = true,
+					Scancode = SDL.Scancode.Q,
+				});
+
+			eventQueued = true;
+		}
+
+		if (prequeueEvent)
+			QueueEvent();
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new Registers();
+
+		rin.AX = (int)Interrupt0x21.Function.ReadKeyboardWithEcho << 8;
+
+		if (!prequeueEvent)
+		{
+			var queueThread = new Thread(
+				() =>
+				{
+					Thread.Sleep(100);
+					QueueEvent();
+				});
+
+			queueThread.IsBackground = true;
+			queueThread.Start();
+		}
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		bool eventQueuedOnReturn = eventQueued;
+
+		// Assert
+		byte characterRead = (byte)(rout.AX & 0xFF);
+
+		eventQueuedOnReturn.Should().BeTrue();
+		captureBuffer.ToString().Should().Be("q");
+		characterRead.Should().Be((byte)'q');
+	}
 	/*
 	public enum Function : byte
 	{
-		ReadKeyboardWithEcho = 0x01,
 		DisplayCharacter = 0x02,
 		AuxiliaryInput = 0x03,
 		AuxiliaryOutput = 0x04,
