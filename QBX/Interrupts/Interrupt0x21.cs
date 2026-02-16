@@ -13,6 +13,9 @@ using QBX.OperatingSystem.Memory;
 using QBX.OperatingSystem.Processes;
 
 using Path = System.IO.Path;
+using File = System.IO.File;
+using BinaryReader = System.IO.BinaryReader;
+using BinaryWriter = System.IO.BinaryWriter;
 
 namespace QBX.Interrupts;
 
@@ -215,6 +218,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 	public enum Function65 : byte
 	{
 		GetExtendedCountryInformation = 0x01,
+		GetUppercaseTable = 0x02,
 	}
 
 	public override Registers Execute(Registers input)
@@ -1861,24 +1865,24 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 							switch (subfunction)
 							{
 								case Function57.GetFileDateAndTime:
-									returnDateTime = System.IO.File.GetLastWriteTime(regularFileDescriptor.Handle);
+									returnDateTime = File.GetLastWriteTime(regularFileDescriptor.Handle);
 									break;
 								case Function57.SetFileDateAndTime:
-									System.IO.File.SetLastWriteTime(regularFileDescriptor.Handle, suppliedDateTime.Value);
+									File.SetLastWriteTime(regularFileDescriptor.Handle, suppliedDateTime.Value);
 									break;
 
 								case Function57.GetFileLastAccessDateAndTime:
-									returnDateTime = System.IO.File.GetLastAccessTime(regularFileDescriptor.Handle);
+									returnDateTime = File.GetLastAccessTime(regularFileDescriptor.Handle);
 									break;
 								case Function57.SetFileLastAccessDateAndTime:
-									System.IO.File.SetLastAccessTime(regularFileDescriptor.Handle, suppliedDateTime.Value);
+									File.SetLastAccessTime(regularFileDescriptor.Handle, suppliedDateTime.Value);
 									break;
 
 								case Function57.GetFileCreationDateAndTime:
-									returnDateTime = System.IO.File.GetCreationTime(regularFileDescriptor.Handle);
+									returnDateTime = File.GetCreationTime(regularFileDescriptor.Handle);
 									break;
 								case Function57.SetFileCreationDateAndTime:
-									System.IO.File.SetCreationTime(regularFileDescriptor.Handle, suppliedDateTime.Value);
+									File.SetCreationTime(regularFileDescriptor.Handle, suppliedDateTime.Value);
 									break;
 
 								default:
@@ -2084,7 +2088,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 						var address = new SegmentedAddress(inputEx.DS, input.SI);
 
 						var stream = new SystemMemoryStream(machine.MemoryBus, address.ToLinearAddress(), 6);
-						var reader = new System.IO.BinaryReader(stream);
+						var reader = new BinaryReader(stream);
 
 						var error = (DOSError)reader.ReadUInt16(); // AX
 						var action = (DOSErrorAction)reader.ReadByte(); // BL
@@ -2213,6 +2217,53 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 								{
 									countryInfo.Import(machine.DOS.CurrentCulture);
 									countryInfo.Serialize(machine.MemoryBus, bufferAddress);
+								});
+							}
+
+							if (machine.DOS.LastError != DOSError.None)
+							{
+								result.FLAGS |= Flags.Carry;
+								result.AX = (ushort)machine.DOS.LastError;
+							}
+
+							break;
+						}
+						case Function65.GetUppercaseTable:
+						{
+							int bufferAddress = inputEx.ES * 0x10 + input.DI;
+
+							int codePage = input.BX;
+
+							CountryCode countryCode = (input.DX == 0xFFFF)
+								? machine.DOS.CurrentCulture.ToCountryCode()
+								: (CountryCode)input.DX;
+
+							int bufferSize = input.CX;
+
+							var cultureInfo = (input.BX == 0xFFFF)
+								? machine.DOS.CurrentCulture
+								: CultureUtility.GetCultureInfoForCodePageAndCountry(codePage, countryCode);
+
+							if (cultureInfo == null)
+								machine.DOS.SetLastError(DOSError.FileNotFound);
+							else if (bufferSize < 5)
+								machine.DOS.SetLastError(DOSError.InvalidFunction);
+							else
+							{
+								machine.DOS.TranslateError(() =>
+								{
+									var table = UpperCaseTables.GetTable(cultureInfo);
+
+									var presentedTableAddress = machine.DOS.PresentData(table);
+
+									var stream = new SystemMemoryStream(machine.MemoryBus, bufferAddress, 5);
+
+									var writer = new BinaryWriter(stream);
+
+									writer.Write((byte)0x02);
+
+									writer.Write(presentedTableAddress.Offset);
+									writer.Write(presentedTableAddress.Segment);
 								});
 							}
 

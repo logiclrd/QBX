@@ -1490,4 +1490,23 @@ public partial class DOS
 			}
 		});
 	}
+
+	Dictionary<byte[], SegmentedAddress> _presentedData = new Dictionary<byte[], SegmentedAddress>();
+
+	internal SegmentedAddress PresentData(byte[] data)
+	{
+		if (!_presentedData.TryGetValue(data, out var presentedAddress))
+		{
+			int linearAddress = MemoryManager.AllocateMemory(data.Length, MemoryManager.RootPSPSegment);
+
+			for (int i = 0; i < data.Length; i++)
+				_machine.MemoryBus[linearAddress + i] = data[i];
+
+			presentedAddress = new SegmentedAddress(linearAddress);
+
+			_presentedData[data] = presentedAddress;
+		}
+
+		return presentedAddress;
+	}
 }
