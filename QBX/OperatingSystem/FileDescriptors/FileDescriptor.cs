@@ -175,7 +175,7 @@ public abstract class FileDescriptor
 			return false;
 		}
 
-		while (ReadBuffer.IsEmpty)
+		while (ReadBuffer.IsEmpty && !WouldHaveBlocked)
 			FillReadBuffer();
 
 		bool ret = ReadBuffer.TryPull(out b);

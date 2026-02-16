@@ -193,6 +193,109 @@ public class Interrupt0x21Tests
 		action.ExecutionTime().Should().BeLessThan(TimeSpan.FromSeconds(0.25));
 	}
 
+	[Test]
+	public void DirectConsoleIO_should_output_characters()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var captureBuffer = new StringValue();
+
+		var capture = new CapturingTextLibrary(machine, captureBuffer);
+
+		machine.VideoFirmware.SetTestingVisualLibrary(capture);
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new Registers();
+
+		rin.AX = (int)Interrupt0x21.Function.DirectConsoleIO << 8;
+		rin.DX = 'k';
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		captureBuffer.ToString().Should().Be("k");
+		machine.DOS.LastError.Should().Be(OperatingSystem.DOSError.None);
+	}
+
+	[Test]
+	public void DirectConsoleIO_should_read_queued_input()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var captureBuffer = new StringValue();
+
+		var capture = new CapturingTextLibrary(machine, captureBuffer);
+
+		machine.VideoFirmware.SetTestingVisualLibrary(capture);
+
+		machine.Keyboard.HandleEvent(
+			new SDL.KeyboardEvent()
+			{
+				Down = true,
+				Scancode = SDL.Scancode.B,
+			});
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new Registers();
+
+		rin.AX = (int)Interrupt0x21.Function.DirectConsoleIO << 8;
+		rin.DX = 0xFF;
+
+		Registers? rout = null;
+
+		// Act & Assert
+		Action action = () => rout = sut.Execute(rin);
+
+		action.ExecutionTime().Should().BeLessThan(TimeSpan.FromSeconds(0.5));
+
+		rout.Should().NotBeNull();
+		rout.FLAGS.Should().NotHaveFlag(Flags.Zero);
+
+		byte characterRead = (byte)(rout.AX & 0xFF);
+
+		captureBuffer.ToString().Should().Be("");
+		characterRead.Should().Be((byte)'b');
+		machine.DOS.LastError.Should().Be(OperatingSystem.DOSError.None);
+	}
+
+	[Test]
+	public void DirectConsoleIO_should_not_block_when_input_queue_is_empty()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var captureBuffer = new StringValue();
+
+		var capture = new CapturingTextLibrary(machine, captureBuffer);
+
+		machine.VideoFirmware.SetTestingVisualLibrary(capture);
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new Registers();
+
+		rin.AX = (int)Interrupt0x21.Function.DirectConsoleIO << 8;
+		rin.DX = 0xFF;
+
+		Registers? rout = null;
+
+		// Act & Assert
+		Action action = () => rout = sut.Execute(rin);
+
+		action.ExecutionTime().Should().BeLessThan(TimeSpan.FromSeconds(50.5));
+
+		rout.Should().NotBeNull();
+		rout.FLAGS.Should().HaveFlag(Flags.Zero);
+
+		captureBuffer.ToString().Should().Be("");
+		machine.DOS.LastError.Should().Be(OperatingSystem.DOSError.None);
+	}
+
 	/*
 	public enum Function : byte
 	{

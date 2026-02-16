@@ -442,6 +442,9 @@ public partial class DOS
 			}
 		});
 
+		if (fileDescriptor.WouldHaveBlocked)
+			ClearLastError();
+
 		byteValue = b;
 
 		return ret;
