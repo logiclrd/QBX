@@ -173,12 +173,7 @@ public class Interrupt0x21Tests
 
 		machine.VideoFirmware.SetTestingVisualLibrary(capture);
 
-		machine.Keyboard.HandleEvent(
-			new SDL.KeyboardEvent()
-			{
-				Down = true,
-				Scancode = SDL.Scancode.B,
-			});
+		SimulateTyping("b", default, machine);
 
 		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
 
@@ -249,50 +244,7 @@ public class Interrupt0x21Tests
 
 		machine.VideoFirmware.SetTestingVisualLibrary(capture);
 
-		SDL.Keymod modState = 0;
-
-		machine.Keyboard.GetModStateTestHook += () => modState;
-
-		modState = SDL.Keymod.LCtrl;
-
-		machine.Keyboard.HandleEvent(
-			new SDL.KeyboardEvent()
-			{
-				Down = true,
-				Scancode = SDL.Scancode.LCtrl,
-			});
-
-		machine.Keyboard.HandleEvent(
-			new SDL.KeyboardEvent()
-			{
-				Down = true,
-				Scancode = SDL.Scancode.C,
-				Mod = SDL.Keymod.LCtrl,
-			});
-
-		machine.Keyboard.HandleEvent(
-			new SDL.KeyboardEvent()
-			{
-				Down = false,
-				Scancode = SDL.Scancode.C,
-				Mod = SDL.Keymod.LCtrl,
-			});
-
-		modState = 0;
-
-		machine.Keyboard.HandleEvent(
-			new SDL.KeyboardEvent()
-			{
-				Down = false,
-				Scancode = SDL.Scancode.LCtrl,
-			});
-
-		machine.Keyboard.HandleEvent(
-			new SDL.KeyboardEvent()
-			{
-				Down = true,
-				Scancode = SDL.Scancode.B,
-			});
+		SimulateTyping("\x03" + "b", ControlCharacterHandling.CtrlLetter, machine);
 
 		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
 
@@ -605,66 +557,14 @@ public class Interrupt0x21Tests
 
 		void QueueEvent()
 		{
-			if (inputType != DOSReadInputType.Character)
+			switch (inputType)
 			{
-				var action =
-					inputType switch
-					{
-						DOSReadInputType.CtrlC => SDL.Scancode.C,
-						DOSReadInputType.CtrlBreak => SDL.Scancode.Pause,
-
-						_ => throw new Exception("Internal error")
-					};
-
-				modState = SDL.Keymod.LCtrl;
-
-				machine.Keyboard.HandleEvent(
-					new SDL.KeyboardEvent()
-					{
-						Down = true,
-						Scancode = SDL.Scancode.LCtrl,
-					});
-
-				machine.Keyboard.HandleEvent(
-					new SDL.KeyboardEvent()
-					{
-						Down = true,
-						Scancode = action,
-						Mod = SDL.Keymod.LCtrl,
-					});
-
-				machine.Keyboard.HandleEvent(
-					new SDL.KeyboardEvent()
-					{
-						Down = false,
-						Scancode = action,
-						Mod = SDL.Keymod.LCtrl,
-					});
-
-				modState = 0;
-
-				machine.Keyboard.HandleEvent(
-					new SDL.KeyboardEvent()
-					{
-						Down = false,
-						Scancode = SDL.Scancode.LCtrl,
-					});
+				case DOSReadInputType.CtrlC: SimulateTyping("\x03", ControlCharacterHandling.CtrlLetter, machine); break;
+				case DOSReadInputType.CtrlBreak: SimulateTyping(CtrlBreakCharacter.ToString(), default, machine); break;
 			}
 
 			// Also send the character, in case break is disabled or doesn't work.
-			machine.Keyboard.HandleEvent(
-				new SDL.KeyboardEvent()
-				{
-					Down = true,
-					Scancode = SDL.Scancode.A,
-				});
-
-			machine.Keyboard.HandleEvent(
-				new SDL.KeyboardEvent()
-				{
-					Down = false,
-					Scancode = SDL.Scancode.A,
-				});
+			SimulateTyping("a", default, machine);
 
 			eventQueued = true;
 		}
@@ -721,5 +621,210 @@ public class Interrupt0x21Tests
 		breakEventOccurred.Should().Be(shouldBreak);
 		characterRead.Should().Be(expectedCharacterRead);
 		machine.DOS.LastError.Should().Be(OperatingSystem.DOSError.None);
+	}
+
+	enum ControlCharacterHandling
+	{
+		CtrlLetter,
+		SemanticKey,
+	}
+
+	const char CtrlBreakCharacter = '\uE001';
+
+	void SimulateTyping(string text, ControlCharacterHandling controlCharacterHandling, Machine machine)
+	{
+		SDL.Keymod modState = 0;
+
+		Func<SDL.Keymod> getModState = () => modState;
+
+		machine.Keyboard.GetModStateTestHook += getModState;
+
+		void ChangeModifiers(bool ctrl, bool shift)
+		{
+			bool alreadyCtrl = (modState & SDL.Keymod.Ctrl) != 0;
+			bool alreadyShift = (modState & SDL.Keymod.Shift) != 0;
+
+			if (!shift && alreadyShift)
+			{
+				modState &= ~SDL.Keymod.Shift;
+				machine.Keyboard.HandleEvent(
+					new SDL.KeyboardEvent()
+					{
+						Down = false,
+						Scancode = SDL.Scancode.LShift,
+					});
+			}
+
+			if (ctrl != alreadyCtrl)
+			{
+				if (ctrl)
+					modState |= SDL.Keymod.LCtrl;
+				else
+					modState &= ~SDL.Keymod.Ctrl;
+
+				machine.Keyboard.HandleEvent(
+					new SDL.KeyboardEvent()
+					{
+						Down = ctrl,
+						Scancode = SDL.Scancode.LCtrl,
+					});
+			}
+
+			if (shift && !alreadyShift)
+			{
+				modState |= SDL.Keymod.LShift;
+				machine.Keyboard.HandleEvent(
+					new SDL.KeyboardEvent()
+					{
+						Down = true,
+						Scancode = SDL.Scancode.LShift,
+					});
+			}
+		}
+
+		try
+		{
+			foreach (char ch in text)
+			{
+				SDL.Scancode scanCode = 0;
+
+				if (ch == CtrlBreakCharacter)
+				{
+					ChangeModifiers(ctrl: true, shift: false);
+
+					scanCode = SDL.Scancode.Pause;
+				}
+				else if ((ch >= 1) && (ch <= 26))
+				{
+					if (controlCharacterHandling == ControlCharacterHandling.CtrlLetter)
+					{
+						ChangeModifiers(ctrl: true, shift: false);
+
+						scanCode = GetScanCodeForCharacter((char)(ch + 'a' - 1));
+					}
+					else
+					{
+						scanCode =
+							ch switch
+							{
+								'\b' => SDL.Scancode.Backspace,
+								'\t' => SDL.Scancode.Tab,
+								'\n' => SDL.Scancode.KpEnter,
+								'\r' => SDL.Scancode.Return,
+
+								_ => 0,
+							};
+					}
+				}
+				else
+				{
+					ChangeModifiers(ctrl: false, shift: IsShifted(ch));
+
+					scanCode = GetScanCodeForCharacter(ch);
+				}
+
+				if (scanCode != 0)
+				{
+					machine.Keyboard.HandleEvent(
+						new SDL.KeyboardEvent()
+						{
+							Down = true,
+							Scancode = scanCode,
+						});
+
+					machine.Keyboard.HandleEvent(
+						new SDL.KeyboardEvent()
+						{
+							Down = false,
+							Scancode = scanCode,
+						});
+				}
+			}
+
+			ChangeModifiers(ctrl: false, shift: false);
+		}
+		finally
+		{
+			machine.Keyboard.GetModStateTestHook -= getModState;
+		}
+	}
+
+	SDL.Scancode GetScanCodeForCharacter(char ch)
+	{
+		switch (ch)
+		{
+			case 'A': case 'a': return SDL.Scancode.A;
+			case 'B': case 'b': return SDL.Scancode.B;
+			case 'C': case 'c': return SDL.Scancode.C;
+			case 'D': case 'd': return SDL.Scancode.D;
+			case 'E': case 'e': return SDL.Scancode.E;
+			case 'F': case 'f': return SDL.Scancode.F;
+			case 'G': case 'g': return SDL.Scancode.G;
+			case 'H': case 'h': return SDL.Scancode.H;
+			case 'I': case 'i': return SDL.Scancode.I;
+			case 'J': case 'j': return SDL.Scancode.J;
+			case 'K': case 'k': return SDL.Scancode.K;
+			case 'L': case 'l': return SDL.Scancode.L;
+			case 'M': case 'm': return SDL.Scancode.M;
+			case 'N': case 'n': return SDL.Scancode.N;
+			case 'O': case 'o': return SDL.Scancode.O;
+			case 'P': case 'p': return SDL.Scancode.P;
+			case 'Q': case 'q': return SDL.Scancode.Q;
+			case 'R': case 'r': return SDL.Scancode.R;
+			case 'S': case 's': return SDL.Scancode.S;
+			case 'T': case 't': return SDL.Scancode.T;
+			case 'U': case 'u': return SDL.Scancode.U;
+			case 'V': case 'v': return SDL.Scancode.V;
+			case 'W': case 'w': return SDL.Scancode.W;
+			case 'X': case 'x': return SDL.Scancode.X;
+			case 'Y': case 'y': return SDL.Scancode.Y;
+			case 'Z': case 'z': return SDL.Scancode.Z;
+
+			case '1': case '!': return SDL.Scancode.Alpha1;
+			case '2': case '@': return SDL.Scancode.Alpha2;
+			case '3': case '#': return SDL.Scancode.Alpha3;
+			case '4': case '$': return SDL.Scancode.Alpha4;
+			case '5': case '%': return SDL.Scancode.Alpha5;
+			case '6': case '^': return SDL.Scancode.Alpha6;
+			case '7': case '&': return SDL.Scancode.Alpha7;
+			case '8': case '*': return SDL.Scancode.Alpha8;
+			case '9': case '(': return SDL.Scancode.Alpha9;
+			case '0': case ')': return SDL.Scancode.Alpha0;
+
+			case '`': case '~': return SDL.Scancode.Grave;
+			case '-': case '_': return SDL.Scancode.Minus;
+			case '=': case '+': return SDL.Scancode.Equals;
+			case '[': case '{': return SDL.Scancode.Leftbracket;
+			case ']': case '}': return SDL.Scancode.Rightbracket;
+			case '\\': case '|': return SDL.Scancode.Backslash;
+			case ';': case ':': return SDL.Scancode.Semicolon;
+			case '\'': case '"': return SDL.Scancode.Apostrophe;
+			case ',': case '<': return SDL.Scancode.Comma;
+			case '.': case '>': return SDL.Scancode.Period;
+			case '/': case '?': return SDL.Scancode.Slash;
+
+			case ' ': return SDL.Scancode.Space;
+		}
+
+		return 0;
+	}
+
+	bool IsShifted(char ch)
+	{
+		switch (ch)
+		{
+			case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
+			case 'G': case 'H': case 'I': case 'J': case 'K': case 'L':
+			case 'M': case 'N': case 'O': case 'P': case 'Q': case 'R':
+			case 'S': case 'T': case 'U': case 'V': case 'W': case 'X':
+			case 'Y': case 'Z':
+			case '!': case '@': case '#': case '$': case '%': case '^':
+			case '&': case '*': case '(': case ')':
+			case '~': case '_': case '+': case '{': case '}': case '|':
+			case ':': case '"': case '<': case '>': case '?':
+				return true;
+		}
+
+		return false;
 	}
 }
