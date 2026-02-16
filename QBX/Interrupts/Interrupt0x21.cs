@@ -223,6 +223,9 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		GetFilenameCharacterTable = 0x05,
 		GetCollateSequenceTable = 0x06,
 		GetDoubleByteCharacterSet = 0x07,
+		ConvertCharacter = 0x20,
+		ConvertString = 0x21,
+		ConvertASCIIZString = 0x22,
 	}
 
 	public override Registers Execute(Registers input)
@@ -2289,6 +2292,68 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 							{
 								result.FLAGS |= Flags.Carry;
 								result.AX = (ushort)machine.DOS.LastError;
+							}
+
+							break;
+						}
+						case Function65.ConvertCharacter:
+						case Function65.ConvertString:
+						case Function65.ConvertASCIIZString:
+						{
+							var uppercaseTable = CharacterTables.GetUppercaseTable(
+								machine.DOS.CurrentCulture);
+
+							byte ToUpper(byte ch)
+							{
+								if ((ch >= 'a') && (ch <= 'z'))
+									ch &= (255 - 32);
+								else if (ch >= 128)
+									ch = uppercaseTable[ch - 128];
+
+								return ch;
+							}
+
+							switch (subfunction)
+							{
+								case Function65.ConvertCharacter:
+								{
+									input.DX &= 0xFF00;
+
+									byte ch = unchecked((byte)(input.DX & 0xFF));
+
+									ch = ToUpper(ch);
+
+									input.DX |= ch;
+
+									break;
+								}
+								case Function65.ConvertString:
+								case Function65.ConvertASCIIZString:
+								{
+									var bufferAddress = new SegmentedAddress(inputEx.DS, input.DX);
+
+									int linearAddress = bufferAddress.ToLinearAddress();
+									int offset = 0;
+
+									Func<bool> atEnd =
+										subfunction switch
+										{
+											Function65.ConvertString => () => (offset >= input.CX),
+											Function65.ConvertASCIIZString => () => (machine.MemoryBus[linearAddress + offset] == 0),
+
+											_ => throw new Exception("Internal error")
+										};
+
+									while (!atEnd())
+									{
+										machine.MemoryBus[linearAddress + offset] = ToUpper(
+											machine.MemoryBus[linearAddress + offset]);
+
+										offset++;
+									}
+
+									break;
+								}
 							}
 
 							break;

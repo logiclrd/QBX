@@ -649,12 +649,9 @@ public partial class DOS
 
 		byte ToUpper(byte b)
 		{
-			if (b < 128)
-			{
-				if ((b >= 'a') && (b <= 'z'))
-					b |= 32;
-			}
-			else
+			if ((b >= 'a') && (b <= 'z'))
+					b &= (255 - 32);
+			else if (b >= 128)
 				b = upperCaseTable[b - 128];
 
 			return b;
