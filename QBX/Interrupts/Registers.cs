@@ -1,7 +1,4 @@
-﻿using System;
-using System.Diagnostics;
-
-namespace QBX.Interrupts;
+﻿namespace QBX.Interrupts;
 
 public class Registers
 {
