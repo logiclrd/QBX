@@ -118,6 +118,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		GetCurrentPSPAddress = 0x62,
 		Function65 = 0x65,
 		Function66 = 0x66,
+		SetMaximumHandleCount = 0x67,
 	}
 
 	public enum Function33 : byte
@@ -2431,6 +2432,17 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 							break;
 						}
 					}
+
+					break;
+				}
+				case Function.SetMaximumHandleCount:
+				{
+					int newMax = input.BX;
+
+					if (newMax < DOS.MinimumMaxFiles)
+						newMax = DOS.MinimumMaxFiles;
+
+					machine.DOS.MaxFiles = newMax;
 
 					break;
 				}

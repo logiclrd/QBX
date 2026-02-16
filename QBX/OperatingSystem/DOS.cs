@@ -61,6 +61,10 @@ public partial class DOS
 
 	public List<FileDescriptor?> Files = new List<FileDescriptor?>();
 
+	public const int MinimumMaxFiles = 20;
+
+	public int MaxFiles = MinimumMaxFiles;
+
 	public bool VerifyWrites = false;
 
 	public Devices Devices;
@@ -854,6 +858,9 @@ public partial class DOS
 			if (Files[i] is null)
 				return i;
 
+		if (Files.Count == MaxFiles)
+			throw new DOSException(DOSError.TooManyOpenFiles);
+
 		Files.Add(null);
 
 		return Files.Count - 1;
@@ -874,6 +881,20 @@ public partial class DOS
 		Files[fileHandle] = fileDescriptor;
 
 		return fileHandle;
+	}
+
+	void PruneFileHandles()
+	{
+		for (int i = Files.Count - 1; i >= MinimumMaxFiles; i--)
+		{
+			if (Files[i] != null)
+			{
+				if (i < Files.Count - 1)
+					Files.RemoveRange(i + 1, Files.Count - i - 1);
+
+				break;
+			}
+		}
 	}
 
 	public bool PopulateFileInfo(FileControlBlock fcb)
@@ -1339,6 +1360,8 @@ public partial class DOS
 			fileDescriptor.Close();
 
 			Files[fileHandle] = null;
+
+			PruneFileHandles();
 
 			return true;
 		});
