@@ -37,7 +37,7 @@ public class FileControlBlock
 
 	public string GetFileName() => GetFileName(FileNameBytes);
 
-	public static string GetFileName(byte[] fileNameBytes)
+	public static string GetFileName(ReadOnlySpan<byte> fileNameBytes)
 	{
 		s_fileNameBuffer ??= new char[12];
 

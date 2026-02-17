@@ -1,8 +1,4 @@
-﻿using System;
-using System.Runtime.InteropServices;
-using System.Text;
-
-namespace QBX.OperatingSystem;
+﻿namespace QBX.OperatingSystem;
 
 public partial class ShortFileNames
 {

@@ -197,6 +197,9 @@ public partial class DOS
 		string fileNamePart = Path.GetFileNameWithoutExtension(fileNamePattern);
 		string extensionPart = Path.GetExtension(fileNamePattern);
 
+		if ((extensionPart.Length > 0) && (extensionPart[0] == '.'))
+			extensionPart = extensionPart.Substring(1);
+
 		string collapsedFileNamePart = NormalizeFileSearchPattern(ref fileNamePart, 8);
 		string collapsedExtensionPart = NormalizeFileSearchPattern(ref extensionPart, 3);
 
@@ -205,12 +208,19 @@ public partial class DOS
 		fcb.SetFileName(fileNamePattern);
 
 		string collapsedFileNamePattern = collapsedFileNamePart + "." + collapsedExtensionPart;
-		string rawFileNamePattern = collapsedFileNamePart + collapsedExtensionPart;
 
 		bool success;
 		IEnumerator<FileSystemInfo> search;
 		FileAttributes searchAttributes = default;
-		byte[] searchPatternBytes = s_cp437.GetBytes(rawFileNamePattern);
+
+		byte[] searchPatternBytes = new byte[11];
+
+		var searchPatternBytesSpan = searchPatternBytes.AsSpan();
+
+		searchPatternBytesSpan.Fill((byte)' ');
+
+		s_cp437.GetBytes(fileNamePart, searchPatternBytesSpan);
+		s_cp437.GetBytes(extensionPart, searchPatternBytesSpan.Slice(8));
 
 		int searchID = _nextSearchID;
 
@@ -322,12 +332,17 @@ public partial class DOS
 		}
 		else
 		{
-			var searchPrototype = directoryInfo.EnumerateFileSystemInfos(fileNamePattern);
+			var searchPrototype = directoryInfo.EnumerateFileSystemInfos();
 
 			if ((attributes & FileAttributes.Directory) == 0)
 				searchPrototype = searchPrototype.OfType<FileInfo>();
 			if ((attributes & FileAttributes.Hidden) == 0)
 				searchPrototype = searchPrototype.Where(entry => ((entry.Attributes & System.IO.FileAttributes.ReadOnly) == 0));
+
+			searchPrototype = searchPrototype.Where(
+				info =>
+					ShortFileNames.TryMap(info.FullName, out var shortPath) &&
+					FileSystemName.MatchesSimpleExpression(fileNamePattern, Path.GetFileName(shortPath)));
 
 			search = searchPrototype.GetEnumerator();
 

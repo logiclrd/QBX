@@ -25,6 +25,12 @@ public class LinuxINodeProvider : INodeProvider<INode>
 		public long tv_nsec;
 	}
 
+	[InlineArray(length: 3)]
+	struct glibc_reserved
+	{
+		long _element0;
+	}
+
 	[StructLayout(LayoutKind.Sequential)]
 	struct stat_
 	{
@@ -42,10 +48,11 @@ public class LinuxINodeProvider : INodeProvider<INode>
 		public timespec st_atime;  /* Time of last access (seconds) */
 		public timespec st_mtime;  /* Time of last modification (seconds) */
 		public timespec st_ctime;  /* Time of last status change (seconds) */
+		public glibc_reserved __glibc_reserved;
 	}
 
 	// Import the stat function from the C standard library (libc)
-	[DllImport("c", SetLastError = true, CharSet = CharSet.Ansi)]
+	[DllImport("c", SetLastError = true, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
 	static extern int stat(string path, out stat_ buf);
 
 	public override bool TryGetINode(string path, out INode inode)
@@ -56,9 +63,11 @@ public class LinuxINodeProvider : INodeProvider<INode>
 		{
 			inode.DeviceID = stat_structure.st_dev;
 			inode.INodeNumber = stat_structure.st_ino;
-		}
 
-		return false;
+			return true;
+		}
+		else
+			return false;
 	}
 }
 
@@ -101,7 +110,7 @@ public class FreeBSDINodeProvider : INodeProvider<INode>
 		public stat_spare st_spare;
 	}
 
-	[DllImport("c", SetLastError = true, CharSet = CharSet.Ansi)]
+	[DllImport("c", SetLastError = true, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
 	static extern int stat(string path, out stat_ buf);
 
 	public override bool TryGetINode(string path, out INode inode)
@@ -112,9 +121,11 @@ public class FreeBSDINodeProvider : INodeProvider<INode>
 		{
 			inode.DeviceID = stat_structure.st_dev;
 			inode.INodeNumber = stat_structure.st_ino;
-		}
 
-		return false;
+			return true;
+		}
+		else
+			return false;
 	}
 }
 
@@ -150,7 +161,7 @@ public class OSXINodeProvider : INodeProvider<INode>
 		public long st_qspare2;
 	}
 
-	[DllImport("c", SetLastError = true, CharSet = CharSet.Ansi)]
+	[DllImport("c", SetLastError = true, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
 	static extern int stat(string path, out stat_ buf);
 
 	public override bool TryGetINode(string path, out INode inode)
@@ -161,8 +172,10 @@ public class OSXINodeProvider : INodeProvider<INode>
 		{
 			inode.DeviceID = stat_structure.st_dev;
 			inode.INodeNumber = stat_structure.st_ino;
-		}
 
-		return false;
+			return true;
+		}
+		else
+			return false;
 	}
 }

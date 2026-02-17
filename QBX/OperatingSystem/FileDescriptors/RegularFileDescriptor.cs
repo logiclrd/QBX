@@ -8,8 +8,10 @@ using Microsoft.Win32.SafeHandles;
 
 namespace QBX.OperatingSystem.FileDescriptors;
 
-public class RegularFileDescriptor(string path, FileStream stream) : FileDescriptor(path)
+public class RegularFileDescriptor(string path, string physicalPath, FileStream stream) : FileDescriptor(path)
 {
+	public string PhysicalPath = physicalPath;
+
 	public override bool CanRead => stream.CanRead;
 	public override bool CanWrite => stream.CanWrite;
 

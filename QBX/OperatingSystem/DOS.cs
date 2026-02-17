@@ -883,9 +883,9 @@ public partial class DOS
 		return Files.Count - 1;
 	}
 
-	int AllocateFileHandleForOpenFile(string path, FileStream stream)
+	int AllocateFileHandleForOpenFile(string path, string physicalPath, FileStream stream)
 	{
-		return AllocateFileHandleForFileDescriptor(new RegularFileDescriptor(path, stream));
+		return AllocateFileHandleForFileDescriptor(new RegularFileDescriptor(path, physicalPath, stream));
 	}
 
 	int AllocateFileHandleForFileDescriptor(FileDescriptor fileDescriptor)
@@ -989,7 +989,7 @@ public partial class DOS
 
 							var stream = fileInfo.Open(openMode.ToSystemFileMode());
 
-							fcb.FileHandle = AllocateFileHandleForOpenFile(shortPath, stream);
+							fcb.FileHandle = AllocateFileHandleForOpenFile(shortPath, fileInfo.FullName, stream);
 
 							return fcb.FileHandle;
 						}
@@ -1061,6 +1061,8 @@ public partial class DOS
 					return AllocateFileHandleForFileDescriptor(device);
 				else
 				{
+					fileName = Path.GetFullPath(fileName);
+
 					var stream = new FileStream(fileName, openMode.ToSystemFileMode(), systemFileAccess, systemFileShare);
 
 					const int AlreadyExists = 183;
@@ -1084,7 +1086,7 @@ public partial class DOS
 							return -1;
 					}
 
-					return AllocateFileHandleForOpenFile(shortPath, stream);
+					return AllocateFileHandleForOpenFile(shortPath, fileName, stream);
 				}
 			});
 

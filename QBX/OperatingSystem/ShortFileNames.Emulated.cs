@@ -56,16 +56,30 @@ public partial class ShortFileNames
 		if (s_shortToLong.TryGetValue(GetCanonicalPath(possibleShortPath), out var longPath))
 			return longPath;
 		else
-			return possibleShortPath;
+		{
+			var container = Path.GetDirectoryName(possibleShortPath);
+
+			if (!string.IsNullOrEmpty(container))
+				return Path.Combine(UnmapEmulated(container), Path.GetFileName(possibleShortPath));
+			else
+				return possibleShortPath;
+		}
 	}
 
 	static bool TryMapEmulated(string path, out string shortPath)
 	{
+		if (s_longToShort.TryGetValue(GetCanonicalPath(path), out var existingShortPath)
+		 && (existingShortPath != null))
+		{
+			shortPath = existingShortPath;
+			return true;
+		}
+
 		var builder = new StringBuilder();
 
 		for (int i = 0; i < path.Length; i++)
 		{
-			if (path[i] == Path.PathSeparator)
+			if (path[i] == Path.DirectorySeparatorChar)
 			{
 				if (builder.Length > 0)
 					MapLastComponent(builder);
@@ -106,18 +120,24 @@ public partial class ShortFileNames
 		int componentLength = 0;
 
 		while ((componentLength < builder.Length)
-		    && (builder[builder.Length - componentLength - 1] != Path.PathSeparator))
+		    && (builder[builder.Length - componentLength - 1] != Path.DirectorySeparatorChar))
 			componentLength++;
 
 		if (componentLength > 0)
 		{
 			string component = builder.ToString(builder.Length - componentLength, componentLength);
 
-			if (!IsValidShortPathComponent(component))
+			string normalizedComponent = component;
+
+			if (!IsValidShortPathComponent(ref normalizedComponent)
+			 || (normalizedComponent != component))
 			{
 				int containerLength = builder.Length - componentLength;
 
 				while ((containerLength > 0) && (builder[containerLength - 1] == Path.PathSeparator))
+					containerLength--;
+
+				if (containerLength > 0)
 					containerLength--;
 
 				string containerShortPath = "";
@@ -135,11 +155,30 @@ public partial class ShortFileNames
 
 				var longName = component;
 
-				var longPath = containerLongPath + Path.PathSeparator + longName;
+				var longPath = Path.Combine(containerLongPath, longName);
 
-				CreateMapping(longName, containerShortPath, out var shortName);
+				string shortName = "";
+				string shortPath = "";
 
-				var shortPath = containerShortPath + Path.PathSeparator + shortName;
+				bool createMapping = false;
+
+				if (normalizedComponent == component)
+					createMapping = true;
+				else
+				{
+					shortName = normalizedComponent;
+					shortPath = Path.Combine(containerShortPath, shortName);
+
+					if (Path.Exists(shortPath))
+						createMapping = true;
+				}
+
+				if (createMapping)
+				{
+					CreateMapping(longPath, containerShortPath, out shortName);
+
+					shortPath = Path.Combine(containerShortPath, shortName);
+				}
 
 				shortPath = GetCanonicalPath(shortPath);
 
@@ -264,7 +303,9 @@ public partial class ShortFileNames
 		return false;
 	}
 
-	static bool IsValidShortPathComponent(string shortPath)
+	static CP437Encoding s_cp437 = new CP437Encoding(ControlCharacterInterpretation.Semantic);
+
+	static bool IsValidShortPathComponent(ref string shortPath)
 	{
 		if (shortPath.Length > 12)
 			return false;
@@ -277,22 +318,35 @@ public partial class ShortFileNames
 
 		int dot = lastDot;
 
-		if ((dot > 8) || (shortPath.Length - dot > 4))
+		int nameLength, extensionLength;
+
+		if (dot >= 0)
+		{
+			nameLength = dot - 1;
+			extensionLength = shortPath.Length - dot - 1;
+		}
+		else
+		{
+			nameLength = shortPath.Length;
+			extensionLength = 0;
+		}
+
+		if ((nameLength > 8) || (extensionLength > 3))
 			return false;
 
-		for (int i = 0; i < shortPath.Length; i++)
+		var shortPathASCII = s_cp437.GetBytes(shortPath);
+
+		for (int i = 0; i < shortPathASCII.Length; i++)
 		{
-			char ch = shortPath[i];
+			byte byteValue = shortPathASCII[i];
 
-			byte byteValue = CP437Encoding.GetByteSemantic(ch);
-
-			byteValue = PathCharacter.ToUpper(byteValue);
-
-			char convertedBack = CP437Encoding.GetCharSemantic(byteValue);
-
-			if (ch != convertedBack)
+			if (!PathCharacter.IsValid(byteValue) && (byteValue != '.'))
 				return false;
+
+			shortPathASCII[i] = PathCharacter.ToUpper(byteValue);
 		}
+
+		shortPath = s_cp437.GetString(shortPathASCII);
 
 		return true;
 	}

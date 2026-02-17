@@ -2,6 +2,7 @@
 using QBX.Firmware.Fonts;
 using QBX.Hardware;
 using QBX.Interrupts;
+using QBX.OperatingSystem.FileDescriptors;
 using QBX.OperatingSystem.FileStructures;
 using QBX.OperatingSystem.Memory;
 using QBX.Tests.Utility;
@@ -601,7 +602,7 @@ public class Interrupt0x21Tests
 
 			try
 			{
-				string testFileActualPath = machine.DOS.Files[fileHandle]!.Path;
+				string testFileActualPath = ((RegularFileDescriptor)machine.DOS.Files[fileHandle]!).PhysicalPath;
 
 				byte[] testData = s_cp437.GetBytes("test");
 
@@ -826,9 +827,11 @@ public class Interrupt0x21Tests
 			File.WriteAllText("TEST24.TXT", "");
 			File.WriteAllText("TEST3.TXT", "");
 
+			const string TestPattern = "TEST2*.*";
+
 			var fcb = new FileControlBlock();
 
-			fcb.SetFileName("TEST2*.*");
+			fcb.SetFileName(TestPattern);
 
 			var fcbAddress = machine.DOS.MemoryManager.AllocateMemory(FileControlBlock.Size, machine.DOS.CurrentPSPSegment);
 
@@ -852,9 +855,13 @@ public class Interrupt0x21Tests
 
 			al.Should().Be(0);
 
-			fcb = FileControlBlock.Deserialize(machine.MemoryBus, fcbAddress);
+			var dirEntrySpan = machine.SystemMemory.AsSpan().Slice(machine.DOS.DataTransferAddress, 32);
 
-			fcb.GetFileName().Should().Be("TEST23.TXT");
+			string fileName = FileControlBlock.GetFileName(dirEntrySpan.Slice(0, 11));
+
+			var validMatches = Directory.GetFiles(workspace.Path, TestPattern).Select(path => Path.GetFileName(path));
+
+			fileName.Should().BeOneOf(validMatches);
 		}
 	}
 
