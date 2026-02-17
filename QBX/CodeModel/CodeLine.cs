@@ -92,7 +92,7 @@ public class CodeLine : IRenderableCode
 
 	public void Render(TextWriter baseWriter, bool includeCRLF = true)
 	{
-		var writer = new ColumnTrackingTextWriter(baseWriter);
+		var writer = new ColumnTrackingTextWriter(baseWriter) { NewLine = baseWriter.NewLine };
 
 		if (LineNumber != null)
 			writer.Write(LineNumber);
