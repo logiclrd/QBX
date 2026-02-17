@@ -1259,7 +1259,9 @@ public partial class DOS
 
 				fileDescriptor.Seek(offset, MoveMethod.FromBeginning);
 
-				if (fileDescriptor.ReadExactly(readSize, Machine.MemoryBus, DataTransferAddress))
+				int dtaAddress = DataTransferAddress;
+
+				if (fileDescriptor.ReadExactly(readSize, Machine.MemoryBus, dtaAddress))
 				{
 					if (advance)
 					{
@@ -1267,6 +1269,12 @@ public partial class DOS
 
 						if (updateRandomRecordNumber)
 							fcb.RandomRecordNumber = fcb.RecordPointer;
+					}
+
+					if (readSize < fcb.RecordSize)
+					{
+						for (int i = readSize; i < fcb.RecordSize; i++)
+							Machine.MemoryBus[dtaAddress + i] = 0;
 					}
 				}
 

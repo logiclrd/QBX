@@ -635,10 +635,74 @@ public class Interrupt0x21Tests
 		}
 	}
 
+	[Test]
+	public void OpenFileWithFCB_should_open_files()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+
+			byte[] testData = s_cp437.GetBytes("QuickBASIC");
+
+			File.WriteAllBytes(TestFileName, testData);
+
+			var fcb = new FileControlBlock();
+
+			fcb.SetFileName(TestFileName);
+
+			machine.DOS.OpenFile(fcb, OperatingSystem.FileStructures.FileMode.Open);
+
+			var fcbAddress = machine.DOS.MemoryManager.AllocateMemory(FileControlBlock.Size, machine.DOS.CurrentPSPSegment);
+
+			fcb.MemoryAddress = fcbAddress;
+
+			fcb.Serialize(machine.MemoryBus);
+
+			try
+			{
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (int)Interrupt0x21.Function.SequentialRead << 8;
+				rin.DS = (ushort)(fcbAddress / MemoryManager.ParagraphSize);
+				rin.DX = (ushort)(fcbAddress % MemoryManager.ParagraphSize);
+
+				var expectedResults = new byte[128];
+
+				testData.CopyTo(expectedResults);
+
+				var dta = machine.SystemMemory.AsSpan().Slice(machine.DOS.DataTransferAddress, 128);
+
+				dta.Fill(1);
+
+				// Act
+				var rout = sut.Execute(rin);
+
+				// Assert
+				int al = rout.AX & 0xFF;
+
+				al.Should().Be(0);
+
+				dta.ShouldBeEquivalentTo(expectedResults);
+			}
+			finally
+			{
+				machine.DOS.CloseFile(fcb);
+			}
+		}
+	}
+
 	/*
 	public enum Function : byte
 	{
-		SetDefaultDrive = 0x0E,
 		OpenFileWithFCB = 0x0F,
 		CloseFileWithFCB = 0x10,
 		FindFirstFileWithFCB = 0x11,

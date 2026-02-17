@@ -8,6 +8,8 @@ namespace QBX.OperatingSystem.FileStructures;
 
 public class FileControlBlock
 {
+	public const int Size = 36;
+
 	public byte DriveIdentifier;
 	public byte[] FileNameBytes = new byte[11]; // FILENAMEEXT, the dot is implicit
 	public ushort CurrentBlockNumber;
@@ -200,11 +202,10 @@ public class FileControlBlock
 			}
 
 			if (atEnd)
-			{
-				inputLength = i;
 				break;
-			}
 		}
+
+		inputLength = i;
 
 		int dot = inputLength - 1;
 
@@ -332,7 +333,7 @@ public class FileControlBlock
 
 	protected void Serialize(IMemory memory, int address)
 	{
-		var stream = new SystemMemoryStream(memory, address, 36);
+		var stream = new SystemMemoryStream(memory, address, Size);
 
 		stream.WriteByte(DriveIdentifier);
 		stream.Write(FileNameBytes);
@@ -355,7 +356,7 @@ public class FileControlBlock
 
 	protected void DeserializeCore(IMemory memory, int address)
 	{
-		var stream = new SystemMemoryStream(memory, address, 36);
+		var stream = new SystemMemoryStream(memory, address, Size);
 
 		DriveIdentifier = (byte)stream.ReadByte();
 		stream.ReadExactly(FileNameBytes);

@@ -19,7 +19,7 @@ public class ClockFileDescriptor() : FileDescriptor("CLOCK$")
 	// Observed behaviour on DOS 6 in a VM
 	static byte[] Fill = { 0xCE, 0xCE, 0xCE, 0xCE, 0xCE, 0xCE, 0xCE, 0xCE, 0xCE, 0xCE, 0xCE, 0xCE, 0xCE, 0xCE, 0xCE, 0xCE };
 
-	protected override void ReadCore(FileBuffer buffer)
+	protected override void ReadCore(ref FileBuffer buffer)
 	{
 		buffer.Push(Fill.AsSpan().Slice(0, Math.Min(Fill.Length, buffer.Available)));
 	}

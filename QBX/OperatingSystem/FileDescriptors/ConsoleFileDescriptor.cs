@@ -39,7 +39,7 @@ public class ConsoleFileDescriptor(DOS owner) : FileDescriptor("CON")
 		throw new DOSException(DOSError.InvalidFunction);
 	}
 
-	protected override void ReadCore(FileBuffer buffer)
+	protected override void ReadCore(ref FileBuffer buffer)
 	{
 		do
 		{

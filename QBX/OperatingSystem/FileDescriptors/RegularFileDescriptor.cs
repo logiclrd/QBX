@@ -64,7 +64,7 @@ public class RegularFileDescriptor(string path, FileStream stream) : FileDescrip
 		return unchecked((uint)stream.Seek(offset, moveMethod.ToSeekOrigin()));
 	}
 
-	protected override void ReadCore(FileBuffer buffer)
+	protected override void ReadCore(ref FileBuffer buffer)
 	{
 		int readSize = buffer.ContiguousAvailable;
 

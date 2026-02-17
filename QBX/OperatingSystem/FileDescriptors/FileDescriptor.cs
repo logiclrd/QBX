@@ -5,14 +5,14 @@ using QBX.OperatingSystem.FileStructures;
 
 namespace QBX.OperatingSystem.FileDescriptors;
 
-public delegate void FileReadFunctor(FileBuffer buffer);
+public delegate void FileReadFunctor(ref FileBuffer buffer);
 public delegate int FileWriteFunctor(ReadOnlySpan<byte> buffer);
 
 public abstract class FileDescriptor
 {
 	public string Path { get; private set; }
 
-	protected virtual void ReadCore(FileBuffer buffer) { }
+	protected virtual void ReadCore(ref FileBuffer buffer) { }
 	protected virtual int WriteCore(ReadOnlySpan<byte> buffer) => 0;
 	protected virtual void CloseCore() { }
 
@@ -110,7 +110,7 @@ public abstract class FileDescriptor
 		if (CanRead)
 		{
 			if (!ReadBuffer.IsFull)
-				ReadCore(ReadBuffer);
+				ReadCore(ref ReadBuffer);
 		}
 	}
 
@@ -215,6 +215,7 @@ public abstract class FileDescriptor
 		{
 			systemMemory[address++] = ReadBuffer.Pull();
 			count++;
+			readSize--;
 		}
 
 		return count;
