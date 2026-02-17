@@ -1,7 +1,7 @@
 # Remove the line below if you want to inherit .editorconfig settings from higher directories
 root = true
 
-﻿[*.{cs,vb}]
+[*.{cs,vb}]
 dotnet_style_operator_placement_when_wrapping = beginning_of_line
 tab_width = 2
 indent_size = 2

@@ -691,7 +691,7 @@ public class Interrupt0x21Tests
 
 				al.Should().Be(0);
 
-				dta.ShouldBeEquivalentTo(expectedResults);
+				dta.ShouldMatch(expectedResults);
 			}
 			finally
 			{
