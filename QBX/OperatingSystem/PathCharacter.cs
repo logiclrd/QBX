@@ -11,6 +11,8 @@ public class PathCharacter
 
 	public static bool IsValid(byte b) => (b >= 32) && (Array.IndexOf(InvalidCharacters, b) < 0);
 
+	public static bool IsValidOrWildcard(byte b) => (b == '?') || IsValid(b);
+
 	public static byte ToUpper(byte b)
 	{
 		if ((b >= 'a') && (b <= 'z'))
@@ -65,6 +67,5 @@ public class PathCharacter
 					return b;
 			}
 		}
-
 	}
 }

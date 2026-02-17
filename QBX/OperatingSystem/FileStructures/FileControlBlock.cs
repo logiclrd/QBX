@@ -48,7 +48,7 @@ public class FileControlBlock
 
 		int offset = 0;
 
-		while ((offset < length) && PathCharacter.IsValid(fileNameBytes[offset]))
+		while ((offset < length) && PathCharacter.IsValidOrWildcard(fileNameBytes[offset]))
 		{
 			s_fileNameBuffer[offset] = CP437Encoding.GetCharSemantic(fileNameBytes[offset]);
 			offset++;
@@ -59,13 +59,13 @@ public class FileControlBlock
 		while ((length > 0) && PathCharacter.IsSpace(fileNameBytes[8 + length - 1]))
 			length--;
 
-		if ((length > 0) && PathCharacter.IsValid(fileNameBytes[8]))
+		if ((length > 0) && PathCharacter.IsValidOrWildcard(fileNameBytes[8]))
 		{
 			s_fileNameBuffer[offset++] = '.';
 
 			int extensionOffset = 0;
 
-			while ((extensionOffset < length) && PathCharacter.IsValid(fileNameBytes[8 + extensionOffset]))
+			while ((extensionOffset < length) && PathCharacter.IsValidOrWildcard(fileNameBytes[8 + extensionOffset]))
 			{
 				s_fileNameBuffer[offset] = CP437Encoding.GetCharSemantic(fileNameBytes[8 + extensionOffset]);
 				offset++;

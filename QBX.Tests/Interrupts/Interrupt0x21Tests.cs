@@ -764,6 +764,100 @@ public class Interrupt0x21Tests
 		}
 	}
 
+	[Test]
+	public void FindFirstFileWithFCB_should_handle_no_matches()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			File.WriteAllText("TEST1.TXT", "");
+			File.WriteAllText("TEST23.TXT", "");
+			File.WriteAllText("TEST24.TXT", "");
+			File.WriteAllText("TEST3.TXT", "");
+
+			var fcb = new FileControlBlock();
+
+			fcb.SetFileName("TEST4*.*");
+
+			var fcbAddress = machine.DOS.MemoryManager.AllocateMemory(FileControlBlock.Size, machine.DOS.CurrentPSPSegment);
+
+			fcb.MemoryAddress = fcbAddress;
+
+			fcb.Serialize(machine.MemoryBus);
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.FindFirstFileWithFCB<< 8;
+			rin.DS = (ushort)(fcbAddress / MemoryManager.ParagraphSize);
+			rin.DX = (ushort)(fcbAddress % MemoryManager.ParagraphSize);
+
+			// Act
+			var rout = sut.Execute(rin);
+
+			// Assert
+			int al = rout.AX & 0xFF;
+
+			al.Should().Be(0xFF);
+		}
+	}
+
+	[Test]
+	public void FindFirstFileWithFCB_should_find_first_file()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			File.WriteAllText("TEST1.TXT", "");
+			File.WriteAllText("TEST23.TXT", "");
+			File.WriteAllText("TEST24.TXT", "");
+			File.WriteAllText("TEST3.TXT", "");
+
+			var fcb = new FileControlBlock();
+
+			fcb.SetFileName("TEST2*.*");
+
+			var fcbAddress = machine.DOS.MemoryManager.AllocateMemory(FileControlBlock.Size, machine.DOS.CurrentPSPSegment);
+
+			fcb.MemoryAddress = fcbAddress;
+
+			fcb.Serialize(machine.MemoryBus);
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.FindFirstFileWithFCB<< 8;
+			rin.DS = (ushort)(fcbAddress / MemoryManager.ParagraphSize);
+			rin.DX = (ushort)(fcbAddress % MemoryManager.ParagraphSize);
+
+			// Act
+			var rout = sut.Execute(rin);
+
+			// Assert
+			int al = rout.AX & 0xFF;
+
+			al.Should().Be(0);
+
+			fcb = FileControlBlock.Deserialize(machine.MemoryBus, fcbAddress);
+
+			fcb.GetFileName().Should().Be("TEST23.TXT");
+		}
+	}
+
 	/*
 	public enum Function : byte
 	{
