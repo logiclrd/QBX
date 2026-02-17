@@ -339,7 +339,7 @@ public class Interrupt0x21Tests
 
 		var messageWithTerminator = new StringValue(message + "$");
 
-		int messageAddress = machine.DOS.MemoryManager.AllocateMemory(messageWithTerminator.Length, machine.DOS.MemoryManager.RootPSPSegment);
+		int messageAddress = machine.DOS.MemoryManager.AllocateMemory(messageWithTerminator.Length, machine.DOS.CurrentPSPSegment);
 
 		messageWithTerminator.AsSpan().CopyTo(machine.SystemMemory.AsSpan().Slice(messageAddress));
 
@@ -379,7 +379,7 @@ public class Interrupt0x21Tests
 
 		byte bufferLength = 8;
 
-		int bufferAddress = machine.DOS.MemoryManager.AllocateMemory(bufferLength + 2, machine.DOS.MemoryManager.RootPSPSegment);
+		int bufferAddress = machine.DOS.MemoryManager.AllocateMemory(bufferLength + 2, machine.DOS.CurrentPSPSegment);
 
 		var bufferHeader = machine.SystemMemory.AsSpan().Slice(bufferAddress, 2);
 		var bufferData = machine.SystemMemory.AsSpan().Slice(bufferAddress + 2, bufferLength);
@@ -429,7 +429,7 @@ public class Interrupt0x21Tests
 
 		byte bufferLength = 4;
 
-		int bufferAddress = machine.DOS.MemoryManager.AllocateMemory(bufferLength + 2, machine.DOS.MemoryManager.RootPSPSegment);
+		int bufferAddress = machine.DOS.MemoryManager.AllocateMemory(bufferLength + 2, machine.DOS.CurrentPSPSegment);
 
 		var bufferHeader = machine.SystemMemory.AsSpan().Slice(bufferAddress, 2);
 		var bufferData = machine.SystemMemory.AsSpan().Slice(bufferAddress + 2, bufferLength);
