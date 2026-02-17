@@ -700,11 +700,73 @@ public class Interrupt0x21Tests
 		}
 	}
 
+	[Test]
+	public void CloseFileWithFCB_should_close_files()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+
+			byte[] testData = s_cp437.GetBytes("QuickBASIC");
+
+			File.WriteAllBytes(TestFileName, testData);
+
+			var fcb = new FileControlBlock();
+
+			fcb.SetFileName(TestFileName);
+
+			machine.DOS.OpenFile(fcb, OperatingSystem.FileStructures.FileMode.Open);
+
+			int fileHandle = fcb.FileHandle;
+
+			var fcbAddress = machine.DOS.MemoryManager.AllocateMemory(FileControlBlock.Size, machine.DOS.CurrentPSPSegment);
+
+			fcb.MemoryAddress = fcbAddress;
+
+			fcb.Serialize(machine.MemoryBus);
+
+			try
+			{
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (int)Interrupt0x21.Function.CloseFileWithFCB << 8;
+				rin.DS = (ushort)(fcbAddress / MemoryManager.ParagraphSize);
+				rin.DX = (ushort)(fcbAddress % MemoryManager.ParagraphSize);
+
+				// Act
+				var fileDescriptorBefore = machine.DOS.Files[fileHandle];
+
+				var rout = sut.Execute(rin);
+
+				var fileDescriptorAfter = machine.DOS.Files[fileHandle];
+
+				// Assert
+				int al = rout.AX & 0xFF;
+
+				al.Should().Be(0);
+
+				fileDescriptorBefore.Should().NotBeNull();
+				fileDescriptorAfter.Should().BeNull();
+			}
+			finally
+			{
+				machine.DOS.CloseFile(fcb);
+			}
+		}
+	}
+
 	/*
 	public enum Function : byte
 	{
-		OpenFileWithFCB = 0x0F,
-		CloseFileWithFCB = 0x10,
 		FindFirstFileWithFCB = 0x11,
 		FindNextFileWithFCB = 0x12,
 		DeleteFileWithFCB = 0x13,
