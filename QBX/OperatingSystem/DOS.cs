@@ -111,11 +111,18 @@ public partial class DOS
 
 		foreach (var drive in drives)
 		{
+			string rootPath = drive.RootDirectory.FullName;
+
+			if (rootPath.Length < 2)
+				rootPath = "C" + Path.PathSeparator + Path.DirectorySeparatorChar; // "C:/" synthetic drive on platforms with no drive letters
+			else if (rootPath[1] != Path.PathSeparator)
+				continue;
+
 			ref DriveParameterBlock dpb = ref DriveParameterBlock.CreateReference(_machine.SystemMemory, nextDPBAddress.ToLinearAddress());
 
 			// This is all nonsense data, because modern drives don't
 			// fit into the fields described by a DPB at all. :-P
-			dpb.DriveIdentifier = (byte)(char.ToUpperInvariant(drive.RootDirectory.FullName[0]) - 'A');
+			dpb.DriveIdentifier = (byte)(char.ToUpperInvariant(rootPath[0]) - 'A');
 			dpb.SectorSize = 512;
 			dpb.ClusterMask = 255; // ClusterMask == (1 << ClusterShift) - 1
 			dpb.ClusterShift = 8;

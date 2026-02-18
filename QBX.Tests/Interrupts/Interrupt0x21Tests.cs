@@ -1,4 +1,6 @@
-﻿using QBX.ExecutionEngine.Execution;
+﻿using System.Numerics;
+
+using QBX.ExecutionEngine.Execution;
 using QBX.Firmware.Fonts;
 using QBX.Hardware;
 using QBX.Interrupts;
@@ -1756,11 +1758,40 @@ public class Interrupt0x21Tests
 		}
 	}
 
+	[Test]
+	public void GetDefaultDriveData_should_return_some_values()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.GetDefaultDriveData << 8;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		BitOperations.PopCount(rout.AX).Should().Be(1);
+		BitOperations.PopCount(rout.CX).Should().Be(1);
+		rout.DX.Should().BeGreaterThan(1000);
+
+		var routEx = rout.AsRegistersEx();
+
+		var mediaDescriptorAddress = new SegmentedAddress(routEx.DS, rout.BX);
+
+		var mediaDescriptor = (MediaDescriptor)machine.MemoryBus[mediaDescriptorAddress.ToLinearAddress()];
+
+		mediaDescriptor.Should().Be(MediaDescriptor.FixedDisk);
+	}
+
 	/*
 	public enum Function : byte
 	{
-		SetDiskTransferAddress = 0x1A,
-		GetDefaultDriveData = 0x1B,
 		GetDriveData = 0x1C,
 		GetDefaultDPB = 0x1F,
 		RandomRead = 0x21,

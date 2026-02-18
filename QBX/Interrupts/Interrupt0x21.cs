@@ -636,7 +636,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 							// call, so we just fake a 100MB hard drive or a 1.44MB floppy.
 
 							result.DS = dpbAddress.Segment;
-							result.BX = dpbAddress.Offset;
+							result.BX = (ushort)(dpbAddress.Offset + DriveParameterBlock.MediaDescriptorFieldOffset);
 
 							if (dpb.MediaDescriptor == MediaDescriptor.FloppyDisk)
 							{

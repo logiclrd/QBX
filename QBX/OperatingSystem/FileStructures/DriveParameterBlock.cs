@@ -1,6 +1,8 @@
-﻿using QBX.Hardware;
-using QBX.OperatingSystem.Memory;
+﻿using System.Reflection;
 using System.Runtime.InteropServices;
+
+using QBX.Hardware;
+using QBX.OperatingSystem.Memory;
 
 namespace QBX.OperatingSystem.FileStructures;
 
@@ -27,6 +29,11 @@ public struct DriveParameterBlock
 	[FieldOffset(25)] public SegmentedAddress NextDPBAddress;
 	[FieldOffset(29)] public ushort NextFreeCluster;
 	[FieldOffset(31)] public ushort FreeClusterCount;
+
+	public static readonly int MediaDescriptorFieldOffset =
+		typeof(DriveParameterBlock).GetField(nameof(MediaDescriptor), BindingFlags.Public | BindingFlags.Instance)!
+		.GetCustomAttribute<FieldOffsetAttribute>()!
+		.Value;
 
 	public static ref DriveParameterBlock CreateReference(SystemMemory systemMemory, int offset)
 	{
