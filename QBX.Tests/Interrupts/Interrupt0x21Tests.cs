@@ -865,11 +865,77 @@ public class Interrupt0x21Tests
 		}
 	}
 
+	[Test]
+	public void FindNextFileWithFCB_should_find_all_matching_files()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			File.WriteAllText("TEST1.TXT", "");
+			File.WriteAllText("TEST23.TXT", "");
+			File.WriteAllText("TEST24.TXT", "");
+			File.WriteAllText("TEST3.TXT", "");
+
+			const string TestPattern = "TEST2*.*";
+
+			var fcb = new FileControlBlock();
+
+			fcb.SetFileName(TestPattern);
+
+			var fcbAddress = machine.DOS.MemoryManager.AllocateMemory(FileControlBlock.Size, machine.DOS.CurrentPSPSegment);
+
+			fcb.MemoryAddress = fcbAddress;
+
+			fcb.Serialize(machine.MemoryBus);
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.FindFirstFileWithFCB << 8;
+			rin.DS = (ushort)(fcbAddress / MemoryManager.ParagraphSize);
+			rin.DX = (ushort)(fcbAddress % MemoryManager.ParagraphSize);
+
+			var rout = sut.Execute(rin);
+
+			var allMatches = new List<string>();
+
+			var dirEntrySpan = machine.SystemMemory.AsSpan().Slice(machine.DOS.DataTransferAddress, 32);
+
+			string fileName = FileControlBlock.GetFileName(dirEntrySpan.Slice(0, 11));
+
+			allMatches.Add(fileName);
+
+			rin.AX = (int)Interrupt0x21.Function.FindNextFileWithFCB << 8;
+
+			// Act
+			rout = sut.Execute(rin);
+
+			while ((rin.AX & 0xFF) == 0)
+			{
+				fileName = FileControlBlock.GetFileName(dirEntrySpan.Slice(0, 11));
+
+				allMatches.Add(fileName);
+
+				rout = sut.Execute(rin);
+			}
+
+			// Assert
+			var validMatches = Directory.GetFiles(workspace.Path, TestPattern).Select(path => Path.GetFileName(path));
+
+			allMatches.Should().BeEquivalentTo(validMatches);
+		}
+	}
+
 	/*
 	public enum Function : byte
 	{
-		FindFirstFileWithFCB = 0x11,
-		FindNextFileWithFCB = 0x12,
 		DeleteFileWithFCB = 0x13,
 		SequentialRead = 0x14,
 		SequentialWrite = 0x15,

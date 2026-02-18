@@ -477,6 +477,8 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 					if (!machine.DOS.FindFirst(fcb))
 						result.AX |= 0xFF;
 
+					fcb.Serialize(machine.MemoryBus);
+
 					break;
 				}
 				case Function.FindNextFileWithFCB:
