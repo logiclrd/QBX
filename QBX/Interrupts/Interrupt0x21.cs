@@ -625,7 +625,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 						int driveIndicator = input.DX & 0xFF;
 
 						var dpbAddress = (driveIndicator != 0)
-							? machine.DOS.GetDriveParameterBlock(driveIndicator)
+							? machine.DOS.GetDriveParameterBlock(driveIndicator - 1)
 							: machine.DOS.GetDefaultDriveParameterBlock();
 
 						if (dpbAddress != 0)

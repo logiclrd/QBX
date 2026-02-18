@@ -1789,10 +1789,75 @@ public class Interrupt0x21Tests
 		mediaDescriptor.Should().Be(MediaDescriptor.FixedDisk);
 	}
 
+	[Test]
+	public void GetDriveData_should_return_some_values_for_default_drive()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.GetDriveData << 8;
+		rin.DX = 0;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		BitOperations.PopCount(rout.AX).Should().Be(1);
+		BitOperations.PopCount(rout.CX).Should().Be(1);
+		rout.DX.Should().BeGreaterThan(1000);
+
+		var routEx = rout.AsRegistersEx();
+
+		var mediaDescriptorAddress = new SegmentedAddress(routEx.DS, rout.BX);
+
+		var mediaDescriptor = (MediaDescriptor)machine.MemoryBus[mediaDescriptorAddress.ToLinearAddress()];
+
+		mediaDescriptor.Should().Be(MediaDescriptor.FixedDisk);
+	}
+
+	[Test]
+	public void GetDriveData_should_return_some_values_for_specified_drive()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.GetDriveData << 8;
+		rin.DX = (ushort)(machine.DOS.GetDefaultDrive() + 1);
+
+		rin.DX.Should().BeInRange(1, 26);
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		BitOperations.PopCount(rout.AX).Should().Be(1);
+		BitOperations.PopCount(rout.CX).Should().Be(1);
+		rout.DX.Should().BeGreaterThan(1000);
+
+		var routEx = rout.AsRegistersEx();
+
+		var mediaDescriptorAddress = new SegmentedAddress(routEx.DS, rout.BX);
+
+		var mediaDescriptor = (MediaDescriptor)machine.MemoryBus[mediaDescriptorAddress.ToLinearAddress()];
+
+		mediaDescriptor.Should().Be(MediaDescriptor.FixedDisk);
+	}
+
 	/*
 	public enum Function : byte
 	{
-		GetDriveData = 0x1C,
 		GetDefaultDPB = 0x1F,
 		RandomRead = 0x21,
 		RandomWrite = 0x22,
