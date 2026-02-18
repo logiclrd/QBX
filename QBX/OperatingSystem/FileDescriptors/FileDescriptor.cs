@@ -128,7 +128,7 @@ public abstract class FileDescriptor
 			{
 				int firstPart = -firstUsed;
 
-				numWritten = WriteCore(WriteBuffer.GetBufferSpan(firstUsed, firstPart));
+				numWritten = WriteCore(WriteBuffer.GetBufferSpan(WriteBuffer.Size + firstUsed, firstPart));
 
 				if (numWritten <= 0)
 					throw new Exception("Write failed"); // TODO: proper type
@@ -278,6 +278,8 @@ public abstract class FileDescriptor
 				FlushWriteBuffer();
 
 			WriteBuffer.Push(systemMemory[address++]);
+
+			writeSize--;
 		}
 	}
 
@@ -285,6 +287,7 @@ public abstract class FileDescriptor
 	{
 		if (!IsClosed)
 		{
+			FlushWriteBuffer();
 			CloseCore();
 			IsClosed = true;
 		}

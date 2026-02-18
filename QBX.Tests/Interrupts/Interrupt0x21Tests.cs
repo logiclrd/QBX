@@ -1083,12 +1083,179 @@ public class Interrupt0x21Tests
 		}
 	}
 
+	[Test]
+	public void SequentialRead_should_read_multiple_records_sequentially()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			Random rnd = new Random();
+
+			const string TestFileName = "TESTFILE.TXT";
+
+			const int NumRecords = 5;
+
+			byte[][] records = new byte[NumRecords][];
+
+			for (int i=0; i < NumRecords; i++)
+			{
+				records[i] = new byte[128];
+				rnd.NextBytes(records[i]);
+			}
+
+			using (var stream = File.OpenWrite(TestFileName))
+			{
+				for (int i=0; i < NumRecords; i++)
+					stream.Write(records[i]);
+			}
+
+			var fcb = new FileControlBlock();
+
+			fcb.SetFileName(TestFileName);
+
+			machine.DOS.OpenFile(fcb, OperatingSystem.FileStructures.FileMode.Open);
+
+			var fcbAddress = machine.DOS.MemoryManager.AllocateMemory(FileControlBlock.Size, machine.DOS.CurrentPSPSegment);
+
+			fcb.MemoryAddress = fcbAddress;
+
+			fcb.Serialize(machine.MemoryBus);
+
+			try
+			{
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (int)Interrupt0x21.Function.SequentialRead << 8;
+				rin.DS = (ushort)(fcbAddress / MemoryManager.ParagraphSize);
+				rin.DX = (ushort)(fcbAddress % MemoryManager.ParagraphSize);
+
+				var expectedResults = new byte[128];
+
+				var dta = machine.SystemMemory.AsSpan().Slice(machine.DOS.DataTransferAddress, 128);
+
+				dta.Fill(1);
+
+				int[] returnCodes = new int[NumRecords];
+				byte[][] actualData = new byte[NumRecords][];
+
+				// Act
+				for (int i=0; i < NumRecords; i++)
+				{
+					var rout = sut.Execute(rin);
+
+					returnCodes[i] = rout.AX & 0xFF;
+					actualData[i] = dta.ToArray();
+				}
+
+				// Assert
+				returnCodes.Should().AllBeEquivalentTo(0);
+
+				for (int i=0; i < NumRecords; i++)
+					actualData[i].ShouldMatch(records[i]);
+			}
+			finally
+			{
+				machine.DOS.CloseFile(fcb);
+			}
+		}
+	}
+
+	[Test]
+	public void SequentialWrite_should_write_multiple_records_sequentially()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			Random rnd = new Random();
+
+			const string TestFileName = "TESTFILE.TXT";
+
+			const int NumRecords = 5;
+
+			byte[][] records = new byte[NumRecords][];
+
+			for (int i=0; i < NumRecords; i++)
+			{
+				records[i] = new byte[128];
+				rnd.NextBytes(records[i]);
+			}
+
+			var fcb = new FileControlBlock();
+
+			fcb.SetFileName(TestFileName);
+
+			machine.DOS.OpenFile(fcb, OperatingSystem.FileStructures.FileMode.CreateNew);
+
+			var fcbAddress = machine.DOS.MemoryManager.AllocateMemory(FileControlBlock.Size, machine.DOS.CurrentPSPSegment);
+
+			fcb.MemoryAddress = fcbAddress;
+
+			fcb.Serialize(machine.MemoryBus);
+
+			int[] returnCodes = new int[NumRecords];
+			byte[][] actualData = new byte[NumRecords][];
+
+			try
+			{
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (int)Interrupt0x21.Function.SequentialWrite << 8;
+				rin.DS = (ushort)(fcbAddress / MemoryManager.ParagraphSize);
+				rin.DX = (ushort)(fcbAddress % MemoryManager.ParagraphSize);
+
+				var dta = machine.SystemMemory.AsSpan().Slice(machine.DOS.DataTransferAddress, 128);
+
+				// Act
+				for (int i=0; i < NumRecords; i++)
+				{
+					records[i].CopyTo(dta);
+
+					var rout = sut.Execute(rin);
+
+					returnCodes[i] = rout.AX & 0xFF;
+				}
+			}
+			finally
+			{
+				machine.DOS.CloseFile(fcb);
+			}
+
+			// Assert
+			returnCodes.Should().AllBeEquivalentTo(0);
+
+			using (var file = File.OpenRead(TestFileName))
+			{
+				byte[] buffer = new byte[128];
+
+				for (int i=0; i < NumRecords; i++)
+				{
+					file.ReadExactly(buffer);
+
+					buffer.ShouldMatch(records[i]);
+				}
+			}
+		}
+	}
+
 	/*
 	public enum Function : byte
 	{
-		DeleteFileWithFCB = 0x13,
-		SequentialRead = 0x14,
-		SequentialWrite = 0x15,
 		CreateFileWithFCB = 0x16,
 		RenameFileWithFCB = 0x17,
 		GetDefaultDrive = 0x19,

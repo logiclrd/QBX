@@ -985,17 +985,32 @@ public partial class DOS
 					{
 						var fileInfo = new FileInfo(fileName);
 
-						if (fileInfo.Length <= uint.MaxValue)
-						{
-							var dateTime = fileInfo.LastWriteTime;
+						bool fileAlreadyExists = fileInfo.Exists;
 
-							fcb.DriveIdentifier = (byte)(shortPath[0] - 64);
-							fcb.FileSize = (uint)fileInfo.Length;
-							fcb.DateStamp.Set(dateTime.Year, dateTime.Month, dateTime.Day);
-							fcb.TimeStamp.Set(dateTime.Hour, dateTime.Minute, dateTime.Second);
+						if (!fileAlreadyExists || (fileInfo.Length <= uint.MaxValue))
+						{
+							void GatherFileInfo()
+							{
+								var dateTime = fileInfo.LastWriteTime;
+
+								fcb.DriveIdentifier = (byte)(shortPath[0] - 64);
+								fcb.FileSize = (uint)fileInfo.Length;
+								fcb.DateStamp.Set(dateTime.Year, dateTime.Month, dateTime.Day);
+								fcb.TimeStamp.Set(dateTime.Hour, dateTime.Minute, dateTime.Second);
+							}
+
+							if (fileAlreadyExists)
+								GatherFileInfo();
+
 							fcb.RecordSize = 128;
 
 							var stream = fileInfo.Open(openMode.ToSystemFileMode());
+
+							if (!fileAlreadyExists)
+							{
+								fileInfo.Refresh();
+								GatherFileInfo();
+							}
 
 							fcb.FileHandle = AllocateFileHandleForOpenFile(shortPath, fileInfo.FullName, stream);
 
@@ -1307,41 +1322,36 @@ public partial class DOS
 		{
 			uint offset = fcb.RecordPointer * fcb.RecordSize;
 
-			if (offset >= fcb.FileSize)
-				return 0;
-			else
+			int writeSize = fcb.RecordSize * recordCount;
+
+			if (0x10000 - DataTransferAddressOffset < writeSize)
+				throw new OperationCanceledException("DTA overlaps segment boundary");
+
+			if (Files[fcb.FileHandle] is not FileDescriptor fileDescriptor)
 			{
-				int writeSize = fcb.RecordSize * recordCount;
-
-				if (0x10000 - DataTransferAddressOffset < writeSize)
-					throw new OperationCanceledException("DTA overlaps segment boundary");
-
-				if (Files[fcb.FileHandle] is not FileDescriptor fileDescriptor)
-				{
-					LastError = DOSError.InvalidHandle;
-					return -1;
-				}
-
-				fileDescriptor.Seek(offset, MoveMethod.FromBeginning);
-
-				for (int i = 0; i < recordCount; i++)
-				{
-					fileDescriptor.Write(fcb.RecordSize, Machine.MemoryBus, DataTransferAddress);
-
-					if (advance)
-					{
-						Advance(fcb);
-
-						if (updateRandomRecordNumber)
-							fcb.RandomRecordNumber = fcb.RecordPointer;
-					}
-				}
-
-				if (VerifyWrites)
-					fileDescriptor.FlushWriteBuffer(true);
-
-				return writeSize;
+				LastError = DOSError.InvalidHandle;
+				return -1;
 			}
+
+			fileDescriptor.Seek(offset, MoveMethod.FromBeginning);
+
+			for (int i = 0; i < recordCount; i++)
+			{
+				fileDescriptor.Write(fcb.RecordSize, Machine.MemoryBus, DataTransferAddress);
+
+				if (advance)
+				{
+					Advance(fcb);
+
+					if (updateRandomRecordNumber)
+						fcb.RandomRecordNumber = fcb.RecordPointer;
+				}
+			}
+
+			if (VerifyWrites)
+				fileDescriptor.FlushWriteBuffer(true);
+
+			return writeSize;
 		});
 	}
 
