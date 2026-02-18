@@ -650,15 +650,13 @@ public class Interrupt0x21Tests
 
 			const string TestFileName = "TESTFILE.TXT";
 
-			byte[] testData = s_cp437.GetBytes("QuickBASIC");
+			byte[] testData = s_cp437.GetBytes(Guid.NewGuid().ToString());
 
 			File.WriteAllBytes(TestFileName, testData);
 
 			var fcb = new FileControlBlock();
 
 			fcb.SetFileName(TestFileName);
-
-			machine.DOS.OpenFile(fcb, OperatingSystem.FileStructures.FileMode.Open);
 
 			var fcbAddress = machine.DOS.MemoryManager.AllocateMemory(FileControlBlock.Size, machine.DOS.CurrentPSPSegment);
 
@@ -672,17 +670,9 @@ public class Interrupt0x21Tests
 
 				var rin = new RegistersEx();
 
-				rin.AX = (int)Interrupt0x21.Function.SequentialRead << 8;
+				rin.AX = (int)Interrupt0x21.Function.OpenFileWithFCB << 8;
 				rin.DS = (ushort)(fcbAddress / MemoryManager.ParagraphSize);
 				rin.DX = (ushort)(fcbAddress % MemoryManager.ParagraphSize);
-
-				var expectedResults = new byte[128];
-
-				testData.CopyTo(expectedResults);
-
-				var dta = machine.SystemMemory.AsSpan().Slice(machine.DOS.DataTransferAddress, 128);
-
-				dta.Fill(1);
 
 				// Act
 				var rout = sut.Execute(rin);
@@ -692,7 +682,39 @@ public class Interrupt0x21Tests
 
 				al.Should().Be(0);
 
-				dta.ShouldMatch(expectedResults);
+				fcb = FileControlBlock.Deserialize(machine.MemoryBus, fcbAddress);
+
+				int fileHandle = fcb.FileHandle;
+
+				fileHandle.Should().BeInRange(2, machine.DOS.Files.Count - 1);
+
+				var regularFile = (RegularFileDescriptor)machine.DOS.Files[fileHandle]!;
+
+				regularFile.PhysicalPath.Should().Be(Path.GetFullPath(TestFileName));
+
+				string? pathRoot = Path.GetPathRoot(regularFile.Path) ?? "C:\\";
+
+				if (string.IsNullOrEmpty(pathRoot))
+					pathRoot = "C:\\";
+
+				byte expectedDriveIdentifier = (byte)(char.ToUpperInvariant(pathRoot[0]) - 'A' + 1);
+
+				fcb.DriveIdentifier.Should().Be(expectedDriveIdentifier);
+
+				byte[] checkDataBuffer = new byte[testData.Length];
+
+				int offset = 0;
+
+				while (offset < checkDataBuffer.Length)
+				{
+					int count = regularFile.Read(checkDataBuffer.AsSpan().Slice(offset));
+
+					count.Should().BePositive();
+
+					offset += count;
+				}
+
+				checkDataBuffer.AsSpan().ShouldMatch(testData);
 			}
 			finally
 			{
@@ -930,6 +952,134 @@ public class Interrupt0x21Tests
 			var validMatches = Directory.GetFiles(workspace.Path, TestPattern).Select(path => Path.GetFileName(path));
 
 			allMatches.Should().BeEquivalentTo(validMatches);
+		}
+	}
+
+	[Test]
+	public void DeleteFileWithFCB_should_delete_files()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			string[] allFiles = [ "TEST1.TXT", "TEST23.TXT", "TEST24.TXT", "TEST3.TXT" ];
+
+			const string TestFileName = "TEST23.TXT";
+
+			foreach (var fileName in allFiles)
+				File.WriteAllText(fileName, "");
+
+			var fcb = new FileControlBlock();
+
+			fcb.SetFileName(TestFileName);
+
+			var fcbAddress = machine.DOS.MemoryManager.AllocateMemory(FileControlBlock.Size, machine.DOS.CurrentPSPSegment);
+
+			fcb.MemoryAddress = fcbAddress;
+
+			fcb.Serialize(machine.MemoryBus);
+
+			try
+			{
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (int)Interrupt0x21.Function.DeleteFileWithFCB << 8;
+				rin.DS = (ushort)(fcbAddress / MemoryManager.ParagraphSize);
+				rin.DX = (ushort)(fcbAddress % MemoryManager.ParagraphSize);
+
+				var expectedFiles = allFiles.Except([TestFileName]);
+
+				// Act
+				var rout = sut.Execute(rin);
+
+				// Assert
+				int al = rout.AX & 0xFF;
+
+				al.Should().Be(0);
+
+				var actualFiles = Directory.GetFiles(workspace.Path);
+
+				for (int i=0; i < actualFiles.Length; i++)
+					actualFiles[i] = Path.GetFileName(actualFiles[i]);
+
+				actualFiles.Should().BeEquivalentTo(expectedFiles);
+			}
+			finally
+			{
+				machine.DOS.CloseFile(fcb);
+			}
+		}
+	}
+
+	[Test]
+	public void SequentialRead_should_read_partial_record()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+
+			byte[] testData = s_cp437.GetBytes("QuickBASIC");
+
+			File.WriteAllBytes(TestFileName, testData);
+
+			var fcb = new FileControlBlock();
+
+			fcb.SetFileName(TestFileName);
+
+			machine.DOS.OpenFile(fcb, OperatingSystem.FileStructures.FileMode.Open);
+
+			var fcbAddress = machine.DOS.MemoryManager.AllocateMemory(FileControlBlock.Size, machine.DOS.CurrentPSPSegment);
+
+			fcb.MemoryAddress = fcbAddress;
+
+			fcb.Serialize(machine.MemoryBus);
+
+			try
+			{
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (int)Interrupt0x21.Function.SequentialRead << 8;
+				rin.DS = (ushort)(fcbAddress / MemoryManager.ParagraphSize);
+				rin.DX = (ushort)(fcbAddress % MemoryManager.ParagraphSize);
+
+				var expectedResults = new byte[128];
+
+				testData.CopyTo(expectedResults);
+
+				var dta = machine.SystemMemory.AsSpan().Slice(machine.DOS.DataTransferAddress, 128);
+
+				dta.Fill(1);
+
+				// Act
+				var rout = sut.Execute(rin);
+
+				// Assert
+				int al = rout.AX & 0xFF;
+
+				al.Should().Be(0);
+
+				dta.ShouldMatch(expectedResults);
+			}
+			finally
+			{
+				machine.DOS.CloseFile(fcb);
+			}
 		}
 	}
 

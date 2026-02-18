@@ -18,6 +18,14 @@ public partial class ShortFileNames
 			return TryMapEmulated(path, shortName);
 	}
 
+	public static string GetFullPath(string relativePath)
+	{
+		if (System.OperatingSystem.IsWindows())
+			return GetFullPathWindows(relativePath);
+		else
+			return GetFullPathEmulated(relativePath);
+	}
+
 	public static string Unmap(string shortPath)
 	{
 		if (System.OperatingSystem.IsWindows())

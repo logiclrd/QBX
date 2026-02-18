@@ -43,6 +43,16 @@ public partial class ShortFileNames
 		BackupSemantics = 0x02000000,
 	}
 
+	static string GetFullPathWindows(string shortRelativePath)
+	{
+		var fullPath = Path.GetFullPath(shortRelativePath);
+
+		if (TryMapWindows(fullPath, out var shortPath))
+			return shortPath;
+		else
+			return fullPath;
+	}
+
 	static string UnmapWindows(string path) => path; // No unmapping needed; the filesystem accepts short paths directly.
 
 	static void ForgetWindows(string longPath) { } // No action needed on Windows.

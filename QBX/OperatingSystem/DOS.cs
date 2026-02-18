@@ -657,6 +657,8 @@ public partial class DOS
 		{
 			if (string.IsNullOrEmpty(path))
 				path = Environment.CurrentDirectory;
+			else
+				path = ShortFileNames.Unmap(path);
 
 			var driveInfo = new DriveInfo(path);
 
@@ -813,6 +815,8 @@ public partial class DOS
 	{
 		TranslateError(() =>
 		{
+			directoryName = ShortFileNames.Unmap(directoryName);
+
 			Directory.CreateDirectory(directoryName);
 		});
 	}
@@ -824,6 +828,8 @@ public partial class DOS
 	{
 		TranslateError(() =>
 		{
+			directoryName = ShortFileNames.Unmap(directoryName);
+
 			Directory.Delete(directoryName, recursive: false);
 		});
 	}
@@ -835,6 +841,8 @@ public partial class DOS
 	{
 		TranslateError(() =>
 		{
+			directoryName = ShortFileNames.Unmap(directoryName);
+
 			Environment.CurrentDirectory = directoryName;
 		});
 	}
@@ -981,7 +989,7 @@ public partial class DOS
 						{
 							var dateTime = fileInfo.LastWriteTime;
 
-							fcb.DriveIdentifier = (byte)(fileInfo.FullName[0] - 64);
+							fcb.DriveIdentifier = (byte)(shortPath[0] - 64);
 							fcb.FileSize = (uint)fileInfo.Length;
 							fcb.DateStamp.Set(dateTime.Year, dateTime.Month, dateTime.Day);
 							fcb.TimeStamp.Set(dateTime.Hour, dateTime.Minute, dateTime.Second);
@@ -1134,6 +1142,8 @@ public partial class DOS
 		{
 			while (true)
 			{
+				directoryPath = ShortFileNames.Unmap(directoryPath);
+
 				string probeFileName = GetTemporaryFileName();
 
 				int handle = OpenFile(Path.Combine(directoryPath, probeFileName), FileMode.CreateNew, OpenMode.Access_ReadWrite | OpenMode.Share_Compatibility);
@@ -1565,6 +1575,8 @@ public partial class DOS
 	{
 		TranslateError(() =>
 		{
+			fileName = ShortFileNames.Unmap(ShortFileNames.GetFullPath(fileName));
+
 			var psi = new ProcessStartInfo(fileName);
 
 			psi.Arguments = parameters.CommandTail;

@@ -51,8 +51,29 @@ public partial class ShortFileNames
 		}
 	}
 
+	static string GetFullPathEmulated(string shortRelativePath)
+	{
+		string longCurrentDirectory = Environment.CurrentDirectory;
+
+		string shortRelativePathNonNormalized;
+
+		if (TryMapEmulated(longCurrentDirectory, out var shortCurrentDirectory))
+			shortRelativePathNonNormalized = Path.Combine(shortCurrentDirectory, shortRelativePath);
+		else
+			shortRelativePathNonNormalized = Path.Combine(longCurrentDirectory, shortRelativePath);
+
+		return Path.GetFullPath(shortRelativePathNonNormalized); // handles '.' and '..' components, does not require that path exist
+	}
+
+	static readonly string DirectorySeparatorString = Path.DirectorySeparatorChar.ToString();
+
 	static string UnmapEmulated(string possibleShortPath)
 	{
+		if ((Path.GetPathRoot("C:\\") is null) && ((possibleShortPath == "C:\\" || possibleShortPath == "C://")))
+			return DirectorySeparatorString;
+
+		possibleShortPath = GetFullPathEmulated(possibleShortPath);
+
 		if (s_shortToLong.TryGetValue(GetCanonicalPath(possibleShortPath), out var longPath))
 			return longPath;
 		else
@@ -77,7 +98,23 @@ public partial class ShortFileNames
 
 		var builder = new StringBuilder();
 
-		for (int i = 0; i < path.Length; i++)
+		int startIndex = 0;
+
+		if ((Path.GetPathRoot(path) is string root) && (root.Length >= 2) && (root[1] == Path.PathSeparator))
+		{
+			builder.Append(root);
+			startIndex = root.Length;
+		}
+		else
+		{
+			builder.Append("C:" + Path.DirectorySeparatorChar);
+
+			while ((startIndex < path.Length)
+			    && ((path[startIndex] == Path.DirectorySeparatorChar) || (path[startIndex] == Path.AltDirectorySeparatorChar)))
+				startIndex++;
+		}
+
+		for (int i = startIndex; i < path.Length; i++)
 		{
 			if (path[i] == Path.DirectorySeparatorChar)
 			{
@@ -98,7 +135,23 @@ public partial class ShortFileNames
 	{
 		var builder = new StringBuilder();
 
-		for (int i = 0; i < path.Length; i++)
+		int startIndex = 0;
+
+		if ((Path.GetPathRoot(path) is string root) && (root.Length >= 2) && (root[1] == Path.PathSeparator))
+		{
+			builder.Append(root);
+			startIndex = root.Length;
+		}
+		else
+		{
+			builder.Append("C:" + Path.DirectorySeparatorChar);
+
+			while ((startIndex < path.Length)
+			    && ((path[startIndex] == Path.DirectorySeparatorChar) || (path[startIndex] == Path.AltDirectorySeparatorChar)))
+				startIndex++;
+		}
+
+		for (int i = startIndex; i < path.Length; i++)
 		{
 			if (path[i] == Path.PathSeparator)
 			{
