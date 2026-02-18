@@ -613,6 +613,12 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 					break;
 				}
+				case Function.SetDiskTransferAddress:
+				{
+					machine.DOS.DataTransferAddressSegment = result.DS;
+					machine.DOS.DataTransferAddressOffset = result.DX;
+					break;
+				}
 				case Function.GetDefaultDriveData:
 				{
 					input.DX = 0;
@@ -660,12 +666,6 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 					if (machine.DOS.LastError != DOSError.None)
 						result.AX |= 0xFF;
 
-					break;
-				}
-				case Function.SetDiskTransferAddress:
-				{
-					machine.DOS.DataTransferAddressSegment = result.DS;
-					machine.DOS.DataTransferAddressOffset = result.DX;
 					break;
 				}
 				case Function.GetDefaultDPB:
