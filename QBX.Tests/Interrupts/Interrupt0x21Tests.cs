@@ -1675,6 +1675,86 @@ public class Interrupt0x21Tests
 		al.Should().Be(driveIdentifier);
 	}
 
+	[Test]
+	public void SetDiskTransferAddress_should_set_disk_transfer_address()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			Random rnd = new Random();
+
+			const string TestFileName = "TESTFILE.TXT";
+
+			const int NumRecords = 5;
+
+			byte[][] records = new byte[NumRecords][];
+
+			for (int i=0; i < NumRecords; i++)
+			{
+				records[i] = new byte[128];
+				rnd.NextBytes(records[i]);
+			}
+
+			using (var stream = File.OpenWrite(TestFileName))
+			{
+				for (int i=0; i < NumRecords; i++)
+					stream.Write(records[i]);
+			}
+
+			var fcb = new FileControlBlock();
+
+			fcb.SetFileName(TestFileName);
+
+			machine.DOS.OpenFile(fcb, OperatingSystem.FileStructures.FileMode.Open);
+
+			try
+			{
+				int[] dtaAddresses = new int[NumRecords];
+
+				for (int i=0; i < NumRecords; i++)
+					dtaAddresses[i] = machine.DOS.MemoryManager.AllocateMemory(fcb.RecordSize, machine.DOS.CurrentPSPSegment);
+
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var expectedResults = new byte[128];
+
+				int[] returnCodes = new int[NumRecords];
+				byte[][] actualData = new byte[NumRecords][];
+
+				// Act
+				for (int i=0; i < NumRecords; i++)
+				{
+					var rin = new RegistersEx();
+
+					rin.AX = (int)Interrupt0x21.Function.SetDiskTransferAddress << 8;
+					rin.DS = (ushort)(dtaAddresses[i] / MemoryManager.ParagraphSize);
+					rin.DX = (ushort)(dtaAddresses[i] % MemoryManager.ParagraphSize);
+
+					sut.Execute(rin);
+
+					machine.DOS.ReadRecord(fcb, advance: true);
+				}
+
+				// Assert
+				for (int i=0; i < NumRecords; i++)
+				{
+					var dtaSpan = machine.SystemMemory.AsSpan().Slice(dtaAddresses[i], fcb.RecordSize);
+
+					dtaSpan.ShouldMatch(records[i]);
+				}
+			}
+			finally
+			{
+				machine.DOS.CloseFile(fcb);
+			}
+		}
+	}
 
 	/*
 	public enum Function : byte
