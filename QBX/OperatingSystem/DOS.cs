@@ -1522,6 +1522,9 @@ public partial class DOS
 			string fileNamePart = Path.GetFileNameWithoutExtension(fileNamePattern);
 			string extensionPart = Path.GetExtension(fileNamePattern);
 
+			if ((extensionPart.Length > 0) && (extensionPart[0] == '.'))
+				extensionPart = extensionPart.Substring(1);
+
 			string collapsedFileNamePart = NormalizeFileSearchPattern(ref fileNamePart, 8);
 			string collapsedExtensionPart = NormalizeFileSearchPattern(ref extensionPart, 3);
 
@@ -1577,6 +1580,9 @@ public partial class DOS
 
 				while (FindNext(search, default, searchPatternBytes, default, PerformRename))
 					;
+
+				if (LastError == DOSError.NoMoreFiles)
+					ClearLastError();
 			}
 		});
 	}

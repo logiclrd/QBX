@@ -1,12 +1,13 @@
 ﻿using System;
-using System.IO;
-using QBX.Firmware.Fonts;
+
 using QBX.Hardware;
 
 namespace QBX.OperatingSystem.FileStructures;
 
 public class RenameFileControlBlock
 {
+	public const int Size = 37;
+
 	public byte DriveIdentifier;
 	public byte[] OldFileNameBytes = new byte[11]; // FILENAMEEXT, the dot is implicit
 	public byte[] NewFileNameBytes = new byte[11];
@@ -30,11 +31,22 @@ public class RenameFileControlBlock
 	public void SetOldFileName(string newValue) => FileControlBlock.SetFileName(newValue, OldFileNameBytes);
 	public void SetNewFileName(string newValue) => FileControlBlock.SetFileName(newValue, NewFileNameBytes);
 
+	public void Serialize(IMemory memory, int address)
+	{
+		var stream = new SystemMemoryStream(memory, address, 37);
+
+		stream.WriteByte(DriveIdentifier);
+		stream.Write(OldFileNameBytes);
+		stream.Write(stackalloc byte[5]);
+		stream.Write(NewFileNameBytes);
+		stream.Write(stackalloc byte[9]);
+	}
+
 	public static RenameFileControlBlock Deserialize(IMemory memory, int address)
 	{
 		var rfcb = new RenameFileControlBlock();
 
-		var stream = new SystemMemoryStream(memory, address, 36);
+		var stream = new SystemMemoryStream(memory, address, 37);
 
 		rfcb.DriveIdentifier = (byte)stream.ReadByte();
 		stream.ReadExactly(rfcb.OldFileNameBytes);

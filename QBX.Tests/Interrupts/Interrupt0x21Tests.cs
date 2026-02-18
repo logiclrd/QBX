@@ -1407,10 +1407,245 @@ public class Interrupt0x21Tests
 		}
 	}
 
+	[Test]
+	public void RenameFileWithFCB_should_rename_files()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestOldFileName = "TESTFILE.TXT";
+			const string TestNewFileName = "TEST2.TXT";
+
+			File.WriteAllText(TestOldFileName, "QuickBASIC");
+
+			var fcb = new RenameFileControlBlock();
+
+			fcb.SetOldFileName(TestOldFileName);
+			fcb.SetNewFileName(TestNewFileName);
+
+			var fcbAddress = machine.DOS.MemoryManager.AllocateMemory(RenameFileControlBlock.Size, machine.DOS.CurrentPSPSegment);
+
+			fcb.Serialize(machine.MemoryBus, fcbAddress);
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.RenameFileWithFCB << 8;
+			rin.DS = (ushort)(fcbAddress / MemoryManager.ParagraphSize);
+			rin.DX = (ushort)(fcbAddress % MemoryManager.ParagraphSize);
+
+			// Act
+			bool oldExistsBefore = File.Exists(TestOldFileName);
+			bool newExistsBefore = File.Exists(TestNewFileName);
+
+			var rout = sut.Execute(rin);
+
+			bool oldExistsAfter = File.Exists(TestOldFileName);
+			bool newExistsAfter = File.Exists(TestNewFileName);
+
+			// Assert
+			int al = rout.AX & 0xFF;
+
+			al.Should().Be(0);
+
+			oldExistsBefore.Should().BeTrue();
+			oldExistsAfter.Should().BeFalse();
+
+			newExistsBefore.Should().BeFalse();
+			newExistsAfter.Should().BeTrue();
+		}
+	}
+
+	[Test]
+	public void RenameFileWithFCB_should_fail_if_old_filename_does_not_exist()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestOldFileName = "TESTFILE.TXT";
+			const string TestNewFileName = "TEST2.TXT";
+
+			var fcb = new RenameFileControlBlock();
+
+			fcb.SetOldFileName(TestOldFileName);
+			fcb.SetNewFileName(TestNewFileName);
+
+			var fcbAddress = machine.DOS.MemoryManager.AllocateMemory(RenameFileControlBlock.Size, machine.DOS.CurrentPSPSegment);
+
+			fcb.Serialize(machine.MemoryBus, fcbAddress);
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.RenameFileWithFCB << 8;
+			rin.DS = (ushort)(fcbAddress / MemoryManager.ParagraphSize);
+			rin.DX = (ushort)(fcbAddress % MemoryManager.ParagraphSize);
+
+			// Act
+			bool oldExistsBefore = File.Exists(TestOldFileName);
+			bool newExistsBefore = File.Exists(TestNewFileName);
+
+			var rout = sut.Execute(rin);
+
+			bool oldExistsAfter = File.Exists(TestOldFileName);
+			bool newExistsAfter = File.Exists(TestNewFileName);
+
+			// Assert
+			int al = rout.AX & 0xFF;
+
+			al.Should().Be(0xFF);
+
+			oldExistsBefore.Should().BeFalse();
+			oldExistsAfter.Should().BeFalse();
+
+			newExistsBefore.Should().BeFalse();
+			newExistsAfter.Should().BeFalse();
+		}
+	}
+
+	[Test]
+	public void RenameFileWithFCB_should_fail_if_new_filename_already_in_use()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestOldFileName = "TESTFILE.TXT";
+			const string TestNewFileName = "TEST2.TXT";
+
+			const string SubjectFileContent = "QuickBasic";
+			const string BlockerFileContent = "Turbo Pascal";
+
+			File.WriteAllText(TestOldFileName, SubjectFileContent);
+			File.WriteAllText(TestNewFileName, BlockerFileContent);
+
+			var fcb = new RenameFileControlBlock();
+
+			fcb.SetOldFileName(TestOldFileName);
+			fcb.SetNewFileName(TestNewFileName);
+
+			var fcbAddress = machine.DOS.MemoryManager.AllocateMemory(RenameFileControlBlock.Size, machine.DOS.CurrentPSPSegment);
+
+			fcb.Serialize(machine.MemoryBus, fcbAddress);
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.RenameFileWithFCB << 8;
+			rin.DS = (ushort)(fcbAddress / MemoryManager.ParagraphSize);
+			rin.DX = (ushort)(fcbAddress % MemoryManager.ParagraphSize);
+
+			// Act
+			bool oldExistsBefore = File.Exists(TestOldFileName);
+			bool newExistsBefore = File.Exists(TestNewFileName);
+
+			var rout = sut.Execute(rin);
+
+			bool oldExistsAfter = File.Exists(TestOldFileName);
+			bool newExistsAfter = File.Exists(TestNewFileName);
+
+			// Assert
+			int al = rout.AX & 0xFF;
+
+			al.Should().Be(0xFF);
+
+			oldExistsBefore.Should().BeTrue();
+			oldExistsAfter.Should().BeTrue();
+
+			newExistsBefore.Should().BeTrue();
+			newExistsAfter.Should().BeTrue();
+
+			string content = File.ReadAllText(TestNewFileName);
+
+			content.Should().Be(BlockerFileContent);
+		}
+	}
+
+	[Test]
+	public void RenameFileWithFCB_should_not_interfere_with_new_filename_when_old_filename_does_not_exist()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestOldFileName = "TESTFILE.TXT";
+			const string TestNewFileName = "TEST2.TXT";
+
+			const string BlockerFileContent = "Turbo Pascal";
+
+			File.WriteAllText(TestNewFileName, BlockerFileContent);
+
+			var fcb = new RenameFileControlBlock();
+
+			fcb.SetOldFileName(TestOldFileName);
+			fcb.SetNewFileName(TestNewFileName);
+
+			var fcbAddress = machine.DOS.MemoryManager.AllocateMemory(RenameFileControlBlock.Size, machine.DOS.CurrentPSPSegment);
+
+			fcb.Serialize(machine.MemoryBus, fcbAddress);
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.RenameFileWithFCB << 8;
+			rin.DS = (ushort)(fcbAddress / MemoryManager.ParagraphSize);
+			rin.DX = (ushort)(fcbAddress % MemoryManager.ParagraphSize);
+
+			// Act
+			bool oldExistsBefore = File.Exists(TestOldFileName);
+			bool newExistsBefore = File.Exists(TestNewFileName);
+
+			var rout = sut.Execute(rin);
+
+			bool oldExistsAfter = File.Exists(TestOldFileName);
+			bool newExistsAfter = File.Exists(TestNewFileName);
+
+			// Assert
+			int al = rout.AX & 0xFF;
+
+			al.Should().Be(0xFF);
+
+			oldExistsBefore.Should().BeFalse();
+			oldExistsAfter.Should().BeFalse();
+
+			newExistsBefore.Should().BeTrue();
+			newExistsAfter.Should().BeTrue();
+
+			string content = File.ReadAllText(TestNewFileName);
+
+			content.Should().Be(BlockerFileContent);
+		}
+	}
+
 	/*
 	public enum Function : byte
 	{
-		RenameFileWithFCB = 0x17,
 		GetDefaultDrive = 0x19,
 		SetDiskTransferAddress = 0x1A,
 		GetDefaultDriveData = 0x1B,
