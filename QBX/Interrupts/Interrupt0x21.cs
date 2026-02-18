@@ -598,7 +598,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					try
 					{
-						int defaultDrive = char.ToUpperInvariant(Environment.CurrentDirectory[0]) - 'A';
+						int defaultDrive = machine.DOS.GetDefaultDrive();
 
 						if ((defaultDrive >= 0) && (defaultDrive <= 25))
 						{

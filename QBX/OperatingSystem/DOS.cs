@@ -644,9 +644,28 @@ public partial class DOS
 		return true;
 	}
 
+	// 0 == A, 1 == B, ...
+	public int GetDefaultDrive()
+	{
+		string path = Environment.CurrentDirectory;
+
+		if (ShortFileNames.TryMap(path, out var shortPath))
+			path = shortPath;
+
+		if ((Path.GetPathRoot(path) is string pathRoot)
+		 && (pathRoot.Length >= 2))
+			path = pathRoot;
+
+		if ((path.Length >= 2)
+		 && (path[1] == Path.PathSeparator))
+			return path[0] - 'A';
+		else
+			return 2; // "C:/" synthetic drive on platforms with no drive letters
+	}
+
 	public SegmentedAddress GetDefaultDriveParameterBlock()
 	{
-		int defaultDrive = char.ToUpperInvariant(Environment.CurrentDirectory[0]) - 'A';
+		int defaultDrive = GetDefaultDrive();
 
 		return GetDriveParameterBlock(defaultDrive);
 	}

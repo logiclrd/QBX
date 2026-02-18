@@ -1643,10 +1643,42 @@ public class Interrupt0x21Tests
 		}
 	}
 
+	[Test]
+	public void GetDefaultDrive_should_return_correct_drive_letter()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.GetDefaultDrive << 8;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		int al = rout.AX & 0xFF;
+
+		int driveIdentifier;
+
+		if ((Path.GetPathRoot(Environment.CurrentDirectory) is string pathRoot)
+		 && (pathRoot.Length >= 2)
+		 && (pathRoot[1] == Path.PathSeparator))
+			driveIdentifier = char.ToUpperInvariant(pathRoot[0]) - 'A';
+		else
+			driveIdentifier = 2; // "C:/" synthetic drive on platforms with no drive letters
+
+		al.Should().Be(driveIdentifier);
+	}
+
+
 	/*
 	public enum Function : byte
 	{
-		GetDefaultDrive = 0x19,
 		SetDiskTransferAddress = 0x1A,
 		GetDefaultDriveData = 0x1B,
 		GetDriveData = 0x1C,
