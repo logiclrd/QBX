@@ -1855,10 +1855,39 @@ public class Interrupt0x21Tests
 		mediaDescriptor.Should().Be(MediaDescriptor.FixedDisk);
 	}
 
+	[Test]
+	public void GetDefaultDPB_should_return_correct_memory_address()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.GetDefaultDPB << 8;
+
+		var expectedAddress = machine.DOS.GetDefaultDriveParameterBlock();
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		int al = rout.AX & 0xFF;
+
+		al.Should().Be(0);
+
+		var routEx = rout.AsRegistersEx();
+
+		var returnedAddress = new SegmentedAddress(routEx.DS, rout.BX);
+
+		returnedAddress.Should().Be(expectedAddress);
+	}
 	/*
 	public enum Function : byte
 	{
-		GetDefaultDPB = 0x1F,
 		RandomRead = 0x21,
 		RandomWrite = 0x22,
 		GetFileSize = 0x23,
