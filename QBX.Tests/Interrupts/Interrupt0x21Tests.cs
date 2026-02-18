@@ -1253,10 +1253,163 @@ public class Interrupt0x21Tests
 		}
 	}
 
+	[Test]
+	public void CreateFileWithFCB_should_create_files()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+
+			var fcb = new FileControlBlock();
+
+			fcb.SetFileName(TestFileName);
+
+			var fcbAddress = machine.DOS.MemoryManager.AllocateMemory(FileControlBlock.Size, machine.DOS.CurrentPSPSegment);
+
+			fcb.MemoryAddress = fcbAddress;
+
+			fcb.Serialize(machine.MemoryBus);
+
+			try
+			{
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (int)Interrupt0x21.Function.CreateFileWithFCB << 8;
+				rin.DS = (ushort)(fcbAddress / MemoryManager.ParagraphSize);
+				rin.DX = (ushort)(fcbAddress % MemoryManager.ParagraphSize);
+
+				// Act
+				bool existsBefore = File.Exists(TestFileName);
+
+				var rout = sut.Execute(rin);
+
+				bool existsAfter = File.Exists(TestFileName);
+
+				// Assert
+				int al = rout.AX & 0xFF;
+
+				al.Should().Be(0);
+
+				existsBefore.Should().BeFalse();
+				existsAfter.Should().BeTrue();
+
+				fcb = FileControlBlock.Deserialize(machine.MemoryBus, fcbAddress);
+
+				int fileHandle = fcb.FileHandle;
+
+				fileHandle.Should().BeInRange(2, machine.DOS.Files.Count - 1);
+
+				var regularFile = (RegularFileDescriptor)machine.DOS.Files[fileHandle]!;
+
+				regularFile.PhysicalPath.Should().Be(Path.GetFullPath(TestFileName));
+
+				string? pathRoot = Path.GetPathRoot(regularFile.Path) ?? "C:\\";
+
+				if (string.IsNullOrEmpty(pathRoot))
+					pathRoot = "C:\\";
+
+				byte expectedDriveIdentifier = (byte)(char.ToUpperInvariant(pathRoot[0]) - 'A' + 1);
+
+				fcb.DriveIdentifier.Should().Be(expectedDriveIdentifier);
+			}
+			finally
+			{
+				machine.DOS.CloseFile(fcb);
+			}
+		}
+	}
+
+	[Test]
+	public void CreateFileWithFCB_should_truncate_existing_files()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+
+			File.WriteAllText(TestFileName, "QuickBASIC");
+
+			var fcb = new FileControlBlock();
+
+			fcb.SetFileName(TestFileName);
+
+			var fcbAddress = machine.DOS.MemoryManager.AllocateMemory(FileControlBlock.Size, machine.DOS.CurrentPSPSegment);
+
+			fcb.MemoryAddress = fcbAddress;
+
+			fcb.Serialize(machine.MemoryBus);
+
+			try
+			{
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (int)Interrupt0x21.Function.CreateFileWithFCB << 8;
+				rin.DS = (ushort)(fcbAddress / MemoryManager.ParagraphSize);
+				rin.DX = (ushort)(fcbAddress % MemoryManager.ParagraphSize);
+
+				// Act
+				bool existsBefore = File.Exists(TestFileName);
+
+				var rout = sut.Execute(rin);
+
+				bool existsAfter = File.Exists(TestFileName);
+
+				// Assert
+				int al = rout.AX & 0xFF;
+
+				al.Should().Be(0);
+
+				existsBefore.Should().BeTrue();
+				existsAfter.Should().BeTrue();
+
+				fcb = FileControlBlock.Deserialize(machine.MemoryBus, fcbAddress);
+
+				int fileHandle = fcb.FileHandle;
+
+				fileHandle.Should().BeInRange(2, machine.DOS.Files.Count - 1);
+
+				var regularFile = (RegularFileDescriptor)machine.DOS.Files[fileHandle]!;
+
+				regularFile.PhysicalPath.Should().Be(Path.GetFullPath(TestFileName));
+
+				string? pathRoot = Path.GetPathRoot(regularFile.Path) ?? "C:\\";
+
+				if (string.IsNullOrEmpty(pathRoot))
+					pathRoot = "C:\\";
+
+				byte expectedDriveIdentifier = (byte)(char.ToUpperInvariant(pathRoot[0]) - 'A' + 1);
+
+				fcb.DriveIdentifier.Should().Be(expectedDriveIdentifier);
+
+				new FileInfo(regularFile.PhysicalPath).Length.Should().Be(0);
+			}
+			finally
+			{
+				machine.DOS.CloseFile(fcb);
+			}
+		}
+	}
+
 	/*
 	public enum Function : byte
 	{
-		CreateFileWithFCB = 0x16,
 		RenameFileWithFCB = 0x17,
 		GetDefaultDrive = 0x19,
 		SetDiskTransferAddress = 0x1A,
