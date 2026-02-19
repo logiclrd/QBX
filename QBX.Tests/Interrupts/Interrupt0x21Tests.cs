@@ -2123,6 +2123,67 @@ public class Interrupt0x21Tests
 			}
 		}
 	}
+
+	[Test]
+	public void GetFileSize_should_return_file_sizes()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.BIN";
+
+			uint fileSize = (uint)TestContext.CurrentContext.Random.Next(10000, 2000000);
+
+			byte[] testData = new byte[fileSize];
+
+			TestContext.CurrentContext.Random.NextBytes(testData);
+
+			File.WriteAllBytes(TestFileName, testData);
+
+			var fcb = new FileControlBlock();
+
+			fcb.SetFileName(TestFileName);
+
+			var fcbAddress = machine.DOS.MemoryManager.AllocateMemory(FileControlBlock.Size, machine.DOS.CurrentPSPSegment);
+
+			fcb.MemoryAddress = fcbAddress;
+
+			fcb.Serialize(machine.MemoryBus);
+
+			try
+			{
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (int)Interrupt0x21.Function.GetFileSize << 8;
+				rin.DS = (ushort)(fcbAddress / MemoryManager.ParagraphSize);
+				rin.DX = (ushort)(fcbAddress % MemoryManager.ParagraphSize);
+
+				// Act
+				var rout = sut.Execute(rin);
+
+				// Assert
+				int al = rout.AX & 0xFF;
+
+				al.Should().Be(0);
+
+				fcb = FileControlBlock.Deserialize(machine.MemoryBus, fcbAddress);
+
+				fcb.FileSize.Should().Be(fileSize);
+			}
+			finally
+			{
+				machine.DOS.CloseFile(fcb);
+			}
+		}
+	}
 	/*
 	public enum Function : byte
 	{
