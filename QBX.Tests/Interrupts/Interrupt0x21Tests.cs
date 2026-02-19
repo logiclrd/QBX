@@ -1041,6 +1041,8 @@ public class Interrupt0x21Tests
 
 			var fcb = new FileControlBlock();
 
+			fcb.RecordSize.Should().BeLessThanOrEqualTo(128); // default DTA size
+
 			fcb.SetFileName(TestFileName);
 
 			machine.DOS.OpenFile(fcb, OperatingSystem.FileStructures.FileMode.Open);
@@ -1061,11 +1063,11 @@ public class Interrupt0x21Tests
 				rin.DS = (ushort)(fcbAddress / MemoryManager.ParagraphSize);
 				rin.DX = (ushort)(fcbAddress % MemoryManager.ParagraphSize);
 
-				var expectedResults = new byte[128];
+				var expectedResults = new byte[fcb.RecordSize];
 
 				testData.CopyTo(expectedResults);
 
-				var dta = machine.SystemMemory.AsSpan().Slice(machine.DOS.DataTransferAddress, 128);
+				var dta = machine.SystemMemory.AsSpan().Slice(machine.DOS.DataTransferAddress, fcb.RecordSize);
 
 				dta.Fill(1);
 
@@ -1100,13 +1102,17 @@ public class Interrupt0x21Tests
 
 			const string TestFileName = "TESTFILE.TXT";
 
+			var fcb = new FileControlBlock();
+
+			fcb.RecordSize.Should().BeLessThanOrEqualTo(128); // default DTA size
+
 			const int NumRecords = 5;
 
 			byte[][] records = new byte[NumRecords][];
 
 			for (int i=0; i < NumRecords; i++)
 			{
-				records[i] = new byte[128];
+				records[i] = new byte[fcb.RecordSize];
 				TestContext.CurrentContext.Random.NextBytes(records[i]);
 			}
 
@@ -1115,8 +1121,6 @@ public class Interrupt0x21Tests
 				for (int i=0; i < NumRecords; i++)
 					stream.Write(records[i]);
 			}
-
-			var fcb = new FileControlBlock();
 
 			fcb.SetFileName(TestFileName);
 
@@ -1138,9 +1142,9 @@ public class Interrupt0x21Tests
 				rin.DS = (ushort)(fcbAddress / MemoryManager.ParagraphSize);
 				rin.DX = (ushort)(fcbAddress % MemoryManager.ParagraphSize);
 
-				var expectedResults = new byte[128];
+				var expectedResults = new byte[fcb.RecordSize];
 
-				var dta = machine.SystemMemory.AsSpan().Slice(machine.DOS.DataTransferAddress, 128);
+				var dta = machine.SystemMemory.AsSpan().Slice(machine.DOS.DataTransferAddress, fcb.RecordSize);
 
 				dta.Fill(1);
 
@@ -1183,17 +1187,19 @@ public class Interrupt0x21Tests
 
 			const string TestFileName = "TESTFILE.TXT";
 
+			var fcb = new FileControlBlock();
+
+			fcb.RecordSize.Should().BeLessThanOrEqualTo(128); // default DTA size
+
 			const int NumRecords = 5;
 
 			byte[][] records = new byte[NumRecords][];
 
 			for (int i=0; i < NumRecords; i++)
 			{
-				records[i] = new byte[128];
+				records[i] = new byte[fcb.RecordSize];
 				TestContext.CurrentContext.Random.NextBytes(records[i]);
 			}
-
-			var fcb = new FileControlBlock();
 
 			fcb.SetFileName(TestFileName);
 
@@ -1218,7 +1224,7 @@ public class Interrupt0x21Tests
 				rin.DS = (ushort)(fcbAddress / MemoryManager.ParagraphSize);
 				rin.DX = (ushort)(fcbAddress % MemoryManager.ParagraphSize);
 
-				var dta = machine.SystemMemory.AsSpan().Slice(machine.DOS.DataTransferAddress, 128);
+				var dta = machine.SystemMemory.AsSpan().Slice(machine.DOS.DataTransferAddress, fcb.RecordSize);
 
 				// Act
 				for (int i=0; i < NumRecords; i++)
@@ -1240,7 +1246,7 @@ public class Interrupt0x21Tests
 
 			using (var file = File.OpenRead(TestFileName))
 			{
-				byte[] buffer = new byte[128];
+				byte[] buffer = new byte[fcb.RecordSize];
 
 				for (int i=0; i < NumRecords; i++)
 				{
@@ -1753,13 +1759,17 @@ public class Interrupt0x21Tests
 
 			const string TestFileName = "TESTFILE.TXT";
 
+			var fcb = new FileControlBlock();
+
+			fcb.RecordSize.Should().BeLessThanOrEqualTo(128); // default DTA size
+
 			const int NumRecords = 5;
 
 			byte[][] records = new byte[NumRecords][];
 
 			for (int i=0; i < NumRecords; i++)
 			{
-				records[i] = new byte[128];
+				records[i] = new byte[fcb.RecordSize];
 				TestContext.CurrentContext.Random.NextBytes(records[i]);
 			}
 
@@ -1768,8 +1778,6 @@ public class Interrupt0x21Tests
 				for (int i=0; i < NumRecords; i++)
 					stream.Write(records[i]);
 			}
-
-			var fcb = new FileControlBlock();
 
 			fcb.SetFileName(TestFileName);
 
@@ -1784,7 +1792,7 @@ public class Interrupt0x21Tests
 
 				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
 
-				var expectedResults = new byte[128];
+				var expectedResults = new byte[fcb.RecordSize];
 
 				int[] returnCodes = new int[NumRecords];
 				byte[][] actualData = new byte[NumRecords][];
@@ -1960,13 +1968,17 @@ public class Interrupt0x21Tests
 
 			const string TestFileName = "TESTFILE.TXT";
 
+			var fcb = new FileControlBlock();
+
+			fcb.RecordSize.Should().BeLessThanOrEqualTo(128); // default DTA size
+
 			const int NumRecords = 5;
 
 			byte[][] records = new byte[NumRecords][];
 
 			for (int i=0; i < NumRecords; i++)
 			{
-				records[i] = new byte[128];
+				records[i] = new byte[fcb.RecordSize];
 				TestContext.CurrentContext.Random.NextBytes(records[i]);
 			}
 
@@ -1975,8 +1987,6 @@ public class Interrupt0x21Tests
 				for (int i=0; i < NumRecords; i++)
 					stream.Write(records[i]);
 			}
-
-			var fcb = new FileControlBlock();
 
 			fcb.SetFileName(TestFileName);
 
@@ -1998,9 +2008,9 @@ public class Interrupt0x21Tests
 				rin.DS = (ushort)(fcbAddress / MemoryManager.ParagraphSize);
 				rin.DX = (ushort)(fcbAddress % MemoryManager.ParagraphSize);
 
-				var expectedResults = new byte[128];
+				var expectedResults = new byte[fcb.RecordSize];
 
-				var dta = machine.SystemMemory.AsSpan().Slice(machine.DOS.DataTransferAddress, 128);
+				var dta = machine.SystemMemory.AsSpan().Slice(machine.DOS.DataTransferAddress, fcb.RecordSize);
 
 				dta.Fill(1);
 
@@ -2049,17 +2059,19 @@ public class Interrupt0x21Tests
 
 			const string TestFileName = "TESTFILE.TXT";
 
+			var fcb = new FileControlBlock();
+
+			fcb.RecordSize.Should().BeLessThanOrEqualTo(128); // default DTA size
+
 			const int NumRecords = 5;
 
 			byte[][] records = new byte[NumRecords][];
 
 			for (int i=0; i < NumRecords; i++)
 			{
-				records[i] = new byte[128];
+				records[i] = new byte[fcb.RecordSize];
 				TestContext.CurrentContext.Random.NextBytes(records[i]);
 			}
-
-			var fcb = new FileControlBlock();
 
 			fcb.SetFileName(TestFileName);
 
@@ -2084,7 +2096,7 @@ public class Interrupt0x21Tests
 				rin.DS = (ushort)(fcbAddress / MemoryManager.ParagraphSize);
 				rin.DX = (ushort)(fcbAddress % MemoryManager.ParagraphSize);
 
-				var dta = machine.SystemMemory.AsSpan().Slice(machine.DOS.DataTransferAddress, 128);
+				var dta = machine.SystemMemory.AsSpan().Slice(machine.DOS.DataTransferAddress, fcb.RecordSize);
 
 				// Act
 				for (int i=0; i < NumRecords; i++)
@@ -2112,7 +2124,7 @@ public class Interrupt0x21Tests
 
 			using (var file = File.OpenRead(TestFileName))
 			{
-				byte[] buffer = new byte[128];
+				byte[] buffer = new byte[fcb.RecordSize];
 
 				for (int i=0; i < NumRecords; i++)
 				{
