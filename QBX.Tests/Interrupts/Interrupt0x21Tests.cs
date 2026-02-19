@@ -1098,8 +1098,6 @@ public class Interrupt0x21Tests
 
 			machine.DOS.SetUpRunningProgramSegmentPrefix("");
 
-			Random rnd = new Random();
-
 			const string TestFileName = "TESTFILE.TXT";
 
 			const int NumRecords = 5;
@@ -1109,7 +1107,7 @@ public class Interrupt0x21Tests
 			for (int i=0; i < NumRecords; i++)
 			{
 				records[i] = new byte[128];
-				rnd.NextBytes(records[i]);
+				TestContext.CurrentContext.Random.NextBytes(records[i]);
 			}
 
 			using (var stream = File.OpenWrite(TestFileName))
@@ -1183,8 +1181,6 @@ public class Interrupt0x21Tests
 
 			machine.DOS.SetUpRunningProgramSegmentPrefix("");
 
-			Random rnd = new Random();
-
 			const string TestFileName = "TESTFILE.TXT";
 
 			const int NumRecords = 5;
@@ -1194,7 +1190,7 @@ public class Interrupt0x21Tests
 			for (int i=0; i < NumRecords; i++)
 			{
 				records[i] = new byte[128];
-				rnd.NextBytes(records[i]);
+				TestContext.CurrentContext.Random.NextBytes(records[i]);
 			}
 
 			var fcb = new FileControlBlock();
@@ -1755,8 +1751,6 @@ public class Interrupt0x21Tests
 
 			machine.DOS.SetUpRunningProgramSegmentPrefix("");
 
-			Random rnd = new Random();
-
 			const string TestFileName = "TESTFILE.TXT";
 
 			const int NumRecords = 5;
@@ -1766,7 +1760,7 @@ public class Interrupt0x21Tests
 			for (int i=0; i < NumRecords; i++)
 			{
 				records[i] = new byte[128];
-				rnd.NextBytes(records[i]);
+				TestContext.CurrentContext.Random.NextBytes(records[i]);
 			}
 
 			using (var stream = File.OpenWrite(TestFileName))
@@ -1964,8 +1958,6 @@ public class Interrupt0x21Tests
 
 			machine.DOS.SetUpRunningProgramSegmentPrefix("");
 
-			Random rnd = new Random();
-
 			const string TestFileName = "TESTFILE.TXT";
 
 			const int NumRecords = 5;
@@ -1975,7 +1967,7 @@ public class Interrupt0x21Tests
 			for (int i=0; i < NumRecords; i++)
 			{
 				records[i] = new byte[128];
-				rnd.NextBytes(records[i]);
+				TestContext.CurrentContext.Random.NextBytes(records[i]);
 			}
 
 			using (var stream = File.OpenWrite(TestFileName))
@@ -2055,8 +2047,6 @@ public class Interrupt0x21Tests
 
 			machine.DOS.SetUpRunningProgramSegmentPrefix("");
 
-			Random rnd = new Random();
-
 			const string TestFileName = "TESTFILE.TXT";
 
 			const int NumRecords = 5;
@@ -2066,7 +2056,7 @@ public class Interrupt0x21Tests
 			for (int i=0; i < NumRecords; i++)
 			{
 				records[i] = new byte[128];
-				rnd.NextBytes(records[i]);
+				TestContext.CurrentContext.Random.NextBytes(records[i]);
 			}
 
 			var fcb = new FileControlBlock();
