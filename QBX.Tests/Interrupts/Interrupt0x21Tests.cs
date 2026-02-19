@@ -2317,11 +2317,198 @@ public class Interrupt0x21Tests
 			}
 		}
 	}
+
+	[Test]
+	public void RandomBlockRead_should_read_block_of_records_in_one_call()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+
+			var fcb = new FileControlBlock();
+
+			fcb.RecordSize.Should().BeLessThanOrEqualTo(128); // default DTA size
+
+			const int NumRecords = 5;
+
+			byte[][] records = new byte[NumRecords][];
+
+			for (int i=0; i < NumRecords; i++)
+			{
+				records[i] = new byte[fcb.RecordSize];
+				TestContext.CurrentContext.Random.NextBytes(records[i]);
+			}
+
+			using (var stream = File.OpenWrite(TestFileName))
+			{
+				for (int i=0; i < NumRecords; i++)
+					stream.Write(records[i]);
+			}
+
+			fcb.SetFileName(TestFileName);
+
+			machine.DOS.OpenFile(fcb, OperatingSystem.FileStructures.FileMode.Open);
+
+			const int BlockReadStart = 1;
+			const int BlockReadSize = 3;
+
+			fcb.RandomRecordNumber = BlockReadStart;
+
+			var fcbAddress = machine.DOS.MemoryManager.AllocateMemory(FileControlBlock.Size, machine.DOS.CurrentPSPSegment);
+
+			fcb.MemoryAddress = fcbAddress;
+
+			fcb.Serialize(machine.MemoryBus);
+
+			var dtaAddress = machine.DOS.MemoryManager.AllocateMemory(fcb.RecordSize * BlockReadSize, machine.DOS.CurrentPSPSegment);
+
+			var dtaAddressSegmented = new SegmentedAddress(dtaAddress);
+
+			machine.DOS.DataTransferAddressSegment = dtaAddressSegmented.Segment;
+			machine.DOS.DataTransferAddressOffset = dtaAddressSegmented.Offset;
+
+			try
+			{
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (int)Interrupt0x21.Function.RandomBlockRead << 8;
+				rin.CX = BlockReadSize;
+				rin.DS = (ushort)(fcbAddress / MemoryManager.ParagraphSize);
+				rin.DX = (ushort)(fcbAddress % MemoryManager.ParagraphSize);
+
+				var expectedResults = new byte[fcb.RecordSize];
+
+				var dta = machine.SystemMemory.AsSpan().Slice(machine.DOS.DataTransferAddress, fcb.RecordSize * BlockReadSize);
+
+				dta.Fill(1);
+
+				// Act
+				var rout = sut.Execute(rin);
+
+				// Assert
+				int al = rout.AX & 0xFF;
+
+				al.Should().Be(0);
+
+				for (int i=0; i < BlockReadSize; i++)
+					dta.Slice(i * fcb.RecordSize, fcb.RecordSize).ShouldMatch(records[BlockReadStart + i]);
+			}
+			finally
+			{
+				machine.DOS.CloseFile(fcb);
+			}
+		}
+	}
+
+	[Test]
+	public void RandomBlockWrite_should_write_block_of_records_in_one_call()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+
+			var fcb = new FileControlBlock();
+
+			fcb.SetFileName(TestFileName);
+
+			machine.DOS.OpenFile(fcb, OperatingSystem.FileStructures.FileMode.CreateNew);
+
+			const int NumRecords = 5;
+
+			byte[][] records = new byte[NumRecords][];
+
+			for (int i=0; i < NumRecords; i++)
+			{
+				records[i] = new byte[fcb.RecordSize];
+				TestContext.CurrentContext.Random.NextBytes(records[i]);
+			}
+
+			const int BlockWriteStart = 1;
+			const int BlockWriteSize = 3;
+
+			fcb.RandomRecordNumber = BlockWriteStart;
+
+			var fcbAddress = machine.DOS.MemoryManager.AllocateMemory(FileControlBlock.Size, machine.DOS.CurrentPSPSegment);
+
+			fcb.MemoryAddress = fcbAddress;
+
+			fcb.Serialize(machine.MemoryBus);
+
+			var dtaAddress = machine.DOS.MemoryManager.AllocateMemory(fcb.RecordSize * BlockWriteSize, machine.DOS.CurrentPSPSegment);
+
+			var dtaAddressSegmented = new SegmentedAddress(dtaAddress);
+
+			machine.DOS.DataTransferAddressSegment = dtaAddressSegmented.Segment;
+			machine.DOS.DataTransferAddressOffset = dtaAddressSegmented.Offset;
+
+			Registers rout;
+
+			try
+			{
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (int)Interrupt0x21.Function.RandomBlockWrite << 8;
+				rin.CX = BlockWriteSize;
+				rin.DS = (ushort)(fcbAddress / MemoryManager.ParagraphSize);
+				rin.DX = (ushort)(fcbAddress % MemoryManager.ParagraphSize);
+
+				var dta = machine.SystemMemory.AsSpan().Slice(machine.DOS.DataTransferAddress, BlockWriteSize * fcb.RecordSize);
+
+				for (int i=0; i < BlockWriteSize; i++)
+					records[BlockWriteStart + i].CopyTo(dta.Slice(i * fcb.RecordSize));
+
+				// Act
+				rout = sut.Execute(rin);
+			}
+			finally
+			{
+				machine.DOS.CloseFile(fcb);
+			}
+
+			// Assert
+			int al = rout.AX & 0xFF;
+
+			al.Should().Be(0);
+
+			using (var file = File.OpenRead(TestFileName))
+			{
+				byte[] buffer = new byte[(BlockWriteStart + BlockWriteSize) * fcb.RecordSize];
+
+				file.Length.Should().Be(buffer.Length);
+
+				file.ReadExactly(buffer);
+
+				byte[] zeroBytes = new byte[BlockWriteStart * fcb.RecordSize];
+
+				buffer.AsSpan().Slice(0, BlockWriteStart * fcb.RecordSize).ShouldMatch(zeroBytes);
+
+				for (int i=0; i < BlockWriteSize; i++)
+					buffer.AsSpan().Slice((BlockWriteStart + i) * fcb.RecordSize, fcb.RecordSize).ShouldMatch(records[BlockWriteStart + i]);
+			}
+		}
+	}
+
 	/*
 	public enum Function : byte
 	{
-		RandomBlockRead = 0x27,
-		RandomBlockWrite = 0x28,
 		ParseFilename = 0x29,
 		GetDate = 0x2A,
 		SetDate = 0x2B,

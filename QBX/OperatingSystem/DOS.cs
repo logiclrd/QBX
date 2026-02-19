@@ -1365,9 +1365,11 @@ public partial class DOS
 
 			fileDescriptor.Seek(offset, MoveMethod.FromBeginning);
 
+			int operationDataTransferAddress = DataTransferAddress;
+
 			for (int i = 0; i < recordCount; i++)
 			{
-				fileDescriptor.Write(fcb.RecordSize, Machine.MemoryBus, DataTransferAddress);
+				fileDescriptor.Write(fcb.RecordSize, Machine.MemoryBus, operationDataTransferAddress);
 
 				if (advance)
 				{
@@ -1376,6 +1378,8 @@ public partial class DOS
 					if (updateRandomRecordNumber)
 						fcb.RandomRecordNumber = fcb.RecordPointer;
 				}
+
+				operationDataTransferAddress += fcb.RecordSize;
 			}
 
 			if (VerifyWrites)
