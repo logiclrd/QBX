@@ -1040,6 +1040,10 @@ public partial class DOS
 
 							fcb.FileHandle = AllocateFileHandleForOpenFile(shortPath, fileInfo.FullName, stream);
 
+							fcb.CurrentBlockNumber = 0;
+							fcb.CurrentRecordNumber = 0;
+							fcb.RandomRecordNumber = 0;
+
 							return fcb.FileHandle;
 						}
 					}

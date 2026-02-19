@@ -2184,13 +2184,130 @@ public class Interrupt0x21Tests
 			}
 		}
 	}
+
+	[Test]
+	public void SetRandomRecordNumber_should_assign_correct_value_to_correct_field()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+
+			var fcb = new FileControlBlock();
+
+			fcb.SetFileName(TestFileName);
+
+			machine.DOS.OpenFile(fcb, OperatingSystem.FileStructures.FileMode.CreateNew);
+
+			var fcbAddress = machine.DOS.MemoryManager.AllocateMemory(FileControlBlock.Size, machine.DOS.CurrentPSPSegment);
+
+			fcb.MemoryAddress = fcbAddress;
+
+			try
+			{
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (int)Interrupt0x21.Function.SetRandomRecordNumber << 8;
+				rin.DS = (ushort)(fcbAddress / MemoryManager.ParagraphSize);
+				rin.DX = (ushort)(fcbAddress % MemoryManager.ParagraphSize);
+
+				fcb.CurrentBlockNumber = 3;
+				fcb.CurrentRecordNumber = 27;
+
+				fcb.Serialize(machine.MemoryBus);
+
+				uint linearRecordNumber = (uint)(fcb.CurrentBlockNumber * 128 + fcb.CurrentRecordNumber);
+
+				// Act
+				var rout = sut.Execute(rin);
+
+				// Assert
+				int al = rout.AX & 0xFF;
+
+				al.Should().Be(0);
+
+				var updatedFCB = FileControlBlock.Deserialize(machine.MemoryBus, fcbAddress);
+
+				updatedFCB.RandomRecordNumber.Should().Be(linearRecordNumber);
+
+				fcb.RandomRecordNumber = updatedFCB.RandomRecordNumber;
+
+				updatedFCB.Should().BeEquivalentTo(fcb);
+			}
+			finally
+			{
+				machine.DOS.CloseFile(fcb);
+			}
+		}
+	}
+
+	[Test]
+	public void SetRandomRecordNumber_should_fail_if_random_necord_number_field_is_not_zero()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+
+			var fcb = new FileControlBlock();
+
+			fcb.SetFileName(TestFileName);
+
+			machine.DOS.OpenFile(fcb, OperatingSystem.FileStructures.FileMode.CreateNew);
+
+			fcb.RandomRecordNumber = 37;
+
+			var fcbAddress = machine.DOS.MemoryManager.AllocateMemory(FileControlBlock.Size, machine.DOS.CurrentPSPSegment);
+
+			fcb.MemoryAddress = fcbAddress;
+
+			fcb.Serialize(machine.MemoryBus);
+
+			try
+			{
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (int)Interrupt0x21.Function.SetRandomRecordNumber << 8;
+				rin.DS = (ushort)(fcbAddress / MemoryManager.ParagraphSize);
+				rin.DX = (ushort)(fcbAddress % MemoryManager.ParagraphSize);
+
+				// Act
+				var rout = sut.Execute(rin);
+
+				// Assert
+				int al = rout.AX & 0xFF;
+
+				al.Should().Be(0xFF);
+
+				var updatedFCB = FileControlBlock.Deserialize(machine.MemoryBus, fcbAddress);
+
+				updatedFCB.Should().BeEquivalentTo(fcb);
+			}
+			finally
+			{
+				machine.DOS.CloseFile(fcb);
+			}
+		}
+	}
 	/*
 	public enum Function : byte
 	{
-		GetFileSize = 0x23,
-		SetRandomRecordNumber = 0x24,
-		SetInterruptVector = 0x25, // not implemented
-		CreateNewPSP = 0x26, // not implemented
 		RandomBlockRead = 0x27,
 		RandomBlockWrite = 0x28,
 		ParseFilename = 0x29,

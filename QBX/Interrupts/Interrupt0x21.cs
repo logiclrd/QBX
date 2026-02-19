@@ -775,7 +775,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 					result.AX &= 0xFF00;
 
-					if ((fcb.FileHandle == 0) || (fcb.RecordPointer != 0))
+					if ((fcb.FileHandle == 0) || (fcb.RandomRecordNumber != 0))
 						result.AX |= 0xFF;
 					else
 						fcb.RandomRecordNumber = unchecked((uint)fcb.RecordPointer);
