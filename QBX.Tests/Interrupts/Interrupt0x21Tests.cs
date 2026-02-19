@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.IO.Enumeration;
+using System.Numerics;
 
 using QBX.ExecutionEngine.Execution;
 using QBX.Firmware.Fonts;
@@ -1410,7 +1411,7 @@ public class Interrupt0x21Tests
 	}
 
 	[Test]
-	public void RenameFileWithFCB_should_rename_files()
+	public void RenameFileWithFCB_should_rename_individual_file()
 	{
 		// Arrange
 		using (var workspace = new TemporaryDirectory())
@@ -1426,22 +1427,22 @@ public class Interrupt0x21Tests
 
 			File.WriteAllText(TestOldFileName, "QuickBASIC");
 
-			var fcb = new RenameFileControlBlock();
+			var rfcb = new RenameFileControlBlock();
 
-			fcb.SetOldFileName(TestOldFileName);
-			fcb.SetNewFileName(TestNewFileName);
+			rfcb.SetOldFileName(TestOldFileName);
+			rfcb.SetNewFileName(TestNewFileName);
 
-			var fcbAddress = machine.DOS.MemoryManager.AllocateMemory(RenameFileControlBlock.Size, machine.DOS.CurrentPSPSegment);
+			var rfcbAddress = machine.DOS.MemoryManager.AllocateMemory(RenameFileControlBlock.Size, machine.DOS.CurrentPSPSegment);
 
-			fcb.Serialize(machine.MemoryBus, fcbAddress);
+			rfcb.Serialize(machine.MemoryBus, rfcbAddress);
 
 			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
 
 			var rin = new RegistersEx();
 
 			rin.AX = (int)Interrupt0x21.Function.RenameFileWithFCB << 8;
-			rin.DS = (ushort)(fcbAddress / MemoryManager.ParagraphSize);
-			rin.DX = (ushort)(fcbAddress % MemoryManager.ParagraphSize);
+			rin.DS = (ushort)(rfcbAddress / MemoryManager.ParagraphSize);
+			rin.DX = (ushort)(rfcbAddress % MemoryManager.ParagraphSize);
 
 			// Act
 			bool oldExistsBefore = File.Exists(TestOldFileName);
@@ -1462,6 +1463,71 @@ public class Interrupt0x21Tests
 
 			newExistsBefore.Should().BeFalse();
 			newExistsAfter.Should().BeTrue();
+		}
+	}
+
+	[Test]
+	public void RenameFileWithFCB_should_rename_multiple_matching_files()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestOldFileName = "TEST2*.TXT";
+			const string TestNewFileName = "TEST2*.BIN";
+
+			var fileSet = new List<string>();
+
+			fileSet.Add("TEST1.TXT");
+			fileSet.Add("TEST23.TXT");
+			fileSet.Add("TEST24.TXT");
+			fileSet.Add("TEST3.TXT");
+
+			fileSet.ForEach(fileName => File.WriteAllText(fileName, ""));
+
+			var expectedNewFileSet = new List<string>();
+
+			foreach (var fileName in fileSet)
+			{
+				if (FileSystemName.MatchesSimpleExpression(TestOldFileName, fileName))
+					expectedNewFileSet.Add(Path.ChangeExtension(fileName, ".BIN"));
+				else
+					expectedNewFileSet.Add(fileName);
+			}
+
+			var rfcb = new RenameFileControlBlock();
+
+			rfcb.SetOldFileName(TestOldFileName);
+			rfcb.SetNewFileName(TestNewFileName);
+
+			var rfcbAddress = machine.DOS.MemoryManager.AllocateMemory(RenameFileControlBlock.Size, machine.DOS.CurrentPSPSegment);
+
+			rfcb.Serialize(machine.MemoryBus, rfcbAddress);
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.RenameFileWithFCB << 8;
+			rin.DS = (ushort)(rfcbAddress / MemoryManager.ParagraphSize);
+			rin.DX = (ushort)(rfcbAddress % MemoryManager.ParagraphSize);
+
+			// Act
+			var rout = sut.Execute(rin);
+
+			// Assert
+			int al = rout.AX & 0xFF;
+
+			al.Should().Be(0);
+
+			var newFileSet = Directory.GetFiles(workspace.Path).Select(path => Path.GetFileName(path));
+
+			newFileSet.Should().BeEquivalentTo(expectedNewFileSet);
 		}
 	}
 
