@@ -86,7 +86,7 @@ public class FileControlBlock
 
 		ParseFileName(
 			(idx) => (offset + idx >= fileName.Length) ? (byte)0 : CP437Encoding.GetByteSemantic(fileName[offset + idx]),
-			(testLength) => fileName.Length > offset + testLength,
+			(testLength) => fileName.Length >= offset + testLength,
 			(numCh) => offset += numCh,
 			ref driveIdentifierIgnored, fileNameBytes,
 			out _, out _,
