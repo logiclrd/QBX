@@ -1737,7 +1737,7 @@ public class Interrupt0x21Tests
 
 		if ((Path.GetPathRoot(Environment.CurrentDirectory) is string pathRoot)
 		 && (pathRoot.Length >= 2)
-		 && (pathRoot[1] == Path.PathSeparator))
+		 && (pathRoot[1] == Path.VolumeSeparatorChar))
 			driveIdentifier = char.ToUpperInvariant(pathRoot[0]) - 'A';
 		else
 			driveIdentifier = 2; // "C:/" synthetic drive on platforms with no drive letters

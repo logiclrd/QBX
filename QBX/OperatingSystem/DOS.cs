@@ -114,8 +114,8 @@ public partial class DOS
 			string rootPath = drive.RootDirectory.FullName;
 
 			if (rootPath.Length < 2)
-				rootPath = "C" + Path.PathSeparator + Path.DirectorySeparatorChar; // "C:/" synthetic drive on platforms with no drive letters
-			else if (rootPath[1] != Path.PathSeparator)
+				rootPath = "C" + Path.VolumeSeparatorChar + Path.DirectorySeparatorChar; // "C:/" synthetic drive on platforms with no drive letters
+			else if (rootPath[1] != Path.VolumeSeparatorChar)
 				continue;
 
 			ref DriveParameterBlock dpb = ref DriveParameterBlock.CreateReference(_machine.SystemMemory, nextDPBAddress.ToLinearAddress());
@@ -664,7 +664,7 @@ public partial class DOS
 			path = pathRoot;
 
 		if ((path.Length >= 2)
-		 && (path[1] == Path.PathSeparator))
+		 && (path[1] == Path.VolumeSeparatorChar))
 			return path[0] - 'A';
 		else
 			return 2; // "C:/" synthetic drive on platforms with no drive letters
@@ -994,8 +994,13 @@ public partial class DOS
 				{
 					fileName = ShortFileNames.Unmap(Path.GetFullPath(fileName));
 
+					bool needLateMap = false;
+
 					if (!ShortFileNames.TryMap(fileName, out var shortPath))
-						return -1;
+					{
+						needLateMap = true;
+						shortPath = "";
+					}
 
 					if (Devices.TryGetDeviceByName(Path.GetFileNameWithoutExtension(fileName), out var device))
 					{
@@ -1026,11 +1031,22 @@ public partial class DOS
 							}
 
 							if (fileAlreadyExists)
+							{
+								if (needLateMap)
+									throw new DOSException(DOSError.GeneralFailure);
+
 								GatherFileInfo();
+							}
 
 							fcb.RecordSize = 128;
 
 							var stream = fileInfo.Open(openMode.ToSystemFileMode());
+
+							if (needLateMap)
+							{
+								if (!ShortFileNames.TryMap(fileName, out shortPath))
+									shortPath = fileName;
+							}
 
 							if (!fileAlreadyExists)
 							{

@@ -100,7 +100,7 @@ public partial class ShortFileNames
 
 		int startIndex = 0;
 
-		if ((Path.GetPathRoot(path) is string root) && (root.Length >= 2) && (root[1] == Path.PathSeparator))
+		if ((Path.GetPathRoot(path) is string root) && (root.Length >= 2) && (root[1] == Path.VolumeSeparatorChar))
 		{
 			builder.Append(root);
 			startIndex = root.Length;
@@ -137,7 +137,7 @@ public partial class ShortFileNames
 
 		int startIndex = 0;
 
-		if ((Path.GetPathRoot(path) is string root) && (root.Length >= 2) && (root[1] == Path.PathSeparator))
+		if ((Path.GetPathRoot(path) is string root) && (root.Length >= 2) && (root[1] == Path.VolumeSeparatorChar))
 		{
 			builder.Append(root);
 			startIndex = root.Length;
@@ -153,7 +153,7 @@ public partial class ShortFileNames
 
 		for (int i = startIndex; i < path.Length; i++)
 		{
-			if (path[i] == Path.PathSeparator)
+			if (path[i] == Path.VolumeSeparatorChar)
 			{
 				if (builder.Length > 0)
 					MapLastComponent(builder);
@@ -187,7 +187,7 @@ public partial class ShortFileNames
 			{
 				int containerLength = builder.Length - componentLength;
 
-				while ((containerLength > 0) && (builder[containerLength - 1] == Path.PathSeparator))
+				while ((containerLength > 0) && (builder[containerLength - 1] == Path.VolumeSeparatorChar))
 					containerLength--;
 
 				if (containerLength > 0)
@@ -249,7 +249,7 @@ public partial class ShortFileNames
 		int componentLength = 0;
 
 		while ((componentLength < builder.Length)
-		    && (builder[builder.Length - componentLength - 1] != Path.PathSeparator))
+		    && (builder[builder.Length - componentLength - 1] != Path.VolumeSeparatorChar))
 			componentLength++;
 
 		if (componentLength > 0)
@@ -258,7 +258,7 @@ public partial class ShortFileNames
 
 			int containerLength = builder.Length - componentLength;
 
-			while ((containerLength > 0) && (builder[containerLength - 1] == Path.PathSeparator))
+			while ((containerLength > 0) && (builder[containerLength - 1] == Path.VolumeSeparatorChar))
 				containerLength--;
 
 			string containerShortPath = "";
@@ -276,8 +276,8 @@ public partial class ShortFileNames
 
 			var longName = component;
 
-			var longPath = containerLongPath + Path.PathSeparator + longName;
-			var shortPath = containerShortPath + Path.PathSeparator + shortName;
+			var longPath = containerLongPath + Path.VolumeSeparatorChar + longName;
+			var shortPath = containerShortPath + Path.VolumeSeparatorChar + shortName;
 
 			shortPath = GetCanonicalPath(shortPath);
 
@@ -343,7 +343,7 @@ public partial class ShortFileNames
 
 			string candidate = prefix + indexChars + extension;
 
-			string candidatePath = containerShortPath + Path.PathSeparator + candidate;
+			string candidatePath = containerShortPath + Path.VolumeSeparatorChar + candidate;
 
 			if (!s_shortToLong.ContainsKey(candidatePath))
 			{
@@ -454,11 +454,11 @@ public partial class ShortFileNames
 
 	static string GetCanonicalPath(string path)
 	{
-		var components = path.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries);
+		var components = path.Split(Path.VolumeSeparatorChar, StringSplitOptions.RemoveEmptyEntries);
 
 		if (!Path.IsPathRooted(path))
-			return Path.PathSeparator + string.Join(Path.PathSeparator, components);
+			return Path.VolumeSeparatorChar + string.Join(Path.VolumeSeparatorChar, components);
 		else
-			return string.Join(Path.PathSeparator, components);
+			return string.Join(Path.VolumeSeparatorChar, components);
 	}
 }
