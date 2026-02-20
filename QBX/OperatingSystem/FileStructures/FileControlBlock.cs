@@ -99,7 +99,7 @@ public class FileControlBlock
 
 		ParseFileName(
 			(idx) => (offset + idx >= fileName.Length) ? (byte)0 : CP437Encoding.GetByteSemantic(fileName[offset + idx]),
-			(testLength) => fileName.Length > testLength + offset,
+			(testLength) => fileName.Length >= testLength + offset,
 			(numCh) => offset += numCh,
 			ref driveIdentifier, fileNameBytes,
 			out _, out _,
@@ -138,25 +138,18 @@ public class FileControlBlock
 		// filename separators:
 		//
 		// : . ; , = +
-		if ((flags & ParseFlags.IgnoreLeadingSeparators) != 0)
+		if ((flags & ParseFlags.IgnoreOneLeadingSeparator) != 0)
 		{
 			if (lengthIsAtLeast(1))
 			{
-				switch (readInputChar(0))
-				{
-					case (byte)':':
-					case (byte)'.':
-					case (byte)';':
-					case (byte)',':
-					case (byte)'=':
-					case (byte)'+':
-						advanceInput(1);
-						break;
-				}
+				if (PathCharacter.IsFileNameSeparator(readInputChar(0)))
+					advanceInput(1);
 			}
 		}
 
-		if (readInputChar(1) == (byte)':')
+		if (lengthIsAtLeast(2)
+		 && PathCharacter.IsLetter(readInputChar(0))
+		 && (readInputChar(1) == (byte)':'))
 		{
 			driveIdentifier = unchecked((byte)(readInputChar(0) - 64));
 			advanceInput(2);
@@ -181,23 +174,27 @@ public class FileControlBlock
 
 		for (i = 1; lengthIsAtLeast(i); i++)
 		{
-			byte b = readInputChar(i);
+			byte b = readInputChar(i - 1);
 
 			bool atEnd = (b < 0x20);
 
 			if (!atEnd)
 			{
-				switch (b)
+				if (PathCharacter.IsFileNameSeparator(b))
+					atEnd = true;
+				else
 				{
-					case (byte)' ': case (byte)'\t':
-					case (byte)':': /*case (byte)'.':*/ case (byte)';': case (byte)',': case (byte)'=': case (byte)'+':
-					case (byte)'/': case (byte)'"': case (byte)'[': case (byte)']': case (byte)'<': case (byte)'>': case (byte)'|':
-						atEnd = true;
-						break;
-					case (byte)'.':
-						atEnd = haveDot;
-						haveDot = true;
-						break;
+					switch (b)
+					{
+						case (byte)' ': case (byte)'\t':
+						case (byte)'/': case (byte)'"': case (byte)'[': case (byte)']': case (byte)'<': case (byte)'>': case (byte)'|':
+							atEnd = true;
+							break;
+						case (byte)'.':
+							atEnd = haveDot;
+							haveDot = true;
+							break;
+					}
 				}
 			}
 
@@ -205,29 +202,24 @@ public class FileControlBlock
 				break;
 		}
 
-		inputLength = i;
+		inputLength = i - 1;
 
 		int dot = inputLength - 1;
 
-		for (i = inputLength - 1; i >= 0; i--)
-		{
-			if (readInputChar(i) == (byte)'.')
-				break;
-
-			dot = i - 1;
-		}
+		while ((dot >= 0) && (readInputChar(dot) != (byte)'.'))
+			dot--;
 
 		if (dot < 0)
 			dot = inputLength;
 
 		int nameLength = Math.Min(dot, 8);
-		int extLength = Math.Min(inputLength - dot - 1, 3);
+		int extLength = Math.Clamp(inputLength - dot - 1, 0, 3);
 
 		var outSpan = fileNameBytes;
 
 		for (i = 0; i < nameLength; i++)
 		{
-			outSpan[i] = readInputChar(i);
+			outSpan[i] = PathCharacter.ToUpper(readInputChar(i));
 
 			if (outSpan[i] == (byte)'*')
 			{
@@ -246,13 +238,16 @@ public class FileControlBlock
 			while (i < 8)
 				outSpan[i++] = (byte)' ';
 
-		advanceInput(nameLength + 1);
+		if (dot < inputLength)
+			advanceInput(nameLength + 1);
+		else
+			advanceInput(nameLength);
 
 		outSpan = outSpan.Slice(8);
 
 		for (i = 0; i < extLength; i++)
 		{
-			outSpan[i] = readInputChar(i);
+			outSpan[i] = PathCharacter.ToUpper(readInputChar(i));
 
 			if (outSpan[i] == (byte)'*')
 			{
@@ -268,7 +263,7 @@ public class FileControlBlock
 		//                                                                             If
 		// the filename extension has fewer than three characters, the function fills the
 		// remaining bytes in the fcbExtent field with space characters.
-		if ((extLength > 0) || ((flags & ParseFlags.DoNotClearOnInvalidExtension) == 0))
+		if ((dot < inputLength) || ((flags & ParseFlags.DoNotClearOnInvalidExtension) == 0))
 			while (i < 3)
 				outSpan[i++] = (byte)' ';
 

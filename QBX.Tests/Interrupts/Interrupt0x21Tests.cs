@@ -2506,6 +2506,245 @@ public class Interrupt0x21Tests
 		}
 	}
 
+	[Test]
+	public void ParseFilename_should_parse_complete_filename()
+	{
+		ParseFilenameTest(
+			input: "D:FILENAME.TXT",
+			parseControl: default,
+			expectFailure: false,
+			expectContainsWildcard: false,
+			expectDriveIdentifier: 'D',
+			expectFileNameBytes: "FILENAMETXT");
+	}
+
+	[Test]
+	public void ParseFilename_should_normalize_filename_case()
+	{
+		ParseFilenameTest(
+			input: "D:Filénæme.txt",
+			parseControl: default,
+			expectFailure: false,
+			expectContainsWildcard: false,
+			expectDriveIdentifier: 'D',
+			expectFileNameBytes: "FILENÆMETXT");
+	}
+
+	[Test]
+	public void ParseFilename_should_pad_short_filename_with_spaces()
+	{
+		ParseFilenameTest(
+			input: "E:FILE.TXT",
+			parseControl: default,
+			expectFailure: false,
+			expectContainsWildcard: false,
+			expectDriveIdentifier: 'E',
+			expectFileNameBytes: "FILE    TXT");
+	}
+
+	[Test]
+	public void ParseFilename_should_pad_short_extension_with_spaces()
+	{
+		ParseFilenameTest(
+			input: "F:FILENAME.T",
+			parseControl: default,
+			expectFailure: false,
+			expectContainsWildcard: false,
+			expectDriveIdentifier: 'F',
+			expectFileNameBytes: "FILENAMET  ");
+	}
+
+	[Test]
+	public void ParseFilename_should_ignore_leading_whitespace()
+	{
+		ParseFilenameTest(
+			input: "  \t G:TESTFILE.BIN",
+			parseControl: default,
+			expectFailure: false,
+			expectContainsWildcard: false,
+			expectDriveIdentifier: 'G',
+			expectFileNameBytes: "TESTFILEBIN");
+	}
+
+	[Test]
+	public void ParseFilename_should_abort_on_leading_separator()
+	{
+		ParseFilenameTest(
+			input: ";H:TESTFILE.BIN",
+			parseControl: default,
+			expectFailure: false,
+			expectContainsWildcard: false,
+			expectDriveIdentifier: default,
+			expectFileNameBytes: "           ",
+			expectConsumedInputBytes: 0);
+	}
+
+	[Test]
+	public void ParseFilename_should_ignore_one_leading_separator_when_configured()
+	{
+		ParseFilenameTest(
+			input: ";H:TESTFILE.BIN",
+			parseControl: ParseFlags.IgnoreOneLeadingSeparator,
+			expectFailure: false,
+			expectContainsWildcard: false,
+			expectDriveIdentifier: 'H',
+			expectFileNameBytes: "TESTFILEBIN");
+	}
+
+	[Test]
+	public void ParseFilename_should_not_ignore_more_than_one_leading_separator()
+	{
+		ParseFilenameTest(
+			input: ";,H:TESTFILE.BIN",
+			parseControl: ParseFlags.IgnoreOneLeadingSeparator,
+			expectFailure: false,
+			expectContainsWildcard: false,
+			expectDriveIdentifier: default,
+			expectFileNameBytes: "           ",
+			expectConsumedInputBytes: 1);
+	}
+
+	[Test]
+	public void ParseFilename_should_terminate_on_control_character()
+	{
+		ParseFilenameTest(
+			input: "I:TEST\bILE.BIN",
+			parseControl: default,
+			expectFailure: false,
+			expectContainsWildcard: false,
+			expectDriveIdentifier: 'I',
+			expectFileNameBytes: "TEST       ",
+			expectConsumedInputBytes: 6);
+	}
+
+	[Test]
+	public void ParseFilename_should_terminate_on_illegal_character([Values('/', '"', '[', ']', '<', '>', '|')] char illegalCharacter)
+	{
+		ParseFilenameTest(
+			input: "I:TEST" + illegalCharacter + "ILE.BIN",
+			parseControl: default,
+			expectFailure: false,
+			expectContainsWildcard: false,
+			expectDriveIdentifier: 'I',
+			expectFileNameBytes: "TEST       ",
+			expectConsumedInputBytes: 6);
+	}
+
+	[Test]
+	public void ParseFilename_should_clear_drive_identifier_when_input_has_no_drive_letter()
+	{
+		ParseFilenameTest(
+			initialDriveIdentifier: 'J',
+			input: "TESTFILE.CAT",
+			parseControl: default,
+			expectFailure: false,
+			expectContainsWildcard: false,
+			expectDriveIdentifier: default,
+			expectFileNameBytes: "TESTFILECAT");
+	}
+
+	[Test]
+	public void ParseFilename_should_leave_drive_identifier_when_input_has_no_drive_letter_if_configured()
+	{
+		ParseFilenameTest(
+			initialDriveIdentifier: 'J',
+			input: "TESTFILE.CAT",
+			parseControl: ParseFlags.DoNotSetDefaultDriveIdentifier,
+			expectFailure: false,
+			expectContainsWildcard: false,
+			expectDriveIdentifier: 'J',
+			expectFileNameBytes: "TESTFILECAT");
+	}
+
+	[Test]
+	public void ParseFilename_should_clear_filename_when_input_has_no_filename()
+	{
+		ParseFilenameTest(
+			initialFileName: "FILETEST.DOG",
+			input: "K:.CAT",
+			parseControl: default,
+			expectFailure: false,
+			expectContainsWildcard: false,
+			expectDriveIdentifier: 'K',
+			expectFileNameBytes: "        CAT");
+	}
+
+	[Test]
+	public void ParseFilename_should_leave_filename_when_input_has_no_filename_if_configured()
+	{
+		ParseFilenameTest(
+			initialFileName: "FILETEST.DOG",
+			input: "K:.CAT",
+			parseControl: ParseFlags.DoNotClearOnInvalidFileName,
+			expectFailure: false,
+			expectContainsWildcard: false,
+			expectDriveIdentifier: 'K',
+			expectFileNameBytes: "FILETESTCAT");
+	}
+
+	[Test]
+	public void ParseFilename_should_clear_extension_when_input_has_no_extension()
+	{
+		ParseFilenameTest(
+			initialFileName: "FILETEST.DOG",
+			input: "L:TESTFILE",
+			parseControl: default,
+			expectFailure: false,
+			expectContainsWildcard: false,
+			expectDriveIdentifier: 'L',
+			expectFileNameBytes: "TESTFILE   ");
+	}
+
+	[Test]
+	public void ParseFilename_should_leave_extension_when_input_has_no_extension_if_configured()
+	{
+		ParseFilenameTest(
+			initialFileName: "FILETEST.DOG",
+			input: "L:TESTFILE",
+			parseControl: ParseFlags.DoNotClearOnInvalidExtension,
+			expectFailure: false,
+			expectContainsWildcard: false,
+			expectDriveIdentifier: 'L',
+			expectFileNameBytes: "TESTFILEDOG");
+	}
+
+	[Test]
+	public void ParseFilename_should_treat_final_dot_as_specified_empty_extension()
+	{
+		ParseFilenameTest(
+			initialFileName: "FILETEST.DOG",
+			input: "M:TESTFILE.",
+			parseControl: ParseFlags.DoNotClearOnInvalidExtension,
+			expectFailure: false,
+			expectContainsWildcard: false,
+			expectDriveIdentifier: 'M',
+			expectFileNameBytes: "TESTFILE   ");
+	}
+
+	[Test]
+	public void ParseFilename_should_expand_wildcards_in_filename()
+	{
+		ParseFilenameTest(
+			input: "O:FIL*.DAT",
+			parseControl: default,
+			expectFailure: false,
+			expectContainsWildcard: true,
+			expectDriveIdentifier: 'O',
+			expectFileNameBytes: "FIL?????DAT");
+	}
+
+	[Test]
+	public void ParseFilename_should_expand_wildcards_in_extension()
+	{
+		ParseFilenameTest(
+			input: "P:FILE.D*",
+			parseControl: default,
+			expectFailure: false,
+			expectContainsWildcard: true,
+			expectDriveIdentifier: 'P',
+			expectFileNameBytes: "FILE    D??");
+	}
+
 	/*
 	public enum Function : byte
 	{
@@ -2781,6 +3020,81 @@ public class Interrupt0x21Tests
 		breakEventOccurred.Should().Be(shouldBreak);
 		characterRead.Should().Be(expectedCharacterRead);
 		machine.DOS.LastError.Should().Be(OperatingSystem.DOSError.None);
+	}
+
+	void ParseFilenameTest(string input, ParseFlags parseControl, bool expectFailure, bool expectContainsWildcard, char expectDriveIdentifier, string expectFileNameBytes, int expectConsumedInputBytes = -1, char initialDriveIdentifier = '\0', string? initialFileName = null)
+	{
+		// Arrange
+		var machine = new Machine();
+
+		machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+		var fcb = new FileControlBlock();
+
+		var fcbAddress = machine.DOS.MemoryManager.AllocateMemory(FileControlBlock.Size, machine.DOS.CurrentPSPSegment);
+
+		fcb.MemoryAddress = fcbAddress;
+
+		if (initialFileName != null)
+			fcb.SetFileName(initialFileName);
+		if (initialDriveIdentifier != '\0')
+			fcb.DriveIdentifier = (byte)(char.ToUpperInvariant(initialDriveIdentifier) - 'A' + 1);
+
+		fcb.Serialize(machine.MemoryBus);
+
+		var inputBytes = s_cp437.GetBytes(input);
+
+		if (expectConsumedInputBytes < 0)
+			expectConsumedInputBytes = inputBytes.Length;
+
+		var inputAddress = machine.DOS.MemoryManager.AllocateMemory(inputBytes.Length + 1, machine.DOS.CurrentPSPSegment);
+
+		for (int i = 0; i < inputBytes.Length; i++)
+			machine.MemoryBus[inputAddress + i] = inputBytes[i];
+		machine.MemoryBus[inputAddress + inputBytes.Length] = 0;
+
+		byte expectDriveIdentifierByte =
+			expectDriveIdentifier == default
+			? (byte)0
+			: (byte)(expectDriveIdentifier - 'A' + 1);
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.ParseFilename << 8;
+		rin.AX |= (byte)parseControl;
+		rin.DS = (ushort)(inputAddress / MemoryManager.ParagraphSize);
+		rin.SI = (ushort)(inputAddress % MemoryManager.ParagraphSize);
+		rin.ES = (ushort)(fcbAddress / MemoryManager.ParagraphSize);
+		rin.DI = (ushort)(fcbAddress % MemoryManager.ParagraphSize);
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		int al = rout.AX & 0xFF;
+
+		if (expectFailure)
+			al.Should().Be(0xFF);
+		else if (expectContainsWildcard)
+			al.Should().Be(1);
+		else
+			al.Should().Be(0);
+
+		fcb = FileControlBlock.Deserialize(machine.MemoryBus, fcbAddress);
+
+		fcb.DriveIdentifier.Should().Be(expectDriveIdentifierByte);
+
+		fcb.FileNameBytes.Should().BeEquivalentTo(
+			s_cp437.GetBytes(expectFileNameBytes),
+			config => config.WithStrictOrdering());
+
+		var newInputAddress = new SegmentedAddress(rout.AsRegistersEx().DS, rout.SI);
+
+		int consumedBytes = newInputAddress.ToLinearAddress() - inputAddress;
+
+		consumedBytes.Should().Be(expectConsumedInputBytes);
 	}
 
 	enum ControlCharacterHandling

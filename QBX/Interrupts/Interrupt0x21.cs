@@ -877,11 +877,18 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 					FileControlBlock.ParseFileName(
 						readInputChar: (idx) => machine.MemoryBus[inputLinearAddress + idx],
 						lengthIsAtLeast: (testLength) => (65536 - inputPointer.Offset >= testLength),
-						advanceInput: (numBytes) => inputPointer.Offset += (ushort)numBytes,
+						advanceInput:
+							(numBytes) =>
+							{
+								inputPointer.Offset += (ushort)numBytes;
+								inputLinearAddress = inputPointer.ToLinearAddress();
+							},
 						ref fcb.DriveIdentifier, fcb.FileNameBytes,
 						out bool containsWildcards,
 						out bool invalidDriveLetter,
 						flags);
+
+					fcb.Serialize(machine.MemoryBus);
 
 					result.AX &= 0xFF00;
 

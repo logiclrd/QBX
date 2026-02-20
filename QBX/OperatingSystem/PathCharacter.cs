@@ -13,6 +13,26 @@ public class PathCharacter
 
 	public static bool IsValidOrWildcard(byte b) => (b == '?') || IsValid(b);
 
+	public static bool IsLetter(byte b) =>
+		((b >= 'A') && (b <= 'Z')) ||
+		((b >= 'a') && (b <= 'z'));
+
+	public static bool IsFileNameSeparator(byte b)
+	{
+		switch (b)
+		{
+			case (byte)':':
+			//case (byte)'.': // documentation error: dot is never a filename separator, because ".TXT" is a valid filename
+			case (byte)';':
+			case (byte)',':
+			case (byte)'=':
+			case (byte)'+':
+				return true;
+		}
+
+		return false;
+	}
+
 	public static byte ToUpper(byte b)
 	{
 		if ((b >= 'a') && (b <= 'z'))
