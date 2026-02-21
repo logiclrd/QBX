@@ -3293,56 +3293,11 @@ public class Interrupt0x21Tests
 	{
 		GetDeviceData = 0x00,
 		SetDeviceData = 0x01,
-		ReceiveControlDataFromCharacterDevice = 0x02, // not implemented
-		SendControlDataToCharacterDevice = 0x03, // not implemented
-		ReceiveControlDataFromBlockDevice = 0x04, // not implemented
-		SendControlDataToBlockDevice = 0x05, // not implemented
 		CheckDeviceInputStatus = 0x06,
 		CheckDeviceOutputStatus = 0x07,
 		DoesDeviceUseRemovableMedia = 0x08,
 		IsDriveRemote = 0x09,
 		IsFileOrDeviceRemote = 0x0A,
-		SetSharingRetryCount = 0x0B, // not implemented
-		Function440C = 0x0C,
-		Function440D = 0x0D,
-		GetLogicalDriveMap = 0x0E, // not implemented
-		SetLogicalDriveMap = 0x0F, // not implemented
-		QueryIOCTLHandle = 0x10, // not implemented
-		QueryIOCTLDevice = 0x11, // not implemented
-	}
-
-	public enum Function440CMinorCode : byte
-	{
-		SetIterationCount = 0x45, // not implemented
-		SelectCodePage = 0x4A, // not implemented
-		StartCodePagePrepare = 0x4C, // not implemented
-		EndCodePagePrepare = 0x4D, // not implemented
-		SetDisplayMode = 0x5F, // not implemented
-		GetIterationCount = 0x65, // not implemented
-		QuerySelectedCodePage = 0x6A, // not implemented
-		QueryCodePagePrepareList = 0x6B, // not implemented
-		GetDisplayMode = 0x7F, // not implemented
-	}
-
-	public enum Function440DMinorCode : byte
-	{
-		SetDeviceParameters = 0x40, // not implemented
-		WriteTrackOnLogicalDrive = 0x41, // not implemented
-		FormatTrackOnLogicalDrive = 0x42, // not implemented
-		SetMediaID = 0x46, // not implemented
-		GetDeviceParameters = 0x60, // not implemented
-		ReadTrackOnLogicalDrive = 0x61, // not implemented
-		VerifyTrackOnLogicalDrive = 0x62, // not implemented
-		GetMediaID = 0x66, // not implemented
-		SenseMediaType = 0x68, // not implemented
-	}
-
-	public enum Function4B : byte
-	{
-		LoadAndExecuteProgram = 0x00, // not implemented
-		LoadProgram = 0x01, // not implemented
-		LoadOverlay = 0x03, // not implemented
-		SetExecutionState = 0x05, // not implemented
 	}
 
 	public enum Function57 : byte
