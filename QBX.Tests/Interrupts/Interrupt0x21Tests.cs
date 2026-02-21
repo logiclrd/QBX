@@ -2920,8 +2920,8 @@ public class Interrupt0x21Tests
 
 		// Assert
 		var actualValue = new SegmentedAddress(
-			machine.DOS.DiskTransferAddressSegment,
-			machine.DOS.DiskTransferAddressOffset);
+			rout.AsRegistersEx().ES,
+			rout.BX);
 
 		actualValue.Should().BeEquivalentTo(expectedValue);
 	}
@@ -3004,20 +3004,235 @@ public class Interrupt0x21Tests
 		actualAddress.Should().BeEquivalentTo(expectedAddress);
 	}
 
-	/*
-	public enum Function33 : byte
+	[Test]
+	public void GetCtrlCCheckFlag_should_return_successfully()
 	{
-		GetCtrlCCheckFlag = 0x00,
-		SetCtrlCCheckFlag = 0x01, // not implemented
-		GetStartupDrive = 0x05,
-		GetMSDOSVersion = 0x06,
+		// Arrange
+		var machine = new Machine();
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.Function33 << 8;
+		rin.AX |= (int)Interrupt0x21.Function33.GetCtrlCCheckFlag;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		int dl = rout.DX & 0xFF;
+
+		dl.Should().BeOneOf(0, 1);
 	}
 
+	[Test]
+	public void SetCtrlCCheckFlag_should_return_successfully()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.Function33 << 8;
+		rin.AX |= (int)Interrupt0x21.Function33.SetCtrlCCheckFlag;
+
+		// Act
+		var rout = sut.Execute(rin);
+	}
+
+	[Test]
+	public void GetStartupDrive_should_return_current_drive_at_startup()
+	{
+		// Arrange
+		var preStartupCurrentDirectory = Environment.CurrentDirectory;
+
+		string preStartupCurrentDrive;
+
+		if ((Path.GetPathRoot(preStartupCurrentDirectory) is string pathRoot)
+		 && (pathRoot.Length >= 2)
+		 && char.IsAsciiLetter(pathRoot[0])
+		 && (pathRoot[1] == Path.VolumeSeparatorChar))
+			preStartupCurrentDrive = pathRoot;
+		else
+			preStartupCurrentDrive = "C:/";
+
+		int expectedStartupDrive = char.ToUpperInvariant(preStartupCurrentDrive[0]) - 'A' + 1;
+
+		var machine = new Machine();
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.Function33 << 8;
+		rin.AX |= (int)Interrupt0x21.Function33.GetStartupDrive;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		int dl = rout.DX & 0xFF;
+
+		dl.Should().Be(expectedStartupDrive);
+	}
+
+	[Test]
+	public void GetMSDOSVersion_should_return_some_values()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.Function33 << 8;
+		rin.AX |= (int)Interrupt0x21.Function33.GetMSDOSVersion;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		int versionMajor = rout.BX & 0xFF;
+		int versionMinor = rout.BX >> 8;
+		int revisionNumber = rout.DX & 0b00000111;
+		int versionFlag = rout.DX >> 8;
+
+		// Assert
+		versionMajor.Should().BeInRange(5, 6);
+		versionMinor.Should().Be(0);
+		revisionNumber.Should().Be(0);
+		versionFlag.Should().Be(0x08);
+	}
+
+	[Test]
+	public void GetInDOSFlagAddress_should_return_correct_address()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.GetInDOSFlagAddress << 8;
+
+		var expectedValue = machine.DOS.InDOSFlagAddress;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		var actualValue = new SegmentedAddress(
+			rout.AsRegistersEx().ES,
+			rout.BX);
+
+		actualValue.Should().BeEquivalentTo(expectedValue);
+	}
+
+	[Test]
+	public void GetDiskFreeSpace_should_return_some_numbers_for_default_drive()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.GetDiskFreeSpace << 8;
+
+		// DL 0 = use default drive
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		rout.AX.Should().NotBe(0xFFFF);
+		rout.BX.Should().Be(0xFFFF);
+		rout.CX.Should().NotBe(0);
+		rout.DX.Should().Be(0xFFFF);
+	}
+
+	[Test]
+	public void GetDiskFreeSpace_should_return_some_values_when_drive_identifier_is_specified()
+	{
+		// Arrange
+		int driveIdentifier = -1;
+
+		for (char driveLetter = 'A'; driveLetter <= 'Z'; driveLetter++)
+		{
+			if (new DriveInfo(string.Concat(driveLetter, Path.VolumeSeparatorChar)).DriveType != DriveType.NoRootDirectory)
+			{
+				driveIdentifier = driveLetter - 'A' + 1;
+				break;
+			}
+		}
+
+		if (driveIdentifier < 0)
+			driveIdentifier = 3; // "C:/" synthetic drive on platforms with no drive letters
+
+		var machine = new Machine();
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.GetDiskFreeSpace << 8;
+		rin.DX = (ushort)driveIdentifier;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		rout.AX.Should().NotBe(0xFFFF);
+		rout.BX.Should().Be(0xFFFF);
+		rout.CX.Should().NotBe(0);
+		rout.DX.Should().Be(0xFFFF);
+	}
+
+	[Test]
+	public void GetDiskFreeSpace_should_fail_on_valid_drive_identifier_that_does_not_refer_to_any_drive()
+	{
+		// Arrange
+		int driveIdentifier = -1;
+
+		for (char driveLetter = 'A'; driveLetter <= 'Z'; driveLetter++)
+		{
+			if (driveLetter != 'C')
+			{
+				if (new DriveInfo(string.Concat(driveLetter, Path.VolumeSeparatorChar)).DriveType == DriveType.NoRootDirectory)
+				{
+					driveIdentifier = driveLetter - 'A' + 1;
+					break;
+				}
+			}
+		}
+
+		if (driveIdentifier < 0)
+			throw new InconclusiveException("Couldn't find an unused drive letter");
+
+		var machine = new Machine();
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.GetDiskFreeSpace << 8;
+		rin.DX = (ushort)driveIdentifier;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		rout.AX.Should().Be(0xFFFF);
+	}
+
+	/*
 	public enum Function : byte
 	{
-		Function33 = 0x33,
-		GetInDOSFlagAddress = 0x34,
-		GetInterruptVector = 0x35, // not implemented
 		GetDiskFreeSpace = 0x36,
 		GetSetCountryInformation = 0x38,
 		CreateDirectory = 0x39,

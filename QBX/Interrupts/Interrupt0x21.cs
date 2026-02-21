@@ -1011,7 +1011,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 							}
 							catch
 							{
-								result.DX = 2; // C:\, if something goes wrong
+								result.DX = 3; // C:\, if something goes wrong
 							}
 
 							break;
@@ -1047,7 +1047,10 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					int driveIdentifier = input.DX & 0xFF;
 
-					var dpbAddress = machine.DOS.GetDriveParameterBlock(driveIdentifier);
+					var dpbAddress =
+						driveIdentifier == 0
+						? machine.DOS.GetDefaultDriveParameterBlock()
+						: machine.DOS.GetDriveParameterBlock(driveIdentifier - 1);
 
 					if (dpbAddress == 0)
 						result.AX = 0xFFFF;
