@@ -2926,10 +2926,36 @@ public class Interrupt0x21Tests
 		actualValue.Should().BeEquivalentTo(expectedValue);
 	}
 
+	[Test]
+	public void GetVersionNumber_should_return_some_values()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.GetVersionNumber << 8;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		int versionMajor = rout.AX & 0xFF;
+		int versionMinor = rout.AX >> 8;
+		int versionFlag = rout.BX >> 8;
+		int serialNumber = ((rout.BX & 0xFF) << 16) | rout.CX;
+
+		// Assert
+		versionMajor.Should().BeInRange(5, 6);
+		versionMinor.Should().Be(0);
+		versionFlag.Should().Be(0);
+		serialNumber.Should().Be(0);
+	}
+
 	/*
 	public enum Function : byte
 	{
-		GetVersionNumber = 0x30,
 		KeepProgram = 0x31,
 		GetDPB = 0x32,
 		Function33 = 0x33,
