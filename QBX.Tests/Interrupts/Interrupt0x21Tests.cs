@@ -2899,10 +2899,36 @@ public class Interrupt0x21Tests
 		valueAfter.Should().Be(newFlagValue);
 	}
 
+	[Test]
+	public void GetDiskTransferAddress_should_return_DTA_address()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.GetDiskTransferAddress << 8;
+
+		var expectedValue = new SegmentedAddress(
+			machine.DOS.DiskTransferAddressSegment,
+			machine.DOS.DiskTransferAddressOffset);
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		var actualValue = new SegmentedAddress(
+			machine.DOS.DiskTransferAddressSegment,
+			machine.DOS.DiskTransferAddressOffset);
+
+		actualValue.Should().BeEquivalentTo(expectedValue);
+	}
+
 	/*
 	public enum Function : byte
 	{
-		GetDiskTransferAddress = 0x2F,
 		GetVersionNumber = 0x30,
 		KeepProgram = 0x31,
 		GetDPB = 0x32,
