@@ -2871,10 +2871,37 @@ public class Interrupt0x21Tests
 		machine.SystemClock.Now.Should().BeCloseTo(expectedTime, TimeSpan.FromMilliseconds(50));
 	}
 
+	[Test]
+	public void SetResetVerifyFlag_should_update_flag_correctly([Values] bool initialFlagValue, [Values] bool newFlagValue)
+	{
+		// Arrange
+		var machine = new Machine();
+
+		machine.DOS.VerifyWrites = initialFlagValue;
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.SetResetVerifyFlag << 8;
+		if (newFlagValue)
+			rin.AX |= 1;
+
+		// Act
+		bool valueBefore = machine.DOS.VerifyWrites;
+
+		var rout = sut.Execute(rin);
+
+		bool valueAfter = machine.DOS.VerifyWrites;
+
+		// Assert
+		valueBefore.Should().Be(initialFlagValue);
+		valueAfter.Should().Be(newFlagValue);
+	}
+
 	/*
 	public enum Function : byte
 	{
-		SetResetVerifyFlag = 0x2E,
 		GetDiskTransferAddress = 0x2F,
 		GetVersionNumber = 0x30,
 		KeepProgram = 0x31,
