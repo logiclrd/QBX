@@ -48,10 +48,10 @@ public partial class DOS
 
 	public CultureInfo CurrentCulture = CultureInfo.CurrentCulture;
 
-	public ushort DataTransferAddressSegment;
-	public ushort DataTransferAddressOffset;
+	public ushort DiskTransferAddressSegment;
+	public ushort DiskTransferAddressOffset;
 
-	public int DataTransferAddress => DataTransferAddressSegment * 0x10 + DataTransferAddressOffset;
+	public int DiskTransferAddress => DiskTransferAddressSegment * 0x10 + DiskTransferAddressOffset;
 
 	public const int StandardInput = 0;
 	public const int StandardOutput = 1;
@@ -193,8 +193,8 @@ public partial class DOS
 		CurrentPSPSegment = (ushort)(pspAddress / MemoryManager.ParagraphSize);
 
 		// Default DTA: use the last 128 bytes of the PSP, overwriting the command-line argument data.
-		DataTransferAddressSegment = CurrentPSPSegment;
-		DataTransferAddressOffset = 128;
+		DiskTransferAddressSegment = CurrentPSPSegment;
+		DiskTransferAddressOffset = 128;
 
 		return CurrentPSPSegment;
 	}
@@ -1318,7 +1318,7 @@ public partial class DOS
 			{
 				int readSize = fcb.RecordSize * recordCount;
 
-				if (0x10000 - DataTransferAddressOffset < readSize)
+				if (0x10000 - DiskTransferAddressOffset < readSize)
 					throw new OperationCanceledException("DTA overlaps segment boundary");
 
 				if (Files[fcb.FileHandle] is not FileDescriptor fileDescriptor)
@@ -1332,7 +1332,7 @@ public partial class DOS
 
 				fileDescriptor.Seek(offset, MoveMethod.FromBeginning);
 
-				int dtaAddress = DataTransferAddress;
+				int dtaAddress = DiskTransferAddress;
 
 				if (fileDescriptor.ReadExactly(readSize, Machine.MemoryBus, dtaAddress))
 				{
@@ -1370,7 +1370,7 @@ public partial class DOS
 
 			int writeSize = fcb.RecordSize * recordCount;
 
-			if (0x10000 - DataTransferAddressOffset < writeSize)
+			if (0x10000 - DiskTransferAddressOffset < writeSize)
 				throw new OperationCanceledException("DTA overlaps segment boundary");
 
 			if (Files[fcb.FileHandle] is not FileDescriptor fileDescriptor)
@@ -1381,11 +1381,11 @@ public partial class DOS
 
 			fileDescriptor.Seek(offset, MoveMethod.FromBeginning);
 
-			int operationDataTransferAddress = DataTransferAddress;
+			int operationDiskTransferAddress = DiskTransferAddress;
 
 			for (int i = 0; i < recordCount; i++)
 			{
-				fileDescriptor.Write(fcb.RecordSize, Machine.MemoryBus, operationDataTransferAddress);
+				fileDescriptor.Write(fcb.RecordSize, Machine.MemoryBus, operationDiskTransferAddress);
 
 				if (advance)
 				{
@@ -1395,7 +1395,7 @@ public partial class DOS
 						fcb.RandomRecordNumber = fcb.RecordPointer;
 				}
 
-				operationDataTransferAddress += fcb.RecordSize;
+				operationDiskTransferAddress += fcb.RecordSize;
 			}
 
 			if (VerifyWrites)

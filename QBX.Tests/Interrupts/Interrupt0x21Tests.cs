@@ -880,7 +880,7 @@ public class Interrupt0x21Tests
 
 			al.Should().Be(0);
 
-			var dirEntrySpan = machine.SystemMemory.AsSpan().Slice(machine.DOS.DataTransferAddress, 32);
+			var dirEntrySpan = machine.SystemMemory.AsSpan().Slice(machine.DOS.DiskTransferAddress, 32);
 
 			string fileName = FileControlBlock.GetFileName(dirEntrySpan.Slice(0, 11));
 
@@ -931,7 +931,7 @@ public class Interrupt0x21Tests
 
 			var allMatches = new List<string>();
 
-			var dirEntrySpan = machine.SystemMemory.AsSpan().Slice(machine.DOS.DataTransferAddress, 32);
+			var dirEntrySpan = machine.SystemMemory.AsSpan().Slice(machine.DOS.DiskTransferAddress, 32);
 
 			string fileName = FileControlBlock.GetFileName(dirEntrySpan.Slice(0, 11));
 
@@ -1067,7 +1067,7 @@ public class Interrupt0x21Tests
 
 				testData.CopyTo(expectedResults);
 
-				var dta = machine.SystemMemory.AsSpan().Slice(machine.DOS.DataTransferAddress, fcb.RecordSize);
+				var dta = machine.SystemMemory.AsSpan().Slice(machine.DOS.DiskTransferAddress, fcb.RecordSize);
 
 				dta.Fill(1);
 
@@ -1144,7 +1144,7 @@ public class Interrupt0x21Tests
 
 				var expectedResults = new byte[fcb.RecordSize];
 
-				var dta = machine.SystemMemory.AsSpan().Slice(machine.DOS.DataTransferAddress, fcb.RecordSize);
+				var dta = machine.SystemMemory.AsSpan().Slice(machine.DOS.DiskTransferAddress, fcb.RecordSize);
 
 				dta.Fill(1);
 
@@ -1224,7 +1224,7 @@ public class Interrupt0x21Tests
 				rin.DS = (ushort)(fcbAddress / MemoryManager.ParagraphSize);
 				rin.DX = (ushort)(fcbAddress % MemoryManager.ParagraphSize);
 
-				var dta = machine.SystemMemory.AsSpan().Slice(machine.DOS.DataTransferAddress, fcb.RecordSize);
+				var dta = machine.SystemMemory.AsSpan().Slice(machine.DOS.DiskTransferAddress, fcb.RecordSize);
 
 				// Act
 				for (int i=0; i < NumRecords; i++)
@@ -2010,7 +2010,7 @@ public class Interrupt0x21Tests
 
 				var expectedResults = new byte[fcb.RecordSize];
 
-				var dta = machine.SystemMemory.AsSpan().Slice(machine.DOS.DataTransferAddress, fcb.RecordSize);
+				var dta = machine.SystemMemory.AsSpan().Slice(machine.DOS.DiskTransferAddress, fcb.RecordSize);
 
 				dta.Fill(1);
 
@@ -2096,7 +2096,7 @@ public class Interrupt0x21Tests
 				rin.DS = (ushort)(fcbAddress / MemoryManager.ParagraphSize);
 				rin.DX = (ushort)(fcbAddress % MemoryManager.ParagraphSize);
 
-				var dta = machine.SystemMemory.AsSpan().Slice(machine.DOS.DataTransferAddress, fcb.RecordSize);
+				var dta = machine.SystemMemory.AsSpan().Slice(machine.DOS.DiskTransferAddress, fcb.RecordSize);
 
 				// Act
 				for (int i=0; i < NumRecords; i++)
@@ -2371,8 +2371,8 @@ public class Interrupt0x21Tests
 
 			var dtaAddressSegmented = new SegmentedAddress(dtaAddress);
 
-			machine.DOS.DataTransferAddressSegment = dtaAddressSegmented.Segment;
-			machine.DOS.DataTransferAddressOffset = dtaAddressSegmented.Offset;
+			machine.DOS.DiskTransferAddressSegment = dtaAddressSegmented.Segment;
+			machine.DOS.DiskTransferAddressOffset = dtaAddressSegmented.Offset;
 
 			try
 			{
@@ -2387,7 +2387,7 @@ public class Interrupt0x21Tests
 
 				var expectedResults = new byte[fcb.RecordSize];
 
-				var dta = machine.SystemMemory.AsSpan().Slice(machine.DOS.DataTransferAddress, fcb.RecordSize * BlockReadSize);
+				var dta = machine.SystemMemory.AsSpan().Slice(machine.DOS.DiskTransferAddress, fcb.RecordSize * BlockReadSize);
 
 				dta.Fill(1);
 
@@ -2454,8 +2454,8 @@ public class Interrupt0x21Tests
 
 			var dtaAddressSegmented = new SegmentedAddress(dtaAddress);
 
-			machine.DOS.DataTransferAddressSegment = dtaAddressSegmented.Segment;
-			machine.DOS.DataTransferAddressOffset = dtaAddressSegmented.Offset;
+			machine.DOS.DiskTransferAddressSegment = dtaAddressSegmented.Segment;
+			machine.DOS.DiskTransferAddressOffset = dtaAddressSegmented.Offset;
 
 			Registers rout;
 
@@ -2470,7 +2470,7 @@ public class Interrupt0x21Tests
 				rin.DS = (ushort)(fcbAddress / MemoryManager.ParagraphSize);
 				rin.DX = (ushort)(fcbAddress % MemoryManager.ParagraphSize);
 
-				var dta = machine.SystemMemory.AsSpan().Slice(machine.DOS.DataTransferAddress, BlockWriteSize * fcb.RecordSize);
+				var dta = machine.SystemMemory.AsSpan().Slice(machine.DOS.DiskTransferAddress, BlockWriteSize * fcb.RecordSize);
 
 				for (int i=0; i < BlockWriteSize; i++)
 					records[BlockWriteStart + i].CopyTo(dta.Slice(i * fcb.RecordSize));

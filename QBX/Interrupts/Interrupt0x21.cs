@@ -615,8 +615,8 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.SetDiskTransferAddress:
 				{
-					machine.DOS.DataTransferAddressSegment = result.DS;
-					machine.DOS.DataTransferAddressOffset = result.DX;
+					machine.DOS.DiskTransferAddressSegment = result.DS;
+					machine.DOS.DiskTransferAddressOffset = result.DX;
 					break;
 				}
 				case Function.GetDefaultDriveData:
@@ -957,8 +957,8 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.GetDiskTransferAddress:
 				{
-					result.ES = machine.DOS.DataTransferAddressSegment;
-					result.BX = machine.DOS.DataTransferAddressOffset;
+					result.ES = machine.DOS.DiskTransferAddressSegment;
+					result.BX = machine.DOS.DiskTransferAddressOffset;
 					break;
 				}
 				case Function.GetVersionNumber:

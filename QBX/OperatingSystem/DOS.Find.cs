@@ -143,7 +143,7 @@ public partial class DOS
 		//     deFileSize     dd ?            ;file size
 		// DIRENTRY    ENDS
 
-		var stream = new SystemMemoryStream(Machine.MemoryBus, DataTransferAddress, 32);
+		var stream = new SystemMemoryStream(Machine.MemoryBus, DiskTransferAddress, 32);
 		var writer = new BinaryWriter(stream);
 
 		FormatAsDirEntry(info, shortName, writer);
@@ -158,7 +158,7 @@ public partial class DOS
 		// EXTHEADER ENDS
 		// ;followed by DIRENTRY
 
-		var stream = new SystemMemoryStream(Machine.MemoryBus, DataTransferAddress, 7 + 32);
+		var stream = new SystemMemoryStream(Machine.MemoryBus, DiskTransferAddress, 7 + 32);
 		var writer = new BinaryWriter(stream);
 
 		writer.Write((byte)0xFF);
@@ -187,7 +187,7 @@ public partial class DOS
 
 		dosFileInfo.FileName.Set(shortName);
 
-		dosFileInfo.Serialize(Machine.MemoryBus, DataTransferAddress);
+		dosFileInfo.Serialize(Machine.MemoryBus, DiskTransferAddress);
 	}
 
 	public bool FindFirst(FileControlBlock fcb)
