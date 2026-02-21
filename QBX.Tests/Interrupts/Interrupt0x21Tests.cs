@@ -2745,14 +2745,135 @@ public class Interrupt0x21Tests
 			expectFileNameBytes: "FILE    D??");
 	}
 
+	[Test]
+	public void GetDate_should_return_date()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.GetDate << 8;
+
+		var expectedDate = DateTime.Now.Date;
+
+		if (DateTime.Now.AddSeconds(2).Date != expectedDate)
+			Assert.Inconclusive("Too close to midnight");
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		int actualDayOfWeek = rout.AX & 0xFF;
+		int actualYear = rout.CX;
+		int actualMonth = rout.DX >> 8;
+		int actualMonthDay = rout.DX & 0xFF;
+
+		// Assert
+		actualDayOfWeek.Should().Be((byte)expectedDate.DayOfWeek);
+		actualYear.Should().Be(expectedDate.Year);
+		actualMonth.Should().Be(expectedDate.Month);
+		actualMonthDay.Should().Be(expectedDate.Day);
+	}
+
+	[Test]
+	public void SetDate_should_modify_date([Random(1980, 2099, 5)] int year, [Random(1, 12, 5)] int month, [Random(1, 31, 5)] int monthDay)
+	{
+		// Arrange
+		monthDay = Math.Min(monthDay, DateTime.DaysInMonth(year, month));
+
+		var machine = new Machine();
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.SetDate << 8;
+		rin.CX = (ushort)year;
+		rin.DX = unchecked((ushort)(
+			(month << 8) |
+			monthDay));
+
+		if (DateTime.Now.AddSeconds(2).Date != DateTime.Now.Date)
+			Assert.Inconclusive("Too close to midnight");
+
+		var expectedDate = new DateTime(year, month, monthDay);
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		machine.SystemClock.Now.Date.Should().Be(expectedDate);
+	}
+
+	[Test]
+	public void GetTime_should_return_time()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.GetTime << 8;
+
+		var expectedTime = DateTime.Now;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		int actualHour = rout.CX >> 8;
+		int actualMinutes = rout.CX & 0xFF;
+		int actualSeconds = rout.DX >> 8;
+		int actualHundredths = rout.DX & 0xFF;
+
+		// Assert
+		var actualTime = DateTime.Today + new TimeSpan(
+			days: 0, actualHour, actualMinutes, actualSeconds, milliseconds: actualHundredths * 10);
+
+		actualTime.Should().BeCloseTo(DateTime.Now, TimeSpan.FromMilliseconds(50));
+	}
+
+	[Test]
+	public void SetTime_should_modify_time([Random(0, 23, 5)] int hour, [Random(0, 59, 5)] int minute, [Random(0, 5999, 5)] int hundredths)
+	{
+		// Arrange
+		int second = hundredths / 100;
+
+		hundredths %= 100;
+
+		var machine = new Machine();
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.SetTime << 8;
+		rin.CX = unchecked((ushort)(
+			(hour << 8) |
+			minute));
+		rin.DX = unchecked((ushort)(
+			(second << 8) |
+			hundredths));
+
+		if (DateTime.Now.AddSeconds(2).Date != DateTime.Now.Date)
+			Assert.Inconclusive("Too close to midnight");
+
+		var expectedTime = DateTime.Today + new TimeSpan(
+			days: 0, hour, minute, second, milliseconds: hundredths * 10);
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		machine.SystemClock.Now.Should().BeCloseTo(expectedTime, TimeSpan.FromMilliseconds(50));
+	}
+
 	/*
 	public enum Function : byte
 	{
-		ParseFilename = 0x29,
-		GetDate = 0x2A,
-		SetDate = 0x2B,
-		GetTime = 0x2C,
-		SetTime = 0x2D,
 		SetResetVerifyFlag = 0x2E,
 		GetDiskTransferAddress = 0x2F,
 		GetVersionNumber = 0x30,
