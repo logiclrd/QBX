@@ -148,9 +148,9 @@ public partial class DOS
 		}
 	}
 
-	delegate bool EnumerateDPBCallback(SegmentedAddress segmentedAddress, ref DriveParameterBlock dpb);
+	internal delegate bool EnumerateDPBCallback(SegmentedAddress segmentedAddress, ref DriveParameterBlock dpb);
 
-	void EnumerateDriveParameterBlocks(EnumerateDPBCallback callback)
+	internal void EnumerateDriveParameterBlocks(EnumerateDPBCallback callback)
 	{
 		var address = FirstDriveParameterBlockAddress;
 

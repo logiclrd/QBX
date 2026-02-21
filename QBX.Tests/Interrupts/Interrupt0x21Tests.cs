@@ -2953,11 +2953,68 @@ public class Interrupt0x21Tests
 		serialNumber.Should().Be(0);
 	}
 
+	static IEnumerable<object[]> EnumerateDriveNumbers()
+	{
+		var driveNumbers = new List<int>();
+
+		new Machine().DOS.EnumerateDriveParameterBlocks(
+			(addr, ref dpb) =>
+			{
+				if ((dpb.DriveIdentifier >= 0) && (dpb.DriveIdentifier <= 25))
+					driveNumbers.Add(dpb.DriveIdentifier + 1); // Convert A=0 to A=1
+
+				return true;
+			});
+
+		yield return [0];
+		foreach (var driveNumber in driveNumbers)
+			yield return [driveNumber];
+	}
+
+	[TestCaseSource(nameof(EnumerateDriveNumbers))]
+	public void GetDPB_should_return_correct_address(int driveNumber)
+	{
+		// Arrange
+		var machine = new Machine();
+
+		if (driveNumber == 0)
+			driveNumber = machine.DOS.GetDefaultDrive();
+		else
+			driveNumber--;
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.GetDPB << 8;
+		rin.DX = (ushort)driveNumber;
+
+		var expectedAddress = machine.DOS.GetDriveParameterBlock(driveNumber);
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		var actualAddress = new SegmentedAddress(rout.AsRegistersEx().DS, rout.BX);
+
+		// Assert
+		int al = rout.AX & 0xFF;
+
+		al.Should().Be(0);
+
+		actualAddress.Should().BeEquivalentTo(expectedAddress);
+	}
+
 	/*
+	public enum Function33 : byte
+	{
+		GetCtrlCCheckFlag = 0x00,
+		SetCtrlCCheckFlag = 0x01, // not implemented
+		GetStartupDrive = 0x05,
+		GetMSDOSVersion = 0x06,
+	}
+
 	public enum Function : byte
 	{
-		KeepProgram = 0x31,
-		GetDPB = 0x32,
 		Function33 = 0x33,
 		GetInDOSFlagAddress = 0x34,
 		GetInterruptVector = 0x35, // not implemented
@@ -3008,14 +3065,6 @@ public class Interrupt0x21Tests
 		CommitFile2 = 0x6A,
 		NullFunction = 0x6B,
 		ExtendedOpenCreate = 0x6C,
-	}
-
-	public enum Function33 : byte
-	{
-		GetCtrlCCheckFlag = 0x00,
-		SetCtrlCCheckFlag = 0x01, // not implemented
-		GetStartupDrive = 0x05,
-		GetMSDOSVersion = 0x06,
 	}
 
 	public enum Function43 : byte
