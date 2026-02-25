@@ -1078,6 +1078,13 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 						countryInfo.Import(machine.DOS.CurrentCulture);
 
 						countryInfo.Serialize(machine.MemoryBus, offset);
+
+						var countryCode = machine.DOS.CurrentCulture.ToCountryCode();
+
+						result.AX &= 0xFF00;
+						result.AX |= unchecked((byte)countryCode);
+
+						result.DX = (ushort)countryCode;
 					}
 					else
 					{

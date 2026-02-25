@@ -7,6 +7,7 @@ using QBX.Hardware;
 using QBX.Interrupts;
 using QBX.OperatingSystem.FileDescriptors;
 using QBX.OperatingSystem.FileStructures;
+using QBX.OperatingSystem.Globalization;
 using QBX.OperatingSystem.Memory;
 using QBX.Tests.Utility;
 
@@ -3228,6 +3229,48 @@ public class Interrupt0x21Tests
 
 		// Assert
 		rout.AX.Should().Be(0xFFFF);
+	}
+
+	[Test]
+	public void GetSetCountryInformation_should_retrieve_current_country_information()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+		var countryInfoBufferAddress = machine.DOS.MemoryManager.AllocateMemory(CountryInfo.Size, machine.DOS.CurrentPSPSegment);
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.GetSetCountryInformation << 8;
+		rin.DS = (ushort)(countryInfoBufferAddress / MemoryManager.ParagraphSize);
+		rin.DX = (ushort)(countryInfoBufferAddress % MemoryManager.ParagraphSize);
+
+		var expectedInfo = machine.DOS.CurrentCulture;
+
+		var expectedCountryCode = expectedInfo.ToCountryCode();
+
+		var expectedCountryInfo = new CountryInfo();
+
+		expectedCountryInfo.Import(expectedInfo);
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		int al = rout.AX & 0xFF;
+
+		al.Should().Be((int)expectedCountryCode & 0xFF);
+		rout.DX.Should().Be((ushort)expectedCountryCode);
+
+		var actualCountryInfo = new CountryInfo();
+
+		actualCountryInfo.Deserialize(machine.MemoryBus, countryInfoBufferAddress);
+
+		actualCountryInfo.Should().BeEquivalentTo(expectedCountryInfo);
 	}
 
 	/*
