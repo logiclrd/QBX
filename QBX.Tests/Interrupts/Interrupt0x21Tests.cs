@@ -1,4 +1,5 @@
-﻿using System.IO.Enumeration;
+﻿using System.Globalization;
+using System.IO.Enumeration;
 using System.Numerics;
 
 using QBX.ExecutionEngine.Execution;
@@ -3261,6 +3262,8 @@ public class Interrupt0x21Tests
 		var rout = sut.Execute(rin);
 
 		// Assert
+		rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
 		int al = rout.AX & 0xFF;
 
 		al.Should().Be((int)expectedCountryCode & 0xFF);
@@ -3273,11 +3276,41 @@ public class Interrupt0x21Tests
 		actualCountryInfo.Should().BeEquivalentTo(expectedCountryInfo);
 	}
 
+	[Test]
+	public void GetSetCountryInformation_should_set_current_country_information([Values] CountryCode countryCode)
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.GetSetCountryInformation << 8;
+		rin.DX = 0xFFFF;
+
+		if ((int)countryCode <= 254)
+			rin.AX |= (ushort)countryCode;
+		else
+		{
+			rin.AX |= 0xFF;
+			rin.BX = (ushort)countryCode;
+		}
+
+		var expectedCultureInfo = CultureInfo.GetCultureInfo(countryCode.ToCultureName());
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+		machine.DOS.CurrentCulture.Should().Be(expectedCultureInfo);
+	}
+
 	/*
 	public enum Function : byte
 	{
-		GetDiskFreeSpace = 0x36,
-		GetSetCountryInformation = 0x38,
 		CreateDirectory = 0x39,
 		RemoveDirectory = 0x3A,
 		ChangeCurrentDirectory = 0x3B,

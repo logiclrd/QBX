@@ -32,7 +32,7 @@ public static class CountryCodeExtensions
 				CultureNameAttribute: field.GetCustomAttribute<CultureNameAttribute>()!
 			))
 		.Select(field => (field.CountryCode, RegionName: field.CultureNameAttribute.CultureName.Split('-').Last()))
-		.GroupBy(field => field.RegionName)
+		.GroupBy(field => field.RegionName, StringComparer.OrdinalIgnoreCase)
 		.ToDictionary(grouping => grouping.Key, grouping => grouping.First().CountryCode, StringComparer.OrdinalIgnoreCase);
 
 	public static CountryCode ToCountryCode(this CultureInfo culture)
