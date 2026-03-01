@@ -4848,10 +4848,164 @@ public class Interrupt0x21Tests
 		captureBuffer.AsSpan().ShouldMatch(testData);
 	}
 
+	[Test, NonParallelizable]
+	public void DeleteFile_should_delete_files()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+
+			File.WriteAllText(TestFileName, "QuickBASIC");
+
+			byte[] fileNameBytes = s_cp437.GetBytes(TestFileName);
+
+			int fileNameBufferSize = fileNameBytes.Length + 1;
+
+			var fileNameAddress = machine.DOS.MemoryManager.AllocateMemory(fileNameBufferSize, machine.DOS.CurrentPSPSegment);
+
+			var fileNameSpan = machine.SystemMemory.AsSpan().Slice(fileNameAddress, fileNameBufferSize);
+
+			fileNameBytes.CopyTo(fileNameSpan);
+			fileNameSpan[fileNameBytes.Length] = 0;
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.DeleteFile << 8;
+			rin.DS = (ushort)(fileNameAddress / MemoryManager.ParagraphSize);
+			rin.DX = (ushort)(fileNameAddress % MemoryManager.ParagraphSize);
+
+			// Act
+			bool existsBefore = File.Exists(TestFileName);
+
+			var rout = sut.Execute(rin);
+
+			bool existsAfter = File.Exists(TestFileName);
+
+			// Assert
+			rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+			existsBefore.Should().BeTrue();
+			existsAfter.Should().BeFalse();
+		}
+	}
+
+	[Test, NonParallelizable]
+	public void DeleteFile_should_delete_files_with_relative_paths()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "A\\TESTFILE.TXT";
+
+			Directory.CreateDirectory("A");
+
+			File.WriteAllText(TestFileName, "QuickBASIC");
+
+			byte[] fileNameBytes = s_cp437.GetBytes(TestFileName);
+
+			int fileNameBufferSize = fileNameBytes.Length + 1;
+
+			var fileNameAddress = machine.DOS.MemoryManager.AllocateMemory(fileNameBufferSize, machine.DOS.CurrentPSPSegment);
+
+			var fileNameSpan = machine.SystemMemory.AsSpan().Slice(fileNameAddress, fileNameBufferSize);
+
+			fileNameBytes.CopyTo(fileNameSpan);
+			fileNameSpan[fileNameBytes.Length] = 0;
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.DeleteFile << 8;
+			rin.DS = (ushort)(fileNameAddress / MemoryManager.ParagraphSize);
+			rin.DX = (ushort)(fileNameAddress % MemoryManager.ParagraphSize);
+
+			// Act
+			bool existsBefore = File.Exists(TestFileName);
+
+			var rout = sut.Execute(rin);
+
+			bool existsAfter = File.Exists(TestFileName);
+
+			// Assert
+			rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+			existsBefore.Should().BeTrue();
+			existsAfter.Should().BeFalse();
+		}
+	}
+
+	[Test, NonParallelizable]
+	public void DeleteFile_should_delete_files_with_relative_paths_including_parent_references()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "..\\TESTFILE.TXT";
+
+			Directory.CreateDirectory("A");
+			Environment.CurrentDirectory = "A";
+
+			File.WriteAllText(TestFileName, "QuickBASIC");
+
+			byte[] fileNameBytes = s_cp437.GetBytes(TestFileName);
+
+			int fileNameBufferSize = fileNameBytes.Length + 1;
+
+			var fileNameAddress = machine.DOS.MemoryManager.AllocateMemory(fileNameBufferSize, machine.DOS.CurrentPSPSegment);
+
+			var fileNameSpan = machine.SystemMemory.AsSpan().Slice(fileNameAddress, fileNameBufferSize);
+
+			fileNameBytes.CopyTo(fileNameSpan);
+			fileNameSpan[fileNameBytes.Length] = 0;
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.DeleteFile << 8;
+			rin.DS = (ushort)(fileNameAddress / MemoryManager.ParagraphSize);
+			rin.DX = (ushort)(fileNameAddress % MemoryManager.ParagraphSize);
+
+			// Act
+			bool existsBefore = File.Exists(TestFileName);
+
+			var rout = sut.Execute(rin);
+
+			bool existsAfter = File.Exists(TestFileName);
+
+			// Assert
+			rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+			existsBefore.Should().BeTrue();
+			existsAfter.Should().BeFalse();
+		}
+	}
+
 	/*
 	public enum Function : byte
 	{
-		DeleteFile = 0x41,
 		MoveFilePointer = 0x42,
 		public enum Function43 : byte
 		{
