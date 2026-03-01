@@ -589,7 +589,7 @@ public class Interrupt0x21Tests
 		machine.DOS.LastError.Should().Be(OperatingSystem.DOSError.None);
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void ResetDrive_should_flush_write_buffers()
 	{
 		// Arrange
@@ -642,7 +642,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void OpenFileWithFCB_should_open_files()
 	{
 		// Arrange
@@ -729,7 +729,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void CloseFileWithFCB_should_close_files()
 	{
 		// Arrange
@@ -793,7 +793,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void FindFirstFileWithFCB_should_handle_no_matches()
 	{
 		// Arrange
@@ -838,7 +838,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void FindFirstFileWithFCB_should_find_first_file()
 	{
 		// Arrange
@@ -893,7 +893,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void FindNextFileWithFCB_should_find_all_matching_files()
 	{
 		// Arrange
@@ -961,7 +961,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void DeleteFileWithFCB_should_delete_files()
 	{
 		// Arrange
@@ -1024,7 +1024,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void SequentialRead_should_read_partial_record()
 	{
 		// Arrange
@@ -1091,7 +1091,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void SequentialRead_should_read_multiple_records_sequentially()
 	{
 		// Arrange
@@ -1176,7 +1176,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void SequentialWrite_should_write_multiple_records_sequentially()
 	{
 		// Arrange
@@ -1261,7 +1261,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void CreateFileWithFCB_should_create_files()
 	{
 		// Arrange
@@ -1336,7 +1336,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void CreateFileWithFCB_should_truncate_existing_files()
 	{
 		// Arrange
@@ -1415,7 +1415,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void RenameFileWithFCB_should_rename_individual_file()
 	{
 		// Arrange
@@ -1471,7 +1471,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void RenameFileWithFCB_should_rename_multiple_matching_files()
 	{
 		// Arrange
@@ -1536,7 +1536,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void RenameFileWithFCB_should_fail_if_old_filename_does_not_exist()
 	{
 		// Arrange
@@ -1590,7 +1590,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void RenameFileWithFCB_should_fail_if_new_filename_already_in_use()
 	{
 		// Arrange
@@ -1654,7 +1654,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void RenameFileWithFCB_should_not_interfere_with_new_filename_when_old_filename_does_not_exist()
 	{
 		// Arrange
@@ -1716,7 +1716,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void GetDefaultDrive_should_return_correct_drive_letter()
 	{
 		// Arrange
@@ -1741,7 +1741,7 @@ public class Interrupt0x21Tests
 		al.Should().Be(driveIdentifier);
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void SetDiskTransferAddress_should_set_disk_transfer_address()
 	{
 		// Arrange
@@ -1950,7 +1950,7 @@ public class Interrupt0x21Tests
 		returnedAddress.Should().Be(expectedAddress);
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void RandomRead_should_read_multiple_records_in_arbitrary_order()
 	{
 		// Arrange
@@ -2041,7 +2041,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void RandomWrite_should_write_multiple_records_in_arbitrary_order()
 	{
 		// Arrange
@@ -2132,7 +2132,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void GetFileSize_should_return_file_sizes()
 	{
 		// Arrange
@@ -2193,7 +2193,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void SetRandomRecordNumber_should_assign_correct_value_to_correct_field()
 	{
 		// Arrange
@@ -2257,7 +2257,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void SetRandomRecordNumber_should_fail_if_random_necord_number_field_is_not_zero()
 	{
 		// Arrange
@@ -2314,7 +2314,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void RandomBlockRead_should_read_block_of_records_in_one_call()
 	{
 		// Arrange
@@ -2405,7 +2405,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void RandomBlockWrite_should_write_block_of_records_in_one_call()
 	{
 		// Arrange
@@ -3039,7 +3039,7 @@ public class Interrupt0x21Tests
 		var rout = sut.Execute(rin);
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void GetStartupDrive_should_return_current_drive_at_startup()
 	{
 		// Arrange
@@ -3292,7 +3292,7 @@ public class Interrupt0x21Tests
 		machine.DOS.CurrentCulture.Should().Be(expectedCultureInfo);
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void CreateDirectory_should_create_directories()
 	{
 		// Arrange
@@ -3342,7 +3342,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void CreateDirectory_should_create_directories_with_absolute_paths()
 	{
 		// Arrange
@@ -3403,7 +3403,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void CreateDirectory_should_create_directories_with_relative_paths()
 	{
 		// Arrange
@@ -3459,7 +3459,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void CreateDirectory_should_create_directories_with_relative_paths_including_parent_references()
 	{
 		// Arrange
@@ -3516,7 +3516,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void RemoveDirectory_should_remove_directories()
 	{
 		// Arrange
@@ -3568,7 +3568,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void RemoveDirectory_should_remove_directories_with_absolute_paths()
 	{
 		// Arrange
@@ -3629,7 +3629,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void RemoveDirectory_should_remove_directories_with_relative_paths()
 	{
 		// Arrange
@@ -3685,7 +3685,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void RemoveDirectory_should_remove_directories_with_relative_paths_including_parent_references()
 	{
 		// Arrange
@@ -3744,7 +3744,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void ChangeCurrentDirectory_should_change_directories()
 	{
 		// Arrange
@@ -3800,7 +3800,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void ChangeCurrentDirectory_should_change_directories_with_absolute_paths()
 	{
 		// Arrange
@@ -3865,7 +3865,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void ChangeCurrentDirectory_should_change_directories_with_relative_paths()
 	{
 		// Arrange
@@ -3925,7 +3925,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void ChangeCurrentDirectory_should_change_directories_with_relative_paths_including_parent_references()
 	{
 		// Arrange
@@ -3988,7 +3988,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void CreateFileWithHandle_should_create_files()
 	{
 		// Arrange
@@ -4054,7 +4054,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void CreateFileWithHandle_should_truncate_existing_files()
 	{
 		// Arrange
@@ -4125,7 +4125,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void OpenFileWithHandle_should_open_files(
 		[Values(OpenMode.Access_ReadOnly, OpenMode.Access_ReadWrite, OpenMode.Access_WriteOnly)] OpenMode openMode)
 	{
@@ -4223,7 +4223,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void OpenFileWithHandle_should_open_files_with_relative_paths(
 		[Values("SUB\\TESTFILE.TXT", "..\\TESTFILE.TXT")] string testFileName)
 	{
@@ -4304,7 +4304,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void OpenFileWithHandle_should_not_create_files()
 	{
 		// Arrange
@@ -4348,7 +4348,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void CloseFileWithHandle_should_close_handle()
 	{
 		// Arrange
@@ -4400,7 +4400,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void CloseFileWithHandle_should_fail_gracefully_on_invalid_handle()
 	{
 		// Arrange
@@ -4428,7 +4428,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void CloseFileWithHandle_should_fail_gracefully_on_double_close()
 	{
 		// Arrange
@@ -4490,7 +4490,7 @@ public class Interrupt0x21Tests
 		}
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void ReadFileOrDevice_should_read_data_from_files()
 	{
 		// Arrange
@@ -4747,7 +4747,7 @@ public class Interrupt0x21Tests
 		action.ExecutionTime().Should().BeGreaterThan(TimeSpan.FromSeconds(0.5));
 	}
 
-	[Test]
+	[Test, NonParallelizable]
 	public void WriteFileOrDevice_should_write_data_to_files()
 	{
 		// Arrange
