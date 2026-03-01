@@ -1148,7 +1148,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 						machine.DOS.SetLastError(DOSError.InvalidParameter);
 					else
 					{
-						int fileHandle = machine.DOS.OpenFile(relativePath.ToString(), FileMode.Create, default);
+						int fileHandle = machine.DOS.OpenFile(relativePath.ToString(), FileMode.Create, OpenMode.Access_ReadWrite);
 
 						result.AX = (ushort)fileHandle;
 
