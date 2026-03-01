@@ -74,6 +74,9 @@ public class RegularFileDescriptor(string path, string physicalPath, FileStream 
 		{
 			int numRead = stream.Read(buffer.GetBufferSpan(buffer.NextFree, readSize));
 
+			if (numRead == 0)
+				throw new EndOfStreamException();
+
 			buffer.Use(numRead);
 		}
 	}

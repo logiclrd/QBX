@@ -4490,10 +4490,117 @@ public class Interrupt0x21Tests
 		}
 	}
 
+	[Test]
+	public void ReadFileOrDevice_should_read_data_from_files()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+
+			byte[] testData = s_cp437.GetBytes(Guid.NewGuid().ToString());
+
+			File.WriteAllBytes(TestFileName, testData);
+
+			int fileHandle = machine.DOS.OpenFile(
+				TestFileName,
+				OperatingSystem.FileStructures.FileMode.Open,
+				OpenMode.Access_ReadWrite);
+
+			const int ReadSize = 512;
+
+			int bufferAddress = machine.DOS.MemoryManager.AllocateMemory(ReadSize, machine.DOS.CurrentPSPSegment);
+
+			var bufferSpan = machine.SystemMemory.AsSpan().Slice(bufferAddress, ReadSize);
+
+			try
+			{
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (int)Interrupt0x21.Function.ReadFileOrDevice << 8;
+				rin.BX = (ushort)fileHandle;
+				rin.CX = (ushort)ReadSize;
+				rin.DS = (ushort)(bufferAddress / MemoryManager.ParagraphSize);
+				rin.DX = (ushort)(bufferAddress % MemoryManager.ParagraphSize);
+
+				// Act
+				var rout = sut.Execute(rin);
+
+				// Assert
+				rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+				int actualBytes = rout.AX;
+
+				actualBytes.Should().Be(testData.Length);
+
+				bufferSpan.Slice(0, actualBytes).ShouldMatch(testData);
+			}
+			finally
+			{
+				machine.DOS.CloseFile(fileHandle);
+			}
+		}
+	}
+
+	[Test]
+	public void ReadFileOrDevice_should_read_data_from_console()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		SDL.Keymod modState = 0;
+
+		machine.Keyboard.GetModStateTestHook += () => modState;
+
+		string testCharacters = Guid.NewGuid().ToString();
+		byte[] testData = s_cp437.GetBytes(testCharacters);
+
+		SimulateTyping(testCharacters, ControlCharacterHandling.SemanticKey, machine);
+
+		int bufferAddress = machine.DOS.MemoryManager.AllocateMemory(testCharacters.Length, machine.DOS.CurrentPSPSegment);
+
+		var bufferSpan = machine.SystemMemory.AsSpan().Slice(bufferAddress, testCharacters.Length);
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.ReadFileOrDevice << 8;
+		rin.BX = DOS.StandardInput;
+		rin.CX = (ushort)testCharacters.Length;
+		rin.DS = (ushort)(bufferAddress / MemoryManager.ParagraphSize);
+		rin.DX = (ushort)(bufferAddress % MemoryManager.ParagraphSize);
+
+		Registers? rout = null;
+
+		// Act
+		Action action = () => rout = sut.Execute(rin);
+
+		action.ExecutionTime().Should().BeLessThan(TimeSpan.FromSeconds(0.25));
+
+		// Assert
+		rout.Should().NotBeNull();
+
+		rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+		int actualBytes = rout.AX;
+
+		actualBytes.Should().Be(testCharacters.Length);
+
+		bufferSpan.Slice(0, actualBytes).ShouldMatch(testData);
+	}
+
 	/*
 	public enum Function : byte
 	{
-		ReadFileOrDevice = 0x3F,
 		WriteFileOrDevice = 0x40,
 		DeleteFile = 0x41,
 		MoveFilePointer = 0x42,
