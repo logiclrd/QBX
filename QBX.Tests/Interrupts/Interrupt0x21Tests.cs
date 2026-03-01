@@ -4348,10 +4348,151 @@ public class Interrupt0x21Tests
 		}
 	}
 
+	[Test]
+	public void CloseFileWithHandle_should_close_handle()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+
+			int fileHandle = machine.DOS.OpenFile(
+				TestFileName,
+				OperatingSystem.FileStructures.FileMode.CreateNew,
+				OpenMode.Access_ReadWrite);
+
+			fileHandle.Should().BeInRange(2, machine.DOS.Files.Count - 1);
+
+			try
+			{
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (int)Interrupt0x21.Function.CloseFileWithHandle << 8;
+				rin.BX = (ushort)fileHandle;
+
+				// Act
+				var fileDescriptorBefore = (RegularFileDescriptor)machine.DOS.Files[fileHandle]!;
+
+				var rout = sut.Execute(rin);
+
+				var fileDescriptorAfter = (RegularFileDescriptor)machine.DOS.Files[fileHandle]!;
+
+				// Assert
+				rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+				fileDescriptorBefore.Should().NotBeNull();
+				fileDescriptorAfter.Should().BeNull();
+			}
+			finally
+			{
+				// should be a no-op on a defunct handle
+				using (machine.DOS.SuppressExceptionsInScope())
+					machine.DOS.CloseFile(fileHandle);
+			}
+		}
+	}
+
+	[Test]
+	public void CloseFileWithHandle_should_fail_gracefully_on_invalid_handle()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.CloseFileWithHandle << 8;
+			rin.BX = ushort.MaxValue;
+
+			// Act
+			var rout = sut.Execute(rin);
+
+			// Assert
+			rout.FLAGS.Should().HaveFlag(Flags.Carry);
+			rout.AX.Should().Be((ushort)DOSError.InvalidHandle);
+		}
+	}
+
+	[Test]
+	public void CloseFileWithHandle_should_fail_gracefully_on_double_close()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+
+			int fileHandle = machine.DOS.OpenFile(
+				TestFileName,
+				OperatingSystem.FileStructures.FileMode.CreateNew,
+				OpenMode.Access_ReadWrite);
+
+			fileHandle.Should().BeInRange(2, machine.DOS.Files.Count - 1);
+
+			try
+			{
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (int)Interrupt0x21.Function.CloseFileWithHandle << 8;
+				rin.BX = (ushort)fileHandle;
+
+				var rin2 = new RegistersEx();
+
+				rin2.AX = (int)Interrupt0x21.Function.CloseFileWithHandle << 8;
+				rin2.BX = (ushort)fileHandle;
+
+				// Act
+				var fileDescriptorBefore = (RegularFileDescriptor)machine.DOS.Files[fileHandle]!;
+
+				var rout = sut.Execute(rin);
+
+				var fileDescriptorAfter = (RegularFileDescriptor)machine.DOS.Files[fileHandle]!;
+
+				var rout2 = sut.Execute(rin2);
+
+				// Assert
+				rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+				fileDescriptorBefore.Should().NotBeNull();
+				fileDescriptorAfter.Should().BeNull();
+
+				rout2.FLAGS.Should().HaveFlag(Flags.Carry);
+				rout2.AX.Should().Be((ushort)DOSError.InvalidHandle);
+			}
+			finally
+			{
+				// should be a no-op on a defunct handle
+				using (machine.DOS.SuppressExceptionsInScope())
+					machine.DOS.CloseFile(fileHandle);
+			}
+		}
+	}
+
 	/*
 	public enum Function : byte
 	{
-		CloseFileWithHandle = 0x3E,
 		ReadFileOrDevice = 0x3F,
 		WriteFileOrDevice = 0x40,
 		DeleteFile = 0x41,
