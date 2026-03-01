@@ -120,18 +120,11 @@ public partial class DOS
 
 		foreach (var drive in eligibleDrives)
 		{
-			string rootPath = drive.RootDirectory.FullName;
-
-			if (rootPath.Length < 2)
-				rootPath = "C" + PathCharacter.VolumeSeparatorChar + Path.DirectorySeparatorChar; // "C:/" synthetic drive on platforms with no drive letters
-			else if (rootPath[1] != PathCharacter.VolumeSeparatorChar)
-				continue;
-
 			ref DriveParameterBlock dpb = ref DriveParameterBlock.CreateReference(_machine.SystemMemory, nextDPBAddress.ToLinearAddress());
 
 			// This is all nonsense data, because modern drives don't
 			// fit into the fields described by a DPB at all. :-P
-			dpb.DriveIdentifier = (byte)(char.ToUpperInvariant(rootPath[0]) - 'A');
+			dpb.DriveIdentifier = (byte)(PathCharacter.GetDriveLetter(drive.RootDirectory.FullName) - 'A');
 			dpb.SectorSize = 512;
 			dpb.ClusterMask = 255; // ClusterMask == (1 << ClusterShift) - 1
 			dpb.ClusterShift = 8;
@@ -672,11 +665,7 @@ public partial class DOS
 		 && (pathRoot.Length >= 2))
 			path = pathRoot;
 
-		if ((path.Length >= 2)
-		 && (path[1] == PathCharacter.VolumeSeparatorChar))
-			return path[0] - 'A';
-		else
-			return 2; // "C:/" synthetic drive on platforms with no drive letters
+		return PathCharacter.GetDriveLetter(path) - 'A';
 	}
 
 	public SegmentedAddress GetDefaultDriveParameterBlock()

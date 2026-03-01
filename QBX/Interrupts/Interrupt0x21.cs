@@ -1007,7 +1007,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 							{
 								string binaryPath = Path.GetFullPath(typeof(DOS).Assembly.Location);
 
-								result.DX = (ushort)(char.ToUpper(binaryPath[0]) - 'A' + 1);
+								result.DX = (ushort)(char.ToUpper(PathCharacter.GetDriveLetter(binaryPath)) - 'A' + 1);
 							}
 							catch
 							{

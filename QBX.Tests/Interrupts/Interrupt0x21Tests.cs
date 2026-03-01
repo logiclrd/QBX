@@ -1736,14 +1736,7 @@ public class Interrupt0x21Tests
 		// Assert
 		int al = rout.AX & 0xFF;
 
-		int driveIdentifier;
-
-		if ((Path.GetPathRoot(Environment.CurrentDirectory) is string pathRoot)
-		 && (pathRoot.Length >= 2)
-		 && (pathRoot[1] == PathCharacter.VolumeSeparatorChar))
-			driveIdentifier = char.ToUpperInvariant(pathRoot[0]) - 'A';
-		else
-			driveIdentifier = 2; // "C:/" synthetic drive on platforms with no drive letters
+		int driveIdentifier = PathCharacter.GetDriveLetter(Environment.CurrentDirectory) - 'A';
 
 		al.Should().Be(driveIdentifier);
 	}
@@ -3052,17 +3045,7 @@ public class Interrupt0x21Tests
 		// Arrange
 		var preStartupCurrentDirectory = Environment.CurrentDirectory;
 
-		string preStartupCurrentDrive;
-
-		if ((Path.GetPathRoot(preStartupCurrentDirectory) is string pathRoot)
-		 && (pathRoot.Length >= 2)
-		 && char.IsAsciiLetter(pathRoot[0])
-		 && (pathRoot[1] == PathCharacter.VolumeSeparatorChar))
-			preStartupCurrentDrive = pathRoot;
-		else
-			preStartupCurrentDrive = "C:/";
-
-		int expectedStartupDrive = char.ToUpperInvariant(preStartupCurrentDrive[0]) - 'A' + 1;
+		int expectedStartupDrive = PathCharacter.GetDriveLetter(preStartupCurrentDirectory) - 'A' + 1;
 
 		var machine = new Machine();
 

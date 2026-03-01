@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Text;
 
 namespace QBX.OperatingSystem;
@@ -6,6 +7,17 @@ namespace QBX.OperatingSystem;
 public class PathCharacter
 {
 	public const char VolumeSeparatorChar = ':';
+
+	public static char GetDriveLetter(string path)
+	{
+		if ((Path.GetPathRoot(path) is string pathRoot)
+		 && (pathRoot.Length >= 2)
+		 && char.IsAsciiLetter(pathRoot[0])
+		 && (pathRoot[1] == VolumeSeparatorChar))
+			return char.ToUpperInvariant(pathRoot[0]);
+		else
+			return 'C'; // "C:/" synthetic drive on platforms with no drive letters
+	}
 
 	public static bool IsSpace(byte b) => (b == ' ') || (b == '\0');
 
