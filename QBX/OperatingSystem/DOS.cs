@@ -602,7 +602,7 @@ public partial class DOS
 		while (numWritten < count)
 		{
 			WriteByte(fileHandle, systemMemory[address++], out b);
-			count--;
+			numWritten++;
 		}
 
 		if (VerifyWrites)
