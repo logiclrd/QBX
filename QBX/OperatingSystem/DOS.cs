@@ -92,16 +92,25 @@ public partial class DOS
 
 		InDOSFlagAddress = MemoryManager.AllocateMemory(length: 4, MemoryManager.RootPSPSegment);
 
-		GenerateDiskParameterBlocks();
+		GenerateDriveParameterBlocks();
 
 		InitializeDevices();
 	}
 
-	private void GenerateDiskParameterBlocks()
+	private void GenerateDriveParameterBlocks()
 	{
 		var drives = DriveInfo.GetDrives();
 
-		int bytesNeeded = drives.Length * DriveParameterBlock.Size;
+		var eligibleDrives = drives
+			.Select(drive => (Drive: drive, RootPath: drive.RootDirectory.FullName))
+			.Where(drive => (drive.RootPath.Length < 2) || (drive.RootPath[1] == PathCharacter.VolumeSeparatorChar))
+			.Select(drive => drive.Drive)
+			.ToArray();
+
+		if (eligibleDrives.Length == 0)
+			throw new Exception("Failed to initialize DPBs: no drives found");
+
+		int bytesNeeded = eligibleDrives.Length * DriveParameterBlock.Size;
 
 		int linearAddress = MemoryManager.AllocateMemory(bytesNeeded, MemoryManager.RootPSPSegment);
 
@@ -109,13 +118,13 @@ public partial class DOS
 
 		var nextDPBAddress = FirstDriveParameterBlockAddress;
 
-		foreach (var drive in drives)
+		foreach (var drive in eligibleDrives)
 		{
 			string rootPath = drive.RootDirectory.FullName;
 
 			if (rootPath.Length < 2)
-				rootPath = "C" + Path.VolumeSeparatorChar + Path.DirectorySeparatorChar; // "C:/" synthetic drive on platforms with no drive letters
-			else if (rootPath[1] != Path.VolumeSeparatorChar)
+				rootPath = "C" + PathCharacter.VolumeSeparatorChar + Path.DirectorySeparatorChar; // "C:/" synthetic drive on platforms with no drive letters
+			else if (rootPath[1] != PathCharacter.VolumeSeparatorChar)
 				continue;
 
 			ref DriveParameterBlock dpb = ref DriveParameterBlock.CreateReference(_machine.SystemMemory, nextDPBAddress.ToLinearAddress());
@@ -664,7 +673,7 @@ public partial class DOS
 			path = pathRoot;
 
 		if ((path.Length >= 2)
-		 && (path[1] == Path.VolumeSeparatorChar))
+		 && (path[1] == PathCharacter.VolumeSeparatorChar))
 			return path[0] - 'A';
 		else
 			return 2; // "C:/" synthetic drive on platforms with no drive letters

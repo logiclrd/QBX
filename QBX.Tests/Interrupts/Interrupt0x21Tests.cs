@@ -6,6 +6,7 @@ using QBX.ExecutionEngine.Execution;
 using QBX.Firmware.Fonts;
 using QBX.Hardware;
 using QBX.Interrupts;
+using QBX.OperatingSystem;
 using QBX.OperatingSystem.FileDescriptors;
 using QBX.OperatingSystem.FileStructures;
 using QBX.OperatingSystem.Globalization;
@@ -1739,7 +1740,7 @@ public class Interrupt0x21Tests
 
 		if ((Path.GetPathRoot(Environment.CurrentDirectory) is string pathRoot)
 		 && (pathRoot.Length >= 2)
-		 && (pathRoot[1] == Path.VolumeSeparatorChar))
+		 && (pathRoot[1] == PathCharacter.VolumeSeparatorChar))
 			driveIdentifier = char.ToUpperInvariant(pathRoot[0]) - 'A';
 		else
 			driveIdentifier = 2; // "C:/" synthetic drive on platforms with no drive letters
@@ -3056,7 +3057,7 @@ public class Interrupt0x21Tests
 		if ((Path.GetPathRoot(preStartupCurrentDirectory) is string pathRoot)
 		 && (pathRoot.Length >= 2)
 		 && char.IsAsciiLetter(pathRoot[0])
-		 && (pathRoot[1] == Path.VolumeSeparatorChar))
+		 && (pathRoot[1] == PathCharacter.VolumeSeparatorChar))
 			preStartupCurrentDrive = pathRoot;
 		else
 			preStartupCurrentDrive = "C:/";
@@ -3166,7 +3167,7 @@ public class Interrupt0x21Tests
 
 		for (char driveLetter = 'A'; driveLetter <= 'Z'; driveLetter++)
 		{
-			if (new DriveInfo(string.Concat(driveLetter, Path.VolumeSeparatorChar)).DriveType != DriveType.NoRootDirectory)
+			if (new DriveInfo(string.Concat(driveLetter, PathCharacter.VolumeSeparatorChar)).DriveType != DriveType.NoRootDirectory)
 			{
 				driveIdentifier = driveLetter - 'A' + 1;
 				break;
@@ -3205,7 +3206,7 @@ public class Interrupt0x21Tests
 		{
 			if (driveLetter != 'C')
 			{
-				if (new DriveInfo(string.Concat(driveLetter, Path.VolumeSeparatorChar)).DriveType == DriveType.NoRootDirectory)
+				if (new DriveInfo(string.Concat(driveLetter, PathCharacter.VolumeSeparatorChar)).DriveType == DriveType.NoRootDirectory)
 				{
 					driveIdentifier = driveLetter - 'A' + 1;
 					break;

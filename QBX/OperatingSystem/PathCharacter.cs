@@ -5,6 +5,8 @@ namespace QBX.OperatingSystem;
 
 public class PathCharacter
 {
+	public const char VolumeSeparatorChar = ':';
+
 	public static bool IsSpace(byte b) => (b == ' ') || (b == '\0');
 
 	static readonly byte[] InvalidCharacters = Encoding.ASCII.GetBytes("\"*+,./:;<=>?[\\]|");
