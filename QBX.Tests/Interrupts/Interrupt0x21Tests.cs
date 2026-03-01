@@ -305,7 +305,7 @@ public class Interrupt0x21Tests
 		DOSReadTest(Interrupt0x21.Function.DirectConsoleInput, prequeueEvent: false, DOSReadInputType.CtrlBreak, shouldBreak: false);
 	}
 
-		[Test]
+	[Test]
 	public void ReadKeyboardWithoutEcho_should_receive_queued_events()
 	{
 		DOSReadTest(Interrupt0x21.Function.ReadKeyboardWithoutEcho, prequeueEvent: true);
@@ -3329,7 +3329,6 @@ public class Interrupt0x21Tests
 		AllocateMemory = 0x48,
 		FreeAllocatedMemory = 0x49,
 		SetMemoryBlockSize = 0x4A,
-		Function4B = 0x4B,
 		EndProgram = 0x4C,
 		GetChildProgramReturnValue = 0x4D,
 		FindFirstFile = 0x4E,
@@ -3346,7 +3345,6 @@ public class Interrupt0x21Tests
 		LockUnlockFile = 0x5C,
 		SetExtendedError = 0x5D,
 		Function5E = 0x5E,
-		Function5F = 0x5F, // network operations -- not supported
 		TrueName = 0x60, // undocumented
 		GetCurrentPSPAddress = 0x62,
 		Function65 = 0x65,
