@@ -8,15 +8,32 @@ public class PathCharacter
 {
 	public const char VolumeSeparatorChar = ':';
 
+	public static bool HasDriveLetter(string path)
+	{
+		return TryGetDriveLetter(path, out _);
+	}
+
 	public static char GetDriveLetter(string path)
 	{
-		if ((Path.GetPathRoot(path) is string pathRoot)
-		 && (pathRoot.Length >= 2)
-		 && char.IsAsciiLetter(pathRoot[0])
-		 && (pathRoot[1] == VolumeSeparatorChar))
-			return char.ToUpperInvariant(pathRoot[0]);
+		TryGetDriveLetter(path, out var driveLetter);
+
+		return driveLetter;
+	}
+
+	public static bool TryGetDriveLetter(string path, out char driveLetter)
+	{
+		if ((path.Length >= 2)
+		 && char.IsAsciiLetter(path[0])
+		 && (path[1] == VolumeSeparatorChar))
+		{
+			driveLetter = char.ToUpperInvariant(path[0]);
+			return true;
+		}
 		else
-			return 'C'; // "C:/" synthetic drive on platforms with no drive letters
+		{
+			driveLetter = 'C'; // "C:/" synthetic drive on platforms with no drive letters
+			return false;
+		}
 	}
 
 	public static bool IsSpace(byte b) => (b == ' ') || (b == '\0');
@@ -46,6 +63,9 @@ public class PathCharacter
 
 		return false;
 	}
+
+	public static bool IsDirectorySeparator(char ch)
+		=> (ch == '\\') || (ch == '/');
 
 	public static byte ToUpper(byte b)
 	{
