@@ -3455,10 +3455,176 @@ public class Interrupt0x21Tests
 		}
 	}
 
+	[Test]
+	public void RemoveDirectory_should_remove_directories()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestDirectoryName = "TESTDIR.FOO";
+
+			Directory.CreateDirectory(TestDirectoryName);
+
+			byte[] directoryNameBytes = s_cp437.GetBytes(TestDirectoryName);
+
+			int directoryNameBufferSize = directoryNameBytes.Length + 1;
+
+			var directoryNameAddress = machine.DOS.MemoryManager.AllocateMemory(directoryNameBufferSize, machine.DOS.CurrentPSPSegment);
+
+			var directoryNameSpan = machine.SystemMemory.AsSpan().Slice(directoryNameAddress, directoryNameBufferSize);
+
+			directoryNameBytes.CopyTo(directoryNameSpan);
+			directoryNameSpan[directoryNameBytes.Length] = 0;
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.RemoveDirectory << 8;
+			rin.DS = (ushort)(directoryNameAddress / MemoryManager.ParagraphSize);
+			rin.DX = (ushort)(directoryNameAddress % MemoryManager.ParagraphSize);
+
+			// Act
+			bool existsBefore = Directory.Exists(TestDirectoryName);
+
+			var rout = sut.Execute(rin);
+
+			bool existsAfter = Directory.Exists(TestDirectoryName);
+
+			// Assert
+			int al = rout.AX & 0xFF;
+
+			al.Should().Be(0);
+
+			existsBefore.Should().BeTrue();
+			existsAfter.Should().BeFalse();
+		}
+	}
+
+	[Test]
+	public void RemoveDirectory_should_remove_directories_with_relative_paths()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string ExistingDirectoryName = "A";
+
+			const string TestDirectoryName = "TESTDIR.FOO";
+
+			var testDirectoryPath = Path.Combine(ExistingDirectoryName, TestDirectoryName);
+
+			Directory.CreateDirectory(testDirectoryPath);
+
+			byte[] directoryNameBytes = s_cp437.GetBytes(testDirectoryPath);
+
+			int directoryNameBufferSize = directoryNameBytes.Length + 1;
+
+			var directoryNameAddress = machine.DOS.MemoryManager.AllocateMemory(directoryNameBufferSize, machine.DOS.CurrentPSPSegment);
+
+			var directoryNameSpan = machine.SystemMemory.AsSpan().Slice(directoryNameAddress, directoryNameBufferSize);
+
+			directoryNameBytes.CopyTo(directoryNameSpan);
+			directoryNameSpan[directoryNameBytes.Length] = 0;
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.RemoveDirectory << 8;
+			rin.DS = (ushort)(directoryNameAddress / MemoryManager.ParagraphSize);
+			rin.DX = (ushort)(directoryNameAddress % MemoryManager.ParagraphSize);
+
+			// Act
+			bool existsBefore = Directory.Exists(testDirectoryPath);
+
+			var rout = sut.Execute(rin);
+
+			bool existsAfter = Directory.Exists(testDirectoryPath);
+
+			// Assert
+			int al = rout.AX & 0xFF;
+
+			al.Should().Be(0);
+
+			existsBefore.Should().BeTrue();
+			existsAfter.Should().BeFalse();
+		}
+	}
+
+	[Test]
+	public void RemoveDirectory_should_remove_directories_with_relative_paths_including_parent_references()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string CurrentDirectoryName = "A";
+
+			Directory.CreateDirectory(CurrentDirectoryName);
+			Environment.CurrentDirectory = CurrentDirectoryName;
+
+			const string TestDirectoryName = "TESTDIR.FOO";
+
+			var testDirectoryPath = Path.Combine("..", TestDirectoryName);
+
+			Directory.CreateDirectory(testDirectoryPath);
+
+			byte[] directoryNameBytes = s_cp437.GetBytes(testDirectoryPath);
+
+			int directoryNameBufferSize = directoryNameBytes.Length + 1;
+
+			var directoryNameAddress = machine.DOS.MemoryManager.AllocateMemory(directoryNameBufferSize, machine.DOS.CurrentPSPSegment);
+
+			var directoryNameSpan = machine.SystemMemory.AsSpan().Slice(directoryNameAddress, directoryNameBufferSize);
+
+			directoryNameBytes.CopyTo(directoryNameSpan);
+			directoryNameSpan[directoryNameBytes.Length] = 0;
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.RemoveDirectory << 8;
+			rin.DS = (ushort)(directoryNameAddress / MemoryManager.ParagraphSize);
+			rin.DX = (ushort)(directoryNameAddress % MemoryManager.ParagraphSize);
+
+			// Act
+			bool existsBefore = Directory.Exists(testDirectoryPath);
+
+			var rout = sut.Execute(rin);
+
+			bool existsAfter = Directory.Exists(testDirectoryPath);
+
+			// Assert
+			int al = rout.AX & 0xFF;
+
+			al.Should().Be(0);
+
+			existsBefore.Should().BeTrue();
+			existsAfter.Should().BeFalse();
+		}
+	}
+
 	/*
 	public enum Function : byte
 	{
-		RemoveDirectory = 0x3A,
 		ChangeCurrentDirectory = 0x3B,
 		CreateFileWithHandle = 0x3C,
 		OpenFileWithHandle = 0x3D,
