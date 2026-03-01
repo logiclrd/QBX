@@ -69,7 +69,7 @@ public partial class ShortFileNames
 
 	static string UnmapEmulated(string possibleShortPath)
 	{
-		if ((Path.GetPathRoot("C:\\") is null) && ((possibleShortPath == "C:\\" || possibleShortPath == "C://")))
+		if ((Path.GetPathRoot("C:\\") is null) && ((possibleShortPath == "C:\\") || (possibleShortPath == "C://")))
 			return DirectorySeparatorString;
 
 		possibleShortPath = GetFullPathEmulated(possibleShortPath);
