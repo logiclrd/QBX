@@ -57,7 +57,7 @@ public class KeyEvent
 
 	public string ToInKeyString()
 	{
-		if (IsEphemeral || IsRelease)
+		if (IsEphemeral)
 			return "";
 		else if (TextCharacter != 0)
 			return TextCharacter.ToString();
@@ -74,6 +74,7 @@ public class KeyEvent
 		SDLScanCode = sdlScanCode;
 		Modifiers = modifiers;
 		IsRelease = isRelease;
+		IsEphemeral = isRelease;
 
 		switch (sdlScanCode)
 		{

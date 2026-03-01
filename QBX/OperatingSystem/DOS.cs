@@ -521,10 +521,16 @@ public partial class DOS
 
 		try
 		{
-			while (numRead < count)
+			using (Devices.Console.WaitForCarriageReturn())
 			{
-				systemMemory[address++] = fileDescriptor.ReadByte();
-				numRead++;
+				while (numRead < count)
+				{
+					systemMemory[address++] = fileDescriptor.ReadByte();
+					numRead++;
+
+					if (fileDescriptor.AtReadBoundary)
+						break;
+				}
 			}
 		}
 		catch (EndOfStreamException) { }

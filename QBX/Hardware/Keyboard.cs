@@ -196,15 +196,6 @@ public class Keyboard(Machine machine)
 		}
 	}
 
-	public bool HasQueuedInput
-	{
-		get
-		{
-			lock (_sync)
-				return _inputQueue.Count > 0;
-		}
-	}
-
 	public bool HasQueuedTangibleInput
 	{
 		get

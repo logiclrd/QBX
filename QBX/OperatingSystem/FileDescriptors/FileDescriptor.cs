@@ -158,6 +158,8 @@ public abstract class FileDescriptor
 
 	protected virtual void FlushToDisk() { VerifyOpen(); }
 
+	public virtual bool AtReadBoundary => false;
+
 	public byte ReadByte()
 	{
 		if (!CanRead)
@@ -165,8 +167,7 @@ public abstract class FileDescriptor
 
 		VerifyOpen();
 
-		if (!TryReadByte(out var b))
-			throw new System.IO.EndOfStreamException();
+		TryReadByte(out var b);
 
 		return b;
 	}

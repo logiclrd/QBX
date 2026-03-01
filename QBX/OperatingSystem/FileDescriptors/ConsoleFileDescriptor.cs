@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 
 using QBX.Hardware;
@@ -20,6 +21,7 @@ public class ConsoleFileDescriptor(DOS owner) : FileDescriptor("CON")
 	Machine _machine = owner.Machine;
 
 	bool _blockingInput = true;
+	bool _waitForNewLine = false;
 
 	class NonBlockingScope(ConsoleFileDescriptor owner) : IDisposable
 	{
@@ -27,7 +29,14 @@ public class ConsoleFileDescriptor(DOS owner) : FileDescriptor("CON")
 		public void Dispose() => owner._blockingInput = saved;
 	}
 
+	class WaitForCarriageReturnScope(ConsoleFileDescriptor owner) : IDisposable
+	{
+		bool saved = Interlocked.Exchange(ref owner._waitForNewLine, true);
+		public void Dispose() => owner._waitForNewLine = saved;
+	}
+
 	public override IDisposable? NonBlocking() => new NonBlockingScope(this);
+	public IDisposable? WaitForCarriageReturn() => new WaitForCarriageReturnScope(this);
 
 	protected override uint SeekCore(int offset, MoveMethod moveMethod)
 	{
@@ -39,43 +48,98 @@ public class ConsoleFileDescriptor(DOS owner) : FileDescriptor("CON")
 		throw new DOSException(DOSError.InvalidFunction);
 	}
 
+	Queue<byte> _lineBuffer = new Queue<byte>(capacity: 255);
+	bool _lineBufferEndsAtLineBoundary = false;
+
+	public override Boolean AtReadBoundary => ReadBuffer.IsEmpty && (_lineBuffer.Count == 0) && _lineBufferEndsAtLineBoundary;
+
 	protected override void ReadCore(ref FileBuffer buffer)
 	{
-		do
+		if (_lineBuffer.Count == 0)
 		{
-			if (_blockingInput)
-			{
-				if (!owner.BreakEnabled)
-					_machine.Keyboard.WaitForInput();
-				else
-				{
-					using (var scope = owner.CancelOnBreak())
-					{
-						_machine.Keyboard.WaitForInput(scope.Token);
+			_lineBufferEndsAtLineBoundary = false;
 
-						if (scope.BreakReceived)
-							throw new Break();
+			using (var scope = owner.BreakEnabled ? owner.CancelOnBreak() : default)
+			{
+				while (true)
+				{
+					if (_blockingInput)
+					{
+						if (!owner.BreakEnabled)
+							_machine.Keyboard.WaitForInput();
+						else
+						{
+							_machine.Keyboard.WaitForInput(scope!.Token);
+
+							if (scope.BreakReceived)
+								throw new Break();
+						}
+					}
+
+					var evt = _machine.Keyboard.GetNextEvent();
+
+					if ((evt != null) && !evt.IsEphemeral && !evt.IsRelease)
+					{
+						if (evt.TextCharacter == '\n')
+						{
+							// ignore
+						}
+						else
+						{
+							if (_lineBuffer.Count + 1 > _lineBuffer.Capacity)
+								break;
+
+							if (evt.HasTextCharacter)
+								_lineBuffer.Enqueue(unchecked((byte)evt.TextCharacter));
+							else
+							{
+								_lineBuffer.Enqueue(0);
+
+								if (_lineBuffer.Count + 1 > _lineBuffer.Capacity)
+									break;
+
+								_lineBuffer.Enqueue(unchecked((byte)evt.ScanCode));
+							}
+
+							if (evt.TextCharacter == '\x1A') // soft EOF
+								break;
+
+							if (evt.TextCharacter == '\r') // CR
+							{
+								if (_lineBuffer.Count < _lineBuffer.Capacity)
+								{
+									_lineBuffer.Enqueue(10); // CR -> CRLF
+									_lineBufferEndsAtLineBoundary = true;
+								}
+
+								break;
+							}
+						}
+					}
+
+					// Exit the loop if:
+					// - There is no more queued input.
+					// - AND either of the following conditions are true:
+					//   * We are configured to be non-blocking.
+					//   * Any bytes have been collected, and we're not configured to wait for a newline.
+					if (!_machine.Keyboard.HasQueuedTangibleInput)
+					{
+						if (!_blockingInput)
+							break;
+						if ((_lineBuffer.Count > 0) && !_waitForNewLine)
+							break;
 					}
 				}
 			}
+		}
 
-			var evt = _machine.Keyboard.GetNextEvent();
-
-			if ((evt != null) && !evt.IsEphemeral)
-			{
-				if (evt.HasTextCharacter)
-					ReadBuffer.Push(unchecked((byte)evt.TextCharacter));
-				else
-				{
-					ReadBuffer.Push(0);
-					ReadBuffer.Push(unchecked((byte)evt.ScanCode));
-				}
-
-				return;
-			}
-		} while (_blockingInput || _machine.Keyboard.HasQueuedInput);
-
-		WouldHaveBlocked = true;
+		if (_lineBuffer.Count == 0)
+			WouldHaveBlocked = true;
+		else
+		{
+			while ((ReadBuffer.Available > 0) && (_lineBuffer.Count > 0))
+				ReadBuffer.Push(_lineBuffer.Dequeue());
+		}
 	}
 
 	protected override int WriteCore(ReadOnlySpan<byte> buffer)
