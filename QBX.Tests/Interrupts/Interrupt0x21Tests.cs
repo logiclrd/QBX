@@ -4125,10 +4125,232 @@ public class Interrupt0x21Tests
 		}
 	}
 
+	[Test]
+	public void OpenFileWithHandle_should_open_files(
+		[Values(OpenMode.Access_ReadOnly, OpenMode.Access_ReadWrite, OpenMode.Access_WriteOnly)] OpenMode openMode)
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+
+			byte[] testData = s_cp437.GetBytes(Guid.NewGuid().ToString());
+
+			File.WriteAllBytes(TestFileName, testData);
+
+			byte[] fileNameBytes = s_cp437.GetBytes(TestFileName);
+
+			int fileNameBufferSize = fileNameBytes.Length + 1;
+
+			var fileNameAddress = machine.DOS.MemoryManager.AllocateMemory(fileNameBufferSize, machine.DOS.CurrentPSPSegment);
+
+			var fileNameSpan = machine.SystemMemory.AsSpan().Slice(fileNameAddress, fileNameBufferSize);
+
+			fileNameBytes.CopyTo(fileNameSpan);
+			fileNameSpan[fileNameBytes.Length] = 0;
+
+			bool shouldBeReadable = (openMode == OpenMode.Access_ReadWrite) || (openMode == OpenMode.Access_ReadOnly);
+			bool shouldBeWritable = (openMode == OpenMode.Access_ReadWrite) || (openMode == OpenMode.Access_WriteOnly);
+
+			int fileHandle = -1;
+
+			try
+			{
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (int)Interrupt0x21.Function.OpenFileWithHandle << 8;
+				rin.AX |= (ushort)openMode;
+				rin.DS = (ushort)(fileNameAddress / MemoryManager.ParagraphSize);
+				rin.DX = (ushort)(fileNameAddress % MemoryManager.ParagraphSize);
+
+				// Act
+				var rout = sut.Execute(rin);
+
+				// Assert
+				rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+				fileHandle = rout.AX;
+
+				fileHandle.Should().BeInRange(2, machine.DOS.Files.Count - 1);
+
+				var regularFile = (RegularFileDescriptor)machine.DOS.Files[fileHandle]!;
+
+				regularFile.PhysicalPath.Should().Be(Path.GetFullPath(TestFileName));
+
+				if (shouldBeReadable)
+				{
+					byte[] checkDataBuffer = new byte[testData.Length];
+
+					int offset = 0;
+
+					while (offset < checkDataBuffer.Length)
+					{
+						int count = regularFile.Read(checkDataBuffer.AsSpan().Slice(offset));
+
+						count.Should().BePositive();
+
+						offset += count;
+					}
+
+					checkDataBuffer.AsSpan().ShouldMatch(testData);
+				}
+
+				if (shouldBeWritable)
+				{
+					File.ReadAllBytes(TestFileName).AsSpan().ShouldMatch(testData, because: "it should not have truncated the file");
+
+					TestContext.CurrentContext.Random.NextBytes(testData);
+
+					regularFile.Seek(0, MoveMethod.FromBeginning);
+					regularFile.Write(testData);
+					regularFile.FlushWriteBuffer(flushToDisk: true);
+
+					File.ReadAllBytes(TestFileName).AsSpan().ShouldMatch(testData);
+				}
+			}
+			finally
+			{
+				machine.DOS.CloseFile(fileHandle);
+			}
+		}
+	}
+
+	[Test]
+	public void OpenFileWithHandle_should_open_files_with_relative_paths(
+		[Values("SUB\\TESTFILE.TXT", "..\\TESTFILE.TXT")] string testFileName)
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			Directory.CreateDirectory("A");
+
+			Environment.CurrentDirectory = "A";
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			byte[] testData = s_cp437.GetBytes(Guid.NewGuid().ToString());
+
+			File.WriteAllBytes(testFileName, testData);
+
+			byte[] fileNameBytes = s_cp437.GetBytes(testFileName);
+
+			int fileNameBufferSize = fileNameBytes.Length + 1;
+
+			var fileNameAddress = machine.DOS.MemoryManager.AllocateMemory(fileNameBufferSize, machine.DOS.CurrentPSPSegment);
+
+			var fileNameSpan = machine.SystemMemory.AsSpan().Slice(fileNameAddress, fileNameBufferSize);
+
+			fileNameBytes.CopyTo(fileNameSpan);
+			fileNameSpan[fileNameBytes.Length] = 0;
+
+			int fileHandle = -1;
+
+			try
+			{
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (int)Interrupt0x21.Function.OpenFileWithHandle << 8;
+				rin.AX |= (ushort)OpenMode.Access_ReadWrite;
+				rin.DS = (ushort)(fileNameAddress / MemoryManager.ParagraphSize);
+				rin.DX = (ushort)(fileNameAddress % MemoryManager.ParagraphSize);
+
+				// Act
+				var rout = sut.Execute(rin);
+
+				// Assert
+				rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+				fileHandle = rout.AX;
+
+				fileHandle.Should().BeInRange(2, machine.DOS.Files.Count - 1);
+
+				var regularFile = (RegularFileDescriptor)machine.DOS.Files[fileHandle]!;
+
+				regularFile.PhysicalPath.Should().Be(Path.GetFullPath(testFileName));
+
+				byte[] checkDataBuffer = new byte[testData.Length];
+
+				int offset = 0;
+
+				while (offset < checkDataBuffer.Length)
+				{
+					int count = regularFile.Read(checkDataBuffer.AsSpan().Slice(offset));
+
+					count.Should().BePositive();
+
+					offset += count;
+				}
+
+				checkDataBuffer.AsSpan().ShouldMatch(testData);
+			}
+			finally
+			{
+				machine.DOS.CloseFile(fileHandle);
+			}
+		}
+	}
+
+	[Test]
+	public void OpenFileWithHandle_should_not_create_files()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+
+			byte[] fileNameBytes = s_cp437.GetBytes(TestFileName);
+
+			int fileNameBufferSize = fileNameBytes.Length + 1;
+
+			var fileNameAddress = machine.DOS.MemoryManager.AllocateMemory(fileNameBufferSize, machine.DOS.CurrentPSPSegment);
+
+			var fileNameSpan = machine.SystemMemory.AsSpan().Slice(fileNameAddress, fileNameBufferSize);
+
+			fileNameBytes.CopyTo(fileNameSpan);
+			fileNameSpan[fileNameBytes.Length] = 0;
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.OpenFileWithHandle << 8;
+			rin.DS = (ushort)(fileNameAddress / MemoryManager.ParagraphSize);
+			rin.DX = (ushort)(fileNameAddress % MemoryManager.ParagraphSize);
+
+			// Act
+			var rout = sut.Execute(rin);
+
+			// Assert
+			rout.FLAGS.Should().HaveFlag(Flags.Carry);
+			rout.AX.Should().Be((ushort)DOSError.FileNotFound);
+
+			File.Exists(TestFileName).Should().BeFalse();
+		}
+	}
+
 	/*
 	public enum Function : byte
 	{
-		OpenFileWithHandle = 0x3D,
 		CloseFileWithHandle = 0x3E,
 		ReadFileOrDevice = 0x3F,
 		WriteFileOrDevice = 0x40,

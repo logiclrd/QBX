@@ -160,6 +160,9 @@ public abstract class FileDescriptor
 
 	public byte ReadByte()
 	{
+		if (!CanRead)
+			throw new DOSException(DOSError.InvalidAccess);
+
 		VerifyOpen();
 
 		if (!TryReadByte(out var b))
@@ -170,6 +173,9 @@ public abstract class FileDescriptor
 
 	public bool TryReadByte(out byte b)
 	{
+		if (!CanRead)
+			throw new DOSException(DOSError.InvalidAccess);
+
 		VerifyOpen();
 
 		if (AtSoftEOF)
@@ -194,6 +200,9 @@ public abstract class FileDescriptor
 
 	public int Read(Span<byte> buffer)
 	{
+		if (!CanRead)
+			throw new DOSException(DOSError.InvalidAccess);
+
 		VerifyOpen();
 
 		while (ReadBuffer.IsEmpty)
@@ -204,6 +213,9 @@ public abstract class FileDescriptor
 
 	public int Read(int readSize, IMemory systemMemory, int address)
 	{
+		if (!CanRead)
+			throw new DOSException(DOSError.InvalidAccess);
+
 		VerifyOpen();
 
 		if (ReadBuffer.IsEmpty)
@@ -241,6 +253,9 @@ public abstract class FileDescriptor
 
 	public void WriteByte(byte b)
 	{
+		if (!CanWrite)
+			throw new DOSException(DOSError.InvalidAccess);
+
 		VerifyOpen();
 
 		WriteBuffer.Push(b);
@@ -251,6 +266,9 @@ public abstract class FileDescriptor
 
 	public void Write(ReadOnlySpan<byte> buffer)
 	{
+		if (!CanWrite)
+			throw new DOSException(DOSError.InvalidAccess);
+
 		VerifyOpen();
 
 		while (buffer.Length > 0)
@@ -270,6 +288,9 @@ public abstract class FileDescriptor
 
 	public void Write(int writeSize, IMemory systemMemory, int address)
 	{
+		if (!CanWrite)
+			throw new DOSException(DOSError.InvalidAccess);
+
 		VerifyOpen();
 
 		while (writeSize > 0)
@@ -287,7 +308,9 @@ public abstract class FileDescriptor
 	{
 		if (!IsClosed)
 		{
-			FlushWriteBuffer();
+			if (CanWrite)
+				FlushWriteBuffer();
+
 			CloseCore();
 			IsClosed = true;
 		}

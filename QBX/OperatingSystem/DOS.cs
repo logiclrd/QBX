@@ -1110,8 +1110,8 @@ public partial class DOS
 				switch (accessModes & OpenMode.AccessMask)
 				{
 					case OpenMode.Access_ReadWrite: systemFileAccess = SystemFileAccess.ReadWrite; break;
-					case OpenMode.Access_WriteOnly: systemFileAccess = SystemFileAccess.Read; break;
-					case OpenMode.Access_ReadOnly: systemFileAccess = SystemFileAccess.Write; break;
+					case OpenMode.Access_ReadOnly: systemFileAccess = SystemFileAccess.Read; break;
+					case OpenMode.Access_WriteOnly: systemFileAccess = SystemFileAccess.Write; break;
 				}
 
 				switch (accessModes & OpenMode.ShareMask)
@@ -1128,8 +1128,6 @@ public partial class DOS
 					return AllocateFileHandleForFileDescriptor(device);
 				else
 				{
-					fileName = Path.GetFullPath(fileName);
-
 					var stream = new FileStream(fileName, openMode.ToSystemFileMode(), systemFileAccess, systemFileShare);
 
 					const int AlreadyExists = 183;
