@@ -3343,6 +3343,67 @@ public class Interrupt0x21Tests
 	}
 
 	[Test]
+	public void CreateDirectory_should_create_directories_with_absolute_paths()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string ExistingDirectoryName = "A";
+
+			const string TestDirectoryName = "TESTDIR.FOO";
+
+			Directory.CreateDirectory(ExistingDirectoryName);
+
+			if (!ShortFileNames.TryMap(Environment.CurrentDirectory, out var currentDirectoryShortPath))
+				throw new Exception("Couldn't map current directory");
+
+			var testDirectoryPath = Path.Join(ExistingDirectoryName, TestDirectoryName);
+
+			var testDirectoryAbsolutePath = Path.Join(currentDirectoryShortPath, ExistingDirectoryName, TestDirectoryName);
+
+			byte[] directoryNameBytes = s_cp437.GetBytes(testDirectoryAbsolutePath);
+
+			int directoryNameBufferSize = directoryNameBytes.Length + 1;
+
+			var directoryNameAddress = machine.DOS.MemoryManager.AllocateMemory(directoryNameBufferSize, machine.DOS.CurrentPSPSegment);
+
+			var directoryNameSpan = machine.SystemMemory.AsSpan().Slice(directoryNameAddress, directoryNameBufferSize);
+
+			directoryNameBytes.CopyTo(directoryNameSpan);
+			directoryNameSpan[directoryNameBytes.Length] = 0;
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.CreateDirectory << 8;
+			rin.DS = (ushort)(directoryNameAddress / MemoryManager.ParagraphSize);
+			rin.DX = (ushort)(directoryNameAddress % MemoryManager.ParagraphSize);
+
+			// Act
+			bool existsBefore = Directory.Exists(testDirectoryPath);
+
+			var rout = sut.Execute(rin);
+
+			bool existsAfter = Directory.Exists(testDirectoryPath);
+
+			// Assert
+			int al = rout.AX & 0xFF;
+
+			al.Should().Be(0);
+
+			existsBefore.Should().BeFalse();
+			existsAfter.Should().BeTrue();
+		}
+	}
+
+	[Test]
 	public void CreateDirectory_should_create_directories_with_relative_paths()
 	{
 		// Arrange
@@ -3496,6 +3557,67 @@ public class Interrupt0x21Tests
 			var rout = sut.Execute(rin);
 
 			bool existsAfter = Directory.Exists(TestDirectoryName);
+
+			// Assert
+			int al = rout.AX & 0xFF;
+
+			al.Should().Be(0);
+
+			existsBefore.Should().BeTrue();
+			existsAfter.Should().BeFalse();
+		}
+	}
+
+	[Test]
+	public void RemoveDirectory_should_remove_directories_with_absolute_paths()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string ExistingDirectoryName = "A";
+
+			const string TestDirectoryName = "TESTDIR.FOO";
+
+			if (!ShortFileNames.TryMap(Environment.CurrentDirectory, out var currentDirectoryShortPath))
+				throw new Exception("Couldn't map current directory");
+
+			var testDirectoryPath = Path.Join(ExistingDirectoryName, TestDirectoryName);
+
+			Directory.CreateDirectory(testDirectoryPath);
+
+			var testDirectoryAbsolutePath = Path.Join(currentDirectoryShortPath, ExistingDirectoryName, TestDirectoryName);
+
+			byte[] directoryNameBytes = s_cp437.GetBytes(testDirectoryAbsolutePath);
+
+			int directoryNameBufferSize = directoryNameBytes.Length + 1;
+
+			var directoryNameAddress = machine.DOS.MemoryManager.AllocateMemory(directoryNameBufferSize, machine.DOS.CurrentPSPSegment);
+
+			var directoryNameSpan = machine.SystemMemory.AsSpan().Slice(directoryNameAddress, directoryNameBufferSize);
+
+			directoryNameBytes.CopyTo(directoryNameSpan);
+			directoryNameSpan[directoryNameBytes.Length] = 0;
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.RemoveDirectory << 8;
+			rin.DS = (ushort)(directoryNameAddress / MemoryManager.ParagraphSize);
+			rin.DX = (ushort)(directoryNameAddress % MemoryManager.ParagraphSize);
+
+			// Act
+			bool existsBefore = Directory.Exists(testDirectoryPath);
+
+			var rout = sut.Execute(rin);
+
+			bool existsAfter = Directory.Exists(testDirectoryPath);
 
 			// Assert
 			int al = rout.AX & 0xFF;
