@@ -235,7 +235,7 @@ public class Interrupt0x21Tests
 		// Act & Assert
 		Action action = () => rout = sut.Execute(rin);
 
-		action.ExecutionTime().Should().BeLessThan(TimeSpan.FromSeconds(50.5));
+		action.ExecutionTime().Should().BeLessThan(TimeSpan.FromSeconds(0.5));
 
 		rout.Should().NotBeNull();
 		rout.FLAGS.Should().HaveFlag(Flags.Zero);
@@ -4563,7 +4563,7 @@ public class Interrupt0x21Tests
 		string testCharacters = Guid.NewGuid().ToString();
 		byte[] testData = s_cp437.GetBytes(testCharacters);
 
-		SimulateTyping(testCharacters, ControlCharacterHandling.SemanticKey, machine);
+		SimulateTyping(testCharacters + '\r', ControlCharacterHandling.SemanticKey, machine);
 
 		int bufferAddress = machine.DOS.MemoryManager.AllocateMemory(testCharacters.Length, machine.DOS.CurrentPSPSegment);
 
@@ -4596,6 +4596,155 @@ public class Interrupt0x21Tests
 		actualBytes.Should().Be(testCharacters.Length);
 
 		bufferSpan.Slice(0, actualBytes).ShouldMatch(testData);
+	}
+
+	[Test]
+	public void ReadFileOrDevice_should_stop_reading_data_from_console_when_enter_is_received()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		SDL.Keymod modState = 0;
+
+		machine.Keyboard.GetModStateTestHook += () => modState;
+
+		string testCharacters = Guid.NewGuid().ToString();
+
+		string testInput = testCharacters + '\r';
+		string expectedTestCharacters = testCharacters + "\r\n";
+
+		string extraTestCharacters = Guid.NewGuid().ToString();
+
+		byte[] expectedTestData = s_cp437.GetBytes(expectedTestCharacters);
+
+		testInput += extraTestCharacters;
+
+		SimulateTyping(testInput, ControlCharacterHandling.SemanticKey, machine);
+
+		int bufferAddress = machine.DOS.MemoryManager.AllocateMemory(testInput.Length, machine.DOS.CurrentPSPSegment);
+
+		var bufferSpan = machine.SystemMemory.AsSpan().Slice(bufferAddress, testInput.Length);
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.ReadFileOrDevice << 8;
+		rin.BX = DOS.StandardInput;
+		rin.CX = (ushort)testInput.Length;
+		rin.DS = (ushort)(bufferAddress / MemoryManager.ParagraphSize);
+		rin.DX = (ushort)(bufferAddress % MemoryManager.ParagraphSize);
+
+		Registers? rout = null;
+
+		// Act
+		Action action = () => rout = sut.Execute(rin);
+
+		action.ExecutionTime().Should().BeLessThan(TimeSpan.FromSeconds(0.25));
+
+		// Assert
+		rout.Should().NotBeNull();
+
+		rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+		int actualBytes = rout.AX;
+
+		actualBytes.Should().Be(expectedTestCharacters.Length);
+
+		bufferSpan.Slice(0, actualBytes).ShouldMatch(expectedTestData);
+	}
+
+	[Test]
+	public void ReadFileOrDevice_should_ignore_newline_characters_preceding_enter_when_reading_from_console()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		SDL.Keymod modState = 0;
+
+		machine.Keyboard.GetModStateTestHook += () => modState;
+
+		string testCharacters = Guid.NewGuid().ToString();
+
+		string testInput = testCharacters + "\n\n\n\n\r";
+		string expectedTestCharacters = testCharacters + "\r\n";
+
+		string extraTestCharacters = Guid.NewGuid().ToString();
+
+		byte[] expectedTestData = s_cp437.GetBytes(expectedTestCharacters);
+
+		testInput += extraTestCharacters;
+
+		SimulateTyping(testInput, ControlCharacterHandling.CtrlLetter, machine);
+
+		int bufferAddress = machine.DOS.MemoryManager.AllocateMemory(testInput.Length, machine.DOS.CurrentPSPSegment);
+
+		var bufferSpan = machine.SystemMemory.AsSpan().Slice(bufferAddress, testInput.Length);
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.ReadFileOrDevice << 8;
+		rin.BX = DOS.StandardInput;
+		rin.CX = (ushort)testInput.Length;
+		rin.DS = (ushort)(bufferAddress / MemoryManager.ParagraphSize);
+		rin.DX = (ushort)(bufferAddress % MemoryManager.ParagraphSize);
+
+		Registers? rout = null;
+
+		// Act
+		Action action = () => rout = sut.Execute(rin);
+
+		action.ExecutionTime().Should().BeLessThan(TimeSpan.FromSeconds(0.25));
+
+		// Assert
+		rout.Should().NotBeNull();
+
+		rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+		int actualBytes = rout.AX;
+
+		actualBytes.Should().Be(expectedTestCharacters.Length);
+
+		bufferSpan.Slice(0, actualBytes).ShouldMatch(expectedTestData);
+	}
+
+	[Test]
+	public void ReadFileOrDevice_should_not_read_data_from_console_without_enter_keypress()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		SDL.Keymod modState = 0;
+
+		machine.Keyboard.GetModStateTestHook += () => modState;
+
+		string testCharacters = Guid.NewGuid().ToString();
+		byte[] testData = s_cp437.GetBytes(testCharacters);
+
+		SimulateTyping(testCharacters, ControlCharacterHandling.SemanticKey, machine);
+
+		int bufferAddress = machine.DOS.MemoryManager.AllocateMemory(testCharacters.Length, machine.DOS.CurrentPSPSegment);
+
+		var bufferSpan = machine.SystemMemory.AsSpan().Slice(bufferAddress, testCharacters.Length);
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.ReadFileOrDevice << 8;
+		rin.BX = DOS.StandardInput;
+		rin.CX = (ushort)testCharacters.Length;
+		rin.DS = (ushort)(bufferAddress / MemoryManager.ParagraphSize);
+		rin.DX = (ushort)(bufferAddress % MemoryManager.ParagraphSize);
+
+		Registers? rout = null;
+
+		// Act & Assert
+		Action action = () => rout = sut.Execute(rin);
+
+		action.ExecutionTime().Should().BeGreaterThan(TimeSpan.FromSeconds(0.5));
 	}
 
 	/*
@@ -4710,6 +4859,7 @@ public class Interrupt0x21Tests
 
 		machine.DOS.Break += () => breakEventOccurred = true;
 
+		object eventQueuedSync = new object();
 		bool eventQueued = false;
 
 		SDL.Keymod modState = 0;
@@ -4718,16 +4868,19 @@ public class Interrupt0x21Tests
 
 		void QueueEvent()
 		{
-			switch (inputType)
+			lock (eventQueuedSync)
 			{
-				case DOSReadInputType.CtrlC: SimulateTyping("\x03", ControlCharacterHandling.CtrlLetter, machine); break;
-				case DOSReadInputType.CtrlBreak: SimulateTyping(CtrlBreakCharacter.ToString(), default, machine); break;
+				switch (inputType)
+				{
+					case DOSReadInputType.CtrlC: SimulateTyping("\x03", ControlCharacterHandling.CtrlLetter, machine); break;
+					case DOSReadInputType.CtrlBreak: SimulateTyping(CtrlBreakCharacter.ToString(), default, machine); break;
+				}
+
+				// Also send the character, in case break is disabled or doesn't work.
+				SimulateTyping("a", default, machine);
+
+				eventQueued = true;
 			}
-
-			// Also send the character, in case break is disabled or doesn't work.
-			SimulateTyping("a", default, machine);
-
-			eventQueued = true;
 		}
 
 		byte expectedCharacterRead;
@@ -4770,7 +4923,10 @@ public class Interrupt0x21Tests
 
 		action.ExecutionTime().Should().BeLessThan(TimeSpan.FromSeconds(0.25));
 
-		bool eventQueuedOnReturn = eventQueued;
+		bool eventQueuedOnReturn;
+
+		lock (eventQueuedSync)
+			eventQueuedOnReturn = eventQueued;
 
 		// Assert
 		rout.Should().NotBeNull();
