@@ -3998,8 +3998,22 @@ public class Interrupt0x21Tests
 		WriteFileOrDevice = 0x40,
 		DeleteFile = 0x41,
 		MoveFilePointer = 0x42,
-		Function43 = 0x43,
-		Function44 = 0x44,
+		public enum Function43 : byte
+		{
+			GetFileAttributes = 0x00,
+			SetFileAttributes = 0x01,
+			ExtendedLengthFileNameOperations = 0xFF, // per Ralf Brown's Interrupt List
+		},
+		public enum Function44 : byte
+		{
+			GetDeviceData = 0x00,
+			SetDeviceData = 0x01,
+			CheckDeviceInputStatus = 0x06,
+			CheckDeviceOutputStatus = 0x07,
+			DoesDeviceUseRemovableMedia = 0x08,
+			IsDriveRemote = 0x09,
+			IsFileOrDeviceRemote = 0x0A,
+		},
 		DuplicateFileHandle = 0x45,
 		ForceDuplicateFileHandle = 0x46,
 		GetCurrentDirectory = 0x47,
@@ -4014,85 +4028,57 @@ public class Interrupt0x21Tests
 		GetPSPAddress = 0x51,
 		GetVerifyState = 0x52,
 		RenameFile = 0x53,
-		Function57 = 0x57,
-		Function58 = 0x58,
+		public enum Function57 : byte
+		{
+			GetFileDateAndTime = 0x00,
+			SetFileDateAndTime = 0x01,
+			GetFileLastAccessDateAndTime = 0x04,
+			SetFileLastAccessDateAndTime = 0x05,
+			GetFileCreationDateAndTime = 0x06,
+			SetFileCreationDateAndTime = 0x07,
+		},
+		public enum Function58 : byte
+		{
+			GetAllocationStrategy = 0x00,
+			SetAllocationStrategy = 0x01,
+			GetUpperMemoryLink = 0x02,
+			SetUpperMemoryLink = 0x03,
+		},
 		GetExtendedError = 0x59,
 		CreateTemporaryFile = 0x5A,
 		CreateNewFile = 0x5B,
 		LockUnlockFile = 0x5C,
 		SetExtendedError = 0x5D,
-		Function5E = 0x5E,
+		public enum Function5E : byte
+		{
+			GetMachineName = 0x00,
+			SetPrinterSetup = 0x02,
+			GetPrinterSetup = 0x03,
+		},
 		TrueName = 0x60, // undocumented
 		GetCurrentPSPAddress = 0x62,
-		Function65 = 0x65,
-		Function66 = 0x66,
+		public enum Function65 : byte
+		{
+			GetExtendedCountryInformation = 0x01,
+			GetUppercaseTable = 0x02,
+			GetFilenameUppercaseTable = 0x04,
+			GetFilenameCharacterTable = 0x05,
+			GetCollateSequenceTable = 0x06,
+			GetDoubleByteCharacterSet = 0x07,
+			ConvertCharacter = 0x20,
+			ConvertString = 0x21,
+			ConvertASCIIZString = 0x22,
+		},
+		public enum Function66 : byte
+		{
+			GetGlobalCodePage = 0x01,
+			SetGlobalCodePage = 0x02,
+		}
 		SetMaximumHandleCount = 0x67,
 		CommitFile = 0x68,
 		CommitFile2 = 0x6A,
 		NullFunction = 0x6B,
 		ExtendedOpenCreate = 0x6C,
-	}
-
-	public enum Function43 : byte
-	{
-		GetFileAttributes = 0x00,
-		SetFileAttributes = 0x01,
-		ExtendedLengthFileNameOperations = 0xFF, // per Ralf Brown's Interrupt List
-	}
-
-	public enum Function44 : byte
-	{
-		GetDeviceData = 0x00,
-		SetDeviceData = 0x01,
-		CheckDeviceInputStatus = 0x06,
-		CheckDeviceOutputStatus = 0x07,
-		DoesDeviceUseRemovableMedia = 0x08,
-		IsDriveRemote = 0x09,
-		IsFileOrDeviceRemote = 0x0A,
-	}
-
-	public enum Function57 : byte
-	{
-		GetFileDateAndTime = 0x00,
-		SetFileDateAndTime = 0x01,
-		GetFileLastAccessDateAndTime = 0x04,
-		SetFileLastAccessDateAndTime = 0x05,
-		GetFileCreationDateAndTime = 0x06,
-		SetFileCreationDateAndTime = 0x07,
-	}
-
-	public enum Function58 : byte
-	{
-		GetAllocationStrategy = 0x00,
-		SetAllocationStrategy = 0x01,
-		GetUpperMemoryLink = 0x02,
-		SetUpperMemoryLink = 0x03,
-	}
-
-	public enum Function5E : byte
-	{
-		GetMachineName = 0x00,
-		SetPrinterSetup = 0x02,
-		GetPrinterSetup = 0x03,
-	}
-
-	public enum Function65 : byte
-	{
-		GetExtendedCountryInformation = 0x01,
-		GetUppercaseTable = 0x02,
-		GetFilenameUppercaseTable = 0x04,
-		GetFilenameCharacterTable = 0x05,
-		GetCollateSequenceTable = 0x06,
-		GetDoubleByteCharacterSet = 0x07,
-		ConvertCharacter = 0x20,
-		ConvertString = 0x21,
-		ConvertASCIIZString = 0x22,
-	}
-
-	public enum Function66 : byte
-	{
-		GetGlobalCodePage = 0x01,
-		SetGlobalCodePage = 0x02,
 	}
 	 */
 
