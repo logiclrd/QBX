@@ -6316,6 +6316,125 @@ public class Interrupt0x21Tests
 		rout.AX.Should().Be(expectedFixedMediaFlagValue);
 	}
 
+	[Test]
+	public void IsDriveRemote_should_return_correct_value([Values] bool testWithRemoteDrive)
+	{
+		var mockDriveInfo = Substitute.For<IDriveInfo>();
+
+		mockDriveInfo.Name.Returns("X:");
+		mockDriveInfo.IsReady.Returns(true);
+		mockDriveInfo.RootDirectoryPath.Returns(@"X:\");
+		mockDriveInfo.DriveType.Returns(testWithRemoteDrive ? DriveType.Network : DriveType.Fixed);
+		mockDriveInfo.DriveFormat.Returns("FAT");
+		mockDriveInfo.AvailableFreeSpace.Returns(1024 * 1024 * 1024);
+		mockDriveInfo.TotalFreeSpace.Returns(1024 * 1024 * 1024);
+		mockDriveInfo.TotalSize.Returns(1024 * 1024 * 1024);
+		mockDriveInfo.VolumeLabel.Returns("FOO");
+
+		var mockDriveInfoProvider = Substitute.For<IDriveInfoProvider>();
+
+		mockDriveInfoProvider.GetDrives().Returns(new IDriveInfo[] { mockDriveInfo });
+		mockDriveInfoProvider.GetDrive(Arg.Any<string>()).Returns(mockDriveInfo);
+
+		var machine = new Machine(mockDriveInfoProvider);
+
+		machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+		ushort expectedRemoteDriveBitValue =
+			testWithRemoteDrive
+			? (ushort)(1 << 12)
+			: (ushort)0;
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.Function44 << 8;
+		rin.AX |= (int)Interrupt0x21.Function44.IsDriveRemote;
+		rin.BX = 1; // "A:\"
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+		ushort remoteDriveBit = rout.DX;
+
+		remoteDriveBit &= expectedRemoteDriveBitValue;
+
+		remoteDriveBit.Should().Be(expectedRemoteDriveBitValue);
+	}
+
+	[Test, NonParallelizable]
+	public void IsFileOrDeviceRemote_should_return_correct_value([Values] bool testWithRemoteDrive)
+	{
+		// Arrange
+		var mockDriveInfo = Substitute.For<IDriveInfo>();
+
+		mockDriveInfo.Name.Returns("X:");
+		mockDriveInfo.IsReady.Returns(true);
+		mockDriveInfo.RootDirectoryPath.Returns(@"X:\");
+		mockDriveInfo.DriveType.Returns(testWithRemoteDrive ? DriveType.Network : DriveType.Fixed);
+		mockDriveInfo.DriveFormat.Returns("FAT");
+		mockDriveInfo.AvailableFreeSpace.Returns(1024 * 1024 * 1024);
+		mockDriveInfo.TotalFreeSpace.Returns(1024 * 1024 * 1024);
+		mockDriveInfo.TotalSize.Returns(1024 * 1024 * 1024);
+		mockDriveInfo.VolumeLabel.Returns("FOO");
+
+		var mockDriveInfoProvider = Substitute.For<IDriveInfoProvider>();
+
+		mockDriveInfoProvider.GetDrives().Returns(new IDriveInfo[] { mockDriveInfo });
+		mockDriveInfoProvider.GetDrive(Arg.Any<string>()).Returns(mockDriveInfo);
+
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine(mockDriveInfoProvider);
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+
+			File.WriteAllText(TestFileName, "DOS 6.22");
+
+			int fileHandle = machine.DOS.OpenFile("TESTFILE.TXT", OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
+
+			ushort expectedRemoteDriveBitValue =
+				testWithRemoteDrive
+				? (ushort)(1 << 15)
+				: (ushort)0;
+
+			try
+			{
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (int)Interrupt0x21.Function.Function44 << 8;
+				rin.AX |= (int)Interrupt0x21.Function44.IsFileOrDeviceRemote;
+				rin.BX = (ushort)fileHandle;
+
+				// Act
+				var rout = sut.Execute(rin);
+
+				// Assert
+				rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+				ushort remoteDriveBit = rout.DX;
+
+				remoteDriveBit &= expectedRemoteDriveBitValue;
+
+				remoteDriveBit.Should().Be(expectedRemoteDriveBitValue);
+			}
+			finally
+			{
+				machine.DOS.CloseFile(fileHandle);
+			}
+		}
+	}
+
 	/*
 	public enum Function : byte
 	{
@@ -6323,11 +6442,6 @@ public class Interrupt0x21Tests
 		{
 			ExtendedLengthFileNameOperations = 0xFF, // per Ralf Brown's Interrupt List
 			// still needs a test for function 0x56
-		},
-		public enum Function44 : byte
-		{
-			IsDriveRemote = 0x09,
-			IsFileOrDeviceRemote = 0x0A,
 		},
 		DuplicateFileHandle = 0x45,
 		ForceDuplicateFileHandle = 0x46,
