@@ -999,16 +999,6 @@ public partial class DOS
 		});
 	}
 
-	static void ParseDeviceFileName(String fileName, out String deviceFileName, out Boolean forceDeviceInterpretation)
-	{
-		deviceFileName = Path.GetFileName(fileName);
-		forceDeviceInterpretation = deviceFileName.EndsWith(':');
-		if (forceDeviceInterpretation)
-			deviceFileName = deviceFileName.Remove(deviceFileName.Length - 1, 1);
-
-		deviceFileName = Path.GetFileNameWithoutExtension(deviceFileName);
-	}
-
 	public int OpenFile(FileControlBlock fcb, FileMode openMode)
 	{
 		return TranslateError(() =>
@@ -1032,9 +1022,7 @@ public partial class DOS
 						shortPath = "";
 					}
 
-					ParseDeviceFileName(fileName, out var deviceFileName, out bool forceDeviceInterpretation);
-
-					if (Devices.TryGetDeviceByName(deviceFileName, out var device))
+					if (Devices.TryGetDeviceByName(Path.GetFileNameWithoutExtension(fileName), out var device))
 					{
 						fcb.FileSize = 0;
 						fcb.DateStamp = default;
@@ -1158,18 +1146,8 @@ public partial class DOS
 				if ((accessModes & OpenMode.Flags_NoInherit) == 0)
 					systemFileShare |= SystemFileShare.Inheritable;
 
-				ParseDeviceFileName(fileName, out var deviceFileName, out bool forceDeviceInterpretation);
-
-				// Can only open device with colon for write, it seems.
-				//  type foo.txt > nul:       Works
-				//  type nul:                 Does not work
-				if (forceDeviceInterpretation && (systemFileAccess != SystemFileAccess.Write))
-					throw new FileNotFoundException();
-
-				if (Devices.TryGetDeviceByName(deviceFileName, out var device))
+				if (Devices.TryGetDeviceByName(Path.GetFileNameWithoutExtension(fileName), out var device))
 					return AllocateFileHandleForFileDescriptor(device);
-				else if (forceDeviceInterpretation)
-					throw new FileNotFoundException();
 				else
 				{
 					var stream = new FileStream(fileName, openMode.ToSystemFileMode(), systemFileAccess, systemFileShare);

@@ -5752,7 +5752,7 @@ public class Interrupt0x21Tests
 	}
 
 	[Test]
-	public void GetDeviceData_should_identify_console_device([Values(DOS.StandardInput, DOS.StandardOutput)] int fileHandle)
+	public void GetDeviceData_should_identify_console_device_from_standard_handles([Values(DOS.StandardInput, DOS.StandardOutput)] int fileHandle)
 	{
 		// Arrange
 		var machine = new Machine();
@@ -5801,7 +5801,56 @@ public class Interrupt0x21Tests
 	}
 
 	[Test]
-	public void GetDeviceData_should_identify_null_device([Values("NUL", "NUL.OUT", "NUL:")] string deviceFileName)
+	public void GetDeviceData_should_identify_console_device([Values("CON", "CON.OUT")] string deviceFileName)
+	{
+		// Arrange
+		var machine = new Machine();
+
+		machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+		int fileHandle = machine.DOS.OpenFile(deviceFileName, OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.Function44 << 8;
+		rin.AX |= (int)Interrupt0x21.Function44.GetDeviceData;
+		rin.BX = (ushort)fileHandle;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+		int dl = rout.DX & 0xFF;
+
+		bool isDevice = (dl & 0x80) != 0;
+
+		bool isConsoleInput = (dl & 1) != 0;
+		bool isConsoleOutput = (dl & 2) != 0;
+		bool isNull = (dl & 4) != 0;
+		bool isClock = (dl & 8) != 0;
+		bool isSpecialDevice = (dl & 0x10) != 0;
+
+		var ioMode = (dl & 0x20) != 0 ? IOMode.Binary : IOMode.ASCII;
+		bool isAtEOF = (dl & 0x40) == 0; // NB: checking for _not_ set
+
+		isDevice.Should().BeTrue();
+
+		isConsoleInput.Should().BeTrue();
+		isConsoleOutput.Should().BeTrue();
+		isNull.Should().BeFalse();
+		isClock.Should().BeFalse();
+		isSpecialDevice.Should().BeFalse();
+
+		ioMode.Should().Be(machine.DOS.Devices.Console.IOMode);
+		isAtEOF.Should().Be(machine.DOS.Devices.Console.AtSoftEOF);
+	}
+
+	[Test]
+	public void GetDeviceData_should_identify_null_device([Values("NUL", "NUL.OUT")] string deviceFileName)
 	{
 		// Arrange
 		var machine = new Machine();
@@ -5850,7 +5899,7 @@ public class Interrupt0x21Tests
 	}
 
 	[Test]
-	public void GetDeviceData_should_identify_clock_device([Values("CLOCK$", "CLOCK$.OUT", "CLOCK$:")] string deviceFileName)
+	public void GetDeviceData_should_identify_clock_device([Values("CLOCK$", "CLOCK$.OUT")] string deviceFileName)
 	{
 		// Arrange
 		var machine = new Machine();
