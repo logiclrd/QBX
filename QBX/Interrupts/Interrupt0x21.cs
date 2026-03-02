@@ -103,8 +103,8 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 		FindNextFile = 0x4F,
 		SetPSPAddress = 0x50,
 		GetPSPAddress = 0x51,
-		GetVerifyState = 0x52,
-		RenameFile = 0x53,
+		GetVerifyState = 0x54,
+		RenameFile = 0x56,
 		Function57 = 0x57,
 		Function58 = 0x58,
 		GetExtendedError = 0x59,
@@ -1287,7 +1287,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					var subfunction = (Function43)al;
 
-					if (subfunction == Function43.ExtendedLengthFileNameOperations)
+					if ((subfunction == Function43.ExtendedLengthFileNameOperations) && (input.BP == 0x5053))
 					{
 						input.AX = input.CX;
 						input.AX <<= 8;

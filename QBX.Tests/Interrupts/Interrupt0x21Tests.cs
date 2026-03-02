@@ -5633,12 +5633,75 @@ public class Interrupt0x21Tests
 		}
 	}
 
+	[Test, NonParallelizable]
+	public void ExtendedLengthFileNameOperations_should_permit_CreateDirectory_with_a_long_input_path()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			// This baseline string is 77 characters long, onto which TestDirectoryName will be appended.
+			// The ExtendedLengthFileNameOperations function is documented as permitting path names up to
+			// 128 characters long, while the base operation has a limit of 67 characters.
+			const string ExistingDirectoryName = "TESTDIR1.DIR/TESTDIR2.DIR/TESTDIR3.DIR/TESTDIR4.DIR/TESTDIR5.DIR/TESTDIR6.DIR";
+
+			const string TestDirectoryName = "TESTDIR.FOO";
+
+			Directory.CreateDirectory(ExistingDirectoryName);
+
+			var testDirectoryPath = Path.Combine(ExistingDirectoryName, TestDirectoryName);
+
+			byte[] directoryNameBytes = s_cp437.GetBytes(testDirectoryPath);
+
+			int directoryNameBufferSize = directoryNameBytes.Length + 1;
+
+			var directoryNameAddress = machine.DOS.MemoryManager.AllocateMemory(directoryNameBufferSize, machine.DOS.CurrentPSPSegment);
+
+			var directoryNameSpan = machine.SystemMemory.AsSpan().Slice(directoryNameAddress, directoryNameBufferSize);
+
+			directoryNameBytes.CopyTo(directoryNameSpan);
+			directoryNameSpan[directoryNameBytes.Length] = 0;
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.Function43 << 8;
+			rin.AX |= (int)Interrupt0x21.Function43.ExtendedLengthFileNameOperations;
+			rin.BP = 0x5053;
+			rin.CX = (int)Interrupt0x21.Function.CreateDirectory;
+			rin.DS = (ushort)(directoryNameAddress / MemoryManager.ParagraphSize);
+			rin.DX = (ushort)(directoryNameAddress % MemoryManager.ParagraphSize);
+
+			// Act
+			bool existsBefore = Directory.Exists(testDirectoryPath);
+
+			var rout = sut.Execute(rin);
+
+			bool existsAfter = Directory.Exists(testDirectoryPath);
+
+			// Assert
+			int al = rout.AX & 0xFF;
+
+			al.Should().Be(0);
+
+			existsBefore.Should().BeFalse();
+			existsAfter.Should().BeTrue();
+		}
+	}
+
 	/*
 	public enum Function : byte
 	{
 		public enum Function43 : byte
 		{
 			ExtendedLengthFileNameOperations = 0xFF, // per Ralf Brown's Interrupt List
+			// still needs a tets for function 0x53
 		},
 		public enum Function44 : byte
 		{
@@ -5662,8 +5725,8 @@ public class Interrupt0x21Tests
 		FindNextFile = 0x4F,
 		SetPSPAddress = 0x50,
 		GetPSPAddress = 0x51,
-		GetVerifyState = 0x52,
-		RenameFile = 0x53,
+		GetVerifyState = 0x54,
+		RenameFile = 0x56,
 		public enum Function57 : byte
 		{
 			GetFileDateAndTime = 0x00,
@@ -5713,7 +5776,6 @@ public class Interrupt0x21Tests
 		SetMaximumHandleCount = 0x67,
 		CommitFile = 0x68,
 		CommitFile2 = 0x6A,
-		NullFunction = 0x6B,
 		ExtendedOpenCreate = 0x6C,
 	}
 	 */
