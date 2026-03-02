@@ -18,6 +18,8 @@ public class ConsoleFileDescriptor(DOS owner) : FileDescriptor("CON")
 	public override bool ReadyToRead => owner.Machine.Keyboard.HasQueuedTangibleInput;
 	public override bool ReadyToWrite => true;
 
+	protected override bool ReadAndWriteAreIndependent => true;
+
 	Machine _machine = owner.Machine;
 
 	bool _blockingInput = true;

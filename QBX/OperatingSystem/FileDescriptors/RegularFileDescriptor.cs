@@ -14,10 +14,12 @@ public class RegularFileDescriptor(string path, string physicalPath, FileStream 
 
 	public override bool CanRead => stream.CanRead;
 	public override bool CanWrite => stream.CanWrite;
+	public override bool CanSeek => stream.CanSeek;
 
 	public override bool ReadyToRead => !AtSoftEOF && (stream.Position < stream.Length);
 	public override bool ReadyToWrite => true;
 
+	public override long FilePointer => stream.Position - ReadBuffer.NumUsed + WriteBuffer.NumUsed;
 	public SafeFileHandle Handle => stream.SafeFileHandle;
 
 	public bool IsPristine = true;
@@ -49,6 +51,12 @@ public class RegularFileDescriptor(string path, string physicalPath, FileStream 
 		stream.Unlock(offset, length);
 	}
 
+	protected override void CancelReadBuffer()
+	{
+		stream.Position -= ReadBuffer.NumUsed;
+
+		base.CancelReadBuffer();
+	}
 	protected override void FlushToDisk()
 	{
 		VerifyOpen();

@@ -455,10 +455,16 @@ public class Interrupt0x21Tests
 		rin.DS = (ushort)(bufferAddress / MemoryManager.ParagraphSize);
 		rin.DX = (ushort)(bufferAddress - rin.DS * MemoryManager.ParagraphSize);
 
-		// Act
-		var rout = sut.Execute(rin);
+		Registers? rout = null;
+
+		// Act & Assert
+		Action action = () => rout = sut.Execute(rin);
+
+		action.ExecutionTime().Should().BeLessThan(TimeSpan.FromSeconds(0.1));
 
 		// Assert
+		rout.Should().NotBeNull();
+
 		captureBuffer.ToString().Should().Be(truncatedMessageWithAlertsAndCarriageReturn);
 		bufferHeader[0].Should().Be(bufferLength);
 		bufferHeader[1].Should().Be((byte)truncatedMessage.Length);
@@ -612,10 +618,12 @@ public class Interrupt0x21Tests
 
 				byte[] testData = s_cp437.GetBytes("test");
 
-				machine.DOS.Write(
+				int numWritten = machine.DOS.Write(
 					fileHandle,
 					testData,
 					out _);
+
+				numWritten.Should().Be(testData.Length);
 
 				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
 

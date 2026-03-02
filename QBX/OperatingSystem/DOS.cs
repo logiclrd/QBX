@@ -540,7 +540,7 @@ public partial class DOS
 
 	readonly byte[] ControlCharacters = [9, 13];
 
-	public void Write(int fileHandle, ReadOnlySpan<byte> bytes, out byte lastByteWritten)
+	public int Write(int fileHandle, ReadOnlySpan<byte> bytes, out byte lastByteWritten)
 	{
 		byte b = default;
 
@@ -550,6 +550,8 @@ public partial class DOS
 			LastError = DOSError.InvalidHandle;
 			throw new ArgumentException("Invalid file descriptor");
 		}
+
+		int totalWritten = 0;
 
 		lastByteWritten = 0;
 
@@ -564,10 +566,15 @@ public partial class DOS
 			{
 				try
 				{
-					fileDescriptor.Write(bytes.Slice(0, controlCharacterIndex));
-					fileDescriptor.Column += controlCharacterIndex;
+					int numWritten = fileDescriptor.Write(bytes.Slice(0, controlCharacterIndex));
 
-					bytes = bytes.Slice(controlCharacterIndex);
+					if (numWritten <= 0)
+						return totalWritten;
+
+					fileDescriptor.Column += numWritten;
+					bytes = bytes.Slice(numWritten);
+
+					totalWritten += numWritten;
 				}
 				catch (Exception e)
 				{
@@ -577,13 +584,22 @@ public partial class DOS
 
 			if (bytes.Length > 0)
 			{
+				long positionBefore = fileDescriptor.FilePointer;
+
 				WriteByte(fileHandle, bytes[0], out b);
+
+				if (fileDescriptor.FilePointer == positionBefore)
+					return totalWritten;
+
 				bytes = bytes.Slice(1);
+				totalWritten += 1;
 			}
 
 			if (VerifyWrites)
 				fileDescriptor.FlushWriteBuffer(true);
 		}
+
+		return totalWritten;
 	}
 
 	public int Write(int fileHandle, IMemory systemMemory, int address, int count)
@@ -1387,7 +1403,8 @@ public partial class DOS
 
 			for (int i = 0; i < recordCount; i++)
 			{
-				fileDescriptor.Write(fcb.RecordSize, Machine.MemoryBus, operationDiskTransferAddress);
+				if (fileDescriptor.Write(fcb.RecordSize, Machine.MemoryBus, operationDiskTransferAddress) < fcb.RecordSize)
+					throw new DOSException(DOSError.GeneralFailure);
 
 				if (advance)
 				{

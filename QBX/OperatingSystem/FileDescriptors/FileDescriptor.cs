@@ -38,9 +38,14 @@ public abstract class FileDescriptor
 
 	public virtual bool CanRead => false;
 	public virtual bool CanWrite => false;
+	public virtual bool CanSeek => false;
 
 	public virtual bool ReadyToRead => false;
 	public virtual bool ReadyToWrite => false;
+
+	public virtual long FilePointer => 0;
+
+	protected virtual bool ReadAndWriteAreIndependent => false;
 
 	public FileBuffer ReadBuffer = new FileBuffer(512);
 	public FileBuffer WriteBuffer = new FileBuffer(512);
@@ -76,9 +81,11 @@ public abstract class FileDescriptor
 	{
 		VerifyOpen();
 
-		FlushWriteBuffer();
+		if (!CanSeek)
+			throw new DOSException(DOSError.InvalidFunction);
 
-		ReadBuffer.NumUsed = 0;
+		FlushWriteBuffer();
+		CancelReadBuffer();
 
 		if (offset != 0)
 			AtSoftEOF = false;
@@ -90,9 +97,11 @@ public abstract class FileDescriptor
 	{
 		VerifyOpen();
 
-		FlushWriteBuffer();
+		if (!CanSeek)
+			throw new DOSException(DOSError.InvalidFunction);
 
-		ReadBuffer.NumUsed = 0;
+		FlushWriteBuffer();
+		CancelReadBuffer();
 
 		if (offset != 0)
 			AtSoftEOF = false;
@@ -112,6 +121,11 @@ public abstract class FileDescriptor
 			if (!ReadBuffer.IsFull)
 				ReadCore(ref ReadBuffer);
 		}
+	}
+
+	protected virtual void CancelReadBuffer()
+	{
+		ReadBuffer.NumUsed = 0;
 	}
 
 	public void FlushWriteBuffer(bool flushToDisk = false)
@@ -162,11 +176,6 @@ public abstract class FileDescriptor
 
 	public byte ReadByte()
 	{
-		if (!CanRead)
-			throw new DOSException(DOSError.InvalidAccess);
-
-		VerifyOpen();
-
 		TryReadByte(out var b);
 
 		return b;
@@ -184,6 +193,9 @@ public abstract class FileDescriptor
 			b = 0;
 			return false;
 		}
+
+		if (!ReadAndWriteAreIndependent)
+			FlushWriteBuffer();
 
 		while (ReadBuffer.IsEmpty && !WouldHaveBlocked)
 			FillReadBuffer();
@@ -206,6 +218,9 @@ public abstract class FileDescriptor
 
 		VerifyOpen();
 
+		if (!ReadAndWriteAreIndependent)
+			FlushWriteBuffer();
+
 		while (ReadBuffer.IsEmpty)
 			FillReadBuffer();
 
@@ -218,6 +233,9 @@ public abstract class FileDescriptor
 			throw new DOSException(DOSError.InvalidAccess);
 
 		VerifyOpen();
+
+		if (!ReadAndWriteAreIndependent)
+			FlushWriteBuffer();
 
 		if (ReadBuffer.IsEmpty)
 			FillReadBuffer();
@@ -259,18 +277,26 @@ public abstract class FileDescriptor
 
 		VerifyOpen();
 
+		if (!ReadAndWriteAreIndependent)
+			CancelReadBuffer();
+
 		WriteBuffer.Push(b);
 
 		if (WriteThrough || WriteBuffer.IsFull)
 			FlushWriteBuffer();
 	}
 
-	public void Write(ReadOnlySpan<byte> buffer)
+	public int Write(ReadOnlySpan<byte> buffer)
 	{
 		if (!CanWrite)
 			throw new DOSException(DOSError.InvalidAccess);
 
 		VerifyOpen();
+
+		if (!ReadAndWriteAreIndependent)
+			CancelReadBuffer();
+
+		int bytesWritten = 0;
 
 		while (buffer.Length > 0)
 		{
@@ -281,28 +307,38 @@ public abstract class FileDescriptor
 			WriteBuffer.Push(buffer.Slice(0, writeSize));
 
 			buffer = buffer.Slice(writeSize);
+			bytesWritten += writeSize;
 
 			if (WriteThrough || WriteBuffer.IsFull)
 				FlushWriteBuffer();
 		}
+
+		return bytesWritten;
 	}
 
-	public void Write(int writeSize, IMemory systemMemory, int address)
+	public int Write(int writeSize, IMemory systemMemory, int address)
 	{
 		if (!CanWrite)
 			throw new DOSException(DOSError.InvalidAccess);
 
 		VerifyOpen();
 
-		while (writeSize > 0)
+		if (!ReadAndWriteAreIndependent)
+			CancelReadBuffer();
+
+		int bytesWritten = 0;
+
+		while (bytesWritten < writeSize)
 		{
 			if (WriteBuffer.IsFull)
 				FlushWriteBuffer();
 
 			WriteBuffer.Push(systemMemory[address++]);
 
-			writeSize--;
+			bytesWritten++;
 		}
+
+		return bytesWritten;
 	}
 
 	public void Close()
