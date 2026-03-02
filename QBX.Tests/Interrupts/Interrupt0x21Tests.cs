@@ -5487,12 +5487,157 @@ public class Interrupt0x21Tests
 		}
 	}
 
+	[Test, NonParallelizable]
+	public void SetFileAttributes_should_update_file_attributes()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+
+			File.WriteAllText(TestFileName, "QuickBASIC");
+
+			byte[] fileNameBytes = s_cp437.GetBytes(TestFileName);
+
+			int fileNameBufferSize = fileNameBytes.Length + 1;
+
+			var fileNameAddress = machine.DOS.MemoryManager.AllocateMemory(fileNameBufferSize, machine.DOS.CurrentPSPSegment);
+
+			var fileNameSpan = machine.SystemMemory.AsSpan().Slice(fileNameAddress, fileNameBufferSize);
+
+			fileNameBytes.CopyTo(fileNameSpan);
+			fileNameSpan[fileNameBytes.Length] = 0;
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.Function43 << 8;
+			rin.AX |= (int)Interrupt0x21.Function43.SetFileAttributes;
+			rin.DS = (ushort)(fileNameAddress / MemoryManager.ParagraphSize);
+			rin.CX = (ushort)OperatingSystem.FileStructures.FileAttributes.ReadOnly;
+			rin.DX = (ushort)(fileNameAddress % MemoryManager.ParagraphSize);
+
+			// Act
+			var rout = sut.Execute(rin);
+
+			// Assert
+			rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+			File.GetAttributes(TestFileName).Should().HaveFlag(System.IO.FileAttributes.ReadOnly);
+		}
+	}
+
+	[Test, NonParallelizable]
+	public void SetFileAttributes_should_update_file_attributes_with_relative_paths()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "A\\TESTFILE.TXT";
+
+			Directory.CreateDirectory("A");
+
+			File.WriteAllText(TestFileName, "QuickBASIC");
+
+			byte[] fileNameBytes = s_cp437.GetBytes(TestFileName);
+
+			int fileNameBufferSize = fileNameBytes.Length + 1;
+
+			var fileNameAddress = machine.DOS.MemoryManager.AllocateMemory(fileNameBufferSize, machine.DOS.CurrentPSPSegment);
+
+			var fileNameSpan = machine.SystemMemory.AsSpan().Slice(fileNameAddress, fileNameBufferSize);
+
+			fileNameBytes.CopyTo(fileNameSpan);
+			fileNameSpan[fileNameBytes.Length] = 0;
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.Function43 << 8;
+			rin.AX |= (int)Interrupt0x21.Function43.SetFileAttributes;
+			rin.CX = (ushort)OperatingSystem.FileStructures.FileAttributes.ReadOnly;
+			rin.DS = (ushort)(fileNameAddress / MemoryManager.ParagraphSize);
+			rin.DX = (ushort)(fileNameAddress % MemoryManager.ParagraphSize);
+
+			// Act
+			var rout = sut.Execute(rin);
+
+			// Assert
+			rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+			File.GetAttributes(TestFileName).Should().HaveFlag(System.IO.FileAttributes.ReadOnly);
+		}
+	}
+
+	[Test, NonParallelizable]
+	public void SetFileAttributes_should_update_file_attributes_with_relative_paths_including_parent_references()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "..\\TESTFILE.TXT";
+
+			Directory.CreateDirectory("A");
+
+			Environment.CurrentDirectory = "A";
+
+			File.WriteAllText(TestFileName, "QuickBASIC");
+
+			byte[] fileNameBytes = s_cp437.GetBytes(TestFileName);
+
+			int fileNameBufferSize = fileNameBytes.Length + 1;
+
+			var fileNameAddress = machine.DOS.MemoryManager.AllocateMemory(fileNameBufferSize, machine.DOS.CurrentPSPSegment);
+
+			var fileNameSpan = machine.SystemMemory.AsSpan().Slice(fileNameAddress, fileNameBufferSize);
+
+			fileNameBytes.CopyTo(fileNameSpan);
+			fileNameSpan[fileNameBytes.Length] = 0;
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.Function43 << 8;
+			rin.AX |= (int)Interrupt0x21.Function43.SetFileAttributes;
+			rin.CX = (ushort)OperatingSystem.FileStructures.FileAttributes.ReadOnly;
+			rin.DS = (ushort)(fileNameAddress / MemoryManager.ParagraphSize);
+			rin.DX = (ushort)(fileNameAddress % MemoryManager.ParagraphSize);
+
+			// Act
+			var rout = sut.Execute(rin);
+
+			// Assert
+			rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+			File.GetAttributes(TestFileName).Should().HaveFlag(System.IO.FileAttributes.ReadOnly);
+		}
+	}
+
 	/*
 	public enum Function : byte
 	{
 		public enum Function43 : byte
 		{
-			SetFileAttributes = 0x01,
 			ExtendedLengthFileNameOperations = 0xFF, // per Ralf Brown's Interrupt List
 		},
 		public enum Function44 : byte
