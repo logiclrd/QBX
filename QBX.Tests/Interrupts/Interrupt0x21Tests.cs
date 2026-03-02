@@ -5011,10 +5011,329 @@ public class Interrupt0x21Tests
 		}
 	}
 
+	[Test, NonParallelizable]
+	public void MoveFilePointer_should_move_pointer_to_a_byte_that_exists_in_the_file()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+			const int TestFileSize = 10240;
+			const int TestFilePointer = 5120;
+
+			byte[] testData = new byte[TestFileSize];
+
+			TestContext.CurrentContext.Random.NextBytes(testData);
+
+			File.WriteAllBytes(TestFileName, testData);
+
+			int fileHandle = machine.DOS.OpenFile(
+				TestFileName,
+				OperatingSystem.FileStructures.FileMode.Open,
+				OpenMode.Access_ReadWrite);
+
+			fileHandle.Should().BeInRange(2, machine.DOS.Files.Count - 1);
+
+			var regularFile = (RegularFileDescriptor)machine.DOS.Files[fileHandle]!;
+
+			try
+			{
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (int)Interrupt0x21.Function.MoveFilePointer << 8;
+				rin.BX = (ushort)fileHandle;
+				rin.CX = unchecked((ushort)(TestFilePointer >> 16));
+				rin.DX = unchecked((ushort)TestFilePointer);
+
+				rin.AX |= (int)MoveMethod.FromBeginning;
+
+				// Act
+				var rout = sut.Execute(rin);
+
+				// Assert
+				rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+				regularFile.FilePointer.Should().Be(TestFilePointer);
+			}
+			finally
+			{
+				machine.DOS.CloseFile(fileHandle);
+			}
+		}
+	}
+
+	[Test, NonParallelizable]
+	public void MoveFilePointer_should_move_pointer_with_specified_move_method([Values] MoveMethod moveMethod)
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+			const int TestFileSize = 10240;
+			const int InitialTestFilePointer = 5120;
+
+			int relativeSeek = 150;
+
+			int expectedFilePointerAfterSeek;
+
+			switch (moveMethod)
+			{
+				case MoveMethod.FromBeginning: expectedFilePointerAfterSeek = relativeSeek; break;
+				case MoveMethod.FromCurrent: expectedFilePointerAfterSeek = InitialTestFilePointer + relativeSeek; break;
+				case MoveMethod.FromEnd:
+					relativeSeek = -150;
+					expectedFilePointerAfterSeek = TestFileSize + relativeSeek;
+					break;
+
+				default: throw new Exception("Internal error: Unrecognized moveMethod in test case data");
+			}
+
+			byte[] testData = new byte[TestFileSize];
+
+			TestContext.CurrentContext.Random.NextBytes(testData);
+
+			File.WriteAllBytes(TestFileName, testData);
+
+			int fileHandle = machine.DOS.OpenFile(
+				TestFileName,
+				OperatingSystem.FileStructures.FileMode.Open,
+				OpenMode.Access_ReadWrite);
+
+			fileHandle.Should().BeInRange(2, machine.DOS.Files.Count - 1);
+
+			var regularFile = (RegularFileDescriptor)machine.DOS.Files[fileHandle]!;
+
+			regularFile.Seek(InitialTestFilePointer, MoveMethod.FromBeginning);
+
+			try
+			{
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (int)Interrupt0x21.Function.MoveFilePointer << 8;
+				rin.BX = (ushort)fileHandle;
+				rin.CX = unchecked((ushort)(relativeSeek >> 16));
+				rin.DX = unchecked((ushort)relativeSeek);
+
+				rin.AX |= (byte)moveMethod;
+
+				// Act
+				var rout = sut.Execute(rin);
+
+				// Assert
+				rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+				regularFile.FilePointer.Should().Be(expectedFilePointerAfterSeek);
+			}
+			finally
+			{
+				machine.DOS.CloseFile(fileHandle);
+			}
+		}
+	}
+
+	[Test, NonParallelizable]
+	public void MoveFilePointer_should_move_pointer_to_byte_past_end_of_file()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+			const int TestFileSize = 10240;
+			const int TestFilePointer = TestFileSize * 10;
+
+			byte[] testData = new byte[TestFileSize];
+
+			TestContext.CurrentContext.Random.NextBytes(testData);
+
+			File.WriteAllBytes(TestFileName, testData);
+
+			int fileHandle = machine.DOS.OpenFile(
+				TestFileName,
+				OperatingSystem.FileStructures.FileMode.Open,
+				OpenMode.Access_ReadWrite);
+
+			fileHandle.Should().BeInRange(2, machine.DOS.Files.Count - 1);
+
+			var regularFile = (RegularFileDescriptor)machine.DOS.Files[fileHandle]!;
+
+			try
+			{
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (int)Interrupt0x21.Function.MoveFilePointer << 8;
+				rin.BX = (ushort)fileHandle;
+				rin.CX = unchecked((ushort)(TestFilePointer >> 16));
+				rin.DX = unchecked((ushort)TestFilePointer);
+
+				rin.AX |= (int)MoveMethod.FromBeginning;
+
+				// Act
+				var rout = sut.Execute(rin);
+
+				// Assert
+				rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+				regularFile.FilePointer.Should().Be(TestFilePointer);
+			}
+			finally
+			{
+				machine.DOS.CloseFile(fileHandle);
+			}
+
+			new FileInfo(TestFileName).Length.Should().Be(TestFileSize);
+		}
+	}
+
+	[Test, NonParallelizable]
+	public void MoveFilePointer_should_move_pointer_to_maximum_possible_file_pointer_value()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+			const int TestFileSize = 10240;
+			const uint TestFilePointer = uint.MaxValue;
+
+			byte[] testData = new byte[TestFileSize];
+
+			TestContext.CurrentContext.Random.NextBytes(testData);
+
+			File.WriteAllBytes(TestFileName, testData);
+
+			int fileHandle = machine.DOS.OpenFile(
+				TestFileName,
+				OperatingSystem.FileStructures.FileMode.Open,
+				OpenMode.Access_ReadWrite);
+
+			fileHandle.Should().BeInRange(2, machine.DOS.Files.Count - 1);
+
+			var regularFile = (RegularFileDescriptor)machine.DOS.Files[fileHandle]!;
+
+			try
+			{
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (int)Interrupt0x21.Function.MoveFilePointer << 8;
+				rin.BX = (ushort)fileHandle;
+				rin.CX = unchecked((ushort)(TestFilePointer >> 16));
+				rin.DX = unchecked((ushort)TestFilePointer);
+
+				rin.AX |= (int)MoveMethod.FromBeginning;
+
+				// Act
+				var rout = sut.Execute(rin);
+
+				// Assert
+				rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+				regularFile.FilePointer.Should().Be(TestFilePointer);
+			}
+			finally
+			{
+				machine.DOS.CloseFile(fileHandle);
+			}
+
+			new FileInfo(TestFileName).Length.Should().Be(TestFileSize);
+		}
+	}
+
+	[Test, NonParallelizable]
+	public void MoveFilePointer_should_move_pointer_to_byte_before_start_of_file()
+	{
+		// This is documented as completing without error; an error occurs on any subsequent read or write operation.
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+			const int TestFileSize = 10240;
+			const int TestFilePointer = -500;
+
+			byte[] testData = new byte[TestFileSize];
+
+			TestContext.CurrentContext.Random.NextBytes(testData);
+
+			File.WriteAllBytes(TestFileName, testData);
+
+			int fileHandle = machine.DOS.OpenFile(
+				TestFileName,
+				OperatingSystem.FileStructures.FileMode.Open,
+				OpenMode.Access_ReadWrite);
+
+			fileHandle.Should().BeInRange(2, machine.DOS.Files.Count - 1);
+
+			var regularFile = (RegularFileDescriptor)machine.DOS.Files[fileHandle]!;
+
+			try
+			{
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (int)Interrupt0x21.Function.MoveFilePointer << 8;
+				rin.BX = (ushort)fileHandle;
+				rin.CX = unchecked((ushort)(TestFilePointer >> 16));
+				rin.DX = unchecked((ushort)TestFilePointer);
+
+				rin.AX |= (int)MoveMethod.FromCurrent;
+
+				// Act
+				var rout = sut.Execute(rin);
+
+				// Assert
+				rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+				regularFile.FilePointer.Should().Be(TestFilePointer);
+			}
+			finally
+			{
+				machine.DOS.CloseFile(fileHandle);
+			}
+
+			new FileInfo(TestFileName).Length.Should().Be(TestFileSize);
+		}
+	}
+
 	/*
 	public enum Function : byte
 	{
-		MoveFilePointer = 0x42,
 		public enum Function43 : byte
 		{
 			GetFileAttributes = 0x00,

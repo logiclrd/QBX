@@ -188,7 +188,7 @@ public abstract class FileDescriptor
 
 		VerifyOpen();
 
-		if (AtSoftEOF)
+		if (AtSoftEOF || (FilePointer < 0))
 		{
 			b = 0;
 			return false;
@@ -218,6 +218,9 @@ public abstract class FileDescriptor
 
 		VerifyOpen();
 
+		if (FilePointer < 0)
+			return 0; // Behaviour observed with DOS 6
+
 		if (!ReadAndWriteAreIndependent)
 			FlushWriteBuffer();
 
@@ -233,6 +236,9 @@ public abstract class FileDescriptor
 			throw new DOSException(DOSError.InvalidAccess);
 
 		VerifyOpen();
+
+		if (FilePointer < 0)
+			return 0; // Behaviour observed with DOS 6
 
 		if (!ReadAndWriteAreIndependent)
 			FlushWriteBuffer();
@@ -277,6 +283,9 @@ public abstract class FileDescriptor
 
 		VerifyOpen();
 
+		if (FilePointer < 0)
+			return;
+
 		if (!ReadAndWriteAreIndependent)
 			CancelReadBuffer();
 
@@ -292,6 +301,9 @@ public abstract class FileDescriptor
 			throw new DOSException(DOSError.InvalidAccess);
 
 		VerifyOpen();
+
+		if (FilePointer < 0)
+			return 0; // Behaviour observed with DOS 6
 
 		if (!ReadAndWriteAreIndependent)
 			CancelReadBuffer();
@@ -322,6 +334,9 @@ public abstract class FileDescriptor
 			throw new DOSException(DOSError.InvalidAccess);
 
 		VerifyOpen();
+
+		if (FilePointer < 0)
+			return 0; // Behaviour observed with DOS 6
 
 		if (!ReadAndWriteAreIndependent)
 			CancelReadBuffer();
