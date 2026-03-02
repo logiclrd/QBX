@@ -2,6 +2,8 @@
 using System.IO.Enumeration;
 using System.Numerics;
 
+using NSubstitute;
+
 using QBX.ExecutionEngine.Execution;
 using QBX.Firmware.Fonts;
 using QBX.Hardware;
@@ -6245,17 +6247,85 @@ public class Interrupt0x21Tests
 		}
 	}
 
+	[Test]
+	public void DoesDeviceUseRemovableMedia_should_return_correct_value([Values] bool testWithRemovableMedia)
+	{
+		var mockDriveInfo = Substitute.For<IDriveInfo>();
+
+		mockDriveInfo.Name.Returns("A:");
+		mockDriveInfo.IsReady.Returns(true);
+		mockDriveInfo.RootDirectoryPath.Returns(@"A:\");
+		mockDriveInfo.DriveType.Returns(testWithRemovableMedia ? DriveType.Removable : DriveType.Fixed);
+		mockDriveInfo.DriveFormat.Returns("FAT");
+		mockDriveInfo.AvailableFreeSpace.Returns(1_457_664);
+		mockDriveInfo.TotalFreeSpace.Returns(1_457_664);
+		mockDriveInfo.TotalSize.Returns(1_457_664);
+		mockDriveInfo.VolumeLabel.Returns("FOO");
+
+		var mockDriveInfoProvider = Substitute.For<IDriveInfoProvider>();
+
+		mockDriveInfoProvider.GetDrives().Returns(new IDriveInfo[] { mockDriveInfo });
+		mockDriveInfoProvider.GetDrive(Arg.Any<string>()).Returns(
+			callInfo =>
+			{
+				string path = callInfo.Arg<string>();
+
+				if (path.Equals("A", StringComparison.OrdinalIgnoreCase)
+				 || path.StartsWith("A:", StringComparison.OrdinalIgnoreCase))
+					return mockDriveInfo;
+				else
+				{
+					var dummyDriveInfo = Substitute.For<IDriveInfo>();
+
+					dummyDriveInfo.Name.Returns(path);
+					dummyDriveInfo.RootDirectoryPath.Returns(path);
+					dummyDriveInfo.VolumeLabel.Returns(path);
+
+					return dummyDriveInfo;
+				}
+			});
+
+		var machine = new Machine(mockDriveInfoProvider);
+
+		machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+		var dpbAddress = machine.DOS.GetDefaultDriveParameterBlock();
+
+		ref var dpb = ref DriveParameterBlock.CreateReference(machine.SystemMemory, dpbAddress.ToLinearAddress());
+
+		ushort expectedFixedMediaFlagValue =
+			testWithRemovableMedia
+			? (ushort)0x0000
+			: (ushort)0x0001;
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.Function44 << 8;
+		rin.AX |= (int)Interrupt0x21.Function44.DoesDeviceUseRemovableMedia;
+		rin.BX = dpb.DriveIdentifier;
+		rin.BX++;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+		rout.AX.Should().Be(expectedFixedMediaFlagValue);
+	}
+
 	/*
 	public enum Function : byte
 	{
 		public enum Function43 : byte
 		{
 			ExtendedLengthFileNameOperations = 0xFF, // per Ralf Brown's Interrupt List
-			// still needs a tets for function 0x53
+			// still needs a test for function 0x56
 		},
 		public enum Function44 : byte
 		{
-			DoesDeviceUseRemovableMedia = 0x08,
 			IsDriveRemote = 0x09,
 			IsFileOrDeviceRemote = 0x0A,
 		},

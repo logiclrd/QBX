@@ -77,8 +77,12 @@ public partial class DOS
 
 	static CP437Encoding s_cp437 = new CP437Encoding(ControlCharacterInterpretation.Semantic);
 
+	internal IDriveInfoProvider DriveInfoProvider;
+
 	public DOS(Machine machine)
 	{
+		DriveInfoProvider = machine.OverrideDriveInfoProvider ?? new DefaultDriveInfoProvider();
+
 		_machine = machine;
 
 		_machine.Keyboard.Break += OnExternalBreak;
@@ -99,10 +103,10 @@ public partial class DOS
 
 	private void GenerateDriveParameterBlocks()
 	{
-		var drives = DriveInfo.GetDrives();
+		var drives = DriveInfoProvider.GetDrives();
 
 		var eligibleDrives = drives
-			.Select(drive => (Drive: drive, RootPath: drive.RootDirectory.FullName))
+			.Select(drive => (Drive: drive, RootPath: drive.RootDirectoryPath))
 			.Where(drive => (drive.RootPath.Length < 2) || (drive.RootPath[1] == PathCharacter.VolumeSeparatorChar))
 			.Select(drive => drive.Drive)
 			.ToArray();
@@ -124,7 +128,7 @@ public partial class DOS
 
 			// This is all nonsense data, because modern drives don't
 			// fit into the fields described by a DPB at all. :-P
-			dpb.DriveIdentifier = (byte)(PathCharacter.GetDriveLetter(drive.RootDirectory.FullName) - 'A');
+			dpb.DriveIdentifier = (byte)(PathCharacter.GetDriveLetter(drive.RootDirectoryPath) - 'A');
 			dpb.SectorSize = 512;
 			dpb.ClusterMask = 255; // ClusterMask == (1 << ClusterShift) - 1
 			dpb.ClusterShift = 8;
@@ -639,7 +643,7 @@ public partial class DOS
 	{
 		return TranslateError(() =>
 		{
-			return DriveInfo.GetDrives().Length;
+			return DriveInfoProvider.GetDrives().Length;
 		});
 	}
 
@@ -706,7 +710,7 @@ public partial class DOS
 			else
 				path = ShortFileNames.Unmap(path);
 
-			var driveInfo = new DriveInfo(path);
+			var driveInfo = DriveInfoProvider.GetDrive(path);
 
 			return driveInfo.DriveType == DriveType.Network;
 		});

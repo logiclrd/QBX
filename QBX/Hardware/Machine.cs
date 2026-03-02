@@ -25,8 +25,17 @@ public class Machine
 	public bool KeepRunning = true;
 	public int ExitCode = 0;
 
+	internal IDriveInfoProvider? OverrideDriveInfoProvider;
+
 	public Machine()
+		: this(overrideDriveInfoProvider: null)
 	{
+	}
+
+	internal Machine(IDriveInfoProvider? overrideDriveInfoProvider)
+	{
+		OverrideDriveInfoProvider = overrideDriveInfoProvider;
+
 		SystemClock = new SystemClock();
 
 		SystemMemory = new SystemMemory();
