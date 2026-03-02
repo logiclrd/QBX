@@ -10,6 +10,8 @@ public delegate int FileWriteFunctor(ReadOnlySpan<byte> buffer);
 
 public abstract class FileDescriptor
 {
+	public int ReferenceCount;
+
 	public string Path { get; private set; }
 
 	protected virtual void ReadCore(ref FileBuffer buffer) { }

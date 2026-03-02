@@ -955,6 +955,8 @@ public partial class DOS
 
 		Files[fileHandle] = fileDescriptor;
 
+		fileDescriptor.ReferenceCount++;
+
 		return fileHandle;
 	}
 
@@ -1489,7 +1491,7 @@ public partial class DOS
 		}
 
 		if (Files[toFileHandle] is FileDescriptor existingFileDescriptor)
-			existingFileDescriptor.Close();
+			CloseFile(toFileHandle, pruneFileHandles: false);
 
 		Files[toFileHandle] = fileDescriptor;
 
@@ -1516,7 +1518,9 @@ public partial class DOS
 		});
 	}
 
-	public bool CloseFile(int fileHandle)
+	public bool CloseFile(int fileHandle) => CloseFile(fileHandle, pruneFileHandles: true);
+
+	bool CloseFile(int fileHandle, bool pruneFileHandles)
 	{
 		if ((fileHandle < 0) || (fileHandle >= Files.Count)
 		 || (Files[fileHandle] is not FileDescriptor fileDescriptor))
@@ -1527,11 +1531,17 @@ public partial class DOS
 
 		return TranslateError(() =>
 		{
-			fileDescriptor.Close();
+			fileDescriptor.ReferenceCount--;
 
-			Files[fileHandle] = null;
+			if (fileDescriptor.ReferenceCount <= 0)
+			{
+				fileDescriptor.Close();
 
-			PruneFileHandles();
+				Files[fileHandle] = null;
+
+				if (pruneFileHandles)
+					PruneFileHandles();
+			}
 
 			return true;
 		});
