@@ -15,7 +15,7 @@ public class ConsoleFileDescriptor(DOS owner) : FileDescriptor("CON")
 	public override bool CanRead => true;
 	public override bool CanWrite => true;
 
-	public override bool ReadyToRead => owner.Machine.Keyboard.HasQueuedTangibleInput;
+	public override bool ReadyToRead => !ReadBuffer.IsEmpty || (_lineBuffer.Count > 0) || owner.Machine.Keyboard.HasQueuedTangibleInput;
 	public override bool ReadyToWrite => true;
 
 	protected override bool ReadAndWriteAreIndependent => true;

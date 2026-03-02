@@ -6108,6 +6108,94 @@ public class Interrupt0x21Tests
 			}
 		}
 	}
+
+	[Test, NonParallelizable]
+	public void CheckDeviceInputStatus_should_detect_file_EOF([Values] bool testAtEOF)
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+
+			File.WriteAllText(TestFileName, "DOS 6.22");
+
+			int fileHandle = machine.DOS.OpenFile("TESTFILE.TXT", OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
+
+			byte expectedInputStatusValue = 0xFF;
+
+			if (testAtEOF)
+			{
+				machine.DOS.SeekFile(fileHandle, 0, MoveMethod.FromEnd);
+				expectedInputStatusValue = 0;
+			}
+
+			try
+			{
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (int)Interrupt0x21.Function.Function44 << 8;
+				rin.AX |= (int)Interrupt0x21.Function44.CheckDeviceInputStatus;
+				rin.BX = (ushort)fileHandle;
+
+				// Act
+				var rout = sut.Execute(rin);
+
+				// Assert
+				rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+				byte al = unchecked((byte)rout.AX);
+
+				al.Should().Be(expectedInputStatusValue);
+			}
+			finally
+			{
+				machine.DOS.CloseFile(fileHandle);
+			}
+		}
+	}
+
+	[Test]
+	public void CheckDeviceInputStatus_should_detect_console_input([Values] bool testWithInput)
+	{
+		var machine = new Machine();
+
+		machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+		byte expectedInputStatusValue = 0;
+
+		if (testWithInput)
+		{
+			SimulateTyping("a", ControlCharacterHandling.SemanticKey, machine);
+			expectedInputStatusValue = 0xFF;
+		}
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.Function44 << 8;
+		rin.AX |= (int)Interrupt0x21.Function44.CheckDeviceInputStatus;
+		rin.BX = (ushort)DOS.StandardInput;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+		byte al = unchecked((byte)rout.AX);
+
+		al.Should().Be(expectedInputStatusValue);
+	}
+
 	/*
 	public enum Function : byte
 	{
@@ -6118,7 +6206,6 @@ public class Interrupt0x21Tests
 		},
 		public enum Function44 : byte
 		{
-			CheckDeviceInputStatus = 0x06,
 			CheckDeviceOutputStatus = 0x07,
 			DoesDeviceUseRemovableMedia = 0x08,
 			IsDriveRemote = 0x09,
