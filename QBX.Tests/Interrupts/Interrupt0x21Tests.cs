@@ -5976,6 +5976,138 @@ public class Interrupt0x21Tests
 		rout.AX.Should().Be((ushort)DOSError.InvalidHandle);
 	}
 
+	[Test]
+	public void SetDeviceData_should_alter_IO_mode()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rinSetup = new RegistersEx();
+
+		rinSetup.AX = (int)Interrupt0x21.Function.Function44 << 8;
+		rinSetup.AX |= (int)Interrupt0x21.Function44.GetDeviceData;
+		rinSetup.BX = DOS.StandardInput;
+
+		var routSetup = sut.Execute(rinSetup);
+
+		ushort newDeviceStatus = routSetup.DX;
+
+		newDeviceStatus ^= 32; // flip IO status bit
+
+		var expectedIOMode = ((newDeviceStatus & 32) != 0) ? IOMode.Binary : IOMode.ASCII;
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.Function44 << 8;
+		rin.AX |= (int)Interrupt0x21.Function44.SetDeviceData;
+		rin.BX = DOS.StandardInput;
+		rin.DX = newDeviceStatus;
+
+		// Act
+		var ioModeBefore = machine.DOS.Devices.Console.IOMode;
+
+		var rout = sut.Execute(rin);
+
+		var ioModeAfter = machine.DOS.Devices.Console.IOMode;
+
+		// Assert
+		rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+		ioModeBefore.Should().NotBe(expectedIOMode);
+		ioModeAfter.Should().Be(expectedIOMode);
+	}
+
+	[Test]
+	public void SetDeviceData_should_alter_soft_EOF_flag()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rinSetup = new RegistersEx();
+
+		rinSetup.AX = (int)Interrupt0x21.Function.Function44 << 8;
+		rinSetup.AX |= (int)Interrupt0x21.Function44.GetDeviceData;
+		rinSetup.BX = DOS.StandardInput;
+
+		var routSetup = sut.Execute(rinSetup);
+
+		ushort newDeviceStatus = routSetup.DX;
+
+		newDeviceStatus ^= 64; // flip EOF status bit
+
+		bool expectedAtEOF = ((newDeviceStatus & 64) == 0);
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.Function44 << 8;
+		rin.AX |= (int)Interrupt0x21.Function44.SetDeviceData;
+		rin.BX = DOS.StandardInput;
+		rin.DX = newDeviceStatus;
+
+		// Act
+		var atEOFBefore = machine.DOS.Devices.Console.AtSoftEOF;
+
+		var rout = sut.Execute(rin);
+
+		var atEOFAfter = machine.DOS.Devices.Console.AtSoftEOF;
+
+		// Assert
+		rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+		atEOFBefore.Should().NotBe(expectedAtEOF);
+		atEOFAfter.Should().Be(expectedAtEOF);
+	}
+
+	[Test, NonParallelizable]
+	public void SetDeviceData_should_detect_non_device_handles()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+
+			File.WriteAllText(TestFileName, "DOS 6.22");
+
+			int fileHandle = machine.DOS.OpenFile("TESTFILE.TXT", OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
+
+			try
+			{
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (int)Interrupt0x21.Function.Function44 << 8;
+				rin.AX |= (int)Interrupt0x21.Function44.SetDeviceData;
+				rin.BX = (ushort)fileHandle;
+				rin.DX = 0x80;
+
+				// Act
+				var rout = sut.Execute(rin);
+
+				// Assert
+				rout.FLAGS.Should().HaveFlag(Flags.Carry);
+				rout.AX.Should().Be((ushort)DOSError.InvalidFunction);
+			}
+			finally
+			{
+				machine.DOS.CloseFile(fileHandle);
+			}
+		}
+	}
 	/*
 	public enum Function : byte
 	{
@@ -5986,7 +6118,6 @@ public class Interrupt0x21Tests
 		},
 		public enum Function44 : byte
 		{
-			SetDeviceData = 0x01,
 			CheckDeviceInputStatus = 0x06,
 			CheckDeviceOutputStatus = 0x07,
 			DoesDeviceUseRemovableMedia = 0x08,

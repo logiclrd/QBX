@@ -1422,7 +1422,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 										? IOMode.ASCII
 										: IOMode.Binary);
 
-									fileDescriptor.AtSoftEOF = ((input.DX & 64) != 0);
+									fileDescriptor.AtSoftEOF = ((input.DX & 64) == 0);
 								}
 							}
 
