@@ -6196,6 +6196,55 @@ public class Interrupt0x21Tests
 		al.Should().Be(expectedInputStatusValue);
 	}
 
+	[NonParallelizable]
+	[TestCase("TESTFILE.TXT", 0xFF)]
+	[TestCase("CON", 0xFF)]
+	[TestCase("NUL", 0xFF)]
+	[TestCase("CLOCK$", 0x00)]
+	public void CheckDeviceOutputStatus_should_return_ready_to_write_status(string deviceOrFileName, byte expectedOutputStatusValue)
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+
+			File.WriteAllText(TestFileName, "DOS 6.22");
+
+			int fileHandle = machine.DOS.OpenFile(deviceOrFileName, OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
+
+			try
+			{
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (int)Interrupt0x21.Function.Function44 << 8;
+				rin.AX |= (int)Interrupt0x21.Function44.CheckDeviceOutputStatus;
+				rin.BX = (ushort)fileHandle;
+
+				// Act
+				var rout = sut.Execute(rin);
+
+				// Assert
+				rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+				byte al = unchecked((byte)rout.AX);
+
+				al.Should().Be(expectedOutputStatusValue);
+			}
+			finally
+			{
+				machine.DOS.CloseFile(fileHandle);
+			}
+		}
+	}
+
 	/*
 	public enum Function : byte
 	{
@@ -6206,7 +6255,6 @@ public class Interrupt0x21Tests
 		},
 		public enum Function44 : byte
 		{
-			CheckDeviceOutputStatus = 0x07,
 			DoesDeviceUseRemovableMedia = 0x08,
 			IsDriveRemote = 0x09,
 			IsFileOrDeviceRemote = 0x0A,
