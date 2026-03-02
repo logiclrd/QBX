@@ -121,7 +121,6 @@ public class RegularFileDescriptor(string path, string physicalPath, FileStream 
 
 	protected override int WriteCore(ReadOnlySpan<byte> buffer)
 	{
-		IsPristine = false;
 		stream.Write(buffer);
 		return buffer.Length;
 	}
@@ -129,5 +128,10 @@ public class RegularFileDescriptor(string path, string physicalPath, FileStream 
 	protected override void CloseCore()
 	{
 		stream.Close();
+	}
+
+	protected override void MarkDirty()
+	{
+		IsPristine = false;
 	}
 }

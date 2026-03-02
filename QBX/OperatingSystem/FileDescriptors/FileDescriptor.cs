@@ -16,6 +16,8 @@ public abstract class FileDescriptor
 	protected virtual int WriteCore(ReadOnlySpan<byte> buffer) => 0;
 	protected virtual void CloseCore() { }
 
+	protected virtual void MarkDirty() { }
+
 	public IOMode IOMode { get; private set; }
 	public bool AtSoftEOF;
 	public bool IsClosed;
@@ -291,6 +293,8 @@ public abstract class FileDescriptor
 
 		WriteBuffer.Push(b);
 
+		MarkDirty();
+
 		if (WriteThrough || WriteBuffer.IsFull)
 			FlushWriteBuffer();
 	}
@@ -321,6 +325,8 @@ public abstract class FileDescriptor
 			buffer = buffer.Slice(writeSize);
 			bytesWritten += writeSize;
 
+			MarkDirty();
+
 			if (WriteThrough || WriteBuffer.IsFull)
 				FlushWriteBuffer();
 		}
@@ -349,6 +355,8 @@ public abstract class FileDescriptor
 				FlushWriteBuffer();
 
 			WriteBuffer.Push(systemMemory[address++]);
+
+			MarkDirty();
 
 			bytesWritten++;
 		}

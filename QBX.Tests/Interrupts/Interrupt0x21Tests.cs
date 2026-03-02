@@ -5695,6 +5695,64 @@ public class Interrupt0x21Tests
 		}
 	}
 
+	[Test, NonParallelizable]
+	public void GetDeviceData_should_identify_regular_files([Values] bool expectedPristine)
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+
+			File.WriteAllText(TestFileName, "DOS 6.22");
+
+			int fileHandle = machine.DOS.OpenFile("TESTFILE.TXT", OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
+
+			if (!expectedPristine)
+				machine.DOS.WriteByte(fileHandle, (byte)'Q', out _);
+
+			int expectedDriveNumber = machine.DOS.GetDefaultDrive();
+
+			try
+			{
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (int)Interrupt0x21.Function.Function44 << 8;
+				rin.AX |= (int)Interrupt0x21.Function44.GetDeviceData;
+				rin.BX = (ushort)fileHandle;
+
+				// Act
+				var rout = sut.Execute(rin);
+
+				// Assert
+				rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+				int dl = rout.DX & 0xFF;
+
+				bool isDevice = (dl & 0x80) != 0;
+				bool isPristine = (dl & 0x40) != 0;
+				int driveNumber = dl & 0x3F;
+
+				isDevice.Should().BeFalse();
+				isPristine.Should().Be(expectedPristine);
+				driveNumber.Should().Be(expectedDriveNumber);
+			}
+			finally
+			{
+				machine.DOS.CloseFile(fileHandle);
+			}
+		}
+	}
+
+
+
 	/*
 	public enum Function : byte
 	{
