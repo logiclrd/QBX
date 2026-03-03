@@ -35,6 +35,7 @@ public static class ExceptionExtensions
 			case AccessViolationException: return DOSError.ReadFault;
 			case EndOfStreamException: return DOSError.HandleEOF;
 			case NotSupportedException: return DOSError.NotSupported;
+			case OutOfMemoryException: return DOSError.NotEnoughMemory;
 		}
 
 		return DOSError.GeneralFailure;

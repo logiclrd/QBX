@@ -1757,6 +1757,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 					{
 						result.FLAGS |= Flags.Carry;
 						result.AX = (ushort)machine.DOS.LastError;
+						result.BX = (ushort)(largestBlockSize / MemoryManager.ParagraphSize);
 					}
 
 					break;

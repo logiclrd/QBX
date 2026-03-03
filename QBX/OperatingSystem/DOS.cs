@@ -42,7 +42,7 @@ public partial class DOS
 
 	public const int ManagedMemoryStart = 0x10000;
 
-	public MemoryManager MemoryManager;
+	public IMemoryManager MemoryManager;
 
 	public ushort CurrentPSPSegment;
 
@@ -196,7 +196,7 @@ public partial class DOS
 			environment ?? EnvironmentBlock.FromAmbientEnvironment(),
 			new StringValue(commandTail));
 
-		CurrentPSPSegment = (ushort)(pspAddress / MemoryManager.ParagraphSize);
+		CurrentPSPSegment = (ushort)(pspAddress / Memory.MemoryManager.ParagraphSize);
 
 		// Default DTA: use the last 128 bytes of the PSP, overwriting the command-line argument data.
 		DiskTransferAddressSegment = CurrentPSPSegment;

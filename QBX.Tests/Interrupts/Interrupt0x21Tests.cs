@@ -7016,6 +7016,339 @@ public class Interrupt0x21Tests
 		}
 	}
 
+	[Test]
+	public void AllocateMemory_should_allocate_memory()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		const int AllocationSizeInParagraphs = 1234;
+		const int AllocationSizeInBytes = AllocationSizeInParagraphs * MemoryManager.ParagraphSize;
+
+		const int AllocationSegment = 5678;
+		const int AllocationLinearAddress = AllocationSegment * MemoryManager.ParagraphSize;
+
+		var mockMemoryManager = Substitute.For<IMemoryManager>();
+
+		mockMemoryManager.AllocateMemory(Arg.Any<int>(), Arg.Any<ushort>()).Returns(
+			callInfo =>
+			{
+				int length = callInfo.Arg<int>();
+				ushort ownerPSPSegment = callInfo.Arg<ushort>();
+
+				return mockMemoryManager.AllocateMemory(length, ownerPSPSegment, out _);
+			});
+
+		mockMemoryManager.AllocateMemory(Arg.Any<int>(), Arg.Any<ushort>(), out Arg.Any<int>()).Returns(
+			callInfo =>
+			{
+				int length = callInfo.ArgAt<int>(0);
+
+				if (length != AllocationSizeInBytes)
+					throw new Exception("Unrecognized allocation size");
+
+				callInfo[2] = 0;
+
+				return AllocationLinearAddress;
+			});
+
+		machine.DOS.MemoryManager = mockMemoryManager;
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.AllocateMemory << 8;
+		rin.BX = AllocationSizeInParagraphs;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+		int allocatedSegment = rout.AX;
+
+		mockMemoryManager.Received().AllocateMemory(
+			Arg.Is(AllocationSizeInBytes),
+			Arg.Is(machine.DOS.CurrentPSPSegment),
+			out Arg.Any<int>());
+
+		allocatedSegment.Should().Be(AllocationSegment);
+	}
+
+	[Test]
+	public void AllocateMemory_should_return_largest_available_chunk_when_request_is_too_large_to_satisfy()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		const int AllocationSizeInParagraphs = 1234;
+		const int AllocationSizeInBytes = AllocationSizeInParagraphs * MemoryManager.ParagraphSize;
+
+		const int AvailableSizeInParagraphs = 876;
+		const int AvailableSizeInBytes = AvailableSizeInParagraphs * MemoryManager.ParagraphSize;
+
+		var mockMemoryManager = Substitute.For<IMemoryManager>();
+
+		mockMemoryManager.AllocateMemory(Arg.Any<int>(), Arg.Any<ushort>()).Returns(
+			callInfo =>
+			{
+				int length = callInfo.Arg<int>();
+				ushort ownerPSPSegment = callInfo.Arg<ushort>();
+
+				return mockMemoryManager.AllocateMemory(length, ownerPSPSegment, out _);
+			});
+
+		mockMemoryManager.AllocateMemory(Arg.Any<int>(), Arg.Any<ushort>(), out Arg.Any<int>()).Returns(
+			callInfo =>
+			{
+				int length = callInfo.ArgAt<int>(0);
+
+				if (length != AllocationSizeInBytes)
+					throw new Exception("Unrecognized allocation size");
+
+				callInfo[2] = AvailableSizeInBytes;
+
+				throw new DOSException(DOSError.NotEnoughMemory);
+			});
+
+		machine.DOS.MemoryManager = mockMemoryManager;
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.AllocateMemory << 8;
+		rin.BX = AllocationSizeInParagraphs;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		rout.FLAGS.Should().HaveFlag(Flags.Carry);
+
+		rout.AX.Should().Be((ushort)DOSError.NotEnoughMemory);
+
+		rout.BX.Should().Be(AvailableSizeInParagraphs);
+
+		mockMemoryManager.Received().AllocateMemory(
+			Arg.Is(AllocationSizeInBytes),
+			Arg.Is(machine.DOS.CurrentPSPSegment),
+			out Arg.Any<int>());
+	}
+
+	[Test]
+	public void FreeAllocatedMemory_should_free_previously_allocated_block()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var mockMemoryManager = Substitute.For<IMemoryManager>();
+
+		machine.DOS.MemoryManager = mockMemoryManager;
+
+		const int PreviouslyAllocatedSegment = 876;
+		const int PreviouslyAllocatedLinearAddress = PreviouslyAllocatedSegment * MemoryManager.ParagraphSize;
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.FreeAllocatedMemory << 8;
+		rin.ES = PreviouslyAllocatedSegment;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+		mockMemoryManager.Received().FreeMemory(PreviouslyAllocatedLinearAddress);
+	}
+
+	[Test]
+	public void FreeAllocatedMemory_should_return_correct_error_if_address_is_not_valid()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		const int InvalidBlockSegment = 876;
+		const int InvalidBlockLinearAddress = InvalidBlockSegment * MemoryManager.ParagraphSize;
+
+		var mockMemoryManager = Substitute.For<IMemoryManager>();
+
+		mockMemoryManager
+			.When(mock => mock.FreeMemory(Arg.Any<int>()))
+			.Do(
+				callInfo =>
+				{
+					int address = callInfo.Arg<int>();
+
+					if (address == InvalidBlockLinearAddress)
+						throw new DOSException(DOSError.InvalidBlock);
+				});
+
+		machine.DOS.MemoryManager = mockMemoryManager;
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.FreeAllocatedMemory << 8;
+		rin.ES = InvalidBlockSegment;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		rout.FLAGS.Should().HaveFlag(Flags.Carry);
+
+		rout.AX.Should().Be((ushort)DOSError.InvalidBlock);
+
+		mockMemoryManager.Received().FreeMemory(InvalidBlockLinearAddress);
+	}
+
+	[Test]
+	public void SetMemoryBlockSize_should_resize_block_to_new_size()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var mockMemoryManager = Substitute.For<IMemoryManager>();
+
+		machine.DOS.MemoryManager = mockMemoryManager;
+
+		const int PreviouslyAllocatedSegment = 876;
+		const int PreviouslyAllocatedLinearAddress = PreviouslyAllocatedSegment * MemoryManager.ParagraphSize;
+
+		const int NewBlockSizeInParagraphs = 2345;
+		const int NewBlockSizeInBytes = NewBlockSizeInParagraphs * MemoryManager.ParagraphSize;
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.SetMemoryBlockSize << 8;
+		rin.ES = PreviouslyAllocatedSegment;
+		rin.BX = NewBlockSizeInParagraphs;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+		mockMemoryManager.Received().ResizeAllocation(
+			Arg.Is(PreviouslyAllocatedLinearAddress),
+			Arg.Is(NewBlockSizeInBytes),
+			out Arg.Any<int>());
+	}
+
+	[Test]
+	public void SetMemoryBlockSize_should_return_largest_available_chunk_when_request_is_too_large_to_satisfy()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		const int PreviouslyAllocatedSegment = 876;
+		const int PreviouslyAllocatedLinearAddress = PreviouslyAllocatedSegment * MemoryManager.ParagraphSize;
+
+		const int NewBlockSizeInParagraphs = 2345;
+		const int NewBlockSizeInBytes = NewBlockSizeInParagraphs * MemoryManager.ParagraphSize;
+
+		const int AvailableSizeInParagraphs = 1235;
+		const int AvailableSizeInBytes = AvailableSizeInParagraphs * MemoryManager.ParagraphSize;
+
+		var mockMemoryManager = Substitute.For<IMemoryManager>();
+
+		mockMemoryManager
+			.When(mock => mock.ResizeAllocation(Arg.Any<int>(), Arg.Any<int>(), out Arg.Any<int>()))
+			.Do(
+				callInfo =>
+				{
+					callInfo[2] = AvailableSizeInBytes;
+
+					throw new DOSException(DOSError.NotEnoughMemory);
+				});
+
+		machine.DOS.MemoryManager = mockMemoryManager;
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.SetMemoryBlockSize << 8;
+		rin.ES = PreviouslyAllocatedSegment;
+		rin.BX = NewBlockSizeInParagraphs;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		rout.FLAGS.Should().HaveFlag(Flags.Carry);
+
+		rout.AX.Should().Be((ushort)DOSError.NotEnoughMemory);
+
+		rout.BX.Should().Be(AvailableSizeInParagraphs);
+
+		mockMemoryManager.Received().ResizeAllocation(
+			Arg.Is(PreviouslyAllocatedLinearAddress),
+			Arg.Is(NewBlockSizeInBytes),
+			out Arg.Any<int>());
+	}
+
+	[Test]
+	public void SetMemoryBlockSize_should_return_correct_error_if_address_is_not_valid()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		const int InvalidBlockSegment = 876;
+		const int InvalidBlockLinearAddress = InvalidBlockSegment * MemoryManager.ParagraphSize;
+
+		const int NewBlockSizeInParagraphs = 2345;
+		const int NewBlockSizeInBytes = NewBlockSizeInParagraphs * MemoryManager.ParagraphSize;
+
+		var mockMemoryManager = Substitute.For<IMemoryManager>();
+
+		mockMemoryManager
+			.When(mock => mock.ResizeAllocation(Arg.Any<int>(), Arg.Any<int>(), out Arg.Any<int>()))
+			.Do(
+				callInfo =>
+				{
+					callInfo[2] = 0;
+
+					int address = callInfo.ArgAt<int>(0);
+
+					if (address == InvalidBlockLinearAddress)
+						throw new DOSException(DOSError.InvalidBlock);
+				});
+
+		machine.DOS.MemoryManager = mockMemoryManager;
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.SetMemoryBlockSize << 8;
+		rin.ES = InvalidBlockSegment;
+		rin.BX = NewBlockSizeInParagraphs;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		rout.FLAGS.Should().HaveFlag(Flags.Carry);
+
+		rout.AX.Should().Be((ushort)DOSError.InvalidBlock);
+
+		mockMemoryManager.Received().ResizeAllocation(
+			Arg.Is(InvalidBlockLinearAddress),
+			Arg.Is(NewBlockSizeInBytes),
+			out Arg.Any<int>());
+	}
+
 	/*
 	public enum Function : byte
 	{
@@ -7024,9 +7357,6 @@ public class Interrupt0x21Tests
 			ExtendedLengthFileNameOperations = 0xFF, // per Ralf Brown's Interrupt List
 			// still needs a test for function 0x56
 		},
-		AllocateMemory = 0x48,
-		FreeAllocatedMemory = 0x49,
-		SetMemoryBlockSize = 0x4A,
 		EndProgram = 0x4C,
 		GetChildProgramReturnValue = 0x4D,
 		FindFirstFile = 0x4E,
