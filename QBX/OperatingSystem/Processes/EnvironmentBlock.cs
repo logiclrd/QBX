@@ -48,11 +48,21 @@ public class EnvironmentBlock : Dictionary<string, string>
 
 	public static void DecodeTo(IMemory systemMemory, int address, DOS context, IDictionary<string, string> environment)
 	{
+		DecodeTo(
+			systemMemory,
+			address,
+			context.ReadStringZ,
+			() => context.LastError,
+			environment);
+	}
+
+	internal static void DecodeTo(IMemory systemMemory, int address, Func<IMemory, int, StringValue> readStringZ, Func<DOSError> getLastError, IDictionary<string, string> environment)
+	{
 		while (true)
 		{
-			var keyValuePair = context.ReadStringZ(systemMemory, address);
+			var keyValuePair = readStringZ(systemMemory, address);
 
-			if (context.LastError != DOSError.None)
+			if (getLastError() != DOSError.None)
 				break;
 
 			if (keyValuePair.Length == 0)

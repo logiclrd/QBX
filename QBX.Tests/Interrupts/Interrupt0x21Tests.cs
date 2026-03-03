@@ -44,7 +44,7 @@ public class Interrupt0x21Tests
 
 		action.Should().Throw<TerminatedException>();
 		machine.DOS.IsTerminated.Should().BeTrue();
-		machine.DOS.LastError.Should().Be(OperatingSystem.DOSError.None);
+		machine.DOS.LastError.Should().Be(DOSError.None);
 	}
 
 	[Test]
@@ -83,7 +83,7 @@ public class Interrupt0x21Tests
 
 		// Assert
 		captureBuffer.ToString().Should().Be("U");
-		machine.DOS.LastError.Should().Be(OperatingSystem.DOSError.None);
+		machine.DOS.LastError.Should().Be(DOSError.None);
 	}
 
 	[Test]
@@ -172,7 +172,7 @@ public class Interrupt0x21Tests
 
 		// Assert
 		captureBuffer.ToString().Should().Be("k");
-		machine.DOS.LastError.Should().Be(OperatingSystem.DOSError.None);
+		machine.DOS.LastError.Should().Be(DOSError.None);
 	}
 
 	[Test]
@@ -210,7 +210,7 @@ public class Interrupt0x21Tests
 
 		captureBuffer.ToString().Should().Be("");
 		characterRead.Should().Be((byte)'b');
-		machine.DOS.LastError.Should().Be(OperatingSystem.DOSError.None);
+		machine.DOS.LastError.Should().Be(DOSError.None);
 	}
 
 	[Test]
@@ -243,7 +243,7 @@ public class Interrupt0x21Tests
 		rout.FLAGS.Should().HaveFlag(Flags.Zero);
 
 		captureBuffer.ToString().Should().Be("");
-		machine.DOS.LastError.Should().Be(OperatingSystem.DOSError.None);
+		machine.DOS.LastError.Should().Be(DOSError.None);
 	}
 
 	[Test]
@@ -281,7 +281,7 @@ public class Interrupt0x21Tests
 
 		captureBuffer.ToString().Should().Be("");
 		characterRead.Should().Be((byte)3);
-		machine.DOS.LastError.Should().Be(OperatingSystem.DOSError.None);
+		machine.DOS.LastError.Should().Be(DOSError.None);
 	}
 
 	[Test]
@@ -365,7 +365,7 @@ public class Interrupt0x21Tests
 
 		// Assert
 		captureBuffer.ToString().Should().Be(message);
-		machine.DOS.LastError.Should().Be(OperatingSystem.DOSError.None);
+		machine.DOS.LastError.Should().Be(DOSError.None);
 	}
 
 	[Test]
@@ -415,7 +415,7 @@ public class Interrupt0x21Tests
 
 		bufferContent.Should().Be(message);
 
-		machine.DOS.LastError.Should().Be(OperatingSystem.DOSError.None);
+		machine.DOS.LastError.Should().Be(DOSError.None);
 	}
 
 	[Test]
@@ -475,7 +475,7 @@ public class Interrupt0x21Tests
 
 		bufferContent.Should().Be(truncatedMessage);
 
-		machine.DOS.LastError.Should().Be(OperatingSystem.DOSError.None);
+		machine.DOS.LastError.Should().Be(DOSError.None);
 	}
 
 	[Test]
@@ -503,7 +503,7 @@ public class Interrupt0x21Tests
 		int al = rout.AX & 0xFF;
 
 		al.Should().Be(0);
-		machine.DOS.LastError.Should().Be(OperatingSystem.DOSError.None);
+		machine.DOS.LastError.Should().Be(DOSError.None);
 	}
 
 	[Test]
@@ -533,7 +533,7 @@ public class Interrupt0x21Tests
 		int al = rout.AX & 0xFF;
 
 		al.Should().Be(0xFF);
-		machine.DOS.LastError.Should().Be(OperatingSystem.DOSError.None);
+		machine.DOS.LastError.Should().Be(DOSError.None);
 	}
 
 	[Test]
@@ -594,7 +594,7 @@ public class Interrupt0x21Tests
 		eventQueuedOnReturn.Should().BeTrue();
 		captureBuffer.ToString().Should().Be(expectedOutput);
 		characterRead.Should().Be(expectedCharacterRead);
-		machine.DOS.LastError.Should().Be(OperatingSystem.DOSError.None);
+		machine.DOS.LastError.Should().Be(DOSError.None);
 	}
 
 	[Test, NonParallelizable]
@@ -611,7 +611,7 @@ public class Interrupt0x21Tests
 
 			int fileHandle = machine.DOS.OpenFile(
 				TestFileName,
-				OperatingSystem.FileStructures.FileMode.Create,
+				QBX.OperatingSystem.FileStructures.FileMode.Create,
 				OpenMode.Access_ReadWrite | OpenMode.Share_DenyNone);
 
 			try
@@ -643,7 +643,7 @@ public class Interrupt0x21Tests
 				// Assert
 				contentBefore.Should().BeEmpty();
 				contentAfter.Should().BeEquivalentTo(testData);
-				machine.DOS.LastError.Should().Be(OperatingSystem.DOSError.None);
+				machine.DOS.LastError.Should().Be(DOSError.None);
 			}
 			finally
 			{
@@ -761,7 +761,7 @@ public class Interrupt0x21Tests
 
 			fcb.SetFileName(TestFileName);
 
-			machine.DOS.OpenFile(fcb, OperatingSystem.FileStructures.FileMode.Open);
+			machine.DOS.OpenFile(fcb, QBX.OperatingSystem.FileStructures.FileMode.Open);
 
 			int fileHandle = fcb.FileHandle;
 
@@ -1058,7 +1058,7 @@ public class Interrupt0x21Tests
 
 			fcb.SetFileName(TestFileName);
 
-			machine.DOS.OpenFile(fcb, OperatingSystem.FileStructures.FileMode.Open);
+			machine.DOS.OpenFile(fcb, QBX.OperatingSystem.FileStructures.FileMode.Open);
 
 			var fcbAddress = machine.DOS.MemoryManager.AllocateMemory(FileControlBlock.Size, machine.DOS.CurrentPSPSegment);
 
@@ -1137,7 +1137,7 @@ public class Interrupt0x21Tests
 
 			fcb.SetFileName(TestFileName);
 
-			machine.DOS.OpenFile(fcb, OperatingSystem.FileStructures.FileMode.Open);
+			machine.DOS.OpenFile(fcb, QBX.OperatingSystem.FileStructures.FileMode.Open);
 
 			var fcbAddress = machine.DOS.MemoryManager.AllocateMemory(FileControlBlock.Size, machine.DOS.CurrentPSPSegment);
 
@@ -1216,7 +1216,7 @@ public class Interrupt0x21Tests
 
 			fcb.SetFileName(TestFileName);
 
-			machine.DOS.OpenFile(fcb, OperatingSystem.FileStructures.FileMode.CreateNew);
+			machine.DOS.OpenFile(fcb, QBX.OperatingSystem.FileStructures.FileMode.CreateNew);
 
 			var fcbAddress = machine.DOS.MemoryManager.AllocateMemory(FileControlBlock.Size, machine.DOS.CurrentPSPSegment);
 
@@ -1787,7 +1787,7 @@ public class Interrupt0x21Tests
 
 			fcb.SetFileName(TestFileName);
 
-			machine.DOS.OpenFile(fcb, OperatingSystem.FileStructures.FileMode.Open);
+			machine.DOS.OpenFile(fcb, QBX.OperatingSystem.FileStructures.FileMode.Open);
 
 			try
 			{
@@ -1996,7 +1996,7 @@ public class Interrupt0x21Tests
 
 			fcb.SetFileName(TestFileName);
 
-			machine.DOS.OpenFile(fcb, OperatingSystem.FileStructures.FileMode.Open);
+			machine.DOS.OpenFile(fcb, QBX.OperatingSystem.FileStructures.FileMode.Open);
 
 			var fcbAddress = machine.DOS.MemoryManager.AllocateMemory(FileControlBlock.Size, machine.DOS.CurrentPSPSegment);
 
@@ -2081,7 +2081,7 @@ public class Interrupt0x21Tests
 
 			fcb.SetFileName(TestFileName);
 
-			machine.DOS.OpenFile(fcb, OperatingSystem.FileStructures.FileMode.CreateNew);
+			machine.DOS.OpenFile(fcb, QBX.OperatingSystem.FileStructures.FileMode.CreateNew);
 
 			var fcbAddress = machine.DOS.MemoryManager.AllocateMemory(FileControlBlock.Size, machine.DOS.CurrentPSPSegment);
 
@@ -2221,7 +2221,7 @@ public class Interrupt0x21Tests
 
 			fcb.SetFileName(TestFileName);
 
-			machine.DOS.OpenFile(fcb, OperatingSystem.FileStructures.FileMode.CreateNew);
+			machine.DOS.OpenFile(fcb, QBX.OperatingSystem.FileStructures.FileMode.CreateNew);
 
 			var fcbAddress = machine.DOS.MemoryManager.AllocateMemory(FileControlBlock.Size, machine.DOS.CurrentPSPSegment);
 
@@ -2285,7 +2285,7 @@ public class Interrupt0x21Tests
 
 			fcb.SetFileName(TestFileName);
 
-			machine.DOS.OpenFile(fcb, OperatingSystem.FileStructures.FileMode.CreateNew);
+			machine.DOS.OpenFile(fcb, QBX.OperatingSystem.FileStructures.FileMode.CreateNew);
 
 			fcb.RandomRecordNumber = 37;
 
@@ -2360,7 +2360,7 @@ public class Interrupt0x21Tests
 
 			fcb.SetFileName(TestFileName);
 
-			machine.DOS.OpenFile(fcb, OperatingSystem.FileStructures.FileMode.Open);
+			machine.DOS.OpenFile(fcb, QBX.OperatingSystem.FileStructures.FileMode.Open);
 
 			const int BlockReadStart = 1;
 			const int BlockReadSize = 3;
@@ -2433,7 +2433,7 @@ public class Interrupt0x21Tests
 
 			fcb.SetFileName(TestFileName);
 
-			machine.DOS.OpenFile(fcb, OperatingSystem.FileStructures.FileMode.CreateNew);
+			machine.DOS.OpenFile(fcb, QBX.OperatingSystem.FileStructures.FileMode.CreateNew);
 
 			const int NumRecords = 5;
 
@@ -4034,7 +4034,7 @@ public class Interrupt0x21Tests
 				rin.AX = (int)Interrupt0x21.Function.CreateFileWithHandle << 8;
 				rin.DS = (ushort)(fileNameAddress / MemoryManager.ParagraphSize);
 				rin.DX = (ushort)(fileNameAddress % MemoryManager.ParagraphSize);
-				rin.CX = (ushort)OperatingSystem.FileStructures.FileAttributes.Normal;
+				rin.CX = (ushort)QBX.OperatingSystem.FileStructures.FileAttributes.Normal;
 
 				// Act
 				bool existsBefore = File.Exists(TestFileName);
@@ -4390,7 +4390,7 @@ public class Interrupt0x21Tests
 
 			int fileHandle = machine.DOS.OpenFile(
 				TestFileName,
-				OperatingSystem.FileStructures.FileMode.CreateNew,
+				QBX.OperatingSystem.FileStructures.FileMode.CreateNew,
 				OpenMode.Access_ReadWrite);
 
 			fileHandle.Should().BeInRange(2, machine.DOS.Files.Count - 1);
@@ -4470,7 +4470,7 @@ public class Interrupt0x21Tests
 
 			int fileHandle = machine.DOS.OpenFile(
 				TestFileName,
-				OperatingSystem.FileStructures.FileMode.CreateNew,
+				QBX.OperatingSystem.FileStructures.FileMode.CreateNew,
 				OpenMode.Access_ReadWrite);
 
 			fileHandle.Should().BeInRange(2, machine.DOS.Files.Count - 1);
@@ -4536,7 +4536,7 @@ public class Interrupt0x21Tests
 
 			int fileHandle = machine.DOS.OpenFile(
 				TestFileName,
-				OperatingSystem.FileStructures.FileMode.Open,
+				QBX.OperatingSystem.FileStructures.FileMode.Open,
 				OpenMode.Access_ReadWrite);
 
 			const int ReadSize = 512;
@@ -4791,7 +4791,7 @@ public class Interrupt0x21Tests
 
 			int fileHandle = machine.DOS.OpenFile(
 				TestFileName,
-				OperatingSystem.FileStructures.FileMode.CreateNew,
+				QBX.OperatingSystem.FileStructures.FileMode.CreateNew,
 				OpenMode.Access_ReadWrite);
 
 			int bufferAddress = machine.DOS.MemoryManager.AllocateMemory(testData.Length, machine.DOS.CurrentPSPSegment);
@@ -5053,7 +5053,7 @@ public class Interrupt0x21Tests
 
 			int fileHandle = machine.DOS.OpenFile(
 				TestFileName,
-				OperatingSystem.FileStructures.FileMode.Open,
+				QBX.OperatingSystem.FileStructures.FileMode.Open,
 				OpenMode.Access_ReadWrite);
 
 			fileHandle.Should().BeInRange(2, machine.DOS.Files.Count - 1);
@@ -5128,7 +5128,7 @@ public class Interrupt0x21Tests
 
 			int fileHandle = machine.DOS.OpenFile(
 				TestFileName,
-				OperatingSystem.FileStructures.FileMode.Open,
+				QBX.OperatingSystem.FileStructures.FileMode.Open,
 				OpenMode.Access_ReadWrite);
 
 			fileHandle.Should().BeInRange(2, machine.DOS.Files.Count - 1);
@@ -5189,7 +5189,7 @@ public class Interrupt0x21Tests
 
 			int fileHandle = machine.DOS.OpenFile(
 				TestFileName,
-				OperatingSystem.FileStructures.FileMode.Open,
+				QBX.OperatingSystem.FileStructures.FileMode.Open,
 				OpenMode.Access_ReadWrite);
 
 			fileHandle.Should().BeInRange(2, machine.DOS.Files.Count - 1);
@@ -5250,7 +5250,7 @@ public class Interrupt0x21Tests
 
 			int fileHandle = machine.DOS.OpenFile(
 				TestFileName,
-				OperatingSystem.FileStructures.FileMode.Open,
+				QBX.OperatingSystem.FileStructures.FileMode.Open,
 				OpenMode.Access_ReadWrite);
 
 			fileHandle.Should().BeInRange(2, machine.DOS.Files.Count - 1);
@@ -5312,7 +5312,7 @@ public class Interrupt0x21Tests
 
 			int fileHandle = machine.DOS.OpenFile(
 				TestFileName,
-				OperatingSystem.FileStructures.FileMode.Open,
+				QBX.OperatingSystem.FileStructures.FileMode.Open,
 				OpenMode.Access_ReadWrite);
 
 			fileHandle.Should().BeInRange(2, machine.DOS.Files.Count - 1);
@@ -5393,9 +5393,9 @@ public class Interrupt0x21Tests
 			// Assert
 			rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
 
-			var attributes = (OperatingSystem.FileStructures.FileAttributes)rout.CX;
+			var attributes = (QBX.OperatingSystem.FileStructures.FileAttributes)rout.CX;
 
-			attributes.Should().HaveFlag(OperatingSystem.FileStructures.FileAttributes.ReadOnly);
+			attributes.Should().HaveFlag(QBX.OperatingSystem.FileStructures.FileAttributes.ReadOnly);
 		}
 	}
 
@@ -5445,9 +5445,9 @@ public class Interrupt0x21Tests
 			// Assert
 			rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
 
-			var attributes = (OperatingSystem.FileStructures.FileAttributes)rout.CX;
+			var attributes = (QBX.OperatingSystem.FileStructures.FileAttributes)rout.CX;
 
-			attributes.Should().HaveFlag(OperatingSystem.FileStructures.FileAttributes.ReadOnly);
+			attributes.Should().HaveFlag(QBX.OperatingSystem.FileStructures.FileAttributes.ReadOnly);
 		}
 	}
 
@@ -5499,9 +5499,9 @@ public class Interrupt0x21Tests
 			// Assert
 			rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
 
-			var attributes = (OperatingSystem.FileStructures.FileAttributes)rout.CX;
+			var attributes = (QBX.OperatingSystem.FileStructures.FileAttributes)rout.CX;
 
-			attributes.Should().HaveFlag(OperatingSystem.FileStructures.FileAttributes.ReadOnly);
+			attributes.Should().HaveFlag(QBX.OperatingSystem.FileStructures.FileAttributes.ReadOnly);
 		}
 	}
 
@@ -5538,7 +5538,7 @@ public class Interrupt0x21Tests
 			rin.AX = (int)Interrupt0x21.Function.Function43 << 8;
 			rin.AX |= (int)Interrupt0x21.Function43.SetFileAttributes;
 			rin.DS = (ushort)(fileNameAddress / MemoryManager.ParagraphSize);
-			rin.CX = (ushort)OperatingSystem.FileStructures.FileAttributes.ReadOnly;
+			rin.CX = (ushort)QBX.OperatingSystem.FileStructures.FileAttributes.ReadOnly;
 			rin.DX = (ushort)(fileNameAddress % MemoryManager.ParagraphSize);
 
 			// Act
@@ -5586,7 +5586,7 @@ public class Interrupt0x21Tests
 
 			rin.AX = (int)Interrupt0x21.Function.Function43 << 8;
 			rin.AX |= (int)Interrupt0x21.Function43.SetFileAttributes;
-			rin.CX = (ushort)OperatingSystem.FileStructures.FileAttributes.ReadOnly;
+			rin.CX = (ushort)QBX.OperatingSystem.FileStructures.FileAttributes.ReadOnly;
 			rin.DS = (ushort)(fileNameAddress / MemoryManager.ParagraphSize);
 			rin.DX = (ushort)(fileNameAddress % MemoryManager.ParagraphSize);
 
@@ -5637,7 +5637,7 @@ public class Interrupt0x21Tests
 
 			rin.AX = (int)Interrupt0x21.Function.Function43 << 8;
 			rin.AX |= (int)Interrupt0x21.Function43.SetFileAttributes;
-			rin.CX = (ushort)OperatingSystem.FileStructures.FileAttributes.ReadOnly;
+			rin.CX = (ushort)QBX.OperatingSystem.FileStructures.FileAttributes.ReadOnly;
 			rin.DS = (ushort)(fileNameAddress / MemoryManager.ParagraphSize);
 			rin.DX = (ushort)(fileNameAddress % MemoryManager.ParagraphSize);
 
@@ -5729,7 +5729,7 @@ public class Interrupt0x21Tests
 
 			File.WriteAllText(TestFileName, "DOS 6.22");
 
-			int fileHandle = machine.DOS.OpenFile("TESTFILE.TXT", OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
+			int fileHandle = machine.DOS.OpenFile("TESTFILE.TXT", QBX.OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
 
 			if (!expectedPristine)
 				machine.DOS.WriteByte(fileHandle, (byte)'Q', out _);
@@ -5826,7 +5826,7 @@ public class Interrupt0x21Tests
 
 		machine.DOS.SetUpRunningProgramSegmentPrefix("");
 
-		int fileHandle = machine.DOS.OpenFile(deviceFileName, OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
+		int fileHandle = machine.DOS.OpenFile(deviceFileName, QBX.OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
 
 		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
 
@@ -5875,7 +5875,7 @@ public class Interrupt0x21Tests
 
 		machine.DOS.SetUpRunningProgramSegmentPrefix("");
 
-		int fileHandle = machine.DOS.OpenFile(deviceFileName, OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_WriteOnly);
+		int fileHandle = machine.DOS.OpenFile(deviceFileName, QBX.OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_WriteOnly);
 
 		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
 
@@ -5924,7 +5924,7 @@ public class Interrupt0x21Tests
 
 		machine.DOS.SetUpRunningProgramSegmentPrefix("");
 
-		int fileHandle = machine.DOS.OpenFile(deviceFileName, OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_WriteOnly);
+		int fileHandle = machine.DOS.OpenFile(deviceFileName, QBX.OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_WriteOnly);
 
 		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
 
@@ -6100,7 +6100,7 @@ public class Interrupt0x21Tests
 
 			File.WriteAllText(TestFileName, "DOS 6.22");
 
-			int fileHandle = machine.DOS.OpenFile("TESTFILE.TXT", OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
+			int fileHandle = machine.DOS.OpenFile("TESTFILE.TXT", QBX.OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
 
 			try
 			{
@@ -6143,7 +6143,7 @@ public class Interrupt0x21Tests
 
 			File.WriteAllText(TestFileName, "DOS 6.22");
 
-			int fileHandle = machine.DOS.OpenFile("TESTFILE.TXT", OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
+			int fileHandle = machine.DOS.OpenFile("TESTFILE.TXT", QBX.OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
 
 			byte expectedInputStatusValue = 0xFF;
 
@@ -6234,7 +6234,7 @@ public class Interrupt0x21Tests
 
 			File.WriteAllText(TestFileName, "DOS 6.22");
 
-			int fileHandle = machine.DOS.OpenFile(deviceOrFileName, OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
+			int fileHandle = machine.DOS.OpenFile(deviceOrFileName, QBX.OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
 
 			try
 			{
@@ -6415,7 +6415,7 @@ public class Interrupt0x21Tests
 
 			File.WriteAllText(TestFileName, "DOS 6.22");
 
-			int fileHandle = machine.DOS.OpenFile("TESTFILE.TXT", OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
+			int fileHandle = machine.DOS.OpenFile("TESTFILE.TXT", QBX.OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
 
 			ushort expectedRemoteDriveBitValue =
 				testWithRemoteDrive
@@ -6467,7 +6467,7 @@ public class Interrupt0x21Tests
 
 			File.WriteAllText(TestFileName, "DOS 6.22");
 
-			int originalFileHandle = machine.DOS.OpenFile(TestFileName, OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
+			int originalFileHandle = machine.DOS.OpenFile(TestFileName, QBX.OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
 
 			var originalFileDescriptor = machine.DOS.Files[originalFileHandle];
 
@@ -6572,7 +6572,7 @@ public class Interrupt0x21Tests
 
 			byte[] testDataBytes = s_cp437.GetBytes(TestData);
 
-			int originalFileHandle = machine.DOS.OpenFile(TestFileName, OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
+			int originalFileHandle = machine.DOS.OpenFile(TestFileName, QBX.OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
 
 			var originalFileDescriptor = machine.DOS.Files[originalFileHandle];
 
@@ -6643,7 +6643,7 @@ public class Interrupt0x21Tests
 
 			byte[] testDataBytes = s_cp437.GetBytes(TestData);
 
-			int originalFileHandle = machine.DOS.OpenFile(TestFileName, OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
+			int originalFileHandle = machine.DOS.OpenFile(TestFileName, QBX.OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
 
 			var originalFileDescriptor = machine.DOS.Files[originalFileHandle];
 
@@ -6714,7 +6714,7 @@ public class Interrupt0x21Tests
 
 			byte[] testDataBytes = s_cp437.GetBytes(TestData);
 
-			int originalFileHandle = machine.DOS.OpenFile(TestFileName, OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
+			int originalFileHandle = machine.DOS.OpenFile(TestFileName, QBX.OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
 
 			var originalFileDescriptor = machine.DOS.Files[originalFileHandle];
 
@@ -6783,7 +6783,7 @@ public class Interrupt0x21Tests
 
 			File.WriteAllText(TestFileName, "DOS 6.22");
 
-			int originalFileHandle = machine.DOS.OpenFile(TestFileName, OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
+			int originalFileHandle = machine.DOS.OpenFile(TestFileName, QBX.OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
 
 			var originalFileDescriptor = machine.DOS.Files[originalFileHandle];
 
@@ -6846,7 +6846,7 @@ public class Interrupt0x21Tests
 
 			File.WriteAllText(TestFileName, "DOS 6.22");
 
-			int originalFileHandle = machine.DOS.OpenFile(TestFileName, OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
+			int originalFileHandle = machine.DOS.OpenFile(TestFileName, QBX.OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
 
 			var originalFileDescriptor = machine.DOS.Files[originalFileHandle];
 
@@ -6920,7 +6920,7 @@ public class Interrupt0x21Tests
 
 			var originalFileDescriptor = machine.DOS.Files[originalFileHandle];
 
-			int duplicatedFileHandle = machine.DOS.OpenFile(TestFileName, OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
+			int duplicatedFileHandle = machine.DOS.OpenFile(TestFileName, QBX.OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
 
 			var duplicatedFileDescriptorBefore = machine.DOS.Files[duplicatedFileHandle];
 
@@ -7078,7 +7078,7 @@ public class Interrupt0x21Tests
 	}
 
 	[Test]
-	public void AllocateMemory_should_return_largest_available_chunk_when_request_is_too_large_to_satisfy()
+	public void AllocateMemory_should_return_largest_available_block_size_when_request_is_too_large_to_satisfy()
 	{
 		// Arrange
 		var machine = new Machine();
@@ -7518,7 +7518,7 @@ public class Interrupt0x21Tests
 		captureBuffer.ToString().Should().Be(expectedOutput);
 		breakEventOccurred.Should().Be(shouldBreak);
 		characterRead.Should().Be(expectedCharacterRead);
-		machine.DOS.LastError.Should().Be(OperatingSystem.DOSError.None);
+		machine.DOS.LastError.Should().Be(DOSError.None);
 	}
 
 	void ParseFilenameTest(string input, ParseFlags parseControl, bool expectFailure, bool expectContainsWildcard, char expectDriveIdentifier, string expectFileNameBytes, int expectConsumedInputBytes = -1, char initialDriveIdentifier = '\0', string? initialFileName = null)

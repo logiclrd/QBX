@@ -274,7 +274,7 @@ public partial class DOS
 			else
 			{
 				_activeSearch = null;
-				LastError = DOSError.FileNotFound;
+				_lastError = DOSError.FileNotFound;
 			}
 
 			return result;
@@ -304,7 +304,7 @@ public partial class DOS
 
 		if (!directoryInfo.Exists)
 		{
-			LastError = DOSError.PathNotFound;
+			_lastError = DOSError.PathNotFound;
 			search = DummySearch();
 			return false;
 		}
@@ -326,7 +326,7 @@ public partial class DOS
 				}
 			}
 
-			LastError = DOSError.FileNotFound;
+			_lastError = DOSError.FileNotFound;
 			search = DummySearch();
 			return false;
 		}
@@ -379,7 +379,7 @@ public partial class DOS
 		{
 			if (_activeSearch == null)
 			{
-				LastError = DOSError.NoMoreFiles;
+				_lastError = DOSError.NoMoreFiles;
 				return false;
 			}
 
@@ -403,7 +403,7 @@ public partial class DOS
 		{
 			if (!search.MoveNext())
 			{
-				LastError = DOSError.NoMoreFiles;
+				_lastError = DOSError.NoMoreFiles;
 				return false;
 			}
 		} while (!ShortFileNames.TryMap(search.Current.FullName, out shortPath));

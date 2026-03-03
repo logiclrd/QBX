@@ -35,7 +35,9 @@ public partial class DOS
 
 	public event Action? Break;
 
-	public DOSError LastError { get; private set; } = DOSError.None;
+	DOSError _lastError = DOSError.None;
+
+	public DOSError LastError => _lastError;
 	public DOSErrorClass LastErrorClass = DOSErrorClass.None;
 	public DOSErrorAction LastErrorAction = DOSErrorAction.None;
 	public DOSErrorLocation LastErrorLocation = DOSErrorLocation.None;
@@ -176,7 +178,7 @@ public partial class DOS
 	void SetLastError(Exception e)
 	{
 		// TODO: translate extended error info
-		LastError = e.ToDOSError();
+		_lastError = e.ToDOSError();
 	}
 
 	public void SetLastError(DOSError error)
@@ -184,7 +186,7 @@ public partial class DOS
 
 	public void SetExtendedError(DOSError error, DOSErrorClass @class, DOSErrorAction action, DOSErrorLocation location)
 	{
-		LastError = error;
+		_lastError = error;
 		LastErrorClass = @class;
 		LastErrorAction = action;
 		LastErrorLocation = location;
@@ -285,7 +287,7 @@ public partial class DOS
 		{
 			SetLastError(e);
 
-			LastError = e.ToDOSError();
+			_lastError = e.ToDOSError();
 
 			if (!_suppressExceptions)
 				throw;
@@ -317,7 +319,9 @@ public partial class DOS
 
 	internal const int MaximumNullTerminatedStringLength = 2048;
 
-	internal StringValue ReadStringZ(IMemory memory, int address)
+	internal StringValue ReadStringZ(IMemory memory, int address) => ReadStringZ(memory, address, ref _lastError);
+
+	static internal StringValue ReadStringZ(IMemory memory, int address, ref DOSError lastError)
 	{
 		var ret = new StringValue();
 
@@ -325,7 +329,7 @@ public partial class DOS
 		{
 			if (ret.Length == MaximumNullTerminatedStringLength)
 			{
-				LastError = DOSError.InvalidData;
+				lastError = DOSError.InvalidData;
 				break;
 			}
 
@@ -418,7 +422,7 @@ public partial class DOS
 		if ((fileHandle < 0) || (fileHandle >= Files.Count)
 			|| (Files[fileHandle] is not FileDescriptor fileDescriptor))
 		{
-			LastError = DOSError.InvalidHandle;
+			_lastError = DOSError.InvalidHandle;
 			throw new ArgumentException("Invalid file descriptor");
 		}
 
@@ -447,7 +451,7 @@ public partial class DOS
 		if ((fileHandle < 0) || (fileHandle >= Files.Count)
 			|| (Files[fileHandle] is not FileDescriptor fileDescriptor))
 		{
-			LastError = DOSError.InvalidHandle;
+			_lastError = DOSError.InvalidHandle;
 			throw new ArgumentException("Invalid file descriptor");
 		}
 
@@ -486,7 +490,7 @@ public partial class DOS
 		if ((fileHandle < 0) || (fileHandle >= Files.Count)
 			|| (Files[fileHandle] is not FileDescriptor fileDescriptor))
 		{
-			LastError = DOSError.InvalidHandle;
+			_lastError = DOSError.InvalidHandle;
 			throw new ArgumentException("Invalid file descriptor");
 		}
 
@@ -519,7 +523,7 @@ public partial class DOS
 		if ((fileHandle < 0) || (fileHandle >= Files.Count)
 			|| (Files[fileHandle] is not FileDescriptor fileDescriptor))
 		{
-			LastError = DOSError.InvalidHandle;
+			_lastError = DOSError.InvalidHandle;
 			throw new ArgumentException("Invalid file descriptor");
 		}
 
@@ -553,7 +557,7 @@ public partial class DOS
 		if ((fileHandle < 0) || (fileHandle >= Files.Count)
 			|| (Files[fileHandle] is not FileDescriptor fileDescriptor))
 		{
-			LastError = DOSError.InvalidHandle;
+			_lastError = DOSError.InvalidHandle;
 			throw new ArgumentException("Invalid file descriptor");
 		}
 
@@ -584,7 +588,7 @@ public partial class DOS
 				}
 				catch (Exception e)
 				{
-					LastError = e.ToDOSError();
+					_lastError = e.ToDOSError();
 				}
 			}
 
@@ -615,7 +619,7 @@ public partial class DOS
 		if ((fileHandle < 0) || (fileHandle >= Files.Count)
 			|| (Files[fileHandle] is not FileDescriptor fileDescriptor))
 		{
-			LastError = DOSError.InvalidHandle;
+			_lastError = DOSError.InvalidHandle;
 			throw new ArgumentException("Invalid file descriptor");
 		}
 
@@ -987,7 +991,7 @@ public partial class DOS
 
 			if (!File.Exists(fileName))
 			{
-				LastError = DOSError.FileNotFound;
+				_lastError = DOSError.FileNotFound;
 				return false;
 			}
 
@@ -995,7 +999,7 @@ public partial class DOS
 
 			if (info.Length > uint.MaxValue)
 			{
-				LastError = DOSError.InvalidFunction;
+				_lastError = DOSError.InvalidFunction;
 				return false;
 			}
 
@@ -1238,7 +1242,7 @@ public partial class DOS
 
 				int handle = OpenFile(Path.Combine(directoryPath, probeFileName), FileMode.CreateNew, OpenMode.Access_ReadWrite | OpenMode.Share_Compatibility);
 
-				if (LastError == DOSError.FileExists)
+				if (_lastError == DOSError.FileExists)
 				{
 					Thread.Sleep(10); // GetTemporaryFileName is based on time to a resolution of 10ms
 					continue;
@@ -1276,7 +1280,7 @@ public partial class DOS
 		if ((fileHandle < 0) || (fileHandle >= Files.Count)
 		 || (Files[fileHandle] is not FileDescriptor fileDescriptor))
 		{
-			LastError = DOSError.InvalidHandle;
+			_lastError = DOSError.InvalidHandle;
 			return;
 		}
 
@@ -1291,7 +1295,7 @@ public partial class DOS
 		if ((fileHandle < 0) || (fileHandle >= Files.Count)
 		 || (Files[fileHandle] is not FileDescriptor fileDescriptor))
 		{
-			LastError = DOSError.InvalidHandle;
+			_lastError = DOSError.InvalidHandle;
 			return;
 		}
 
@@ -1306,7 +1310,7 @@ public partial class DOS
 		if ((fileHandle < 0) || (fileHandle >= Files.Count)
 		 || (Files[fileHandle] is not FileDescriptor fileDescriptor))
 		{
-			LastError = DOSError.InvalidHandle;
+			_lastError = DOSError.InvalidHandle;
 			return;
 		}
 
@@ -1352,7 +1356,7 @@ public partial class DOS
 
 				if (Files[fcb.FileHandle] is not FileDescriptor fileDescriptor)
 				{
-					LastError = DOSError.InvalidHandle;
+					_lastError = DOSError.InvalidHandle;
 					return -1;
 				}
 
@@ -1404,7 +1408,7 @@ public partial class DOS
 
 			if (Files[fcb.FileHandle] is not FileDescriptor fileDescriptor)
 			{
-				LastError = DOSError.InvalidHandle;
+				_lastError = DOSError.InvalidHandle;
 				return -1;
 			}
 
@@ -1440,7 +1444,7 @@ public partial class DOS
 		if ((fileHandle < 0) || (fileHandle >= Files.Count)
 		 || (Files[fileHandle] is not FileDescriptor fileDescriptor))
 		{
-			LastError = DOSError.InvalidHandle;
+			_lastError = DOSError.InvalidHandle;
 			return uint.MaxValue;
 		}
 
@@ -1455,7 +1459,7 @@ public partial class DOS
 		if ((fileHandle < 0) || (fileHandle >= Files.Count)
 		 || (Files[fileHandle] is not FileDescriptor fileDescriptor))
 		{
-			LastError = DOSError.InvalidHandle;
+			_lastError = DOSError.InvalidHandle;
 			return uint.MaxValue;
 		}
 
@@ -1470,7 +1474,7 @@ public partial class DOS
 		if ((fileHandle < 0) || (fileHandle >= Files.Count)
 		 || (Files[fileHandle] is not FileDescriptor fileDescriptor))
 		{
-			LastError = DOSError.InvalidHandle;
+			_lastError = DOSError.InvalidHandle;
 			return -1;
 		}
 
@@ -1485,13 +1489,13 @@ public partial class DOS
 		if ((fileHandle < 0) || (fileHandle >= Files.Count)
 		 || (Files[fileHandle] is not FileDescriptor fileDescriptor))
 		{
-			LastError = DOSError.InvalidHandle;
+			_lastError = DOSError.InvalidHandle;
 			return -1;
 		}
 
 		if (toFileHandle < 0)
 		{
-			LastError = DOSError.InvalidHandle;
+			_lastError = DOSError.InvalidHandle;
 			return -1;
 		}
 
@@ -1533,7 +1537,7 @@ public partial class DOS
 		if ((fileHandle < 0) || (fileHandle >= Files.Count)
 		 || (Files[fileHandle] is not FileDescriptor fileDescriptor))
 		{
-			LastError = DOSError.InvalidHandle;
+			_lastError = DOSError.InvalidHandle;
 			return false;
 		}
 
@@ -1589,7 +1593,7 @@ public partial class DOS
 			string newPath = ShortFileNames.Unmap(newShortPath);
 
 			if (File.Exists(newPath))
-				LastError = DOSError.FileExists;
+				_lastError = DOSError.FileExists;
 			else
 			{
 				File.Move(oldPath, newPath);
@@ -1597,7 +1601,7 @@ public partial class DOS
 				ShortFileNames.Forget(oldPath);
 
 				if (!ShortFileNames.TryMap(newPath, Path.GetFileName(newShortPath)))
-					LastError = DOSError.GeneralFailure;
+					_lastError = DOSError.GeneralFailure;
 			}
 		});
 	}
@@ -1670,7 +1674,7 @@ public partial class DOS
 				while (FindNext(search, default, searchPatternBytes, default, PerformRename))
 					;
 
-				if (LastError == DOSError.NoMoreFiles)
+				if (_lastError == DOSError.NoMoreFiles)
 					ClearLastError();
 			}
 		});

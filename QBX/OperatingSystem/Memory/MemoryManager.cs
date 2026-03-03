@@ -95,10 +95,12 @@ public class MemoryManager : IMemoryManager
 			{
 				largestBlockSize = Math.Max(largestBlockSize, mcb.SizeInBytes);
 
-				if ((mcb.SizeInBytes >= length) && (mcb.SizeInBytes < bestFitSoFar))
+				if ((mcb.SizeInBytes >= length)
+				 && ((mcb.SizeInBytes < bestFitSoFar) || (strategy != MemoryAllocationStrategy.BestFit)))
 				{
-					if (((strategy == MemoryAllocationStrategy.LastFit) && (mcb.Type == MemoryControlBlockType.HasNextNode))
-					 || ((strategy == MemoryAllocationStrategy.BestFit) && (mcb.SizeInParagraphs > lengthInParagraphs)))
+					if ((mcb.Type == MemoryControlBlockType.HasNextNode)
+					 && ((strategy == MemoryAllocationStrategy.LastFit)
+					  || ((strategy == MemoryAllocationStrategy.BestFit) && (mcb.SizeInParagraphs > lengthInParagraphs))))
 					{
 						int nextBlockAddress = scanOffset + ParagraphSize + mcb.SizeInBytes;
 
@@ -109,11 +111,13 @@ public class MemoryManager : IMemoryManager
 					}
 
 					int remainingBytes = mcb.SizeInBytes - length;
+					int remainingParagraphs = remainingBytes / ParagraphSize;
 
 					// Split the control block if there are enough bytes for a subsequent allocation.
 					if (remainingBytes >= 32)
 					{
-						if (strategy == MemoryAllocationStrategy.FirstFit)
+						if ((strategy == MemoryAllocationStrategy.FirstFit)
+						 || (strategy == MemoryAllocationStrategy.BestFit))
 						{
 							var nodeType = mcb.Type;
 
@@ -124,7 +128,7 @@ public class MemoryManager : IMemoryManager
 
 							mcbNext.Type = nodeType;
 							mcbNext.OwnerPSPSegment = MemoryControlBlock.FreeBlockOwner;
-							mcbNext.SizeInParagraphs = (ushort)((remainingBytes - 1) / ParagraphSize);
+							mcbNext.SizeInParagraphs = (ushort)(remainingParagraphs - 1);
 							mcbNext.ProgramName.Clear();
 						}
 						else
@@ -132,8 +136,7 @@ public class MemoryManager : IMemoryManager
 							// Last fit; keep unallocated space at the start of this chunk.
 							var nodeType = mcb.Type;
 
-							mcb.OwnerPSPSegment = MemoryControlBlock.FreeBlockOwner;
-							mcb.SizeInParagraphs = (ushort)((remainingBytes - 1) / ParagraphSize);
+							mcb.SizeInParagraphs = (ushort)(remainingParagraphs - 1);
 							mcb.ProgramName.Clear();
 							mcb.Type = MemoryControlBlockType.HasNextNode;
 
@@ -161,7 +164,7 @@ public class MemoryManager : IMemoryManager
 		}
 	}
 
-	private void ConsolidateFreeBlocks()
+	internal void ConsolidateFreeBlocks()
 	{
 		int scanOffset = _offset;
 
@@ -184,6 +187,7 @@ public class MemoryManager : IMemoryManager
 				if (newSize <= ushort.MaxValue)
 				{
 					mcb.SizeInParagraphs = (ushort)newSize;
+					mcb.Type = mcbNext.Type;
 					continue;
 				}
 			}
@@ -194,7 +198,14 @@ public class MemoryManager : IMemoryManager
 
 	public void ResizeAllocation(int address, int newSize, out int largestBlockSize)
 	{
+		if (newSize < 0)
+			throw new ArgumentOutOfRangeException(nameof(newSize));
+
+		ConsolidateFreeBlocks();
+
 		int scanOffset = _offset;
+
+		int newSizeInParagraphs = (newSize + ParagraphSize - 1) / ParagraphSize;
 
 		while (true)
 		{
@@ -215,52 +226,60 @@ public class MemoryManager : IMemoryManager
 				{
 					largestBlockSize = mcb.SizeInBytes;
 
-					if (newSize > mcb.SizeInBytes)
+					if (newSizeInParagraphs > mcb.SizeInParagraphs)
 						throw new DOSException(DOSError.NotEnoughMemory);
 
-					int freedBytes = mcb.SizeInBytes - newSize;
+					int freedParagraphs = mcb.SizeInParagraphs - newSizeInParagraphs;
 
-					if (freedBytes >= 32)
+					if (freedParagraphs >= 2)
 					{
-						mcb.SizeInParagraphs = (ushort)((newSize + ParagraphSize - 1) / ParagraphSize);
-						mcb.Type = MemoryControlBlockType.HasNextNode;
+						mcb.SizeInParagraphs = (ushort)newSizeInParagraphs;
 
 						ref MemoryControlBlock mcbNext = ref mcb.Next();
 
-						mcbNext.Type = MemoryControlBlockType.LastNode;
+						mcbNext.Type = mcb.Type;
 						mcbNext.OwnerPSPSegment = MemoryControlBlock.FreeBlockOwner;
-						mcbNext.SizeInParagraphs = (ushort)((freedBytes - 1) / ParagraphSize);
+						mcbNext.SizeInParagraphs = (ushort)(freedParagraphs - 1);
 						mcbNext.ProgramName.Clear();
+
+						mcb.Type = MemoryControlBlockType.HasNextNode;
 					}
 				}
 				else
 				{
 					ref MemoryControlBlock mcbNext = ref mcb.Next();
 
-					if (mcbNext.OwnerPSPSegment == MemoryControlBlock.FreeBlockOwner)
-						largestBlockSize = mcb.SizeInParagraphs + 1 + mcbNext.SizeInParagraphs;
-					else
-						largestBlockSize = mcb.SizeInParagraphs;
+					int largestBlockSizeInParagraphs;
 
-					if (newSize > largestBlockSize)
+					if (mcbNext.OwnerPSPSegment == MemoryControlBlock.FreeBlockOwner)
+						largestBlockSizeInParagraphs = mcb.SizeInParagraphs + 1 + mcbNext.SizeInParagraphs;
+					else
+						largestBlockSizeInParagraphs = mcb.SizeInParagraphs;
+
+					largestBlockSize = largestBlockSizeInParagraphs * ParagraphSize;
+
+					if (newSizeInParagraphs > largestBlockSizeInParagraphs)
 						throw new DOSException(DOSError.NotEnoughMemory);
 
 					// First, subsume the next block
-					mcb.SizeInParagraphs = (ushort)(largestBlockSize / ParagraphSize);
+					mcb.Type = mcbNext.Type;
+					mcb.SizeInParagraphs = (ushort)largestBlockSizeInParagraphs;
 
 					// Then, subdivide back if possible.
-					int remainingBytes = mcb.SizeInBytes - newSize;
+					int remainingParagraphs = mcb.SizeInParagraphs - newSizeInParagraphs;
 
-					if (remainingBytes >= 32)
+					if (remainingParagraphs >= 2)
 					{
-						mcb.SizeInParagraphs = (ushort)((newSize + ParagraphSize - 1) / ParagraphSize);
+						mcb.SizeInParagraphs = (ushort)newSizeInParagraphs;
 
 						ref MemoryControlBlock mcbNewNext = ref mcb.Next();
 
-						mcbNewNext.Type = MemoryControlBlockType.HasNextNode;
+						mcbNewNext.Type = mcb.Type;
 						mcbNewNext.OwnerPSPSegment = MemoryControlBlock.FreeBlockOwner;
-						mcbNewNext.SizeInParagraphs = (ushort)((remainingBytes - 1) / ParagraphSize);
+						mcbNewNext.SizeInParagraphs = (ushort)(remainingParagraphs - 1);
 						mcbNewNext.ProgramName.Clear();
+
+						mcb.Type = MemoryControlBlockType.HasNextNode;
 					}
 				}
 
@@ -374,7 +393,7 @@ public class MemoryManager : IMemoryManager
 			}
 			catch { }
 
-			int secondArgumentStart = firstArgumentStart + 1;
+			int secondArgumentStart = firstArgumentEnd + 1;
 
 			while ((secondArgumentStart < commandLine.Length) && (commandLine[secondArgumentStart] == (byte)' '))
 				secondArgumentStart++;
