@@ -6451,6 +6451,322 @@ public class Interrupt0x21Tests
 		}
 	}
 
+	[Test, NonParallelizable]
+	public void DuplicateFileHandle_should_duplicate_file_handle()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+
+			File.WriteAllText(TestFileName, "DOS 6.22");
+
+			int originalFileHandle = machine.DOS.OpenFile(TestFileName, OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
+
+			var originalFileDescriptor = machine.DOS.Files[originalFileHandle];
+
+			try
+			{
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (int)Interrupt0x21.Function.DuplicateFileHandle << 8;
+				rin.BX = (ushort)originalFileHandle;
+
+				// Act
+				var rout = sut.Execute(rin);
+
+				// Assert
+				rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+				int duplicatedFileHandle = rout.AX;
+
+				try
+				{
+					duplicatedFileHandle.Should().NotBe(originalFileHandle);
+					duplicatedFileHandle.Should().BeInRange(2, machine.DOS.Files.Count - 1);
+
+					var duplicatedFileDescriptor = machine.DOS.Files[duplicatedFileHandle];
+
+					duplicatedFileDescriptor.Should().BeSameAs(originalFileDescriptor);
+
+					duplicatedFileDescriptor.ReferenceCount.Should().BeGreaterThan(1);
+				}
+				finally
+				{
+					machine.DOS.CloseFile(duplicatedFileHandle);
+				}
+			}
+			finally
+			{
+				machine.DOS.CloseFile(originalFileHandle);
+			}
+		}
+	}
+
+	[Test]
+	public void DuplicateFileHandle_should_duplicate_standard_handle([Values(DOS.StandardInput, DOS.StandardOutput)] int originalFileHandle)
+	{
+		// Arrange
+		var machine = new Machine();
+
+		machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+		var originalFileDescriptor = machine.DOS.Files[originalFileHandle];
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.DuplicateFileHandle << 8;
+		rin.BX = (ushort)originalFileHandle;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+		int duplicatedFileHandle = rout.AX;
+
+		try
+		{
+			duplicatedFileHandle.Should().NotBe(originalFileHandle);
+			duplicatedFileHandle.Should().BeInRange(2, machine.DOS.Files.Count - 1);
+
+			var duplicatedFileDescriptor = machine.DOS.Files[duplicatedFileHandle];
+
+			duplicatedFileDescriptor.Should().BeSameAs(originalFileDescriptor);
+
+			duplicatedFileDescriptor.ReferenceCount.Should().BeGreaterThan(1);
+		}
+		finally
+		{
+			machine.DOS.CloseFile(duplicatedFileHandle);
+		}
+	}
+
+	[Test, NonParallelizable]
+	public void DuplicateFileHandle_should_create_a_handle_that_still_works_when_the_original_is_closed()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+			const string TestData = "DOS 6.22";
+
+			File.WriteAllText(TestFileName, TestData);
+
+			byte[] testDataBytes = s_cp437.GetBytes(TestData);
+
+			int originalFileHandle = machine.DOS.OpenFile(TestFileName, OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
+
+			var originalFileDescriptor = machine.DOS.Files[originalFileHandle];
+
+			const int ReadBufferSize = 100;
+
+			int readBufferAddress = machine.DOS.MemoryManager.AllocateMemory(ReadBufferSize, machine.DOS.CurrentPSPSegment);
+
+			var readBufferSpan = machine.SystemMemory.AsSpan().Slice(readBufferAddress, ReadBufferSize);
+
+			try
+			{
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (int)Interrupt0x21.Function.DuplicateFileHandle << 8;
+				rin.BX = (ushort)originalFileHandle;
+
+				// Act & Assert
+				var rout = sut.Execute(rin);
+
+				rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+				int duplicatedFileHandle = rout.AX;
+
+				try
+				{
+					duplicatedFileHandle.Should().NotBe(originalFileHandle);
+					duplicatedFileHandle.Should().BeInRange(2, machine.DOS.Files.Count - 1);
+
+					machine.DOS.CloseFile(originalFileHandle);
+
+					// Exercise the new handle, make sure it still works.
+					int readSize = machine.DOS.Read(duplicatedFileHandle, machine.SystemMemory, readBufferAddress, ReadBufferSize);
+
+					readSize.Should().Be(testDataBytes.Length);
+
+					readBufferSpan.Slice(0, readSize).ShouldMatch(testDataBytes);
+				}
+				finally
+				{
+					machine.DOS.CloseFile(duplicatedFileHandle);
+				}
+			}
+			finally
+			{
+				machine.DOS.CloseFile(originalFileHandle);
+			}
+		}
+	}
+
+	[Test, NonParallelizable]
+	public void DuplicateFileHandle_should_create_a_handle_that_can_be_closed_without_interfering_with_the_original()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+			const string TestData = "DOS 6.22";
+
+			File.WriteAllText(TestFileName, TestData);
+
+			byte[] testDataBytes = s_cp437.GetBytes(TestData);
+
+			int originalFileHandle = machine.DOS.OpenFile(TestFileName, OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
+
+			var originalFileDescriptor = machine.DOS.Files[originalFileHandle];
+
+			const int ReadBufferSize = 100;
+
+			int readBufferAddress = machine.DOS.MemoryManager.AllocateMemory(ReadBufferSize, machine.DOS.CurrentPSPSegment);
+
+			var readBufferSpan = machine.SystemMemory.AsSpan().Slice(readBufferAddress, ReadBufferSize);
+
+			try
+			{
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (int)Interrupt0x21.Function.DuplicateFileHandle << 8;
+				rin.BX = (ushort)originalFileHandle;
+
+				// Act & Assert
+				var rout = sut.Execute(rin);
+
+				rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+				int duplicatedFileHandle = rout.AX;
+
+				try
+				{
+					duplicatedFileHandle.Should().NotBe(originalFileHandle);
+					duplicatedFileHandle.Should().BeInRange(2, machine.DOS.Files.Count - 1);
+
+					machine.DOS.CloseFile(duplicatedFileHandle);
+
+					// Exercise the original handle, make sure it still works.
+					int readSize = machine.DOS.Read(originalFileHandle, machine.SystemMemory, readBufferAddress, ReadBufferSize);
+
+					readSize.Should().Be(testDataBytes.Length);
+
+					readBufferSpan.Slice(0, readSize).ShouldMatch(testDataBytes);
+				}
+				finally
+				{
+					machine.DOS.CloseFile(duplicatedFileHandle);
+				}
+			}
+			finally
+			{
+				machine.DOS.CloseFile(originalFileHandle);
+			}
+		}
+	}
+
+	[Test, NonParallelizable]
+	public void DuplicateFileHandle_should_create_a_handle_that_closes_properly()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+			const string TestData = "DOS 6.22";
+
+			File.WriteAllText(TestFileName, TestData);
+
+			byte[] testDataBytes = s_cp437.GetBytes(TestData);
+
+			int originalFileHandle = machine.DOS.OpenFile(TestFileName, OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
+
+			var originalFileDescriptor = machine.DOS.Files[originalFileHandle];
+
+			const int ReadBufferSize = 100;
+
+			int readBufferAddress = machine.DOS.MemoryManager.AllocateMemory(ReadBufferSize, machine.DOS.CurrentPSPSegment);
+
+			var readBufferSpan = machine.SystemMemory.AsSpan().Slice(readBufferAddress, ReadBufferSize);
+
+			try
+			{
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (int)Interrupt0x21.Function.DuplicateFileHandle << 8;
+				rin.BX = (ushort)originalFileHandle;
+
+				// Act & Assert
+				var rout = sut.Execute(rin);
+
+				rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+				int duplicatedFileHandle = rout.AX;
+
+				try
+				{
+					duplicatedFileHandle.Should().NotBe(originalFileHandle);
+					duplicatedFileHandle.Should().BeInRange(2, machine.DOS.Files.Count - 1);
+
+					machine.DOS.CloseFile(duplicatedFileHandle);
+
+					// Verify that the handle we just closed no longer works.
+					var action =
+						() => machine.DOS.Read(duplicatedFileHandle, machine.SystemMemory, readBufferAddress, ReadBufferSize);
+
+					action.Should().Throw<Exception>();
+
+					machine.DOS.LastError.Should().Be(DOSError.InvalidHandle);
+				}
+				finally
+				{
+					machine.DOS.CloseFile(duplicatedFileHandle);
+				}
+			}
+			finally
+			{
+				machine.DOS.CloseFile(originalFileHandle);
+			}
+		}
+	}
+
 	/*
 	public enum Function : byte
 	{

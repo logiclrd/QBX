@@ -365,6 +365,8 @@ public partial class DOS
 			Files.Add(null);
 
 		Files[0] = Files[1] = Devices.Console;
+
+		Devices.Console.ReferenceCount = 2;
 	}
 
 	public void CloseAllFiles(bool keepStandardHandles)
@@ -1534,14 +1536,12 @@ public partial class DOS
 			fileDescriptor.ReferenceCount--;
 
 			if (fileDescriptor.ReferenceCount <= 0)
-			{
 				fileDescriptor.Close();
 
-				Files[fileHandle] = null;
+			Files[fileHandle] = null;
 
-				if (pruneFileHandles)
-					PruneFileHandles();
-			}
+			if (pruneFileHandles)
+				PruneFileHandles();
 
 			return true;
 		});
