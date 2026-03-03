@@ -4215,7 +4215,7 @@ public class Interrupt0x21Tests
 
 				if (shouldBeWritable)
 				{
-					File.ReadAllBytes(TestFileName).AsSpan().ShouldMatch(testData, because: "it should not have truncated the file");
+					ReadAllBytesFromFile(TestFileName).AsSpan().ShouldMatch(testData, because: "it should not have truncated the file");
 
 					TestContext.CurrentContext.Random.NextBytes(testData);
 
@@ -4223,7 +4223,7 @@ public class Interrupt0x21Tests
 					regularFile.Write(testData);
 					regularFile.FlushWriteBuffer(flushToDisk: true);
 
-					File.ReadAllBytes(TestFileName).AsSpan().ShouldMatch(testData);
+					ReadAllBytesFromFile(TestFileName).AsSpan().ShouldMatch(testData);
 				}
 			}
 			finally
@@ -4233,9 +4233,21 @@ public class Interrupt0x21Tests
 		}
 	}
 
+	private byte[] ReadAllBytesFromFile(string testFileName)
+	{
+		using (var stream = new FileStream(testFileName, System.IO.FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+		{
+			byte[] data = new byte[stream.Length];
+
+			stream.ReadExactly(data);
+
+			return data;
+		}
+	}
+
 	[Test, NonParallelizable]
 	public void OpenFileWithHandle_should_open_files_with_relative_paths(
-		[Values("SUB\\TESTFILE.TXT", "..\\TESTFILE.TXT")] string testFileName)
+		[Values("SUB/TESTFILE.TXT", "../TESTFILE.TXT")] string testFileName)
 	{
 		// Arrange
 		using (var workspace = new TemporaryDirectory())
@@ -4245,6 +4257,10 @@ public class Interrupt0x21Tests
 			Directory.CreateDirectory("A");
 
 			Environment.CurrentDirectory = "A";
+
+			if ((Path.GetDirectoryName(testFileName) is string containerName)
+			 && (containerName != ".."))
+				Directory.CreateDirectory(containerName);
 
 			var machine = new Machine();
 
@@ -4920,7 +4936,7 @@ public class Interrupt0x21Tests
 
 			machine.DOS.SetUpRunningProgramSegmentPrefix("");
 
-			const string TestFileName = "A\\TESTFILE.TXT";
+			const string TestFileName = "A/TESTFILE.TXT";
 
 			Directory.CreateDirectory("A");
 
@@ -4972,7 +4988,7 @@ public class Interrupt0x21Tests
 
 			machine.DOS.SetUpRunningProgramSegmentPrefix("");
 
-			const string TestFileName = "..\\TESTFILE.TXT";
+			const string TestFileName = "../TESTFILE.TXT";
 
 			Directory.CreateDirectory("A");
 			Environment.CurrentDirectory = "A";
@@ -5395,7 +5411,7 @@ public class Interrupt0x21Tests
 
 			machine.DOS.SetUpRunningProgramSegmentPrefix("");
 
-			const string TestFileName = "A\\TESTFILE.TXT";
+			const string TestFileName = "A/TESTFILE.TXT";
 
 			Directory.CreateDirectory("A");
 
@@ -5447,7 +5463,7 @@ public class Interrupt0x21Tests
 
 			machine.DOS.SetUpRunningProgramSegmentPrefix("");
 
-			const string TestFileName = "..\\TESTFILE.TXT";
+			const string TestFileName = "../TESTFILE.TXT";
 
 			Directory.CreateDirectory("A");
 
@@ -5547,7 +5563,7 @@ public class Interrupt0x21Tests
 
 			machine.DOS.SetUpRunningProgramSegmentPrefix("");
 
-			const string TestFileName = "A\\TESTFILE.TXT";
+			const string TestFileName = "A/TESTFILE.TXT";
 
 			Directory.CreateDirectory("A");
 
@@ -5596,7 +5612,7 @@ public class Interrupt0x21Tests
 
 			machine.DOS.SetUpRunningProgramSegmentPrefix("");
 
-			const string TestFileName = "..\\TESTFILE.TXT";
+			const string TestFileName = "../TESTFILE.TXT";
 
 			Directory.CreateDirectory("A");
 
