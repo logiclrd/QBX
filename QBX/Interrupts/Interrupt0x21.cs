@@ -1686,7 +1686,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 					int address = buffer.ToLinearAddress();
 					int i;
 
-					for (i = 0; path[i] != 0; i++)
+					for (i = 0; (i < path.Length) && (path[i] != 0); i++)
 						machine.MemoryBus[address + i] = CP437Encoding.GetByteSemantic(path[i]);
 					machine.MemoryBus[address + i] = 0;
 

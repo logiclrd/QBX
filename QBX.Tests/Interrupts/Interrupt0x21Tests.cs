@@ -6964,6 +6964,58 @@ public class Interrupt0x21Tests
 		}
 	}
 
+	[Test, NonParallelizable]
+	public void GetCurrentDirectory_should_return_mapped_current_directory()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			Assume.That(ShortFileNames.TryMap(Environment.CurrentDirectory, out var shortCurrentDirectory) == true);
+
+			// GetCurrentDirectory does not include a drive letter.
+			if (PathCharacter.HasDriveLetter(shortCurrentDirectory))
+				shortCurrentDirectory = shortCurrentDirectory.Substring(3);
+
+			// GetCurrentDirectory always uses backslashes.
+			shortCurrentDirectory = shortCurrentDirectory.Replace('/', '\\');
+
+			byte[] shortCurrentDirectoryBytes = s_cp437.GetBytes(shortCurrentDirectory);
+
+			// GetCurrentDirectory is documented as never writing more than 64 bytes (including null terminator).
+			Assume.That(shortCurrentDirectoryBytes.Length < 64);
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const int BufferSize = 64;
+
+			int bufferAddress = machine.DOS.MemoryManager.AllocateMemory(BufferSize, machine.DOS.CurrentPSPSegment);
+
+			var bufferSpan = machine.SystemMemory.AsSpan().Slice(bufferAddress, BufferSize);
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.GetCurrentDirectory << 8;
+			rin.DS = (ushort)(bufferAddress / MemoryManager.ParagraphSize);
+			rin.SI = (ushort)(bufferAddress % MemoryManager.ParagraphSize);
+			rin.DX = 0; // use the default drive
+
+			// Act
+			var rout = sut.Execute(rin);
+
+			// Assert
+			rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+			bufferSpan.Slice(0, shortCurrentDirectoryBytes.Length).ShouldMatch(shortCurrentDirectoryBytes);
+			bufferSpan[shortCurrentDirectoryBytes.Length].Should().Be(0);
+		}
+	}
+
 	/*
 	public enum Function : byte
 	{
@@ -6972,7 +7024,6 @@ public class Interrupt0x21Tests
 			ExtendedLengthFileNameOperations = 0xFF, // per Ralf Brown's Interrupt List
 			// still needs a test for function 0x56
 		},
-		GetCurrentDirectory = 0x47,
 		AllocateMemory = 0x48,
 		FreeAllocatedMemory = 0x49,
 		SetMemoryBlockSize = 0x4A,

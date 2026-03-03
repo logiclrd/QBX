@@ -906,6 +906,9 @@ public partial class DOS
 	{
 		return TranslateError(() =>
 		{
+			if (driveIdentifier == 0)
+				driveIdentifier = GetDefaultDrive() + 1;
+
 			if ((driveIdentifier < 1) || (driveIdentifier > 26))
 				throw new DOSException(DOSError.InvalidParameter);
 
