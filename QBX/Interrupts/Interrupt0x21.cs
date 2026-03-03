@@ -1662,7 +1662,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 					int fileHandle = input.BX;
 					int toFileHandle = input.CX;
 
-					result.AX = (ushort)machine.DOS.DuplicateHandle(fileHandle, toFileHandle );
+					result.AX = (ushort)machine.DOS.DuplicateHandle(fileHandle, toFileHandle);
 
 					if (machine.DOS.LastError != DOSError.None)
 					{

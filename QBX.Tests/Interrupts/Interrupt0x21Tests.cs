@@ -6767,6 +6767,203 @@ public class Interrupt0x21Tests
 		}
 	}
 
+	[Test, NonParallelizable]
+	public void ForceDuplicateFileHandle_should_duplicate_handle_to_unused_handle()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+
+			File.WriteAllText(TestFileName, "DOS 6.22");
+
+			int originalFileHandle = machine.DOS.OpenFile(TestFileName, OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
+
+			var originalFileDescriptor = machine.DOS.Files[originalFileHandle];
+
+			int duplicatedFileHandle = machine.DOS.Files.FindIndex(entry => entry is null);
+
+			if (duplicatedFileHandle < 0)
+				duplicatedFileHandle = machine.DOS.Files.Count;
+
+			try
+			{
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (int)Interrupt0x21.Function.ForceDuplicateFileHandle << 8;
+				rin.BX = (ushort)originalFileHandle;
+				rin.CX = (ushort)duplicatedFileHandle;
+
+				// Act
+				var rout = sut.Execute(rin);
+
+				// Assert
+				rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+				try
+				{
+					duplicatedFileHandle.Should().BeInRange(2, machine.DOS.Files.Count - 1);
+
+					var duplicatedFileDescriptor = machine.DOS.Files[duplicatedFileHandle];
+
+					duplicatedFileDescriptor.Should().BeSameAs(originalFileDescriptor);
+
+					duplicatedFileDescriptor.ReferenceCount.Should().BeGreaterThan(1);
+				}
+				finally
+				{
+					machine.DOS.CloseFile(duplicatedFileHandle);
+				}
+			}
+			finally
+			{
+				machine.DOS.CloseFile(originalFileHandle);
+			}
+		}
+	}
+
+	[Test, NonParallelizable]
+	public void ForceDuplicateFileHandle_should_duplicate_handle_to_unused_handle_forcing_file_handle_table_to_expand_by_more_than_one()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+
+			File.WriteAllText(TestFileName, "DOS 6.22");
+
+			int originalFileHandle = machine.DOS.OpenFile(TestFileName, OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
+
+			var originalFileDescriptor = machine.DOS.Files[originalFileHandle];
+
+			int duplicatedFileHandle = machine.DOS.Files.Count + 10;
+
+			try
+			{
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (int)Interrupt0x21.Function.ForceDuplicateFileHandle << 8;
+				rin.BX = (ushort)originalFileHandle;
+				rin.CX = (ushort)duplicatedFileHandle;
+
+				// Act
+				int tableSizeBefore = machine.DOS.Files.Count;
+
+				var rout = sut.Execute(rin);
+
+				int tableSizeAfter = machine.DOS.Files.Count;
+
+				// Assert
+				rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+				try
+				{
+					duplicatedFileHandle.Should().BeInRange(2, machine.DOS.Files.Count - 1);
+
+					for (int i = tableSizeBefore; i < tableSizeAfter; i++)
+					{
+						if (i != duplicatedFileHandle)
+							machine.DOS.Files[i].Should().BeNull();
+					}
+
+					var duplicatedFileDescriptor = machine.DOS.Files[duplicatedFileHandle];
+
+					duplicatedFileDescriptor.Should().BeSameAs(originalFileDescriptor);
+
+					duplicatedFileDescriptor.ReferenceCount.Should().BeGreaterThan(1);
+				}
+				finally
+				{
+					machine.DOS.CloseFile(duplicatedFileHandle);
+				}
+			}
+			finally
+			{
+				machine.DOS.CloseFile(originalFileHandle);
+			}
+		}
+	}
+
+	[Test, NonParallelizable]
+	public void ForceDuplicateFileHandle_should_duplicate_handle_to_open_handle_and_close_the_original_handle()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+
+			File.WriteAllText(TestFileName, "DOS 6.22");
+
+			int originalFileHandle = DOS.StandardInput;
+
+			var originalFileDescriptor = machine.DOS.Files[originalFileHandle];
+
+			int duplicatedFileHandle = machine.DOS.OpenFile(TestFileName, OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite);
+
+			var duplicatedFileDescriptorBefore = machine.DOS.Files[duplicatedFileHandle];
+
+			duplicatedFileDescriptorBefore.Should().NotBeNull();
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.ForceDuplicateFileHandle << 8;
+			rin.BX = (ushort)originalFileHandle;
+			rin.CX = (ushort)duplicatedFileHandle;
+
+			// Act
+			int tableSizeBefore = machine.DOS.Files.Count;
+
+			var rout = sut.Execute(rin);
+
+			int tableSizeAfter = machine.DOS.Files.Count;
+
+			// Assert
+			rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+			try
+			{
+				tableSizeAfter.Should().Be(tableSizeBefore);
+
+				var duplicatedFileDescriptor = machine.DOS.Files[duplicatedFileHandle];
+
+				duplicatedFileDescriptor.Should().BeSameAs(originalFileDescriptor);
+				duplicatedFileDescriptor.Should().NotBeSameAs(duplicatedFileDescriptorBefore);
+
+				duplicatedFileDescriptor.ReferenceCount.Should().BeGreaterThan(1);
+				duplicatedFileDescriptorBefore.ReferenceCount.Should().Be(0);
+				duplicatedFileDescriptorBefore.IsClosed.Should().BeTrue();
+			}
+			finally
+			{
+				machine.DOS.CloseFile(duplicatedFileHandle);
+			}
+		}
+	}
+
 	/*
 	public enum Function : byte
 	{
@@ -6775,8 +6972,6 @@ public class Interrupt0x21Tests
 			ExtendedLengthFileNameOperations = 0xFF, // per Ralf Brown's Interrupt List
 			// still needs a test for function 0x56
 		},
-		DuplicateFileHandle = 0x45,
-		ForceDuplicateFileHandle = 0x46,
 		GetCurrentDirectory = 0x47,
 		AllocateMemory = 0x48,
 		FreeAllocatedMemory = 0x49,

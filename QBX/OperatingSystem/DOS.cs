@@ -1486,21 +1486,24 @@ public partial class DOS
 			return -1;
 		}
 
-		if ((toFileHandle < 0) || (toFileHandle >= Files.Count))
+		if (toFileHandle < 0)
 		{
 			LastError = DOSError.InvalidHandle;
 			return -1;
 		}
+
+		// Expand the table if necessary
+		while (toFileHandle >= Files.Count)
+			Files.Add(null);
 
 		if (Files[toFileHandle] is FileDescriptor existingFileDescriptor)
 			CloseFile(toFileHandle, pruneFileHandles: false);
 
 		Files[toFileHandle] = fileDescriptor;
 
-		return TranslateError(() =>
-		{
-			return AllocateFileHandleForFileDescriptor(fileDescriptor);
-		});
+		fileDescriptor.ReferenceCount++;
+
+		return toFileHandle;
 	}
 
 	public bool CloseFile(FileControlBlock fcb)
