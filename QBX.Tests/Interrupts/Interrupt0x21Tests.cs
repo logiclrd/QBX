@@ -7676,6 +7676,55 @@ public class Interrupt0x21Tests
 		}
 	}
 
+	[Test]
+	public void SetPSPAddress_should_set_PSP_address()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		const ushort TestSegmentValue = 0xBEEF;
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.SetPSPAddress << 8;
+		rin.BX = TestSegmentValue;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+		machine.DOS.CurrentPSPSegment.Should().Be(TestSegmentValue);
+	}
+
+	[Test]
+	public void GetPSPAddress_should_get_PSP_address()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		const ushort TestSegmentValue = 0xBABE;
+
+		machine.DOS.CurrentPSPSegment = TestSegmentValue;
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.GetPSPAddress << 8;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+		rout.BX.Should().Be(TestSegmentValue);
+	}
+
 	/*
 	public enum Function : byte
 	{
@@ -7684,8 +7733,6 @@ public class Interrupt0x21Tests
 			ExtendedLengthFileNameOperations = 0xFF, // per Ralf Brown's Interrupt List
 			// still needs a test for function 0x56
 		},
-		SetPSPAddress = 0x50,
-		GetPSPAddress = 0x51,
 		GetVerifyState = 0x54,
 		RenameFile = 0x56,
 		public enum Function57 : byte
