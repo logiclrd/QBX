@@ -5716,6 +5716,75 @@ public class Interrupt0x21Tests
 	}
 
 	[Test, NonParallelizable]
+	public void ExtendedLengthFileNameOperations_should_permit_RenameFile_with_a_long_input_path()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			// This baseline string is 77 characters long, onto which TestDirectoryName will be appended.
+			// The ExtendedLengthFileNameOperations function is documented as permitting path names up to
+			// 128 characters long, while the base operation has a limit of 67 characters.
+			const string ExistingDirectoryName = "TESTDIR1.DIR/TESTDIR2.DIR/TESTDIR3.DIR/TESTDIR4.DIR/TESTDIR5.DIR/TESTDIR6.DIR";
+
+			Directory.CreateDirectory(ExistingDirectoryName);
+
+			const string OldFileName = ExistingDirectoryName + "/TEST1.TXT";
+			const string NewFileName = ExistingDirectoryName + "/TEST2.TXT";
+
+			File.WriteAllText(OldFileName, "");
+
+			byte[] oldFileNameBytes = s_cp437.GetBytes(OldFileName);
+			byte[] newFileNameBytes = s_cp437.GetBytes(NewFileName);
+
+			int oldFileNameAddress = machine.DOS.MemoryManager.AllocateMemory(oldFileNameBytes.Length + 1, machine.DOS.CurrentPSPSegment);
+			int newFileNameAddress = machine.DOS.MemoryManager.AllocateMemory(newFileNameBytes.Length + 1, machine.DOS.CurrentPSPSegment);
+
+			var oldFileNameSpan = machine.SystemMemory.AsSpan().Slice(oldFileNameAddress, oldFileNameBytes.Length + 1);
+			var newFileNameSpan = machine.SystemMemory.AsSpan().Slice(newFileNameAddress, newFileNameBytes.Length + 1);
+
+			oldFileNameBytes.CopyTo(oldFileNameSpan);
+			oldFileNameSpan[oldFileNameBytes.Length] = 0;
+
+			newFileNameBytes.CopyTo(newFileNameSpan);
+			newFileNameSpan[newFileNameBytes.Length] = 0;
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.RenameFile << 8;
+			rin.DS = (ushort)(oldFileNameAddress / MemoryManager.ParagraphSize);
+			rin.DX = (ushort)(oldFileNameAddress % MemoryManager.ParagraphSize);
+			rin.ES = (ushort)(newFileNameAddress / MemoryManager.ParagraphSize);
+			rin.DI = (ushort)(newFileNameAddress % MemoryManager.ParagraphSize);
+
+			// Act
+			bool oldExistsBefore = File.Exists(OldFileName);
+			bool newExistsBefore = File.Exists(NewFileName);
+
+			var rout = sut.Execute(rin);
+
+			bool oldExistsAfter = File.Exists(OldFileName);
+			bool newExistsAfter = File.Exists(NewFileName);
+
+			// Assert
+			rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+			oldExistsBefore.Should().BeTrue();
+			newExistsBefore.Should().BeFalse();
+
+			oldExistsAfter.Should().BeFalse();
+			newExistsAfter.Should().BeTrue();
+		}
+	}
+
+	[Test, NonParallelizable]
 	public void GetDeviceData_should_identify_regular_files([Values] bool expectedPristine)
 	{
 		// Arrange
@@ -7752,15 +7821,273 @@ public class Interrupt0x21Tests
 		al.Should().Be(expectedVerifyStateValue);
 	}
 
+	[Test, NonParallelizable]
+	public void RenameFile_should_rename_files()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string OldFileName = "TEST1.TXT";
+			const string NewFileName = "TEST2.TXT";
+
+			File.WriteAllText(OldFileName, "");
+
+			byte[] oldFileNameBytes = s_cp437.GetBytes(OldFileName);
+			byte[] newFileNameBytes = s_cp437.GetBytes(NewFileName);
+
+			int oldFileNameAddress = machine.DOS.MemoryManager.AllocateMemory(oldFileNameBytes.Length + 1, machine.DOS.CurrentPSPSegment);
+			int newFileNameAddress = machine.DOS.MemoryManager.AllocateMemory(newFileNameBytes.Length + 1, machine.DOS.CurrentPSPSegment);
+
+			var oldFileNameSpan = machine.SystemMemory.AsSpan().Slice(oldFileNameAddress, oldFileNameBytes.Length + 1);
+			var newFileNameSpan = machine.SystemMemory.AsSpan().Slice(newFileNameAddress, newFileNameBytes.Length + 1);
+
+			oldFileNameBytes.CopyTo(oldFileNameSpan);
+			oldFileNameSpan[oldFileNameBytes.Length] = 0;
+
+			newFileNameBytes.CopyTo(newFileNameSpan);
+			newFileNameSpan[newFileNameBytes.Length] = 0;
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.RenameFile << 8;
+			rin.DS = (ushort)(oldFileNameAddress / MemoryManager.ParagraphSize);
+			rin.DX = (ushort)(oldFileNameAddress % MemoryManager.ParagraphSize);
+			rin.ES = (ushort)(newFileNameAddress / MemoryManager.ParagraphSize);
+			rin.DI = (ushort)(newFileNameAddress % MemoryManager.ParagraphSize);
+
+			// Act
+			bool oldExistsBefore = File.Exists(OldFileName);
+			bool newExistsBefore = File.Exists(NewFileName);
+
+			var rout = sut.Execute(rin);
+
+			bool oldExistsAfter = File.Exists(OldFileName);
+			bool newExistsAfter = File.Exists(NewFileName);
+
+			// Assert
+			rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+			oldExistsBefore.Should().BeTrue();
+			newExistsBefore.Should().BeFalse();
+
+			oldExistsAfter.Should().BeFalse();
+			newExistsAfter.Should().BeTrue();
+		}
+	}
+
+	[Test, NonParallelizable]
+	public void RenameFile_should_rename_directories()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string OldDirectoryName = "TEST1.TXT";
+			const string NewDirectoryName = "TEST2.TXT";
+
+			Directory.CreateDirectory(OldDirectoryName);
+
+			byte[] oldDirectoryNameBytes = s_cp437.GetBytes(OldDirectoryName);
+			byte[] newDirectoryNameBytes = s_cp437.GetBytes(NewDirectoryName);
+
+			int oldDirectoryNameAddress = machine.DOS.MemoryManager.AllocateMemory(oldDirectoryNameBytes.Length + 1, machine.DOS.CurrentPSPSegment);
+			int newDirectoryNameAddress = machine.DOS.MemoryManager.AllocateMemory(newDirectoryNameBytes.Length + 1, machine.DOS.CurrentPSPSegment);
+
+			var oldDirectoryNameSpan = machine.SystemMemory.AsSpan().Slice(oldDirectoryNameAddress, oldDirectoryNameBytes.Length + 1);
+			var newDirectoryNameSpan = machine.SystemMemory.AsSpan().Slice(newDirectoryNameAddress, newDirectoryNameBytes.Length + 1);
+
+			oldDirectoryNameBytes.CopyTo(oldDirectoryNameSpan);
+			oldDirectoryNameSpan[oldDirectoryNameBytes.Length] = 0;
+
+			newDirectoryNameBytes.CopyTo(newDirectoryNameSpan);
+			newDirectoryNameSpan[newDirectoryNameBytes.Length] = 0;
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.RenameFile << 8;
+			rin.DS = (ushort)(oldDirectoryNameAddress / MemoryManager.ParagraphSize);
+			rin.DX = (ushort)(oldDirectoryNameAddress % MemoryManager.ParagraphSize);
+			rin.ES = (ushort)(newDirectoryNameAddress / MemoryManager.ParagraphSize);
+			rin.DI = (ushort)(newDirectoryNameAddress % MemoryManager.ParagraphSize);
+
+			// Act
+			bool oldExistsBefore = Directory.Exists(OldDirectoryName);
+			bool newExistsBefore = Directory.Exists(NewDirectoryName);
+
+			var rout = sut.Execute(rin);
+
+			bool oldExistsAfter = Directory.Exists(OldDirectoryName);
+			bool newExistsAfter = Directory.Exists(NewDirectoryName);
+
+			// Assert
+			rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+			oldExistsBefore.Should().BeTrue();
+			newExistsBefore.Should().BeFalse();
+
+			oldExistsAfter.Should().BeFalse();
+			newExistsAfter.Should().BeTrue();
+		}
+	}
+
+	[Test, NonParallelizable]
+	public void RenameFile_should_move_files()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string OldParentDirectory = "A";
+			const string NewParentDirectory = "B";
+
+			const string FileName = "TEST1.TXT";
+
+			const string OldFileName = OldParentDirectory + "/" + FileName;
+			const string NewFileName = NewParentDirectory + "/" + FileName;
+
+			Directory.CreateDirectory(OldParentDirectory);
+			Directory.CreateDirectory(NewParentDirectory);
+
+			File.WriteAllText(OldFileName, "");
+
+			byte[] oldFileNameBytes = s_cp437.GetBytes(OldFileName);
+			byte[] newFileNameBytes = s_cp437.GetBytes(NewFileName);
+
+			int oldFileNameAddress = machine.DOS.MemoryManager.AllocateMemory(oldFileNameBytes.Length + 1, machine.DOS.CurrentPSPSegment);
+			int newFileNameAddress = machine.DOS.MemoryManager.AllocateMemory(newFileNameBytes.Length + 1, machine.DOS.CurrentPSPSegment);
+
+			var oldFileNameSpan = machine.SystemMemory.AsSpan().Slice(oldFileNameAddress, oldFileNameBytes.Length + 1);
+			var newFileNameSpan = machine.SystemMemory.AsSpan().Slice(newFileNameAddress, newFileNameBytes.Length + 1);
+
+			oldFileNameBytes.CopyTo(oldFileNameSpan);
+			oldFileNameSpan[oldFileNameBytes.Length] = 0;
+
+			newFileNameBytes.CopyTo(newFileNameSpan);
+			newFileNameSpan[newFileNameBytes.Length] = 0;
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.RenameFile << 8;
+			rin.DS = (ushort)(oldFileNameAddress / MemoryManager.ParagraphSize);
+			rin.DX = (ushort)(oldFileNameAddress % MemoryManager.ParagraphSize);
+			rin.ES = (ushort)(newFileNameAddress / MemoryManager.ParagraphSize);
+			rin.DI = (ushort)(newFileNameAddress % MemoryManager.ParagraphSize);
+
+			// Act
+			bool oldExistsBefore = File.Exists(OldFileName);
+			bool newExistsBefore = File.Exists(NewFileName);
+
+			var rout = sut.Execute(rin);
+
+			bool oldExistsAfter = File.Exists(OldFileName);
+			bool newExistsAfter = File.Exists(NewFileName);
+
+			// Assert
+			rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+			oldExistsBefore.Should().BeTrue();
+			newExistsBefore.Should().BeFalse();
+
+			oldExistsAfter.Should().BeFalse();
+			newExistsAfter.Should().BeTrue();
+		}
+	}
+
+	[Test, NonParallelizable]
+	public void RenameFile_should_move_directories()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string OldParentDirectory = "A";
+			const string NewParentDirectory = "B";
+
+			const string DirectoryName = "TEST1.TXT";
+
+			const string OldDirectoryName = OldParentDirectory + "/" + DirectoryName;
+			const string NewDirectoryName = NewParentDirectory + "/" + DirectoryName;
+
+			Directory.CreateDirectory(OldParentDirectory);
+			Directory.CreateDirectory(NewParentDirectory);
+
+			Directory.CreateDirectory(OldDirectoryName);
+
+			byte[] oldDirectoryNameBytes = s_cp437.GetBytes(OldDirectoryName);
+			byte[] newDirectoryNameBytes = s_cp437.GetBytes(NewDirectoryName);
+
+			int oldDirectoryNameAddress = machine.DOS.MemoryManager.AllocateMemory(oldDirectoryNameBytes.Length + 1, machine.DOS.CurrentPSPSegment);
+			int newDirectoryNameAddress = machine.DOS.MemoryManager.AllocateMemory(newDirectoryNameBytes.Length + 1, machine.DOS.CurrentPSPSegment);
+
+			var oldDirectoryNameSpan = machine.SystemMemory.AsSpan().Slice(oldDirectoryNameAddress, oldDirectoryNameBytes.Length + 1);
+			var newDirectoryNameSpan = machine.SystemMemory.AsSpan().Slice(newDirectoryNameAddress, newDirectoryNameBytes.Length + 1);
+
+			oldDirectoryNameBytes.CopyTo(oldDirectoryNameSpan);
+			oldDirectoryNameSpan[oldDirectoryNameBytes.Length] = 0;
+
+			newDirectoryNameBytes.CopyTo(newDirectoryNameSpan);
+			newDirectoryNameSpan[newDirectoryNameBytes.Length] = 0;
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.RenameFile << 8;
+			rin.DS = (ushort)(oldDirectoryNameAddress / MemoryManager.ParagraphSize);
+			rin.DX = (ushort)(oldDirectoryNameAddress % MemoryManager.ParagraphSize);
+			rin.ES = (ushort)(newDirectoryNameAddress / MemoryManager.ParagraphSize);
+			rin.DI = (ushort)(newDirectoryNameAddress % MemoryManager.ParagraphSize);
+
+			// Act
+			bool oldExistsBefore = Directory.Exists(OldDirectoryName);
+			bool newExistsBefore = Directory.Exists(NewDirectoryName);
+
+			var rout = sut.Execute(rin);
+
+			bool oldExistsAfter = Directory.Exists(OldDirectoryName);
+			bool newExistsAfter = Directory.Exists(NewDirectoryName);
+
+			// Assert
+			rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+			oldExistsBefore.Should().BeTrue();
+			newExistsBefore.Should().BeFalse();
+
+			oldExistsAfter.Should().BeFalse();
+			newExistsAfter.Should().BeTrue();
+		}
+	}
+
 	/*
 	public enum Function : byte
 	{
-		public enum Function43 : byte
-		{
-			ExtendedLengthFileNameOperations = 0xFF, // per Ralf Brown's Interrupt List
-			// still needs a test for function 0x56
-		},
-		RenameFile = 0x56,
 		public enum Function57 : byte
 		{
 			GetFileDateAndTime = 0x00,

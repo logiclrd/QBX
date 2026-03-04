@@ -16,7 +16,7 @@ public partial class ShortFileNames
 		int cchBuffer);
 
 	[DllImport("kernel32", CharSet = CharSet.Unicode, SetLastError = true)]
-	private static extern int SetShortPathNameW(
+	private static extern int SetFileShortNameW(
 		SafeFileHandle hFile,
 		string lpszShortName);
 
@@ -110,7 +110,7 @@ public partial class ShortFileNames
 			return false;
 
 		using (fileHandle)
-			SetShortPathNameW(fileHandle, shortName);
+			SetFileShortNameW(fileHandle, shortName);
 
 		return (Marshal.GetLastPInvokeError() == 0);
 	}

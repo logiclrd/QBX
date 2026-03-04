@@ -1596,7 +1596,10 @@ public partial class DOS
 				_lastError = DOSError.FileExists;
 			else
 			{
-				File.Move(oldPath, newPath);
+				if (Directory.Exists(oldPath))
+					Directory.Move(oldPath, newPath);
+				else
+					File.Move(oldPath, newPath);
 
 				ShortFileNames.Forget(oldPath);
 
