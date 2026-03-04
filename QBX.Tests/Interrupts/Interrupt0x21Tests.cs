@@ -8208,13 +8208,60 @@ public class Interrupt0x21Tests
 				});
 	}
 
+	[Test]
+	public void GetAllocationStrategy_should_return_allocation_strategy([Values] MemoryAllocationStrategy testAllocationStrategy)
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		machine.DOS.MemoryManager.AllocationStrategy = testAllocationStrategy;
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.Function58 << 8;
+		rin.AX |= (int)Interrupt0x21.Function58.GetAllocationStrategy;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+		var allocationStrategy = (MemoryAllocationStrategy)rout.AX;
+
+		allocationStrategy.Should().Be(testAllocationStrategy);
+	}
+
+	[Test]
+	public void SetAllocationStrategy_should_set_allocation_strategy([Values] MemoryAllocationStrategy testAllocationStrategy)
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.Function58 << 8;
+		rin.AX |= (int)Interrupt0x21.Function58.SetAllocationStrategy;
+		rin.BX = (ushort)testAllocationStrategy;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+		machine.DOS.MemoryManager.AllocationStrategy.Should().Be(testAllocationStrategy);
+	}
+
 	/*
 	public enum Function : byte
 	{
 		public enum Function58 : byte
 		{
-			GetAllocationStrategy = 0x00,
-			SetAllocationStrategy = 0x01,
 			GetUpperMemoryLink = 0x02,
 			SetUpperMemoryLink = 0x03,
 		},
