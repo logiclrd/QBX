@@ -836,7 +836,7 @@ public class Interrupt0x21Tests
 
 			var rin = new RegistersEx();
 
-			rin.AX = (int)Interrupt0x21.Function.FindFirstFileWithFCB<< 8;
+			rin.AX = (int)Interrupt0x21.Function.FindFirstFileWithFCB << 8;
 			rin.DS = (ushort)(fcbAddress / MemoryManager.ParagraphSize);
 			rin.DX = (ushort)(fcbAddress % MemoryManager.ParagraphSize);
 
@@ -883,7 +883,7 @@ public class Interrupt0x21Tests
 
 			var rin = new RegistersEx();
 
-			rin.AX = (int)Interrupt0x21.Function.FindFirstFileWithFCB<< 8;
+			rin.AX = (int)Interrupt0x21.Function.FindFirstFileWithFCB << 8;
 			rin.DS = (ushort)(fcbAddress / MemoryManager.ParagraphSize);
 			rin.DX = (ushort)(fcbAddress % MemoryManager.ParagraphSize);
 
@@ -957,7 +957,7 @@ public class Interrupt0x21Tests
 			// Act
 			rout = sut.Execute(rin);
 
-			while ((rin.AX & 0xFF) == 0)
+			while ((rout.AX & 0xFF) == 0)
 			{
 				fileName = FileControlBlock.GetFileName(dirEntrySpan.Slice(0, 11));
 
