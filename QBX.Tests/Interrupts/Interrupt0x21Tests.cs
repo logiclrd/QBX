@@ -7349,6 +7349,31 @@ public class Interrupt0x21Tests
 			out Arg.Any<int>());
 	}
 
+	[Test]
+	public void EndProgram_should_mark_DOS_as_terminated_and_store_exit_code(
+		[Values(0, 1, 37, 254, 255)] byte testExitCode)
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new Registers();
+
+		rin.AX = (int)Interrupt0x21.Function.EndProgram << 8;
+		rin.AX |= testExitCode;
+
+		Assume.That(machine.DOS.IsTerminated == false);
+
+		// Act & Assert
+		Action action = () => sut.Execute(rin);
+
+		action.Should().Throw<TerminatedException>();
+		machine.DOS.IsTerminated.Should().BeTrue();
+		machine.DOS.LastError.Should().Be(DOSError.None);
+		machine.ExitCode.Should().Be(testExitCode);
+	}
+
 	/*
 	public enum Function : byte
 	{
@@ -7357,7 +7382,6 @@ public class Interrupt0x21Tests
 			ExtendedLengthFileNameOperations = 0xFF, // per Ralf Brown's Interrupt List
 			// still needs a test for function 0x56
 		},
-		EndProgram = 0x4C,
 		GetChildProgramReturnValue = 0x4D,
 		FindFirstFile = 0x4E,
 		FindNextFile = 0x4F,

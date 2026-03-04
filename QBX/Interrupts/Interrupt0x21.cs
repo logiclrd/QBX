@@ -1798,8 +1798,8 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				case Function.EndProgram:
 				{
 					machine.ExitCode = result.AX & 0xFF;
-					machine.KeepRunning = false;
-					break;
+					machine.DOS.TerminateProgram();
+					throw new TerminatedException();
 				}
 				case Function.GetChildProgramReturnValue:
 				{
