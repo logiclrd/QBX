@@ -8477,10 +8477,89 @@ public class Interrupt0x21Tests
 		}
 	}
 
+	[Test]
+	public void LockUnlockFile_should_lock_file_byte_regions()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var mockFile = Substitute.For<FileDescriptor>("TESTFILE.TXT");
+
+		machine.DOS.Files.Add(mockFile);
+
+		int fileHandle = machine.DOS.Files.Count - 1;
+
+		const ushort LockFlag = 0; // 00h = lock
+		const int LockRegionOffset = 0x2345ABCD;
+		const int LockRegionLength = 0x1234FEDC;
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.LockUnlockFile << 8;
+		rin.AX |= LockFlag;
+
+		rin.BX = (ushort)fileHandle;
+
+		rin.CX = unchecked((ushort)(LockRegionOffset >> 16));
+		rin.DX = unchecked((ushort)LockRegionOffset);
+
+		rin.SI = unchecked((ushort)(LockRegionLength	 >> 16));
+		rin.DI = unchecked((ushort)LockRegionLength);
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+		mockFile.Received().Lock(LockRegionOffset, LockRegionLength);
+	}
+
+	[Test]
+	public void LockUnlockFile_should_unlock_file_byte_regions()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var mockFile = Substitute.For<FileDescriptor>("TESTFILE.TXT");
+
+		machine.DOS.Files.Add(mockFile);
+
+		int fileHandle = machine.DOS.Files.Count - 1;
+
+		const ushort LockFlag = 1; // 01h = unlock
+		const int LockRegionOffset = 0x2345ABCD;
+		const int LockRegionLength = 0x1234FEDC;
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.LockUnlockFile << 8;
+		rin.AX |= LockFlag;
+
+		rin.BX = (ushort)fileHandle;
+
+		rin.CX = unchecked((ushort)(LockRegionOffset >> 16));
+		rin.DX = unchecked((ushort)LockRegionOffset);
+
+		rin.SI = unchecked((ushort)(LockRegionLength	 >> 16));
+		rin.DI = unchecked((ushort)LockRegionLength);
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+		mockFile.Received().Unlock(LockRegionOffset, LockRegionLength);
+	}
+
 	/*
 	public enum Function : byte
 	{
-		LockUnlockFile = 0x5C,
 		SetExtendedError = 0x5D,
 		public enum Function5E : byte
 		{
