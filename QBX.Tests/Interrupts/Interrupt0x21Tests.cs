@@ -8361,10 +8361,124 @@ public class Interrupt0x21Tests
 		}
 	}
 
+	[Test, NonParallelizable]
+	public void CreateNewFile_should_create_files()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+
+			byte[] fileNameBytes = s_cp437.GetBytes(TestFileName);
+
+			int fileNameBufferSize = fileNameBytes.Length + 1;
+
+			var fileNameAddress = machine.DOS.MemoryManager.AllocateMemory(fileNameBufferSize, machine.DOS.CurrentPSPSegment);
+
+			var fileNameSpan = machine.SystemMemory.AsSpan().Slice(fileNameAddress, fileNameBufferSize);
+
+			fileNameBytes.CopyTo(fileNameSpan);
+			fileNameSpan[fileNameBytes.Length] = 0;
+
+			int fileHandle = -1;
+
+			try
+			{
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (int)Interrupt0x21.Function.CreateNewFile << 8;
+				rin.DS = (ushort)(fileNameAddress / MemoryManager.ParagraphSize);
+				rin.DX = (ushort)(fileNameAddress % MemoryManager.ParagraphSize);
+				rin.CX = (ushort)QBX.OperatingSystem.FileStructures.FileAttributes.Normal;
+
+				// Act
+				bool existsBefore = File.Exists(TestFileName);
+
+				var rout = sut.Execute(rin);
+
+				bool existsAfter = File.Exists(TestFileName);
+
+				// Assert
+				rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+				fileHandle = rout.AX;
+
+				existsBefore.Should().BeFalse();
+				existsAfter.Should().BeTrue();
+
+				fileHandle.Should().BeInRange(2, machine.DOS.Files.Count - 1);
+
+				var regularFile = (RegularFileDescriptor)machine.DOS.Files[fileHandle]!;
+
+				regularFile.PhysicalPath.Should().Be(Path.GetFullPath(TestFileName));
+			}
+			finally
+			{
+				machine.DOS.CloseFile(fileHandle);
+			}
+		}
+	}
+
+	[Test, NonParallelizable]
+	public void CreateNewFile_should_fail_if_file_already_exists()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+
+			File.WriteAllText(TestFileName, "QuickBASIC");
+
+			byte[] fileNameBytes = s_cp437.GetBytes(TestFileName);
+
+			int fileNameBufferSize = fileNameBytes.Length + 1;
+
+			var fileNameAddress = machine.DOS.MemoryManager.AllocateMemory(fileNameBufferSize, machine.DOS.CurrentPSPSegment);
+
+			var fileNameSpan = machine.SystemMemory.AsSpan().Slice(fileNameAddress, fileNameBufferSize);
+
+			fileNameBytes.CopyTo(fileNameSpan);
+			fileNameSpan[fileNameBytes.Length] = 0;
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.CreateNewFile << 8;
+			rin.DS = (ushort)(fileNameAddress / MemoryManager.ParagraphSize);
+			rin.DX = (ushort)(fileNameAddress % MemoryManager.ParagraphSize);
+
+			// Act
+			bool existsBefore = File.Exists(TestFileName);
+
+			var rout = sut.Execute(rin);
+
+			bool existsAfter = File.Exists(TestFileName);
+
+			// Assert
+			rout.FLAGS.Should().HaveFlag(Flags.Carry);
+
+			rout.AX.Should().Be((ushort)DOSError.FileExists);
+		}
+	}
+
 	/*
 	public enum Function : byte
 	{
-		CreateNewFile = 0x5B,
 		LockUnlockFile = 0x5C,
 		SetExtendedError = 0x5D,
 		public enum Function5E : byte
