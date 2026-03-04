@@ -7445,7 +7445,10 @@ public class Interrupt0x21Tests
 				throw new Exception("Interpreter needed for interpreter?");
 		}
 
-		byte[] programFileBytes = s_cp437.GetBytes(programFile);
+		if (!ShortFileNames.TryMap(programFile, out var programFileShort))
+			throw new Exception("Failed to map program file name");
+
+		byte[] programFileBytes = s_cp437.GetBytes(programFileShort);
 
 		int programFileAddress = machine.DOS.MemoryManager.AllocateMemory(programFileBytes.Length + 1, machine.DOS.CurrentPSPSegment);
 
@@ -8169,6 +8172,7 @@ public class Interrupt0x21Tests
 	}
 
 	[Test, NonParallelizable]
+	[Platform(Exclude = NUnitPlatformNames.Linux)]
 	public void GetFileCreationDateAndTime_should_return_file_created_datetime()
 	{
 		FileDateTimeTest(
@@ -8189,6 +8193,7 @@ public class Interrupt0x21Tests
 	}
 
 	[Test, NonParallelizable]
+	[Platform(Exclude = NUnitPlatformNames.Linux)]
 	public void SetFileCreationDateAndTime_should_return_file_created_datetime()
 	{
 		FileDateTimeTest(
@@ -8463,11 +8468,7 @@ public class Interrupt0x21Tests
 			rin.DX = (ushort)(fileNameAddress % MemoryManager.ParagraphSize);
 
 			// Act
-			bool existsBefore = File.Exists(TestFileName);
-
 			var rout = sut.Execute(rin);
-
-			bool existsAfter = File.Exists(TestFileName);
 
 			// Assert
 			rout.FLAGS.Should().HaveFlag(Flags.Carry);

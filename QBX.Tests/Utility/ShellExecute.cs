@@ -57,7 +57,7 @@ public class ShellExecute
 			{
 				string fileProbePathShort = fileName;
 
-				if (fileType.Extension != null)
+				if (!string.IsNullOrWhiteSpace(fileType.Extension))
 					fileProbePathShort = Path.ChangeExtension(fileProbePathShort, fileType.Extension);
 
 				if (!string.IsNullOrWhiteSpace(pathToProbeShort))

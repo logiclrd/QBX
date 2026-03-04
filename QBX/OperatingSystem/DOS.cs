@@ -6,6 +6,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 
 using QBX.ExecutionEngine.Execution;
@@ -1120,17 +1121,7 @@ public partial class DOS
 			{
 				bool needLateMap = false;
 
-				string? containerPath = Path.GetDirectoryName(fileName);
-
-				if (string.IsNullOrEmpty(containerPath))
-					containerPath = Environment.CurrentDirectory;
-				else
-					containerPath = Path.GetFullPath(containerPath);
-
-				fileName = Path.Combine(
-					containerPath ?? "",
-					Path.GetFileName(fileName));
-
+				fileName = ShortFileNames.GetFullPath(fileName);
 				fileName = ShortFileNames.Unmap(fileName);
 
 				if (!ShortFileNames.TryMap(fileName, out var shortPath))
@@ -1692,7 +1683,8 @@ public partial class DOS
 
 			var psi = new ProcessStartInfo(fileName);
 
-			psi.Arguments = parameters.CommandTail;
+			foreach (string argument in SplitArguments(parameters.CommandTail))
+				psi.ArgumentList.Add(argument);
 
 			foreach (var variable in parameters.Environment)
 				psi.Environment[variable.Key] = variable.Value;
@@ -1711,6 +1703,70 @@ public partial class DOS
 				}
 			}
 		});
+	}
+
+	static List<string> SplitArguments(string argumentString)
+	{
+		var argList = new List<string>();
+
+		var span = argumentString.AsSpan();
+
+		var buffer = new StringBuilder();
+
+		while (span.Length > 0)
+		{
+			char endChar;
+
+			if ((span[0] == '"') || (span[0] == '\''))
+			{
+				endChar = span[0];
+				span = span.Slice(1);
+			}
+			else
+				endChar = ' ';
+
+			buffer.Length = 0;
+
+			while ((span.Length > 0) && (span[0] != endChar))
+			{
+				if (span[0] == '\\')
+				{
+					if (span.Length == 1)
+					{
+						buffer.Append('\\');
+						span = span.Slice(1);
+						break;
+					}
+
+					switch (span[1])
+					{
+						case 'b': buffer.Append((char)8); break;
+						case 't': buffer.Append((char)9); break;
+						case 'n': buffer.Append((char)10); break;
+						case 'r': buffer.Append((char)13); break;
+
+						default:
+							buffer.Append(span[1]);
+							break;
+					}
+
+					span = span.Slice(2);
+				}
+				else
+				{
+					buffer.Append(span[0]);
+					span = span.Slice(1);
+				}
+			}
+
+			argList.Add(buffer.ToString());
+
+			span = span.Slice(1);
+			while ((span.Length > 0) && char.IsWhiteSpace(span[0]))
+				span = span.Slice(1);
+		}
+
+		return argList;
 	}
 
 	Dictionary<byte[], SegmentedAddress> _presentedData = new Dictionary<byte[], SegmentedAddress>();
