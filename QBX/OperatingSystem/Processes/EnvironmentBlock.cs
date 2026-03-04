@@ -85,6 +85,8 @@ public class EnvironmentBlock : Dictionary<string, string>
 			}
 
 			environment[variableName] = value;
+
+			address += keyValuePair.Length + 1;
 		}
 	}
 }

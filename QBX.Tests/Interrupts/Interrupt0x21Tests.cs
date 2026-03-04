@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using System.IO.Enumeration;
 using System.Numerics;
+using System.Runtime.InteropServices;
 
 using NSubstitute;
 
@@ -13,6 +14,7 @@ using QBX.OperatingSystem.FileDescriptors;
 using QBX.OperatingSystem.FileStructures;
 using QBX.OperatingSystem.Globalization;
 using QBX.OperatingSystem.Memory;
+using QBX.OperatingSystem.Processes;
 using QBX.Tests.Utility;
 
 using SDL3;
@@ -7347,6 +7349,73 @@ public class Interrupt0x21Tests
 			Arg.Is(InvalidBlockLinearAddress),
 			Arg.Is(NewBlockSizeInBytes),
 			out Arg.Any<int>());
+	}
+
+	[Test]
+	public void LoadAndExecuteProgram_should_run_program()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		const int TestExitCode = 42;
+
+		(string programFile, string commandTail) =
+			RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+			? ("cmd.exe", $"/c exit {TestExitCode}")
+			: ("sh", $"-c 'exit {TestExitCode}'");
+
+		programFile = ShellExecute.FindProgramFileOnPath(programFile, out var interpreter);
+
+		if (interpreter != null)
+		{
+			commandTail = $"{interpreter} {commandTail}";
+			programFile = ShellExecute.FindProgramFileOnPath(programFile, out interpreter);
+
+			if (interpreter != null)
+				throw new Exception("Interpreter needed for interpreter?");
+		}
+
+		byte[] programFileBytes = s_cp437.GetBytes(programFile);
+
+		int programFileAddress = machine.DOS.MemoryManager.AllocateMemory(programFileBytes.Length + 1, machine.DOS.CurrentPSPSegment);
+
+		var programFileSpan = machine.SystemMemory.AsSpan().Slice(programFileAddress, programFileBytes.Length + 1);
+
+		programFileBytes.CopyTo(programFileSpan);
+		programFileSpan[programFileBytes.Length] = 0;
+
+		var loadExec =
+			new LoadExec()
+			{
+				CommandTail = commandTail,
+			};
+
+		loadExec.Environment["PATH"] = "C:\\DOS";
+
+		var loadExecAddress = machine.DOS.MemoryManager.AllocateMemory(LoadExec.Size, machine.DOS.CurrentPSPSegment);
+
+		loadExec.Serialize(
+			machine.SystemMemory,
+			loadExecAddress,
+			machine.DOS.MemoryManager,
+			machine.DOS.CurrentPSPSegment);
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.Function4B << 8;
+		rin.AX |= (int)Interrupt0x21.Function4B.LoadAndExecuteProgram;
+		rin.DS = (ushort)(programFileAddress / MemoryManager.ParagraphSize);
+		rin.DX = (ushort)(programFileAddress % MemoryManager.ParagraphSize);
+		rin.ES = (ushort)(loadExecAddress / MemoryManager.ParagraphSize);
+		rin.BX = (ushort)(loadExecAddress % MemoryManager.ParagraphSize);
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		machine.DOS.LastChildProcessExitCode.Should().Be(TestExitCode);
 	}
 
 	[Test]
