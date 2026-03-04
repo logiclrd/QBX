@@ -1893,7 +1893,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 						FileTime fileTime = new FileTime() { Raw = input.CX };
 						FileDate fileDate = new FileDate() { Raw = input.DX };
 
-						Lazy<DateTime> suppliedDateTime = new Lazy<DateTime>(
+						Lazy<DateTime> suppliedDateTime = new Lazy<DateTime>(() =>
 							new DateTime(
 								fileDate.Year, fileDate.Month, fileDate.Day,
 								fileTime.Hour, fileTime.Minute, fileTime.Second));

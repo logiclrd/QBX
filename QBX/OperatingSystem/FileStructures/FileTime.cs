@@ -36,4 +36,6 @@ public struct FileTime
 
 	public FileTime Set(DateTime dateTime)
 		=> Set(dateTime.Hour, dateTime.Minute, dateTime.Second);
+	public TimeOnly Get()
+		=> new TimeOnly(Hour, Minute, Second);
 }

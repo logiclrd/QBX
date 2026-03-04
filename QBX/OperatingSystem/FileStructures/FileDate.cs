@@ -36,4 +36,6 @@ public struct FileDate
 
 	public FileDate Set(DateTime dateTime)
 		=> Set(dateTime.Year, dateTime.Month,	dateTime.Day);
+	public DateOnly Get()
+		=> new DateOnly(Year, Month, Day);
 }

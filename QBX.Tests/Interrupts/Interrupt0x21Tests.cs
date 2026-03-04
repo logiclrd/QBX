@@ -8085,18 +8085,132 @@ public class Interrupt0x21Tests
 		}
 	}
 
+	[Test, NonParallelizable]
+	public void GetFileDateAndTime_should_return_file_last_modified_datetime()
+	{
+		FileDateTimeTest(
+			Interrupt0x21.Function57.GetFileDateAndTime,
+			arrange:
+				(dateTime, fileName, rin) =>
+				{
+					File.SetLastWriteTime(fileName, dateTime);
+				},
+			assert:
+				(fileName, rout) =>
+				{
+					var time = new FileTime() { Raw = rout.CX };
+					var date = new FileDate() { Raw = rout.DX };
+
+					return date.Get().ToDateTime(time.Get());
+				});
+	}
+
+	[Test, NonParallelizable]
+	public void SetFileDateAndTime_should_return_file_last_modified_datetime()
+	{
+		FileDateTimeTest(
+			Interrupt0x21.Function57.SetFileDateAndTime,
+			arrange:
+				(dateTime, fileName, rin) =>
+				{
+					var time = new FileTime().Set(dateTime);
+					var date = new FileDate().Set(dateTime);
+
+					rin.CX = time.Raw;
+					rin.DX = date.Raw;
+				},
+			assert:
+				(fileName, rout) =>
+				{
+					return File.GetLastWriteTime(fileName);
+				});
+	}
+
+	[Test, NonParallelizable]
+	public void GetFileLastAccessDateAndTime_should_return_file_last_accessed_datetime()
+	{
+		FileDateTimeTest(
+			Interrupt0x21.Function57.GetFileLastAccessDateAndTime,
+			arrange:
+				(dateTime, fileName, rin) =>
+				{
+					File.SetLastAccessTime(fileName, dateTime);
+				},
+			assert:
+				(fileName, rout) =>
+				{
+					var time = new FileTime() { Raw = rout.CX };
+					var date = new FileDate() { Raw = rout.DX };
+
+					return date.Get().ToDateTime(time.Get());
+				});
+	}
+
+	[Test, NonParallelizable]
+	public void SetFileLastAccessDateAndTime_should_return_file_last_accessed_datetime()
+	{
+		FileDateTimeTest(
+			Interrupt0x21.Function57.SetFileLastAccessDateAndTime,
+			arrange:
+				(dateTime, fileName, rin) =>
+				{
+					var time = new FileTime().Set(dateTime);
+					var date = new FileDate().Set(dateTime);
+
+					rin.CX = time.Raw;
+					rin.DX = date.Raw;
+				},
+			assert:
+				(fileName, rout) =>
+				{
+					return File.GetLastAccessTime(fileName);
+				});
+	}
+
+	[Test, NonParallelizable]
+	public void GetFileCreationDateAndTime_should_return_file_created_datetime()
+	{
+		FileDateTimeTest(
+			Interrupt0x21.Function57.GetFileCreationDateAndTime,
+			arrange:
+				(dateTime, fileName, rin) =>
+				{
+					File.SetCreationTime(fileName, dateTime);
+				},
+			assert:
+				(fileName, rout) =>
+				{
+					var time = new FileTime() { Raw = rout.CX };
+					var date = new FileDate() { Raw = rout.DX };
+
+					return date.Get().ToDateTime(time.Get());
+				});
+	}
+
+	[Test, NonParallelizable]
+	public void SetFileCreationDateAndTime_should_return_file_created_datetime()
+	{
+		FileDateTimeTest(
+			Interrupt0x21.Function57.SetFileCreationDateAndTime,
+			arrange:
+				(dateTime, fileName, rin) =>
+				{
+					var time = new FileTime().Set(dateTime);
+					var date = new FileDate().Set(dateTime);
+
+					rin.CX = time.Raw;
+					rin.DX = date.Raw;
+				},
+			assert:
+				(fileName, rout) =>
+				{
+					return File.GetCreationTime(fileName);
+				});
+	}
+
 	/*
 	public enum Function : byte
 	{
-		public enum Function57 : byte
-		{
-			GetFileDateAndTime = 0x00,
-			SetFileDateAndTime = 0x01,
-			GetFileLastAccessDateAndTime = 0x04,
-			SetFileLastAccessDateAndTime = 0x05,
-			GetFileCreationDateAndTime = 0x06,
-			SetFileCreationDateAndTime = 0x07,
-		},
 		public enum Function58 : byte
 		{
 			GetAllocationStrategy = 0x00,
@@ -8317,6 +8431,60 @@ public class Interrupt0x21Tests
 		int consumedBytes = newInputAddress.ToLinearAddress() - inputAddress;
 
 		consumedBytes.Should().Be(expectConsumedInputBytes);
+	}
+
+	static readonly DateTime Epoch = new DateTime(1980, 1, 1);
+	static readonly TimeSpan DateRange = new DateTime(1980 + 127, 12, 31, 23, 59, 59) - Epoch;
+
+	void FileDateTimeTest(
+		Interrupt0x21.Function57 subfunction,
+		Action<DateTime, string, Registers> arrange,
+		Func<string, Registers, DateTime> assert)
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			var testDateTime = Epoch.AddSeconds(TestContext.CurrentContext.Random.NextDouble() * DateRange.TotalSeconds);
+
+			const string TestFileName = "TEST1.TXT";
+
+			File.WriteAllText(TestFileName, "");
+
+			int fileHandle = machine.DOS.OpenFile(TestFileName, QBX.OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite | OpenMode.Share_DenyNone);
+
+			try
+			{
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (int)Interrupt0x21.Function.Function57 << 8;
+				rin.AX |= (ushort)subfunction;
+				rin.BX = (ushort)fileHandle;
+
+				arrange(testDateTime, TestFileName, rin);
+
+				// Act
+				var rout = sut.Execute(rin);
+
+				// Assert
+				rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+				var resultDateTimeUTC = assert(TestFileName, rout);
+
+				resultDateTimeUTC.Should().BeCloseTo(testDateTime, precision: TimeSpan.FromSeconds(2));
+			}
+			finally
+			{
+				machine.DOS.CloseFile(fileHandle);
+			}
+		}
 	}
 
 	enum ControlCharacterHandling
