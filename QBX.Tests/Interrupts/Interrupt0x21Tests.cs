@@ -7725,6 +7725,33 @@ public class Interrupt0x21Tests
 		rout.BX.Should().Be(TestSegmentValue);
 	}
 
+	[Test]
+	public void GetVerifyState_should_return_verify_state([Values] bool testVerifyState)
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		machine.DOS.VerifyWrites = testVerifyState;
+
+		int expectedVerifyStateValue = testVerifyState ? 1 : 0;
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.GetVerifyState << 8;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+		int al = rout.AX & 0xFF;
+
+		al.Should().Be(expectedVerifyStateValue);
+	}
+
 	/*
 	public enum Function : byte
 	{
@@ -7733,7 +7760,6 @@ public class Interrupt0x21Tests
 			ExtendedLengthFileNameOperations = 0xFF, // per Ralf Brown's Interrupt List
 			// still needs a test for function 0x56
 		},
-		GetVerifyState = 0x54,
 		RenameFile = 0x56,
 		public enum Function57 : byte
 		{
