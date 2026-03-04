@@ -924,15 +924,16 @@ public partial class DOS
 	{
 		return TranslateError(() =>
 		{
-			path = Path.GetFullPath(path);
+			path = ShortFileNames.GetFullPath(path);
 
-			if (!ShortFileNames.TryMap(path, out var shortPath))
-				throw new DOSException(DOSError.GeneralFailure);
+			if ((path.Length >= 3)
+			 && (path[1] == ':')
+			 && PathCharacter.DirectorySeparators.Contains(path[2]))
+				path = path.Substring(3);
 
-			if (shortPath.AsSpan().Slice(1, 2).SequenceEqual(":\\"))
-				shortPath = shortPath.Substring(3);
+			path = path.Replace('/', '\\');
 
-			return shortPath;
+			return path;
 		});
 	}
 

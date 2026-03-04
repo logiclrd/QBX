@@ -64,6 +64,8 @@ public class PathCharacter
 		return false;
 	}
 
+	public static readonly char[] DirectorySeparators = ['/', '\\'];
+
 	public static bool IsDirectorySeparator(char ch)
 		=> (ch == '\\') || (ch == '/');
 

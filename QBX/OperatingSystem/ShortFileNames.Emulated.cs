@@ -55,21 +55,41 @@ public partial class ShortFileNames
 
 	static string GetFullPathEmulated(string shortRelativePath)
 	{
-		if (PathCharacter.HasDriveLetter(shortRelativePath))
-			return GetCanonicalPath(shortRelativePath);
-		else
+		if (PathCharacter.TryGetDriveLetter(shortRelativePath, out var driveLetter))
 		{
-			string longCurrentDirectory = Environment.CurrentDirectory;
-
-			string shortRelativePathNonNormalized;
-
-			if (TryMapEmulated(longCurrentDirectory, out var shortCurrentDirectory))
-				shortRelativePathNonNormalized = Path.Combine(shortCurrentDirectory, shortRelativePath);
+			if ((driveLetter == 'C')
+			 && ((shortRelativePath.Length < 3) || !PathCharacter.DirectorySeparators.Contains(shortRelativePath[2])))
+				shortRelativePath = ".\\" + shortRelativePath.Substring(2);
 			else
-				shortRelativePathNonNormalized = Path.Combine(longCurrentDirectory, shortRelativePath);
-
-			return GetCanonicalPath(shortRelativePathNonNormalized);
+				return GetCanonicalPath(shortRelativePath);
 		}
+
+		string longCurrentDirectory = Environment.CurrentDirectory;
+
+		string shortRelativePathNonNormalized;
+
+		if (TryMapEmulated(longCurrentDirectory, out var shortCurrentDirectory))
+			shortRelativePathNonNormalized = CombinePath(shortCurrentDirectory, shortRelativePath);
+		else
+			shortRelativePathNonNormalized = CombinePath(longCurrentDirectory, shortRelativePath);
+
+		return GetCanonicalPath(shortRelativePathNonNormalized);
+	}
+
+	static string CombinePath(string basePath, string relativePath)
+	{
+		if (PathCharacter.HasDriveLetter(relativePath))
+			return relativePath;
+
+		if ((relativePath.Length > 0) && PathCharacter.DirectorySeparators.Contains(relativePath[0]))
+		{
+			if (PathCharacter.TryGetDriveLetter(basePath, out char driveLetter))
+				return driveLetter + ":" + relativePath;
+			else
+				return relativePath;
+		}
+
+		return basePath.TrimEnd(PathCharacter.DirectorySeparators) + PathCharacter.DirectorySeparators[0] + relativePath.TrimStart(PathCharacter.DirectorySeparators);
 	}
 
 	static readonly string DirectorySeparatorString = Path.DirectorySeparatorChar.ToString();
@@ -451,16 +471,14 @@ public partial class ShortFileNames
 		}
 	}
 
-	static readonly char[] PathSeparators = [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar];
-
 	static string GetCanonicalPath(string path)
 	{
 		if (path.Length == 0)
 			return path;
 
-		bool prependRoot = PathSeparators.Contains(path[0]);
+		bool prependRoot = PathCharacter.DirectorySeparators.Contains(path[0]);
 
-		var components = path.Split(PathSeparators, StringSplitOptions.RemoveEmptyEntries).ToList();
+		var components = path.Split(PathCharacter.DirectorySeparators, StringSplitOptions.RemoveEmptyEntries).ToList();
 
 		for (int i=0; i < components.Count; i++)
 		{
