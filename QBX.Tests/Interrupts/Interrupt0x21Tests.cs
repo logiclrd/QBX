@@ -7374,6 +7374,53 @@ public class Interrupt0x21Tests
 		machine.ExitCode.Should().Be(testExitCode);
 	}
 
+	[Test]
+	public void GetChildProgramReturnValue_should_return_last_child_process_exit_code()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		const int TestExitCode = 25;
+
+		(string programFile, string commandTail) =
+			RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+			? ("cmd.exe", $"/c exit {TestExitCode}")
+			: ("sh", $"-c 'exit {TestExitCode}'");
+
+		var loadExec =
+			new LoadExec()
+			{
+				CommandTail = commandTail,
+			};
+
+		programFile = ShellExecute.FindProgramFileOnPath(programFile, out var interpreter);
+
+		if (interpreter != null)
+		{
+			commandTail = $"{interpreter} {commandTail}";
+			programFile = ShellExecute.FindProgramFileOnPath(programFile, out interpreter);
+
+			if (interpreter != null)
+				throw new Exception("Interpreter needed for interpreter?");
+		}
+
+		machine.DOS.ExecuteChildProcess(programFile, loadExec);
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new Registers();
+
+		rin.AX = (int)Interrupt0x21.Function.GetChildProgramReturnValue << 8;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		int actualExitCode = rout.AX & 0xFF;
+
+		actualExitCode.Should().Be(TestExitCode);
+	}
+
 	/*
 	public enum Function : byte
 	{
@@ -7382,7 +7429,6 @@ public class Interrupt0x21Tests
 			ExtendedLengthFileNameOperations = 0xFF, // per Ralf Brown's Interrupt List
 			// still needs a test for function 0x56
 		},
-		GetChildProgramReturnValue = 0x4D,
 		FindFirstFile = 0x4E,
 		FindNextFile = 0x4F,
 		SetPSPAddress = 0x50,
