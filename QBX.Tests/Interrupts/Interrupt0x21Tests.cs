@@ -16,6 +16,7 @@ using QBX.OperatingSystem.Globalization;
 using QBX.OperatingSystem.Memory;
 using QBX.OperatingSystem.Processes;
 using QBX.Tests.Utility;
+using QBX.Tests.Utility.Interop;
 
 using SDL3;
 
@@ -8292,10 +8293,77 @@ public class Interrupt0x21Tests
 		errorAction.Should().Be(testErrorAction);
 		errorLocation.Should().Be(testErrorLocation);
 	}
+
+	[Test, NonParallelizable]
+	public void CreateTemporaryFile_should_create_and_open_temporary_file([Values(".", "A")] string folderName)
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			Directory.CreateDirectory("A");
+
+			const int FileNameBufferSize = 64;
+
+			int fileNameAddress = machine.DOS.MemoryManager.AllocateMemory(FileNameBufferSize, machine.DOS.CurrentPSPSegment);
+
+			var fileNameSpan = machine.SystemMemory.AsSpan().Slice(fileNameAddress, FileNameBufferSize + 1);
+
+			fileNameSpan.Clear();
+			s_cp437.GetBytes(folderName + "\\", fileNameSpan);
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.CreateTemporaryFile << 8;
+			rin.DS = (ushort)(fileNameAddress / MemoryManager.ParagraphSize);
+			rin.DX = (ushort)(fileNameAddress % MemoryManager.ParagraphSize);
+
+			// Act
+			var rout = sut.Execute(rin);
+
+			// Assert
+			rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+			int fileHandle = rout.AX;
+
+			try
+			{
+				int terminator = fileNameSpan.IndexOf((byte)0);
+
+				if (terminator < 0)
+					terminator = fileNameSpan.Length;
+
+				string shortFileName = s_cp437.GetString(fileNameSpan.Slice(0, terminator));
+
+				string longFileName = ShortFileNames.Unmap(shortFileName);
+
+				File.Exists(longFileName).Should().BeTrue();
+
+				fileHandle.Should().BeInRange(2, machine.DOS.Files.Count - 1);
+
+				var fileDescriptor = machine.DOS.Files[fileHandle];
+
+				string fileDescriptorPath = fileDescriptor.Should().BeOfType<RegularFileDescriptor>().Which.PhysicalPath;
+
+				IsSameFile(longFileName, fileDescriptorPath).Should().BeTrue();
+			}
+			finally
+			{
+				machine.DOS.CloseFile(fileHandle);
+			}
+		}
+	}
+
 	/*
 	public enum Function : byte
 	{
-		CreateTemporaryFile = 0x5A,
 		CreateNewFile = 0x5B,
 		LockUnlockFile = 0x5C,
 		SetExtendedError = 0x5D,
@@ -8786,5 +8854,28 @@ public class Interrupt0x21Tests
 		int index = TestContext.CurrentContext.Random.Next(0, enumDomain.Length);
 
 		return (TEnum)enumDomain[index];
+	}
+
+	static bool IsSameFile(string path1, string path2)
+	{
+		if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+			return IsSameFile(path1, path2, new FileIndexProvider());
+		else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+			return IsSameFile(path1, path2, new LinuxINodeProvider());
+		else if (RuntimeInformation.IsOSPlatform(OSPlatform.FreeBSD))
+			return IsSameFile(path1, path2, new FreeBSDINodeProvider());
+		else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+			return IsSameFile(path1, path2, new OSXINodeProvider());
+		else
+			return Path.GetFullPath(path1) == Path.GetFullPath(path2);
+	}
+
+	static bool IsSameFile<TINode>(string path1, string path2, INodeProvider<TINode> inodeProvider)
+		where TINode : INode<TINode>
+	{
+		return
+			inodeProvider.TryGetINode(path1, out var inode1) &&
+			inodeProvider.TryGetINode(path2, out var inode2) &&
+			inode1.IsSameVolumeAndFileAs(inode2);
 	}
 }
