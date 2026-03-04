@@ -8257,15 +8257,44 @@ public class Interrupt0x21Tests
 		machine.DOS.MemoryManager.AllocationStrategy.Should().Be(testAllocationStrategy);
 	}
 
+	[Test]
+	public void GetExtendedError_should_return_error_details()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var testError = RandomEnumValue<DOSError>();
+		var testErrorClass = RandomEnumValue<DOSErrorClass>();
+		var testErrorAction = RandomEnumValue<DOSErrorAction>();
+		var testErrorLocation = RandomEnumValue<DOSErrorLocation>();
+
+		machine.DOS.SetExtendedError(testError, testErrorClass, testErrorAction, testErrorLocation);
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.GetExtendedError << 8;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+		var error = (DOSError)rout.AX;
+		var errorClass = (DOSErrorClass)(rout.BX >> 8);
+		var errorAction = (DOSErrorAction)(rout.BX & 0xFF);
+		var errorLocation = (DOSErrorLocation)(rout.CX >> 8);
+
+		error.Should().Be(testError);
+		errorClass.Should().Be(testErrorClass);
+		errorAction.Should().Be(testErrorAction);
+		errorLocation.Should().Be(testErrorLocation);
+	}
 	/*
 	public enum Function : byte
 	{
-		public enum Function58 : byte
-		{
-			GetUpperMemoryLink = 0x02,
-			SetUpperMemoryLink = 0x03,
-		},
-		GetExtendedError = 0x59,
 		CreateTemporaryFile = 0x5A,
 		CreateNewFile = 0x5B,
 		LockUnlockFile = 0x5C,
@@ -8737,5 +8766,25 @@ public class Interrupt0x21Tests
 		}
 
 		return false;
+	}
+
+	static Dictionary<Type, object[]> s_cachedEnumDomains = new Dictionary<Type, object[]>();
+
+	static TEnum RandomEnumValue<TEnum>()
+	{
+		var enumType = typeof(TEnum);
+
+		if (!s_cachedEnumDomains.TryGetValue(enumType, out var enumDomain))
+		{
+			TEnum[] values = (TEnum[])Enum.GetValues(typeof(TEnum));
+
+			enumDomain = values.Cast<object>().ToArray();
+
+			s_cachedEnumDomains[enumType] = enumDomain;
+		}
+
+		int index = TestContext.CurrentContext.Random.Next(0, enumDomain.Length);
+
+		return (TEnum)enumDomain[index];
 	}
 }
