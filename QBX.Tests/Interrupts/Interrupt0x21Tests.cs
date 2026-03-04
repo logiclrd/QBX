@@ -7490,6 +7490,192 @@ public class Interrupt0x21Tests
 		actualExitCode.Should().Be(TestExitCode);
 	}
 
+	[Test, NonParallelizable]
+	public void FindFirstFile_should_handle_no_matches()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			File.WriteAllText("TEST1.TXT", "");
+			File.WriteAllText("TEST23.TXT", "");
+			File.WriteAllText("TEST24.TXT", "");
+			File.WriteAllText("TEST3.TXT", "");
+
+			const string TestPattern = "TEST4*.*";
+
+			byte[] patternBytes = s_cp437.GetBytes(TestPattern);
+
+			int patternAddress = machine.DOS.MemoryManager.AllocateMemory(patternBytes.Length + 1, machine.DOS.CurrentPSPSegment);
+
+			var patternSpan = machine.SystemMemory.AsSpan().Slice(patternAddress, patternBytes.Length + 1);
+
+			patternBytes.CopyTo(patternSpan);
+			patternSpan[patternBytes.Length] = 0;
+
+			var dtaAddress = machine.DOS.MemoryManager.AllocateMemory(DOSFileInfo.Size, machine.DOS.CurrentPSPSegment);
+
+			var dtaAddressSegmented = new SegmentedAddress(dtaAddress);
+
+			machine.DOS.DiskTransferAddressSegment = dtaAddressSegmented.Segment;
+			machine.DOS.DiskTransferAddressOffset = dtaAddressSegmented.Offset;
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.FindFirstFile << 8;
+			rin.DS = (ushort)(patternAddress / MemoryManager.ParagraphSize);
+			rin.DX = (ushort)(patternAddress % MemoryManager.ParagraphSize);
+
+			// Act
+			var rout = sut.Execute(rin);
+
+			// Assert
+			rout.FLAGS.Should().HaveFlag(Flags.Carry);
+
+			rout.AX.Should().Be((ushort)DOSError.FileNotFound);
+		}
+	}
+
+	[Test, NonParallelizable]
+	public void FindFirstFile_should_find_first_file()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			File.WriteAllText("TEST1.TXT", "");
+			File.WriteAllText("TEST23.TXT", "");
+			File.WriteAllText("TEST24.TXT", "");
+			File.WriteAllText("TEST3.TXT", "");
+
+			const string TestPattern = "TEST2*.*";
+
+			byte[] patternBytes = s_cp437.GetBytes(TestPattern);
+
+			int patternAddress = machine.DOS.MemoryManager.AllocateMemory(patternBytes.Length + 1, machine.DOS.CurrentPSPSegment);
+
+			var patternSpan = machine.SystemMemory.AsSpan().Slice(patternAddress, patternBytes.Length + 1);
+
+			patternBytes.CopyTo(patternSpan);
+			patternSpan[patternBytes.Length] = 0;
+
+			var dtaAddress = machine.DOS.MemoryManager.AllocateMemory(DOSFileInfo.Size, machine.DOS.CurrentPSPSegment);
+
+			var dtaAddressSegmented = new SegmentedAddress(dtaAddress);
+
+			machine.DOS.DiskTransferAddressSegment = dtaAddressSegmented.Segment;
+			machine.DOS.DiskTransferAddressOffset = dtaAddressSegmented.Offset;
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.FindFirstFile << 8;
+			rin.DS = (ushort)(patternAddress / MemoryManager.ParagraphSize);
+			rin.DX = (ushort)(patternAddress % MemoryManager.ParagraphSize);
+
+			// Act
+			var rout = sut.Execute(rin);
+
+			// Assert
+			rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+			var fileInfo = new DOSFileInfo();
+
+			fileInfo.Deserialize(machine.SystemMemory, dtaAddress);
+
+			var validMatches = Directory.GetFiles(workspace.Path, TestPattern).Select(path => Path.GetFileName(path));
+
+			fileInfo.FileName.ToStringZ().Should().BeOneOf(validMatches);
+		}
+	}
+
+	[Test, NonParallelizable]
+	public void FindNextFile_should_find_all_matching_files()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			File.WriteAllText("TEST1.TXT", "");
+			File.WriteAllText("TEST23.TXT", "");
+			File.WriteAllText("TEST24.TXT", "");
+			File.WriteAllText("TEST3.TXT", "");
+
+			const string TestPattern = "TEST2*.*";
+
+			byte[] patternBytes = s_cp437.GetBytes(TestPattern);
+
+			int patternAddress = machine.DOS.MemoryManager.AllocateMemory(patternBytes.Length + 1, machine.DOS.CurrentPSPSegment);
+
+			var patternSpan = machine.SystemMemory.AsSpan().Slice(patternAddress, patternBytes.Length + 1);
+
+			patternBytes.CopyTo(patternSpan);
+			patternSpan[patternBytes.Length] = 0;
+
+			var dtaAddress = machine.DOS.MemoryManager.AllocateMemory(DOSFileInfo.Size, machine.DOS.CurrentPSPSegment);
+
+			var dtaAddressSegmented = new SegmentedAddress(dtaAddress);
+
+			machine.DOS.DiskTransferAddressSegment = dtaAddressSegmented.Segment;
+			machine.DOS.DiskTransferAddressOffset = dtaAddressSegmented.Offset;
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.FindFirstFile << 8;
+			rin.DS = (ushort)(patternAddress / MemoryManager.ParagraphSize);
+			rin.DX = (ushort)(patternAddress % MemoryManager.ParagraphSize);
+
+			var rout = sut.Execute(rin);
+
+			var allMatches = new List<string>();
+
+			var fileInfo = new DOSFileInfo();
+
+			fileInfo.Deserialize(machine.SystemMemory, dtaAddress);
+
+			allMatches.Add(fileInfo.FileName.ToStringZ());
+
+			rin.AX = (int)Interrupt0x21.Function.FindNextFile << 8;
+
+			// Act
+			rout = sut.Execute(rin);
+
+			while ((rout.FLAGS & Flags.Carry) == 0)
+			{
+				fileInfo.Deserialize(machine.SystemMemory, dtaAddress);
+
+				allMatches.Add(fileInfo.FileName.ToStringZ());
+
+				rout = sut.Execute(rin);
+			}
+
+			// Assert
+			var validMatches = Directory.GetFiles(workspace.Path, TestPattern).Select(path => Path.GetFileName(path));
+
+			allMatches.Should().BeEquivalentTo(validMatches);
+		}
+	}
+
 	/*
 	public enum Function : byte
 	{
@@ -7498,8 +7684,6 @@ public class Interrupt0x21Tests
 			ExtendedLengthFileNameOperations = 0xFF, // per Ralf Brown's Interrupt List
 			// still needs a test for function 0x56
 		},
-		FindFirstFile = 0x4E,
-		FindNextFile = 0x4F,
 		SetPSPAddress = 0x50,
 		GetPSPAddress = 0x51,
 		GetVerifyState = 0x54,

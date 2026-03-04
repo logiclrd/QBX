@@ -8,6 +8,8 @@ namespace QBX.OperatingSystem.FileStructures;
 
 public class DOSFileInfo
 {
+	public const int Size = 43;
+
 	[InlineArray(length: 11)]
 	public struct SearchPatternBytes
 	{
@@ -27,12 +29,12 @@ public class DOSFileInfo
 	public FileAttributes Attributes;
 	public FileTime FileTime;
 	public FileDate FileDate;
-	public uint Size;
+	public uint FileSize;
 	public StringValue FileName = StringValue.CreateFixedLength(length: 13);
 
 	public void Serialize(IMemory memory, int address)
 	{
-		var stream = new SystemMemoryStream(memory, address, length: 43);
+		var stream = new SystemMemoryStream(memory, address, length: Size);
 
 		var writer = new BinaryWriter(stream);
 
@@ -43,13 +45,13 @@ public class DOSFileInfo
 		writer.Write((byte)Attributes);
 		writer.Write(FileTime.Raw);
 		writer.Write(FileDate.Raw);
-		writer.Write(Size);
+		writer.Write(FileSize);
 		writer.Write(FileName.AsSpan());
 	}
 
 	public void Deserialize(IMemory memory, int address)
 	{
-		var stream = new SystemMemoryStream(memory, address, length: 43);
+		var stream = new SystemMemoryStream(memory, address, length: Size);
 
 		var reader = new BinaryReader(stream);
 
@@ -60,7 +62,7 @@ public class DOSFileInfo
 		Attributes = (FileAttributes)reader.ReadByte();
 		FileTime.Raw = reader.ReadUInt16();
 		FileDate.Raw = reader.ReadUInt16();
-		Size = reader.ReadUInt32();
+		FileSize = reader.ReadUInt32();
 		reader.ReadExactly(FileName.AsSpan());
 	}
 }

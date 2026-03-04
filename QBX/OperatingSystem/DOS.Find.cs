@@ -10,6 +10,8 @@ using QBX.OperatingSystem.FileStructures;
 
 using FileAttributes = QBX.OperatingSystem.FileStructures.FileAttributes;
 
+using StringValue = QBX.ExecutionEngine.Execution.StringValue;
+
 namespace QBX.OperatingSystem;
 
 public partial class DOS
@@ -183,9 +185,17 @@ public partial class DOS
 		dosFileInfo.FileDate.Set(timestamp);
 
 		if (info is FileInfo fileInfo)
-			dosFileInfo.Size = (uint)fileInfo.Length;
+			dosFileInfo.FileSize = (uint)fileInfo.Length;
 
-		dosFileInfo.FileName.Set(shortName);
+		var shortNameBytes = new StringValue(shortName);
+
+		var shortNameSpan = shortNameBytes.AsSpan();
+
+		if (shortNameSpan.Length > dosFileInfo.FileName.Length)
+			shortNameSpan = shortNameSpan.Slice(0, dosFileInfo.FileName.Length);
+
+		dosFileInfo.FileName.Clear();
+		shortNameSpan.CopyTo(dosFileInfo.FileName.AsSpan());
 
 		dosFileInfo.Serialize(Machine.MemoryBus, DiskTransferAddress);
 	}
@@ -253,11 +263,14 @@ public partial class DOS
 			string fileNamePart = Path.GetFileNameWithoutExtension(fileNamePattern);
 			string extensionPart = Path.GetExtension(fileNamePattern);
 
+			if ((extensionPart.Length > 0) && (extensionPart[0] == '.'))
+				extensionPart = extensionPart.Substring(1);
+
 			string collapsedFileNamePart = NormalizeFileSearchPattern(ref fileNamePart, 8);
 			string collapsedExtensionPart = NormalizeFileSearchPattern(ref extensionPart, 3);
 
 			string collapsedFileNamePattern = collapsedFileNamePart + "." + collapsedExtensionPart;
-			string rawFileNamePattern = collapsedFileNamePart + collapsedExtensionPart;
+			string rawFileNamePattern = fileNamePart + extensionPart;
 
 			byte[] searchPatternBytes = s_cp437.GetBytes(rawFileNamePattern);
 

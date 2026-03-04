@@ -274,6 +274,16 @@ public class StringValue : IComparable<StringValue>, IEquatable<StringValue>
 	public string ToString(int index, int length)
 		=> s_cp437.GetString(AsSpan().Slice(index, length));
 
+	public string ToStringZ()
+	{
+		int terminator = IndexOf(0);
+
+		if (terminator < 0)
+			terminator = Length;
+
+		return ToString(0, terminator);
+	}
+
 	public static int Compare(StringValue left, StringValue right)
 		=> Compare(left.AsSpan(), right.AsSpan());
 
