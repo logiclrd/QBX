@@ -2357,12 +2357,11 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 							{
 								case Function65.ConvertCharacter:
 								{
-									input.DX &= 0xFF00;
-
 									byte ch = unchecked((byte)(input.DX & 0xFF));
 
 									ch = ToUpper(ch);
 
+									input.DX &= 0xFF00;
 									input.DX |= ch;
 
 									break;

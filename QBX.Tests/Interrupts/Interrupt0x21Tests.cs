@@ -9149,12 +9149,48 @@ public class Interrupt0x21Tests
 			getExpectedTable: culture => CharacterTables.GetDoubleByteCharacterSet(culture));
 	}
 
+	[Test]
+	public void ConvertCharacter_should_uppercase_character([Range(1, 254)] byte testCharacter)
+	{
+		// Arrange
+		var machine = new Machine();
+
+		machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+		var uppercaseTable = CharacterTables.GetUppercaseTable(machine.DOS.CurrentCulture);
+
+		byte expectedUppercaseCharacter = testCharacter;
+
+		if (expectedUppercaseCharacter < 128)
+		{
+			if ((expectedUppercaseCharacter >= 'a') && (expectedUppercaseCharacter <= 'z'))
+				expectedUppercaseCharacter -= 32;
+		}
+		else
+			expectedUppercaseCharacter = uppercaseTable[expectedUppercaseCharacter - 128];
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.Function65 << 8;
+		rin.AX |= (int)Interrupt0x21.Function65.ConvertCharacter;
+		rin.DX = testCharacter;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		int actualUppercaseCharacter = rout.DX & 0xFF;
+
+		actualUppercaseCharacter.Should().Be(expectedUppercaseCharacter);
+	}
+
 	/*
 	public enum Function : byte
 	{
 		public enum Function65 : byte
 		{
-			ConvertCharacter = 0x20,
 			ConvertString = 0x21,
 			ConvertASCIIZString = 0x22,
 		},
