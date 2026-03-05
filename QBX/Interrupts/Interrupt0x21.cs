@@ -341,7 +341,9 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.DisplayString:
 				{
-					int o = inputEx.DS * 0x10 + result.DX;
+					var address = new SegmentedAddress(inputEx.DS, input.DX);
+
+					int o = address.ToLinearAddress();
 
 					while (true)
 					{
@@ -360,7 +362,9 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.BufferedKeyboardInput:
 				{
-					int o = inputEx.DS * 0x10 + result.DX;
+					var address = new SegmentedAddress(inputEx.DS, input.DX);
+
+					int o = address.ToLinearAddress();
 
 					int numBytesDesired = machine.MemoryBus[o];
 
@@ -438,9 +442,9 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.OpenFileWithFCB:
 				{
-					int offset = inputEx.DS * 0x10 + input.DX;
+					var address = new SegmentedAddress(inputEx.DS, input.DX);
 
-					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
+					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, address.ToLinearAddress());
 
 					int fd = machine.DOS.OpenFile(fcb, FileMode.Open);
 
@@ -455,9 +459,9 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.CloseFileWithFCB:
 				{
-					int offset = inputEx.DS * 0x10 + input.DX;
+					var address = new SegmentedAddress(inputEx.DS, input.DX);
 
-					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
+					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, address.ToLinearAddress());
 
 					result.AX &= 0xFF00;
 
@@ -468,9 +472,9 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.FindFirstFileWithFCB:
 				{
-					int offset = inputEx.DS * 0x10 + input.DX;
+					var address = new SegmentedAddress(inputEx.DS, input.DX);
 
-					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
+					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, address.ToLinearAddress());
 
 					result.AX &= 0xFF00;
 
@@ -483,9 +487,9 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.FindNextFileWithFCB:
 				{
-					int offset = inputEx.DS * 0x10 + input.DX;
+					var address = new SegmentedAddress(inputEx.DS, input.DX);
 
-					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
+					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, address.ToLinearAddress());
 
 					result.AX &= 0xFF00;
 
@@ -496,9 +500,9 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.DeleteFileWithFCB:
 				{
-					int offset = inputEx.DS * 0x10 + input.DX;
+					var address = new SegmentedAddress(inputEx.DS, input.DX);
 
-					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
+					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, address.ToLinearAddress());
 
 					result.AX &= 0xFF00;
 
@@ -511,9 +515,9 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.SequentialRead:
 				{
-					int offset = inputEx.DS * 0x10 + input.DX;
+					var address = new SegmentedAddress(inputEx.DS, input.DX);
 
-					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
+					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, address.ToLinearAddress());
 
 					result.AX &= 0xFF00;
 
@@ -535,9 +539,9 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.SequentialWrite:
 				{
-					int offset = inputEx.DS * 0x10 + input.DX;
+					var address = new SegmentedAddress(inputEx.DS, input.DX);
 
-					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
+					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, address.ToLinearAddress());
 
 					result.AX &= 0xFF00;
 
@@ -564,9 +568,9 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.CreateFileWithFCB:
 				{
-					int offset = inputEx.DS * 0x10 + input.DX;
+					var address = new SegmentedAddress(inputEx.DS, input.DX);
 
-					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
+					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, address.ToLinearAddress());
 
 					int fd = machine.DOS.OpenFile(fcb, FileMode.Create);
 
@@ -581,9 +585,9 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.RenameFileWithFCB:
 				{
-					int offset = inputEx.DS * 0x10 + input.DX;
+					var address = new SegmentedAddress(inputEx.DS, input.DX);
 
-					var rfcb = RenameFileControlBlock.Deserialize(machine.MemoryBus, offset);
+					var rfcb = RenameFileControlBlock.Deserialize(machine.MemoryBus, address.ToLinearAddress());
 
 					machine.DOS.RenameFiles(rfcb);
 
@@ -679,9 +683,9 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.RandomRead:
 				{
-					int offset = inputEx.DS * 0x10 + input.DX;
+					var address = new SegmentedAddress(inputEx.DS, input.DX);
 
-					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
+					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, address.ToLinearAddress());
 
 					if (fcb.RandomRecordNumber > 8388607) // maximum addressible record number
 						result.AX |= 0xFF;
@@ -714,9 +718,9 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.RandomWrite:
 				{
-					int offset = inputEx.DS * 0x10 + input.DX;
+					var address = new SegmentedAddress(inputEx.DS, input.DX);
 
-					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
+					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, address.ToLinearAddress());
 
 					if (fcb.RandomRecordNumber > 8388607) // maximum addressible record number
 						result.AX |= 0xFF;
@@ -754,9 +758,9 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.GetFileSize:
 				{
-					int offset = inputEx.DS * 0x10 + input.DX;
+					var address = new SegmentedAddress(inputEx.DS, input.DX);
 
-					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
+					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, address.ToLinearAddress());
 
 					result.AX &= 0xFF00;
 
@@ -769,9 +773,9 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.SetRandomRecordNumber:
 				{
-					int offset = inputEx.DS * 0x10 + input.DX;
+					var address = new SegmentedAddress(inputEx.DS, input.DX);
 
-					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
+					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, address.ToLinearAddress());
 
 					result.AX &= 0xFF00;
 
@@ -786,9 +790,9 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.RandomBlockRead:
 				{
-					int offset = inputEx.DS * 0x10 + input.DX;
+					var address = new SegmentedAddress(inputEx.DS, input.DX);
 
-					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
+					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, address.ToLinearAddress());
 
 					if (fcb.RandomRecordNumber > 8388607) // maximum addressible record number
 						result.AX |= 0xFF;
@@ -823,9 +827,9 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.RandomBlockWrite:
 				{
-					int offset = inputEx.DS * 0x10 + input.DX;
+					var address = new SegmentedAddress(inputEx.DS, input.DX);
 
-					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
+					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, address.ToLinearAddress());
 
 					if (fcb.RandomRecordNumber > 8388607) // maximum addressible record number
 						result.AX |= 0xFF;
@@ -865,9 +869,9 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.ParseFilename:
 				{
-					int offset = inputEx.ES * 0x10 + input.DI;
+					var address = new SegmentedAddress(inputEx.ES, input.DI);
 
-					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, offset);
+					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, address.ToLinearAddress());
 
 					var flags = unchecked((ParseFlags)input.AX);
 
@@ -1071,13 +1075,13 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 					if (input.DX != 0xFFFF)
 					{
 						// Get
-						int offset = inputEx.DS * 0x10 + input.DX;
+						var address = new SegmentedAddress(inputEx.DS, input.DX);
 
 						var countryInfo = new CountryInfo();
 
 						countryInfo.Import(machine.DOS.CurrentCulture);
 
-						countryInfo.Serialize(machine.MemoryBus, offset);
+						countryInfo.Serialize(machine.MemoryBus, address.ToLinearAddress());
 
 						var countryCode = machine.DOS.CurrentCulture.ToCountryCode();
 
@@ -1105,9 +1109,9 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				case Function.RemoveDirectory:
 				case Function.ChangeCurrentDirectory:
 				{
-					int address = inputEx.DS * 0x10 + input.DX;
+					var address = new SegmentedAddress(inputEx.DS, input.DX);
 
-					var directoryName = machine.DOS.ReadStringZ(machine.MemoryBus, address);
+					var directoryName = machine.DOS.ReadStringZ(machine.MemoryBus, address.ToLinearAddress());
 
 					if (machine.DOS.LastError != DOSError.None)
 					{
@@ -1131,9 +1135,9 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.CreateFileWithHandle:
 				{
-					int address = inputEx.DS * 0x10 + input.DX;
+					var address = new SegmentedAddress(inputEx.DS, input.DX);
 
-					var relativePath = machine.DOS.ReadStringZ(machine.MemoryBus, address);
+					var relativePath = machine.DOS.ReadStringZ(machine.MemoryBus, address.ToLinearAddress());
 
 					if (machine.DOS.LastError != DOSError.None)
 					{
@@ -1166,9 +1170,9 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.OpenFileWithHandle:
 				{
-					int address = inputEx.DS * 0x10 + input.DX;
+					var address = new SegmentedAddress(inputEx.DS, input.DX);
 
-					var relativePath = machine.DOS.ReadStringZ(machine.MemoryBus, address);
+					var relativePath = machine.DOS.ReadStringZ(machine.MemoryBus, address.ToLinearAddress());
 
 					if (machine.DOS.LastError != DOSError.None)
 					{
@@ -1237,9 +1241,9 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.DeleteFile:
 				{
-					int address = inputEx.DS * 0x10 + input.DX;
+					var address = new SegmentedAddress(inputEx.DS, input.DX);
 
-					var relativePath = machine.DOS.ReadStringZ(machine.MemoryBus, address);
+					var relativePath = machine.DOS.ReadStringZ(machine.MemoryBus, address.ToLinearAddress());
 
 					if (machine.DOS.LastError != DOSError.None)
 					{
@@ -1305,9 +1309,9 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 						case Function43.GetFileAttributes:
 						case Function43.SetFileAttributes:
 						{
-							int address = inputEx.DS * 0x10 + input.DX;
+							var address = new SegmentedAddress(inputEx.DS, input.DX);
 
-							var relativePath = machine.DOS.ReadStringZ(machine.MemoryBus, address);
+							var relativePath = machine.DOS.ReadStringZ(machine.MemoryBus, address.ToLinearAddress());
 
 							if (machine.DOS.LastError != DOSError.None)
 							{
@@ -2067,9 +2071,9 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.CreateNewFile:
 				{
-					int address = inputEx.DS * 0x10 + input.DX;
+					var address = new SegmentedAddress(inputEx.DS, input.DX);
 
-					var relativePath = machine.DOS.ReadStringZ(machine.MemoryBus, address);
+					var relativePath = machine.DOS.ReadStringZ(machine.MemoryBus, address.ToLinearAddress());
 
 					if (machine.DOS.LastError != DOSError.None)
 					{
@@ -2233,7 +2237,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 					{
 						case Function65.GetExtendedCountryInformation:
 						{
-							int bufferAddress = inputEx.ES * 0x10 + input.DI;
+							var bufferAddress = new SegmentedAddress(inputEx.ES, input.DI);
 
 							int codePage = input.BX;
 
@@ -2258,7 +2262,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 								machine.DOS.TranslateError(() =>
 								{
 									countryInfo.Import(machine.DOS.CurrentCulture);
-									countryInfo.Serialize(machine.MemoryBus, bufferAddress);
+									countryInfo.Serialize(machine.MemoryBus, bufferAddress.ToLinearAddress());
 								});
 							}
 
@@ -2276,7 +2280,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 						case Function65.GetCollateSequenceTable:
 						case Function65.GetDoubleByteCharacterSet:
 						{
-							int bufferAddress = inputEx.ES * 0x10 + input.DI;
+							var bufferAddress = new SegmentedAddress(inputEx.ES, input.DI);
 
 							int codePage = input.BX;
 
@@ -2312,7 +2316,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 
 									var presentedTableAddress = machine.DOS.PresentData(table);
 
-									var stream = new SystemMemoryStream(machine.MemoryBus, bufferAddress, 5);
+									var stream = new SystemMemoryStream(machine.MemoryBus, bufferAddress.ToLinearAddress(), 5);
 
 									var writer = new BinaryWriter(stream);
 
@@ -2504,9 +2508,9 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				}
 				case Function.ExtendedOpenCreate:
 				{
-					int address = inputEx.DS * 0x10 + input.SI;
+					var address = new SegmentedAddress(inputEx.DS, input.SI);
 
-					var relativePath = machine.DOS.ReadStringZ(machine.MemoryBus, address);
+					var relativePath = machine.DOS.ReadStringZ(machine.MemoryBus, address.ToLinearAddress());
 
 					if (machine.DOS.LastError != DOSError.None)
 					{
