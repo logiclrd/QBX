@@ -1883,81 +1883,52 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					int fileHandle = input.BX;
 
-					machine.DOS.ClearLastError();
+					var subfunction = (Function57)al;
 
-					if ((fileHandle < 0) || (fileHandle >= machine.DOS.Files.Count)
-					 || (machine.DOS.Files[fileHandle] is not FileDescriptor fileDescriptor))
-						machine.DOS.SetLastError(DOSError.InvalidHandle);
-					else if (fileDescriptor is not RegularFileDescriptor regularFileDescriptor)
-						machine.DOS.SetLastError(DOSError.InvalidFunction);
-					else
+					FileTime fileTime = new FileTime() { Raw = input.CX };
+					FileDate fileDate = new FileDate() { Raw = input.DX };
+
+					Lazy<DateTime> suppliedDateTime = new Lazy<DateTime>(() =>
+						new DateTime(
+							fileDate.Year, fileDate.Month, fileDate.Day,
+							fileTime.Hour, fileTime.Minute, fileTime.Second));
+
+					result.FLAGS &= ~Flags.Carry;
+
+					DateTime returnDateTime = default;
+
+					machine.DOS.TranslateError(() =>
 					{
-						var subfunction = (Function57)al;
-
-						FileTime fileTime = new FileTime() { Raw = input.CX };
-						FileDate fileDate = new FileDate() { Raw = input.DX };
-
-						Lazy<DateTime> suppliedDateTime = new Lazy<DateTime>(() =>
-							new DateTime(
-								fileDate.Year, fileDate.Month, fileDate.Day,
-								fileTime.Hour, fileTime.Minute, fileTime.Second));
-
-						DateTime returnDateTime = default;
-
-						machine.DOS.TranslateError(() =>
+						switch (subfunction)
 						{
-							switch (subfunction)
-							{
-								case Function57.GetFileDateAndTime:
-									returnDateTime = File.GetLastWriteTime(regularFileDescriptor.Handle);
-									break;
-								case Function57.SetFileDateAndTime:
-									File.SetLastWriteTime(regularFileDescriptor.Handle, suppliedDateTime.Value);
-									break;
+							case Function57.GetFileDateAndTime: returnDateTime = machine.DOS.GetFileLastWriteTime(fileHandle); break;
+							case Function57.SetFileDateAndTime: machine.DOS.SetFileLastWriteTime(fileHandle, suppliedDateTime.Value); break;
 
-								case Function57.GetFileLastAccessDateAndTime:
-									returnDateTime = File.GetLastAccessTime(regularFileDescriptor.Handle);
-									break;
-								case Function57.SetFileLastAccessDateAndTime:
-									File.SetLastAccessTime(regularFileDescriptor.Handle, suppliedDateTime.Value);
-									break;
+							case Function57.GetFileLastAccessDateAndTime: returnDateTime = machine.DOS.GetFileLastAccessTime(fileHandle); break;
+							case Function57.SetFileLastAccessDateAndTime: machine.DOS.SetFileLastAccessTime(fileHandle, suppliedDateTime.Value); break;
 
-								case Function57.GetFileCreationDateAndTime:
-									returnDateTime = File.GetCreationTime(regularFileDescriptor.Handle);
-									break;
-								case Function57.SetFileCreationDateAndTime:
-									File.SetCreationTime(regularFileDescriptor.Handle, suppliedDateTime.Value);
-									break;
+							case Function57.GetFileCreationDateAndTime: returnDateTime = machine.DOS.GetFileCreationTime(fileHandle); break;
+							case Function57.SetFileCreationDateAndTime: machine.DOS.SetFileCreationTime(fileHandle, suppliedDateTime.Value); break;
 
-								default:
-								{
-									machine.DOS.SetLastError(DOSError.InvalidFunction);
-
-									result.FLAGS |= Flags.Carry;
-									result.AX = (ushort)machine.DOS.LastError;
-
-									break;
-								}
-							}
-						});
-
-						if (machine.DOS.LastError == DOSError.None)
-						{
-							if (returnDateTime != default)
-							{
-								fileTime.Set(returnDateTime);
-								fileDate.Set(returnDateTime);
-
-								result.CX = fileTime.Raw;
-								result.DX = fileDate.Raw;
-							}
+							default: machine.DOS.SetLastError(DOSError.InvalidFunction); break;
 						}
-					}
+					});
 
 					if (machine.DOS.LastError != DOSError.None)
 					{
 						result.FLAGS |= Flags.Carry;
 						result.AX = (ushort)machine.DOS.LastError;
+					}
+					else
+					{
+						if (returnDateTime != default)
+						{
+							fileTime.Set(returnDateTime);
+							fileDate.Set(returnDateTime);
+
+							result.CX = fileTime.Raw;
+							result.DX = fileDate.Raw;
+						}
 					}
 
 					break;

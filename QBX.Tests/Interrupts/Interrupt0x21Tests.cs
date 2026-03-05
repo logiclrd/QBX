@@ -1,7 +1,10 @@
-﻿using System.Globalization;
+﻿using System.Dynamic;
+using System.Globalization;
 using System.IO.Enumeration;
 using System.Numerics;
 using System.Runtime.InteropServices;
+
+using Microsoft.Win32.SafeHandles;
 
 using NSubstitute;
 
@@ -8095,12 +8098,12 @@ public class Interrupt0x21Tests
 		FileDateTimeTest(
 			Interrupt0x21.Function57.GetFileDateAndTime,
 			arrange:
-				(dateTime, fileName, rin) =>
+				(dateTime, mockFileDateTimeProvider, underlyingFileHandle, rin) =>
 				{
-					File.SetLastWriteTime(fileName, dateTime);
+					mockFileDateTimeProvider.GetLastWriteTime(underlyingFileHandle).Returns(dateTime);
 				},
 			assert:
-				(fileName, rout) =>
+				(receivedLastWriteTime, receivedLastAccessTime, receivedCreationTime, rout) =>
 				{
 					var time = new FileTime() { Raw = rout.CX };
 					var date = new FileDate() { Raw = rout.DX };
@@ -8110,12 +8113,12 @@ public class Interrupt0x21Tests
 	}
 
 	[Test, NonParallelizable]
-	public void SetFileDateAndTime_should_return_file_last_modified_datetime()
+	public void SetFileDateAndTime_should_set_file_last_modified_datetime()
 	{
 		FileDateTimeTest(
 			Interrupt0x21.Function57.SetFileDateAndTime,
 			arrange:
-				(dateTime, fileName, rin) =>
+				(dateTime, mockFileDateTimeProvider, underlyingFileHandle, rin) =>
 				{
 					var time = new FileTime().Set(dateTime);
 					var date = new FileDate().Set(dateTime);
@@ -8124,9 +8127,13 @@ public class Interrupt0x21Tests
 					rin.DX = date.Raw;
 				},
 			assert:
-				(fileName, rout) =>
+				(receivedLastWriteTime, receivedLastAccessTime, receivedCreationTime, rout) =>
 				{
-					return File.GetLastWriteTime(fileName);
+					receivedLastWriteTime.Should().NotBeNull();
+					receivedLastAccessTime.Should().BeNull();
+					receivedCreationTime.Should().BeNull();
+
+					return receivedLastWriteTime!.Value;
 				});
 	}
 
@@ -8136,12 +8143,12 @@ public class Interrupt0x21Tests
 		FileDateTimeTest(
 			Interrupt0x21.Function57.GetFileLastAccessDateAndTime,
 			arrange:
-				(dateTime, fileName, rin) =>
+				(dateTime, mockFileDateTimeProvider, underlyingFileHandle, rin) =>
 				{
-					File.SetLastAccessTime(fileName, dateTime);
+					mockFileDateTimeProvider.GetLastAccessTime(underlyingFileHandle).Returns(dateTime);
 				},
 			assert:
-				(fileName, rout) =>
+				(receivedLastWriteTime, receivedLastAccessTime, receivedCreationTime, rout) =>
 				{
 					var time = new FileTime() { Raw = rout.CX };
 					var date = new FileDate() { Raw = rout.DX };
@@ -8151,12 +8158,12 @@ public class Interrupt0x21Tests
 	}
 
 	[Test, NonParallelizable]
-	public void SetFileLastAccessDateAndTime_should_return_file_last_accessed_datetime()
+	public void SetFileLastAccessDateAndTime_should_set_file_last_accessed_datetime()
 	{
 		FileDateTimeTest(
 			Interrupt0x21.Function57.SetFileLastAccessDateAndTime,
 			arrange:
-				(dateTime, fileName, rin) =>
+				(dateTime, mockFileDateTimeProvider, underlyingFileHandle, rin) =>
 				{
 					var time = new FileTime().Set(dateTime);
 					var date = new FileDate().Set(dateTime);
@@ -8165,25 +8172,28 @@ public class Interrupt0x21Tests
 					rin.DX = date.Raw;
 				},
 			assert:
-				(fileName, rout) =>
+				(receivedLastWriteTime, receivedLastAccessTime, receivedCreationTime, rout) =>
 				{
-					return File.GetLastAccessTime(fileName);
+					receivedLastWriteTime.Should().BeNull();
+					receivedLastAccessTime.Should().NotBeNull();
+					receivedCreationTime.Should().BeNull();
+
+					return receivedLastAccessTime!.Value;
 				});
 	}
 
 	[Test, NonParallelizable]
-	[Platform(Exclude = NUnitPlatformNames.Linux)]
 	public void GetFileCreationDateAndTime_should_return_file_created_datetime()
 	{
 		FileDateTimeTest(
 			Interrupt0x21.Function57.GetFileCreationDateAndTime,
 			arrange:
-				(dateTime, fileName, rin) =>
+				(dateTime, mockFileDateTimeProvider, underlyingFileHandle, rin) =>
 				{
-					File.SetCreationTime(fileName, dateTime);
+					mockFileDateTimeProvider.GetCreationTime(underlyingFileHandle).Returns(dateTime);
 				},
 			assert:
-				(fileName, rout) =>
+				(receivedLastWriteTime, receivedLastAccessTime, receivedCreationTime, rout) =>
 				{
 					var time = new FileTime() { Raw = rout.CX };
 					var date = new FileDate() { Raw = rout.DX };
@@ -8193,13 +8203,12 @@ public class Interrupt0x21Tests
 	}
 
 	[Test, NonParallelizable]
-	[Platform(Exclude = NUnitPlatformNames.Linux)]
-	public void SetFileCreationDateAndTime_should_return_file_created_datetime()
+	public void SetFileCreationDateAndTime_should_set_file_created_datetime()
 	{
 		FileDateTimeTest(
 			Interrupt0x21.Function57.SetFileCreationDateAndTime,
 			arrange:
-				(dateTime, fileName, rin) =>
+				(dateTime, mockFileDateTimeProvider, underlyingFileHandle, rin) =>
 				{
 					var time = new FileTime().Set(dateTime);
 					var date = new FileDate().Set(dateTime);
@@ -8208,9 +8217,13 @@ public class Interrupt0x21Tests
 					rin.DX = date.Raw;
 				},
 			assert:
-				(fileName, rout) =>
+				(receivedLastWriteTime, receivedLastAccessTime, receivedCreationTime, rout) =>
 				{
-					return File.GetCreationTime(fileName);
+					receivedLastWriteTime.Should().BeNull();
+					receivedLastAccessTime.Should().BeNull();
+					receivedCreationTime.Should().NotBeNull();
+
+					return receivedCreationTime!.Value;
 				});
 	}
 
@@ -9525,15 +9538,33 @@ public class Interrupt0x21Tests
 
 	void FileDateTimeTest(
 		Interrupt0x21.Function57 subfunction,
-		Action<DateTime, string, Registers> arrange,
-		Func<string, Registers, DateTime> assert)
+		Action<DateTime, IFileDateTimeProvider, SafeFileHandle, Registers> arrange,
+		Func<DateTime?, DateTime?, DateTime?, Registers, DateTime> assert)
 	{
 		// Arrange
 		using (var workspace = new TemporaryDirectory())
 		{
 			Environment.CurrentDirectory = workspace.Path;
 
-			var machine = new Machine();
+			var mockFileDateTimeProvider = Substitute.For<IFileDateTimeProvider>();
+
+			var underlyingFileHandle = new SafeFileHandle();
+
+			DateTime? receivedLastWriteTime = null;
+			DateTime? receivedLastAccessTime = null;
+			DateTime? receivedCreationTime = null;
+
+			mockFileDateTimeProvider
+				.When(mock => mock.SetLastWriteTime(Arg.Any<SafeFileHandle>(), Arg.Any<DateTime>()))
+				.Do(callInfo => { if (callInfo.Arg<SafeFileHandle>() == underlyingFileHandle) receivedLastWriteTime = callInfo.Arg<DateTime>(); });
+			mockFileDateTimeProvider
+				.When(mock => mock.SetLastAccessTime(Arg.Any<SafeFileHandle>(), Arg.Any<DateTime>()))
+				.Do(callInfo => { if (callInfo.Arg<SafeFileHandle>() == underlyingFileHandle) receivedLastAccessTime = callInfo.Arg<DateTime>(); });
+			mockFileDateTimeProvider
+				.When(mock => mock.SetCreationTime(Arg.Any<SafeFileHandle>(), Arg.Any<DateTime>()))
+				.Do(callInfo => { if (callInfo.Arg<SafeFileHandle>() == underlyingFileHandle) receivedCreationTime = callInfo.Arg<DateTime>(); });
+
+			var machine = new Machine(overrideFileDateTimeProvider: mockFileDateTimeProvider);
 
 			machine.DOS.SetUpRunningProgramSegmentPrefix("");
 
@@ -9545,6 +9576,13 @@ public class Interrupt0x21Tests
 
 			int fileHandle = machine.DOS.OpenFile(TestFileName, QBX.OperatingSystem.FileStructures.FileMode.Open, OpenMode.Access_ReadWrite | OpenMode.Share_DenyNone);
 
+			// Capture the underlying file handle for the mock.
+			fileHandle.Should().BeInRange(2, machine.DOS.Files.Count - 1);
+
+			var fileDescriptor = machine.DOS.Files[fileHandle].Should().BeOfType<RegularFileDescriptor>().Which;
+
+			underlyingFileHandle = fileDescriptor.Handle;
+
 			try
 			{
 				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
@@ -9555,7 +9593,7 @@ public class Interrupt0x21Tests
 				rin.AX |= (ushort)subfunction;
 				rin.BX = (ushort)fileHandle;
 
-				arrange(testDateTime, TestFileName, rin);
+				arrange(testDateTime, mockFileDateTimeProvider, underlyingFileHandle, rin);
 
 				// Act
 				var rout = sut.Execute(rin);
@@ -9563,7 +9601,7 @@ public class Interrupt0x21Tests
 				// Assert
 				rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
 
-				var resultDateTimeUTC = assert(TestFileName, rout);
+				var resultDateTimeUTC = assert(receivedLastWriteTime, receivedLastAccessTime, receivedCreationTime, rout);
 
 				resultDateTimeUTC.Should().BeCloseTo(testDateTime, precision: TimeSpan.FromSeconds(2));
 			}

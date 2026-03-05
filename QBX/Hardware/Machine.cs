@@ -26,15 +26,17 @@ public class Machine
 	public int ExitCode = 0;
 
 	internal IDriveInfoProvider? OverrideDriveInfoProvider;
+	internal IFileDateTimeProvider? OverrideFileDateTimeProvider;
 
 	public Machine()
-		: this(overrideDriveInfoProvider: null)
+		: this(overrideDriveInfoProvider: null, overrideFileDateTimeProvider: null)
 	{
 	}
 
-	internal Machine(IDriveInfoProvider? overrideDriveInfoProvider)
+	internal Machine(IDriveInfoProvider? overrideDriveInfoProvider = null, IFileDateTimeProvider? overrideFileDateTimeProvider = null)
 	{
 		OverrideDriveInfoProvider = overrideDriveInfoProvider;
+		OverrideFileDateTimeProvider = overrideFileDateTimeProvider;
 
 		SystemClock = new SystemClock();
 

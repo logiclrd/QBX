@@ -81,10 +81,12 @@ public partial class DOS
 	static CP437Encoding s_cp437 = new CP437Encoding(ControlCharacterInterpretation.Semantic);
 
 	internal IDriveInfoProvider DriveInfoProvider;
+	internal IFileDateTimeProvider FileDateTimeProvider;
 
 	public DOS(Machine machine)
 	{
 		DriveInfoProvider = machine.OverrideDriveInfoProvider ?? new DefaultDriveInfoProvider();
+		FileDateTimeProvider = machine.OverrideFileDateTimeProvider ?? new DefaultFileDateTimeProvider();
 
 		_machine = machine;
 
@@ -1556,6 +1558,96 @@ public partial class DOS
 				if (_lastError == DOSError.NoMoreFiles)
 					ClearLastError();
 			}
+		});
+	}
+
+	public DateTime GetFileLastWriteTime(int fileHandle)
+	{
+		return TranslateError(() =>
+		{
+			if ((fileHandle < 0) || (fileHandle >= Files.Count)
+			|| (Files[fileHandle] is not FileDescriptor fileDescriptor))
+				throw new DOSException(DOSError.InvalidHandle);
+
+			if (fileDescriptor is not RegularFileDescriptor regularFileDescriptor)
+				throw new DOSException(DOSError.InvalidFunction);
+
+			return FileDateTimeProvider.GetLastWriteTime(regularFileDescriptor.Handle);
+		});
+	}
+
+	public DateTime GetFileLastAccessTime(int fileHandle)
+	{
+		return TranslateError(() =>
+		{
+			if ((fileHandle < 0) || (fileHandle >= Files.Count)
+			 || (Files[fileHandle] is not FileDescriptor fileDescriptor))
+				throw new DOSException(DOSError.InvalidHandle);
+
+			if (fileDescriptor is not RegularFileDescriptor regularFileDescriptor)
+				throw new DOSException(DOSError.InvalidFunction);
+
+			return FileDateTimeProvider.GetLastAccessTime(regularFileDescriptor.Handle);
+		});
+	}
+
+	public DateTime GetFileCreationTime(int fileHandle)
+	{
+		return TranslateError(() =>
+		{
+			if ((fileHandle < 0) || (fileHandle >= Files.Count)
+			 || (Files[fileHandle] is not FileDescriptor fileDescriptor))
+				throw new DOSException(DOSError.InvalidHandle);
+
+			if (fileDescriptor is not RegularFileDescriptor regularFileDescriptor)
+				throw new DOSException(DOSError.InvalidFunction);
+
+			return FileDateTimeProvider.GetCreationTime(regularFileDescriptor.Handle);
+		});
+	}
+
+	public void SetFileLastWriteTime(int fileHandle, DateTime newValue)
+	{
+		TranslateError(() =>
+		{
+			if ((fileHandle < 0) || (fileHandle >= Files.Count)
+			 || (Files[fileHandle] is not FileDescriptor fileDescriptor))
+				throw new DOSException(DOSError.InvalidHandle);
+
+			if (fileDescriptor is not RegularFileDescriptor regularFileDescriptor)
+				throw new DOSException(DOSError.InvalidFunction);
+
+			FileDateTimeProvider.SetLastWriteTime(regularFileDescriptor.Handle, newValue);
+		});
+	}
+
+	public void SetFileLastAccessTime(int fileHandle, DateTime newValue)
+	{
+		TranslateError(() =>
+		{
+			if ((fileHandle < 0) || (fileHandle >= Files.Count)
+			 || (Files[fileHandle] is not FileDescriptor fileDescriptor))
+				throw new DOSException(DOSError.InvalidHandle);
+
+			if (fileDescriptor is not RegularFileDescriptor regularFileDescriptor)
+				throw new DOSException(DOSError.InvalidFunction);
+
+			FileDateTimeProvider.SetLastAccessTime(regularFileDescriptor.Handle, newValue);
+		});
+	}
+
+	public void SetFileCreationTime(int fileHandle, DateTime newValue)
+	{
+		TranslateError(() =>
+		{
+			if ((fileHandle < 0) || (fileHandle >= Files.Count)
+			 || (Files[fileHandle] is not FileDescriptor fileDescriptor))
+				throw new DOSException(DOSError.InvalidHandle);
+
+			if (fileDescriptor is not RegularFileDescriptor regularFileDescriptor)
+				throw new DOSException(DOSError.InvalidFunction);
+
+			FileDateTimeProvider.SetCreationTime(regularFileDescriptor.Handle, newValue);
 		});
 	}
 
