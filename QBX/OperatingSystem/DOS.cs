@@ -1645,9 +1645,12 @@ public partial class DOS
 
 			argList.Add(buffer.ToString());
 
-			span = span.Slice(1);
-			while ((span.Length > 0) && char.IsWhiteSpace(span[0]))
+			if (span.Length > 0)
+			{
 				span = span.Slice(1);
+				while ((span.Length > 0) && char.IsWhiteSpace(span[0]))
+					span = span.Slice(1);
+			}
 		}
 
 		return argList;
