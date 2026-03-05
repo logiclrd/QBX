@@ -9015,10 +9015,32 @@ public class Interrupt0x21Tests
 		}
 	}
 
+	[Test]
+	public void GetCurrentPSPAddress_should_return_PSP_segment()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.GetCurrentPSPAddress << 8;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+		rout.BX.Should().Be(machine.DOS.CurrentPSPSegment);
+	}
+
 	/*
 	public enum Function : byte
 	{
-		GetCurrentPSPAddress = 0x62,
 		public enum Function65 : byte
 		{
 			GetExtendedCountryInformation = 0x01,
