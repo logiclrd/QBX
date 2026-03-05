@@ -8776,10 +8776,10 @@ public class Interrupt0x21Tests
 
 			const string TestFileName = "a/testfile.txt";
 
-			Directory.CreateDirectory("A");
+			Directory.CreateDirectory("a");
 			File.WriteAllText(TestFileName, "QuickBASIC");
 
-			if (!ShortFileNames.TryMap(TestFileName, out var expectedTrueName))
+			if (!ShortFileNames.TryMap(Path.GetFullPath(TestFileName), out var expectedTrueName))
 				throw new Exception("Failed to map test filename");
 
 			expectedTrueName = ShortFileNames.GetFullPath(expectedTrueName);
@@ -8839,10 +8839,10 @@ public class Interrupt0x21Tests
 
 			const string TestFileName = "a/testfile.txt";
 
-			Directory.CreateDirectory("A");
+			Directory.CreateDirectory("a");
 			File.WriteAllText(TestFileName, "QuickBASIC");
 
-			if (!ShortFileNames.TryMap(TestFileName, out var expectedTrueName))
+			if (!ShortFileNames.TryMap(Path.GetFullPath(TestFileName), out var expectedTrueName))
 				throw new Exception("Failed to map test filename");
 
 			expectedTrueName = ShortFileNames.GetFullPath(expectedTrueName);
