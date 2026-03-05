@@ -725,6 +725,10 @@ public partial class DOS
 
 	public StringValue GetCanonicalName(StringValue inputPath)
 	{
+		var inputPathString = inputPath.ToString();
+
+		var canonicalPathString = ShortFileNames.GetFullPath(inputPathString);
+
 		var upperCaseTable = CharacterTables.GetFilenameUppercaseTable(CurrentCulture);
 
 		byte ToUpper(byte b)
@@ -737,132 +741,12 @@ public partial class DOS
 			return b;
 		}
 
-		var inputSpan = inputPath.AsSpan();
+		var canonicalPathBytes = new StringValue(canonicalPathString);
 
-		var outputPath = new StringValue();
+		for (int i = 0; i < canonicalPathBytes.Length; i++)
+			canonicalPathBytes[i] = ToUpper(canonicalPathBytes[i]);
 
-		string currentDirectory;
-
-		if ((inputPath.Length >= 2)
-		 && char.IsAsciiLetter((char)inputSpan[0])
-		 && (inputSpan[1] == ':'))
-		{
-			currentDirectory = Path.GetFullPath(s_cp437.GetString(inputSpan.Slice(0, 2)));
-
-			inputSpan = inputSpan.Slice(2);
-		}
-		else
-			currentDirectory = Environment.CurrentDirectory;
-
-		if (!ShortFileNames.TryMap(currentDirectory, out currentDirectory))
-		{
-			SetLastError(DOSError.GeneralFailure);
-			return outputPath;
-		}
-
-		outputPath.Append(currentDirectory);
-
-		for (int i = 0; i < outputPath.Length; i++)
-			outputPath[i] = ToUpper(outputPath[i]);
-
-		while (inputSpan.Length > 0)
-		{
-			int separator = inputSpan.IndexOf((byte)'\\');
-
-			if (separator == 0)
-			{
-				outputPath.Append((byte)'\\');
-				inputSpan = inputSpan.Slice(1);
-			}
-			else
-			{
-				bool isLastComponent = (separator < 0);
-
-				var component = isLastComponent ? inputSpan : inputSpan.Slice(0, separator);
-
-				inputSpan = inputSpan.Slice(component.Length);
-
-				// ".": same directory
-				if ((component.Length == 1) && (component[0] == '.'))
-				{
-					if (outputPath.EndsWith((byte)'\\'))
-						outputPath.Remove(outputPath.Length - 1, 1);
-
-					continue;
-				}
-
-				// "..": parent directory
-				if ((component.Length == 2) && (component[0] == '.') && (component[1] == '.'))
-				{
-					if (outputPath.EndsWith((byte)'\\'))
-						outputPath.Remove(outputPath.Length - 1, 1);
-
-					int nextSeparator = outputPath.Length - 1;
-
-					while ((nextSeparator >= 0) && (outputPath[nextSeparator] != '\\'))
-						nextSeparator--;
-
-					if (nextSeparator < 0)
-						outputPath.Clear();
-					else
-						outputPath.Remove(nextSeparator, outputPath.Length - nextSeparator);
-
-					continue;
-				}
-
-				int dot = component.IndexOf((byte)'.');
-				int otherDot = component.LastIndexOf((byte)'.');
-
-				if (dot != otherDot)
-				{
-					if (isLastComponent)
-						SetLastError(DOSError.FileNotFound);
-					else
-						SetLastError(DOSError.PathNotFound);
-
-					break;
-				}
-
-				int nameLength = Math.Min(dot, 8);
-
-				for (int i = 0; i < nameLength; i++)
-				{
-					if (component[i] == '*')
-					{
-						while (i < 8)
-							outputPath.Append((byte)'?');
-
-						break;
-					}
-
-					outputPath.Append(ToUpper(component[i]));
-				}
-
-				component = component.Slice(dot + 1);
-
-				int extLength = component.Length;
-
-				if (extLength > 0)
-				{
-					outputPath.Append((byte)'.');
-
-					for (int i = 0; i < extLength; i++)
-					{
-						if (component[i] == '*')
-						{
-							while (i < 3)
-								outputPath.Append((byte)'?');
-
-							break;
-						}
-
-						outputPath.Append(ToUpper(component[i]));
-					}
-				}
-			}
-		}
-
-		return outputPath;
+		return canonicalPathBytes;
 	}
 
 	public void CreateDirectory(StringValue directoryName)

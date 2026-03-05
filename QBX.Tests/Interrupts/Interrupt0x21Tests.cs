@@ -8749,10 +8749,275 @@ public class Interrupt0x21Tests
 		rout.AX.Should().Be((ushort)DOSError.InvalidFunction);
 	}
 
+	[Test, NonParallelizable]
+	public void TrueName_should_capitalize_path()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "a/testfile.txt";
+
+			Directory.CreateDirectory("A");
+			File.WriteAllText(TestFileName, "QuickBASIC");
+
+			if (!ShortFileNames.TryMap(TestFileName, out var expectedTrueName))
+				throw new Exception("Failed to map test filename");
+
+			expectedTrueName = ShortFileNames.GetFullPath(expectedTrueName);
+
+			expectedTrueName = expectedTrueName.ToUpper();
+
+			var expectedTrueNameBytes = s_cp437.GetBytes(expectedTrueName + '\0');
+
+			byte[] fileNameBytes = s_cp437.GetBytes(TestFileName);
+
+			int inputBufferSize = fileNameBytes.Length + 1;
+
+			var inputAddress = machine.DOS.MemoryManager.AllocateMemory(inputBufferSize, machine.DOS.CurrentPSPSegment);
+
+			var inputSpan = machine.SystemMemory.AsSpan().Slice(inputAddress, inputBufferSize);
+
+			fileNameBytes.CopyTo(inputSpan);
+			inputSpan[fileNameBytes.Length] = 0;
+
+			const int OutputBufferSize = 128;
+
+			var outputAddress = machine.DOS.MemoryManager.AllocateMemory(OutputBufferSize, machine.DOS.CurrentPSPSegment);
+
+			var outputSpan = machine.SystemMemory.AsSpan().Slice(outputAddress, OutputBufferSize);
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.TrueName << 8;
+			rin.DS = (ushort)(inputAddress / MemoryManager.ParagraphSize);
+			rin.SI = (ushort)(inputAddress % MemoryManager.ParagraphSize);
+			rin.ES = (ushort)(outputAddress / MemoryManager.ParagraphSize);
+			rin.DI = (ushort)(outputAddress % MemoryManager.ParagraphSize);
+
+			// Act
+			var rout = sut.Execute(rin);
+
+			// Assert
+			rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+			outputSpan.ShouldStartWith(expectedTrueNameBytes);
+		}
+	}
+
+	[Test, NonParallelizable]
+	public void TrueName_should_normalize_separator_characters()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "a/testfile.txt";
+
+			Directory.CreateDirectory("A");
+			File.WriteAllText(TestFileName, "QuickBASIC");
+
+			if (!ShortFileNames.TryMap(TestFileName, out var expectedTrueName))
+				throw new Exception("Failed to map test filename");
+
+			expectedTrueName = ShortFileNames.GetFullPath(expectedTrueName);
+
+			string input = expectedTrueName.Replace('\\', '/');
+
+			expectedTrueName = expectedTrueName.ToUpper();
+
+			var expectedTrueNameBytes = s_cp437.GetBytes(expectedTrueName + '\0');
+
+			byte[] inputBytes = s_cp437.GetBytes(input);
+
+			int inputBufferSize = inputBytes.Length + 1;
+
+			var inputAddress = machine.DOS.MemoryManager.AllocateMemory(inputBufferSize, machine.DOS.CurrentPSPSegment);
+
+			var inputSpan = machine.SystemMemory.AsSpan().Slice(inputAddress, inputBufferSize);
+
+			inputBytes.CopyTo(inputSpan);
+			inputSpan[inputBytes.Length] = 0;
+
+			const int OutputBufferSize = 128;
+
+			var outputAddress = machine.DOS.MemoryManager.AllocateMemory(OutputBufferSize, machine.DOS.CurrentPSPSegment);
+
+			var outputSpan = machine.SystemMemory.AsSpan().Slice(outputAddress, OutputBufferSize);
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.TrueName << 8;
+			rin.DS = (ushort)(inputAddress / MemoryManager.ParagraphSize);
+			rin.SI = (ushort)(inputAddress % MemoryManager.ParagraphSize);
+			rin.ES = (ushort)(outputAddress / MemoryManager.ParagraphSize);
+			rin.DI = (ushort)(outputAddress % MemoryManager.ParagraphSize);
+
+			// Act
+			var rout = sut.Execute(rin);
+
+			// Assert
+			rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+			outputSpan.ShouldStartWith(expectedTrueNameBytes);
+		}
+	}
+
+	[Test, NonParallelizable]
+	public void TrueName_should_follow_navigation_tokens_to_current_directory()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "testfile.txt";
+
+			File.WriteAllText(TestFileName, "QuickBASIC");
+
+			if (!ShortFileNames.TryMap(TestFileName, out var expectedTrueName))
+				throw new Exception("Failed to map test filename");
+
+			expectedTrueName = ShortFileNames.GetFullPath(expectedTrueName);
+			expectedTrueName = expectedTrueName.ToUpper();
+
+			string input = expectedTrueName;
+
+			int lastSlash = input.LastIndexOf('\\');
+
+			input = input.Substring(0, lastSlash) + "\\." + input.Substring(lastSlash);
+
+			var expectedTrueNameBytes = s_cp437.GetBytes(expectedTrueName + '\0');
+
+			byte[] inputBytes = s_cp437.GetBytes(input);
+
+			int inputBufferSize = inputBytes.Length + 1;
+
+			var inputAddress = machine.DOS.MemoryManager.AllocateMemory(inputBufferSize, machine.DOS.CurrentPSPSegment);
+
+			var inputSpan = machine.SystemMemory.AsSpan().Slice(inputAddress, inputBufferSize);
+
+			inputBytes.CopyTo(inputSpan);
+			inputSpan[inputBytes.Length] = 0;
+
+			const int OutputBufferSize = 128;
+
+			var outputAddress = machine.DOS.MemoryManager.AllocateMemory(OutputBufferSize, machine.DOS.CurrentPSPSegment);
+
+			var outputSpan = machine.SystemMemory.AsSpan().Slice(outputAddress, OutputBufferSize);
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.TrueName << 8;
+			rin.DS = (ushort)(inputAddress / MemoryManager.ParagraphSize);
+			rin.SI = (ushort)(inputAddress % MemoryManager.ParagraphSize);
+			rin.ES = (ushort)(outputAddress / MemoryManager.ParagraphSize);
+			rin.DI = (ushort)(outputAddress % MemoryManager.ParagraphSize);
+
+			// Act
+			var rout = sut.Execute(rin);
+
+			// Assert
+			rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+			outputSpan.ShouldStartWith(expectedTrueNameBytes);
+		}
+	}
+
+	[Test, NonParallelizable]
+	public void TrueName_should_follow_navigation_tokens_to_parent_directory()
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "testfile.txt";
+
+			File.WriteAllText(TestFileName, "QuickBASIC");
+
+			if (!ShortFileNames.TryMap(TestFileName, out var expectedTrueName))
+				throw new Exception("Failed to map test filename");
+
+			expectedTrueName = ShortFileNames.GetFullPath(expectedTrueName);
+			expectedTrueName = expectedTrueName.ToUpper();
+
+			Directory.CreateDirectory("A");
+
+			Environment.CurrentDirectory = "A";
+
+			string input = expectedTrueName;
+
+			int lastSlash = input.LastIndexOf('\\');
+
+			input = input.Substring(0, lastSlash) + "\\A\\.." + input.Substring(lastSlash);
+
+			var expectedTrueNameBytes = s_cp437.GetBytes(expectedTrueName + '\0');
+
+			byte[] inputBytes = s_cp437.GetBytes(input);
+
+			int inputBufferSize = inputBytes.Length + 1;
+
+			var inputAddress = machine.DOS.MemoryManager.AllocateMemory(inputBufferSize, machine.DOS.CurrentPSPSegment);
+
+			var inputSpan = machine.SystemMemory.AsSpan().Slice(inputAddress, inputBufferSize);
+
+			inputBytes.CopyTo(inputSpan);
+			inputSpan[inputBytes.Length] = 0;
+
+			const int OutputBufferSize = 128;
+
+			var outputAddress = machine.DOS.MemoryManager.AllocateMemory(OutputBufferSize, machine.DOS.CurrentPSPSegment);
+
+			var outputSpan = machine.SystemMemory.AsSpan().Slice(outputAddress, OutputBufferSize);
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.TrueName << 8;
+			rin.DS = (ushort)(inputAddress / MemoryManager.ParagraphSize);
+			rin.SI = (ushort)(inputAddress % MemoryManager.ParagraphSize);
+			rin.ES = (ushort)(outputAddress / MemoryManager.ParagraphSize);
+			rin.DI = (ushort)(outputAddress % MemoryManager.ParagraphSize);
+
+			// Act
+			var rout = sut.Execute(rin);
+
+			// Assert
+			rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+			outputSpan.ShouldStartWith(expectedTrueNameBytes);
+		}
+	}
+
 	/*
 	public enum Function : byte
 	{
-		TrueName = 0x60, // undocumented
 		GetCurrentPSPAddress = 0x62,
 		public enum Function65 : byte
 		{
