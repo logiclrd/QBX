@@ -2261,7 +2261,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 							{
 								machine.DOS.TranslateError(() =>
 								{
-									countryInfo.Import(machine.DOS.CurrentCulture);
+									countryInfo.Import(cultureInfo);
 									countryInfo.Serialize(machine.MemoryBus, bufferAddress.ToLinearAddress());
 								});
 							}

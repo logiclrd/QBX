@@ -9038,12 +9038,62 @@ public class Interrupt0x21Tests
 		rout.BX.Should().Be(machine.DOS.CurrentPSPSegment);
 	}
 
+	[Test, Sequential]
+	public void GetExtendedCountryInformation_should_return_culture_information(
+		[Values(0xFFFF, 437, 850)] int testCodePageID,
+		[Values((CountryCode)0xFFFF, CountryCode.UnitedStates, CountryCode.CanadianFrench)] CountryCode testCountryCode)
+	{
+		// Arrange
+		var machine = new Machine();
+
+		machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+		var bufferAddress = machine.DOS.MemoryManager.AllocateMemory(ExtendedCountryInfo.Size, machine.DOS.CurrentPSPSegment);
+
+		var expectedCountryInfo = new ExtendedCountryInfo();
+
+		if (testCodePageID == 0xFFFF) // current
+			expectedCountryInfo.Import(machine.DOS.CurrentCulture);
+		else
+		{
+			var culture = CultureUtility.GetCultureInfoForCodePageAndCountry(testCodePageID, testCountryCode);
+
+			if (culture == null)
+				throw new Exception("Couldn't get test culture");
+
+			expectedCountryInfo.Import(culture);
+		}
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.Function65 << 8;
+		rin.AX |= (int)Interrupt0x21.Function65.GetExtendedCountryInformation;
+		rin.BX = (ushort)testCodePageID;
+		rin.CX = ExtendedCountryInfo.Size;
+		rin.DX = (ushort)testCountryCode;
+		rin.ES = unchecked((ushort)(bufferAddress / MemoryManager.ParagraphSize));
+		rin.DI = unchecked((ushort)(bufferAddress % MemoryManager.ParagraphSize));
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+		var actualCountryInfo = new ExtendedCountryInfo();
+
+		actualCountryInfo.Deserialize(machine.MemoryBus, bufferAddress);
+
+		actualCountryInfo.Should().BeEquivalentTo(expectedCountryInfo);
+	}
+
 	/*
 	public enum Function : byte
 	{
 		public enum Function65 : byte
 		{
-			GetExtendedCountryInformation = 0x01,
 			GetUppercaseTable = 0x02,
 			GetFilenameUppercaseTable = 0x04,
 			GetFilenameCharacterTable = 0x05,

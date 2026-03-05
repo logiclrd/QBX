@@ -51,6 +51,6 @@ public class ExtendedCountryInfo : CountryInfo
 		CountryCode = (CountryCode)reader.ReadUInt16();
 		CodePageID = reader.ReadUInt16();
 
-		base.Serialize(memory, address + 6);
+		base.Deserialize(memory, address + 6);
 	}
 }
