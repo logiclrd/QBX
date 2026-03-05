@@ -9186,14 +9186,23 @@ public class Interrupt0x21Tests
 		actualUppercaseCharacter.Should().Be(expectedUppercaseCharacter);
 	}
 
+	[Test]
+	public void ConvertString_should_uppercase_entire_string()
+	{
+		InternationalizationStringUppercaseTest(
+			subfunction: Interrupt0x21.Function65.ConvertString);
+	}
+
+	[Test]
+	public void ConvertASCIIZString_should_uppercase_entire_string()
+	{
+		InternationalizationStringUppercaseTest(
+			subfunction: Interrupt0x21.Function65.ConvertASCIIZString);
+	}
+
 	/*
 	public enum Function : byte
 	{
-		public enum Function65 : byte
-		{
-			ConvertString = 0x21,
-			ConvertASCIIZString = 0x22,
-		},
 		public enum Function66 : byte
 		{
 			GetGlobalCodePage = 0x01,
@@ -9206,6 +9215,7 @@ public class Interrupt0x21Tests
 	}
 	 */
 
+	#region Common Test Methods
 	enum DOSReadInputType
 	{
 		Character,
@@ -9502,6 +9512,62 @@ public class Interrupt0x21Tests
 		tableSpan.ShouldMatch(expectedTable);
 	}
 
+	void InternationalizationStringUppercaseTest(Interrupt0x21.Function65 subfunction)
+	{
+		// Arrange
+		var machine = new Machine();
+
+		machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+		var testString = new StringValue();
+
+		for (byte b = 1; b <= 254; b++)
+			testString.Append(b);
+		testString.Append(0); // ignored for ConvertString
+
+		int bufferAddress = machine.DOS.MemoryManager.AllocateMemory(testString.Length, machine.DOS.CurrentPSPSegment);
+
+		var bufferSpan = machine.SystemMemory.AsSpan().Slice(bufferAddress, testString.Length);
+
+		testString.AsSpan().CopyTo(bufferSpan);
+
+		var uppercaseTable = CharacterTables.GetUppercaseTable(machine.DOS.CurrentCulture);
+
+		var expectedResult = new StringValue(testString);
+
+		for (int i = 0; i < expectedResult.Length; i++)
+		{
+			byte b = expectedResult[i];
+
+			if ((b >= 'a') && (b <= 'z'))
+				b -= 32;
+			else if (b >= 128)
+				b = uppercaseTable[b - 128];
+
+			expectedResult[i] = b;
+		}
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.Function65 << 8;
+		rin.AX |= (byte)subfunction;
+		rin.CX = (ushort)(testString.Length - 1); // ignored for ConvertASCIIZString
+		rin.DS = unchecked((ushort)(bufferAddress / MemoryManager.ParagraphSize));
+		rin.DX = unchecked((ushort)(bufferAddress % MemoryManager.ParagraphSize));
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+		bufferSpan.ShouldMatch(expectedResult.AsSpan());
+	}
+	#endregion
+
+	#region Keyboard Input Simulator
 	enum ControlCharacterHandling
 	{
 		CtrlLetter,
@@ -9706,7 +9772,9 @@ public class Interrupt0x21Tests
 
 		return false;
 	}
+	#endregion
 
+	#region Test Data Helpers
 	static Dictionary<Type, object[]> s_cachedEnumDomains = new Dictionary<Type, object[]>();
 
 	static TEnum RandomEnumValue<TEnum>()
@@ -9726,7 +9794,9 @@ public class Interrupt0x21Tests
 
 		return (TEnum)enumDomain[index];
 	}
+	#endregion
 
+	#region File Assertions
 	static bool IsSameFile(string path1, string path2)
 	{
 		if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -9749,4 +9819,5 @@ public class Interrupt0x21Tests
 			inodeProvider.TryGetINode(path2, out var inode2) &&
 			inode1.IsSameVolumeAndFileAs(inode2);
 	}
+	#endregion
 }
