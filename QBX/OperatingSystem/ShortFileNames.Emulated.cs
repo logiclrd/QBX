@@ -105,10 +105,10 @@ public partial class ShortFileNames
 			return longPath;
 		else
 		{
-			var container = Path.GetDirectoryName(possibleShortPath);
+			var container = PathCharacter.GetDirectoryName(possibleShortPath);
 
 			if (!string.IsNullOrEmpty(container))
-				return Path.Combine(UnmapEmulated(container), Path.GetFileName(possibleShortPath));
+				return Path.Join(UnmapEmulated(container), PathCharacter.GetFileName(possibleShortPath));
 			else
 				return possibleShortPath;
 		}
