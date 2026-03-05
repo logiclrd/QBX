@@ -8685,14 +8685,73 @@ public class Interrupt0x21Tests
 		bufferSpan.ShouldStartWith(expectedMachineNameBytes);
 	}
 
+	[Test]
+	public void SetPrinterSetup_should_not_crash()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+		const int SetupStringSize = 100;
+		const string SetupString = "blah";
+
+		var setupStringAddress = machine.DOS.MemoryManager.AllocateMemory(SetupStringSize, machine.DOS.CurrentPSPSegment);
+
+		var setupStringSpan = machine.SystemMemory.AsSpan().Slice(setupStringAddress, SetupStringSize);
+
+		s_cp437.GetBytes(SetupString + "\0").CopyTo(setupStringSpan);
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.Function5E << 8;
+		rin.AX |= (int)Interrupt0x21.Function5E.SetPrinterSetup;
+		rin.DS = unchecked((ushort)(setupStringAddress / MemoryManager.ParagraphSize));
+		rin.DX = unchecked((ushort)(setupStringAddress % MemoryManager.ParagraphSize));
+		rin.CX = (ushort)SetupString.Length;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		rout.FLAGS.Should().HaveFlag(Flags.Carry);
+		rout.AX.Should().Be((ushort)DOSError.InvalidFunction);
+	}
+
+	[Test]
+	public void GetPrinterSetup_should_not_crash()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+		const int SetupStringSize = 100;
+
+		var setupStringAddress = machine.DOS.MemoryManager.AllocateMemory(SetupStringSize, machine.DOS.CurrentPSPSegment);
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.Function5E << 8;
+		rin.AX |= (int)Interrupt0x21.Function5E.GetPrinterSetup;
+		rin.ES = unchecked((ushort)(setupStringAddress / MemoryManager.ParagraphSize));
+		rin.DI = unchecked((ushort)(setupStringAddress % MemoryManager.ParagraphSize));
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		rout.FLAGS.Should().HaveFlag(Flags.Carry);
+		rout.AX.Should().Be((ushort)DOSError.InvalidFunction);
+	}
+
 	/*
 	public enum Function : byte
 	{
-		public enum Function5E : byte
-		{
-			SetPrinterSetup = 0x02,
-			GetPrinterSetup = 0x03,
-		},
 		TrueName = 0x60, // undocumented
 		GetCurrentPSPAddress = 0x62,
 		public enum Function65 : byte
