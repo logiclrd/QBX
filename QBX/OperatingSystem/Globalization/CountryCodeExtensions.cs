@@ -24,16 +24,25 @@ public static class CountryCodeExtensions
 		return cultureName;
 	}
 
-	static Dictionary<string, CountryCode> s_countryCodeByRegionName =
+	static Dictionary<string, Dictionary<string, CountryCode>> s_countryCodeByLanguageTagByRegionName =
 		typeof(CountryCode).GetFields(BindingFlags.Public | BindingFlags.Static)
 		.Select(field =>
 			(
 				CountryCode: (CountryCode)field.GetValue(null)!,
 				CultureNameAttribute: field.GetCustomAttribute<CultureNameAttribute>()!
 			))
-		.Select(field => (field.CountryCode, RegionName: field.CultureNameAttribute.CultureName.Split('-').Last()))
+		.Select(
+			field =>
+			(
+				field.CountryCode,
+				LanguageTag: field.CultureNameAttribute.CultureName.Split('-').First(),
+				RegionName: field.CultureNameAttribute.CultureName.Split('-').Last()
+			))
 		.GroupBy(field => field.RegionName, StringComparer.OrdinalIgnoreCase)
-		.ToDictionary(grouping => grouping.Key, grouping => grouping.First().CountryCode, StringComparer.OrdinalIgnoreCase);
+		.ToDictionary(
+			grouping => grouping.Key,
+			grouping => grouping.ToDictionary(set => set.LanguageTag, set => set.CountryCode, StringComparer.OrdinalIgnoreCase),
+			StringComparer.OrdinalIgnoreCase);
 
 	public static CountryCode ToCountryCode(this CultureInfo culture)
 	{
@@ -41,18 +50,23 @@ public static class CountryCodeExtensions
 			return CountryCode.AreaSouth;
 		else if (culture.IetfLanguageTag == "fr-CA")
 			return CountryCode.CanadianFrench;
-		else
+		else if (!culture.IsNeutralCulture)
 		{
 			try
 			{
 				var region = new RegionInfo(culture.LCID);
 
-				return s_countryCodeByRegionName[region.Name];
+				if (s_countryCodeByLanguageTagByRegionName.TryGetValue(region.Name, out var countryCodesByLanguageTag))
+				{
+					if (countryCodesByLanguageTag.TryGetValue(culture.TwoLetterISOLanguageName, out var countryCodeForLanguage))
+						return countryCodeForLanguage;
+					if (countryCodesByLanguageTag.TryGetValue("en", out var countryCodeForEnglish))
+						return countryCodeForEnglish;
+				}
 			}
-			catch
-			{
-				return CountryCode.UnitedStates;
-			}
+			catch { }
 		}
+
+		return CountryCode.UnitedStates;
 	}
 }

@@ -2435,6 +2435,9 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 							{
 								var newCulture = CultureUtility.GetCultureInfoForCodePageAndCountry(codePage, country);
 
+								if (newCulture == null)
+									newCulture = CultureUtility.GetCultureInfoForCodePageAndCountry(codePage, CountryCode.UnitedStates);
+
 								if (newCulture != null)
 									machine.DOS.CurrentCulture = newCulture;
 								else
