@@ -9275,11 +9275,21 @@ public class Interrupt0x21Tests
 		machine.DOS.MaxFiles.Should().Be(expectedLimit);
 	}
 
+	[Test, NonParallelizable]
+	public void CommitFile_should_flush_write_buffer()
+	{
+		CommitFileTest(Interrupt0x21.Function.CommitFile);
+	}
+
+	[Test, NonParallelizable]
+	public void CommitFile2_should_flush_write_buffer()
+	{
+		CommitFileTest(Interrupt0x21.Function.CommitFile2);
+	}
+
 	/*
 	public enum Function : byte
 	{
-		CommitFile = 0x68,
-		CommitFile2 = 0x6A,
 		ExtendedOpenCreate = 0x6C,
 	}
 	 */
@@ -9633,6 +9643,56 @@ public class Interrupt0x21Tests
 		rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
 
 		bufferSpan.ShouldMatch(expectedResult.AsSpan());
+	}
+
+	void CommitFileTest(Interrupt0x21.Function function)
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+
+			byte[] testData = s_cp437.GetBytes(Guid.NewGuid().ToString());
+
+			int fileHandle = machine.DOS.OpenFile(
+				TestFileName,
+				QBX.OperatingSystem.FileStructures.FileMode.Create,
+				OpenMode.Access_ReadWrite);
+
+			try
+			{
+				machine.DOS.Write(
+					fileHandle,
+					testData,
+					out _);
+
+				var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+				var rin = new RegistersEx();
+
+				rin.AX = (ushort)((int)function << 8);
+				rin.BX = (ushort)fileHandle;
+
+				// Act & Assert
+				ReadAllBytesFromFile(TestFileName).AsSpan().ShouldMatch(Span<byte>.Empty, because: "bytes written so far should still be buffered");
+
+				var rout = sut.Execute(rin);
+
+				rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+				ReadAllBytesFromFile(TestFileName).AsSpan().ShouldMatch(testData);
+			}
+			finally
+			{
+				machine.DOS.CloseFile(fileHandle);
+			}
+		}
 	}
 	#endregion
 
