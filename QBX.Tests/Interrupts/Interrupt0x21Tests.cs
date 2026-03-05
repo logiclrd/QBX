@@ -9287,12 +9287,59 @@ public class Interrupt0x21Tests
 		CommitFileTest(Interrupt0x21.Function.CommitFile2);
 	}
 
-	/*
-	public enum Function : byte
+	[Test, NonParallelizable]
+	public void ExtendedOpenCreate_Create_should_not_clobber_existing_files()
 	{
-		ExtendedOpenCreate = 0x6C,
+		ExtendedOpenCreateTest(
+			precreateFile: true,
+			testOpenAction: OpenAction.Create,
+			expectFailure: DOSError.FileExists);
 	}
-	 */
+
+	[Test, NonParallelizable]
+	public void ExtendedOpenCreate_Create_should_create_new_files()
+	{
+		ExtendedOpenCreateTest(
+			precreateFile: false,
+			testOpenAction: OpenAction.Create);
+	}
+
+	[Test, NonParallelizable]
+	public void ExtendedOpenCreate_Open_should_open_existing_files()
+	{
+		ExtendedOpenCreateTest(
+			precreateFile: true,
+			testOpenAction: OpenAction.Open,
+			expectFailure: DOSError.None,
+			expectTruncate: false);
+	}
+
+	[Test, NonParallelizable]
+	public void ExtendedOpenCreate_Open_should_fail_if_file_does_not_exist()
+	{
+		ExtendedOpenCreateTest(
+			precreateFile: false,
+			testOpenAction: OpenAction.Open,
+			expectFailure: DOSError.FileNotFound);
+	}
+
+	[Test, NonParallelizable]
+	public void ExtendedOpenCreate_Truncate_should_truncate_existing_files()
+	{
+		ExtendedOpenCreateTest(
+			precreateFile: true,
+			testOpenAction: OpenAction.Truncate,
+			expectTruncate: true);
+	}
+
+	[Test, NonParallelizable]
+	public void ExtendedOpenCreate_Truncate_should_fail_if_file_does_not_exist()
+	{
+		ExtendedOpenCreateTest(
+			precreateFile: false,
+			testOpenAction: OpenAction.Truncate,
+			expectFailure: DOSError.FileNotFound);
+	}
 
 	#region Common Test Methods
 	enum DOSReadInputType
@@ -9691,6 +9738,88 @@ public class Interrupt0x21Tests
 			finally
 			{
 				machine.DOS.CloseFile(fileHandle);
+			}
+		}
+	}
+
+	void ExtendedOpenCreateTest(
+		bool precreateFile,
+		OpenAction testOpenAction,
+		DOSError expectFailure = DOSError.None,
+		bool expectTruncate = false)
+	{
+		// Arrange
+		using (var workspace = new TemporaryDirectory())
+		{
+			Environment.CurrentDirectory = workspace.Path;
+
+			var machine = new Machine();
+
+			machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+			const string TestFileName = "TESTFILE.TXT";
+
+			byte[] testData = s_cp437.GetBytes("QuickBASIC");
+
+			if (precreateFile)
+				File.WriteAllBytes(TestFileName, testData);
+
+			byte[] fileNameBytes = s_cp437.GetBytes(TestFileName);
+
+			int fileNameBufferSize = fileNameBytes.Length + 1;
+
+			var fileNameAddress = machine.DOS.MemoryManager.AllocateMemory(fileNameBufferSize, machine.DOS.CurrentPSPSegment);
+
+			var fileNameSpan = machine.SystemMemory.AsSpan().Slice(fileNameAddress, fileNameBufferSize);
+
+			fileNameBytes.CopyTo(fileNameSpan);
+			fileNameSpan[fileNameBytes.Length] = 0;
+
+			int GetFileSize()
+			{
+				var fileInfo = new FileInfo(TestFileName);
+
+				return fileInfo.Exists ? (int)fileInfo.Length : -1;
+			}
+
+			var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+			var rin = new RegistersEx();
+
+			rin.AX = (int)Interrupt0x21.Function.ExtendedOpenCreate << 8;
+			rin.BX = (ushort)OpenMode.Access_ReadWrite;
+			rin.CX = (ushort)QBX.OperatingSystem.FileStructures.FileAttributes.Normal;
+			rin.DX = (ushort)testOpenAction;
+			rin.DS = (ushort)(fileNameAddress / MemoryManager.ParagraphSize);
+			rin.SI = (ushort)(fileNameAddress % MemoryManager.ParagraphSize);
+
+			// Act
+			int sizeBefore = GetFileSize();
+
+			var rout = sut.Execute(rin);
+
+			int sizeAfter = GetFileSize();
+
+			// Assert
+			if (expectFailure != DOSError.None)
+			{
+				rout.FLAGS.Should().HaveFlag(Flags.Carry);
+
+				rout.AX.Should().Be((ushort)expectFailure);
+			}
+			else
+			{
+				rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+				if (precreateFile)
+					sizeBefore.Should().Be(testData.Length);
+				else
+					sizeBefore.Should().Be(-1);
+
+				if (expectTruncate)
+					sizeAfter.Should().Be(0);
+				else
+					sizeAfter.Should().Be(precreateFile ? testData.Length : 0);
 			}
 		}
 	}
