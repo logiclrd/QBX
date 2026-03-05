@@ -268,7 +268,7 @@ public partial class ShortFileNames
 				{
 					shortName = normalizedComponent;
 
-					shortPath = Path.Join(containerShortPath, shortName);
+					shortPath = PathCharacter.Join(containerShortPath, shortName);
 					shortPath = GetCanonicalPath(shortPath);
 
 					//if (s_shortToLong.ContainsKey(shortPath))
@@ -286,7 +286,7 @@ public partial class ShortFileNames
 					else
 					{
 						shortName = normalizedComponent;
-						shortPath = Path.Combine(containerShortPath, shortName);
+						shortPath = PathCharacter.Join(containerShortPath, shortName);
 
 						if (Path.Exists(shortPath))
 							createMapping = true;
@@ -296,7 +296,7 @@ public partial class ShortFileNames
 					{
 						CreateMapping(longPath, containerShortPath, out shortName);
 
-						shortPath = Path.Combine(containerShortPath, shortName);
+						shortPath = PathCharacter.Join(containerShortPath, shortName);
 					}
 
 					shortPath = GetCanonicalPath(shortPath);
@@ -486,7 +486,7 @@ public partial class ShortFileNames
 				components.RemoveAt(i);
 			else if (components[i] == "..")
 			{
-				if (i > 0)
+				if ((i > 0) && !PathCharacter.IsDriveLetter(components[i - 1]))
 				{
 					components.RemoveRange(i - 1, 2);
 					i--;
@@ -500,10 +500,10 @@ public partial class ShortFileNames
 		 && PathCharacter.HasDriveLetter(components[0]))
 			prependRoot = false;
 
-		path = Path.Join(CollectionsMarshal.AsSpan(components));
+		path = PathCharacter.Join(CollectionsMarshal.AsSpan(components));
 
 		if (prependRoot)
-			path = Path.DirectorySeparatorChar + path;
+			path = PathCharacter.DirectorySeparators[0] + path;
 
 		return path;
 	}

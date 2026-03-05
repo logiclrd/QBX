@@ -8,6 +8,11 @@ public class PathCharacter
 {
 	public const char VolumeSeparatorChar = ':';
 
+	public static bool IsDriveLetter(string path)
+	{
+		return (path.Length == 2) && char.IsAsciiLetter(path[0]) && (path[1] == VolumeSeparatorChar);
+	}
+
 	public static bool HasDriveLetter(string path)
 	{
 		return TryGetDriveLetter(path, out _);
@@ -64,10 +69,40 @@ public class PathCharacter
 		return false;
 	}
 
-	public static readonly char[] DirectorySeparators = ['/', '\\'];
+	public static readonly char[] DirectorySeparators = ['\\', '/'];
 
 	public static bool IsDirectorySeparator(char ch)
 		=> (ch == '\\') || (ch == '/');
+
+	public static string Join(string? left, string? right)
+	{
+		if ((left == null) && (right == null))
+			return "";
+		else if (string.IsNullOrWhiteSpace(left))
+			return right!;
+		else if (string.IsNullOrWhiteSpace(right))
+			return left;
+		else
+			return left + DirectorySeparators[0] + right;
+	}
+
+	public static string Join(ReadOnlySpan<string?> components)
+	{
+		var builder = new StringBuilder();
+
+		for (int i=0; i < components.Length; i++)
+		{
+			if (!string.IsNullOrWhiteSpace(components[i]))
+			{
+				if (builder.Length > 0)
+					builder.Append(DirectorySeparators[0]);
+
+				builder.Append(components[i]);
+			}
+		}
+
+		return builder.ToString();
+	}
 
 	public static byte ToUpper(byte b)
 	{
