@@ -9252,10 +9252,32 @@ public class Interrupt0x21Tests
 		machine.DOS.CurrentCulture.TextInfo.OEMCodePage.Should().Be(testCodePageID);
 	}
 
+	[Test, Sequential]
+	public void SetMaximumHandleCount_should_set_handle_limit(
+		[Values(10, 100, 1000)] int testRequestLimit,
+		[Values(20, 100, 1000)] int expectedLimit)
+	{
+		// Arrange
+		var machine = new Machine();
+
+		// Act
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.SetMaximumHandleCount << 8;
+		rin.BX = (ushort)testRequestLimit;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		machine.DOS.MaxFiles.Should().Be(expectedLimit);
+	}
+
 	/*
 	public enum Function : byte
 	{
-		SetMaximumHandleCount = 0x67,
 		CommitFile = 0x68,
 		CommitFile2 = 0x6A,
 		ExtendedOpenCreate = 0x6C,
