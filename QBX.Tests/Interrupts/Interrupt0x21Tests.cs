@@ -9246,7 +9246,35 @@ public class Interrupt0x21Tests
 
 		var currentCodePageID = (ushort)machine.DOS.CurrentCulture.TextInfo.OEMCodePage;
 
-		var testCodePageID = currentCodePageID == 850 ? 437 : 850;
+		// Find a candidate test code page.
+		int testCodePageID = -1;
+
+		var country = machine.DOS.CurrentCulture.ToCountryCode();
+
+		foreach (var cultureInfo in CultureInfo.GetCultures(CultureTypes.AllCultures))
+		{
+			if ((cultureInfo.TextInfo.OEMCodePage != currentCodePageID)
+			 && (cultureInfo.ToCountryCode() == country))
+			{
+				testCodePageID = cultureInfo.TextInfo.OEMCodePage;
+				break;
+			}
+		}
+
+		if (testCodePageID < 0)
+		{
+			foreach (var cultureInfo in CultureInfo.GetCultures(CultureTypes.AllCultures))
+			{
+				if ((cultureInfo.TextInfo.OEMCodePage != currentCodePageID)
+				 && (cultureInfo.ToCountryCode() == CountryCode.UnitedStates))
+				{
+					testCodePageID = cultureInfo.TextInfo.OEMCodePage;
+					break;
+				}
+			}
+
+			Assume.That(testCodePageID > 0);
+		}
 
 		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
 
