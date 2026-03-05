@@ -8557,10 +8557,88 @@ public class Interrupt0x21Tests
 		mockFile.Received().Unlock(LockRegionOffset, LockRegionLength);
 	}
 
+	const int SetExtendedErrorRepetitions = 3;
+
+	[Test, Sequential]
+	public void SetExtendedError_should_set_error_values(
+		[Random(SetExtendedErrorRepetitions)] ushort testError,
+		[Random(SetExtendedErrorRepetitions)] byte testErrorClass,
+		[Random(SetExtendedErrorRepetitions)] byte testErrorAction,
+		[Random(SetExtendedErrorRepetitions)] ushort testErrorLocation)
+	{
+		// Arrange
+		var machine = new Machine();
+
+		machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+		// ERROR   STRUC
+		//     errAX       dw  ?   ;ax register
+		//     errBX       dw  ?   ;bx register
+		//     errCX       dw  ?   ;cx register
+		//     errDX       dw  ?   ;dx register
+		//     errSI       dw  ?   ;si register
+		//     errDI       dw  ?   ;di register
+		//     errDS       dw  ?   ;ds register
+		//     errES       dw  ?   ;es register
+		//     errReserved dw  ?   ;reserved 16 bits
+		//     errUID      dw  ?   ;user (computer) ID (0 = local computer)
+		//     errPID      dw  ?   ;program ID (0 = local program)
+		// ERROR   ENDS
+		//
+		// This structure is very self-describing and says exactly how
+		// each field will be interpreted.
+		//
+		// Fortunately, it is documented:
+		// - errAX  Specifies the error value.
+		// - errBX  Specifies the error class in the high-order byte and the suggested action
+		//          in the low-order byte.
+		// - errCX  Specifies the error-location value.
+
+		const int ErrorStructureFields = 11; // they're all words
+
+		const int ErrorStructureSize = ErrorStructureFields * 2;
+
+		int errorStructureAddress = machine.DOS.MemoryManager.AllocateMemory(ErrorStructureSize, machine.DOS.CurrentPSPSegment);
+
+		var errorStructureStream = new SystemMemoryStream(machine.MemoryBus, errorStructureAddress, ErrorStructureSize);
+
+		var writer = new BinaryWriter(errorStructureStream);
+
+		writer.Write(testError); // ax
+		writer.Write((ushort)((testErrorClass << 8) | testErrorAction)); // bx
+		writer.Write(testErrorLocation); // cx
+		writer.Write((ushort)0); // dx
+		writer.Write((ushort)0); // si
+		writer.Write((ushort)0); // di
+		writer.Write((ushort)0); // ds
+		writer.Write((ushort)0); // es
+		writer.Write((ushort)0); // reserved
+		writer.Write((ushort)0); // uid
+		writer.Write((ushort)0); // pid
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.SetExtendedError << 8;
+		rin.AX |= 0x0A; // ??
+		rin.DS = unchecked((ushort)(errorStructureAddress / MemoryManager.ParagraphSize));
+		rin.SI = unchecked((ushort)(errorStructureAddress % MemoryManager.ParagraphSize));
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		machine.DOS.LastError.Should().Be((DOSError)testError);
+		machine.DOS.LastErrorClass.Should().Be((DOSErrorClass)testErrorClass);
+		machine.DOS.LastErrorAction.Should().Be((DOSErrorAction)testErrorAction);
+		machine.DOS.LastErrorLocation.Should().Be((DOSErrorLocation)testErrorLocation);
+	}
+
+
 	/*
 	public enum Function : byte
 	{
-		SetExtendedError = 0x5D,
 		public enum Function5E : byte
 		{
 			GetMachineName = 0x00,
