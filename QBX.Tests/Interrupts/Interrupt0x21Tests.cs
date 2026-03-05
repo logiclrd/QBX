@@ -9200,14 +9200,61 @@ public class Interrupt0x21Tests
 			subfunction: Interrupt0x21.Function65.ConvertASCIIZString);
 	}
 
+	[Test]
+	public void GetGlobalCodePage_should_return_current_code_page()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var currentCodePageID = (ushort)machine.DOS.CurrentCulture.TextInfo.OEMCodePage;
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.Function66 << 8;
+		rin.AX |= (int)Interrupt0x21.Function66.GetGlobalCodePage;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+		rout.BX.Should().Be(currentCodePageID);
+		rout.DX.Should().Be(currentCodePageID);
+	}
+
+	[Test]
+	public void SetGlobalCodePage_should_set_current_code_page()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		var currentCodePageID = (ushort)machine.DOS.CurrentCulture.TextInfo.OEMCodePage;
+
+		var testCodePageID = currentCodePageID == 850 ? 437 : 850;
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.Function66 << 8;
+		rin.AX |= (int)Interrupt0x21.Function66.SetGlobalCodePage;
+		rin.BX = (ushort)testCodePageID;
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+		machine.DOS.CurrentCulture.TextInfo.OEMCodePage.Should().Be(testCodePageID);
+	}
+
 	/*
 	public enum Function : byte
 	{
-		public enum Function66 : byte
-		{
-			GetGlobalCodePage = 0x01,
-			SetGlobalCodePage = 0x02,
-		}
 		SetMaximumHandleCount = 0x67,
 		CommitFile = 0x68,
 		CommitFile2 = 0x6A,
