@@ -2166,6 +2166,8 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 								machine.MemoryBus[offset++] = CP437Encoding.GetByteSemantic(machineName[i]);
 							machine.MemoryBus[offset] = 0;
 
+							result.CX = 0x100;
+
 							break;
 						}
 						default:

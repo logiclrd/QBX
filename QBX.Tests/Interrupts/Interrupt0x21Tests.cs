@@ -8635,13 +8635,61 @@ public class Interrupt0x21Tests
 		machine.DOS.LastErrorLocation.Should().Be((DOSErrorLocation)testErrorLocation);
 	}
 
+	[Test]
+	public void GetMachineName_should_copy_machine_name_to_buffer()
+	{
+		// Arrange
+		var machine = new Machine();
+
+		machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+		const int BufferSize = 16;
+
+		int bufferAddress = machine.DOS.MemoryManager.AllocateMemory(BufferSize, machine.DOS.CurrentPSPSegment);
+
+		var bufferSpan = machine.SystemMemory.AsSpan().Slice(bufferAddress, BufferSize);
+
+		var expectedMachineName = Environment.MachineName.AsSpan();
+
+		int dot = expectedMachineName.IndexOf('.');
+
+		if (dot > 0)
+			expectedMachineName = expectedMachineName.Slice(0, dot);
+
+		if (expectedMachineName.Length > 15)
+			expectedMachineName.Slice(0, 15);
+
+		byte[] expectedMachineNameBytes = new byte[expectedMachineName.Length + 1];
+
+		s_cp437.GetBytes(expectedMachineName, expectedMachineNameBytes);
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.Function5E << 8;
+		rin.AX |= (int)Interrupt0x21.Function5E.GetMachineName;
+		rin.DS = unchecked((ushort)(bufferAddress / MemoryManager.ParagraphSize));
+		rin.DX = unchecked((ushort)(bufferAddress % MemoryManager.ParagraphSize));
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+		int ch = rout.CX >> 8;
+
+		ch.Should().NotBe(0);
+
+		bufferSpan.ShouldStartWith(expectedMachineNameBytes);
+	}
 
 	/*
 	public enum Function : byte
 	{
 		public enum Function5E : byte
 		{
-			GetMachineName = 0x00,
 			SetPrinterSetup = 0x02,
 			GetPrinterSetup = 0x03,
 		},
