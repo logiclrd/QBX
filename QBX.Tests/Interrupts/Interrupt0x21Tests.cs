@@ -9089,16 +9089,71 @@ public class Interrupt0x21Tests
 		actualCountryInfo.Should().BeEquivalentTo(expectedCountryInfo);
 	}
 
+	[Test, Sequential]
+	public void GetUppercaseTable_should_present_and_return_uppercase_table(
+		[Values(0xFFFF, 437, 850)] int testCodePageID,
+		[Values((CountryCode)0xFFFF, CountryCode.UnitedStates, CountryCode.CanadianFrench)] CountryCode testCountryCode)
+	{
+		InternationalizationTableTest(
+			table: Interrupt0x21.Function65.GetUppercaseTable,
+			testCodePageID,
+			testCountryCode,
+			getExpectedTable: culture => CharacterTables.GetUppercaseTable(culture));
+	}
+
+	[Test, Sequential]
+	public void GetFilenameUppercaseTable_should_present_and_return_filename_uppercase_table(
+		[Values(0xFFFF, 437, 850)] int testCodePageID,
+		[Values((CountryCode)0xFFFF, CountryCode.UnitedStates, CountryCode.CanadianFrench)] CountryCode testCountryCode)
+	{
+		InternationalizationTableTest(
+			table: Interrupt0x21.Function65.GetFilenameUppercaseTable,
+			testCodePageID,
+			testCountryCode,
+			getExpectedTable: culture => CharacterTables.GetFilenameUppercaseTable(culture));
+	}
+
+	[Test, Sequential]
+	public void GetFilenameCharacterTable_should_present_and_return_filename_character_table(
+		[Values(0xFFFF, 437, 850)] int testCodePageID,
+		[Values((CountryCode)0xFFFF, CountryCode.UnitedStates, CountryCode.CanadianFrench)] CountryCode testCountryCode)
+	{
+		InternationalizationTableTest(
+			table: Interrupt0x21.Function65.GetFilenameCharacterTable,
+			testCodePageID,
+			testCountryCode,
+			getExpectedTable: _ => FileCharTable.Default.ToByteArray());
+	}
+
+	[Test, Sequential]
+	public void GetCollateSequenceTable_should_present_and_return_collate_sequence_table(
+		[Values(0xFFFF, 437, 850)] int testCodePageID,
+		[Values((CountryCode)0xFFFF, CountryCode.UnitedStates, CountryCode.CanadianFrench)] CountryCode testCountryCode)
+	{
+		InternationalizationTableTest(
+			table: Interrupt0x21.Function65.GetCollateSequenceTable,
+			testCodePageID,
+			testCountryCode,
+			getExpectedTable: culture => CharacterTables.GetCollateSequenceTable(culture));
+	}
+
+	[Test, Sequential]
+	public void GetDoubleByteCharacterSet_should_present_and_return_doublebyte_character_set(
+		[Values(0xFFFF, 437, 850)] int testCodePageID,
+		[Values((CountryCode)0xFFFF, CountryCode.UnitedStates, CountryCode.CanadianFrench)] CountryCode testCountryCode)
+	{
+		InternationalizationTableTest(
+			table: Interrupt0x21.Function65.GetDoubleByteCharacterSet,
+			testCodePageID,
+			testCountryCode,
+			getExpectedTable: culture => CharacterTables.GetDoubleByteCharacterSet(culture));
+	}
+
 	/*
 	public enum Function : byte
 	{
 		public enum Function65 : byte
 		{
-			GetUppercaseTable = 0x02,
-			GetFilenameUppercaseTable = 0x04,
-			GetFilenameCharacterTable = 0x05,
-			GetCollateSequenceTable = 0x06,
-			GetDoubleByteCharacterSet = 0x07,
 			ConvertCharacter = 0x20,
 			ConvertString = 0x21,
 			ConvertASCIIZString = 0x22,
@@ -9345,6 +9400,70 @@ public class Interrupt0x21Tests
 				machine.DOS.CloseFile(fileHandle);
 			}
 		}
+	}
+
+	void InternationalizationTableTest(
+		Interrupt0x21.Function65 table,
+		int testCodePageID,
+		CountryCode testCountryCode,
+		Func<CultureInfo, byte[]> getExpectedTable)
+	{
+		// Arrange
+		var machine = new Machine();
+
+		machine.DOS.SetUpRunningProgramSegmentPrefix("");
+
+		const int BufferSize = 5; // table identifier plus long pointer
+
+		int bufferAddress = machine.DOS.MemoryManager.AllocateMemory(BufferSize, machine.DOS.CurrentPSPSegment);
+
+		var bufferSpan = machine.SystemMemory.AsSpan().Slice(bufferAddress, BufferSize);
+
+		CultureInfo expectedCulture;
+
+		if (testCodePageID == 0xFFFF) // current
+			expectedCulture = machine.DOS.CurrentCulture;
+		else
+		{
+			expectedCulture = CultureUtility.GetCultureInfoForCodePageAndCountry(testCodePageID, testCountryCode)
+				?? throw new Exception($"Failed to retrieve CultureInfo for code page {testCodePageID} and country code {testCountryCode}");
+		}
+
+		var expectedTable = getExpectedTable(expectedCulture);
+
+		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
+
+		var rin = new RegistersEx();
+
+		rin.AX = (int)Interrupt0x21.Function.Function65 << 8;
+		rin.AX |= (byte)table;
+		rin.BX = (ushort)testCodePageID;
+		rin.CX = BufferSize;
+		rin.DX = (ushort)testCountryCode;
+		rin.ES = (ushort)(bufferAddress / MemoryManager.ParagraphSize);
+		rin.DI = (ushort)(bufferAddress % MemoryManager.ParagraphSize);
+
+		// Act
+		var rout = sut.Execute(rin);
+
+		// Assert
+		rout.FLAGS.Should().NotHaveFlag(Flags.Carry);
+
+		bufferSpan[0].Should().Be((byte)table);
+
+		var farPointer = MemoryMarshal.Cast<byte, ushort>(bufferSpan.Slice(1));
+
+		var tableAddressSegmented = new SegmentedAddress(farPointer[1], farPointer[0]);
+
+		int tableAddress = tableAddressSegmented.ToLinearAddress();
+
+		var tableHeader = machine.SystemMemory.AsSpan().Slice(tableAddress, 2);
+
+		int tableSize = tableHeader[0] + (tableHeader[1] << 8);
+
+		var tableSpan = machine.SystemMemory.AsSpan().Slice(tableAddress + 2, tableSize);
+
+		tableSpan.ShouldMatch(expectedTable);
 	}
 
 	enum ControlCharacterHandling

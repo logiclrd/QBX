@@ -1658,14 +1658,27 @@ public partial class DOS
 
 	Dictionary<byte[], SegmentedAddress> _presentedData = new Dictionary<byte[], SegmentedAddress>();
 
-	internal SegmentedAddress PresentData(byte[] data)
+	internal SegmentedAddress PresentData(byte[] data, bool lengthPrefix = false)
 	{
 		if (!_presentedData.TryGetValue(data, out var presentedAddress))
 		{
-			int linearAddress = MemoryManager.AllocateMemory(data.Length, MemoryManager.RootPSPSegment);
+			int bytesNeeded = data.Length;
+
+			if (lengthPrefix)
+				bytesNeeded += 2;
+
+			int linearAddress = MemoryManager.AllocateMemory(bytesNeeded, MemoryManager.RootPSPSegment);
+
+			int writeOffset = linearAddress;
+
+			if (lengthPrefix)
+			{
+				_machine.MemoryBus[writeOffset++] = unchecked((byte)data.Length);
+				_machine.MemoryBus[writeOffset++] = unchecked((byte)(data.Length >> 8));
+			}
 
 			for (int i = 0; i < data.Length; i++)
-				_machine.MemoryBus[linearAddress + i] = data[i];
+				_machine.MemoryBus[writeOffset + i] = data[i];
 
 			presentedAddress = new SegmentedAddress(linearAddress);
 

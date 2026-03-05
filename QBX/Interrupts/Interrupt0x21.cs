@@ -2314,13 +2314,14 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 											_ => throw new Exception("Internal error")
 										};
 
-									var presentedTableAddress = machine.DOS.PresentData(table);
+									var presentedTableAddress = machine.DOS.PresentData(table, lengthPrefix: true);
 
 									var stream = new SystemMemoryStream(machine.MemoryBus, bufferAddress.ToLinearAddress(), 5);
 
 									var writer = new BinaryWriter(stream);
 
-									writer.Write((byte)0x02);
+									// Table identifier
+									writer.Write((byte)subfunction);
 
 									writer.Write(presentedTableAddress.Offset);
 									writer.Write(presentedTableAddress.Segment);

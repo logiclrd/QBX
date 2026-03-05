@@ -28,8 +28,8 @@ public class CharacterTables
 	{
 		string[] cultureNameParts = cultureName.ToLowerInvariant().Split('-');
 
-		string language = cultureNameParts[0];
-		string country = cultureNameParts[1];
+		string language = cultureNameParts.Length < 1 ? "en" : cultureNameParts[0];
+		string country = cultureNameParts.Length < 2 ? "us" : cultureNameParts[1];
 
 		int slash = country.IndexOf('/');
 
@@ -135,7 +135,7 @@ public class CharacterTables
 	{
 		string[] cultureNameParts = cultureName.ToLowerInvariant().Split('-');
 
-		string country = cultureNameParts[1];
+		string country = cultureNameParts.Length < 2 ? "us" : cultureNameParts[1];
 
 		int slash = country.IndexOf('/');
 
@@ -170,8 +170,8 @@ public class CharacterTables
 	{
 		string[] cultureNameParts = cultureName.ToLowerInvariant().Split('-');
 
-		string language = cultureNameParts[0];
-		string country = cultureNameParts[1];
+		string language = cultureNameParts.Length < 1 ? "en" : cultureNameParts[0];
+		string country = cultureNameParts.Length < 2 ? "us" : cultureNameParts[1];
 
 		int slash = country.IndexOf('/');
 
