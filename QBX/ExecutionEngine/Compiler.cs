@@ -947,6 +947,19 @@ public class Compiler
 				mapper.ApplyDefTypeStatement(defTypeStatement);
 				break;
 			}
+			case CodeModel.Statements.FileWidthStatement fileWidthStatement:
+			{
+				var translatedFileWidthStatement = new FileWidthStatement(fileWidthStatement);
+
+				TranslateNumericArgumentExpression(
+					ref translatedFileWidthStatement.FileNumberExpression, fileWidthStatement.FileNumberExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedFileWidthStatement.WidthExpression, fileWidthStatement.WidthExpression);
+
+				container.Append(translatedFileWidthStatement);
+
+				break;
+			}
 			case CodeModel.Statements.DimStatement dimStatement: // also matches RedimStatement
 			{
 				if (dimStatement.Shared && (element.Type != CodeModel.CompilationElementType.Main))

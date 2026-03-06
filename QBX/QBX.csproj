@@ -47,8 +47,4 @@
 		<EmbeddedResource Include="DevelopmentEnvironment\WindowIcon.ppm" />
 	</ItemGroup>
 
-	<ItemGroup>
-		<None Include=".editorconfig" />
-	</ItemGroup>
-
 </Project>
