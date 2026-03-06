@@ -420,6 +420,18 @@ public partial class DOS
 		});
 	}
 
+	public void SetFileBufferSize(int fileHandle, int bufferSize)
+	{
+		if ((fileHandle < 0) || (fileHandle >= Files.Count)
+			|| (Files[fileHandle] is not FileDescriptor fileDescriptor))
+		{
+			_lastError = DOSError.InvalidHandle;
+			throw new ArgumentException("Invalid file descriptor");
+		}
+
+		fileDescriptor.SetBufferSize(bufferSize);
+	}
+
 	public byte ReadByte(int fileHandle, bool echo = false)
 	{
 		if ((fileHandle < 0) || (fileHandle >= Files.Count)

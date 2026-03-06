@@ -57,6 +57,8 @@ public class ExecutionContext
 
 	public readonly StringValue CommandLine = new StringValue();
 
+	public readonly Dictionary<int, OpenFile> Files = new Dictionary<int, OpenFile>();
+
 	public ExecutionContext(Machine machine, PlayProcessor playProcessor)
 	{
 		_executionState = new ExecutionState();

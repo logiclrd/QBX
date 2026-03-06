@@ -698,6 +698,27 @@ public class Compiler
 
 				break;
 			}
+			case CodeModel.Statements.CloseStatement closeStatement:
+			{
+				var translatedCloseStatement = new CloseStatement(closeStatement);
+
+				foreach (var fileNumberExpression in closeStatement.FileNumberExpressions)
+				{
+					Evaluable? translatedFileNumberExpression = null;
+
+					TranslateNumericArgumentExpression(
+						ref translatedFileNumberExpression, fileNumberExpression);
+
+					if (translatedFileNumberExpression == null)
+						throw new Exception("Internal error: FileNumberExpression translated to null");
+
+					translatedCloseStatement.FileNumberExpressions.Add(translatedFileNumberExpression);
+				}
+
+				container.Append(translatedCloseStatement);
+
+				break;
+			}
 			case CodeModel.Statements.ClsStatement clsStatement:
 			{
 				var translatedClsStatement = new ClsStatement(clsStatement);
@@ -1623,6 +1644,64 @@ public class Compiler
 				}
 
 				container.Append(translatedOnErrorStatement);
+
+				break;
+			}
+			case CodeModel.Statements.OpenStatement openStatement:
+			{
+				var translatedOpenStatement = new OpenStatement(openStatement);
+
+				translatedOpenStatement.OpenMode =
+					openStatement.OpenMode switch
+					{
+						CodeModel.Statements.OpenMode.Random => OpenMode.Random,
+						CodeModel.Statements.OpenMode.Binary => OpenMode.Binary,
+						CodeModel.Statements.OpenMode.Input => OpenMode.Input,
+						CodeModel.Statements.OpenMode.Output => OpenMode.Output,
+						CodeModel.Statements.OpenMode.Append => OpenMode.Append,
+
+						_ => throw new CompilerException("Unrecognized OpenMode value " + openStatement.OpenMode)
+					};
+
+				translatedOpenStatement.AccessMode =
+					openStatement.AccessMode switch
+					{
+						CodeModel.Statements.AccessMode.Read => AccessMode.Read,
+						CodeModel.Statements.AccessMode.Write => AccessMode.Write,
+						CodeModel.Statements.AccessMode.ReadWrite => AccessMode.ReadWrite,
+
+						CodeModel.Statements.AccessMode.Unspecified =>
+							translatedOpenStatement.OpenMode switch
+							{
+								OpenMode.Input => AccessMode.Read,
+								OpenMode.Output => AccessMode.Write,
+								_ => AccessMode.ReadWrite, // Random, Binary, Append
+							},
+
+						_ => throw new CompilerException("Unrecognized AccessMode value " + openStatement.AccessMode)
+					};
+
+				translatedOpenStatement.LockMode =
+					openStatement.LockMode switch
+					{
+						CodeModel.Statements.LockMode.Shared => LockMode.Shared,
+						CodeModel.Statements.LockMode.LockRead => LockMode.LockRead,
+						CodeModel.Statements.LockMode.LockWrite => LockMode.LockWrite,
+						CodeModel.Statements.LockMode.LockReadWrite => LockMode.LockReadWrite,
+
+						CodeModel.Statements.LockMode.None => LockMode.LockReadWrite,
+
+						_ => throw new CompilerException("Unrecognized LockMode value " + openStatement.LockMode)
+					};
+
+				TranslateStringArgumentExpression(
+					ref translatedOpenStatement.FileNameExpression, openStatement.FileNameExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedOpenStatement.FileNumberExpression, openStatement.FileNumberExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedOpenStatement.RecordLengthExpression, openStatement.RecordLengthExpression);
+
+				container.Append(translatedOpenStatement);
 
 				break;
 			}

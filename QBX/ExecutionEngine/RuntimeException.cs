@@ -1,6 +1,7 @@
 ﻿using System;
 
 using QBX.LexicalAnalysis;
+using QBX.OperatingSystem;
 
 namespace QBX.ExecutionEngine;
 
@@ -216,6 +217,8 @@ public class RuntimeException : Exception
 		=> ForErrorNumber(6, statement);
 	public static RuntimeException Overflow(Token? context)
 		=> ForErrorNumber(6, context);
+	public static RuntimeException OutOfMemory(CodeModel.Statements.Statement? statement)
+		=> ForErrorNumber(7, statement);
 	public static RuntimeException SubscriptOutOfRange(CodeModel.Expressions.Expression? expression)
 		=> ForErrorNumber(9, expression);
 	public static RuntimeException SubscriptOutOfRange()
@@ -234,12 +237,109 @@ public class RuntimeException : Exception
 		=> ForErrorNumber(19, statement);
 	public static RuntimeException ResumeWithoutError(CodeModel.Statements.Statement? statement)
 		=> ForErrorNumber(20, statement);
+	public static RuntimeException FileNotFound(CodeModel.Statements.Statement? statement)
+		=> ForErrorNumber(53, statement);
+	public static RuntimeException FileAlreadyOpen(CodeModel.Statements.Statement? statement)
+		=> ForErrorNumber(55, statement);
+	public static RuntimeException DeviceIOError(CodeModel.Statements.Statement? statement)
+		=> ForErrorNumber(57, statement);
+	public static RuntimeException FileAlreadyExists(CodeModel.Statements.Statement? statement)
+		=> ForErrorNumber(58, statement);
+	public static RuntimeException DiskFull(CodeModel.Statements.Statement? statement)
+		=> ForErrorNumber(61, statement);
 	public static RuntimeException BadFileName()
 		=> ForErrorNumber(64, default(Token));
+	public static RuntimeException TooManyFiles(CodeModel.Statements.Statement? statement)
+		=> ForErrorNumber(67, statement);
 	public static RuntimeException DeviceUnavailable()
 		=> ForErrorNumber(68, default(Token));
+	public static RuntimeException PathFileAccessError(CodeModel.Statements.Statement? statement)
+		=> ForErrorNumber(75, statement);
 	public static RuntimeException PathNotFound()
 		=> ForErrorNumber(76, default(Token));
+	public static RuntimeException PathNotFound(CodeModel.Statements.Statement? statement)
+		=> ForErrorNumber(76, statement);
 	public static RuntimeException ArgumentCountMismatch()
 		=> ForErrorNumber(101, default(Token));
+
+	internal static Exception ForDOSError(DOSError dosError, CodeModel.Statements.Statement? statement)
+	{
+		switch (dosError)
+		{
+			case DOSError.InvalidFunction: return IllegalFunctionCall(statement);
+			case DOSError.FileNotFound: return FileNotFound(statement);
+			case DOSError.PathNotFound: return PathNotFound(statement);
+			case DOSError.TooManyOpenFiles: return TooManyFiles(statement);
+			case DOSError.InvalidAccess: return PathFileAccessError(statement);
+			case DOSError.NotEnoughMemory: return OutOfMemory(statement);
+			case DOSError.AccessDenied: return PathFileAccessError(statement);
+			case DOSError.CurrentDirectory: return PathNotFound(statement);
+			case DOSError.FileExists: return FileAlreadyExists(statement);
+			case DOSError.CRC: return DeviceIOError(statement);
+			case DOSError.SectorNotFound: return DeviceIOError(statement);
+			case DOSError.WriteFault: return DeviceIOError(statement);
+			case DOSError.ReadFault: return DeviceIOError(statement);
+			case DOSError.AdapterHardwareError: return DeviceIOError(statement);
+			case DOSError.HandleDiskFull: return DiskFull(statement);
+
+			case DOSError.InvalidHandle:
+			case DOSError.ArenaTrashed:
+			case DOSError.InvalidBlock:
+			case DOSError.BadEnvironment:
+			case DOSError.BadFormat:
+			case DOSError.InvalidData:
+			case DOSError.InvalidDrive:
+			case DOSError.NotSameDevice:
+			case DOSError.NoMoreFiles:
+			case DOSError.WriteProtect:
+			case DOSError.BadUnit:
+			case DOSError.NotReady:
+			case DOSError.BadCommand:
+			case DOSError.BadLength:
+			case DOSError.Seek:
+			case DOSError.NotDOSDisk:
+			case DOSError.OutOfPaper:
+			case DOSError.GeneralFailure:
+			case DOSError.SharingViolation:
+			case DOSError.LockViolation:
+			case DOSError.WrongDisk:
+			case DOSError.FCBUnavailable:
+			case DOSError.SharingBufferExceeded:
+			case DOSError.CodePageMismatched:
+			case DOSError.HandleEOF:
+			case DOSError.NotSupported:
+			case DOSError.RemoteNotListed:
+			case DOSError.DuplicateName:
+			case DOSError.BadNetworkPath:
+			case DOSError.NetworkBusy:
+			case DOSError.DeviceDoesNotExist:
+			case DOSError.TooManyCommands:
+			case DOSError.BadNetworkResponse:
+			case DOSError.UnexpectedNetworkError:
+			case DOSError.BadRemoteAdapter:
+			case DOSError.PrintQueueFull:
+			case DOSError.NoSpoolSpace:
+			case DOSError.PrintCancelled:
+			case DOSError.NetworkNameDeleted:
+			case DOSError.NetworkAccessDenied:
+			case DOSError.BadDeviceType:
+			case DOSError.BadNetworkName:
+			case DOSError.TooManyNames:
+			case DOSError.TooManySessions:
+			case DOSError.SharingPaused:
+			case DOSError.RequestNotAccepted:
+			case DOSError.RedirectionPaused:
+			case DOSError.DuplicateFCB:
+			case DOSError.CannotMakeDirectory:
+			case DOSError.FailureOnINT24:
+			case DOSError.OutOfStructures:
+			case DOSError.AlreadyAssigned:
+			case DOSError.InvalidPassword:
+			case DOSError.InvalidParameter:
+			case DOSError.NetworkWriteFault:
+			case DOSError.SystemComponentNotLoaded:
+			default:
+				return IllegalFunctionCall(statement);
+		}
+	}
 }

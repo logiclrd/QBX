@@ -193,6 +193,9 @@ public partial class Program
 		if (!Machine.KeepRunning)
 			return;
 
+		foreach (var file in _executionContext.Files.Values)
+			Machine.DOS.CloseFile(file.FileHandle);
+
 		foreach (var watch in _watches)
 		{
 			watch.LastValue = null;

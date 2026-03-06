@@ -272,6 +272,12 @@ public class FileControlBlock
 
 	public static void SetFileName(ReadOnlySpan<byte> fileName, Span<byte> fileNameBytes)
 	{
+		for (int i = 0; i < fileName.Length; i++)
+		{
+			if ((fileName[i] != '.') && !PathCharacter.IsValidOrWildcard(fileName[i]))
+				throw new Exception("Invalid filename");
+		}
+
 		int dot = fileName.LastIndexOf((byte)'.');
 
 		int extraDot = fileName.IndexOf((byte)'.');
@@ -281,13 +287,18 @@ public class FileControlBlock
 
 		fileNameBytes.Clear();
 
+		if (dot < 0)
+			dot = fileName.Length;
+
 		int nameLength = Math.Min(dot, 8);
 
 		var inSpan = fileName;
 		var outSpan = fileNameBytes;
 
 		inSpan.Slice(0, nameLength).CopyTo(outSpan);
-		inSpan.Slice(dot + 1).CopyTo(outSpan.Slice(8));
+
+		if (dot + 1 < inSpan.Length)
+			inSpan.Slice(dot + 1).CopyTo(outSpan.Slice(8));
 	}
 
 	public uint RecordPointer => CurrentBlockNumber * 128u + CurrentRecordNumber;

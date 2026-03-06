@@ -176,6 +176,14 @@ public abstract class FileDescriptor
 
 	protected virtual void FlushToDisk() { VerifyOpen(); }
 
+	public void SetBufferSize(int bufferSize)
+	{
+		FlushWriteBuffer();
+
+		ReadBuffer = new FileBuffer(bufferSize);
+		WriteBuffer = new FileBuffer(bufferSize);
+	}
+
 	public virtual bool AtReadBoundary => false;
 
 	public byte ReadByte()
