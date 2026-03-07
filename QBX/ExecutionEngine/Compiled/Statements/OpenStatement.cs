@@ -1,10 +1,14 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
+using QBX.CodeModel.Statements;
 using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
 using QBX.OperatingSystem;
 using QBX.OperatingSystem.FileStructures;
+
+using OSOpenMode = QBX.OperatingSystem.FileStructures.OpenMode;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
@@ -16,6 +20,17 @@ public class OpenStatement(CodeModel.Statements.Statement source) : Executable(s
 	public Evaluable? FileNameExpression;
 	public Evaluable? FileNumberExpression;
 	public Evaluable? RecordLengthExpression;
+
+	static readonly IEnumerable<OSOpenMode> Attempt_Read =
+		[OSOpenMode.Access_ReadOnly];
+	static readonly IEnumerable<OSOpenMode> Attempt_Write =
+		[OSOpenMode.Access_WriteOnly];
+	static readonly IEnumerable<OSOpenMode> Attempt_ReadWrite =
+		[OSOpenMode.Access_ReadWrite];
+	static readonly IEnumerable<OSOpenMode> Attempt_ReadWrite_Write =
+		[OSOpenMode.Access_ReadWrite, OSOpenMode.Access_WriteOnly];
+	static readonly IEnumerable<OSOpenMode> Attempt_ReadWrite_Write_Read =
+		[OSOpenMode.Access_ReadWrite, OSOpenMode.Access_WriteOnly, OSOpenMode.Access_ReadOnly];
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
@@ -52,29 +67,93 @@ public class OpenStatement(CodeModel.Statements.Statement source) : Executable(s
 				_ => throw new Exception("Unrecognized OpenMode value " + OpenMode)
 			};
 
-		var accessModes =
-			OpenMode switch
-			{
-				OpenMode.Input => OperatingSystem.FileStructures.OpenMode.Access_ReadOnly,
-				OpenMode.Output or OpenMode.Append => OperatingSystem.FileStructures.OpenMode.Access_WriteOnly,
-				OpenMode.Random or OpenMode.Binary => OperatingSystem.FileStructures.OpenMode.Access_ReadWrite,
+		IEnumerable<OSOpenMode> attemptAccessModes;
 
-				_ => throw new Exception("Unrecognized OpenMode value " + OpenMode)
-			};
+		switch (OpenMode)
+		{
+			case OpenMode.Input:
+			{
+				if ((AccessMode == AccessMode.Unspecified) || (AccessMode == AccessMode.Read))
+					attemptAccessModes = Attempt_Read;
+				else
+					throw RuntimeException.IllegalFunctionCall(Source);
+
+				break;
+			}
+			case OpenMode.Output:
+			{
+				if ((AccessMode == AccessMode.Unspecified) || (AccessMode == AccessMode.Write))
+					attemptAccessModes = Attempt_Write;
+				else
+					throw RuntimeException.IllegalFunctionCall(Source);
+
+				break;
+			}
+			case OpenMode.Append:
+			{
+				switch (AccessMode)
+				{
+					case AccessMode.Unspecified: attemptAccessModes = Attempt_ReadWrite_Write; break;
+					case AccessMode.Write: attemptAccessModes = Attempt_Write; break;
+
+					default: throw RuntimeException.IllegalFunctionCall(Source);
+				}
+
+				break;
+			}
+			case OpenMode.Random:
+			case OpenMode.Binary:
+			{
+				switch (AccessMode)
+				{
+					case AccessMode.Unspecified: attemptAccessModes = Attempt_ReadWrite_Write_Read; break;
+					case AccessMode.Read: attemptAccessModes = Attempt_Read; break;
+					case AccessMode.Write: attemptAccessModes = Attempt_Write; break;
+					case AccessMode.ReadWrite: attemptAccessModes = Attempt_ReadWrite; break;
+
+					default: throw RuntimeException.IllegalFunctionCall(Source);
+				}
+
+				break;
+			}
+
+			default: throw RuntimeException.IllegalFunctionCall(Source);
+		}
+
+		OSOpenMode shareMode = OSOpenMode.Share_Compatibility;
 
 		switch (LockMode)
 		{
-			case LockMode.LockRead: accessModes |= OperatingSystem.FileStructures.OpenMode.Share_DenyRead; break;
-			case LockMode.LockWrite: accessModes |= OperatingSystem.FileStructures.OpenMode.Share_DenyWrite; break;
-			case LockMode.LockReadWrite: accessModes |= OperatingSystem.FileStructures.OpenMode.Share_DenyReadWrite; break;
+			case LockMode.LockRead: shareMode |= OSOpenMode.Share_DenyRead; break;
+			case LockMode.LockWrite: shareMode |= OSOpenMode.Share_DenyWrite; break;
+			case LockMode.LockReadWrite: shareMode |= OSOpenMode.Share_DenyReadWrite; break;
 		}
 
 		try
 		{
-			openFile.FileHandle = context.Machine.DOS.OpenFile(
-				fileName.Value.ToString(),
-				openMode,
-				accessModes);
+			DOSException? lastException = null;
+
+			foreach (var accessMode in attemptAccessModes)
+			{
+				try
+				{
+					openFile.FileHandle = context.Machine.DOS.OpenFile(
+						fileName.Value.ToString(),
+						openMode,
+						accessMode | shareMode);
+
+					lastException = null;
+
+					break;
+				}
+				catch (DOSException ex)
+				{
+					lastException = ex;
+				}
+			}
+
+			if (lastException != null)
+				throw lastException;
 
 			if (OpenMode == OpenMode.Append)
 				context.Machine.DOS.SeekFile(openFile.FileHandle, 0, MoveMethod.FromEnd);
