@@ -97,7 +97,8 @@ public partial class ShortFileNames
 	static string UnmapEmulated(string possibleShortPath)
 	{
 		if (string.IsNullOrEmpty(Path.GetPathRoot("C:\\"))
-		 && ((possibleShortPath == "C:\\") || (possibleShortPath == "C://")))
+		 && ((possibleShortPath == "C:\\") || (possibleShortPath == "C://")
+		  || (possibleShortPath == "c:\\") || (possibleShortPath == "c://")))
 			return DirectorySeparatorString;
 
 		possibleShortPath = GetFullPathEmulated(possibleShortPath);
