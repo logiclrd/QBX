@@ -25,15 +25,13 @@ public class OpenFile
 
 	public void ConfigureFields(IEnumerable<FileRecordField> fields, ExecutionContext context)
 	{
-		foreach (var previousMapping in Fields)
-			context.FieldVariables.Remove(previousMapping.Variable);
+		ClearFieldConfiguration(context);
 
 		int bytesSpecified = fields.Sum(field => field.Width);
 
 		if (bytesSpecified > RecordLength)
 			throw RuntimeException.FieldOverflow();
 
-		Fields.Clear();
 		Fields.AddRange(fields);
 
 		if (bytesSpecified < RecordLength)
@@ -56,6 +54,14 @@ public class OpenFile
 
 			context.FieldVariables[field.Variable] = this;
 		}
+	}
+
+	public void ClearFieldConfiguration(ExecutionContext context)
+	{
+		foreach (var previousMapping in Fields)
+			context.FieldVariables.Remove(previousMapping.Variable);
+
+		Fields.Clear();
 	}
 
 	public void UnlinkFieldVariable(StringVariable variable)

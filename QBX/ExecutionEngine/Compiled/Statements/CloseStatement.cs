@@ -28,8 +28,8 @@ public class CloseStatement(CodeModel.Statements.Statement source) : Executable(
 				}
 				finally
 				{
+					openFile.ClearFieldConfiguration(context);
 					context.Files.Remove(fileNumber);
-
 				}
 			}
 		}
