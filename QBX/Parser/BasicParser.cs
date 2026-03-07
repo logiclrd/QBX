@@ -1983,7 +1983,10 @@ public class BasicParser
 				}
 
 				if (tokenHandler.NextTokenIs(TokenType.NumberSign))
+				{
+					statement.IncludeNumberSign = true;
 					tokenHandler.Advance();
+				}
 
 				int comma = tokenHandler.FindNextUnparenthesizedOf(TokenType.Comma);
 
