@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.PortableExecutable;
 
 using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
@@ -130,7 +131,7 @@ public class OpenStatement(CodeModel.Statements.Statement source) : Executable(s
 
 		try
 		{
-			DOSException? lastException = null;
+			DOSError lastError = DOSError.None;
 
 			foreach (var accessMode in attemptAccessModes)
 			{
@@ -141,18 +142,19 @@ public class OpenStatement(CodeModel.Statements.Statement source) : Executable(s
 						openMode,
 						accessMode | shareMode);
 
-					lastException = null;
+					lastError = context.Machine.DOS.LastError;
 
-					break;
+					if (lastError == DOSError.None)
+						break;
 				}
 				catch (DOSException ex)
 				{
-					lastException = ex;
+					lastError = ex.ToDOSError();
 				}
 			}
 
-			if (lastException != null)
-				throw lastException;
+			if (lastError != DOSError.None)
+				throw RuntimeException.ForDOSError(lastError, Source);
 
 			if (OpenMode == OpenMode.Append)
 				context.Machine.DOS.SeekFile(openFile.FileHandle, 0, MoveMethod.FromEnd);
@@ -179,6 +181,9 @@ public class OpenStatement(CodeModel.Statements.Statement source) : Executable(s
 					context.Machine.DOS.SetFileBufferSize(openFile.FileHandle, openFile.BufferSize);
 				}
 			}
+
+			if (OpenMode == OpenMode.Random)
+				openFile.ConfigureFields(System.Array.Empty<FileRecordField>(), context);
 
 			context.Files[fileNumber] = openFile;
 		}
