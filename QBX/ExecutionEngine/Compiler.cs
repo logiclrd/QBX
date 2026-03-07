@@ -947,19 +947,6 @@ public class Compiler
 				mapper.ApplyDefTypeStatement(defTypeStatement);
 				break;
 			}
-			case CodeModel.Statements.FileWidthStatement fileWidthStatement:
-			{
-				var translatedFileWidthStatement = new FileWidthStatement(fileWidthStatement);
-
-				TranslateNumericArgumentExpression(
-					ref translatedFileWidthStatement.FileNumberExpression, fileWidthStatement.FileNumberExpression);
-				TranslateNumericArgumentExpression(
-					ref translatedFileWidthStatement.WidthExpression, fileWidthStatement.WidthExpression);
-
-				container.Append(translatedFileWidthStatement);
-
-				break;
-			}
 			case CodeModel.Statements.DimStatement dimStatement: // also matches RedimStatement
 			{
 				if (dimStatement.Shared && (element.Type != CodeModel.CompilationElementType.Main))
@@ -1225,6 +1212,19 @@ public class Compiler
 					};
 
 				container.Append(translatedExitScopeStatement);
+
+				break;
+			}
+			case CodeModel.Statements.FileWidthStatement fileWidthStatement:
+			{
+				var translatedFileWidthStatement = new FileWidthStatement(fileWidthStatement);
+
+				TranslateNumericArgumentExpression(
+					ref translatedFileWidthStatement.FileNumberExpression, fileWidthStatement.FileNumberExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedFileWidthStatement.WidthExpression, fileWidthStatement.WidthExpression);
+
+				container.Append(translatedFileWidthStatement);
 
 				break;
 			}
@@ -1605,6 +1605,24 @@ public class Compiler
 				}
 
 				container.Append(translatedLineInputStatement);
+
+				break;
+			}
+			case CodeModel.Statements.LockStatement lockStatement:
+			{
+				var translatedLockStatement = new LockStatement(lockStatement);
+
+				if (lockStatement.FileNumberExpression is null)
+					throw new CompilerException("LockStatement without FileNumberExpression");
+
+				TranslateNumericArgumentExpression(
+					ref translatedLockStatement.FileNumberExpression, lockStatement.FileNumberExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedLockStatement.StartExpression, lockStatement.RangeStartExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedLockStatement.EndExpression, lockStatement.RangeEndExpression);
+
+				container.Append(translatedLockStatement);
 
 				break;
 			}
@@ -2216,6 +2234,24 @@ public class Compiler
 
 				if (statement is not CodeModel.Statements.EndTypeStatement)
 					throw new RuntimeException(typeStatement, "Unterminated TYPE definition");
+
+				break;
+			}
+			case CodeModel.Statements.UnlockStatement unlockStatement:
+			{
+				var translatedUnlockStatement = new UnlockStatement(unlockStatement);
+
+				if (unlockStatement.FileNumberExpression is null)
+					throw new CompilerException("UnlockStatement without FileNumberExpression");
+
+				TranslateNumericArgumentExpression(
+					ref translatedUnlockStatement.FileNumberExpression, unlockStatement.FileNumberExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedUnlockStatement.StartExpression, unlockStatement.RangeStartExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedUnlockStatement.EndExpression, unlockStatement.RangeEndExpression);
+
+				container.Append(translatedUnlockStatement);
 
 				break;
 			}
