@@ -90,6 +90,8 @@ public class CompilerException : Exception
 		=> new CompilerException(statement, "Statement illegal in TYPE block");
 	public static CompilerException ValueIsNotConstant(CodeModel.Expressions.Expression? expression)
 		=> new CompilerException(expression, "Value is not constant");
+	public static CompilerException Overflow(CodeModel.Expressions.Expression? expression)
+		=> new CompilerException(expression, "Overflow");
 	public static CompilerException Overflow(Token? context)
 		=> new CompilerException(context, "Overflow");
 	public static CompilerException DivisionByZero(Token? context)

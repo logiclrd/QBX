@@ -91,7 +91,7 @@ public class IntegerSubtraction(Evaluable left, Evaluable right) : BinaryExpress
 		int difference = leftValue.Value - rightValue.Value;
 
 		if ((difference < short.MinValue) || (difference > short.MaxValue))
-			throw RuntimeException.Overflow(Source?.Token);
+			throw RuntimeException.Overflow(Source);
 
 		return new IntegerVariable(unchecked((short)difference));
 	}
@@ -104,7 +104,7 @@ public class IntegerSubtraction(Evaluable left, Evaluable right) : BinaryExpress
 		int difference = leftValue.Value - rightValue.Value;
 
 		if ((difference < short.MinValue) || (difference > short.MaxValue))
-			throw CompilerException.Overflow(Source?.Token);
+			throw CompilerException.Overflow(Source);
 
 		return new IntegerLiteralValue(unchecked((short)difference));
 	}
@@ -125,7 +125,7 @@ public class LongSubtraction(Evaluable left, Evaluable right) : BinaryExpression
 		}
 		catch (OverflowException)
 		{
-			throw RuntimeException.Overflow(Source?.Token);
+			throw RuntimeException.Overflow(Source);
 		}
 	}
 
@@ -140,7 +140,7 @@ public class LongSubtraction(Evaluable left, Evaluable right) : BinaryExpression
 		}
 		catch (OverflowException)
 		{
-			throw CompilerException.Overflow(Source?.Token);
+			throw CompilerException.Overflow(Source);
 		}
 	}
 }
@@ -160,7 +160,7 @@ public class SingleSubtraction(Evaluable left, Evaluable right) : BinaryExpressi
 		}
 		catch (OverflowException)
 		{
-			throw RuntimeException.Overflow(Source?.Token);
+			throw RuntimeException.Overflow(Source);
 		}
 	}
 
@@ -175,7 +175,7 @@ public class SingleSubtraction(Evaluable left, Evaluable right) : BinaryExpressi
 		}
 		catch (OverflowException)
 		{
-			throw CompilerException.Overflow(Source?.Token);
+			throw CompilerException.Overflow(Source);
 		}
 	}
 }
@@ -195,7 +195,7 @@ public class DoubleSubtraction(Evaluable left, Evaluable right) : BinaryExpressi
 		}
 		catch (OverflowException)
 		{
-			throw RuntimeException.Overflow(Source?.Token);
+			throw RuntimeException.Overflow(Source);
 		}
 	}
 
@@ -210,7 +210,7 @@ public class DoubleSubtraction(Evaluable left, Evaluable right) : BinaryExpressi
 		}
 		catch (OverflowException)
 		{
-			throw CompilerException.Overflow(Source?.Token);
+			throw CompilerException.Overflow(Source);
 		}
 	}
 }
@@ -230,7 +230,7 @@ public class CurrencySubtraction(Evaluable left, Evaluable right) : BinaryExpres
 		}
 		catch (OverflowException)
 		{
-			throw RuntimeException.Overflow(Source?.Token);
+			throw RuntimeException.Overflow(Source);
 		}
 	}
 
@@ -245,7 +245,7 @@ public class CurrencySubtraction(Evaluable left, Evaluable right) : BinaryExpres
 		}
 		catch (OverflowException)
 		{
-			throw CompilerException.Overflow(Source?.Token);
+			throw CompilerException.Overflow(Source);
 		}
 	}
 }
