@@ -2,6 +2,8 @@
 using System.IO;
 using System.Text;
 
+using QBX.Firmware.Fonts;
+
 namespace QBX.OperatingSystem;
 
 public class PathCharacter
@@ -84,7 +86,12 @@ public class PathCharacter
 		if (lastSeparator < 0)
 			return null;
 		else
+		{
+			if ((lastSeparator == 2) && (path[1] == VolumeSeparatorChar))
+				lastSeparator++;
+
 			return new string(path.Slice(0, lastSeparator));
+		}
 	}
 
 	public static string GetFileName(ReadOnlySpan<char> path)
@@ -122,6 +129,34 @@ public class PathCharacter
 		}
 
 		return builder.ToString();
+	}
+
+	public static bool EqualsCaseInsensitive(string left, string right)
+	{
+		if (left.Length != right.Length)
+			return false;
+
+		for (int i=0; i < left.Length; i++)
+		{
+			char leftCh = left[i];
+			char rightCh = right[i];
+
+			if (leftCh != rightCh)
+			{
+				if (IsDirectorySeparator(leftCh) && IsDirectorySeparator(rightCh))
+					continue;
+
+				byte leftByte = CP437Encoding.GetByteSemantic(leftCh);
+				byte rightByte = CP437Encoding.GetByteSemantic(rightCh);
+
+				if (ToUpper(leftByte) == ToUpper(rightByte))
+					continue;
+
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	public static byte ToUpper(byte b)

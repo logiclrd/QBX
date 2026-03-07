@@ -96,19 +96,65 @@ public partial class ShortFileNames
 
 	static string UnmapEmulated(string possibleShortPath)
 	{
-		if ((Path.GetPathRoot("C:\\") is null) && ((possibleShortPath == "C:\\") || (possibleShortPath == "C://")))
+		if (string.IsNullOrEmpty(Path.GetPathRoot("C:\\"))
+		 && ((possibleShortPath == "C:\\") || (possibleShortPath == "C://")))
 			return DirectorySeparatorString;
 
 		possibleShortPath = GetFullPathEmulated(possibleShortPath);
 
-		if (s_shortToLong.TryGetValue(GetCanonicalPath(possibleShortPath), out var longPath))
+		if (s_shortToLong.TryGetValue(possibleShortPath, out var longPath))
 			return longPath;
 		else
 		{
 			var container = PathCharacter.GetDirectoryName(possibleShortPath);
 
 			if (!string.IsNullOrEmpty(container))
-				return Path.Join(UnmapEmulated(container), PathCharacter.GetFileName(possibleShortPath));
+			{
+				string fileName = PathCharacter.GetFileName(possibleShortPath);
+
+				string containerLongPath = UnmapEmulated(container);
+
+				longPath = Path.Join(containerLongPath, fileName);
+
+				if ((fileName.Length > 0)
+				 && !File.Exists(longPath)
+				 && !Directory.Exists(longPath)
+				 && Directory.Exists(containerLongPath))
+				{
+					// The user could be specifying a valid short filename for a path that we've never
+					// tried to map before, and this lookup needs to be case-insensitive. The mappings
+					// are nontrivial. The only guarantee is that the short filename will start with
+					// the same character (modulo case) as the long filename. So, we have to try
+					// mapping every file whose first character matches.
+
+					char firstCharacter = fileName[0];
+
+					byte firstByte = CP437Encoding.GetByteSemantic(firstCharacter);
+					byte firstByteUpper = PathCharacter.ToUpper(firstByte);
+
+					char firstCharacterUpper = CP437Encoding.GetCharSemantic(firstByteUpper);
+
+					foreach (var fileSystemInfo in new DirectoryInfo(containerLongPath).EnumerateFileSystemInfos())
+					{
+						char ch = fileSystemInfo.Name[0];
+
+						if ((ch == firstCharacter)
+						 || (ch == firstCharacterUpper))
+						{
+							if (TryMapEmulated(fileSystemInfo.FullName, out var newShortPath))
+							{
+								if (PathCharacter.EqualsCaseInsensitive(possibleShortPath, newShortPath))
+								{
+									longPath = fileSystemInfo.FullName;
+									break;
+								}
+							}
+						}
+					}
+				}
+
+				return longPath;
+			}
 			else
 				return possibleShortPath;
 		}
