@@ -118,7 +118,7 @@ public class LiteralExpression : Expression
 	public bool IsStringLiteral => (Token != null) && (Token.Type == TokenType.String);
 	public string StringLiteralValue => Token!.StringLiteralValue;
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		string? str = Token?.Value;
 

@@ -19,7 +19,7 @@ public class IdentifierExpression : Expression
 		Identifier = token.Value ?? throw new Exception("Internal error: Identifier token has no value");
 	}
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		writer.Write(Identifier);
 	}

@@ -62,7 +62,7 @@ public class BinaryExpression : Expression
 		return base.ClaimTokens(owner);
 	}
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		Left.Render(writer);
 

@@ -32,7 +32,7 @@ public class UnaryExpression : Expression
 		return base.ClaimTokens(owner);
 	}
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		switch (Operator)
 		{

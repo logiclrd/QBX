@@ -28,7 +28,7 @@ public class CallOrIndexExpression : Expression
 		return base.ClaimTokens(owner);
 	}
 
-	public override void Render(TextWriter writer)
+	protected override void RenderImplementation(TextWriter writer)
 	{
 		Subject.Render(writer);
 		writer.Write('(');

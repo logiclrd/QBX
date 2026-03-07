@@ -8,6 +8,7 @@ namespace QBX.CodeModel.Expressions;
 public abstract class Expression : IRenderableCode
 {
 	public Token? Token { get; set; }
+	public bool IsFileNumberArgument { get; set; }
 
 	public virtual bool IsValidAssignmentTarget() => false;
 	public virtual bool IsValidIndexSubject() => false;
@@ -19,5 +20,13 @@ public abstract class Expression : IRenderableCode
 		return this;
 	}
 
-	public abstract void Render(TextWriter writer);
+	public void Render(TextWriter writer)
+	{
+		if (IsFileNumberArgument)
+			writer.Write('#');
+
+		RenderImplementation(writer);
+	}
+
+	protected abstract void RenderImplementation(TextWriter writer);
 }
