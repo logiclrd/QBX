@@ -1,4 +1,6 @@
-﻿using QBX.ExecutionEngine.Compiled;
+﻿using System.Linq;
+
+using QBX.ExecutionEngine.Compiled;
 
 namespace QBX.ExecutionEngine.Execution.Variables;
 
@@ -25,7 +27,30 @@ public class ArrayVariable(DataType type, int fixedStringLength = -1) : Variable
 	}
 
 	public override object GetData() => Array;
-	public override void SetData(object value) => Array = (Array)value;
+
+	public override void SetData(object value)
+	{
+		if ((value is not ArrayVariable arrayValue)
+		 || !arrayValue.ElementType.Equals(this.ElementType)
+		 || (arrayValue.Array.Elements.Length != this.Array.Elements.Length))
+			throw RuntimeException.TypeMismatch();
+
+		Array.EnsureUnpacked();
+		arrayValue.Array.EnsureUnpacked();
+
+		for (int i = 0; i < Array.Elements.Length; i++)
+		{
+			var thisElement = Array.Elements[i];
+			var otherElement = arrayValue.Array.Elements[i];
+
+			if (thisElement == null)
+				Array.Elements[i] = otherElement;
+			else if (otherElement == null)
+				Array.Elements[i] = null;
+			else
+				thisElement.SetData(otherElement.GetData());
+		}
+	}
 
 	public override int Serialize(System.Span<byte> buffer)
 		=> Array.Serialize(buffer);

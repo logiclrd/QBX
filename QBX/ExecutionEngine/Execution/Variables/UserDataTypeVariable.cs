@@ -53,7 +53,19 @@ public class UserDataTypeVariable : Variable
 	public override int CoerceToInt(Evaluable? context) => throw RuntimeException.TypeMismatch(context?.Source);
 
 	public override object GetData() => this;
-	public override void SetData(object value) => throw new NotSupportedException();
+
+	public override void SetData(object value)
+	{
+		if ((value is not UserDataTypeVariable otherUDT)
+		 || !otherUDT.DataType.Equals(DataType))
+			throw RuntimeException.TypeMismatch();
+
+		if (Fields.Length != otherUDT.Fields.Length)
+			throw new Exception("Internal error: UDT field mismatch");
+
+		for (int i = 0; i < Fields.Length; i++)
+			Fields[i].SetData(otherUDT.Fields[i].GetData());
+	}
 
 	public override int Serialize(Span<byte> buffer)
 	{
