@@ -134,7 +134,7 @@ public enum TokenType
 	[KeywordToken] INP,
 	[KeywordToken] INPUT,
 	[KeywordFunction(maximumParameterCount: 2, fileNumberParameter: 1)]
-	[KeywordToken("INPUT$")] INPUT_s, // TODO: parsing must allow for a # sign before file numbers
+	[KeywordToken("INPUT$")] INPUT_s,
 	[KeywordFunction(minimumParameterCount: 2, maximumParameterCount: 3)]
 	[KeywordToken] INSTR,
 	[KeywordFunction]
@@ -142,7 +142,7 @@ public enum TokenType
 	[KeywordToken] INTEGER,
 	[KeywordToken] IOCTL,
 	[KeywordFunction(fileNumberParameter: 0)]
-	[KeywordToken("IOCTL$")] IOCTL_s, // TODO: parsing must allow for a # sign before file numbers
+	[KeywordToken("IOCTL$")] IOCTL_s,
 	[KeywordToken] IS,
 	[KeywordToken] KEY,
 	[KeywordFunction(maximumParameterCount: 2, arrayArgumentIndex: 0)]

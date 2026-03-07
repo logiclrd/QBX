@@ -3973,19 +3973,35 @@ public class BasicParser
 		return caseExpression;
 	}
 
-	ExpressionList ParseExpressionList(ListRange<Token> tokens, Token endToken, int minCount = 0, int maxCount = int.MaxValue)
+	ExpressionList ParseExpressionList(ListRange<Token> tokens, Token endToken, int minCount = 0, int maxCount = int.MaxValue, int fileNumberParameterIndex = -1)
 	{
-		// TODO: file number parameters (allow preceding '#')
-
 		var list = new ExpressionList();
 
 		if (tokens.Count > 0)
 		{
 			var endTokenRef = new TokenRef();
 
-			foreach (var range in SplitCommaDelimitedList(tokens, endTokenRef))
+			foreach (var listItemRange in SplitCommaDelimitedList(tokens, endTokenRef))
 			{
-				list.Expressions.Add(ParseExpression(range, endTokenRef.Token ?? endToken));
+				var range = listItemRange;
+
+				int index = list.Expressions.Count;
+				bool isFileNumberArgument = false;
+
+				if (index == fileNumberParameterIndex)
+				{
+					if ((range.Count > 0) && (range[0].Type == TokenType.NumberSign))
+					{
+						isFileNumberArgument = true;
+						range = range.Slice(1);
+					}
+				}
+
+				var expression = ParseExpression(range, endTokenRef.Token ?? endToken);
+
+				expression.IsFileNumberArgument = isFileNumberArgument;
+
+				list.Expressions.Add(expression);
 
 				if ((list.Expressions.Count == maxCount)
 				 && (endTokenRef.Token != null))
@@ -4039,7 +4055,8 @@ public class BasicParser
 						tokens.Count - openParenthesisIndex - 2),
 						endToken,
 						config.MinimumParameterCount,
-						config.MaximumParameterCount);
+						config.MaximumParameterCount,
+						config.FileNumberParameter);
 
 					// TODO: isAssignable
 
