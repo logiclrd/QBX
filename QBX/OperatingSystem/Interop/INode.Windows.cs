@@ -1,9 +1,10 @@
-﻿using Microsoft.Win32.SafeHandles;
-using System.Reflection.Metadata;
+﻿using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace QBX.Tests.Utility.Interop;
+using Microsoft.Win32.SafeHandles;
+
+namespace QBX.OperatingSystem.Interop;
 
 public class FileIndex : INode<FileIndex>
 {

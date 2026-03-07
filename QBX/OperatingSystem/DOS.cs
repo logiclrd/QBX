@@ -16,6 +16,7 @@ using QBX.OperatingSystem.Breaks;
 using QBX.OperatingSystem.FileDescriptors;
 using QBX.OperatingSystem.FileStructures;
 using QBX.OperatingSystem.Globalization;
+using QBX.OperatingSystem.Interop;
 using QBX.OperatingSystem.Memory;
 using QBX.OperatingSystem.Processes;
 
@@ -1092,6 +1093,61 @@ public partial class DOS
 
 			return -1;
 		}
+	}
+
+	public bool FileIsOpenAsOneOf(StringValue fileName, IEnumerable<int> fileHandles)
+	{
+		if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+			return FileIsOpenAsOneOf(fileName, fileHandles, new FileIndexProvider());
+		else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+			return FileIsOpenAsOneOf(fileName, fileHandles, new LinuxINodeProvider());
+		else if (RuntimeInformation.IsOSPlatform(OSPlatform.FreeBSD))
+			return FileIsOpenAsOneOf(fileName, fileHandles, new FreeBSDINodeProvider());
+		else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+			return FileIsOpenAsOneOf(fileName, fileHandles, new OSXINodeProvider());
+		else
+		{
+			// Quick & dirty fallback, probably not reliable, probably won't ever run.
+			string filePath = ShortFileNames.GetFullPath(fileName.ToString());
+
+			foreach (int fileHandle in fileHandles)
+			{
+				if ((fileHandle >= 2) && (fileHandle < Files.Count)
+				 && (Files[fileHandle] is FileDescriptor fileDescriptor))
+				{
+					if (filePath == fileDescriptor.Path)
+						return true;
+				}
+			}
+
+			return false;
+		}
+	}
+
+	bool FileIsOpenAsOneOf<TINode>(StringValue fileName, IEnumerable<int> fileHandles, INodeProvider<TINode> inodeProvider)
+		where TINode : INode<TINode>
+	{
+		try
+		{
+			if (inodeProvider.TryGetINode(ShortFileNames.Unmap(fileName.ToString()), out var fileINode))
+			{
+				foreach (int fileHandle in fileHandles)
+				{
+					if ((fileHandle >= 2) && (fileHandle < Files.Count)
+					 && (Files[fileHandle] is RegularFileDescriptor fileDescriptor))
+					{
+						if (inodeProvider.TryGetINode(fileDescriptor.PhysicalPath, out var checkINode))
+						{
+							if (fileINode.IsSameVolumeAndFileAs(checkINode))
+								return true;
+						}
+					}
+				}
+			}
+		}
+		catch { }
+
+		return false;
 	}
 
 	static string GetTemporaryFileName()

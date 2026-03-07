@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 
 using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
@@ -29,6 +30,13 @@ public class OpenStatement(CodeModel.Statements.Statement source) : Executable(s
 			throw RuntimeException.FileAlreadyOpen(Source);
 
 		var fileName = (StringVariable)FileNameExpression.Evaluate(context, stackFrame);
+
+		if ((OpenMode == OpenMode.Output)
+		 && (OpenMode == OpenMode.Append))
+		{
+			if (context.Machine.DOS.FileIsOpenAsOneOf(fileName.Value, context.Files.Values.Select(openFile => openFile.FileHandle)))
+				throw RuntimeException.FileAlreadyOpen(Source);
+		}
 
 		int? recordLength = RecordLengthExpression?.EvaluateAndCoerceToInt(context, stackFrame);
 

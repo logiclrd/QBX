@@ -1,4 +1,4 @@
-﻿namespace QBX.Tests.Utility.Interop;
+﻿namespace QBX.OperatingSystem.Interop;
 
 public abstract class INode<TINode>
 	where TINode : INode<TINode>

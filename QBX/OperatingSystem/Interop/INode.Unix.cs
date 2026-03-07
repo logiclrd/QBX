@@ -1,7 +1,8 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace QBX.Tests.Utility.Interop;
+namespace QBX.OperatingSystem.Interop;
 
 public class INode : INode<INode>
 {
