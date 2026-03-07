@@ -53,6 +53,24 @@ public class OpenFile
 			field.Variable.ValueSpan.Clear();
 			while (field.Variable.Value.Length < field.Width)
 				field.Variable.Value.Append((byte)0);
+
+			context.FieldVariables[field.Variable] = this;
+		}
+	}
+
+	public void UnlinkFieldVariable(StringVariable variable)
+	{
+		StringVariable? replacement = null;
+
+		foreach (var field in Fields)
+		{
+			if (field.Variable == variable)
+			{
+				// It's not well-formed, but the code is permitted to map the
+				// same variable to more than one field.
+				replacement ??= new StringVariable(variable.Value);
+				field.Variable = replacement;
+			}
 		}
 	}
 

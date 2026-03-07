@@ -16,6 +16,9 @@ public class AssignmentStatement(CodeModel.Statements.Statement? source) : Execu
 
 		try
 		{
+			if (targetVariable is StringVariable stringVariable)
+				context.UnlinkFieldVariable(stringVariable);
+
 			targetVariable.SetData(valueVariable.GetData());
 		}
 		catch (RuntimeException error)

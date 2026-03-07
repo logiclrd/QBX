@@ -58,6 +58,16 @@ public class ExecutionContext
 	public readonly StringValue CommandLine = new StringValue();
 
 	public readonly Dictionary<int, OpenFile> Files = new Dictionary<int, OpenFile>();
+	public readonly Dictionary<StringVariable, OpenFile> FieldVariables = new Dictionary<StringVariable, OpenFile>();
+
+	public void UnlinkFieldVariable(StringVariable variable)
+	{
+		if (FieldVariables.TryGetValue(variable, out var openFile))
+		{
+			openFile.UnlinkFieldVariable(variable);
+			FieldVariables.Remove(variable);
+		}
+	}
 
 	public ExecutionContext(Machine machine, PlayProcessor playProcessor)
 	{
