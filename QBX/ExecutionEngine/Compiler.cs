@@ -2802,6 +2802,7 @@ public class Compiler
 					case TokenType.LCASE: function = new LCaseFunction(); break;
 					case TokenType.LEFT: function = new LeftFunction(); break;
 					case TokenType.LEN: function = new LenFunction(); break;
+					case TokenType.LOF: function = new LOFFunction(); break;
 					case TokenType.LTRIM: function = new LTrimFunction(); break;
 					case TokenType.MID: function = new MidFunction(); break;
 					case TokenType.PEEK: function = new PeekFunction(); break;
