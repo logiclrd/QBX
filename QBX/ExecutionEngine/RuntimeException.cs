@@ -237,6 +237,8 @@ public class RuntimeException : Exception
 		=> ForErrorNumber(19, statement);
 	public static RuntimeException ResumeWithoutError(CodeModel.Statements.Statement? statement)
 		=> ForErrorNumber(20, statement);
+	public static RuntimeException FieldOverflow()
+		=> ForErrorNumber(50, default(Token));
 	public static RuntimeException BadFileNameOrNumber(CodeModel.Statements.Statement? statement)
 		=> ForErrorNumber(52, statement);
 	public static RuntimeException FileNotFound(CodeModel.Statements.Statement? statement)
