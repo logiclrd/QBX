@@ -1,3 +1,5 @@
+using System;
+
 namespace QBX.Hardware;
 
 public class MemoryBus : IMemory
@@ -18,5 +20,16 @@ public class MemoryBus : IMemory
 	{
 		get => _segmentMap[address >> 4][address];
 		set => _segmentMap[address >> 4][address] = value;
+	}
+
+	public bool TryGetSpan(int offset, int length, out Span<byte> span)
+	{
+		int segment = offset >> 4;
+
+		if ((segment >= 0) || (segment < _segmentMap.Length))
+			return _segmentMap[segment].TryGetSpan(offset, length, out span);
+
+		span = Span<byte>.Empty;
+		return false;
 	}
 }

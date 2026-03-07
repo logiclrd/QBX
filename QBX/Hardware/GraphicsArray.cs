@@ -939,4 +939,20 @@ public class GraphicsArray : IMemory
 			}
 		}
 	}
+
+	public bool TryGetSpan(int offset, int length, out Span<byte> span)
+	{
+		offset -= Graphics.MemoryMapBaseAddress;
+
+		if ((offset >= 0)
+		 && (offset < VRAM.Length)
+		 && (VRAM.Length - offset <= length))
+		{
+			span = VRAM.AsSpan().Slice(offset, length);
+			return true;
+		}
+
+		span = Span<byte>.Empty;
+		return false;
+	}
 }

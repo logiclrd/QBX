@@ -2795,6 +2795,7 @@ public class Compiler
 					case TokenType.FIX: return FixFunction.Construct(keywordFunction.Token, arguments);
 					case TokenType.INKEY: function = new InKeyFunction(); break;
 					case TokenType.INP: function = new InpFunction(); break;
+					case TokenType.INPUT_s: function = InputFunction.Construct(keywordFunction.Token, arguments); break;
 					case TokenType.INSTR: function = new InStrFunction(); break;
 					case TokenType.INT: return IntFunction.Construct(keywordFunction.Token, arguments);
 					case TokenType.LBOUND: function = new LBoundFunction(); break;

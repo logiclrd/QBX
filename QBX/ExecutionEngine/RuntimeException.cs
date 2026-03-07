@@ -239,6 +239,8 @@ public class RuntimeException : Exception
 		=> ForErrorNumber(20, statement);
 	public static RuntimeException FieldOverflow()
 		=> ForErrorNumber(50, default(Token));
+	public static RuntimeException BadFileNameOrNumber(Token? context)
+		=> ForErrorNumber(52, context);
 	public static RuntimeException BadFileNameOrNumber(CodeModel.Statements.Statement? statement)
 		=> ForErrorNumber(52, statement);
 	public static RuntimeException FileNotFound(CodeModel.Statements.Statement? statement)
@@ -251,6 +253,8 @@ public class RuntimeException : Exception
 		=> ForErrorNumber(58, statement);
 	public static RuntimeException DiskFull(CodeModel.Statements.Statement? statement)
 		=> ForErrorNumber(61, statement);
+	public static RuntimeException InputPastEndOfFile(CodeModel.Expressions.Expression? expression)
+		=> ForErrorNumber(62, expression);
 	public static RuntimeException BadRecordNumber(Token? context)
 		=> ForErrorNumber(63, context);
 	public static RuntimeException BadFileName()

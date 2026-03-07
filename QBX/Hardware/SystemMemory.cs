@@ -55,5 +55,19 @@ public class SystemMemory : IMemory
 			_ram[address] = value;
 		}
 	}
+
+	public bool TryGetSpan(int offset, int length, out Span<byte> span)
+	{
+		if ((offset >= 0)
+		 && (offset < _ram.Length)
+		 && (_ram.Length - offset <= length))
+		{
+			span = _ram.AsSpan().Slice(offset, length);
+			return true;
+		}
+
+		span = Span<byte>.Empty;
+		return false;
+	}
 }
 

@@ -93,8 +93,6 @@ public class OpenFile
 
 		while ((data.Length > 0) && (fieldIndex < Fields.Count))
 		{
-			int availableBytes = Fields[fieldIndex].Width - fieldOffset;
-
 			var fieldSpan = Fields[fieldIndex].Variable.ValueSpan.Slice(fieldOffset);
 
 			int copySize = Math.Min(data.Length, fieldSpan.Length);
@@ -113,6 +111,40 @@ public class OpenFile
 		}
 
 		if ((fieldIndex >= Fields.Count) && (data.Length != 0))
+			throw RuntimeException.FieldOverflow();
+	}
+
+	public void ReadFromFields(Span<byte> buffer)
+	{
+		int fieldIndex = 0;
+		int fieldOffset = RecordOffset;
+
+		while ((fieldIndex < Fields.Count) && (fieldOffset >= Fields[fieldIndex].Width))
+		{
+			fieldOffset -= Fields[fieldIndex].Width;
+			fieldIndex++;
+		}
+
+		while ((buffer.Length > 0) && (fieldIndex < Fields.Count))
+		{
+			var fieldSpan = Fields[fieldIndex].Variable.ValueSpan.Slice(fieldOffset);
+
+			int copySize = Math.Min(buffer.Length, fieldSpan.Length);
+
+			fieldSpan.Slice(0, copySize).CopyTo(buffer);
+			buffer = buffer.Slice(copySize);
+
+			RecordOffset += copySize;
+			fieldOffset += copySize;
+
+			if (fieldOffset >= Fields[fieldIndex].Width)
+			{
+				fieldOffset -= Fields[fieldIndex].Width;
+				fieldIndex++;
+			}
+		}
+
+		if ((fieldIndex >= Fields.Count) && (buffer.Length != 0))
 			throw RuntimeException.FieldOverflow();
 	}
 

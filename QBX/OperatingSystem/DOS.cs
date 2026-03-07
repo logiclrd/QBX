@@ -536,6 +536,9 @@ public partial class DOS
 
 	public int Read(int fileHandle, IMemory systemMemory, int address, int count)
 	{
+		if (systemMemory.TryGetSpan(address, count, out var bufferSpan))
+			return Read(fileHandle, bufferSpan);
+
 		if ((fileHandle < 0) || (fileHandle >= Files.Count)
 			|| (Files[fileHandle] is not FileDescriptor fileDescriptor))
 		{
@@ -552,6 +555,36 @@ public partial class DOS
 				while (numRead < count)
 				{
 					systemMemory[address++] = fileDescriptor.ReadByte();
+					numRead++;
+
+					if (fileDescriptor.AtReadBoundary)
+						break;
+				}
+			}
+		}
+		catch (EndOfStreamException) { }
+
+		return numRead;
+	}
+
+	public int Read(int fileHandle, Span<byte> buffer)
+	{
+		if ((fileHandle < 0) || (fileHandle >= Files.Count)
+			|| (Files[fileHandle] is not FileDescriptor fileDescriptor))
+		{
+			_lastError = DOSError.InvalidHandle;
+			throw new ArgumentException("Invalid file descriptor");
+		}
+
+		int numRead = 0;
+
+		try
+		{
+			using (Devices.Console.WaitForCarriageReturn())
+			{
+				while (numRead < buffer.Length)
+				{
+					buffer[numRead] = fileDescriptor.ReadByte();
 					numRead++;
 
 					if (fileDescriptor.AtReadBoundary)

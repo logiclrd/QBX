@@ -68,7 +68,25 @@ public class StringValue : IComparable<StringValue>, IEquatable<StringValue>
 
 	public byte[] ToByteArray() => _bytes.ToArray();
 
-	public int Length => _bytes.Count;
+	public int Length
+	{
+		get => _bytes.Count;
+		set
+		{
+			if (_isFixedLength && (value != _bytes.Count))
+				throw new Exception("Cannot change the length of a fixed-length StringValue");
+
+			if (_bytes.Count > value)
+				_bytes.RemoveRange(value, _bytes.Count);
+			else if (_bytes.Count < value)
+			{
+				if (_bytes.Capacity < value)
+					_bytes.Capacity = value;
+
+				_bytes.AddRange(Enumerable.Repeat((byte)0, value));
+			}
+		}
+	}
 
 	public bool IsFixedLength => _isFixedLength;
 
