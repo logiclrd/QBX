@@ -2025,6 +2025,19 @@ public class Compiler
 
 				break;
 			}
+			case CodeModel.Statements.SeekStatement seekStatement:
+			{
+				var translatedSeekStatement = new SeekStatement(seekStatement);
+
+				TranslateNumericArgumentExpression(
+					ref translatedSeekStatement.FileNumberExpression, seekStatement.FileNumberExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedSeekStatement.PositionExpression, seekStatement.PositionExpression);
+
+				container.Append(translatedSeekStatement);
+
+				break;
+			}
 			case CodeModel.Statements.SelectCaseStatement selectCaseStatement:
 			{
 				var translatedSelectCaseStatement = new SelectCaseStatement(selectCaseStatement);

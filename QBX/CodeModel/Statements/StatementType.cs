@@ -70,6 +70,7 @@ public enum StatementType
 	PutSprite,
 	Randomize,
 	Resume,
+	Seek,
 	SoftKeyConfig,
 	SoftKeyControl,
 	SoftKeyList,

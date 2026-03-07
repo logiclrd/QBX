@@ -18,8 +18,6 @@ public abstract class FileByteRangeStatement : Statement
 	{
 		if (FileNumberExpression == null)
 			throw new Exception($"Internal error: {Type}Statement with no FileNumberExpression");
-		if (FileNumberExpression == null)
-			throw new Exception($"Internal error: {Type}Statement with no FileNumberExpression");
 
 		writer.Write(StatementName);
 		writer.Write(IncludeNumberSign ? " #" : " ");

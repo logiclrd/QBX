@@ -249,6 +249,8 @@ public class RuntimeException : Exception
 		=> ForErrorNumber(58, statement);
 	public static RuntimeException DiskFull(CodeModel.Statements.Statement? statement)
 		=> ForErrorNumber(61, statement);
+	public static RuntimeException BadRecordNumber(Token? context)
+		=> ForErrorNumber(63, context);
 	public static RuntimeException BadFileName()
 		=> ForErrorNumber(64, default(Token));
 	public static RuntimeException TooManyFiles(CodeModel.Statements.Statement? statement)

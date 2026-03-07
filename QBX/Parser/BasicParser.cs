@@ -3021,6 +3021,37 @@ public class BasicParser
 				return screen;
 			}
 
+			case TokenType.SEEK:
+			{
+				var statement = new SeekStatement();
+
+				if (tokenHandler.NextTokenIs(TokenType.NumberSign))
+				{
+					statement.IncludeNumberSign = true;
+					tokenHandler.Advance();
+				}
+
+				int comma = tokenHandler.FindNextUnparenthesizedOf(TokenType.Comma);
+
+				var fileNumberTokens = tokenHandler.RemainingTokens;
+
+				var midToken = tokenHandler.EndToken;
+
+				if (comma > 0)
+				{
+					midToken = fileNumberTokens[comma];
+					fileNumberTokens = fileNumberTokens.Slice(0, comma);
+				}
+
+				statement.FileNumberExpression = ParseExpressionForStatement(statement, fileNumberTokens, midToken);
+
+				tokenHandler.Advance(fileNumberTokens.Count);
+
+				statement.PositionExpression = ParseExpressionForStatement(statement, tokenHandler.RemainingTokens, tokenHandler.EndToken);
+
+				return statement;
+			}
+
 			case TokenType.SELECT:
 			{
 				var selectCase = new SelectCaseStatement();
