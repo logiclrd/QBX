@@ -66,8 +66,6 @@ public abstract class VisualLibrary
 	{
 		CharacterLineWindowStart = 0;
 		CharacterLineWindowEnd = CharacterHeight - 1;
-
-		(CursorX, CursorY) = Machine.VideoFirmware.GetCursorPosition(ActivePageNumber);
 	}
 
 	public abstract byte CurrentAttributeByte { get; set; }

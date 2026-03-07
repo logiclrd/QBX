@@ -11,6 +11,7 @@ public partial class Program
 {
 	byte[] _savedOutput = new byte[262144];
 	byte[] _savedVideoFirmwareState = Array.Empty<byte>();
+	int _savedActivePageNumber;
 
 	void SetIDEVideoMode()
 	{
@@ -29,6 +30,8 @@ public partial class Program
 		_savedVideoFirmwareState = new byte[Machine.VideoFirmware.GetStateBufferLength()];
 
 		Machine.VideoFirmware.SaveState(_savedVideoFirmwareState);
+
+		_savedActivePageNumber = Machine.VideoFirmware.VisualLibrary.ActivePageNumber;
 	}
 
 	void RestoreOutput()
@@ -38,6 +41,9 @@ public partial class Program
 			Machine.VideoFirmware.RestoreState(_savedVideoFirmwareState);
 
 			_savedOutput.CopyTo(Machine.GraphicsArray.VRAM);
+
+			Machine.VideoFirmware.VisualLibrary.ActivePageNumber = _savedActivePageNumber;
+			Machine.VideoFirmware.VisualLibrary.RefreshParameters();
 		}
 	}
 }

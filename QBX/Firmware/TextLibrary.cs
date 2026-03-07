@@ -67,7 +67,7 @@ public class TextLibrary : VisualLibrary
 
 	public void ReloadCursorAddress()
 	{
-		(CursorX, CursorY) = Machine.VideoFirmware.GetCursorPosition();
+		(CursorX, CursorY) = Machine.VideoFirmware.GetCursorPosition(ActivePageNumber);
 	}
 
 	public void SetAttributes(int foreground, int background)
@@ -131,7 +131,7 @@ public class TextLibrary : VisualLibrary
 
 	public void UpdatePhysicalCursor()
 	{
-		Machine.VideoFirmware.MoveCursor(CursorX, CursorY);
+		Machine.VideoFirmware.MoveCursor(CursorX, CursorY, ActivePageNumber);
 	}
 
 	class ClipScope(TextLibrary owner, IntegerRect previousRect) : IDisposable

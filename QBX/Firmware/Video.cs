@@ -584,7 +584,10 @@ public partial class Video(Machine machine)
 
 		int width = array.CRTController.Registers.EndHorizontalDisplay + 1;
 
-		int cursorAddress = array.CRTController.CursorAddress;
+		int cursorAddress =
+			pageNumber == _visiblePageNumber
+			? array.CRTController.CursorAddress
+			: _cursorAddressByPageNumber[pageNumber];
 
 		return (cursorAddress % width, cursorAddress / width);
 	}
@@ -643,10 +646,13 @@ public partial class Video(Machine machine)
 		int pageSize = ComputePageSize();
 		int pageCount = 16384 / pageSize;
 
+		var array = machine.GraphicsArray;
+
+		if ((_visiblePageNumber >= 0) && (_visiblePageNumber < pageCount))
+			_cursorAddressByPageNumber[_visiblePageNumber] = array.CRTController.CursorAddress;
+
 		if ((pageNumber >= 0) && (pageNumber < pageCount))
 		{
-			var array = machine.GraphicsArray;
-
 			int startAddress = pageNumber * pageSize / 4;
 
 			array.CRTController.Registers[CRTControllerRegisters.StartAddressHigh] =
