@@ -70,6 +70,8 @@ public partial class Program : HostedProgram, IOvertypeFlag
 
 		if (space >= 0)
 			commandTail = commandTail.Substring(space + 1).TrimStart();
+		else
+			commandTail = ""; // contains only argv[0]
 
 		Machine.DOS.SetUpRunningProgramSegmentPrefix(commandTail);
 
