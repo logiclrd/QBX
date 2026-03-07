@@ -3656,6 +3656,9 @@ public class BasicParser
 			tokenHandler.RemainingTokens.Slice(midTokenIndex + 1),
 			endToken);
 
+		if (!targetExpression.IsValidAssignmentTarget())
+			throw new SyntaxErrorException(tokenHandler.RemainingTokens[midTokenIndex + 1], "Expected: variable");
+
 		return new FieldDefinition(fieldWidthExpression, targetExpression);
 	}
 

@@ -489,7 +489,7 @@ public class Compiler
 
 		nextStatementInfo = null;
 
-		void TranslateNumericArgumentExpression(ref Evaluable? target, CodeModel.Expressions.Expression? expression)
+		void TranslateNumericArgumentExpression([NotNullIfNotNull("expression")] ref Evaluable? target, CodeModel.Expressions.Expression? expression)
 		{
 			if (expression != null)
 			{
@@ -500,7 +500,7 @@ public class Compiler
 			}
 		}
 
-		void TranslateStringArgumentExpression(ref Evaluable? target, CodeModel.Expressions.Expression? expression)
+		void TranslateStringArgumentExpression([NotNullIfNotNull("expression")] ref Evaluable? target, CodeModel.Expressions.Expression? expression)
 		{
 			if (expression != null)
 			{
@@ -1212,6 +1212,31 @@ public class Compiler
 					};
 
 				container.Append(translatedExitScopeStatement);
+
+				break;
+			}
+			case CodeModel.Statements.FieldStatement fieldStatement:
+			{
+				var translatedFieldStatement = new FieldStatement(fieldStatement);
+
+				TranslateNumericArgumentExpression(
+					ref translatedFieldStatement.FileNumberExpression, fieldStatement.FileNumberExpression);
+
+				foreach (var definition in fieldStatement.FieldDefinitions)
+				{
+					Evaluable? widthExpression = null;
+					Evaluable? targetExpression = null;
+
+					TranslateNumericArgumentExpression(
+						ref widthExpression, definition.FieldWidthExpression);
+					TranslateStringArgumentExpression(
+						ref targetExpression, definition.TargetExpression);
+
+					translatedFieldStatement.FieldMappings.Add(
+						new FieldMapping(widthExpression, targetExpression));
+				}
+
+				container.Append(translatedFieldStatement);
 
 				break;
 			}
