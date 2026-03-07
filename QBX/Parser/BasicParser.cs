@@ -3047,6 +3047,8 @@ public class BasicParser
 
 				tokenHandler.Advance(fileNumberTokens.Count);
 
+				tokenHandler.Expect(TokenType.Comma);
+
 				statement.PositionExpression = ParseExpressionForStatement(statement, tokenHandler.RemainingTokens, tokenHandler.EndToken);
 
 				return statement;
