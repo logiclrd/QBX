@@ -110,12 +110,17 @@ public partial class Program
 
 		_executionThread.Start();
 
-		if (_executionContext.WaitForRootFrame())
+		if (_compilation.IsEmpty)
+			_executionContext.Controls.Terminate();
+		else
 		{
-			var rootFrame = _executionContext.RootFrame;
+			if (_executionContext.WaitForRootFrame())
+			{
+				var rootFrame = _executionContext.RootFrame;
 
-			if (rootFrame != null)
-				EvaluateWatches(rootFrame);
+				if (rootFrame != null)
+					EvaluateWatches(rootFrame);
+			}
 		}
 
 		return true;
@@ -151,9 +156,14 @@ public partial class Program
 		else
 			RestoreOutput();
 
-		_executionContext.Controls.ContinueExecution();
+		if (_executionContext.ExecutionState.IsTerminated)
+			ExecutionEpilogue();
+		else
+		{
+			_executionContext.Controls.ContinueExecution();
 
-		UnpauseExecution();
+			UnpauseExecution();
+		}
 	}
 
 	public void Step()

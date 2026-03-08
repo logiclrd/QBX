@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 
 using QBX.ExecutionEngine.Compiled;
-using QBX.ExecutionEngine.Execution;
 
 namespace QBX.ExecutionEngine;
 
@@ -85,5 +85,9 @@ public class Compilation
 	{
 		EntrypointRoutine = Modules[0].MainRoutine;
 	}
+
+	public bool IsEmpty =>
+		(EntrypointRoutine == null) ||
+		(EntrypointRoutine.Statements.All(statement => !statement.CanBreak));
 }
 
