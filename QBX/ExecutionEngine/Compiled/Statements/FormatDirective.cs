@@ -4,10 +4,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 
-using QBX.CodeModel.Statements;
-using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
-using QBX.Firmware;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
@@ -297,14 +294,14 @@ public abstract class FormatDirective
 		return new NumericFormatDirective(pattern.ToString(), leftPadChar, leadingDollarSign, separateThousands, exponentCharacters, trailingMinusSign);
 	}
 
-	public abstract void Emit(Variable argument, ExecutionContext context, CodeModel.Statements.PrintStatement? statement);
+	public abstract void Emit(Variable argument, CodeModel.Statements.PrintStatement? statement, PrintEmitter emitter);
 }
 
 public class LiteralFormatDirective(string literalText) : FormatDirective
 {
-	public override void Emit(Variable argument, ExecutionContext context, CodeModel.Statements.PrintStatement? statement)
+	public override void Emit(Variable argument, CodeModel.Statements.PrintStatement? statement, PrintEmitter emitter)
 	{
-		context.VisualLibrary.WriteText(literalText);
+		emitter.Emit(literalText);
 	}
 }
 
@@ -312,15 +309,15 @@ public class NumericFormatDirective(string pattern, char leftPadChar, bool leadi
 {
 	public override bool UsesArgument => true;
 
-	public override void Emit(Variable argument, ExecutionContext context, PrintStatement? statement)
+	public override void Emit(Variable argument, CodeModel.Statements.PrintStatement? statement, PrintEmitter emitter)
 	{
 		switch (argument)
 		{
-			case IntegerVariable integerValue: Emit((decimal)integerValue.Value, context.VisualLibrary); break;
-			case LongVariable longValue: Emit((decimal)longValue.Value, context.VisualLibrary); break;
-			case SingleVariable singleValue: Emit(singleValue.Value, 'E', context.VisualLibrary); break;
-			case DoubleVariable doubleValue: Emit(doubleValue.Value, 'D', context.VisualLibrary); break;
-			case CurrencyVariable currencyValue: Emit(currencyValue.Value, context.VisualLibrary); break;
+			case IntegerVariable integerValue: Emit((decimal)integerValue.Value, emitter); break;
+			case LongVariable longValue: Emit((decimal)longValue.Value, emitter); break;
+			case SingleVariable singleValue: Emit(singleValue.Value, 'E', emitter); break;
+			case DoubleVariable doubleValue: Emit(doubleValue.Value, 'D', emitter); break;
+			case CurrencyVariable currencyValue: Emit(currencyValue.Value, emitter); break;
 
 			default: throw RuntimeException.TypeMismatch(statement);
 		}
@@ -329,7 +326,7 @@ public class NumericFormatDirective(string pattern, char leftPadChar, bool leadi
 	[ThreadStatic]
 	static Dictionary<string, string>? s_patternsWithThousandsSeparators;
 
-	internal void Emit(double value, char exponentLetter, VisualLibrary visual)
+	internal void Emit(double value, char exponentLetter, PrintEmitter emitter)
 	{
 		bool isNegative = (value < 0);
 
@@ -453,46 +450,46 @@ public class NumericFormatDirective(string pattern, char leftPadChar, bool leadi
 		if (leadingDollarSign)
 		{
 			if (numberStart == 0)
-				visual.WriteText("%$");
+				emitter.Emit("%$");
 			else
 				formattedChars[numberStart - 1] = '$';
 		}
 		else if (formatted.Length > pattern.Length)
-			visual.WriteText('%');
+			emitter.Emit('%');
 
 		for (int i = formattedChars.Length; i < pattern.Length; i++)
-			visual.WriteText(leftPadChar);
+			emitter.Emit(leftPadChar);
 
-		visual.WriteText(formattedChars);
+		emitter.Emit(formattedChars);
 
 		if (exponentCharacters > 0)
 		{
-			visual.WriteText(exponentLetter);
+			emitter.Emit(exponentLetter);
 
 			if (exponentValue >= 0)
-				visual.WriteText('+');
+				emitter.Emit('+');
 			else
-				visual.WriteText('-');
+				emitter.Emit('-');
 
 			exponentValue = Math.Abs(exponentValue);
 
 			if ((exponentCharacters == 4) && (exponentValue >= 100))
 			{
-				visual.WriteText('%');
-				visual.WriteText((exponentValue %= 10).ToString());
+				emitter.Emit('%');
+				emitter.Emit((exponentValue %= 10).ToString());
 			}
 			else
 			{
-				visual.WriteText(exponentValue.ToString(
+				emitter.Emit(exponentValue.ToString(
 					exponentCharacters == 4 ? "d2" : "d3"));
 			}
 		}
 
 		if (trailingMinusSign)
-			visual.WriteText(isNegative ? '-' : ' ');
+			emitter.Emit(isNegative ? '-' : ' ');
 	}
 
-	internal void Emit(decimal value, VisualLibrary visual)
+	internal void Emit(decimal value, PrintEmitter emitter)
 	{
 		bool isNegative = (value < 0);
 
@@ -603,61 +600,61 @@ public class NumericFormatDirective(string pattern, char leftPadChar, bool leadi
 		}
 
 		if (decimalPosition > patternDecimalPosition)
-			visual.WriteText('%');
+			emitter.Emit('%');
 
 		if (decimalPosition == 0)
 		{
 			for (int i = 1; i < patternDecimalPosition; i++)
-				visual.WriteText(leftPadChar);
+				emitter.Emit(leftPadChar);
 
-			visual.WriteText('0');
+			emitter.Emit('0');
 		}
 		else
 		{
 			for (int i = decimalPosition; i < patternDecimalPosition; i++)
-				visual.WriteText(leftPadChar);
+				emitter.Emit(leftPadChar);
 
-			visual.WriteText(rawDigitsSpan.Slice(0, decimalPosition));
+			emitter.Emit(rawDigitsSpan.Slice(0, decimalPosition));
 		}
 
 		if (patternDecimalPosition < pattern.Length)
 		{
-			visual.WriteText('.');
+			emitter.Emit('.');
 
 			for (int i = patternDecimalPosition + 1, j = decimalPosition; i < pattern.Length; i++, j++)
 			{
 				if (j < rawDigitsSpan.Length)
-					visual.WriteText(rawDigitsSpan[j]);
+					emitter.Emit(rawDigitsSpan[j]);
 				else
-					visual.WriteText('0');
+					emitter.Emit('0');
 			}
 		}
 
 		if (exponentCharacters > 0)
 		{
-			visual.WriteText("E");
+			emitter.Emit("E");
 
 			if (exponentValue >= 0)
-				visual.WriteText('+');
+				emitter.Emit('+');
 			else
-				visual.WriteText('-');
+				emitter.Emit('-');
 
 			exponentValue = Math.Abs(exponentValue);
 
 			if ((exponentCharacters == 4) && (exponentValue >= 100))
 			{
-				visual.WriteText('%');
-				visual.WriteText((exponentValue %= 10).ToString());
+				emitter.Emit('%');
+				emitter.Emit((exponentValue %= 10).ToString());
 			}
 			else
 			{
-				visual.WriteText(exponentValue.ToString(
+				emitter.Emit(exponentValue.ToString(
 					exponentCharacters == 4 ? "00" : "000"));
 			}
 		}
 
 		if (trailingMinusSign)
-			visual.WriteText(isNegative ? '-' : ' ');
+			emitter.Emit(isNegative ? '-' : ' ');
 	}
 }
 
@@ -666,9 +663,9 @@ public class StringFormatDirective(int fieldWidth = -1) : FormatDirective
 	public override bool UsesArgument => true;
 
 	[ThreadStatic]
-	static string? s_spaces;
+	static byte[]? s_spaces;
 
-	public override void Emit(Variable argument, ExecutionContext context, PrintStatement? statement)
+	public override void Emit(Variable argument, CodeModel.Statements.PrintStatement? statement, PrintEmitter emitter)
 	{
 		if (argument is not StringVariable stringArgument)
 			throw RuntimeException.TypeMismatch(statement);
@@ -676,18 +673,21 @@ public class StringFormatDirective(int fieldWidth = -1) : FormatDirective
 		var str = stringArgument.ValueSpan;
 
 		if (fieldWidth < 0)
-			context.VisualLibrary.WriteText(str);
+			emitter.Emit(str);
 		else if (str.Length > fieldWidth)
-			context.VisualLibrary.WriteText(str.Slice(0, fieldWidth));
+			emitter.Emit(str.Slice(0, fieldWidth));
 		else
 		{
 			int padding = fieldWidth - str.Length;
 
 			if ((s_spaces == null) || (s_spaces.Length < padding))
-				s_spaces = new string(' ', padding * 2);
+			{
+				s_spaces = new byte[padding * 2];
+				s_spaces.AsSpan().Fill((byte)' ');
+			}
 
-			context.VisualLibrary.WriteText(str);
-			context.VisualLibrary.WriteText(s_spaces.AsSpan().Slice(0, padding));
+			emitter.Emit(str);
+			emitter.Emit(s_spaces.AsSpan().Slice(0, padding));
 		}
 	}
 }

@@ -412,11 +412,10 @@ public partial class Program
 							@break |= !watch.LastValue.IsZero;
 						else
 						{
-							var emitter = new PrintEmitter(_executionContext);
-
 							var value = new StringValue();
 
-							emitter.CaptureOutputTo(value);
+							var emitter = new CapturingPrintEmitter(Machine, value);
+
 							emitter.Emit(watch.LastValue);
 
 							watch.LastValueFormatted = value;

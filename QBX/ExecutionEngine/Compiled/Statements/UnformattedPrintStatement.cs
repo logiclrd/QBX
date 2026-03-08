@@ -9,12 +9,15 @@ public class UnformattedPrintStatement(CodeModel.Statements.Statement? source) :
 {
 	public List<PrintArgument> Arguments = new List<PrintArgument>();
 
+	protected virtual PrintEmitter CreateEmitter(ExecutionContext context, StackFrame stackFrame)
+		=> new VisualPrintEmitter(context.VisualLibrary);
+
 	[ThreadStatic]
-	static string? s_spaces;
+	static byte[]? s_spaces;
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
-		var emitter = new PrintEmitter(context);
+		var emitter = CreateEmitter(context, stackFrame);
 
 		foreach (var argument in Arguments)
 		{
@@ -34,19 +37,22 @@ public class UnformattedPrintStatement(CodeModel.Statements.Statement? source) :
 				{
 					int newCursorX = argument.Expression.EvaluateAndCoerceToInt(context, stackFrame);
 
-					newCursorX = (newCursorX - 1) % context.VisualLibrary.CharacterWidth;
+					newCursorX = (newCursorX - 1) % emitter.Width;
 
-					if (newCursorX < context.VisualLibrary.CursorX)
-						context.VisualLibrary.NewLine();
+					if (newCursorX < emitter.CursorX)
+						emitter.EmitNewLine();
 
 					if (argument.ArgumentType == PrintArgumentType.Tab)
-						context.VisualLibrary.MoveCursor(newCursorX, context.VisualLibrary.CursorY);
+						emitter.CursorX = newCursorX;
 					else
 					{
 						if ((s_spaces == null) || (s_spaces.Length < newCursorX))
-							s_spaces = new string(' ', newCursorX * 2);
+						{
+							s_spaces = new byte[newCursorX * 2];
+							s_spaces.AsSpan().Fill((byte)' ');
+						}
 
-						context.VisualLibrary.WriteText(s_spaces, 0, newCursorX);
+						emitter.Emit(s_spaces.AsSpan().Slice(0, newCursorX));
 					}
 
 					break;
@@ -56,7 +62,7 @@ public class UnformattedPrintStatement(CodeModel.Statements.Statement? source) :
 			switch (argument.CursorAction)
 			{
 				case PrintCursorAction.NextZone: emitter.NextZone(); break;
-				case PrintCursorAction.NextLine: emitter.NextLine(); break;
+				case PrintCursorAction.NextLine: emitter.EmitNewLine(); break;
 			}
 		}
 	}

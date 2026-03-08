@@ -1853,9 +1853,6 @@ public class Compiler
 			}
 			case CodeModel.Statements.PrintStatement printStatement:
 			{
-				if (printStatement.FileNumberExpression != null)
-					throw new NotImplementedException("TODO");
-
 				PrintArgument TranslatePrintArgument(CodeModel.Statements.PrintArgument argument)
 				{
 					var translatedArgument = new PrintArgument();
@@ -1884,10 +1881,21 @@ public class Compiler
 					return translatedArgument;
 				}
 
-
 				if (printStatement.UsingExpression == null)
 				{
-					var translatedPrintStatement = new UnformattedPrintStatement(printStatement);
+					UnformattedPrintStatement translatedPrintStatement;
+
+					if (printStatement.FileNumberExpression == null)
+						translatedPrintStatement = new UnformattedPrintStatement(printStatement);
+					else
+					{
+						var printToFileStatement = new UnformattedPrintToFileStatement(printStatement);
+
+						TranslateNumericArgumentExpression(
+							ref printToFileStatement.FileNumberExpression, printStatement.FileNumberExpression);
+
+						translatedPrintStatement = printToFileStatement;
+					}
 
 					foreach (var argument in printStatement.Arguments)
 					{
@@ -1899,7 +1907,19 @@ public class Compiler
 				}
 				else
 				{
-					var translatedPrintStatement = new FormattedPrintStatement(printStatement);
+					FormattedPrintStatement translatedPrintStatement;
+
+					if (printStatement.FileNumberExpression == null)
+						translatedPrintStatement = new FormattedPrintStatement(printStatement);
+					else
+					{
+						var printToFileStatement = new FormattedPrintToFileStatement(printStatement);
+
+						TranslateNumericArgumentExpression(
+							ref printToFileStatement.FileNumberExpression, printStatement.FileNumberExpression);
+
+						translatedPrintStatement = printToFileStatement;
+					}
 
 					translatedPrintStatement.Format = TranslateExpression(printStatement.UsingExpression, container, mapper, compilation);
 

@@ -2,44 +2,82 @@
 
 using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
-using QBX.Firmware;
+using QBX.Firmware.Fonts;
 using QBX.Numbers;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class PrintEmitter(ExecutionContext context)
+public abstract class PrintEmitter
 {
-	VisualLibrary _visual = context.VisualLibrary;
+	public abstract int CursorX { get; set; }
+	public abstract int Width { get; }
 
-	public void CaptureOutputTo(StringValue str)
+	static readonly CP437Encoding s_cp437 = new CP437Encoding(ControlCharacterInterpretation.Semantic);
+
+	[ThreadStatic]
+	static byte[]? s_buffer;
+
+	public virtual void Emit(ReadOnlySpan<char> chars)
 	{
-		_visual = new CapturingTextLibrary(context.Machine, str);
+		int numBytes = s_cp437.GetByteCount(chars);
+
+		if ((s_buffer == null) || (s_buffer.Length < numBytes))
+			s_buffer = new byte[Math.Max(128, numBytes * 2)];
+
+		numBytes = s_cp437.GetBytes(chars, s_buffer);
+
+		Emit(s_buffer.AsSpan().Slice(0, numBytes));
 	}
 
-	public void StopCapturingOutput()
+	public virtual void Emit(byte ch)
 	{
-		_visual = context.VisualLibrary;
+		if (s_buffer == null)
+			s_buffer = new byte[128];
+
+		s_buffer[0] = ch;
+
+		Emit(s_buffer.AsSpan().Slice(0, 1));
 	}
 
-	public void NextLine()
+	public virtual void Emit(char ch)
 	{
-		_visual.NewLine();
+		if (s_buffer == null)
+			s_buffer = new byte[128];
+
+		s_buffer[0] = CP437Encoding.GetByteSemantic(ch);
+
+		Emit(s_buffer.AsSpan().Slice(0, 1));
 	}
+
+	public abstract void Emit(Span<byte> str);
+
+	public virtual void EmitNewLine()
+	{
+		if (s_buffer == null)
+			s_buffer = new byte[128];
+
+		s_buffer[0] = 13;
+		s_buffer[1] = 10;
+
+		Emit(s_buffer.AsSpan().Slice(0, 2));
+	}
+
+	public virtual void Flush() { }
 
 	public const string Zone = "              "; // 14 characters
 
 	public void NextZone()
 	{
-		int currentZoneStart = Zone.Length * (_visual.CursorX / Zone.Length);
+		int currentZoneStart = Zone.Length * (CursorX / Zone.Length);
 		int nextZoneStart = currentZoneStart + Zone.Length;
 
-		if (nextZoneStart >= _visual.Width)
-			_visual.NewLine();
+		if (nextZoneStart >= Width)
+			EmitNewLine();
 		else
 		{
-			int offset = _visual.CursorX - currentZoneStart;
+			int offset = CursorX - currentZoneStart;
 
-			_visual.WriteText(Zone.AsSpan().Slice(offset));
+			Emit(Zone.AsSpan().Slice(offset));
 		}
 	}
 
@@ -56,11 +94,8 @@ public class PrintEmitter(ExecutionContext context)
 		}
 	}
 
-	public void Emit(string str) => _visual.WriteText(str);
-
-	public void Emit(byte ch) => _visual.WriteText(ch);
-	public void Emit(StringValue str) => _visual.WriteText(str.AsSpan());
-	public void Emit(Span<byte> str) => _visual.WriteText(str);
+	public void Emit(string str) => Emit(str.AsSpan());
+	public void Emit(StringValue str) => Emit(str.AsSpan());
 
 	public void Emit(short integerValue)
 	{

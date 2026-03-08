@@ -260,7 +260,7 @@ public class NumberFormatDirectiveTests
 		var sut = new NumericFormatDirective(pattern, leftPadChar, leadingDollarSign, separateThousands, exponentCharacters, trailingMinusSign);
 
 		// Act
-		sut.Emit(value, exponentLetter, sink);
+		sut.Emit(value, exponentLetter, new VisualPrintEmitter(sink));
 
 		// Assert
 		sink.GetCapturedOutput().Should().Be(expectedOutput);
@@ -280,7 +280,7 @@ public class NumberFormatDirectiveTests
 		var sut = new NumericFormatDirective(pattern, leftPadChar, leadingDollarSign, separateThousands, exponentCharacters, trailingMinusSign);
 
 		// Act
-		sut.Emit(value, sink);
+		sut.Emit(value, new VisualPrintEmitter(sink));
 
 		// Assert
 		sink.GetCapturedOutput().Should().Be(expectedOutput);

@@ -3,8 +3,6 @@ using System.Collections.Generic;
 
 using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
-using QBX.Firmware;
-using QBX.Numbers;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
@@ -17,12 +15,17 @@ public class FormattedPrintStatement(CodeModel.Statements.Statement? source) : E
 	public CodeModel.Statements.PrintStatement? Statement;
 
 	[ThreadStatic]
-	static string? s_spaces;
+	static byte[]? s_spaces;
+
+	protected virtual PrintEmitter CreateEmitter(ExecutionContext context, StackFrame stackFrame)
+		=> new VisualPrintEmitter(context.VisualLibrary);
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (Format == null)
 			throw new Exception("FormattedPrintStatement does not have a Format expression");
+
+		var emitter = CreateEmitter(context, stackFrame);
 
 		var formatVariable = (StringVariable)Format.Evaluate(context, stackFrame);
 		string format = formatVariable.ValueString;
@@ -60,24 +63,27 @@ public class FormattedPrintStatement(CodeModel.Statements.Statement? source) : E
 
 							int newCursorX = argument.Expression.EvaluateAndCoerceToInt(context, stackFrame);
 
-							newCursorX = (newCursorX - 1) % context.VisualLibrary.CharacterWidth;
+							newCursorX = (newCursorX - 1) % emitter.Width;
 
-							if (newCursorX < context.VisualLibrary.CursorX)
-								context.VisualLibrary.NewLine();
+							if (newCursorX < emitter.CursorX)
+								emitter.EmitNewLine();
 
 							if (argument.ArgumentType == PrintArgumentType.Tab)
-								context.VisualLibrary.MoveCursor(newCursorX, context.VisualLibrary.CursorY);
+								emitter.CursorX = newCursorX;
 							else
 							{
 								if ((s_spaces == null) || (s_spaces.Length < newCursorX))
-									s_spaces = new string(' ', newCursorX * 2);
+								{
+									s_spaces = new byte[newCursorX * 2];
+									s_spaces.AsSpan().Fill((byte)' ');
+								}
 
-								context.VisualLibrary.WriteText(s_spaces, 0, newCursorX);
+								emitter.Emit(s_spaces.AsSpan().Slice(0, newCursorX));
 							}
 						}
 					}
 
-					directive.Emit(argumentValue, context, Statement);
+					directive.Emit(argumentValue, Statement, emitter);
 
 					return true; // continue loop
 				});
@@ -87,6 +93,6 @@ public class FormattedPrintStatement(CodeModel.Statements.Statement? source) : E
 		}
 
 		if (EmitNewLine)
-			context.VisualLibrary.NewLine();
+			emitter.EmitNewLine();
 	}
 }
