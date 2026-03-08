@@ -276,6 +276,9 @@ public partial class DOS
 
 			int searchID = _nextSearchID;
 
+			if (Path.GetDirectoryName(fileNamePattern) is string directoryToSearch)
+				collapsedFileNamePattern = Path.Join(directoryToSearch, collapsedFileNamePattern);
+
 			var result = FindFirst(collapsedFileNamePattern, attributes, searchPatternBytes, searchID, FormatFindResultAsFileInfo, out var search);
 
 			if (result)
@@ -309,11 +312,14 @@ public partial class DOS
 
 	bool FindFirst(string fileNamePattern, FileAttributes attributes, ReadOnlySpan<byte> searchPattern, int searchID, FindResultFormatter formatResult, out IEnumerator<FileSystemInfo> search)
 	{
-		string containerPath = Path.GetDirectoryName(fileNamePattern) ?? ".";
+		string? containerPath = Path.GetDirectoryName(fileNamePattern);
+
+		if (string.IsNullOrWhiteSpace(containerPath))
+			containerPath = Environment.CurrentDirectory;
 
 		fileNamePattern = Path.GetFileName(fileNamePattern);
 
-		var directoryInfo = new DirectoryInfo(Environment.CurrentDirectory);
+		var directoryInfo = new DirectoryInfo(containerPath);
 
 		if (!directoryInfo.Exists)
 		{
