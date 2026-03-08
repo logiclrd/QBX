@@ -53,4 +53,6 @@ public class ArrayElementExpression(Evaluable arrayExpression, DataType type) : 
 
 		return array.GetElement(subscripts, SubscriptExpressions);
 	}
+
+	public override bool IsAssignable => true;
 }

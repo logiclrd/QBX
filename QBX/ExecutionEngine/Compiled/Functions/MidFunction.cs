@@ -12,7 +12,9 @@ public class MidFunction : Function
 	public Evaluable? StartExpression;
 	public Evaluable? LengthExpression;
 
-	public bool IsAssignable { get; private set; }
+	bool _isAssignable;
+
+	public override bool IsAssignable => _isAssignable;
 
 	protected override int MinArgumentCount => 2;
 	protected override int MaxArgumentCount => 3;
@@ -25,7 +27,7 @@ public class MidFunction : Function
 				if (!value.Type.IsString)
 					throw CompilerException.TypeMismatch(value.Source);
 
-				IsAssignable =
+				_isAssignable =
 					(value is IdentifierExpression) ||
 					(value is FieldAccessExpression);
 

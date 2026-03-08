@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 using QBX.ExecutionEngine.Compiled.Expressions;
@@ -47,4 +48,19 @@ public abstract class Evaluable
 		=> false;
 	public virtual LiteralValue EvaluateConstant()
 		=> throw CompilerException.ValueIsNotConstant(Source);
+
+	public virtual bool IsAssignable => false;
+
+	public virtual void EvaluateAndAssignTo(ExecutionContext context, StackFrame stackFrame, Variable newValue)
+	{
+		if (!IsAssignable)
+			throw new Exception("Call to EvaluateAndAssignTo when IsAssignable is false");
+
+		var targetVariable = Evaluate(context, stackFrame);
+
+		if (targetVariable is StringVariable stringVariable)
+			context.UnlinkFieldVariable(stringVariable);
+
+		targetVariable.SetData(newValue.GetData());
+	}
 }

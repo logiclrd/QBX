@@ -68,4 +68,6 @@ public class FieldAccessExpression(Evaluable expression, int fieldIndex, DataTyp
 	}
 
 	public override LiteralValue EvaluateConstant() => throw CompilerException.ValueIsNotConstant(expression.Source);
+
+	public override bool IsAssignable => expression.IsAssignable;
 }

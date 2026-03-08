@@ -2918,6 +2918,7 @@ public class Compiler
 					case TokenType.CSNG: function = new CSngFunction(); break;
 					case TokenType.CSRLIN: function = new CsrLinFunction(); break;
 					case TokenType.CURDIR: function = new CurDirFunction(); break;
+					case TokenType.DATE: function = new DateFunction(); break;
 					case TokenType.DIR: function = new DirFunction(); break;
 					case TokenType.EOF: function = new EOFFunction(); break;
 					case TokenType.ERR: function = new ErrFunction(); break;
@@ -2951,6 +2952,7 @@ public class Compiler
 					case TokenType.STR: function = new StrFunction(); break;
 					case TokenType.STRING_s: function = new StringFunction(); break;
 					case TokenType.TAN: function = new TanFunction(); break;
+					case TokenType.TIME: function = new TimeFunction(); break;
 					case TokenType.TIMER: function = new TimerFunction(); break;
 					case TokenType.UBOUND: function = new UBoundFunction(); break;
 					case TokenType.UCASE: function = new UCaseFunction(); break;

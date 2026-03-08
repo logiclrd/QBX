@@ -16,4 +16,6 @@ public class IdentifierExpression(int variableIndex, DataType type) : Evaluable
 	{
 		throw CompilerException.ValueIsNotConstant(Source);
 	}
+
+	public override bool IsAssignable => true;
 }

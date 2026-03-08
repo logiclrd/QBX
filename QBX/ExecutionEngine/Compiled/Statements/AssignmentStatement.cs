@@ -1,5 +1,6 @@
+using System;
+
 using QBX.ExecutionEngine.Execution;
-using QBX.ExecutionEngine.Execution.Variables;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
@@ -10,15 +11,16 @@ public class AssignmentStatement(CodeModel.Statements.Statement? source) : Execu
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
-		var targetVariable = TargetExpression!.Evaluate(context, stackFrame);
-		var valueVariable = ValueExpression!.Evaluate(context, stackFrame);
+		if (TargetExpression == null)
+			throw new Exception("AssignmentStatement with no TargetExpression");
+		if (ValueExpression == null)
+			throw new Exception("AssignmentStatement with no ValueExpression");
+
+		var valueVariable = ValueExpression.Evaluate(context, stackFrame);
 
 		try
 		{
-			if (targetVariable is StringVariable stringVariable)
-				context.UnlinkFieldVariable(stringVariable);
-
-			targetVariable.SetData(valueVariable.GetData());
+			TargetExpression.EvaluateAndAssignTo(context, stackFrame, valueVariable);
 		}
 		catch (RuntimeException error)
 		{

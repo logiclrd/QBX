@@ -53,7 +53,7 @@ public class ConsoleFileDescriptor(DOS owner) : FileDescriptor("CON")
 	Queue<byte> _lineBuffer = new Queue<byte>(capacity: 255);
 	bool _lineBufferEndsAtLineBoundary = false;
 
-	public override Boolean AtReadBoundary => ReadBuffer.IsEmpty && (_lineBuffer.Count == 0) && _lineBufferEndsAtLineBoundary;
+	public override bool AtReadBoundary => ReadBuffer.IsEmpty && (_lineBuffer.Count == 0) && _lineBufferEndsAtLineBoundary;
 
 	protected override void ReadCore(ref FileBuffer buffer)
 	{
