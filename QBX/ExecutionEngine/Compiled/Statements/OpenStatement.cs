@@ -169,6 +169,8 @@ public class OpenStatement(CodeModel.Statements.Statement source) : Executable(s
 					_ => throw new Exception("Unrecognized OpenMode value " + OpenMode)
 				};
 
+			openFile.OpenedForAppend = (OpenMode == OpenMode.Append);
+
 			if (recordLength != null)
 			{
 				if (openFile.IOMode == OpenFileIOMode.Random)

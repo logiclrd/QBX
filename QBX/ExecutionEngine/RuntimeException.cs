@@ -273,6 +273,8 @@ public class RuntimeException : Exception
 		=> ForErrorNumber(64, default(Token));
 	public static RuntimeException TooManyFiles(CodeModel.Statements.Statement? statement)
 		=> ForErrorNumber(67, statement);
+	public static RuntimeException TooManyFiles(CodeModel.Expressions.Expression? expression)
+		=> ForErrorNumber(67, expression);
 	public static RuntimeException DeviceUnavailable()
 		=> ForErrorNumber(68, default(Token));
 	public static RuntimeException PathFileAccessError(CodeModel.Statements.Statement? statement)

@@ -14,6 +14,7 @@ public class OpenFile
 
 	public int FileHandle;
 	public OpenFileIOMode IOMode;
+	public bool OpenedForAppend;
 	public int BufferSize = 512;
 	public int RecordLength = 128;
 	public int CurrentRecordNumber;

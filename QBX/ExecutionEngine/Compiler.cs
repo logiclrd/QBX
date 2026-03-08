@@ -2921,6 +2921,8 @@ public class Compiler
 					case TokenType.ERR: function = new ErrFunction(); break;
 					case TokenType.ERL: function = new ErlFunction(); break;
 					case TokenType.FIX: return FixFunction.Construct(keywordFunction.Token, arguments);
+					case TokenType.FILEATTR: function = new FileAttrFunction(); break;
+					case TokenType.FREEFILE: function = new FreeFileFunction(); break;
 					case TokenType.INKEY: function = new InKeyFunction(); break;
 					case TokenType.INP: function = new InpFunction(); break;
 					case TokenType.INPUT_s: function = InputFunction.Construct(keywordFunction.Token, arguments); break;
