@@ -1542,6 +1542,7 @@ public class BasicParser
 					tokenHandler.ExpectOneOf(TokenType.Number, TokenType.Identifier);
 
 					input.FileNumberExpression = ParseExpressionForStatement(input, fileNumberToken, tokenHandler.RemainingTokens.Skip(1).FirstOrDefault() ?? tokenHandler.EndToken);
+					input.EchoNewLine = false;
 
 					tokenHandler.Expect(TokenType.Comma);
 				}
@@ -1721,6 +1722,7 @@ public class BasicParser
 						tokenHandler.ExpectOneOf(TokenType.Number, TokenType.Identifier);
 
 						lineInput.FileNumberExpression = ParseExpressionForStatement(lineInput, fileNumberToken, tokenHandler.RemainingTokens.Skip(1).FirstOrDefault() ?? tokenHandler.EndToken);
+						lineInput.EchoNewLine = false;
 
 						tokenHandler.Expect(TokenType.Comma);
 					}

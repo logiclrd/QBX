@@ -1544,26 +1544,48 @@ public class Compiler
 			{
 				string promptString;
 
-				if (inputStatement.PromptString != null)
+				if (inputStatement.FileNumberExpression == null)
 				{
-					promptString = inputStatement.PromptString;
+					if (inputStatement.PromptString != null)
+					{
+						promptString = inputStatement.PromptString;
 
-					if (inputStatement.PromptQuestionMark)
-						promptString += "? ";
+						if (inputStatement.PromptQuestionMark)
+							promptString += "? ";
+					}
+					else
+						promptString = "? ";
+
+					var translatedInputStatement = new InputStatement(promptString, inputStatement);
+
+					foreach (var target in inputStatement.Targets)
+					{
+						var translatedTarget = TranslateExpression(target, container, mapper, compilation);
+
+						translatedInputStatement.TargetExpressions.Add(translatedTarget);
+					}
+
+					container.Append(translatedInputStatement);
 				}
 				else
-					promptString = "? ";
-
-				var translatedInputStatement = new InputStatement(promptString, inputStatement);
-
-				foreach (var target in inputStatement.Targets)
 				{
-					var translatedTarget = TranslateExpression(target, container, mapper, compilation);
+					if (inputStatement.PromptString != null)
+						throw new Exception("Internal error: InputStatement with both PromptString and FileNumberExpression");
 
-					translatedInputStatement.TargetExpressions.Add(translatedTarget);
+					var translatedInputStatement = new InputFromFileStatement(inputStatement);
+
+					TranslateNumericArgumentExpression(
+						ref translatedInputStatement.FileNumberExpression, inputStatement.FileNumberExpression);
+
+					foreach (var target in inputStatement.Targets)
+					{
+						var translatedTarget = TranslateExpression(target, container, mapper, compilation);
+
+						translatedInputStatement.TargetExpressions.Add(translatedTarget);
+					}
+
+					container.Append(translatedInputStatement);
 				}
-
-				container.Append(translatedInputStatement);
 
 				break;
 			}
@@ -1607,10 +1629,27 @@ public class Compiler
 			}
 			case CodeModel.Statements.LineInputStatement lineInputStatement:
 			{
-				var translatedLineInputStatement = new LineInputStatement(
-					lineInputStatement.PromptString,
-					lineInputStatement.EchoNewLine,
-					lineInputStatement);
+				LineInputStatement translatedLineInputStatement;
+
+				if (lineInputStatement.FileNumberExpression is null)
+				{
+					translatedLineInputStatement = new LineInputFromConsoleStatement(
+						lineInputStatement.PromptString,
+						lineInputStatement.EchoNewLine,
+						lineInputStatement);
+				}
+				else
+				{
+					if (lineInputStatement.PromptString != null)
+						throw new Exception("Internal error: LineInputStatement with both PromptString and FileNumberExpression");
+
+					var lineInputFromFileStatement = new LineInputFromFileStatement(lineInputStatement);
+
+					TranslateNumericArgumentExpression(
+						ref lineInputFromFileStatement.FileNumberExpression, lineInputStatement.FileNumberExpression);
+
+					translatedLineInputStatement = lineInputFromFileStatement;
+				}
 
 				try
 				{

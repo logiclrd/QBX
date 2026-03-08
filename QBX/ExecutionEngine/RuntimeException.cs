@@ -255,6 +255,8 @@ public class RuntimeException : Exception
 		=> ForErrorNumber(58, statement);
 	public static RuntimeException DiskFull(CodeModel.Statements.Statement? statement)
 		=> ForErrorNumber(61, statement);
+	public static RuntimeException InputPastEndOfFile(CodeModel.Statements.Statement? statement)
+		=> ForErrorNumber(62, statement);
 	public static RuntimeException InputPastEndOfFile(CodeModel.Expressions.Expression? expression)
 		=> ForErrorNumber(62, expression);
 	public static RuntimeException BadRecordNumber(Token? context)

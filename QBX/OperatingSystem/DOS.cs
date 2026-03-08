@@ -450,7 +450,7 @@ public partial class DOS
 				OnInternalBreak();
 			else if (b == 13)
 				fileDescriptor.Column = 0;
-			else
+			else if (b != 10)
 				fileDescriptor.Column++;
 
 			if (echo)
@@ -484,7 +484,7 @@ public partial class DOS
 			{
 				if (b == 13)
 					fileDescriptor.Column = 0;
-				else
+				else if (b != 10)
 					fileDescriptor.Column++;
 
 				return true;
@@ -517,7 +517,7 @@ public partial class DOS
 				fileDescriptor.WriteByte(b);
 				if (b == 13)
 					fileDescriptor.Column = 0;
-				else
+				else if (b != 10)
 					fileDescriptor.Column++;
 			}
 			else

@@ -148,6 +148,66 @@ public class OpenFile
 			throw RuntimeException.FieldOverflow();
 	}
 
+	public StringValue ReadLine(DOS dos)
+	{
+		var buffer = new StringValue();
+
+		Func<byte> readByte;
+		Action<byte> unreadByte;
+
+		if (IOMode != OpenFileIOMode.Random)
+		{
+			readByte = () => dos.ReadByte(FileHandle);
+			unreadByte =
+				b =>
+				{
+					var fileDescriptor = dos.Files[FileHandle];
+
+					fileDescriptor?.ReadBuffer.Inject(b);
+				};
+		}
+		else
+		{
+			readByte =
+				() =>
+				{
+					unsafe
+					{
+						Span<byte> byteBuffer = stackalloc byte[1];
+
+						ReadFromFields(byteBuffer);
+
+						return byteBuffer[0];
+					}
+				};
+
+			unreadByte =
+				b =>
+				{
+					RecordOffset--;
+				};
+		}
+
+		while (true)
+		{
+			byte b = readByte();
+
+			if (b == 13)
+			{
+				b = readByte();
+
+				if (b != 10)
+					unreadByte(b);
+
+				break;
+			}
+
+			buffer.Append(b);
+		}
+
+		return buffer;
+	}
+
 	public void FlushFields(DOS dos)
 	{
 		if (!FieldsPristine)

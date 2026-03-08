@@ -41,11 +41,11 @@ public class LineInputStatement : Statement
 				writer.Write(PromptStringSeparatorCharacter);
 				writer.Write(' ');
 			}
-
-			if (TargetExpression == null)
-				throw new Exception("Internal error: LineInputStatement with no TargetExpression");
-
-			TargetExpression.Render(writer);
 		}
+
+		if (TargetExpression == null)
+			throw new Exception("Internal error: LineInputStatement with no TargetExpression");
+
+		TargetExpression.Render(writer);
 	}
 }

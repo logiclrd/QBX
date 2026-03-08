@@ -41,7 +41,7 @@ public struct FileBuffer(int size)
 			throw new InvalidOperationException("Insufficient buffer space");
 
 		NumUsed++;
-		_data[NextFree - NumUsed] = data;
+		_data[(size + NextFree - NumUsed) % size] = data;
 	}
 
 	public void Push(byte data)

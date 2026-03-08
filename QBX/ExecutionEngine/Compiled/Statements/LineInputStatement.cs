@@ -5,9 +5,12 @@ using QBX.ExecutionEngine.Execution.Variables;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class LineInputStatement(string? promptString, bool echoNewline, CodeModel.Statements.Statement source) : Executable(source)
+public abstract class LineInputStatement(CodeModel.Statements.Statement source) : Executable(source)
 {
 	public Evaluable? TargetExpression;
+
+	protected virtual void EmitPrompt(ExecutionContext context) { }
+	protected abstract StringValue ReadLine(ExecutionContext context);
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
@@ -16,10 +19,9 @@ public class LineInputStatement(string? promptString, bool echoNewline, CodeMode
 
 		var target = (StringVariable)TargetExpression.Evaluate(context, stackFrame);
 
-		if (promptString != null)
-			context.VisualLibrary.WriteText(promptString);
+		EmitPrompt(context);
 
-		var inputLine = context.VisualLibrary.ReadLine(context.Machine.Keyboard, echoNewline);
+		var inputLine = ReadLine(context);
 
 		target.Value.Set(inputLine);
 	}
