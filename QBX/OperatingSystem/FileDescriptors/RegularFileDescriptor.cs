@@ -21,6 +21,8 @@ public class RegularFileDescriptor(string path, string physicalPath, FileStream 
 
 	public override long FilePointer => (_negativeFilePointer != 0) ? _negativeFilePointer : (stream.Position - ReadBuffer.NumUsed + WriteBuffer.NumUsed);
 
+	public long Length => stream.Length;
+
 	long _negativeFilePointer = 0;
 
 	public SafeFileHandle Handle => stream.SafeFileHandle;

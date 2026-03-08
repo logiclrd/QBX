@@ -1,0 +1,151 @@
+EOF:
+  if (OUTPUT or APPEND)
+    ERROR "bad file mode"
+  else if (known to be at eof)
+    TRUE
+  else if (RANDOM OR BINARY)
+    FALSE
+  else
+    try read one byte
+    if (success) put back into buffer
+    return (known to be at eof)
+  end if
+
+POS:
+  if (RANDOM OR BINARY)
+    a = get file logical record number
+    if (is character device)
+      a *= file record length (= 1 for binary?)
+      if a is out of range
+        ERROR "overflow"
+      end if
+    end if
+    a
+  else
+    if (is character device)
+      1
+    else
+      a = get file pointer
+      if (INPUT)
+        a -= input buffer count
+      end if
+      a += output buffer count
+      if a is out of range
+        ERROR "overflow"
+      else
+        a
+      end if
+    end if
+  end if
+
+LOF:
+  if (is character device)
+    if (RANDOM or BINARY)
+      file size from FDB
+    else
+      1
+    end if
+  else
+    if (OUTPUT or APPEND)
+      flush output buffer
+    end if
+
+    saved = get file pointer
+
+    seek (0, SEEK_END)
+
+    length = get file pointer
+
+    seek (saved, SEEK_BEG)
+
+    length
+  end if
+
+INPUT 1 char:
+  if (known to be at eof)
+    EofExit
+  else if (RANDOM)
+    offset = FieldOverflowCheck
+    Buffer[offset]
+  else
+    if (!have buffered character)
+      read a fresh buffer
+    end if
+
+    a = pull character from buffer
+    a
+  end if
+
+OUTPUT 1 char:
+  if (RANDOM)
+    if (at end of buffer)
+      ERROR for field overflow
+    else
+      put character into buffer
+      increment buffer pointer
+    end if
+  else
+    if (is character device)
+      if (char is EOF char)
+        return
+      end if
+    end if
+
+    if (output buffer is full)
+      flush output buffer
+    end if
+
+    put character into buffer
+  end if
+
+  if (char is newline)
+    output position = 0
+  else if (char >= 32)
+    output position++
+  end if
+
+convert seek offset to byte offset (optional arg):
+  if (arg specified)
+    if (arg <= 0)
+      ERROR "bad record number"
+    end if
+
+    arg--
+
+    if (!RANDOM and !BINARY)
+      clear buffer
+      return arg
+    end if
+
+    logical record number = arg
+  end if
+
+  offset = get logical record number
+
+  if (!BINARY)
+    offset *= record length
+  end if
+
+  clear buffer
+
+  return offset
+
+lock:
+  if (no range args)
+    lock entire file = true
+  else if (!(RANDOM or BINARY))
+    lock entire file = true
+  end if
+
+  if (lock entire file)
+    lock 0x00000000 to 0xFFFFFFFF
+  else if (first specified)
+    if (last specified)
+      lock first*reclen to (last+1)*reclen-1
+    else
+      lock first*reclen to (first+1)*reclen-1
+    end if
+  else // last specified but not first
+    lock 0x00000000 to (last+1)*reclen-1
+  end if
+(and the mirror for unlock)

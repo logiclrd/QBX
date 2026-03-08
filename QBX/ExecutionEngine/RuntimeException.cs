@@ -245,6 +245,8 @@ public class RuntimeException : Exception
 		=> ForErrorNumber(52, statement);
 	public static RuntimeException FileNotFound(CodeModel.Statements.Statement? statement)
 		=> ForErrorNumber(53, statement);
+	public static RuntimeException BadFileMode(CodeModel.Expressions.Expression? expression)
+		=> ForErrorNumber(54, expression);
 	public static RuntimeException FileAlreadyOpen(CodeModel.Statements.Statement? statement)
 		=> ForErrorNumber(55, statement);
 	public static RuntimeException DeviceIOError(CodeModel.Statements.Statement? statement)
@@ -272,7 +274,10 @@ public class RuntimeException : Exception
 	public static RuntimeException ArgumentCountMismatch()
 		=> ForErrorNumber(101, default(Token));
 
-	internal static Exception ForDOSError(DOSError dosError, CodeModel.Statements.Statement? statement)
+	internal static RuntimeException ForDOSError(DOSError dosError, CodeModel.Expressions.Expression? expression)
+		=> ForDOSError(dosError, statement: null).AddContext(expression);
+
+	internal static RuntimeException ForDOSError(DOSError dosError, CodeModel.Statements.Statement? statement)
 	{
 		switch (dosError)
 		{

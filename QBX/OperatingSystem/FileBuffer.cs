@@ -35,6 +35,15 @@ public struct FileBuffer(int size)
 		}
 	}
 
+	public void Inject(byte data)
+	{
+		if (Available == 0)
+			throw new InvalidOperationException("Insufficient buffer space");
+
+		NumUsed++;
+		_data[NextFree - NumUsed] = data;
+	}
+
 	public void Push(byte data)
 	{
 		if (Available == 0)

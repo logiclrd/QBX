@@ -2790,6 +2790,7 @@ public class Compiler
 					case TokenType.COMMAND: function = new CommandFunction(); break;
 					case TokenType.COS: function = new CosFunction(); break;
 					case TokenType.CSNG: function = new CSngFunction(); break;
+					case TokenType.EOF: function = new EOFFunction(); break;
 					case TokenType.ERR: function = new ErrFunction(); break;
 					case TokenType.ERL: function = new ErlFunction(); break;
 					case TokenType.FIX: return FixFunction.Construct(keywordFunction.Token, arguments);
@@ -2802,6 +2803,7 @@ public class Compiler
 					case TokenType.LCASE: function = new LCaseFunction(); break;
 					case TokenType.LEFT: function = new LeftFunction(); break;
 					case TokenType.LEN: function = new LenFunction(); break;
+					case TokenType.LOC: function = new LocFunction(); break;
 					case TokenType.LOF: function = new LOFFunction(); break;
 					case TokenType.LTRIM: function = new LTrimFunction(); break;
 					case TokenType.MID: function = new MidFunction(); break;
