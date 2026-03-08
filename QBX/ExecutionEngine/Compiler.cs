@@ -372,6 +372,16 @@ public class Compiler
 
 		if (statementIndex >= line.Statements.Count)
 		{
+			if (line.EndOfLineComment != null)
+			{
+				string commentText = line.EndOfLineComment;
+
+				if (commentText[0] == '\'') // should always be true
+					commentText = commentText.Substring(1);
+
+				ProcessCommentForDirectives(commentText, compilation);
+			}
+
 			line.SourceLineIndex ??= new MutableBox<int>(lineIndex); // Just in case there are no statements on this line
 			lineIndexRef = lineIndex + 1;
 			statementIndexRef = 0;

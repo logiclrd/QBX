@@ -262,19 +262,23 @@ public class IntegerForStatement(CodeModel.Statements.ForStatement? sourceForSta
 
 		var iteratorVariable = (IntegerVariable)stackFrame.Variables[IteratorVariableIndex];
 
-		while (!nextStatement.FinishLoop)
+		try
 		{
-			System.Threading.Thread.Yield();
+			while (!nextStatement.FinishLoop)
+			{
+				System.Threading.Thread.Yield();
 
-			iteratorVariable.Value = nextStatement.NextValue;
+				iteratorVariable.Value = nextStatement.NextValue;
 
-			for (int i = statementIndex; i < Body!.Count; i++)
-				context.Dispatch(Body[i], stackFrame);
+				for (int i = statementIndex; i < Body!.Count; i++)
+					context.Dispatch(Body[i], stackFrame);
 
-			statementIndex = 0;
+				statementIndex = 0;
 
-			context.Dispatch(nextStatement, stackFrame);
+				context.Dispatch(nextStatement, stackFrame);
+			}
 		}
+		catch (ExitFor) { }
 	}
 
 	class NextStatement(short from, short to, short step, CodeModel.Statements.NextStatement? sourceNextStatement)
