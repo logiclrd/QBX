@@ -1,7 +1,5 @@
 using QBX.ExecutionEngine.Execution;
 using QBX.Firmware;
-using QBX.Hardware;
-using System.Reflection.PortableExecutable;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 

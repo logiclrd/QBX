@@ -1,7 +1,6 @@
-using QBX.ExecutionEngine.Execution;
-using QBX.Firmware;
 using System;
-using System.Reflection.PortableExecutable;
+
+using QBX.ExecutionEngine.Execution;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 

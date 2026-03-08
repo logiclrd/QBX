@@ -1,7 +1,4 @@
 using QBX.ExecutionEngine.Execution;
-using QBX.Firmware;
-
-using static QBX.Hardware.GraphicsArray;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 

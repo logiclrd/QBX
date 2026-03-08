@@ -1,6 +1,5 @@
 using QBX.ExecutionEngine.Execution;
 using QBX.LexicalAnalysis;
-using System;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 

@@ -3,7 +3,6 @@ using System;
 using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
 using QBX.OperatingSystem.FileStructures;
-using QBX.Parser;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
