@@ -12,7 +12,7 @@ public class DirFunction : Function
 {
 	public Evaluable? FileSpec;
 
-	protected override Int32 MinArgumentCount => 0;
+	protected override int MinArgumentCount => 0;
 
 	protected override void SetArgument(int index, Evaluable value)
 	{

@@ -2905,6 +2905,7 @@ public class Compiler
 					case TokenType.COMMAND: function = new CommandFunction(); break;
 					case TokenType.COS: function = new CosFunction(); break;
 					case TokenType.CSNG: function = new CSngFunction(); break;
+					case TokenType.CURDIR: function = new CurDirFunction(); break;
 					case TokenType.DIR: function = new DirFunction(); break;
 					case TokenType.EOF: function = new EOFFunction(); break;
 					case TokenType.ERR: function = new ErrFunction(); break;

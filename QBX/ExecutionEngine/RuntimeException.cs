@@ -281,6 +281,8 @@ public class RuntimeException : Exception
 		=> ForErrorNumber(76, default(Token));
 	public static RuntimeException PathNotFound(CodeModel.Statements.Statement? statement)
 		=> ForErrorNumber(76, statement);
+	public static RuntimeException PathNotFound(CodeModel.Expressions.Expression? expression)
+		=> ForErrorNumber(76, expression);
 	public static RuntimeException ArgumentCountMismatch()
 		=> ForErrorNumber(101, default(Token));
 
