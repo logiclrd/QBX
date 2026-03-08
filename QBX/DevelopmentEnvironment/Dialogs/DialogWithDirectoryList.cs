@@ -2,7 +2,11 @@
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
+using System.Text;
 using System.Text.RegularExpressions;
+
+using Microsoft.Win32.SafeHandles;
 
 using QBX.DevelopmentEnvironment.Dialogs.Widgets;
 using QBX.Hardware;
@@ -200,4 +204,171 @@ public abstract class DialogWithDirectoryList : Dialog
 
 		base.OnClosed();
 	}
+
+	static readonly char[] DirectorySeparators = [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar];
+
+	protected static string GetCanonicalName(string relativePath)
+		=> GetCanonicalName(relativePath, Environment.CurrentDirectory);
+
+	protected static string GetCanonicalName(string relativePath, string relativeTo)
+	{
+		if ((Path.GetPathRoot(relativePath) is string pathRoot)
+		 && !string.IsNullOrWhiteSpace(pathRoot))
+		{
+			if (DirectorySeparators.Contains(relativePath[relativePath.Length - 1]))
+			{
+				relativePath = relativePath.Substring(pathRoot.Length);
+				relativePath = relativePath.TrimStart(DirectorySeparators);
+
+				return Path.Join(
+					pathRoot.ToUpperInvariant(),
+					GetCanonicalName(relativePath, pathRoot));
+			}
+			else
+			{
+				relativePath = relativePath.Substring(pathRoot.Length);
+
+				return pathRoot.ToUpperInvariant()
+					+ GetCanonicalName(relativePath, Path.GetFullPath(pathRoot));
+			}
+		}
+		else
+		{
+			int separatorIndex = relativePath.IndexOfAny(DirectorySeparators);
+
+			if (separatorIndex == 0)
+			{
+				// Relative path starts with a path separator; jump to root
+				relativePath = relativePath.TrimStart(DirectorySeparators);
+
+				return Path.Join(
+					Path.GetPathRoot(relativeTo),
+					GetCanonicalName(relativePath));
+			}
+			else
+			{
+				if (separatorIndex < 0)
+					separatorIndex = relativePath.Length;
+
+				string component = relativePath.Substring(0, separatorIndex);
+
+				if (separatorIndex + 1 <= relativePath.Length)
+					separatorIndex++;
+
+				relativePath = relativePath.Substring(separatorIndex);
+				relativePath = relativePath.TrimStart(DirectorySeparators);
+
+				if (component == ".")
+					return GetCanonicalName(relativePath, relativeTo);
+
+				if (component == "..")
+				{
+					relativeTo = Path.GetDirectoryName(relativeTo) ?? relativeTo;
+
+					if (relativePath != "")
+						return GetCanonicalName(relativePath, relativeTo);
+					else
+						return relativeTo;
+				}
+
+				if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+				{
+					var fileHandle = CreateFileW(
+						Path.Combine(relativeTo, component),
+						dwDesiredAccess: 0,
+						FILE_SHARE_READWRITE | FILE_SHARE_DELETE,
+						lpSecurityAttributes: IntPtr.Zero,
+						OPEN_EXISTING,
+						FILE_FLAG_BACKUP_SEMANTICS,
+						hTemplateFile: IntPtr.Zero);
+
+					if (!fileHandle.IsInvalid)
+					{
+						try
+						{
+							var buffer = new StringBuilder();
+
+							buffer.Capacity = 100;
+
+							int result = GetFinalPathNameByHandleW(
+								fileHandle,
+								buffer,
+								buffer.Capacity,
+								FILE_NAME_NORMALIZED | VOLUME_NAME_NONE);
+
+							if ((Marshal.GetLastWin32Error() == ERROR_INSUFFICIENT_BUFFER)
+							 && (result > 0)
+							 && (result < 33000))
+							{
+								buffer.Capacity = result;
+
+								result = GetFinalPathNameByHandleW(
+									fileHandle,
+									buffer,
+									buffer.Capacity,
+									FILE_NAME_NORMALIZED | VOLUME_NAME_NONE);
+							}
+
+							if ((Marshal.GetLastWin32Error() == ERROR_NONE)
+							 && (result >= 0)
+							 && (result < 33000))
+							{
+								string normalizedPath = buffer.ToString(0, (int)result);
+
+								component = Path.GetFileName(normalizedPath);
+							}
+						}
+						finally
+						{
+							fileHandle.Close();
+						}
+					}
+				}
+
+				if (relativePath.Length == 0)
+					return component;
+				else
+				{
+					return Path.Join(
+						component,
+						GetCanonicalName(relativePath, Path.Join(relativeTo, component)));
+				}
+			}
+		}
+	}
+
+	const string Windows = "Windows";
+
+	const uint FILE_SHARE_READWRITE = 0x00000003;
+	const uint FILE_SHARE_DELETE = 0x00000004;
+
+	const uint OPEN_EXISTING = 3;
+
+	const uint FILE_FLAG_BACKUP_SEMANTICS = 0x02000000;
+
+	[DllImport("kernel32", CharSet = CharSet.Unicode, SetLastError = true)]
+	[SupportedOSPlatform(Windows)]
+	static extern SafeFileHandle CreateFileW(
+		string lpFileName,
+		uint dwDesiredAccess,
+		uint dwShareMode,
+		IntPtr lpSecurityAttributes,
+		uint dwCreationDisposition,
+		uint dwFlagsAndAttributes,
+		IntPtr hTemplateFile);
+
+	const uint FILE_NAME_NORMALIZED = 0x0;
+
+	const uint VOLUME_NAME_NONE = 0x4;
+
+	[DllImport("kernel32", CharSet = CharSet.Unicode, SetLastError = true)]
+	[SupportedOSPlatform(Windows)]
+	static extern int GetFinalPathNameByHandleW(
+		SafeFileHandle hFile,
+		StringBuilder lpszFilePath,
+		int cchFilePath,
+		uint dwFlags);
+
+	const int ERROR_NONE = 0;
+	const int ERROR_INSUFFICIENT_BUFFER = 122;
 }

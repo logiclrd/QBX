@@ -231,11 +231,24 @@ public class OpenFileDialog : DialogWithDirectoryList
 				{
 					SetCurrentDirectory(CurrentDirectory);
 
-					if (input.IndexOfAny('*', '?') >= 0)
-						SetFilter(input.ToString());
+					string fileName = input.ToString();
+
+					if (fileName.IndexOfAny('*', '?') >= 0)
+						SetFilter(fileName.ToString());
+					else if (Directory.Exists(fileName))
+					{
+						txtFileName.Text.Set(Filter);
+						txtFileName.SelectAll();
+
+						SetFocus(bdrFileName);
+
+						SetCurrentDirectory(GetCanonicalName(fileName));
+
+						break;
+					}
 					else
 					{
-						var selectedFilePath = Path.Combine(CurrentDirectory, input.ToString());
+						var selectedFilePath = Path.Combine(CurrentDirectory, fileName);
 
 						if (!File.Exists(selectedFilePath)
 						 && !Path.GetFileName(selectedFilePath).Contains('.'))

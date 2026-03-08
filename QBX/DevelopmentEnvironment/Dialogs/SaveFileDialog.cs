@@ -35,14 +35,6 @@ public class SaveFileDialog : DialogWithDirectoryList
 	Button cmdCancel;
 	Button cmdHelp;
 
-	bool _showFilter = false;
-
-	protected override void SetFilter(string newFilter)
-	{
-		base.SetFilter(newFilter);
-		_showFilter = true;
-	}
-
 	public event Action<RuntimeException>? Error;
 	public event Action<string>? TargetPathSpecified;
 
@@ -76,6 +68,9 @@ public class SaveFileDialog : DialogWithDirectoryList
 	[MemberNotNull(nameof(cmdHelp))]
 	void InitializeComponent(string initialFileName)
 	{
+		if (string.IsNullOrWhiteSpace(initialFileName))
+			initialFileName = Filter;
+
 		Width = 50;
 		Height = 19;
 
@@ -245,9 +240,18 @@ public class SaveFileDialog : DialogWithDirectoryList
 					break;
 				}
 
-				CurrentDirectory = rootString;
-				txtFileName.Text.Set(input);
+				if (input.Length == 0)
+					txtFileName.Text.Set(Filter);
+				else
+					txtFileName.Text.Set(input);
+
 				txtFileName.SelectAll();
+
+				SetFocus(bdrFileName);
+
+				SetCurrentDirectory(rootString);
+
+				break;
 			}
 			else
 			{
@@ -267,22 +271,46 @@ public class SaveFileDialog : DialogWithDirectoryList
 						break;
 					}
 
-					CurrentDirectory = subpath;
-					txtFileName.Text.Set(input);
+					if (input.Length == 0)
+						txtFileName.Text.Set(Filter);
+					else
+						txtFileName.Text.Set(input);
+
 					txtFileName.SelectAll();
+
+					SetFocus(bdrFileName);
+
+					SetCurrentDirectory(subpath);
+
+					break;
 				}
 				else
 				{
 					SetCurrentDirectory(CurrentDirectory);
 
 					if (input.IndexOfAny('*', '?') >= 0)
+					{
+						SetFilter(new string(input));
 						txtFileName.SelectAll();
+						SetFocus(bdrFileName);
+					}
 					else
 					{
 						string fileName = input.ToString();
 
 						if (fileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
 							Error?.Invoke(RuntimeException.BadFileName());
+						else if (Directory.Exists(fileName))
+						{
+							txtFileName.Text.Set(Filter);
+							txtFileName.SelectAll();
+
+							SetFocus(bdrFileName);
+
+							SetCurrentDirectory(GetCanonicalName(fileName));
+
+							break;
+						}
 						else
 						{
 							if (!fileName.Contains('.'))
@@ -317,9 +345,6 @@ public class SaveFileDialog : DialogWithDirectoryList
 		if (lstDirectories.SelectedIndex >= 0)
 		{
 			txtFileName.Text.Set(lstDirectories.SelectedValue);
-
-			if (_showFilter)
-				txtFileName.Text.Append((byte)'\\').Append(Filter);
 		}
 	}
 
