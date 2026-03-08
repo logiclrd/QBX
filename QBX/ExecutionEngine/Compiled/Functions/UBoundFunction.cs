@@ -38,7 +38,7 @@ public class UBoundFunction : Function
 		CollapseConstantExpression(ref DimensionExpression);
 	}
 
-	public override DataType Type => DataType.String;
+	public override DataType Type => DataType.Integer;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
