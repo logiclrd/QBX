@@ -237,6 +237,8 @@ public class RuntimeException : Exception
 		=> ForErrorNumber(19, statement);
 	public static RuntimeException ResumeWithoutError(CodeModel.Statements.Statement? statement)
 		=> ForErrorNumber(20, statement);
+	public static RuntimeException VariableRequired(CodeModel.Statements.Statement? statement)
+		=> ForErrorNumber(40, statement);
 	public static RuntimeException FieldOverflow()
 		=> ForErrorNumber(50, default(Token));
 	public static RuntimeException BadFileNameOrNumber(Token? context)
@@ -245,6 +247,8 @@ public class RuntimeException : Exception
 		=> ForErrorNumber(52, statement);
 	public static RuntimeException FileNotFound(CodeModel.Statements.Statement? statement)
 		=> ForErrorNumber(53, statement);
+	public static RuntimeException BadFileMode(CodeModel.Statements.Statement? statement)
+		=> ForErrorNumber(54, statement);
 	public static RuntimeException BadFileMode(CodeModel.Expressions.Expression? expression)
 		=> ForErrorNumber(54, expression);
 	public static RuntimeException FileAlreadyOpen(CodeModel.Statements.Statement? statement)
@@ -253,12 +257,16 @@ public class RuntimeException : Exception
 		=> ForErrorNumber(57, statement);
 	public static RuntimeException FileAlreadyExists(CodeModel.Statements.Statement? statement)
 		=> ForErrorNumber(58, statement);
+	public static RuntimeException BadRecordLength(CodeModel.Statements.Statement? statement)
+		=> ForErrorNumber(59, statement);
 	public static RuntimeException DiskFull(CodeModel.Statements.Statement? statement)
 		=> ForErrorNumber(61, statement);
 	public static RuntimeException InputPastEndOfFile(CodeModel.Statements.Statement? statement)
 		=> ForErrorNumber(62, statement);
 	public static RuntimeException InputPastEndOfFile(CodeModel.Expressions.Expression? expression)
 		=> ForErrorNumber(62, expression);
+	public static RuntimeException BadRecordNumber(CodeModel.Statements.Statement? statement)
+		=> ForErrorNumber(63, statement);
 	public static RuntimeException BadRecordNumber(Token? context)
 		=> ForErrorNumber(63, context);
 	public static RuntimeException BadFileName()

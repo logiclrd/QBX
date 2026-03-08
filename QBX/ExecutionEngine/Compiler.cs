@@ -1342,6 +1342,34 @@ public class Compiler
 
 				break;
 			}
+			case CodeModel.Statements.GetStatement getStatement:
+			{
+				GetStatement translatedGetStatement;
+
+				if (getStatement.TargetExpression == null)
+					translatedGetStatement = new GetToFieldsStatement(getStatement);
+				else
+				{
+					var getToTargetStatement = new GetToTargetStatement(getStatement);
+
+					getToTargetStatement.TargetExpression = TranslateExpression(
+						getStatement.TargetExpression,
+						container,
+						mapper,
+						compilation);
+
+					translatedGetStatement = getToTargetStatement;
+				}
+
+				TranslateNumericArgumentExpression(
+					ref translatedGetStatement.FileNumberExpression, getStatement.FileNumberExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedGetStatement.RecordNumberExpression, getStatement.RecordNumberExpression);
+
+				container.Append(translatedGetStatement);
+
+				break;
+			}
 			case CodeModel.Statements.GetSpriteStatement getSpriteStatement:
 			{
 				var translatedGetStatement = new GetSpriteStatement(getSpriteStatement);
@@ -1976,6 +2004,34 @@ public class Compiler
 
 					container.Append(translatedPrintStatement);
 				}
+
+				break;
+			}
+			case CodeModel.Statements.PutStatement putStatement:
+			{
+				PutStatement translatedPutStatement;
+
+				if (putStatement.TargetExpression == null)
+					translatedPutStatement = new PutFromFieldsStatement(putStatement);
+				else
+				{
+					var putFromTargetStatement = new PutFromTargetStatement(putStatement);
+
+					putFromTargetStatement.TargetExpression = TranslateExpression(
+						putStatement.TargetExpression,
+						container,
+						mapper,
+						compilation);
+
+					translatedPutStatement = putFromTargetStatement;
+				}
+
+				TranslateNumericArgumentExpression(
+					ref translatedPutStatement.FileNumberExpression, putStatement.FileNumberExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedPutStatement.RecordNumberExpression, putStatement.RecordNumberExpression);
+
+				container.Append(translatedPutStatement);
 
 				break;
 			}
