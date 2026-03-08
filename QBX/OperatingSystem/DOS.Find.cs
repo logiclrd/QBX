@@ -270,7 +270,7 @@ public partial class DOS
 			string collapsedExtensionPart = NormalizeFileSearchPattern(ref extensionPart, 3);
 
 			string collapsedFileNamePattern = collapsedFileNamePart + "." + collapsedExtensionPart;
-			string rawFileNamePattern = fileNamePart + extensionPart;
+			string rawFileNamePattern = fileNamePart.PadRight(8) + extensionPart.PadRight(3);
 
 			byte[] searchPatternBytes = s_cp437.GetBytes(rawFileNamePattern);
 
