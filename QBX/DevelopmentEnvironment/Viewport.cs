@@ -13,7 +13,9 @@ namespace QBX.DevelopmentEnvironment;
 
 public class Viewport
 {
-	public string Heading = "Untitled";
+	const string DefaultHeading = "Untitled";
+
+	public string Heading = DefaultHeading;
 	public CompilationUnit? CompilationUnit;
 	public CompilationElement? CompilationElement;
 	public HelpPage? HelpPage;
@@ -39,6 +41,16 @@ public class Viewport
 	public int CachedContentTopY;
 	public int CachedContentHeight;
 
+	public void UpdateHeading()
+	{
+		if (CompilationElement == null)
+			Heading = DefaultHeading;
+		else if (CompilationElement.Name == null)
+			Heading = CompilationElement.Owner.Name;
+		else
+			Heading = CompilationElement.Owner.Name + ":" + CompilationElement.Name;
+	}
+
 	public void SwitchTo(CompilationElement element)
 	{
 		CompilationElement?.CachedCursorLine = CursorY;
@@ -46,10 +58,7 @@ public class Viewport
 		CompilationUnit = element.Owner;
 		CompilationElement = element;
 
-		if (element.Name == null)
-			Heading = element.Owner.Name;
-		else
-			Heading = element.Owner.Name + ":" + element.Name;
+		UpdateHeading();
 
 		CursorX = 0;
 		CursorY = element.CachedCursorLine;

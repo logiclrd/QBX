@@ -79,6 +79,9 @@ namespace QBX.DevelopmentEnvironment
 				Save(unit, writer);
 
 			unit.FilePath = filePath;
+
+			PrimaryViewport.UpdateHeading();
+			SplitViewport?.UpdateHeading();
 		}
 
 		public void Save(CompilationUnit unit, TextWriter writer)
