@@ -2907,6 +2907,7 @@ public class Compiler
 					case TokenType.ABS: return AbsFunction.Construct(keywordFunction.Token, arguments);
 					case TokenType.ASC: function = new AscFunction(); break;
 					case TokenType.ATN: function = new AtnFunction(); break;
+					case TokenType.BOF: function = new BOFFunction(); break;
 					case TokenType.CCUR: function = new CCurFunction(); break;
 					case TokenType.CDBL: function = new CDblFunction(); break;
 					case TokenType.CHR: function = new ChrFunction(); break;
@@ -2915,6 +2916,7 @@ public class Compiler
 					case TokenType.COMMAND: function = new CommandFunction(); break;
 					case TokenType.COS: function = new CosFunction(); break;
 					case TokenType.CSNG: function = new CSngFunction(); break;
+					case TokenType.CSRLIN: function = new CsrLinFunction(); break;
 					case TokenType.CURDIR: function = new CurDirFunction(); break;
 					case TokenType.DIR: function = new DirFunction(); break;
 					case TokenType.EOF: function = new EOFFunction(); break;
@@ -2939,6 +2941,7 @@ public class Compiler
 					case TokenType.PEEK: function = new PeekFunction(); break;
 					case TokenType.PEN: function = new PenFunction(); break;
 					case TokenType.POINT: function = new PointFunction(); break;
+					case TokenType.POS: function = new PosFunction(); break;
 					case TokenType.RIGHT: function = new RightFunction(); break;
 					case TokenType.RND: function = new RndFunction(); break;
 					case TokenType.RTRIM: function = new RTrimFunction(); break;
@@ -2946,6 +2949,7 @@ public class Compiler
 					case TokenType.SIN: function = new SinFunction(); break;
 					case TokenType.SPACE: function = new SpaceFunction(); break;
 					case TokenType.STR: function = new StrFunction(); break;
+					case TokenType.STRING_s: function = new StringFunction(); break;
 					case TokenType.TAN: function = new TanFunction(); break;
 					case TokenType.TIMER: function = new TimerFunction(); break;
 					case TokenType.UBOUND: function = new UBoundFunction(); break;

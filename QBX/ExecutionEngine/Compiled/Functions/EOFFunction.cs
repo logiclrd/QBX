@@ -25,7 +25,7 @@ public class EOFFunction : Function
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (FileNumberExpression == null)
-			throw new Exception("LOFFunction with no FileNumberExpression");
+			throw new Exception("EOFFunction with no FileNumberExpression");
 
 		int fileNumber = FileNumberExpression.EvaluateAndCoerceToInt(context, stackFrame);
 

@@ -33,6 +33,12 @@ public class FileAttrFunction : Function
 		}
 	}
 
+	public override void CollapseConstantSubexpressions()
+	{
+		CollapseConstantExpression(ref FileNumberExpression);
+		CollapseConstantExpression(ref AttributeExpression);
+	}
+
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (FileNumberExpression == null)

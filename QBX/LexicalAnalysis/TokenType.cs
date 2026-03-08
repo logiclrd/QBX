@@ -103,7 +103,6 @@ public enum TokenType
 	[KeywordFunction(parameterCount: 0, isAssignable: true)]
 	[KeywordToken] ERR,
 	[KeywordToken] ERROR,
-	[KeywordFunction]
 	[KeywordToken] EQV,
 	[KeywordToken] EXIT,
 	[KeywordFunction]
@@ -244,7 +243,7 @@ public enum TokenType
 	[KeywordFunction(minimumParameterCount: 2, maximumParameterCount: 3)] // can also be a statement
 	[KeywordToken] SCREEN,
 	[KeywordFunction]
-	[KeywordToken] SEEK,
+	[KeywordToken] SEEK, // can also be a statement
 	[KeywordToken] SEG,
 	[KeywordToken] SELECT,
 	[KeywordToken] SETINDEX,
