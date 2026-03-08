@@ -283,6 +283,16 @@ public class StringValue : IComparable<StringValue>, IEquatable<StringValue>
 	public StringValue Substring(int offset, int length)
 		=> new StringValue().Append(AsSpan().Slice(offset, length));
 
+	public StringValue TrimZ()
+	{
+		int terminator = IndexOf(0);
+
+		if (terminator < 0)
+			return this;
+		else
+			return new StringValue(AsSpan().Slice(0, terminator));
+	}
+
 	public override string ToString()
 		=> s_cp437.GetString(AsSpan());
 

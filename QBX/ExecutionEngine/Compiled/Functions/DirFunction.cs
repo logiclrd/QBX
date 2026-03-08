@@ -72,7 +72,7 @@ public class DirFunction : Function
 		{
 			s_fileInfo.Deserialize(context.Machine.MemoryBus, s_fileInfoBufferAddress);
 
-			return new StringVariable(s_fileInfo.FileName);
+			return new StringVariable(s_fileInfo.FileName.TrimZ());
 		}
 	}
 }
