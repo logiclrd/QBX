@@ -414,7 +414,7 @@ public partial class Program
 				chars = viewportContentWidth;
 
 			var (unselectedLeft, selected, unselectedRight) =
-				CalculateSelectionHighlight(viewport.Clipboard, lineIndex, viewport.ScrollX, viewportContentWidth);
+				CalculateSelectionHighlight(viewport.Clipboard, lineIndex, viewport.ScrollX, viewportContentWidth, viewport.CompilationElement);
 
 			var rowAttr = normalAttr;
 			var rowHighlightAttr = highlightAttr;
@@ -636,7 +636,8 @@ public partial class Program
 
 	(int unselectedLeft, int selected, int unselectedRight) CalculateSelectionHighlight(
 		Clipboard clipboard,
-		int lineIndex, int scrollX, int chars)
+		int lineIndex, int scrollX, int chars,
+		CompilationElement? compilationElement)
 	{
 		// In a viewport showing line lineIndex, scrolled right by scrollX characters,
 		// subdivide chars characters into unselected and selected regions.
@@ -646,7 +647,7 @@ public partial class Program
 		// When a dialog is active, error context is rendered as selection.
 		if (Dialogs.Count != 0)
 		{
-			if (_errorToken == null)
+			if ((_errorToken == null) || (_errorToken.OwnerStatement?.CodeLine?.CompilationElement != compilationElement))
 				return (chars, 0, 0);
 			else
 			{
