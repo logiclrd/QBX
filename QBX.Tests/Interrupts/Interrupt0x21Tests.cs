@@ -3059,9 +3059,9 @@ public class Interrupt0x21Tests
 	public void GetStartupDrive_should_return_current_drive_at_startup()
 	{
 		// Arrange
-		var preStartupCurrentDirectory = Environment.CurrentDirectory;
+		var pathToDOSBinary = Path.GetFullPath(typeof(DOS).Assembly.Location);
 
-		int expectedStartupDrive = PathCharacter.GetDriveLetter(preStartupCurrentDirectory) - 'A' + 1;
+		int expectedStartupDrive = PathCharacter.GetDriveLetter(pathToDOSBinary) - 'A' + 1;
 
 		var machine = new Machine();
 
