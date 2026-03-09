@@ -296,5 +296,7 @@ public class Viewport
 		CursorY = newCursorY;
 		ScrollX = newScrollX;
 		ScrollY = newScrollY;
+
+		Clipboard.StartSelection(newCursorX, newCursorY);
 	}
 }

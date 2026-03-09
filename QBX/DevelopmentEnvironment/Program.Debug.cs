@@ -74,15 +74,11 @@ public partial class Program
 	public void PresentError(CompilerException error)
 	{
 		PresentError(error.Message, error.Context, avoidContext: true);
-
-		_errorToken = error.Context;
 	}
 
 	public void PresentError(RuntimeException error)
 	{
 		PresentError(error.Message, error.Context, avoidContext: true);
-
-		_errorToken = error.Context;
 	}
 
 	public void PresentError(string errorMessage, Token? context = null, bool avoidContext = false)
@@ -100,6 +96,8 @@ public partial class Program
 				ViewportPositioningPriority.Cursor,
 				viewportWidth: TextLibrary.CharacterWidth - 2);
 		}
+
+		_errorToken = context;
 
 		var dialog = ShowDialog(new ErrorDialog(Machine, Configuration, errorMessage));
 

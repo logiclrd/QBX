@@ -58,7 +58,8 @@ public abstract class Evaluable
 
 		var targetVariable = Evaluate(context, stackFrame);
 
-		if (targetVariable is StringVariable stringVariable)
+		if ((targetVariable is StringVariable stringVariable)
+		 && stringVariable.IsMappedField)
 			context.UnlinkFieldVariable(stringVariable);
 
 		targetVariable.SetData(newValue.GetData());

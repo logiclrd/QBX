@@ -50,7 +50,11 @@ public partial class Program
 			 && _executionThread.IsAlive)
 				_executionThread.IsBackground = true;
 
-			_executionContext?.Controls.Terminate();
+			if (_executionContext != null)
+			{
+				_executionContext.Controls.Terminate();
+				_executionContext.CloseAllFiles();
+			}
 		}
 		catch { }
 	}
@@ -203,8 +207,7 @@ public partial class Program
 		if (!Machine.KeepRunning)
 			return;
 
-		foreach (var file in _executionContext.Files.Values)
-			Machine.DOS.CloseFile(file.FileHandle);
+		_executionContext.CloseAllFiles();
 
 		foreach (var watch in _watches)
 		{

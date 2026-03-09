@@ -16,6 +16,10 @@ public class StringVariable : Variable
 
 	public virtual StringValue CloneValue() => new StringValue(RawValue);
 
+	public int IsMappedFieldCount = 0;
+
+	public bool IsMappedField => (IsMappedFieldCount > 0);
+
 	static Encoding s_cp437 = new CP437Encoding(ControlCharacterInterpretation.Semantic);
 
 	public StringVariable(int fixedStringLength = 0)

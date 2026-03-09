@@ -48,7 +48,11 @@ public class GetToFieldsStatement(CodeModel.Statements.Statement? source) : GetS
 			s_buffer.AsSpan().Slice(0, openFile.RecordLength));
 
 		openFile.RecordOffset = 0;
-		openFile.WriteToFields(s_buffer.AsSpan().Slice(numRead));
+
+		if (numRead == 0)
+			throw RuntimeException.InputPastEndOfFile(Source);
+
+		openFile.WriteToFields(s_buffer.AsSpan().Slice(0, numRead));
 		openFile.RecordOffset = 0;
 
 		openFile.CurrentRecordNumber++;

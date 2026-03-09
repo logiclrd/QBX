@@ -726,7 +726,7 @@ public partial class Program
 
 						break;
 					default: // Find identifier extent
-									 // Grow left
+						// Grow left
 						while (startIndex > 0)
 						{
 							char ch = buffer[startIndex - 1];
@@ -790,5 +790,7 @@ public partial class Program
 
 		viewport.CursorX = column;
 		viewport.CursorY = lineNumber;
+
+		viewport.Clipboard.StartSelection(viewport.CursorX, viewport.CursorY);
 	}
 }

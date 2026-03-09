@@ -53,14 +53,13 @@ public class OpenFile
 			while (field.Variable.Value.Length < field.Width)
 				field.Variable.Value.Append((byte)0);
 
-			context.FieldVariables[field.Variable] = this;
+			context.AddFieldVariableLink(field.Variable, this);
 		}
 	}
 
 	public void ClearFieldConfiguration(ExecutionContext context)
 	{
-		foreach (var previousMapping in Fields)
-			context.FieldVariables.Remove(previousMapping.Variable);
+		context.RemoveAllFieldVariableLinks(this);
 
 		Fields.Clear();
 	}

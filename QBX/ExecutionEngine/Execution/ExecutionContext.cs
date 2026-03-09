@@ -58,14 +58,80 @@ public class ExecutionContext
 	public readonly StringValue CommandLine = new StringValue();
 
 	public readonly Dictionary<int, OpenFile> Files = new Dictionary<int, OpenFile>();
-	public readonly Dictionary<StringVariable, OpenFile> FieldVariables = new Dictionary<StringVariable, OpenFile>();
+
+	public void CloseAllFiles()
+	{
+		foreach (var file in Files.Values)
+			Machine.DOS.CloseFile(file.FileHandle);
+
+		Files.Clear();
+	}
+
+	readonly Dictionary<StringVariable, List<OpenFile>> _openFilesByFieldVariable = new Dictionary<StringVariable, List<OpenFile>>();
+	readonly Dictionary<OpenFile, List<StringVariable>> _fieldVariablesByOpenFile = new Dictionary<OpenFile, List<StringVariable>>();
+
+	public void AddFieldVariableLink(StringVariable variable, OpenFile openFile)
+	{
+		if (!_openFilesByFieldVariable.TryGetValue(variable, out var openFiles))
+		{
+			openFiles = new List<OpenFile>();
+			_openFilesByFieldVariable[variable] = openFiles;
+		}
+
+		if (!openFiles.Contains(openFile))
+			openFiles.Add(openFile);
+
+		if (!_fieldVariablesByOpenFile.TryGetValue(openFile, out var fieldVariables))
+		{
+			fieldVariables = new List<StringVariable>();
+			_fieldVariablesByOpenFile[openFile] = fieldVariables;
+		}
+
+		if (!fieldVariables.Contains(variable))
+			fieldVariables.Add(variable);
+
+		variable.IsMappedFieldCount++;
+	}
+
+	public void RemoveAllFieldVariableLinks(OpenFile openFile)
+	{
+		if (_fieldVariablesByOpenFile.TryGetValue(openFile, out var fieldVariablesForOpenFile))
+		{
+			foreach (var fieldVariable in fieldVariablesForOpenFile)
+			{
+				if (_openFilesByFieldVariable.TryGetValue(fieldVariable, out var openFilesForFieldVariable))
+				{
+					openFilesForFieldVariable.Remove(openFile);
+					if (openFilesForFieldVariable.Count == 0)
+						_openFilesByFieldVariable.Remove(fieldVariable);
+
+					fieldVariable.IsMappedFieldCount--;
+				}
+			}
+
+			_fieldVariablesByOpenFile.Remove(openFile);
+		}
+	}
 
 	public void UnlinkFieldVariable(StringVariable variable)
 	{
-		if (FieldVariables.TryGetValue(variable, out var openFile))
+		if (_openFilesByFieldVariable.TryGetValue(variable, out var openFiles))
 		{
-			openFile.UnlinkFieldVariable(variable);
-			FieldVariables.Remove(variable);
+			foreach (var openFile in openFiles)
+			{
+				openFile.UnlinkFieldVariable(variable);
+
+				if (_fieldVariablesByOpenFile.TryGetValue(openFile, out var fieldVariablesForFile))
+				{
+					fieldVariablesForFile.Remove(variable);
+					if (fieldVariablesForFile.Count == 0)
+						_fieldVariablesByOpenFile.Remove(openFile);
+
+					variable.IsMappedFieldCount--;
+				}
+			}
+
+			_openFilesByFieldVariable.Remove(variable);
 		}
 	}
 
