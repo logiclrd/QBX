@@ -4128,9 +4128,7 @@ public class Interrupt0x21Tests
 
 				var regularFile = (RegularFileDescriptor)machine.DOS.Files[fileHandle]!;
 
-				regularFile.PhysicalPath.Should().Be(Path.GetFullPath(TestFileName));
-
-				string? pathRoot = Path.GetPathRoot(regularFile.Path) ?? "C:\\";
+				IsSameFile(TestFileName, regularFile.PhysicalPath).Should().BeTrue();
 
 				new FileInfo(regularFile.PhysicalPath).Length.Should().Be(0);
 			}
@@ -4199,7 +4197,7 @@ public class Interrupt0x21Tests
 
 				var regularFile = (RegularFileDescriptor)machine.DOS.Files[fileHandle]!;
 
-				regularFile.PhysicalPath.Should().Be(Path.GetFullPath(TestFileName));
+				IsSameFile(TestFileName, regularFile.PhysicalPath).Should().BeTrue();
 
 				if (shouldBeReadable)
 				{
@@ -4236,18 +4234,6 @@ public class Interrupt0x21Tests
 			{
 				machine.DOS.CloseFile(fileHandle);
 			}
-		}
-	}
-
-	private byte[] ReadAllBytesFromFile(string testFileName)
-	{
-		using (var stream = new FileStream(testFileName, System.IO.FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
-		{
-			byte[] data = new byte[stream.Length];
-
-			stream.ReadExactly(data);
-
-			return data;
 		}
 	}
 
@@ -4312,7 +4298,7 @@ public class Interrupt0x21Tests
 
 				var regularFile = (RegularFileDescriptor)machine.DOS.Files[fileHandle]!;
 
-				regularFile.PhysicalPath.Should().Be(Path.GetFullPath(testFileName));
+				IsSameFile(testFileName, regularFile.PhysicalPath).Should().BeTrue();
 
 				byte[] checkDataBuffer = new byte[testData.Length];
 
@@ -10121,6 +10107,18 @@ public class Interrupt0x21Tests
 	#endregion
 
 	#region File Assertions
+	static byte[] ReadAllBytesFromFile(string fileName)
+	{
+		using (var stream = new FileStream(fileName, System.IO.FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+		{
+			byte[] data = new byte[stream.Length];
+
+			stream.ReadExactly(data);
+
+			return data;
+		}
+	}
+
 	static bool IsSameFile(string path1, string path2)
 	{
 		if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
