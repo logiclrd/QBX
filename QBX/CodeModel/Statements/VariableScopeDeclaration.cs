@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-using QBX.CodeModel;
+using QBX.LexicalAnalysis;
 
 namespace QBX.CodeModel.Statements;
 
@@ -11,6 +11,9 @@ public class VariableScopeDeclaration : IRenderableCode
 	public bool IsArray { get; set; }
 	public DataType? Type { get; set; }
 	public string? UserType { get; set; }
+
+	public Token? NameToken;
+	public Token? TypeToken;
 
 	public void Render(TextWriter writer)
 	{

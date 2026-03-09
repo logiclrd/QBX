@@ -62,6 +62,8 @@ public class Mapper
 {
 	Mapper? _root;
 
+	public Mapper RootMapper => _root ?? this;
+
 	public readonly Routine Routine;
 
 	bool _isFrozen;
@@ -373,16 +375,20 @@ public class Mapper
 	}
 
 	public void LinkRootVariable(string name)
+		=> LinkRootVariable(name, name);
+
+	public void LinkRootVariable(string localName, string rootName)
 	{
 		if (_isFrozen)
 			throw new Exception("The Mapper is frozen");
 		if (_root == null)
 			throw new Exception("Cannot link to a root variable from the root");
 
-		name = QualifyIdentifier(name);
+		localName = QualifyIdentifier(localName);
+		rootName = QualifyIdentifier(rootName);
 
-		int localIndex = ResolveVariable(name);
-		int rootIndex = _root.ResolveVariable(name);
+		int localIndex = ResolveVariable(localName);
+		int rootIndex = _root.ResolveVariable(rootName);
 
 		var variableInfo = _variables[localIndex];
 

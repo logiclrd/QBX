@@ -228,16 +228,29 @@ public class Compiler
 			while (lineIndex < element.Lines.Count)
 				TranslateStatement(element, ref lineIndex, ref statementIndex, routine, routine, compilation, module);
 
-			routine.VariableTypes = mapper.GetVariableTypes();
-			routine.LinkedVariables = mapper.GetLinkedVariables();
+			// Defer processing of the main module unfrozen for now in case later routines want
+			// to add variables to make them STATIC.
+			if (routine.Source.Type != CodeModel.CompilationElementType.Main)
+			{
+				routine.Mapper.Freeze();
+
+				routine.VariableTypes = mapper.GetVariableTypes();
+				routine.LinkedVariables = mapper.GetLinkedVariables();
+			}
 
 			routine.ResolveJumpStatements();
 
 			foreach (var statement in routine.AllStatements)
 				if (statement is IUnresolvedLineReference unresolvedLineReference)
 					unresolvedLineReference.Resolve(routine);
+		}
 
-			routine.Mapper.Freeze();
+		// Finish up processing of the main routine.
+		if (module.MainRoutine is Routine mainRoutine)
+		{
+			mainRoutine.Mapper.Freeze();
+
+			mainRoutine.VariableTypes = mainRoutine.Mapper.GetVariableTypes();
 		}
 
 		compilation.Modules.Add(module);
@@ -2415,6 +2428,41 @@ public class Compiler
 					ref translatedUnlockStatement.EndExpression, unlockStatement.RangeEndExpression);
 
 				container.Append(translatedUnlockStatement);
+
+				break;
+			}
+			case CodeModel.Statements.VariableScopeStatement variableScopeStatement:
+			{
+				bool createNewVariables = (variableScopeStatement.ScopeType == CodeModel.Statements.VariableScopeType.Static);
+
+				var rootMapper = mapper.RootMapper;
+
+				foreach (var declaration in variableScopeStatement.Declarations)
+				{
+					DataType variableType;
+
+					if (declaration.UserType != null)
+						variableType = typeRepository.ResolveType(declaration.UserType, declaration.TypeToken);
+					else if (declaration.Type != null)
+						variableType = DataType.FromCodeModelDataType(declaration.Type.Value);
+					else
+						variableType = DataType.ForPrimitiveDataType(mapper.GetTypeForIdentifier(declaration.Name));
+
+					mapper.DeclareVariable(declaration.Name, variableType, declaration.NameToken);
+
+					string rootVariableName = declaration.Name;
+
+					if (createNewVariables)
+					{
+						string hiddenVariableName = "<" + element.Name + ">" + declaration.Name;
+
+						rootMapper.DeclareVariable(hiddenVariableName, variableType, declaration.NameToken);
+
+						rootVariableName = hiddenVariableName;
+					}
+
+					mapper.LinkRootVariable(declaration.Name, rootVariableName);
+				}
 
 				break;
 			}

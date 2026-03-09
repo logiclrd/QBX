@@ -3075,7 +3075,7 @@ public class BasicParser
 
 				var scopeStatement = new VariableScopeStatement();
 
-				switch (tokenHandler.NextToken.Type)
+				switch (token.Type)
 				{
 					case TokenType.SHARED: scopeStatement.ScopeType = VariableScopeType.Shared; break;
 					case TokenType.STATIC: scopeStatement.ScopeType = VariableScopeType.Static; break;
@@ -3096,7 +3096,7 @@ public class BasicParser
 
 					var declaration = new VariableScopeDeclaration();
 
-					declaration.Name = declarationHandler.ExpectIdentifier(allowTypeCharacter: true);
+					declaration.Name = declarationHandler.ExpectIdentifier(allowTypeCharacter: true, out declaration.NameToken);
 
 					if (declarationHandler.NextTokenIs(TokenType.OpenParenthesis))
 					{
@@ -3114,14 +3114,14 @@ public class BasicParser
 						declarationHandler.Advance();
 
 						if (declarationHandler.NextTokenIs(TokenType.Identifier))
-							declaration.UserType = declarationHandler.ExpectIdentifier(allowTypeCharacter: false);
+							declaration.UserType = declarationHandler.ExpectIdentifier(allowTypeCharacter: false, out declaration.TypeToken);
 						else
 						{
 							if (!declarationHandler.NextToken.IsDataType)
 								throw new SyntaxErrorException(declarationHandler.NextToken, "Expected data type");
 
 							declaration.Type = DataTypeConverter.FromToken(declarationHandler.NextToken);
-							//declaration.ActualName = declaration.Name + new TypeCharacter(declaration.Type.Value).Character;
+							declaration.TypeToken = declarationHandler.NextToken;
 
 							declarationHandler.Advance();
 						}
