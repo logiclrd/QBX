@@ -2918,6 +2918,13 @@ public class Compiler
 					case TokenType.CSNG: function = new CSngFunction(); break;
 					case TokenType.CSRLIN: function = new CsrLinFunction(); break;
 					case TokenType.CURDIR: function = new CurDirFunction(); break;
+					case TokenType.CVC: function = new CvCFunction(); break;
+					case TokenType.CVD: function = new CvDFunction(); break;
+					case TokenType.CVDMBF: function = new CvDMBFFunction(); break;
+					case TokenType.CVI: function = new CvIFunction(); break;
+					case TokenType.CVL: function = new CvLFunction(); break;
+					case TokenType.CVS: function = new CvSFunction(); break;
+					case TokenType.CVSMBF: function = new CvSMBFFunction(); break;
 					case TokenType.DATE: function = new DateFunction(); break;
 					case TokenType.DIR: function = new DirFunction(); break;
 					case TokenType.EOF: function = new EOFFunction(); break;
@@ -2938,6 +2945,13 @@ public class Compiler
 					case TokenType.LOC: function = new LocFunction(); break;
 					case TokenType.LOF: function = new LOFFunction(); break;
 					case TokenType.LTRIM: function = new LTrimFunction(); break;
+					case TokenType.MKC: function = new MkCFunction(); break;
+					case TokenType.MKD: function = new MkDFunction(); break;
+					case TokenType.MKDMBF: function = new MkDMBFFunction(); break;
+					case TokenType.MKI: function = new MkIFunction(); break;
+					case TokenType.MKL: function = new MkLFunction(); break;
+					case TokenType.MKS: function = new MkSFunction(); break;
+					case TokenType.MKSMBF: function = new MkSMBFFunction(); break;
 					case TokenType.MID: function = new MidFunction(); break;
 					case TokenType.PEEK: function = new PeekFunction(); break;
 					case TokenType.PEN: function = new PenFunction(); break;
