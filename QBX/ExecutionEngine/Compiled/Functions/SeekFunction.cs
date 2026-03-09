@@ -6,7 +6,7 @@ using QBX.OperatingSystem.FileDescriptors;
 
 namespace QBX.ExecutionEngine.Compiled.Functions;
 
-public class LocFunction : Function
+public class SeekFunction : Function
 {
 	public override DataType Type => DataType.Long;
 
@@ -23,7 +23,7 @@ public class LocFunction : Function
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (FileNumberExpression == null)
-			throw new Exception("LocFunction with no FileNumberExpression");
+			throw new Exception("SeekFunction with no FileNumberExpression");
 
 		int fileNumber = FileNumberExpression.EvaluateAndCoerceToInt(context, stackFrame);
 
@@ -42,11 +42,8 @@ public class LocFunction : Function
 				throw RuntimeException.IllegalFunctionCall(Source); // internal error
 
 			filePointer = checked((int)fileDescriptor.FilePointer);
-
-			if (openFile.IOMode != OpenFileIOMode.Binary)
-				filePointer = (filePointer + 127) / 128;
 		}
 
-		return new LongVariable(filePointer);
+		return new LongVariable(filePointer + 1);
 	}
 }

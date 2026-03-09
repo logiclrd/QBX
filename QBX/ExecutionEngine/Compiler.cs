@@ -2965,6 +2965,7 @@ public class Compiler
 					case TokenType.RND: function = new RndFunction(); break;
 					case TokenType.RTRIM: function = new RTrimFunction(); break;
 					case TokenType.SCREEN: function = new ScreenFunction(); break;
+					case TokenType.SEEK: function = new SeekFunction(); break;
 					case TokenType.SGN: function = new SgnFunction(); break;
 					case TokenType.SIN: function = new SinFunction(); break;
 					case TokenType.SPACE: function = new SpaceFunction(); break;
