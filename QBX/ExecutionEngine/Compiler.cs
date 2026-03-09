@@ -2930,6 +2930,7 @@ public class Compiler
 					case TokenType.EOF: function = new EOFFunction(); break;
 					case TokenType.ERR: function = new ErrFunction(); break;
 					case TokenType.ERL: function = new ErlFunction(); break;
+					case TokenType.EXP: function = new ExpFunction(); break;
 					case TokenType.FIX: return FixFunction.Construct(keywordFunction.Token, arguments);
 					case TokenType.FILEATTR: function = new FileAttrFunction(); break;
 					case TokenType.FREEFILE: function = new FreeFileFunction(); break;
@@ -2943,6 +2944,7 @@ public class Compiler
 					case TokenType.LEFT: function = new LeftFunction(); break;
 					case TokenType.LEN: function = new LenFunction(); break;
 					case TokenType.LOC: function = new LocFunction(); break;
+					case TokenType.LOG: function = new LogFunction(); break;
 					case TokenType.LOF: function = new LOFFunction(); break;
 					case TokenType.LTRIM: function = new LTrimFunction(); break;
 					case TokenType.MKC: function = new MkCFunction(); break;
@@ -2961,8 +2963,10 @@ public class Compiler
 					case TokenType.RND: function = new RndFunction(); break;
 					case TokenType.RTRIM: function = new RTrimFunction(); break;
 					case TokenType.SCREEN: function = new ScreenFunction(); break;
+					case TokenType.SGN: function = new SgnFunction(); break;
 					case TokenType.SIN: function = new SinFunction(); break;
 					case TokenType.SPACE: function = new SpaceFunction(); break;
+					case TokenType.SQR: function = new SqrFunction(); break;
 					case TokenType.STR: function = new StrFunction(); break;
 					case TokenType.STRING_s: function = new StringFunction(); break;
 					case TokenType.TAN: function = new TanFunction(); break;

@@ -98,6 +98,13 @@ public class NumberFormatter
 		if (value == 0)
 			return qualify ? "0!" : "0";
 
+		if (float.IsNaN(value))
+			return "1.#IND";
+		if (float.IsPositiveInfinity(value))
+			return "1.#INF";
+		if (float.IsNegativeInfinity(value))
+			return "-1.#INF";
+
 		string str;
 
 		string lead = "";
@@ -181,6 +188,13 @@ public class NumberFormatter
 	{
 		if (value == 0)
 			return qualify ? "0#" : "0";
+
+		if (double.IsNaN(value))
+			return "1.#IND";
+		if (double.IsPositiveInfinity(value))
+			return "1.#INF";
+		if (double.IsNegativeInfinity(value))
+			return "-1.#INF";
 
 		string str;
 
