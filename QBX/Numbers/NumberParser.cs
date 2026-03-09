@@ -19,7 +19,7 @@ public static class NumberParser
 
 		char lastChar = chars[chars.Length - 1];
 
-		if (!char.IsAsciiDigit(lastChar) && (lastChar != '.'))
+		if (!char.IsAsciiHexDigit(lastChar) && (lastChar != '.'))
 		{
 			if (lastChar != '%')
 				return false;
@@ -86,7 +86,7 @@ public static class NumberParser
 
 		char lastChar = chars[chars.Length - 1];
 
-		if (!char.IsAsciiDigit(lastChar) && (lastChar != '.'))
+		if (!char.IsAsciiHexDigit(lastChar) && (lastChar != '.'))
 		{
 			if (lastChar != '&')
 				return false;
