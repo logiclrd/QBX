@@ -2448,6 +2448,11 @@ public class Compiler
 					else
 						variableType = DataType.ForPrimitiveDataType(mapper.GetTypeForIdentifier(declaration.Name));
 
+					// If the variable is both DIM SHARED from the root scope and SHARED in this scope,
+					// that's okay. We just don't have any work to do here; it's already linked.
+					if (mapper.IsLinkedVariable(declaration.Name))
+						continue;
+
 					mapper.DeclareVariable(declaration.Name, variableType, declaration.NameToken);
 
 					string rootVariableName = declaration.Name;

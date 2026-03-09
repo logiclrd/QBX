@@ -198,6 +198,13 @@ public class Mapper
 		}
 	}
 
+	public bool IsLinkedVariable(string name)
+	{
+		return
+			_variableIndexByName.TryGetValue(name, out var index) &&
+			(_variables[index].LinkedToRootVariableIndex >= 0);
+	}
+
 	Stack<PrimitiveDataType[]> _identifierTypesStack = new Stack<PrimitiveDataType[]>();
 
 	public void PushIdentifierTypes()
