@@ -2,11 +2,10 @@
 
 using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
-using QBX.Numbers;
 
 namespace QBX.ExecutionEngine.Compiled.Functions;
 
-public class StrFunction : Function
+public class HexFunction : Function
 {
 	public Evaluable? Argument;
 
@@ -28,11 +27,16 @@ public class StrFunction : Function
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (Argument == null)
-			throw new Exception("StrFunction with no Argument");
+			throw new Exception("HexFunction with no Argument");
 
 		var argumentValue = Argument.Evaluate(context, stackFrame);
 
-		var formatted = NumberFormatter.Format(argumentValue, qualify: false, Source);
+		string formatted;
+
+		if (argumentValue is IntegerVariable integerVariable)
+			formatted = unchecked((ushort)integerVariable.Value).ToString("X");
+		else
+			formatted = argumentValue.CoerceToInt(Argument).ToString("X");
 
 		var stringValue = new StringValue(formatted);
 

@@ -2934,6 +2934,7 @@ public class Compiler
 					case TokenType.FIX: return FixFunction.Construct(keywordFunction.Token, arguments);
 					case TokenType.FILEATTR: function = new FileAttrFunction(); break;
 					case TokenType.FREEFILE: function = new FreeFileFunction(); break;
+					case TokenType.HEX: function = new HexFunction(); break;
 					case TokenType.INKEY: function = new InKeyFunction(); break;
 					case TokenType.INP: function = new InpFunction(); break;
 					case TokenType.INPUT_s: function = InputFunction.Construct(keywordFunction.Token, arguments); break;
@@ -2955,6 +2956,7 @@ public class Compiler
 					case TokenType.MKS: function = new MkSFunction(); break;
 					case TokenType.MKSMBF: function = new MkSMBFFunction(); break;
 					case TokenType.MID: function = new MidFunction(); break;
+					case TokenType.OCT: function = new OctFunction(); break;
 					case TokenType.PEEK: function = new PeekFunction(); break;
 					case TokenType.PEN: function = new PenFunction(); break;
 					case TokenType.POINT: function = new PointFunction(); break;
