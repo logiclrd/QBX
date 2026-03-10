@@ -79,7 +79,7 @@ public partial class Program
 			if (HelpViewport != null)
 				row += RenderViewport(row, HelpViewport, connectUp: false, horizontalScrollBar: false);
 
-			row += RenderViewport(row, PrimaryViewport, connectUp: false);
+			row += RenderViewport(row, PrimaryViewport, connectUp: (HelpViewport != null));
 
 			if (SplitViewport != null)
 				row += RenderViewport(row, SplitViewport, connectUp: true);
@@ -298,13 +298,13 @@ public partial class Program
 			}
 		}
 
-		if (!Configuration.ShowScrollBars || !viewport.IsFocused || (viewport.Height <= 1))
+		if (!Configuration.ShowScrollBars || (viewport != FocusedViewport) || (viewport.Height <= 1))
 		{
 			verticalScrollBar = false;
 			horizontalScrollBar = false;
 		}
 
-		var normalAttr = (viewport.HelpPage != null)
+		var normalAttr = (viewport.HelpTopic != null)
 			? Configuration.DisplayAttributes.HelpWindowNormalText
 			: Configuration.DisplayAttributes.ProgramViewWindowNormalText;
 
@@ -363,7 +363,7 @@ public partial class Program
 		normalAttr.Set(TextLibrary);
 		TextLibrary.WriteText(topLeft);
 		TextLibrary.WriteText(_horizontalRule, 0, headingLeft);
-		if (viewport.IsFocused)
+		if (viewport == FocusedViewport)
 			normalAttr.SetInverted(TextLibrary);
 		TextLibrary.WriteText(' ');
 		TextLibrary.WriteText(viewport.Heading);
@@ -477,7 +477,7 @@ public partial class Program
 					rowAttr.Set(TextLibrary);
 
 					if (chars >= unselectedRight)
-						TextLibrary.WriteText(buffer, viewport.ScrollX + unselectedLeft + selected, unselectedLeft);
+						TextLibrary.WriteText(buffer, viewport.ScrollX + unselectedLeft + selected, unselectedRight);
 					else
 					{
 						int virtualChars = unselectedRight - chars;

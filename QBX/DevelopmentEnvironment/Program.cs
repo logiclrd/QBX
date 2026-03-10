@@ -5,11 +5,12 @@ using System.Collections.Generic;
 using System.Linq;
 
 using QBX.CodeModel;
+using QBX.DevelopmentEnvironment.Dialogs;
+using QBX.DevelopmentEnvironment.Help;
+using QBX.ExecutionEngine;
 using QBX.Firmware;
 using QBX.Hardware;
 using QBX.Parser;
-using QBX.ExecutionEngine;
-using QBX.DevelopmentEnvironment.Dialogs;
 using QBX.QuickLibraries;
 
 namespace QBX.DevelopmentEnvironment;
@@ -24,7 +25,9 @@ public partial class Program : HostedProgram, IOvertypeFlag
 	public List<CompilationUnit> LoadedFiles = new List<CompilationUnit>();
 	public int MainModuleIndex;
 
-	public Viewport? HelpViewport = null; // new Viewport() { HelpPage = new HelpPage(), IsEditable = false };
+	public HelpSystem HelpSystem;
+
+	public Viewport? HelpViewport = null;
 	public Viewport PrimaryViewport;
 	public Viewport? SplitViewport;
 	public Viewport ImmediateViewport;
@@ -89,15 +92,13 @@ public partial class Program : HostedProgram, IOvertypeFlag
 		TextLibrary.Clear();
 		TextLibrary.HideCursor();
 
+		HelpSystem = new HelpSystem(Configuration);
+
 		SaveOutput();
 
 		Parser = new BasicParser();
 
-		PrimaryViewport =
-			new Viewport(Parser)
-			{
-				IsFocused = true
-			};
+		PrimaryViewport = new Viewport(Parser);
 
 		ImmediateViewport =
 			new Viewport(Parser)
@@ -376,29 +377,6 @@ public partial class Program : HostedProgram, IOvertypeFlag
 		}
 	}
 
-	public override bool EnableMainLoop => true;
-
-	public TDialog ShowDialog<TDialog>(TDialog dialog)
-		where TDialog : Dialog
-	{
-		var previousMode = Mode;
-
-		dialog.Y = (TextLibrary.Height - dialog.Height) / 2;
-
-		int dialogPoint = Dialogs.Count;
-
-		Dialogs.Add(dialog);
-
-		dialog.Closed +=
-			(_, _) =>
-			{
-				Dialogs.RemoveRange(dialogPoint, Dialogs.Count - dialogPoint);
-				Mode = previousMode;
-			};
-
-		return dialog;
-	}
-
 	void SetWindowIcon()
 	{
 		using (var stream = typeof(Program).Assembly.GetManifestResourceStream("QBX.DevelopmentEnvironment.WindowIcon.ppm"))
@@ -490,6 +468,8 @@ public partial class Program : HostedProgram, IOvertypeFlag
 		}
 	}
 
+	public override bool EnableMainLoop => true;
+
 	bool _closeRequested;
 
 	public override void Run(CancellationToken cancellationToken)
@@ -563,6 +543,78 @@ public partial class Program : HostedProgram, IOvertypeFlag
 			 && !keyEvent.IsRelease
 			 && !keyEvent.IsEphemeral)
 				break;
+		}
+	}
+
+	public TDialog ShowDialog<TDialog>(TDialog dialog)
+		where TDialog : Dialog
+	{
+		var previousMode = Mode;
+
+		dialog.Y = (TextLibrary.Height - dialog.Height) / 2;
+
+		int dialogPoint = Dialogs.Count;
+
+		Dialogs.Add(dialog);
+
+		dialog.Closed +=
+			(_, _) =>
+			{
+				Dialogs.RemoveRange(dialogPoint, Dialogs.Count - dialogPoint);
+				Mode = previousMode;
+			};
+
+		return dialog;
+	}
+
+	public void ShowHelpTopic(string contextString)
+	{
+		if (HelpSystem.TryGetTopic(contextString, out var topic))
+		{
+			int maximumHeight = TextLibrary.Height;
+
+			maximumHeight--; // menu bar
+			maximumHeight--; // reference bar
+			maximumHeight--; // primary viewport
+			maximumHeight--; // immediate viewport
+
+			if (SplitViewport != null)
+				maximumHeight--; // split viewport
+
+			int helpViewportHeight = Math.Min(maximumHeight, topic.Lines.Count);
+
+			int remainingLines = maximumHeight - helpViewportHeight;
+
+			int otherViewports = (SplitViewport != null ? 3 : 2);
+
+			int minimumLinesNeeded = otherViewports + 1;
+
+			if (remainingLines < minimumLinesNeeded)
+			{
+				int deficit = minimumLinesNeeded - remainingLines;
+
+				helpViewportHeight -= deficit;
+				remainingLines += deficit;
+			}
+
+			int primaryViewportLines = remainingLines / otherViewports;
+
+			remainingLines -= primaryViewportLines;
+
+			int splitViewportLines = (SplitViewport != null) ? remainingLines / 2 : 0;
+			int immediateViewportLines = remainingLines - splitViewportLines;
+
+			HelpViewport ??= new Viewport(Parser) { IsEditable = false };
+			HelpViewport.HelpTopic = topic;
+			HelpViewport.Height = helpViewportHeight;
+			HelpViewport.UpdateHeading();
+
+			PrimaryViewport.Height = primaryViewportLines - 1;
+			SplitViewport?.Height = splitViewportLines - 1;
+			ImmediateViewport.Height = immediateViewportLines - 1;
+
+
+			FocusedViewport = HelpViewport;
 		}
 	}
 

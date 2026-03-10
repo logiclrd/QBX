@@ -1,17 +1,19 @@
 ﻿using System;
+using System.IO;
 
 using QBX.ExecutionEngine.Execution;
+using QBX.Firmware.Fonts;
 
-namespace QBX.DevelopmentEnvironment.HelpFiles;
+namespace QBX.DevelopmentEnvironment.Help;
 
-public class HelpFileTopicLine
+public class HelpDatabaseTopicLine
 {
 	public StringValue Text = null!;
 	public byte[] AttributeData = System.Array.Empty<byte>();
 
 	public override string ToString() => Text.ToString();
 
-	public static HelpFileTopicLine Parse(ref ReadOnlySpan<byte> data)
+	public static HelpDatabaseTopicLine Parse(ref ReadOnlySpan<byte> data)
 	{
 		int textBlockLength = data[0];
 		data = data.Slice(1);
@@ -26,11 +28,18 @@ public class HelpFileTopicLine
 		data = data.Slice(attributeBlockLength - 1);
 
 		return
-			new HelpFileTopicLine()
+			new HelpDatabaseTopicLine()
 			{
 				Text = new StringValue(textBlock),
 				AttributeData = attributeBlock.ToArray(),
 			};
+	}
+
+	static CP437Encoding s_cp437 = new CP437Encoding(ControlCharacterInterpretation.Graphic);
+
+	public void RenderPlainText(TextWriter writer)
+	{
+		writer.Write(s_cp437.GetString(Text.AsSpan()));
 	}
 }
 

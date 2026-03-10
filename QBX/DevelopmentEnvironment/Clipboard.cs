@@ -84,17 +84,27 @@ public class Clipboard(Viewport owner)
 		{
 			_clipboardContentMultiLine = stash ? new List<CodeLine>() : null;
 
+			var buffer = new StringWriter();
+			var bufferBuilder = buffer.GetStringBuilder();
+
 			int lineCount = 1 + effectiveEndY - effectiveStartY;
 
 			for (int i = 0; i < lineCount; i++)
 			{
-				_clipboardContentMultiLine?.Add(_owner.GetCodeLineAt(effectiveStartY));
+				bufferBuilder.Length = 0;
+
+				_owner.GetLineAt(effectiveStartY, buffer);
+
+				_clipboardContentMultiLine?.Add(
+					CodeLine.CreateUnparsed(bufferBuilder.ToString()));
 
 				if (retain)
 					effectiveStartY++;
 				else
 					_owner.DeleteLine(effectiveStartY);
 			}
+
+			// TODO: reparse this compilation element
 
 			if (!retain)
 			{
@@ -200,7 +210,7 @@ public class Clipboard(Viewport owner)
 
 			for (int i = 0; i < lineCount; i++)
 			{
-				_owner.GetCodeLineAt(effectiveStartY).Render(writer);
+				_owner.GetLineAt(effectiveStartY, writer);
 				writer.WriteLine();
 
 				effectiveStartY++;

@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text;
 
 using QBX.CodeModel;
+using QBX.CodeModel.Statements;
+using QBX.DevelopmentEnvironment.Help;
 using QBX.LexicalAnalysis;
 using QBX.Parser;
 using QBX.Utility;
@@ -18,9 +20,8 @@ public class Viewport
 	public string Heading = DefaultHeading;
 	public CompilationUnit? CompilationUnit;
 	public CompilationElement? CompilationElement;
-	public HelpPage? HelpPage;
+	public HelpDatabaseTopic? HelpTopic;
 	public bool IsEditable = true;
-	public bool IsFocused = false;
 	public bool ShowMaximize = true;
 	public int Height; // Ignored for the first, which fills available space.
 	public int ScrollX, ScrollY;
@@ -43,7 +44,9 @@ public class Viewport
 
 	public void UpdateHeading()
 	{
-		if (CompilationElement == null)
+		if (HelpTopic != null)
+			Heading = HelpTopic.GetStatementArgument(":n"); // TODO: argument not a bare string
+		else if (CompilationElement == null)
 			Heading = DefaultHeading;
 		else if (CompilationElement.Name == null)
 			Heading = CompilationElement.Owner.Name;
@@ -77,8 +80,8 @@ public class Viewport
 
 	public int GetContentLineCount()
 	{
-		if (HelpPage != null)
-			return HelpPage.Lines.Count;
+		if (HelpTopic != null)
+			return HelpTopic.Lines.Count;
 		else if (CompilationElement != null)
 		{
 			int count = CompilationElement.Lines.Count;
@@ -94,9 +97,10 @@ public class Viewport
 
 	public void RenderLine(int y, TextWriter writer)
 	{
-		if (HelpPage != null)
+		if (HelpTopic != null)
 		{
-			// TODO
+			if ((y >= 0) && (y < HelpTopic.Lines.Count))
+				HelpTopic.Lines[y].RenderPlainText(writer);
 		}
 		else if (CompilationElement != null)
 		{
@@ -105,18 +109,16 @@ public class Viewport
 		}
 	}
 
-	public CodeLine GetCodeLineAt(int y)
+	public void GetLineAt(int y, TextWriter writer)
 	{
 		if (TryGetCodeLineAt(y) is CodeLine line)
-			return line;
+			line.Render(writer);
 
-		if (HelpPage != null)
+		if (HelpTopic != null)
 		{
-			if ((y >= 0) && (y < HelpPage.Lines.Count))
-				return CodeLine.CreateUnparsed(HelpPage.Lines[y]);
+			if ((y >= 0) && (y < HelpTopic.Lines.Count))
+				HelpTopic.Lines[y].RenderPlainText(writer);
 		}
-
-		return CodeLine.CreateEmpty();
 	}
 
 	public CodeLine? TryGetCodeLineAt(int y)
@@ -296,7 +298,5 @@ public class Viewport
 		CursorY = newCursorY;
 		ScrollX = newScrollX;
 		ScrollY = newScrollY;
-
-		Clipboard.StartSelection(newCursorX, newCursorY);
 	}
 }
