@@ -2,6 +2,10 @@
 root = true
 
 [*.{cs,vb}]
+dotnet_diagnostic.CS8981.severity = none
+dotnet_diagnostic.IDE0017.severity = none
+dotnet_diagnostic.IDE0034.severity = none
+dotnet_diagnostic.IDE0049.severity = none
 dotnet_style_operator_placement_when_wrapping = beginning_of_line
 tab_width = 2
 indent_size = 2
@@ -28,9 +32,7 @@ dotnet_style_explicit_tuple_names = true:suggestion
 dotnet_style_prefer_inferred_tuple_names = true:suggestion
 dotnet_style_prefer_inferred_anonymous_type_member_names = true:suggestion
 dotnet_style_namespace_match_folder = true:suggestion
-dotnet_diagnostic.CS8981.severity = none
 dotnet_style_predefined_type_for_locals_parameters_members = true
-dotnet_diagnostic.IDE0049.severity = none
 csharp_using_directive_placement = outside_namespace:silent
 csharp_new_line_before_catch = true
 csharp_new_line_before_else = true
