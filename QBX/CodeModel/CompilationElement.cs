@@ -16,6 +16,8 @@ public class CompilationElement(CompilationUnit owner) : IRenderableCode
 	public CompilationElementType Type { get; set; }
 	public IReadOnlyList<CodeLine> Lines => _lines;
 
+	public int FirstLineIndex { get; set; }
+
 	public int CachedCursorLine; // Used by DevelopmentEnvironment
 
 	public IEnumerable<Statement> AllStatements => _lines.SelectMany(line => line.Statements);

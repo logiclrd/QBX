@@ -1,0 +1,5 @@
+foo
+
+SUB foo
+ERROR 2
+END SUB

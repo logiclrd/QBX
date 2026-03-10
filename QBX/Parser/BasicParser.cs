@@ -28,6 +28,8 @@ public class BasicParser
 
 		var prelude = new List<CodeLine>();
 
+		int lineIndex = 0;
+
 		foreach (var line in ParseCodeLines(tokenStream, ignoreErrors))
 		{
 			if (((element == mainElement) || betweenElements)
@@ -57,6 +59,8 @@ public class BasicParser
 
 						element = new CompilationElement(unit);
 						unit.Elements.Add(element);
+
+						element.FirstLineIndex = lineIndex - prelude.Count;
 
 						element.AddLines(prelude);
 						prelude.Clear();
@@ -93,6 +97,8 @@ public class BasicParser
 
 				element.AddLine(line);
 			}
+
+			lineIndex++;
 		}
 
 		mainElement.AddLines(prelude);

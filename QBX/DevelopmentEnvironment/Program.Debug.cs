@@ -91,7 +91,7 @@ public partial class Program
 				FocusedViewport.SwitchTo(element);
 
 			FocusedViewport.ScrollCursorIntoView(
-				newCursorX: context.Column, newCursorY: context.Line,
+				newCursorX: context.Column, newCursorY: context.Line - element.FirstLineIndex,
 				FocusedViewport.ScrollX, FocusedViewport.ScrollY,
 				ViewportPositioningPriority.Cursor,
 				viewportWidth: TextLibrary.CharacterWidth - 2);
