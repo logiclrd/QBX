@@ -5,6 +5,7 @@ using System.Text;
 using QBX.CodeModel;
 using QBX.DevelopmentEnvironment.Dialogs;
 using QBX.Firmware;
+using QBX.Firmware.Fonts;
 using QBX.Utility;
 
 namespace QBX.DevelopmentEnvironment;
@@ -776,7 +777,7 @@ public partial class Program
 
 		_statusCharBuffer.AsSpan().Fill(32);
 
-		_statusCharBuffer[0] = (byte)'|';
+		_statusCharBuffer[0] = CP437Encoding.GetByteGraphic('│');
 		_statusCharBuffer[5] = Machine.SystemMemory.KeyboardStatus_CapsLock ? (byte)'C' : (byte)' ';
 		_statusCharBuffer[6] = Machine.SystemMemory.KeyboardStatus_NumLock ? (byte)'N' : (byte)' ';
 

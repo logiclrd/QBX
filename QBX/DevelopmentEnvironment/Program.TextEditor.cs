@@ -475,6 +475,35 @@ public partial class Program
 						if (newCursorX < newScrollX)
 							newScrollX = 0;
 					}
+					else if (FocusedViewport.HelpTopic != null)
+					{
+						// Check for a link under the cursor.
+						var lineIndex = FocusedViewport.CursorY;
+
+						if ((lineIndex >= 0) && (lineIndex < FocusedViewport.HelpTopic.Lines.Count))
+						{
+							int cursorX = FocusedViewport.CursorX;
+
+							var line = FocusedViewport.HelpTopic.Lines[lineIndex];
+
+							var link = line.Links?.Find(candidate => (candidate.StartIndex <= cursorX) && (cursorX <= candidate.EndIndex));
+
+							if (link != null)
+							{
+								if (link.TargetContextString != null)
+									ShowHelpTopic(link.TargetContextString);
+								else if (link.TargetTopicIndex >= 0)
+								{
+									var database = FocusedViewport.HelpTopic.Database;
+
+									if (link.TargetTopicIndex < database.Topics.Count)
+										ShowHelpTopic(database.Topics[link.TargetTopicIndex]);
+								}
+
+								ReloadViewportParameters();
+							}
+						}
+					}
 
 					break;
 				}

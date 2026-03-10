@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 using QBX.ExecutionEngine.Execution;
@@ -102,8 +103,8 @@ public class HelpDatabaseTopicLine
 		{
 			var link = new HelpDatabaseTopicLineLink();
 
-			link.StartIndex = attributeBlock[0];
-			link.EndIndex = attributeBlock[1];
+			link.StartIndex = attributeBlock[0] - 1;
+			link.EndIndex = attributeBlock[1] - 1;
 
 			if (attributeBlock[2] == 0)
 			{
@@ -117,15 +118,17 @@ public class HelpDatabaseTopicLine
 			}
 			else
 			{
-				link.TargetContextString = new StringValue();
+				var contextStringBuilder = new StringValue();
 
 				attributeBlock = attributeBlock.Slice(2);
 
 				while ((attributeBlock.Length > 0) && (attributeBlock[0] != 0))
 				{
-					link.TargetContextString.Append(attributeBlock[0]);
+					contextStringBuilder.Append(attributeBlock[0]);
 					attributeBlock = attributeBlock.Slice(1);
 				}
+
+				link.TargetContextString = contextStringBuilder.ToString();
 
 				attributeBlock = attributeBlock.Slice(1); // the NUL character
 			}

@@ -216,7 +216,7 @@ public static class HelpFileLoader
 						.Where(mapping => mapping.TopicIndex == i)
 						.Select(mapping => mapping.String);
 
-					ret.AddTopic(DecodeTopic(compressedData, huffmanTree, keywords), contextStringsForTopic);
+					ret.AddTopic(DecodeTopic(ret, compressedData, huffmanTree, keywords), contextStringsForTopic);
 				}
 
 				yield return ret;
@@ -224,7 +224,7 @@ public static class HelpFileLoader
 		}
 	}
 
-	static HelpDatabaseTopic DecodeTopic(byte[] compressedData, HuffmanTreeNode? huffmanTree, byte[][]? keywords)
+	static HelpDatabaseTopic DecodeTopic(HelpDatabase database, byte[] compressedData, HuffmanTreeNode? huffmanTree, byte[][]? keywords)
 	{
 		if (compressedData.Length < 2)
 			throw new FormatException("Invalid section data: length is " + compressedData.Length);
@@ -248,7 +248,7 @@ public static class HelpFileLoader
 		dataSpan = dataSpan.Slice(0, decompressedDataLength);
 
 		// Step 4: Transform to in-memory HelpFileTopic
-		return HelpDatabaseTopic.Parse(dataSpan);
+		return HelpDatabaseTopic.Parse(database, dataSpan);
 	}
 
 	static Span<byte> HuffmanDecompress(ReadOnlySpan<byte> dataSpan, HuffmanTreeNode huffmanTreeRoot)

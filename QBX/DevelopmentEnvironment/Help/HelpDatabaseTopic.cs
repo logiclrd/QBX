@@ -3,10 +3,11 @@ using System.Collections.Generic;
 
 namespace QBX.DevelopmentEnvironment.Help;
 
-public class HelpDatabaseTopic
+public class HelpDatabaseTopic(HelpDatabase database)
 {
-	// TODO
 	public string TopicName = "Unknown";
+
+	public HelpDatabase Database => database;
 
 	public List<string> Statements = new List<string>();
 	public List<HelpDatabaseTopicLine> Lines = new List<HelpDatabaseTopicLine>();
@@ -20,9 +21,9 @@ public class HelpDatabaseTopic
 		return "";
 	}
 
-	public static HelpDatabaseTopic Parse(ReadOnlySpan<byte> data)
+	public static HelpDatabaseTopic Parse(HelpDatabase database, ReadOnlySpan<byte> data)
 	{
-		var topic = new HelpDatabaseTopic();
+		var topic = new HelpDatabaseTopic(database);
 
 		while (data.Length > 0)
 		{

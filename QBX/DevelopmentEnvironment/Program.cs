@@ -567,55 +567,97 @@ public partial class Program : HostedProgram, IOvertypeFlag
 		return dialog;
 	}
 
+	List<HelpDatabaseTopic> _helpHistory = new List<HelpDatabaseTopic>();
+
 	public void ShowHelpTopic(string contextString)
 	{
-		if (HelpSystem.TryGetTopic(contextString, out var topic))
+		HelpDatabaseTopic? topic;
+
+		if (string.Equals(contextString, "!B", StringComparison.OrdinalIgnoreCase))
 		{
-			int maximumHeight = TextLibrary.Height;
+			if (_helpHistory.Count < 2)
+				return;
 
-			maximumHeight--; // menu bar
-			maximumHeight--; // reference bar
-			maximumHeight--; // primary viewport
-			maximumHeight--; // immediate viewport
+			// Get the second-to-last entry, because the last entry is the one currently visible.
+			topic = _helpHistory[_helpHistory.Count - 2];
 
-			if (SplitViewport != null)
-				maximumHeight--; // split viewport
-
-			int helpViewportHeight = Math.Min(maximumHeight, topic.Lines.Count);
-
-			int remainingLines = maximumHeight - helpViewportHeight;
-
-			int otherViewports = (SplitViewport != null ? 3 : 2);
-
-			int minimumLinesNeeded = otherViewports + 1;
-
-			if (remainingLines < minimumLinesNeeded)
-			{
-				int deficit = minimumLinesNeeded - remainingLines;
-
-				helpViewportHeight -= deficit;
-				remainingLines += deficit;
-			}
-
-			int primaryViewportLines = remainingLines / otherViewports;
-
-			remainingLines -= primaryViewportLines;
-
-			int splitViewportLines = (SplitViewport != null) ? remainingLines / 2 : 0;
-			int immediateViewportLines = remainingLines - splitViewportLines;
-
-			HelpViewport ??= new Viewport(Parser) { IsEditable = false };
-			HelpViewport.HelpTopic = topic;
-			HelpViewport.Height = helpViewportHeight;
-			HelpViewport.UpdateHeading();
-
-			PrimaryViewport.Height = primaryViewportLines - 1;
-			SplitViewport?.Height = splitViewportLines - 1;
-			ImmediateViewport.Height = immediateViewportLines - 1;
-
-
-			FocusedViewport = HelpViewport;
+			// topic will be re-added, so remove both the currently-visible topic and the one we're about to show.
+			_helpHistory.RemoveRange(_helpHistory.Count - 2, 2);
 		}
+		else if (!HelpSystem.TryGetTopic(contextString, out topic))
+			return;
+
+		ShowHelpTopic(topic);
+	}
+
+	public void ShowHelpTopic(HelpDatabaseTopic topic)
+	{
+		_helpHistory.Add(topic);
+
+		int maximumHeight = TextLibrary.Height;
+
+		maximumHeight--; // menu bar
+		maximumHeight--; // reference bar
+		maximumHeight--; // primary viewport
+		maximumHeight--; // immediate viewport
+
+		if (SplitViewport != null)
+			maximumHeight--; // split viewport
+
+		int helpViewportHeight = Math.Min(maximumHeight, topic.Lines.Count);
+
+		int remainingLines = maximumHeight - helpViewportHeight;
+
+		int otherViewports = (SplitViewport != null ? 3 : 2);
+
+		int minimumLinesNeeded = otherViewports + 1;
+
+		if (remainingLines < minimumLinesNeeded)
+		{
+			int deficit = minimumLinesNeeded - remainingLines;
+
+			helpViewportHeight -= deficit;
+			remainingLines += deficit;
+		}
+
+		int primaryViewportLines = remainingLines / otherViewports;
+
+		remainingLines -= primaryViewportLines;
+
+		int splitViewportLines = (SplitViewport != null) ? remainingLines / 2 : 0;
+		int immediateViewportLines = remainingLines - splitViewportLines;
+
+		HelpViewport ??= new Viewport(Parser) { IsEditable = false };
+		HelpViewport.HelpTopic = topic;
+		HelpViewport.Height = helpViewportHeight;
+		HelpViewport.UpdateHeading();
+
+		// Place cursor at the start of the first link.
+		int cursorX = 0;
+		int cursorY = 0;
+
+		for (int y = 0; y < topic.Lines.Count; y++)
+		{
+			var line = topic.Lines[y];
+
+			if ((line.Links != null) && line.Links.Any())
+			{
+				var link = line.Links[0];
+
+				cursorX = link.StartIndex;
+				cursorY = y;
+
+				break;
+			}
+		}
+
+		HelpViewport.ScrollCursorIntoView(cursorX, cursorY, 0, 0, ViewportPositioningPriority.Cursor, TextLibrary.Width - 2, ignoreErrors: true);
+
+		PrimaryViewport.Height = primaryViewportLines - 1;
+		SplitViewport?.Height = splitViewportLines - 1;
+		ImmediateViewport.Height = immediateViewportLines - 1;
+
+		FocusedViewport = HelpViewport;
 	}
 
 	// Comes from another thread
