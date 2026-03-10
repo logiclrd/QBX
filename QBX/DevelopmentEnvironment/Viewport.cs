@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 
 using QBX.CodeModel;
-using QBX.CodeModel.Statements;
 using QBX.DevelopmentEnvironment.Help;
 using QBX.LexicalAnalysis;
 using QBX.Parser;

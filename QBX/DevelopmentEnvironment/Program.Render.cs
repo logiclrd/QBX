@@ -263,6 +263,8 @@ public partial class Program
 
 	ResettableStringWriter _lineRenderBuffer = new ResettableStringWriter();
 
+	static readonly StringBuilder EmptyBuffer = new StringBuilder();
+
 	int RenderViewport(int row, Viewport viewport, bool connectUp, bool verticalScrollBar = true, bool horizontalScrollBar = true)
 	{
 		int nextLineIndex = -1;
@@ -393,10 +395,15 @@ public partial class Program
 
 			int lineIndex = y + viewport.ScrollY;
 
+			var (unselectedLeft, selected, unselectedRight) =
+				CalculateSelectionHighlight(viewport.Clipboard, lineIndex, viewport.ScrollX, viewportContentWidth, viewport.CompilationElement);
+
 			StringBuilder buffer;
 
 			if ((lineIndex == viewport.CursorY) && (viewport.CurrentLineBuffer != null))
 				buffer = viewport.CurrentLineBuffer;
+			else if ((viewport.HelpTopic != null) && (selected == 0))
+				buffer = EmptyBuffer;
 			else
 			{
 				_lineRenderBuffer.Reset();
@@ -412,9 +419,6 @@ public partial class Program
 				chars = 0;
 			if (chars > viewportContentWidth)
 				chars = viewportContentWidth;
-
-			var (unselectedLeft, selected, unselectedRight) =
-				CalculateSelectionHighlight(viewport.Clipboard, lineIndex, viewport.ScrollX, viewportContentWidth, viewport.CompilationElement);
 
 			var rowAttr = normalAttr;
 			var rowHighlightAttr = highlightAttr;
@@ -487,6 +491,17 @@ public partial class Program
 						TextLibrary.WriteText(_spaces, 0, virtualChars);
 					}
 				}
+			}
+			else if ((viewport.HelpTopic != null) && (lineIndex < viewport.HelpTopic.Lines.Count))
+			{
+				// Draw a formatted help topic line.
+				var line = viewport.HelpTopic.Lines[lineIndex];
+
+				line.RenderFormatted(
+					Configuration,
+					TextLibrary,
+					viewport.ScrollX,
+					viewportContentWidth);
 			}
 			else
 			{

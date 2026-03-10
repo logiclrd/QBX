@@ -28,9 +28,8 @@ public class HelpDatabaseTopic
 		{
 			var line = HelpDatabaseTopicLine.Parse(ref data);
 
-			if (line.Text.StartsWith((byte)'.')
-			 || line.Text.StartsWith((byte)':'))
-				topic.Statements.Add(line.Text.ToString());
+			if (line.IsCommandLine)
+				topic.Statements.Add(line.ToPlainTextString());
 			else
 				topic.Lines.Add(line);
 		}
