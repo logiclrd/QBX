@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 
 using QBX.Firmware;
@@ -8,7 +7,7 @@ using QBX.Utility;
 
 namespace QBX.DevelopmentEnvironment.Dialogs.Widgets;
 
-public class HorizontalListBox<TValue> : ListBox<TValue>
+public class HorizontalListBox<TValue> : ListBox<HorizontalListBox<TValue>, TValue>
 	where TValue : notnull
 {
 	public HorizontalListBox()
@@ -16,11 +15,13 @@ public class HorizontalListBox<TValue> : ListBox<TValue>
 		IsTabStop = true;
 	}
 
+	protected override HorizontalListBox<TValue> GetSelf() => this;
+
 	int[] _columnWidths = Array.Empty<int>();
 	int[] _columnOffsets = Array.Empty<int>();
 	int _maxScrollColumnIndex;
 
-	public override void EnsureVisible(int index)
+	public override HorizontalListBox<TValue> EnsureVisible(int index)
 	{
 		if (index >= 0)
 		{
@@ -50,6 +51,8 @@ public class HorizontalListBox<TValue> : ListBox<TValue>
 				columnLeft += _columnWidths[ScrollPosition];
 			}
 		}
+
+		return this;
 	}
 
 	[ThreadStatic]
@@ -173,12 +176,22 @@ public class HorizontalListBox<TValue> : ListBox<TValue>
 		int x = X + bounds.X1;
 		int y = Y + bounds.Y1;
 
-		DialogPaint.DrawScrollableBox(
-			x, y, Width, Height,
-			title: "",
-			configuration, visual,
-			horizontalScrollValue: ScrollPosition,
-			horizontalScrollMax: _maxScrollColumnIndex + 1);
+		if (ShowScrollBar)
+		{
+			DialogPaint.DrawScrollableBox(
+				x, y, Width, Height,
+				title: "",
+				configuration, visual,
+				horizontalScrollValue: ScrollPosition,
+				horizontalScrollMax: _maxScrollColumnIndex + 1);
+		}
+		else
+		{
+			DialogPaint.DrawBox(
+				x, y, Width, Height,
+				title: "",
+				configuration, visual);
+		}
 
 		int innerX1 = x + 1;
 		int innerY1 = y + 1;
@@ -216,7 +229,7 @@ public class HorizontalListBox<TValue> : ListBox<TValue>
 				}
 			}
 
-			if ((IsFocused || ShowSelectionWhenUnfocused)
+			if ((IsFocused ? ShowSelectionWhenFocused : ShowSelectionWhenUnfocused)
 			 && (SelectedIndex >= 0) && (SelectedIndex < Items.Count))
 			{
 				int selectionColumn = SelectedIndex / columnHeight;

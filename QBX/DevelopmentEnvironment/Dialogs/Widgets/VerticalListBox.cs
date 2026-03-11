@@ -6,7 +6,7 @@ using QBX.Utility;
 
 namespace QBX.DevelopmentEnvironment.Dialogs.Widgets;
 
-public class VerticalListBox<TValue> : ListBox<TValue>
+public class VerticalListBox<TValue> : ListBox<VerticalListBox<TValue>, TValue>
 	where TValue : notnull
 {
 	public VerticalListBox()
@@ -14,7 +14,9 @@ public class VerticalListBox<TValue> : ListBox<TValue>
 		IsTabStop = true;
 	}
 
-	public override void EnsureVisible(int index)
+	protected override VerticalListBox<TValue> GetSelf() => this;
+
+	public override VerticalListBox<TValue> EnsureVisible(int index)
 	{
 		if (index >= 0)
 		{
@@ -25,6 +27,8 @@ public class VerticalListBox<TValue> : ListBox<TValue>
 			if (index < ScrollPosition)
 				ScrollPosition = index;
 		}
+
+		return this;
 	}
 
 	[ThreadStatic]
@@ -132,12 +136,22 @@ public class VerticalListBox<TValue> : ListBox<TValue>
 		int innerWidth = innerX2 - innerX1 + 1;
 		int innerHeight = innerY2 - innerY1 + 1;
 
-		DialogPaint.DrawScrollableBox(
-			x, y, Width, Height,
-			title: "",
-			configuration, visual,
-			verticalScrollValue: ScrollPosition,
-			verticalScrollMax: Math.Max(1, Items.Count - innerHeight));
+		if (ShowScrollBar)
+		{
+			DialogPaint.DrawScrollableBox(
+				x, y, Width, Height,
+				title: "",
+				configuration, visual,
+				verticalScrollValue: ScrollPosition,
+				verticalScrollMax: Math.Max(1, Items.Count - innerHeight));
+		}
+		else
+		{
+			DialogPaint.DrawBox(
+				x, y, Width, Height,
+				title: "",
+				configuration, visual);
+		}
 
 		using (visual.PushClipRect(bounds))
 		using (visual.PushClipRect(innerX1, innerY1, innerX2, innerY2))
@@ -147,7 +161,7 @@ public class VerticalListBox<TValue> : ListBox<TValue>
 			for (int idx = ScrollPosition, itemY = innerY1; itemY <= innerY2; idx++, itemY++)
 			{
 				bool highlight =
-					(IsFocused || ShowSelectionWhenUnfocused) &&
+					(IsFocused ? ShowSelectionWhenFocused : ShowSelectionWhenUnfocused) &&
 					(idx == SelectedIndex);
 
 				string label = ((idx >= 0) && (idx < Items.Count)) ? Items[idx].Label : "";
