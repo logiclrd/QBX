@@ -1,8 +1,8 @@
 ﻿using System;
-using System.IO;
-using System.Threading;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Threading;
 
 using QBX.CodeModel;
 using QBX.DevelopmentEnvironment.Dialogs;
@@ -501,7 +501,7 @@ public partial class Program : HostedProgram, IOvertypeFlag
 
 			Render();
 
-			if (Machine.Keyboard.WaitForInput(cancellationToken))
+			if (Machine.Keyboard.WaitForInput(cancellationToken, eatReleaseEvents: false))
 			{
 				var input = Machine.Keyboard.GetNextEvent();
 

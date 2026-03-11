@@ -157,7 +157,7 @@ public class Keyboard(Machine machine)
 		}
 	}
 
-	public bool WaitForInput(int timeoutMilliseconds = Timeout.Infinite)
+	public bool WaitForInput(int timeoutMilliseconds = Timeout.Infinite, bool eatReleaseEvents = true)
 	{
 		if (timeoutMilliseconds != Timeout.Infinite)
 			return WaitForInput(TimeSpan.FromMilliseconds(timeoutMilliseconds));
@@ -169,7 +169,8 @@ public class Keyboard(Machine machine)
 			if (_interruptCount > 0)
 				return false;
 
-			EatReleaseEvents(_inputQueue);
+			if (eatReleaseEvents)
+				EatReleaseEvents(_inputQueue);
 
 			Interlocked.Increment(ref _waitCount);
 
@@ -182,7 +183,8 @@ public class Keyboard(Machine machine)
 					if (_interruptCount > 0)
 						return true;
 
-					EatReleaseEvents(_inputQueue);
+					if (eatReleaseEvents)
+						EatReleaseEvents(_inputQueue);
 				}
 			}
 			finally
@@ -205,7 +207,7 @@ public class Keyboard(Machine machine)
 		}
 	}
 
-	public bool WaitForInput(TimeSpan timeout)
+	public bool WaitForInput(TimeSpan timeout, bool eatReleaseEvents = true)
 	{
 		var deadline = DateTime.UtcNow + timeout;
 
@@ -216,7 +218,8 @@ public class Keyboard(Machine machine)
 			if (_interruptCount > 0)
 				return false;
 
-			EatReleaseEvents(_inputQueue);
+			if (eatReleaseEvents)
+				EatReleaseEvents(_inputQueue);
 
 			Interlocked.Increment(ref _waitCount);
 
@@ -234,7 +237,8 @@ public class Keyboard(Machine machine)
 					if (_interruptCount > 0)
 						return false;
 
-					EatReleaseEvents(_inputQueue);
+					if (eatReleaseEvents)
+						EatReleaseEvents(_inputQueue);
 				}
 			}
 			finally
@@ -248,7 +252,7 @@ public class Keyboard(Machine machine)
 		}
 	}
 
-	public bool WaitForInput(CancellationToken cancellationToken)
+	public bool WaitForInput(CancellationToken cancellationToken, bool eatReleaseEvents = true)
 	{
 		void NotifyWaitLoop()
 		{
@@ -275,7 +279,8 @@ public class Keyboard(Machine machine)
 					if (_interruptCount > 0)
 						return false;
 
-					EatReleaseEvents(_inputQueue);
+					if (eatReleaseEvents)
+						EatReleaseEvents(_inputQueue);
 
 					if (cancellationToken.IsCancellationRequested)
 						return false;
@@ -292,7 +297,7 @@ public class Keyboard(Machine machine)
 		}
 	}
 
-	public bool WaitForNewInput(int timeoutMilliseconds = Timeout.Infinite)
+	public bool WaitForNewInput(int timeoutMilliseconds = Timeout.Infinite, bool eatReleaseEvents = true)
 	{
 		if (timeoutMilliseconds != Timeout.Infinite)
 			return WaitForNewInput(TimeSpan.FromMilliseconds(timeoutMilliseconds));
@@ -320,7 +325,8 @@ public class Keyboard(Machine machine)
 					if (_interruptCount > 0)
 						return false;
 
-					EatReleaseEvents(_divertedEvents);
+					if (eatReleaseEvents)
+						EatReleaseEvents(_divertedEvents);
 				}
 
 				foreach (var newEvent in _divertedEvents)
@@ -340,7 +346,7 @@ public class Keyboard(Machine machine)
 		}
 	}
 
-	public bool WaitForNewInput(TimeSpan timeout)
+	public bool WaitForNewInput(TimeSpan timeout, bool eatReleaseEvents = true)
 	{
 		var deadline = DateTime.UtcNow + timeout;
 
@@ -372,7 +378,8 @@ public class Keyboard(Machine machine)
 					if (_interruptCount > 0)
 						return false;
 
-					EatReleaseEvents(_divertedEvents);
+					if (eatReleaseEvents)
+						EatReleaseEvents(_divertedEvents);
 				}
 
 				foreach (var newEvent in _divertedEvents)
