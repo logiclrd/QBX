@@ -25,7 +25,7 @@ public class HelpDatabase(bool caseSensitive)
 
 		foreach (var contextString in contextStrings)
 		{
-			TopicByContextString[contextString] = topic;
+			TopicByContextString.TryAdd(contextString, topic);
 
 			if (!contextString.StartsWith('@'))
 				GlobalContextStrings.Add(contextString);
