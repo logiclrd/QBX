@@ -485,6 +485,10 @@ public partial class Program : HostedProgram, IOvertypeFlag
 
 		SetWindowIcon();
 
+		HelpSystem.LoadFile("BAS7ADVR.HLP");
+		HelpSystem.LoadFile("BAS7ENER.HLP");
+		HelpSystem.LoadFile("BAS7EX.HLP");
+
 		while (Machine.KeepRunning && !Machine.DOS.IsTerminated)
 		{
 			if (AutoRun)
@@ -568,6 +572,12 @@ public partial class Program : HostedProgram, IOvertypeFlag
 	}
 
 	List<HelpDatabaseTopic> _helpHistory = new List<HelpDatabaseTopic>();
+
+	public bool TryShowHelpTopicForTokenUnderCursor()
+	{
+		// TODO
+		return false;
+	}
 
 	public void ShowHelpTopic(string contextString)
 	{

@@ -248,6 +248,22 @@ public partial class Program
 		{
 			switch (input.ScanCode)
 			{
+				case ScanCode.F1:
+				{
+					if (!input.Modifiers.CtrlKey)
+					{
+						if (input.Modifiers.ShiftKey)
+						{
+							ShowHelpTopic("bas7qck.hlp!h.default");
+							ReloadViewportParameters();
+							select = false;
+						}
+						else if (TryShowHelpTopicForTokenUnderCursor())
+							ReloadViewportParameters();
+					}
+
+					break;
+				}
 				case ScanCode.F4:
 				{
 					RestoreOutput();
@@ -503,6 +519,17 @@ public partial class Program
 								ReloadViewportParameters();
 							}
 						}
+					}
+
+					break;
+				}
+				case ScanCode.Escape:
+				{
+					if (FocusedViewport == HelpViewport)
+					{
+						HelpViewport = null;
+						FocusedViewport = PrimaryViewport;
+						ReloadViewportParameters();
 					}
 
 					break;
