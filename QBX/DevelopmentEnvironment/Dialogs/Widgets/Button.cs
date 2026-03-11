@@ -9,6 +9,7 @@ public class Button : Widget
 {
 	public string Text = "";
 	public int AccessKeyIndex = -1;
+	public bool IsDefault = false;
 
 	public override bool IsEnabled
 	{
@@ -43,7 +44,7 @@ public class Button : Widget
 			: configuration.DisplayAttributes.PullDownMenuandDialogBoxDisabledItems;
 
 		var borderAttr =
-			IsFocused
+			(IsFocused || IsDefault)
 			? configuration.DisplayAttributes.DialogBoxActiveCommandButtonBorderCharacters
 			: textAttr;
 
