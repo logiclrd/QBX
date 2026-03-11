@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace QBX.DevelopmentEnvironment;
 
-public class MenuList<TItem>(string label) : MenuItem(label), IList<TItem>, IEnumerable<TItem>
+public class MenuList<TItem>(string label, string? helpContextString = null) : MenuItem(label, helpContextString), IList<TItem>, IEnumerable<TItem>
 	where TItem : MenuItem
 {
 	public List<TItem> Items = new List<TItem>();

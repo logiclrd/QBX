@@ -94,125 +94,125 @@ public partial class Program
 	void InitializeMenuBar()
 	{
 		mnuFile =
-			new Menu("&File", 16)
+			new Menu("&File", 16, "m.f")
 			{
-				(mnuFileNew = new MenuItem("&New Program")),
-				(mnuFileOpenProgram = new MenuItem("&Open Program...")),
-				new MenuItem("&Merge..."),
-				(mnuFileSave = new MenuItem("&Save")),
-				(mnuFileSaveAs = new MenuItem("Save &As...")),
-				(mnuFileSaveAll = new MenuItem("Sa&ve All")),
+				(mnuFileNew = new MenuItem("&New Program", "-324")),
+				(mnuFileOpenProgram = new MenuItem("&Open Program...", "-325")),
+				new MenuItem("&Merge...", "-326"),
+				(mnuFileSave = new MenuItem("&Save", "-327")),
+				(mnuFileSaveAs = new MenuItem("Save &As...", "-328")),
+				(mnuFileSaveAll = new MenuItem("Sa&ve All", "-329")),
 				MenuItem.Separator,
-				new MenuItem("&Create File..."),
-				(mnuFileLoadFile = new MenuItem("&Load File...")),
-				new MenuItem("&Unload File..."),
+				new MenuItem("&Create File...", "-330"),
+				(mnuFileLoadFile = new MenuItem("&Load File...", "-331")),
+				new MenuItem("&Unload File...", "-332"),
 				MenuItem.Separator,
-				new MenuItem("&Print..."),
-				new MenuItem("&DOS Shell"),
+				new MenuItem("&Print...", "-333"),
+				new MenuItem("&DOS Shell", "-334"),
 				MenuItem.Separator,
-				(mnuFileExit = new MenuItem("E&xit")),
+				(mnuFileExit = new MenuItem("E&xit", "-335")),
 			};
 
 		mnuEdit =
-			new Menu("&Edit", 17)
+			new Menu("&Edit", 17, "m.e")
 			{
-				new MenuItem("&Undo     Alt+Bksp") { IsEnabled = false },
-				new MenuItem("&Redo    Ctrl+Bksp") { IsEnabled = false },
-				new MenuItem("Cu&t     Shift+Del") { IsEnabled = false },
-				new MenuItem("&Copy     Ctrl+Ins") { IsEnabled = false },
-				new MenuItem("&Paste   Shift+Ins") { IsEnabled = false },
-				new MenuItem("Cl&ear         Del") { IsEnabled = false },
+				new MenuItem("&Undo     Alt+Bksp", "-336") { IsEnabled = false },
+				new MenuItem("&Redo    Ctrl+Bksp", "-337") { IsEnabled = false },
+				new MenuItem("Cu&t     Shift+Del", "-338") { IsEnabled = false },
+				new MenuItem("&Copy     Ctrl+Ins", "-339") { IsEnabled = false },
+				new MenuItem("&Paste   Shift+Ins", "-341") { IsEnabled = false },
+				new MenuItem("Cl&ear         Del", "-340") { IsEnabled = false },
 				MenuItem.Separator,
-				new MenuItem("New &SUB..."),
-				new MenuItem("New &FUNCTION..."),
+				new MenuItem("New &SUB...", "-342"),
+				new MenuItem("New &FUNCTION...", "-343"),
 			};
 
 		mnuView =
-			new Menu("&View", 21)
+			new Menu("&View", 21, "m.v")
 			{
-				new MenuItem("&SUBs...            F2"),
-				new MenuItem("N&ext SUB     Shift+F2"),
-				new MenuItem("S&plit"),
+				new MenuItem("&SUBs...            F2", "-344"),
+				new MenuItem("N&ext SUB     Shift+F2", "-345"),
+				new MenuItem("S&plit", "-346"),
 				MenuItem.Separator,
-				new MenuItem("&Next Statement"),
-				new MenuItem("O&utput Screen      F4"),
+				new MenuItem("&Next Statement", "-347"),
+				new MenuItem("O&utput Screen      F4", "-348"),
 				MenuItem.Separator,
-				new MenuItem("&Included File") { IsEnabled = false },
-				new MenuItem("Included &Lines"),
+				new MenuItem("&Included File", "-349") { IsEnabled = false },
+				new MenuItem("Included &Lines", "-350"),
 			};
 
 		mnuSearch =
-			new Menu("&Search", 24)
+			new Menu("&Search", 24, "m.s")
 			{
-				new MenuItem("&Find..."),
-				new MenuItem("&Selected Text     Ctrl+\\"),
-				new MenuItem("&Repeat Last Find      F3"),
-				new MenuItem("&Change..."),
-				new MenuItem("&Label..."),
+				new MenuItem("&Find...", "-351"),
+				new MenuItem("&Selected Text     Ctrl+\\", "-352"),
+				new MenuItem("&Repeat Last Find      F3", "-353"),
+				new MenuItem("&Change...", "-354"),
+				new MenuItem("&Label...", "-355"),
 			};
 
 		mnuRun =
-			new Menu("&Run", 19)
+			new Menu("&Run", 19, "m.r")
 			{
-				new MenuItem("&Start      Shift+F5"),
-				new MenuItem("&Restart"),
-				new MenuItem("Co&ntinue         F5"),
-				new MenuItem("Modify &COMMAND$..."),
+				new MenuItem("&Start      Shift+F5", "-356"),
+				new MenuItem("&Restart", "-357"),
+				new MenuItem("Co&ntinue         F5", "-358"),
+				new MenuItem("Modify &COMMAND$...", "-359"),
 				MenuItem.Separator,
-				new MenuItem("Make E&XE File..."),
-				new MenuItem("Make &Library..."),
+				new MenuItem("Make E&XE File...", "-360"),
+				new MenuItem("Make &Library...", "-361"),
 				MenuItem.Separator,
-				new MenuItem("Set &Main Module..."),
+				new MenuItem("Set &Main Module...", "-362"),
 			};
 
 		mnuDebug =
-			new Menu("&Debug", 27)
+			new Menu("&Debug", 27, "m.d")
 			{
-				(mnuDebugAddWatch = new MenuItem("&Add Watch...")),
-				(mnuDebugInstantWatch = new MenuItem("&Instant Watch...   Shift+F9")),
-				(mnuDebugWatchpoint = new MenuItem("&Watchpoint...")),
-				(mnuDebugDeleteWatch = new MenuItem("&Delete Watch...") { IsEnabled = false }),
-				(mnuDebugDeleteAllWatch = new MenuItem("De&lete All Watch") { IsEnabled = false }),
+				(mnuDebugAddWatch = new MenuItem("&Add Watch...", "-363")),
+				(mnuDebugInstantWatch = new MenuItem("&Instant Watch...   Shift+F9", "-364")),
+				(mnuDebugWatchpoint = new MenuItem("&Watchpoint...", "-365")),
+				(mnuDebugDeleteWatch = new MenuItem("&Delete Watch...", "-366") { IsEnabled = false }),
+				(mnuDebugDeleteAllWatch = new MenuItem("De&lete All Watch", "-367") { IsEnabled = false }),
 				MenuItem.Separator,
-				new MenuItem("&Trace On"),
-				new MenuItem("&History On"),
+				new MenuItem("&Trace On", "-368"),
+				new MenuItem("&History On", "-369"),
 				MenuItem.Separator,
-				new MenuItem("Toggle &Breakpoint        F9"),
-				new MenuItem("&Clear All Breakpoints"),
-				new MenuItem("Break on &Errors"),
-				new MenuItem("&Set Next Statement") { IsEnabled = false },
+				new MenuItem("Toggle &Breakpoint        F9", "-370"),
+				new MenuItem("&Clear All Breakpoints", "-371"),
+				new MenuItem("Break on &Errors", "-372"),
+				new MenuItem("&Set Next Statement", "-373") { IsEnabled = false },
 			};
 
 		mnuCalls =
-			new Menu("&Calls", 15)
+			new Menu("&Calls", 15, "m.c")
 			{
 				// Dynamically populated
 			};
 
 		mnuUtility =
-			new Menu("&Utility", 18)
+			new Menu("&Utility", 18, "m.u")
 			{
-				new MenuItem("&Run DOS Command..."),
-				new MenuItem("&Customize Menu..."),
+				new MenuItem("&Run DOS Command...", "-374"),
+				new MenuItem("&Customize Menu...", "-375"),
 			};
 
 		mnuOptions =
-			new Menu("&Options", 18)
+			new Menu("&Options", 18, "m.o")
 			{
-				(mnuOptionsDisplay = new MenuItem("&Display...")),
-				new MenuItem("Set &Paths..."),
-				new MenuItem("Right &Mouse..."),
-				new MenuItem("&Syntax Checking") { IsChecked = true },
+				(mnuOptionsDisplay = new MenuItem("&Display...", "-384")),
+				new MenuItem("Set &Paths...", "-385"),
+				new MenuItem("Right &Mouse...", "-386"),
+				new MenuItem("&Syntax Checking", "-387") { IsChecked = true },
 				(mnuOptionsDetectDelayLoops = new MenuItem("Detect Delay &Loops") { IsChecked = DetectDelayLoops }),
 			};
 
 		mnuHelp =
-			new Menu("&Help", 25)
+			new Menu("&Help", 25, "m.h")
 			{
-				(mnuHelpIndex = new MenuItem("&Index")),
-				(mnuHelpContents = new MenuItem("&Contents")),
-				(mnuHelpTopic = new MenuItem("&Topic:                 F1") { IsEnabled = false }),
-				(mnuHelpUsingHelp = new MenuItem("Using &Help       Shift+F1")),
+				(mnuHelpIndex = new MenuItem("&Index", "-389")),
+				(mnuHelpContents = new MenuItem("&Contents", "-390")),
+				(mnuHelpTopic = new MenuItem("&Topic:                 F1", "-391") { IsEnabled = false }),
+				(mnuHelpUsingHelp = new MenuItem("Using &Help       Shift+F1", "-392")),
 			};
 
 		MenuBar =
