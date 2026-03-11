@@ -1,0 +1,245 @@
+File: "m.f"
+File New: "-324"
+File Open: "-325"
+File Merge: "-326"
+File Save: "-327"
+File Save As: "-328"
+File Save All: "-329"
+File Create: "-330"
+File Load: "-331"
+File Unload: "-332"
+File Print: "-333"
+File DOS Shell: "-334"
+File Exit: "-335"
+
+Edit: "m.e"
+Edit Undo: "-336"
+Edit Redo: "-337"
+Edit Cut: "-338"
+Edit Copy: "-339"
+Edit Clear: "-340"
+Edit Paste: "-341"
+Edit New SUB: "-342"
+Edit New FUNCTION: "-343"
+
+View: "m.v"
+View SUBs: "-344"
+View Next SUB: "-345"
+View Split: "-346"
+View Next Statement: "-347"
+View Output Screen: "-348"
+View Included File: "-349"
+View Included Lines: "-350"
+
+Search: "m.s"
+Search Find: "-351"
+Search Selected Text: "-352"
+Search Repeat Last Find: "-353"
+Search Change: "-354"
+Search Label: "-355"
+
+Run: "m.r"
+Run Start: "-356"
+Run Restart: "-357"
+Run Continue: "-358"
+Run Modify COMMAND$: "-359"
+Run Make EXE File: "-360"
+Run Make Library: "-361"
+Run Set Main Module: "-362"
+
+Debug: "m.d"
+Debug Add Watch: "-363"
+Debug Instant Watch: "-364"
+Debug Watchpoint: "-365"
+Debug Delete Watch: "-366"
+Debug Delete All Watch: "-367"
+Debug Trace On: "-368"
+Debug History On: "-369"
+Debug Toggle Breakpoint: "-370"
+Debug Clear All Breakpoints: "-371"
+Debug Break On Errors: "-372"
+Debug Set Next Statement: "-373"
+
+Utility: "m.u"
+Utility Run DOS Command: "-374"
+Utility Customize Menu: "-375"
+Utility custom item: "-376"
+
+Calls: "m.c"
+Calls item: "-393"
+
+Options: "m.o"
+Options Display: "-384"
+Options Set Paths: "-385"
+Options Right Mouse: "-386"
+Options Syntax Checking: "-387"
+
+Help: "m.h"
+Help Index: "-389"
+Help Contents: "-390"
+Help Topic Under Cursor: "-391"
+Help Using Help: "-392"
+
+Open File Dialog: "-920"
+Merge Dialog: "-921"
+Save As Dialog: "-902"
+Create File Dialog: "-901"
+Load File Dialog: "-903"
+Print Dialog: "-904"
+New Procedure Dialog: "-912"
+SUBs Dialog: "-911"
+Find Dialog: "-908"
+Change Dialog: "-907"
+Change Match Dialog: "-909"
+Make EXE File Dialog: "-905"
+Make Library Dialog: "-906"
+Watch Dialog: "-915"
+Delete Watch Dialog: "-910"
+Run DOS Command Dialog: "-917"
+Customize Menu Overview Dialog: "-918"
+Customize Menu Add/Edit Item Dialog: "-919"
+Display Options Dialog: "-913"
+Path Options Dialog: "-914"
+Right Mouse Button Dialog: "-900"
+Unload File Dialog: "-264"
+Move SUB Dialog: "-263"
+Modify COMMAND$ Dialog: "-246"
+Set Main Module Dialog: "-266"
+Add Watch Dialog: "-244"
+Syntax Error Dialog: "-121"
+Cannot Continue Dialog: "-198"
+No Main Module Dialog: "-199"
+Help Not Available Dialog: "-203" => F1 but token doesn't match anything AND at least one error exists in program
+File Already Loaded Dialog: "-204" => trying to use Load File on a file that's already in the loaded set
+Duplicate SUB or FUNCTION Dialog: "-205" => trying to use Load File but the target file has a conflicting routine with already-loaded units
+Module Missing Dialog: "-206" => trying to load a .MAK file and one of the modules couldn't be found
+Cannot Edit Included Lines Dialog: "-207" => trying to edit included lines when "Show Included Lines" is on
+Cannot Edit With Included Lines Visible Dialog: "-208" => trying to edit program when "Show Included Lines" is on
+Overwrite Prompt Dialog: "-211" => trying to Save As but the target file already exists
+Confirm Deletion of SUB Dialog: "-212" => trying to delete SUB from the SUBs dialog (F2)
+Confirm Remark Instead of Blank Line Dialog: "-213" => trying to insert a blank line before a routine's opening statement
+Confirm Discard Changes (Unload) Dialog: "-214" => trying to unload a file that is not pristine
+Confirm Discard Changes (New/Open) Dialog: "-215" => trying to start/open a new program when the edit state is not pristine
+Save Include File Prompt Dialog: "-216" => trying to run program with an include file open that is not pristine
+Save Include Files First Prompt Dialog: "-217" => trying to save a module from which an included file is open that is not pristine
+Cannot Cross Procedure/Module Boundary Dialog: "-218" => trying to Set Next Statement to a different routine
+Must Specify Name Dialog: "-241" => accepting New SUB or New FUNCTION dialog with empty text box
+DATA Moved To Module Level Dialog: "-242" => not sure what triggers this, maybe on load?
+File Name Conflict Dialog: "-243" => trying to Save As with a module name that is already in use
+Add Watchpoint Dialog: "-245"
+Must Specify Search String Dialog: "-253" => accepting Find or Change dialog with an empty Find What field
+Not Found Dialog: "-254" => find didn't find it
+Replace All Finished Dialog: "-255" => after completion of Replace All, cursor has been returned to the starting point
+Wrong Item Type Dialog: "-265" => activating the "Move" button with a module selected in the SUBs dialog (F2)
+Swap Floppy Disk Dialog: "-267" => performing an action which accesses A: or B: when a common drive has been renamed to the other one
+Cannot Change Tab Stops Dialog: "-273" => trying to edit the tab width when a loaded document is using tabs
+QuickLibrary Name Conflict Dialog: "-274" => trying to compile a .QLB with the same name as another .QLB loaded in the current session
+Out Of Buffer Space Dialog: "-275"
+Code Too Large Dialog: "-276"
+Procedure Code Too Large Dialog: "-277"
+Invalid Expression for Instant Watch Dialog: "-315"
+Unable To Change To Directory Dialog: "-316" => trying to execute a custom Utility menu item whose Initial Directory specifies a non-existent directory
+Too Many Custom Utilities Dialog: "-317" => trying to add a 9th custom Utility menu item
+Must Specify Menu Text And Path Dialog: "-319" => trying to accept custom Utility menu item dialog with empty Menu Text or Path Name
+Bad Accelerator Key Value (Range) Dialog: "-321" => trying to accept custom Utility menu item dialog with an out-of-range accelerator key value (only 1-10 supported)
+Bad Accelerator Key Value (In Use) Dialog: "-322" => trying to accept custom Utility menu item dialog with an accelerator key number that is already in use
+Key File Not Found Dialog: "-323" => not sure how you specify a key file name, command-line??
+Identifier Too Long Dialog: "-114"
+Invalid Identifier Character Dialog: "-115" => specifying a DEF FN with non-letter or FUNCTION or SUB that start with a digit or contain a type character
+Identifier Cannot End With Dialog: "-116" => specifing a SUB procedure name or a COMMON declaration including a type character
+Cannot Contain Period Dialog: "-117" => a dotted identifier with a disallowed slug
+Out Of Space Dialog: "-118"
+Illegal Number Dialog: "-119" => inappropriate number for context, such as a mismatched type character ("10.5%") or an invalid fixed string length (DIM x AS STRING * 0)
+Not Constant Dialog: "-120" => non-constant expression used to initialize a constant variable
+Not ASCII Dialog: "-123" => BASICA binary format not supported when compiling
+Unsupported Statements Warning Dialog: "-124" => could be useful for unimplemented statements
+Illegal Outside of Routine Dialog: "-149" => Exit Scope statement used outside of any scope
+Illegal Outside of SUB/FUNCTION Dialog: "-150" => SHARED or STATIC used in module level or DEF FN
+Illegal Inside of SUB/FUNCTION Dialog: "-151" => not sure what off the top of my head
+Invalid Statement Preceding SUB/FUNCTION Dialog: "-152" => statement other than REM, DEFtype, EVENT ON and EVENT OFF encountered in the prologue of a SUB/FUNCTION
+SUB/FUNCTION without END SUB/END FUNCTION Dialog: "-153"
+END DEF without DEF Dialog: "-154"
+No Such Field Dialog: "-155"
+Type Not Defined (Parameter) Dialog: "-156" => SUB/FUNCTION parameter 'AS undefinedtype'
+Must Be First Statement On Line Dialog: "-157" => IF/ELSEIF/ELSE/END IF and SELECT CASE/END SELECT
+Cannot Add Code After End Of Routine: "-158"
+TYPE without END TYPE Dialog: "-159"
+END TYPE without TYPE Dialog: "-160"
+Invalid Statement Inside TYPE Dialog: "-161"
+SUBs/FUNCTIONs Not Allowed In Include Files Dialog: "-162"
+Cannot Name SUB/FUNCTION FNxxx Dialog: "-163"
+Cannot Load/Save With Non-Disk Device Dialog: "-164"
+Metacommand Syntax Error Dialog: "-165"
+Breakpoints On First CASE Statement Not Allowed Dialog: "-166"
+Array Already Dimensioned Dialog: "-167" => static array DIMmed twice or dynamic array DIMmed a second time with no ERASE or OPTION BASE used after array already dimensioned
+COMMON And DECLARE Must Precede Executable Statements Dialog: "-168"
+END IF without IF Dialog: "-169"
+IF without END IF Dialog: "-170"
+ELSE without IF Dialog: "-171"
+EXIT FOR outside of FOR Dialog: "-173"
+EXIT DO outside of DO Dialog: "-172"
+DO without LOOP: "-174"
+LOOP without DO: "-175"
+SELECT CASE without END SELECT: "-176"
+CASE without SELECT CASE: "-177"
+END SELECT without SELECT CASE: "-178"
+Cannot Use Fixed-Length String As Parameter: "-179"
+Cannot Pass User-Define Type with CALL: "-180"
+Multi-line DEF FN without END DEF: "-181"
+SUB or FUNCTION Parameter Type Does Not Match DECLARE: "-182"
+SUB or FUNCTION Name Matches QuickLibrary Export: "-183"
+AS Clause Required On First Declaration: "-184" => DIM, REDIM, SHARED or COMMON references an array initially declared with no AS using an AS clause
+AS Clause Required: "-185" => DIM, REDIM, SHARED or COMMON references an array initially declared with AS clause without one
+Statements and Labels Illegal Between SELECT CASE and CASE => "-186"
+Numeric Array Illegal: "-187" => VARPTR$ used on a non-string
+Type Member Outside of TYPE: "-188"
+Too Many COMMON Variables: "-189" => not sure what triggers this
+Incorrect Number of Dimensions: "-190"
+DEF FN Not Permitted In IF/THEN/ELSE or SELECT CASE: "-191"
+FOR Index Variable Already Used: "-194"
+Illegal Type for ISAM OPEN: "-196"
+User-Defined Type Too Large: "-197" => more than 64KB per instance
+Program Contains Unsupported Types Warning: "MSG_UnsupType"
+Module Name Conflict: "-279" => more than one loaded module has the same base name
+Unsupported Features: "-278"
+Executable Statements Not Allowed Before SUB/FUNCTION: "-152"
+Unsupported Statement: "MSG_UnsupStatement"
+Too Many Local Strings: "-195" or "h.pg$" => a procedure can only have up to 255 local strings
+
+Runtime Error 1 "NEXT without FOR": "-1" or "-2001"
+Runtime Error 2 "Syntax Error": "-2" or "-2002"
+Runtime Error 3 "RETURN without GOSUB": "-3" or "-2003"
+Runtime Error 4 "Out of DATA": "-4" or "-2004"
+Runtime Error 5 "Illegal function call": "-5" or "-2005"
+Runtime Error 6 "Overflow": "-6" or "-2006"
+
+// If error 17 results from the IDE ascertaining that it can't continue, "-2017"
+// If error 17 bubbles up from the program, "-17"
+
+So, if an error comes from the program, use the error code directly. If a runtime exception results
+from something the IDE does, add 2000 before negating.
+
+-2024 in particular comes from trying to print and getting no response from the printer
+and -2025 from getting an error back
+
+-24 and -25 come from LPRINT
+
+-71 if disk isn't ready from action taken by the code
+-2071 if disk isn't ready when trying to save/load within the IDE
+
+-72 if disk I/O error from code
+-2072 if disk I/O error from IDE action
+
+-76 if path not found from code
+-2076 if path not found from IDE action
+
+-90 as the fallback for any unprintable error
+
+error -111: call stack overflow
+error -112: "QBX cannot load a document file larger than 64K."
+error -113: "QBX cannot load an include file larger than 64K."
+
+NB: DEF FN permits spaces between "FN" and the rest of the identifier (collapsed down when re-rendered)
+
+NB: Block IF, ELSEIF, ELSE and END IF must be first statement on line
+NB: SELECT CASE and END SELECT must be first statement on line
