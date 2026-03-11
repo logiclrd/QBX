@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -26,6 +27,10 @@ public partial class Program : HostedProgram, IOvertypeFlag
 	public int MainModuleIndex;
 
 	public HelpSystem HelpSystem;
+
+	public const string EnvironmentHelpFile = "BAS7ENER.HLP";
+
+	const string EnvironmentHelpFilePrefix = EnvironmentHelpFile + "!";
 
 	public Viewport? HelpViewport = null;
 	public Viewport PrimaryViewport;
@@ -579,25 +584,31 @@ public partial class Program : HostedProgram, IOvertypeFlag
 		return false;
 	}
 
-	public void ShowHelpTopic(string contextString)
+	public bool TryFindHelpTopic(string contextString, [NotNullWhen(true)] out HelpDatabaseTopic? topic)
 	{
-		HelpDatabaseTopic? topic;
+		topic = null;
 
 		if (string.Equals(contextString, "!B", StringComparison.OrdinalIgnoreCase))
 		{
 			if (_helpHistory.Count < 2)
-				return;
+				return false;
 
 			// Get the second-to-last entry, because the last entry is the one currently visible.
 			topic = _helpHistory[_helpHistory.Count - 2];
 
 			// topic will be re-added, so remove both the currently-visible topic and the one we're about to show.
 			_helpHistory.RemoveRange(_helpHistory.Count - 2, 2);
-		}
-		else if (!HelpSystem.TryGetTopic(_helpHistory.LastOrDefault()?.Database, contextString, out topic))
-			return;
 
-		ShowHelpTopic(topic);
+			return true;
+		}
+		else
+			return HelpSystem.TryGetTopic(_helpHistory.LastOrDefault()?.Database, contextString, out topic);
+	}
+
+	public void ShowHelpTopic(string contextString)
+	{
+		if (TryFindHelpTopic(contextString, out var topic))
+			ShowHelpTopic(topic);
 	}
 
 	public void ShowHelpTopic(HelpDatabaseTopic topic)
@@ -668,6 +679,17 @@ public partial class Program : HostedProgram, IOvertypeFlag
 		ImmediateViewport.Height = immediateViewportLines - 1;
 
 		FocusedViewport = HelpViewport;
+	}
+
+	public void ShowHelpTopicPopup(string contextString)
+	{
+		if (TryFindHelpTopic(contextString, out var topic))
+			ShowHelpTopicPopup(topic);
+	}
+
+	public void ShowHelpTopicPopup(HelpDatabaseTopic topic)
+	{
+		ShowDialog(new HelpPopupDialog(Machine, Configuration, topic));
 	}
 
 	// Comes from another thread

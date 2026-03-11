@@ -379,8 +379,8 @@ public partial class Program
 				case ScanCode.F1:
 					if (SelectedMenu < 0)
 						TryShowHelpTopicForTokenUnderCursor();
-					else
-						break; // TODO: show help topic for the selected menu
+					else if (MenuBar[SelectedMenu].HelpContextString != null)
+						ShowHelpTopicPopup(EnvironmentHelpFilePrefix + MenuBar[SelectedMenu].HelpContextString);
 
 					break;
 
@@ -454,7 +454,16 @@ public partial class Program
 			switch (input.ScanCode)
 			{
 				case ScanCode.F1:
-					// TODO
+					if ((SelectedMenu >= 0)
+					 && (SelectedMenu < MenuBar.Count)
+					 && (SelectedMenuItem >= 0)
+					 && (SelectedMenuItem < MenuBar[SelectedMenu].Items.Count))
+					{
+						var menuItem = MenuBar[SelectedMenu].Items[SelectedMenuItem];
+
+						if (menuItem.HelpContextString != null)
+							ShowHelpTopicPopup(EnvironmentHelpFilePrefix + menuItem.HelpContextString);
+					}
 
 					break;
 
