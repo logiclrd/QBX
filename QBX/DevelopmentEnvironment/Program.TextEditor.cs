@@ -527,10 +527,13 @@ public partial class Program
 				{
 					if (FocusedViewport == HelpViewport)
 					{
-						HelpViewport = null;
 						FocusedViewport = PrimaryViewport;
 						ReloadViewportParameters();
 					}
+
+					HelpViewport = null;
+
+					FocusedViewport.Clipboard.CancelSelection();
 
 					break;
 				}
@@ -734,6 +737,8 @@ public partial class Program
 
 	private void InstantWatchAtCurrentCursorLocation()
 	{
+		FocusedViewport.CommitCurrentLine();
+
 		// If there is a selection, use the selection.
 		// If there isn't a selection, walk backward until we find an
 		// alphanumeric character or a close parenthesis. Then continue
@@ -806,28 +811,7 @@ public partial class Program
 
 						break;
 					default: // Find identifier extent
-						// Grow left
-						while (startIndex > 0)
-						{
-							char ch = buffer[startIndex - 1];
-
-							if (!char.IsAsciiLetterOrDigit(ch))
-								break;
-
-							startIndex--;
-						}
-
-						// Grow right
-						while (endIndex + 1 < buffer.Length)
-						{
-							char ch = buffer[endIndex + 1];
-
-							if (!char.IsAsciiLetterOrDigit(ch)
-							 && !"%&!#@$".Contains(ch))
-								break;
-
-							endIndex++;
-						}
+						FindIdentifierExtent(buffer, ref startIndex, out endIndex);
 
 						break;
 				}
@@ -846,6 +830,40 @@ public partial class Program
 			ShowInstantWatch(_nextStatementRoutine?.Mapper, subject);
 		else
 			PresentError("Invalid expression for Instant Watch");
+	}
+
+	void FindIdentifierExtent(StringBuilder buffer, ref int startIndex, out int endIndex)
+	{
+		// Find identifier
+		if ((startIndex > 0)
+		 && !char.IsAsciiLetterOrDigit(buffer[startIndex])
+		 && char.IsAsciiLetterOrDigit(buffer[startIndex - 1]))
+			startIndex--;
+
+		endIndex = startIndex;
+
+		// Grow left
+		while (startIndex > 0)
+		{
+			char ch = buffer[startIndex - 1];
+
+			if (!char.IsAsciiLetterOrDigit(ch))
+				break;
+
+			startIndex--;
+		}
+
+		// Grow right
+		while (endIndex + 1 < buffer.Length)
+		{
+			char ch = buffer[endIndex + 1];
+
+			if (!char.IsAsciiLetterOrDigit(ch)
+				&& !"%&!#@$".Contains(ch))
+				break;
+
+			endIndex++;
+		}
 	}
 
 	public void NavigateTo(CompilationElement element, int lineNumber, int column)

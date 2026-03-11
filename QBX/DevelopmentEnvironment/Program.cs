@@ -29,8 +29,10 @@ public partial class Program : HostedProgram, IOvertypeFlag
 	public HelpSystem HelpSystem;
 
 	public const string EnvironmentHelpFile = "BAS7ENER.HLP";
+	public const string QuickHelpFile = "BAS7QCK.HLP";
 
 	const string EnvironmentHelpFilePrefix = EnvironmentHelpFile + "!";
+	const string QuickHelpFilePrefix = QuickHelpFile + "!";
 
 	public Viewport? HelpViewport = null;
 	public Viewport PrimaryViewport;
@@ -490,10 +492,6 @@ public partial class Program : HostedProgram, IOvertypeFlag
 
 		SetWindowIcon();
 
-		HelpSystem.LoadFile("BAS7ADVR.HLP");
-		HelpSystem.LoadFile("BAS7ENER.HLP");
-		HelpSystem.LoadFile("BAS7EX.HLP");
-
 		while (Machine.KeepRunning && !Machine.DOS.IsTerminated)
 		{
 			if (AutoRun)
@@ -580,8 +578,28 @@ public partial class Program : HostedProgram, IOvertypeFlag
 
 	public bool TryShowHelpTopicForTokenUnderCursor()
 	{
-		// TODO
-		return false;
+		FocusedViewport.CommitCurrentLine();
+		FocusedViewport.EditCurrentLine();
+
+		var buffer = FocusedViewport.CurrentLineBuffer;
+
+		if (buffer == null)
+			return false;
+
+		int startIndex = FocusedViewport.CursorX;
+
+		FindIdentifierExtent(buffer, ref startIndex, out var endIndex);
+
+		string token = buffer.ToString(startIndex, endIndex - startIndex + 1);
+
+		string contextString = QuickHelpFilePrefix + token;
+
+		if (!TryFindHelpTopic(contextString, out var topic))
+			return false;
+
+		ShowHelpTopic(contextString, focusHelp: false);
+
+		return true;
 	}
 
 	public bool TryFindHelpTopic(string contextString, [NotNullWhen(true)] out HelpDatabaseTopic? topic)
@@ -605,13 +623,13 @@ public partial class Program : HostedProgram, IOvertypeFlag
 			return HelpSystem.TryGetTopic(_helpHistory.LastOrDefault()?.Database, contextString, out topic);
 	}
 
-	public void ShowHelpTopic(string contextString)
+	public void ShowHelpTopic(string contextString, bool focusHelp = true)
 	{
 		if (TryFindHelpTopic(contextString, out var topic))
-			ShowHelpTopic(topic);
+			ShowHelpTopic(topic, focusHelp);
 	}
 
-	public void ShowHelpTopic(HelpDatabaseTopic topic)
+	public void ShowHelpTopic(HelpDatabaseTopic topic, bool focusHelp = true)
 	{
 		_helpHistory.Add(topic);
 
@@ -678,7 +696,8 @@ public partial class Program : HostedProgram, IOvertypeFlag
 		SplitViewport?.Height = splitViewportLines - 1;
 		ImmediateViewport.Height = immediateViewportLines - 1;
 
-		FocusedViewport = HelpViewport;
+		if (focusHelp)
+			FocusedViewport = HelpViewport;
 	}
 
 	public void ShowHelpTopicPopup(string contextString)
