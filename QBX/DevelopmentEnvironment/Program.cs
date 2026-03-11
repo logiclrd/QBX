@@ -584,7 +584,7 @@ public partial class Program : HostedProgram, IOvertypeFlag
 			// topic will be re-added, so remove both the currently-visible topic and the one we're about to show.
 			_helpHistory.RemoveRange(_helpHistory.Count - 2, 2);
 		}
-		else if (!HelpSystem.TryGetTopic(contextString, out topic))
+		else if (!HelpSystem.TryGetTopic(_helpHistory.LastOrDefault()?.Database, contextString, out topic))
 			return;
 
 		ShowHelpTopic(topic);

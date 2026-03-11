@@ -32,13 +32,18 @@ public class HelpDatabase(bool caseSensitive)
 		}
 	}
 
-	public bool TryGetTopic(string contextString, [NotNullWhen(true)] out HelpDatabaseTopic? topic)
+	public bool TryGetGlobalTopic(string contextString, [NotNullWhen(true)] out HelpDatabaseTopic? topic)
 	{
 		if (GlobalContextStrings.Contains(contextString))
 			return TopicByContextString.TryGetValue(contextString, out topic);
 
 		topic = null;
 		return false;
+	}
+
+	public bool TryGetTopic(string contextString, [NotNullWhen(true)] out HelpDatabaseTopic? topic)
+	{
+		return TopicByContextString.TryGetValue(contextString, out topic);
 	}
 }
 

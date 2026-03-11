@@ -93,7 +93,7 @@ public class HelpSystem
 		}
 	}
 
-	public bool TryGetTopic(string contextString, [NotNullWhen(true)] out HelpDatabaseTopic? topic)
+	public bool TryGetTopic(HelpDatabase? currentDatabase, string contextString, [NotNullWhen(true)] out HelpDatabaseTopic? topic)
 	{
 		int separator = contextString.IndexOf('!');
 
@@ -115,18 +115,28 @@ public class HelpSystem
 				}
 			}
 
-			return helpFile.TryGetTopic(contextString, out topic);
+			return helpFile.TryGetGlobalTopic(contextString, out topic);
 		}
 		else
 		{
-			// Search all indexed help files
-			if (_haveCaseInsensitiveContextStrings
-			 && _contextStrings.TryGetValue(contextString.ToLowerInvariant(), out topic))
-				return true;
+			if (currentDatabase != null)
+			{
+				// Search the local database, including local context strings.
+				if (currentDatabase.TryGetTopic(contextString, out topic))
+					return true;
+			}
 
-			if (_haveCaseSensitiveContextStrings
-			 && _contextStrings.TryGetValue(contextString, out topic))
-				return true;
+			if (!contextString.StartsWith('@'))
+			{
+				// Search all indexed help files
+				if (_haveCaseInsensitiveContextStrings
+				 && _contextStrings.TryGetValue(contextString.ToLowerInvariant(), out topic))
+					return true;
+
+				if (_haveCaseSensitiveContextStrings
+				 && _contextStrings.TryGetValue(contextString, out topic))
+					return true;
+			}
 		}
 
 		topic = null;
