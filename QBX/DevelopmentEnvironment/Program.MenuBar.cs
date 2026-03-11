@@ -466,7 +466,9 @@ public partial class Program
 					Mode = UIMode.TextEditor;
 					break;
 				case ScanCode.Return:
-					if (ActivateMenuItem(MenuBar[SelectedMenu].Items[SelectedMenuItem]))
+					if ((SelectedMenu >= 0)
+					 && (SelectedMenu < MenuBar.Count)
+					 && ActivateMenuItem(MenuBar[SelectedMenu].Items[SelectedMenuItem]))
 						SetUIModeAfterMenuItemActivation();
 					break;
 				case ScanCode.Left:
