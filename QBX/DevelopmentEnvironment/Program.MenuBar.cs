@@ -44,6 +44,10 @@ public partial class Program
 	MenuItem mnuOptionsDetectDelayLoops;
 
 	Menu mnuHelp;
+	MenuItem mnuHelpIndex;
+	MenuItem mnuHelpContents;
+	MenuItem mnuHelpTopic;
+	MenuItem mnuHelpUsingHelp;
 
 	public int SelectedMenu = -1;
 	public int SelectedMenuItem = -1;
@@ -82,7 +86,11 @@ public partial class Program
 		nameof(mnuOptions),
 		nameof(mnuOptionsDisplay),
 		nameof(mnuOptionsDetectDelayLoops),
-		nameof(mnuHelp))]
+		nameof(mnuHelp),
+		nameof(mnuHelpIndex),
+		nameof(mnuHelpContents),
+		nameof(mnuHelpTopic),
+		nameof(mnuHelpUsingHelp))]
 	void InitializeMenuBar()
 	{
 		mnuFile =
@@ -201,10 +209,10 @@ public partial class Program
 		mnuHelp =
 			new Menu("&Help", 25)
 			{
-				new MenuItem("&Index"),
-				new MenuItem("&Contents"),
-				new MenuItem("&Topic:                 F1") { IsEnabled = false },
-				new MenuItem("Using &Help       Shift+F1"),
+				(mnuHelpIndex = new MenuItem("&Index")),
+				(mnuHelpContents = new MenuItem("&Contents")),
+				(mnuHelpTopic = new MenuItem("&Topic:                 F1") { IsEnabled = false }),
+				(mnuHelpUsingHelp = new MenuItem("Using &Help       Shift+F1")),
 			};
 
 		MenuBar =
@@ -237,6 +245,11 @@ public partial class Program
 
 		mnuOptionsDisplay.Clicked = mnuOptionsDisplay_Clicked;
 		mnuOptionsDetectDelayLoops.Clicked = mnuOptionsDetectDelayLoops_Clicked;
+
+		mnuHelpIndex.Clicked = mnuHelpIndex_Clicked;
+		mnuHelpContents.Clicked = mnuHelpContent_Clicked;
+		mnuHelpTopic.Clicked = mnuHelpTopic_Clicked;
+		mnuHelpUsingHelp.Clicked = mnuHelpUsingHelp_Clicked;
 	}
 
 	private void mnuFileNew_Clicked()
@@ -313,6 +326,26 @@ public partial class Program
 		mnuOptionsDetectDelayLoops.IsChecked = DetectDelayLoops;
 	}
 
+	private void mnuHelpIndex_Clicked()
+	{
+		ShowHelpTopic("bas7qck.hlp!blang.index");
+	}
+
+	private void mnuHelpContent_Clicked()
+	{
+		ShowHelpTopic("bas7qck.hlp!blang.contents");
+	}
+
+	private void mnuHelpTopic_Clicked()
+	{
+		TryShowHelpTopicForTokenUnderCursor();
+	}
+
+	private void mnuHelpUsingHelp_Clicked()
+	{
+		ShowHelpTopic("bas7qck.hlp!h.default");
+	}
+
 	bool ActivateMenuItem(MenuItem item)
 	{
 		if (!item.IsEnabled)
@@ -343,6 +376,14 @@ public partial class Program
 		{
 			switch (input.ScanCode)
 			{
+				case ScanCode.F1:
+					if (SelectedMenu < 0)
+						TryShowHelpTopicForTokenUnderCursor();
+					else
+						break; // TODO: show help topic for the selected menu
+
+					break;
+
 				case ScanCode.Alt:
 					AltReleaseAction = AltRelease.DeactivateMenuBar;
 					break;
@@ -412,6 +453,11 @@ public partial class Program
 		{
 			switch (input.ScanCode)
 			{
+				case ScanCode.F1:
+					// TODO
+
+					break;
+
 				case ScanCode.Alt:
 					AltReleaseAction = AltRelease.CloseMenu;
 					break;
