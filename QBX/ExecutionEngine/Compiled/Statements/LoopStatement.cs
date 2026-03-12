@@ -7,9 +7,27 @@ using QBX.ExecutionEngine.Execution;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public abstract class LoopStatement(CodeModel.Statements.Statement source) : Executable(source)
+public abstract class LoopStatement(Sequence body, CodeModel.Statements.Statement source) : Executable(source)
 {
 	public LoopType Type;
+
+	public override int GetSequenceCount() => 1;
+
+	public override Sequence? GetSequenceByIndex(int sequenceIndex)
+	{
+		if (sequenceIndex == 0)
+			return body;
+
+		throw new IndexOutOfRangeException();
+	}
+
+	public override int IndexOfSequence(Sequence sequence)
+	{
+		if (sequence == body)
+			return 0;
+
+		throw new Exception("Internal error: Sequence is not owned by this statement");
+	}
 
 	public static LoopStatement ConstructUnconditionalLoop(Sequence body, CodeModel.Statements.Statement source, bool detectDelayLoops)
 	{
@@ -27,7 +45,7 @@ public abstract class LoopStatement(CodeModel.Statements.Statement source) : Exe
 	}
 
 	class UnconditionalLoopStatement(Sequence body, CodeModel.Statements.Statement source, bool detectDelayLoops)
-		: LoopStatement(source)
+		: LoopStatement(body, source)
 	{
 		public override void Execute(ExecutionContext context, StackFrame stackFrame)
 		{
@@ -87,7 +105,7 @@ public abstract class ConditionalLoopStatement : LoopStatement
 	}
 
 	protected ConditionalLoopStatement(Executable conditionStatement, Sequence body, CodeModel.Statements.Statement source)
-		: base(source)
+		: base(body, source)
 	{
 		Body = body;
 
