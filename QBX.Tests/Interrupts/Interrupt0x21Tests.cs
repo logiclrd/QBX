@@ -75,7 +75,7 @@ public class Interrupt0x21Tests
 
 		var capture = new CapturingTextLibrary(machine, captureBuffer);
 
-		machine.VideoFirmware.SetTestingVisualLibrary(capture);
+		machine.VideoFirmware.SetVisualLibrary(capture);
 
 		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
 
@@ -164,7 +164,7 @@ public class Interrupt0x21Tests
 
 		var capture = new CapturingTextLibrary(machine, captureBuffer);
 
-		machine.VideoFirmware.SetTestingVisualLibrary(capture);
+		machine.VideoFirmware.SetVisualLibrary(capture);
 
 		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
 
@@ -191,7 +191,7 @@ public class Interrupt0x21Tests
 
 		var capture = new CapturingTextLibrary(machine, captureBuffer);
 
-		machine.VideoFirmware.SetTestingVisualLibrary(capture);
+		machine.VideoFirmware.SetVisualLibrary(capture);
 
 		SimulateTyping("b", default, machine);
 
@@ -229,7 +229,7 @@ public class Interrupt0x21Tests
 
 		var capture = new CapturingTextLibrary(machine, captureBuffer);
 
-		machine.VideoFirmware.SetTestingVisualLibrary(capture);
+		machine.VideoFirmware.SetVisualLibrary(capture);
 
 		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
 
@@ -262,7 +262,7 @@ public class Interrupt0x21Tests
 
 		var capture = new CapturingTextLibrary(machine, captureBuffer);
 
-		machine.VideoFirmware.SetTestingVisualLibrary(capture);
+		machine.VideoFirmware.SetVisualLibrary(capture);
 
 		SimulateTyping("\x03" + "b", ControlCharacterHandling.CtrlLetter, machine);
 
@@ -348,7 +348,7 @@ public class Interrupt0x21Tests
 
 		var capture = new CapturingTextLibrary(machine, captureBuffer);
 
-		machine.VideoFirmware.SetTestingVisualLibrary(capture);
+		machine.VideoFirmware.SetVisualLibrary(capture);
 
 		string message = "QuickBASIC";
 
@@ -384,7 +384,7 @@ public class Interrupt0x21Tests
 
 		var capture = new CapturingTextLibrary(machine, captureBuffer);
 
-		machine.VideoFirmware.SetTestingVisualLibrary(capture);
+		machine.VideoFirmware.SetVisualLibrary(capture);
 
 		string message = "Quick";
 
@@ -434,7 +434,7 @@ public class Interrupt0x21Tests
 
 		var capture = new CapturingTextLibrary(machine, captureBuffer);
 
-		machine.VideoFirmware.SetTestingVisualLibrary(capture);
+		machine.VideoFirmware.SetVisualLibrary(capture);
 
 		string message = "Quick";
 
@@ -494,7 +494,7 @@ public class Interrupt0x21Tests
 
 		var capture = new CapturingTextLibrary(machine, captureBuffer);
 
-		machine.VideoFirmware.SetTestingVisualLibrary(capture);
+		machine.VideoFirmware.SetVisualLibrary(capture);
 
 		var sut = machine.InterruptHandlers[0x21] ?? throw new Exception("Internal error");
 
@@ -522,7 +522,7 @@ public class Interrupt0x21Tests
 
 		var capture = new CapturingTextLibrary(machine, captureBuffer);
 
-		machine.VideoFirmware.SetTestingVisualLibrary(capture);
+		machine.VideoFirmware.SetVisualLibrary(capture);
 
 		SimulateTyping("Foo", default, machine);
 
@@ -552,7 +552,7 @@ public class Interrupt0x21Tests
 
 		var capture = new CapturingTextLibrary(machine, captureBuffer);
 
-		machine.VideoFirmware.SetTestingVisualLibrary(capture);
+		machine.VideoFirmware.SetVisualLibrary(capture);
 
 		SimulateTyping("ignore me", default, machine);
 
@@ -4833,7 +4833,7 @@ public class Interrupt0x21Tests
 
 		var capture = new CapturingTextLibrary(machine, captureBuffer);
 
-		machine.VideoFirmware.SetTestingVisualLibrary(capture);
+		machine.VideoFirmware.SetVisualLibrary(capture);
 
 		byte[] testData = s_cp437.GetBytes(Guid.NewGuid().ToString());
 
@@ -9385,7 +9385,7 @@ public class Interrupt0x21Tests
 
 		var capture = new CapturingTextLibrary(machine, captureBuffer);
 
-		machine.VideoFirmware.SetTestingVisualLibrary(capture);
+		machine.VideoFirmware.SetVisualLibrary(capture);
 
 		bool breakEventOccurred = false;
 

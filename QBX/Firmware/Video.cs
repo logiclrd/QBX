@@ -17,8 +17,9 @@ public partial class Video(Machine machine)
 	// Can't initialize a VisualLibrary at construction time, but will be populated soon.
 	VisualLibrary _visualLibrary = null!;
 
-	internal void SetTestingVisualLibrary(VisualLibrary testVisualLibrary)
+	internal void SetVisualLibrary(VisualLibrary testVisualLibrary)
 	{
+		_visualLibrary?.Dispose();
 		_visualLibrary = testVisualLibrary;
 	}
 
@@ -339,18 +340,18 @@ public partial class Video(Machine machine)
 		{
 			var textLibrary = new TextLibrary(machine);
 
-			_visualLibrary = textLibrary;
+			SetVisualLibrary(textLibrary);
 
 			textLibrary.HideCursor();
 		}
 		else if (modeParams.ShiftRegisterInterleave)
-			_visualLibrary = new GraphicsLibrary_2bppInterleaved(machine);
+			SetVisualLibrary(new GraphicsLibrary_2bppInterleaved(machine));
 		else if (modeParams.IsMonochrome)
-			_visualLibrary = new GraphicsLibrary_1bppPacked(machine);
+			SetVisualLibrary(new GraphicsLibrary_1bppPacked(machine));
 		else if (modeParams.Use256Colours)
-			_visualLibrary = new GraphicsLibrary_8bppFlat(machine);
+			SetVisualLibrary(new GraphicsLibrary_8bppFlat(machine));
 		else
-			_visualLibrary = new GraphicsLibrary_4bppPlanar(machine);
+			SetVisualLibrary(new GraphicsLibrary_4bppPlanar(machine));
 	}
 
 	public void SetCharacterRows(int rows)

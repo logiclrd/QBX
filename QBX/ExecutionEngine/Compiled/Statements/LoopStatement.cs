@@ -7,27 +7,26 @@ using QBX.ExecutionEngine.Execution;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public abstract class LoopStatement(Sequence body, CodeModel.Statements.Statement source) : Executable(source)
+public abstract class LoopStatement(CodeModel.Statements.Statement source) : Executable(source)
 {
 	public LoopType Type;
 
-	public override int GetSequenceCount() => 1;
+	public override int GetSequenceCount()
+	{
+		throw new Exception("Internal error: GetSequenceCount must be overridden");
+	}
 
 	public override Sequence? GetSequenceByIndex(int sequenceIndex)
 	{
-		if (sequenceIndex == 0)
-			return body;
-
-		throw new IndexOutOfRangeException();
+		throw new Exception("Internal error: GetSequenceByIndex must be overridden");
 	}
 
 	public override int IndexOfSequence(Sequence sequence)
 	{
-		if (sequence == body)
-			return 0;
-
-		throw new Exception("Internal error: Sequence is not owned by this statement");
+		throw new Exception("Internal error: GetSequenceByIndex must be overridden");
 	}
+
+	public override bool SelfSequenceDispatch => true;
 
 	public static LoopStatement ConstructUnconditionalLoop(Sequence body, CodeModel.Statements.Statement source, bool detectDelayLoops)
 	{
@@ -45,10 +44,45 @@ public abstract class LoopStatement(Sequence body, CodeModel.Statements.Statemen
 	}
 
 	class UnconditionalLoopStatement(Sequence body, CodeModel.Statements.Statement source, bool detectDelayLoops)
-		: LoopStatement(body, source)
+		: LoopStatement(source)
 	{
+		public override int GetSequenceCount() => 1;
+
+		public override Sequence? GetSequenceByIndex(int sequenceIndex)
+		{
+			if (sequenceIndex == 0)
+				return body;
+
+			throw new IndexOutOfRangeException();
+		}
+
+		public override int IndexOfSequence(Sequence sequence)
+		{
+			if (sequence == body)
+				return 0;
+
+			throw new Exception("Internal error: Sequence is not owned by this statement");
+		}
+
 		public override void Execute(ExecutionContext context, StackFrame stackFrame)
 		{
+			StatementPath? dummyGoToPath = null;
+
+			Dispatch(context, stackFrame, 0, ref dummyGoToPath);
+		}
+
+		public override void Dispatch(ExecutionContext context, StackFrame stackFrame, int sequenceIndex, ref StatementPath? goTo)
+		{
+			int statementIndex = 0;
+
+			if (goTo != null)
+			{
+				statementIndex = goTo.Pop();
+
+				if (goTo.Count == 0)
+					goTo = null;
+			}
+
 			try
 			{
 				bool isEmptyLoop = detectDelayLoops && (body.Count == 0);
@@ -60,7 +94,10 @@ public abstract class LoopStatement(Sequence body, CodeModel.Statements.Statemen
 					else
 						System.Threading.Thread.Yield();
 
-					context.Dispatch(body, stackFrame);
+					for (int i = statementIndex; i < body!.Count; i++)
+						context.Dispatch(body[i], stackFrame);
+
+					statementIndex = 0;
 				}
 			}
 			catch (ExitDo) when (Type == LoopType.Do)
@@ -105,7 +142,7 @@ public abstract class ConditionalLoopStatement : LoopStatement
 	}
 
 	protected ConditionalLoopStatement(Executable conditionStatement, Sequence body, CodeModel.Statements.Statement source)
-		: base(body, source)
+		: base(source)
 	{
 		Body = body;
 
@@ -118,16 +155,6 @@ public abstract class ConditionalLoopStatement : LoopStatement
 	}
 
 	public override int GetSequenceCount() => 2;
-
-	public override Sequence? GetSequenceByIndex(int sequenceIndex)
-	{
-		throw new Exception("Internal error: GetSequenceByIndex must be overridden");
-	}
-
-	public override int IndexOfSequence(Sequence sequence)
-	{
-		throw new Exception("Internal error: GetSequenceByIndex must be overridden");
-	}
 
 	public override bool SelfSequenceDispatch => true;
 

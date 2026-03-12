@@ -8,7 +8,7 @@ using QBX.Utility;
 
 namespace QBX.Firmware;
 
-public abstract class VisualLibrary
+public abstract class VisualLibrary : IDisposable
 {
 	public readonly Machine Machine;
 	public readonly GraphicsArray Array;
@@ -17,33 +17,52 @@ public abstract class VisualLibrary
 	{
 		Machine = machine;
 
-		machine.MouseDriver.DisplayPageNumberChanged += MouseDriver_DisplayPageNumberChanged;
-		machine.MouseDriver.PositionChanged += MouseDriver_PositionChanged;
-		machine.MouseDriver.PointerVisibleChanged += MouseDriver_PointerVisibleChanged;
+		Machine.MouseDriver.DisplayPageNumberChanged += MouseDriver_DisplayPageNumberChanged;
+		Machine.MouseDriver.PositionChanged += MouseDriver_PositionChanged;
+		Machine.MouseDriver.PointerVisibleChanged += MouseDriver_PointerVisibleChanged;
 
 		Array = machine.GraphicsArray;
 
 		RefreshParameters();
 	}
 
+	public void Dispose()
+	{
+		Machine.MouseDriver.DisplayPageNumberChanged -= MouseDriver_DisplayPageNumberChanged;
+		Machine.MouseDriver.PositionChanged -= MouseDriver_PositionChanged;
+		Machine.MouseDriver.PointerVisibleChanged -= MouseDriver_PointerVisibleChanged;
+	}
+
 	private void MouseDriver_DisplayPageNumberChanged()
 	{
-		UndrawPointer();
-		DrawPointer();
+		try
+		{
+			UndrawPointer();
+			DrawPointer();
+		}
+		catch { }
 	}
 
 	private void MouseDriver_PositionChanged()
 	{
-		UndrawPointer();
-		DrawPointer();
+		try
+		{
+			UndrawPointer();
+			DrawPointer();
+		}
+		catch { }
 	}
 
 	private void MouseDriver_PointerVisibleChanged()
 	{
-		if (Machine.MouseDriver.PointerVisible)
-			DrawPointer();
-		else
-			UndrawPointer();
+		try
+		{
+			if (Machine.MouseDriver.PointerVisible)
+				DrawPointer();
+			else
+				UndrawPointer();
+		}
+		catch { }
 	}
 
 	public int ActivePageNumber;
