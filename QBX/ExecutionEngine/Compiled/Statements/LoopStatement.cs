@@ -109,13 +109,25 @@ public abstract class ConditionalLoopStatement : LoopStatement
 	{
 		Body = body;
 
-		_firstSequence = GetSequenceByIndex(0);
-
 		_conditionWrapper = new Sequence();
 		_conditionWrapper.Append(conditionStatement);
+
+		// With PreConditionLoopStatements, _firstSequence is the _conditionWrapper.
+		// With PostConditionLoopStatements, _firstSequence is the loop body.
+		_firstSequence = GetSequenceByIndex(0);
 	}
 
 	public override int GetSequenceCount() => 2;
+
+	public override Sequence? GetSequenceByIndex(int sequenceIndex)
+	{
+		throw new Exception("Internal error: GetSequenceByIndex must be overridden");
+	}
+
+	public override int IndexOfSequence(Sequence sequence)
+	{
+		throw new Exception("Internal error: GetSequenceByIndex must be overridden");
+	}
 
 	public override bool SelfSequenceDispatch => true;
 
@@ -294,7 +306,9 @@ public abstract class ConditionalLoopStatement : LoopStatement
 						statementIndex--;
 
 					for (int i = statementIndex; i < body!.Count; i++)
-						context.Dispatch(Body[i], stackFrame);
+						context.Dispatch(body[i], stackFrame);
+
+					statementIndex = 0;
 				}
 			}
 			catch (ExitDo) when (Type == LoopType.Do)
@@ -335,12 +349,14 @@ public abstract class ConditionalLoopStatement : LoopStatement
 					System.Threading.Thread.Yield();
 
 					for (int i = statementIndex; i < body!.Count; i++)
-						context.Dispatch(Body[i], stackFrame);
+						context.Dispatch(body[i], stackFrame);
 
 					context.Dispatch(conditionStatement, stackFrame);
 
 					if (!conditionStatement.ConditionValue)
 						break;
+
+					statementIndex = 0;
 				}
 			}
 			catch (ExitDo) when (Type == LoopType.Do)
