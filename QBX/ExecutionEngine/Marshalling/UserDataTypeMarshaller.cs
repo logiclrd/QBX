@@ -109,9 +109,6 @@ public class UserDataTypeMarshaller : Marshaller
 
 		var nativeMembers = EnumerateDataMembers(nativeType).ToList();
 
-		if (nativeMembers.Count < userDataType.Fields.Count)
-			throw CompilerException.TypeMismatch();
-
 		for (int i=0, j=0; (i < userDataType.Fields.Count) && (j < nativeMembers.Count); i++, j++)
 		{
 			var member = nativeMembers[j];

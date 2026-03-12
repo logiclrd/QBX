@@ -51,8 +51,6 @@ public class NativeProcedureCallStatement(CodeModel.Statements.Statement? source
 	{
 		if (Target == null)
 			throw new Exception("NativeProcedureCallStatement has no Target");
-		if (Target.Invoke == null)
-			throw new Exception("Internal error: NativeProcedure has not had its thunk built");
 
 		var arguments = new Variable[Arguments.Count];
 
@@ -63,8 +61,10 @@ public class NativeProcedureCallStatement(CodeModel.Statements.Statement? source
 		{
 			if (LocalThunk != null)
 				LocalThunk.Invoke(arguments);
-			else
+			else if (Target.Invoke != null)
 				Target.Invoke(arguments);
+			else
+				throw new Exception("Internal error: NativeProcedure has not had its thunk built");
 		}
 		catch (RuntimeException error)
 		{

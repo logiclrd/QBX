@@ -580,6 +580,8 @@ public class Compiler
 				{
 					var translatedCallStatement = new NativeProcedureCallStatement(callStatement);
 
+					translatedCallStatement.Target = nativeProcedure;
+
 					if (nativeProcedure.ParameterTypes == null)
 					{
 						if (callStatement.Arguments != null)
@@ -606,8 +608,6 @@ public class Compiler
 
 						if (callArgumentCount != targetArgumentCount)
 							throw CompilerException.ArgumentCountMismatch(callStatement.FirstToken);
-
-						translatedCallStatement.Target = nativeProcedure;
 
 						if (callStatement.Arguments != null)
 						{

@@ -73,7 +73,7 @@ public class NativeProcedure(object site, MethodInfo implementation)
 		Type returnVariableType = ReturnType == null ? typeof(void) : GetPrimitiveVariableType(ReturnType);
 
 		var inputParameter = Expression.Parameter(typeof(Variable[]));
-		 
+
 		int variableCount = parameters.Length;
 
 		if (ReturnType != null)
@@ -138,7 +138,7 @@ public class NativeProcedure(object site, MethodInfo implementation)
 			callExpression = Expression.Assign(marshalledArguments.Last(), callExpression);
 
 		blockBody.Add(callExpression);
-		
+
 		for (int i = 0; i < parameters.Length; i++)
 		{
 			if (parameters[i].ParameterType.IsByRef
