@@ -1,7 +1,4 @@
-Merge Dialog: "-921"
-Save As Dialog: "-902"
 Create File Dialog: "-901"
-Load File Dialog: "-903"
 Print Dialog: "-904"
 New Procedure Dialog: "-912"
 SUBs Dialog: "-911"
