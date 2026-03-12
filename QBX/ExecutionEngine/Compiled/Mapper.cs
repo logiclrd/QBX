@@ -86,6 +86,8 @@ public class Mapper
 	HashSet<string> _globalVariableNames = new HashSet<string>();
 	HashSet<string> _globalArrayNames = new HashSet<string>();
 
+	public IEnumerable<string> GlobalIdentifiers => _globalVariableNames.Concat(_globalArrayNames);
+
 	PrimitiveDataType[] _identifierTypes = new PrimitiveDataType[26];
 
 	// Slugs: avoid conflicts to do with dotted variable names.
@@ -426,12 +428,32 @@ public class Mapper
 
 	public void ScanForDisallowedSlugs(IEnumerable<CodeModel.Statements.Statement> statements)
 	{
-		foreach (var dimStatement in statements.OfType<CodeModel.Statements.DimStatement>())
+		if (_root != null)
 		{
-			foreach (var declaration in dimStatement.Declarations)
+			foreach (var global in _root.GlobalIdentifiers)
+				AddDisallowedSlug(global);
+		}
+
+		foreach (var statement in statements)
+		{
+			switch (statement)
 			{
-				if (declaration.UserType != null)
-					AddDisallowedSlug(declaration.Name);
+				case CodeModel.Statements.DimStatement dimStatement:
+					foreach (var declaration in dimStatement.Declarations)
+					{
+						if (declaration.UserType != null)
+							AddDisallowedSlug(declaration.Name);
+					}
+
+					break;
+				case CodeModel.Statements.VariableScopeStatement scopeStatement:
+					foreach (var declaration in scopeStatement.Declarations)
+					{
+						if (declaration.UserType != null)
+							AddDisallowedSlug(declaration.Name);
+					}
+
+					break;
 			}
 		}
 	}
