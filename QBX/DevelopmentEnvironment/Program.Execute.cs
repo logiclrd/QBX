@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
+using QBX.CodeModel;
 using QBX.ExecutionEngine;
 using QBX.ExecutionEngine.Execution;
 using QBX.Firmware;
@@ -75,7 +76,8 @@ public partial class Program
 				_compilation.RegisterNativeProcedure(nativeProcedure);
 
 			foreach (var file in LoadedFiles)
-				_compiler.Compile(file, _compilation);
+				if (file.IncludeInBuild && (file is CompilationUnit unit))
+					_compiler.Compile(unit, _compilation);
 		}
 		catch (CompilerException error)
 		{

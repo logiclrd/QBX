@@ -16,9 +16,9 @@ using QBX.OperatingSystem.Breaks;
 using QBX.OperatingSystem.FileDescriptors;
 using QBX.OperatingSystem.FileStructures;
 using QBX.OperatingSystem.Globalization;
-using QBX.OperatingSystem.Interop;
 using QBX.OperatingSystem.Memory;
 using QBX.OperatingSystem.Processes;
+using QBX.Utility.Interop;
 
 using FileMode = QBX.OperatingSystem.FileStructures.FileMode;
 using OpenMode = QBX.OperatingSystem.FileStructures.OpenMode;

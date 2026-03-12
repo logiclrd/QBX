@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 
-using QBX.CodeModel;
 using QBX.DevelopmentEnvironment.Dialogs;
 using QBX.DevelopmentEnvironment.Help;
 using QBX.ExecutionEngine;
@@ -23,7 +22,7 @@ public partial class Program : HostedProgram, IOvertypeFlag
 
 	public Configuration Configuration = new Configuration();
 
-	public List<CompilationUnit> LoadedFiles = new List<CompilationUnit>();
+	public List<IEditableUnit> LoadedFiles = new List<IEditableUnit>();
 	public int MainModuleIndex;
 
 	public HelpSystem HelpSystem;

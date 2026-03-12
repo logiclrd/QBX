@@ -32,7 +32,7 @@ namespace QBX.DevelopmentEnvironment
 			Continue();
 		}
 
-		public void PromptToSaveChanges(CompilationUnit unit, Action continuation, Action? notifySave = null)
+		public void PromptToSaveChanges(IEditableUnit unit, Action continuation, Action? notifySave = null)
 		{
 			if (unit.IsPristine)
 			{
@@ -73,7 +73,7 @@ namespace QBX.DevelopmentEnvironment
 			Continue();
 		}
 
-		public void SaveIfNeeded(CompilationUnit unit, Action? continuation = null)
+		public void SaveIfNeeded(IEditableUnit unit, Action? continuation = null)
 		{
 			if (unit.IsPristine)
 				continuation?.Invoke();
@@ -94,7 +94,7 @@ namespace QBX.DevelopmentEnvironment
 				InteractiveSave(unit);
 		}
 
-		public void InteractiveSave(CompilationUnit unit, Action? continuation = null, SaveFileDialogTitle title = SaveFileDialogTitle.Save)
+		public void InteractiveSave(IEditableUnit unit, Action? continuation = null, SaveFileDialogTitle title = SaveFileDialogTitle.Save)
 		{
 			var dialog = new SaveFileDialog(Machine, Configuration, title, unit.FilePath);
 

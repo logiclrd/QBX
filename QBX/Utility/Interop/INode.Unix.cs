@@ -2,7 +2,7 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace QBX.OperatingSystem.Interop;
+namespace QBX.Utility.Interop;
 
 public class INode : INode<INode>
 {

@@ -278,13 +278,13 @@ public partial class Program
 			horizontalScrollBar = false;
 		}
 
-		if (IsExecuting && (viewport.CompilationUnit != null))
+		if (IsExecuting && (viewport.EditableUnit != null))
 		{
 			var nextStatement = _errorToken?.OwnerStatement ?? _nextStatement;
 
 			if ((nextStatement != null)
 			 && (nextStatement.CodeLine is CodeLine codeLine)
-			 && (viewport.CompilationElement == codeLine.CompilationElement))
+			 && (viewport.EditableElement == codeLine.CompilationElement))
 			{
 				nextLineIndex = codeLine.SourceLineIndex.Value;
 
@@ -397,7 +397,7 @@ public partial class Program
 			int lineIndex = y + viewport.ScrollY;
 
 			var (unselectedLeft, selected, unselectedRight) =
-				CalculateSelectionHighlight(viewport.Clipboard, lineIndex, viewport.ScrollX, viewportContentWidth, viewport.CompilationElement);
+				CalculateSelectionHighlight(viewport.Clipboard, lineIndex, viewport.ScrollX, viewportContentWidth, viewport.EditableElement);
 
 			StringBuilder buffer;
 
@@ -424,7 +424,7 @@ public partial class Program
 			var rowAttr = normalAttr;
 			var rowHighlightAttr = highlightAttr;
 
-			if ((viewport.TryGetCodeLineAt(lineIndex) is CodeLine currentCodeLine)
+			if (viewport.TryGetCodeLineAt(lineIndex, out var currentCodeLine)
 			 && _breakpoints.Contains(currentCodeLine))
 			{
 				rowAttr = breakpointAttr;
@@ -653,7 +653,7 @@ public partial class Program
 	(int unselectedLeft, int selected, int unselectedRight) CalculateSelectionHighlight(
 		Clipboard clipboard,
 		int lineIndex, int scrollX, int chars,
-		CompilationElement? compilationElement)
+		IEditableElement? compilationElement)
 	{
 		// In a viewport showing line lineIndex, scrolled right by scrollX characters,
 		// subdivide chars characters into unselected and selected regions.

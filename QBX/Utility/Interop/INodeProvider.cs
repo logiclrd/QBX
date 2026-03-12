@@ -1,4 +1,4 @@
-﻿namespace QBX.OperatingSystem.Interop;
+﻿namespace QBX.Utility.Interop;
 
 public abstract class INodeProvider<TINode>
 	where TINode : INode<TINode>

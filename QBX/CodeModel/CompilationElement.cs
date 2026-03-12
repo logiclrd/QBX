@@ -4,21 +4,25 @@ using System.IO;
 using System.Linq;
 
 using QBX.CodeModel.Statements;
+using QBX.DevelopmentEnvironment;
 
 namespace QBX.CodeModel;
 
-public class CompilationElement(CompilationUnit owner) : IRenderableCode
+public class CompilationElement(CompilationUnit owner) : IRenderableCode, IEditableElement
 {
 	public CompilationUnit Owner => owner;
+
+	IEditableUnit IEditableElement.Owner => owner;
 
 	public string? Name { get; set; }
 
 	public CompilationElementType Type { get; set; }
 	public IReadOnlyList<CodeLine> Lines => _lines;
 
-	public int FirstLineIndex { get; set; }
+	IReadOnlyList<IEditableLine> IEditableElement.Lines => _lines;
 
-	public int CachedCursorLine; // Used by DevelopmentEnvironment
+	public int FirstLineIndex { get; set; }
+	public int CachedCursorLine { get; set; }
 
 	public IEnumerable<Statement> AllStatements => _lines.SelectMany(line => line.Statements);
 
@@ -39,6 +43,8 @@ public class CompilationElement(CompilationUnit owner) : IRenderableCode
 		owner.IsPristine = false;
 	}
 
+	void IEditableElement.AddLine(IEditableLine line) => AddLine((CodeLine)line);
+
 	public void AddLine(CodeLine line)
 	{
 		_lines.Add(line);
@@ -53,6 +59,8 @@ public class CompilationElement(CompilationUnit owner) : IRenderableCode
 			line.CompilationElement = this;
 	}
 
+	void IEditableElement.InsertLine(int index, IEditableLine line) => InsertLine(index, (CodeLine)line);
+
 	public void InsertLine(int index, CodeLine line)
 	{
 		_lines.Insert(index, line);
@@ -61,6 +69,8 @@ public class CompilationElement(CompilationUnit owner) : IRenderableCode
 		for (int lineNumber = index; lineNumber < _lines.Count; lineNumber++)
 			_lines[lineNumber].SourceLineIndex.Value = lineNumber;
 	}
+
+	void IEditableElement.ReplaceLine(int index, IEditableLine line) => ReplaceLine(index, (CodeLine)line);
 
 	public void ReplaceLine(int index, CodeLine newLine)
 	{

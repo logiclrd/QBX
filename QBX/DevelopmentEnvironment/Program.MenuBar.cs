@@ -260,7 +260,7 @@ public partial class Program
 
 	private void mnuFileSave_Clicked()
 	{
-		if (FocusedViewport?.CompilationUnit is CompilationUnit unit)
+		if (FocusedViewport?.EditableUnit is CompilationUnit unit)
 		{
 			if (CommitViewportsOrPresentError())
 				InteractiveSaveIfUnitHasNoFilePath(unit);
@@ -269,7 +269,7 @@ public partial class Program
 
 	private void mnuFileSaveAs_Clicked()
 	{
-		if (FocusedViewport?.CompilationUnit is CompilationUnit unit)
+		if (FocusedViewport?.EditableUnit is CompilationUnit unit)
 		{
 			if (CommitViewportsOrPresentError())
 				InteractiveSave(unit, title: DevelopmentEnvironment.Dialogs.SaveFileDialogTitle.SaveAs);
@@ -552,13 +552,18 @@ public partial class Program
 	{
 		mnuCalls.Items.Clear();
 
-		if (LoadedFiles.Any())
+		foreach (var editable in LoadedFiles)
 		{
-			PushCall(
-				LoadedFiles[0].Name,
-				LoadedFiles[0].Elements[0],
-				lineNumber: 0,
-				column: 0);
+			if (editable is CompilationUnit unit)
+			{
+				PushCall(
+					unit.Name,
+					unit.Elements[0],
+					lineNumber: 0,
+					column: 0);
+
+				break;
+			}
 		}
 	}
 

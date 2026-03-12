@@ -93,7 +93,7 @@ public class Clipboard(Viewport owner)
 			{
 				bufferBuilder.Length = 0;
 
-				_owner.GetLineAt(effectiveStartY, buffer);
+				_owner.RenderLineAt(effectiveStartY, buffer);
 
 				_clipboardContentMultiLine?.Add(
 					CodeLine.CreateUnparsed(bufferBuilder.ToString()));
@@ -210,7 +210,7 @@ public class Clipboard(Viewport owner)
 
 			for (int i = 0; i < lineCount; i++)
 			{
-				_owner.GetLineAt(effectiveStartY, writer);
+				_owner.RenderLineAt(effectiveStartY, writer);
 				writer.WriteLine();
 
 				effectiveStartY++;

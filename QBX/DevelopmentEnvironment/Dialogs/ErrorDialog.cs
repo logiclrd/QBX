@@ -5,11 +5,18 @@ namespace QBX.DevelopmentEnvironment.Dialogs;
 
 public class ErrorDialog : Dialog
 {
-	public ErrorDialog(Machine machine, Configuration configuration, string errorMessage, int? errorNumber)
+	public ErrorDialog(Machine machine, Configuration configuration, string errorMessage, int? errorNumber, ErrorSource source)
 		: base(machine, configuration)
 	{
 		if (errorNumber.HasValue)
-			HelpContextString = (-errorNumber.Value).ToString();
+		{
+			int errorNumberForSource = errorNumber.Value;
+
+			if (source == ErrorSource.DevelopmentEnvironment)
+				errorNumberForSource += 2000;
+
+			HelpContextString = (-errorNumberForSource).ToString();
+		}
 		else
 			HelpContextString = "-121"; // Syntax Error
 
@@ -40,7 +47,7 @@ public class ErrorDialog : Dialog
 				Y = 4,
 				Width = 8,
 				Text = "OK",
-				Activated = Close
+				Activated = cmdOK_Activated
 			});
 
 		Widgets.Add(
@@ -51,8 +58,19 @@ public class ErrorDialog : Dialog
 				Width = 8,
 				Text = "Help",
 				AccessKeyIndex = 0,
+				Activated = cmdHelp_Activated
 			});
 
 		SetFocus(Widgets[1]);
+	}
+
+	void cmdOK_Activated()
+	{
+		Close();
+	}
+
+	void cmdHelp_Activated()
+	{
+		OnShowHelpPopup();
 	}
 }

@@ -351,7 +351,7 @@ public partial class Program
 						InstantWatchAtCurrentCursorLocation();
 					else
 					{
-						if (FocusedViewport.TryGetCodeLineAt(FocusedViewport.CursorY) is CodeLine currentCodeLine)
+						if (FocusedViewport.TryGetCodeLineAt(FocusedViewport.CursorY, out var currentCodeLine))
 							ToggleBreakpoint(currentCodeLine);
 					}
 
@@ -829,7 +829,7 @@ public partial class Program
 		if (isValid)
 			ShowInstantWatch(_nextStatementRoutine?.Mapper, subject);
 		else
-			PresentError("Invalid expression for Instant Watch");
+			PresentError("Invalid expression for Instant Watch", 315, context: null, ErrorSource.Program, avoidContext: false);
 	}
 
 	void FindIdentifierExtent(StringBuilder buffer, ref int startIndex, out int endIndex)
@@ -870,9 +870,9 @@ public partial class Program
 	{
 		Viewport viewport;
 
-		if (PrimaryViewport.CompilationElement == element)
+		if (PrimaryViewport.EditableElement == element)
 			viewport = PrimaryViewport;
-		else if (SplitViewport?.CompilationElement == element)
+		else if (SplitViewport?.EditableElement == element)
 			viewport = SplitViewport;
 		else
 			viewport = PrimaryViewport;

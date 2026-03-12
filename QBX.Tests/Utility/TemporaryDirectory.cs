@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-using QBX.OperatingSystem.Interop;
+using QBX.Utility.Interop;
 
 namespace QBX.Tests.Utility;
 

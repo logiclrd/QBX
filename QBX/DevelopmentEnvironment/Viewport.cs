@@ -17,8 +17,8 @@ public class Viewport
 	const string DefaultHeading = "Untitled";
 
 	public string Heading = DefaultHeading;
-	public CompilationUnit? CompilationUnit;
-	public CompilationElement? CompilationElement;
+	public IEditableUnit? EditableUnit;
+	public IEditableElement? EditableElement;
 	public HelpDatabaseTopic? HelpTopic;
 	public bool IsEditable = true;
 	public bool ShowMaximize = true;
@@ -45,20 +45,20 @@ public class Viewport
 	{
 		if (HelpTopic != null)
 			Heading = HelpTopic.TopicName;
-		else if (CompilationElement == null)
+		else if (EditableElement == null)
 			Heading = DefaultHeading;
-		else if (CompilationElement.Name == null)
-			Heading = CompilationElement.Owner.Name;
+		else if (EditableElement.Name == null)
+			Heading = EditableElement.Owner.Name;
 		else
-			Heading = CompilationElement.Owner.Name + ":" + CompilationElement.Name;
+			Heading = EditableElement.Owner.Name + ":" + EditableElement.Name;
 	}
 
-	public void SwitchTo(CompilationElement element)
+	public void SwitchTo(IEditableElement element)
 	{
-		CompilationElement?.CachedCursorLine = CursorY;
+		EditableElement?.CachedCursorLine = CursorY;
 
-		CompilationUnit = element.Owner;
-		CompilationElement = element;
+		EditableUnit = element.Owner;
+		EditableElement = element;
 
 		UpdateHeading();
 
@@ -81,9 +81,9 @@ public class Viewport
 	{
 		if (HelpTopic != null)
 			return HelpTopic.Lines.Count;
-		else if (CompilationElement != null)
+		else if (EditableElement != null)
 		{
-			int count = CompilationElement.Lines.Count;
+			int count = EditableElement.Lines.Count;
 
 			if ((CursorY >= count) && CurrentLineChanged)
 				count++;
@@ -101,16 +101,16 @@ public class Viewport
 			if ((y >= 0) && (y < HelpTopic.Lines.Count))
 				HelpTopic.Lines[y].RenderPlainText(writer);
 		}
-		else if (CompilationElement != null)
+		else if (EditableElement != null)
 		{
-			if ((y >= 0) && (y < CompilationElement.Lines.Count))
-				CompilationElement.Lines[y].Render(writer, includeCRLF: false);
+			if ((y >= 0) && (y < EditableElement.Lines.Count))
+				EditableElement.Lines[y].Render(writer, includeCRLF: false);
 		}
 	}
 
-	public void GetLineAt(int y, TextWriter writer)
+	public void RenderLineAt(int y, TextWriter writer)
 	{
-		if (TryGetCodeLineAt(y) is CodeLine line)
+		if (TryGetLineAt(y, out var line))
 			line.Render(writer);
 
 		if (HelpTopic != null)
@@ -120,52 +120,68 @@ public class Viewport
 		}
 	}
 
-	public CodeLine? TryGetCodeLineAt(int y)
+	public bool TryGetLineAt(int y, [NotNullWhen(true)] out IEditableLine? line)
 	{
-		if (CompilationElement != null)
+		if (EditableElement != null)
 		{
-			if ((y >= 0) && (y < CompilationElement.Lines.Count))
-				return CompilationElement.Lines[y];
+			if ((y >= 0) && (y < EditableElement.Lines.Count))
+			{
+				line = EditableElement.Lines[y];
+				return true;
+			}
 		}
 
-		return null;
+		line = null;
+		return false;
+	}
+
+	public bool TryGetCodeLineAt(int y, [NotNullWhen(true)] out CodeLine? codeLine)
+	{
+		if (TryGetLineAt(y, out var line))
+		{
+			codeLine = line as CodeLine;
+			return (codeLine != null);
+		}
+
+		codeLine = null;
+		return false;
 	}
 
 	public void DeleteLine(int y)
 	{
-		if ((CompilationElement != null) && IsEditable)
+		if ((EditableElement != null) && IsEditable)
 		{
-			if (y < CompilationElement.Lines.Count)
+			if (y < EditableElement.Lines.Count)
 			{
-				CompilationElement.RemoveLineAt(y);
-				CompilationElement.Dirty();
+				EditableElement.RemoveLineAt(y);
+				EditableElement.Dirty();
 			}
 		}
 	}
 
-	public void InsertLine(int y, CodeLine newLine)
+	public void InsertLine(int y, IEditableLine newLine)
 	{
-		if ((CompilationElement != null) && IsEditable)
+		if ((EditableElement != null) && IsEditable)
 		{
-			if (y < CompilationElement.Lines.Count)
-				CompilationElement.InsertLine(y, newLine);
+			if (y < EditableElement.Lines.Count)
+				EditableElement.InsertLine(y, newLine);
 			else
-				CompilationElement.AddLine(newLine);
+				EditableElement.AddLine(newLine);
 
-			CompilationElement.Dirty();
+			EditableElement.Dirty();
 		}
 	}
 
-	public void ReplaceCurrentLine(CodeLine newLine)
+	public void ReplaceCurrentLine(IEditableLine newLine)
 	{
-		if ((CompilationElement != null) && IsEditable)
+		if ((EditableElement != null) && IsEditable)
 		{
-			if (CursorY < CompilationElement.Lines.Count)
-				CompilationElement.ReplaceLine(CursorY, newLine);
+			if (CursorY < EditableElement.Lines.Count)
+				EditableElement.ReplaceLine(CursorY, newLine);
 			else
-				CompilationElement.AddLine(newLine);
+				EditableElement.AddLine(newLine);
 
-			CompilationElement.Dirty();
+			EditableElement.Dirty();
 
 			CurrentLineChanged = false;
 			CurrentLineBuffer = null;

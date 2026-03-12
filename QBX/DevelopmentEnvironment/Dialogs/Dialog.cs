@@ -91,6 +91,12 @@ public abstract class Dialog(Machine machine, Configuration configuration) : IFo
 	public event EventHandler<string>? ShowHelpPopup;
 	public event EventHandler? Closed;
 
+	protected virtual void OnShowHelpPopup()
+	{
+		if (HelpContextString != null)
+			ShowHelpPopup?.Invoke(this, HelpContextString);
+	}
+
 	protected virtual void OnClosed() => Closed?.Invoke(this, EventArgs.Empty);
 
 	public void Close()
@@ -139,9 +145,7 @@ public abstract class Dialog(Machine machine, Configuration configuration) : IFo
 		{
 			case ScanCode.F1:
 			{
-				if (HelpContextString != null)
-					ShowHelpPopup?.Invoke(this, HelpContextString);
-
+				OnShowHelpPopup();
 				break;
 			}
 

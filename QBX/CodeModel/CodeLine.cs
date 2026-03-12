@@ -5,11 +5,12 @@ using System.Linq;
 using System.Text;
 
 using QBX.CodeModel.Statements;
+using QBX.DevelopmentEnvironment;
 using QBX.Utility;
 
 namespace QBX.CodeModel;
 
-public class CodeLine : IRenderableCode
+public class CodeLine : IRenderableCode, IEditableLine
 {
 	public CompilationElement? CompilationElement { get; set; }
 

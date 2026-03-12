@@ -1,16 +1,22 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 
+using QBX.DevelopmentEnvironment;
 using QBX.LexicalAnalysis;
 using QBX.Parser;
 
 namespace QBX.CodeModel;
 
-public class CompilationUnit : IRenderableCode
+public class CompilationUnit : IRenderableCode, IEditableUnit
 {
 	string _name = "Untitled";
 	string _filePath = "";
 	bool _hasFilePath = false;
+
+	public bool IsPristine { get; set; }
+
+	public bool EnableSmartEditor => true;
+	public bool IncludeInBuild { get; set; } = true;
 
 	public string Name => _name;
 
@@ -30,6 +36,8 @@ public class CompilationUnit : IRenderableCode
 
 	public List<CompilationElement> Elements { get; } = new List<CompilationElement>();
 
+	IReadOnlyList<IEditableElement> IEditableUnit.Elements => Elements;
+
 	public bool IsEmpty
 	{
 		get
@@ -42,8 +50,6 @@ public class CompilationUnit : IRenderableCode
 			return (Elements[0].Lines.Count == 0);
 		}
 	}
-
-	public bool IsPristine = true; // Used by DevelopmentEnvironment
 
 	public void Render(TextWriter writer)
 	{

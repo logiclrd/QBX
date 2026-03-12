@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 
 using QBX.LexicalAnalysis;
 using QBX.OperatingSystem;
@@ -288,10 +289,10 @@ public class RuntimeException : Exception
 	public static RuntimeException ArgumentCountMismatch()
 		=> ForErrorNumber(101, default(Token));
 
-	internal static RuntimeException ForDOSError(DOSError dosError, CodeModel.Expressions.Expression? expression)
+	public static RuntimeException ForDOSError(DOSError dosError, CodeModel.Expressions.Expression? expression)
 		=> ForDOSError(dosError, statement: null).AddContext(expression);
 
-	internal static RuntimeException ForDOSError(DOSError dosError, CodeModel.Statements.Statement? statement)
+	public static RuntimeException ForDOSError(DOSError dosError, CodeModel.Statements.Statement? statement)
 	{
 		switch (dosError)
 		{
@@ -371,4 +372,7 @@ public class RuntimeException : Exception
 				return IllegalFunctionCall(statement);
 		}
 	}
+
+	public static RuntimeException ForIOException(IOException exception, CodeModel.Statements.Statement? statement = null)
+		=> ForDOSError(exception.ToDOSError(), statement);
 }

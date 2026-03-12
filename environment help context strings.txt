@@ -46,7 +46,6 @@ QuickLibrary Name Conflict Dialog: "-274" => trying to compile a .QLB with the s
 Out Of Buffer Space Dialog: "-275"
 Code Too Large Dialog: "-276"
 Procedure Code Too Large Dialog: "-277"
-Invalid Expression for Instant Watch Dialog: "-315"
 Unable To Change To Directory Dialog: "-316" => trying to execute a custom Utility menu item whose Initial Directory specifies a non-existent directory
 Too Many Custom Utilities Dialog: "-317" => trying to add a 9th custom Utility menu item
 Must Specify Menu Text And Path Dialog: "-319" => trying to accept custom Utility menu item dialog with empty Menu Text or Path Name

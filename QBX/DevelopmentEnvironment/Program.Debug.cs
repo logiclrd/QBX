@@ -30,6 +30,23 @@ public partial class Program
 	HashSet<CodeLine> _breakpoints = new HashSet<CodeLine>();
 	List<Watch> _watches = new List<Watch>();
 
+	void ActivateViewportForElement(IEditableElement element)
+	{
+		if (FocusedViewport.EditableElement != element)
+		{
+			if (PrimaryViewport.EditableElement == element)
+				FocusedViewport = PrimaryViewport;
+			else if (SplitViewport?.EditableElement == element)
+				FocusedViewport = SplitViewport;
+
+			if (FocusedViewport == HelpViewport)
+				FocusedViewport = PrimaryViewport;
+
+			if (FocusedViewport.EditableElement != element)
+				FocusedViewport.SwitchTo(element);
+		}
+	}
+
 	private void ShowNextStatement(IEnumerable<StackFrame> stack)
 	{
 		var currentFrame = stack.FirstOrDefault();
@@ -44,16 +61,7 @@ public partial class Program
 				if ((_nextStatement.CodeLine is CodeLine line)
 				 && (line.CompilationElement is CompilationElement element))
 				{
-					if (FocusedViewport.CompilationElement != element)
-					{
-						if (PrimaryViewport.CompilationElement == element)
-							FocusedViewport = PrimaryViewport;
-						else if (SplitViewport?.CompilationElement == element)
-							FocusedViewport = SplitViewport;
-
-						if (FocusedViewport.CompilationElement != element)
-							FocusedViewport.SwitchTo(element);
-					}
+					ActivateViewportForElement(element);
 
 					FocusedViewport.CursorX = _nextStatement.SourceColumn;
 					FocusedViewport.CursorY = line.SourceLineIndex.Value;
@@ -76,24 +84,23 @@ public partial class Program
 		PresentError(error.Message, error.Context, avoidContext: true);
 	}
 
-	public void PresentError(RuntimeException error)
+	public void PresentError(RuntimeException error, ErrorSource source = ErrorSource.Program)
 	{
-		PresentError(error.Message, error.ErrorNumber, error.Context, avoidContext: true);
+		PresentError(error.Message, error.ErrorNumber, error.Context, source, avoidContext: true);
 	}
 
 	public void PresentError(string errorMessage, Token? context = null, bool avoidContext = false)
 	{
-		PresentError(errorMessage, errorNumber: null, context, avoidContext);
+		PresentError(errorMessage, errorNumber: null, context, ErrorSource.Program, avoidContext);
 	}
 
-	public void PresentError(string errorMessage, int? errorNumber, Token? context, bool avoidContext)
+	public void PresentError(string errorMessage, int? errorNumber, Token? context, ErrorSource source, bool avoidContext)
 	{
 		if ((context?.OwnerStatement is Statement statement)
 		 && (statement.CodeLine is CodeLine line)
 		 && (line.CompilationElement is CompilationElement element))
 		{
-			if (FocusedViewport.CompilationElement != element)
-				FocusedViewport.SwitchTo(element);
+			ActivateViewportForElement(element);
 
 			FocusedViewport.ScrollCursorIntoView(
 				newCursorX: context.Column, newCursorY: context.Line - element.FirstLineIndex,
@@ -104,7 +111,7 @@ public partial class Program
 
 		_errorToken = context;
 
-		var dialog = ShowDialog(new ErrorDialog(Machine, Configuration, errorMessage, errorNumber));
+		var dialog = ShowDialog(new ErrorDialog(Machine, Configuration, errorMessage, errorNumber, source));
 
 		if (avoidContext)
 		{
@@ -140,8 +147,8 @@ public partial class Program
 
 	public void ShowInstantWatch(Mapper? mapper, string subject)
 	{
-		if ((FocusedViewport.CompilationUnit == null)
-		 || (FocusedViewport.CompilationElement == null))
+		if ((FocusedViewport.EditableUnit is not CompilationUnit unit)
+		 || (FocusedViewport.EditableElement is not CompilationElement element))
 			return;
 
 		try
@@ -151,8 +158,8 @@ public partial class Program
 			dialog.SetExpression(subject);
 
 			var instantWatch = new Watch(
-				FocusedViewport.CompilationUnit,
-				FocusedViewport.CompilationElement,
+				unit,
+				element,
 				subject);
 
 			instantWatch.Routine = _nextStatementRoutine;
@@ -175,7 +182,7 @@ public partial class Program
 		}
 		catch
 		{
-			PresentError("Invalid expression for Instant Watch");
+			PresentError("Invalid expression for Instant Watch", 315, context: null, ErrorSource.Program, avoidContext: false);
 		}
 	}
 
@@ -183,9 +190,16 @@ public partial class Program
 	{
 		var viewport = FocusedViewport;
 
-		if ((FocusedViewport.CompilationUnit == null)
-		 || (FocusedViewport.CompilationElement == null))
+		if ((FocusedViewport.EditableUnit is not CompilationUnit)
+		 || (FocusedViewport.EditableElement is not CompilationElement))
 			viewport = PrimaryViewport;
+
+		if ((viewport.EditableUnit is not CompilationUnit unit)
+		 || (viewport.EditableElement is not CompilationElement element))
+		{
+			PresentError("Internal error: Could not locate a CompilationElement to operate on.");
+			return;
+		}
 
 		var dialog = new AddWatchDialog(Machine, Configuration);
 
@@ -193,8 +207,8 @@ public partial class Program
 			() =>
 			{
 				var watchpoint = new Watch(
-					viewport.CompilationUnit!,
-					viewport.CompilationElement!,
+					unit,
+					element,
 					dialog.WatchExpression);
 
 				AddWatch(watchpoint);
@@ -207,9 +221,16 @@ public partial class Program
 	{
 		var viewport = FocusedViewport;
 
-		if ((FocusedViewport.CompilationUnit == null)
-		 || (FocusedViewport.CompilationElement == null))
+		if ((FocusedViewport.EditableUnit == null)
+		 || (FocusedViewport.EditableElement == null))
 			viewport = PrimaryViewport;
+
+		if ((viewport.EditableUnit is not CompilationUnit unit)
+		 || (viewport.EditableElement is not CompilationElement element))
+		{
+			PresentError("Internal error: Could not locate a CompilationElement to operate on.");
+			return;
+		}
 
 		var dialog = new WatchpointDialog(Machine, Configuration);
 
@@ -217,8 +238,8 @@ public partial class Program
 			() =>
 			{
 				var watchpoint = new Watch(
-					viewport.CompilationUnit!,
-					viewport.CompilationElement!,
+					unit,
+					element,
 					dialog.WatchpointExpression);
 
 				watchpoint.IsWatchPoint = true;
@@ -237,13 +258,13 @@ public partial class Program
 		if (FocusedViewport == HelpViewport)
 			FocusedViewport = PrimaryViewport;
 
-		if ((FocusedViewport.CompilationUnit == null)
-		 || (FocusedViewport.CompilationElement == null))
+		if ((FocusedViewport.EditableUnit is not CompilationUnit unit)
+		 || (FocusedViewport.EditableElement is not CompilationElement element))
 			return;
 
 		var watch = new Watch(
-			FocusedViewport.CompilationUnit,
-			FocusedViewport.CompilationElement,
+			unit,
+			element,
 			expression);
 
 		watch.IsWatchPoint = watchPoint;

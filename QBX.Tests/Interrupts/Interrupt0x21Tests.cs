@@ -15,9 +15,9 @@ using QBX.OperatingSystem;
 using QBX.OperatingSystem.FileDescriptors;
 using QBX.OperatingSystem.FileStructures;
 using QBX.OperatingSystem.Globalization;
-using QBX.OperatingSystem.Interop;
 using QBX.OperatingSystem.Memory;
 using QBX.OperatingSystem.Processes;
+using QBX.Utility;
 
 using QBX.Tests.Utility;
 
@@ -4128,7 +4128,7 @@ public class Interrupt0x21Tests
 
 				var regularFile = (RegularFileDescriptor)machine.DOS.Files[fileHandle]!;
 
-				IsSameFile(TestFileName, regularFile.PhysicalPath).Should().BeTrue();
+				FileIdentityUtility.IsSameFile(TestFileName, regularFile.PhysicalPath).Should().BeTrue();
 
 				new FileInfo(regularFile.PhysicalPath).Length.Should().Be(0);
 			}
@@ -4197,7 +4197,7 @@ public class Interrupt0x21Tests
 
 				var regularFile = (RegularFileDescriptor)machine.DOS.Files[fileHandle]!;
 
-				IsSameFile(TestFileName, regularFile.PhysicalPath).Should().BeTrue();
+				FileIdentityUtility.IsSameFile(TestFileName, regularFile.PhysicalPath).Should().BeTrue();
 
 				if (shouldBeReadable)
 				{
@@ -4298,7 +4298,7 @@ public class Interrupt0x21Tests
 
 				var regularFile = (RegularFileDescriptor)machine.DOS.Files[fileHandle]!;
 
-				IsSameFile(testFileName, regularFile.PhysicalPath).Should().BeTrue();
+				FileIdentityUtility.IsSameFile(testFileName, regularFile.PhysicalPath).Should().BeTrue();
 
 				byte[] checkDataBuffer = new byte[testData.Length];
 
@@ -8356,7 +8356,7 @@ public class Interrupt0x21Tests
 
 				string fileDescriptorPath = fileDescriptor.Should().BeOfType<RegularFileDescriptor>().Which.PhysicalPath;
 
-				IsSameFile(longFileName, fileDescriptorPath).Should().BeTrue();
+				FileIdentityUtility.IsSameFile(longFileName, fileDescriptorPath).Should().BeTrue();
 			}
 			finally
 			{
@@ -10117,29 +10117,6 @@ public class Interrupt0x21Tests
 
 			return data;
 		}
-	}
-
-	static bool IsSameFile(string path1, string path2)
-	{
-		if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-			return IsSameFile(path1, path2, new FileIndexProvider());
-		else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-			return IsSameFile(path1, path2, new LinuxINodeProvider());
-		else if (RuntimeInformation.IsOSPlatform(OSPlatform.FreeBSD))
-			return IsSameFile(path1, path2, new FreeBSDINodeProvider());
-		else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-			return IsSameFile(path1, path2, new OSXINodeProvider());
-		else
-			return Path.GetFullPath(path1) == Path.GetFullPath(path2);
-	}
-
-	static bool IsSameFile<TINode>(string path1, string path2, INodeProvider<TINode> inodeProvider)
-		where TINode : INode<TINode>
-	{
-		return
-			inodeProvider.TryGetINode(path1, out var inode1) &&
-			inodeProvider.TryGetINode(path2, out var inode2) &&
-			inode1.IsSameVolumeAndFileAs(inode2);
 	}
 	#endregion
 }

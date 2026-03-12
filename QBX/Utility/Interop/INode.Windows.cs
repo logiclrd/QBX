@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 using Microsoft.Win32.SafeHandles;
 
-namespace QBX.OperatingSystem.Interop;
+namespace QBX.Utility.Interop;
 
 public class FileIndex : INode<FileIndex>
 {
