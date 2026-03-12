@@ -1345,8 +1345,13 @@ public class Compiler
 							nextStatementInfo.LoopsMatched++;
 						else
 							nextStatementInfo = null;
+
+						break;
 					}
 				}
+
+				if (nextStatement == null)
+					throw CompilerException.ForWithoutNext(forStatement);
 
 				var translatedForStatement = ForStatement.Construct(
 					iteratorVariableIndex,

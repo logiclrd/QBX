@@ -78,6 +78,8 @@ public class CompilerException : Exception
 		=> new CompilerException(statement, "Subprogram not defined");
 	public static CompilerException SubprogramNotDefined(Token? context)
 		=> new CompilerException(context, "Subprogram not defined");
+	public static CompilerException ForWithoutNext(CodeModel.Statements.Statement? statement)
+		=> new CompilerException(statement, "FOR without NEXT");
 	public static CompilerException NextWithoutFor(Token? context)
 		=> new CompilerException(context, "NEXT without FOR");
 	public static CompilerException IllegalNumber(CodeModel.Expressions.Expression? expression)

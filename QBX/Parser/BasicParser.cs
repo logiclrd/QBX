@@ -28,10 +28,12 @@ public class BasicParser
 
 		var prelude = new List<CodeLine>();
 
-		int lineIndex = 0;
+		int lineIndex = -1; // increment at start of loop because there are paths that skip the end of the loop
 
 		foreach (var line in ParseCodeLines(tokenStream, ignoreErrors))
 		{
+			lineIndex++;
+
 			if (((element == mainElement) || betweenElements)
 			 && (line.IsCommentLine || line.IsDefTypeLine))
 				prelude.Add(line);
@@ -97,8 +99,6 @@ public class BasicParser
 
 				element.AddLine(line);
 			}
-
-			lineIndex++;
 		}
 
 		mainElement.AddLines(prelude);
@@ -114,7 +114,6 @@ public class BasicParser
 		var line = new CodeLine();
 		var buffer = new List<Token>();
 		bool haveContent = false;
-		int sourceLineNumber = 1;
 		Token? precedingWhitespaceToken = null;
 		bool startsWithDATA = false;
 		bool lineConsumed = false;
@@ -144,7 +143,6 @@ public class BasicParser
 				yield return line;
 				line = new CodeLine();
 				haveContent = false;
-				sourceLineNumber++;
 				precedingWhitespaceToken = null;
 				startsWithDATA = false;
 				lineConsumed = false;
