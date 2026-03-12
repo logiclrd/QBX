@@ -115,7 +115,7 @@ public class NumberFormatter
 			value = -value;
 		}
 
-		if (value < 1)
+		if (value < 0.1)
 		{
 			int exponent = 0;
 
@@ -206,7 +206,7 @@ public class NumberFormatter
 			value = -value;
 		}
 
-		if (value < 1)
+		if (value < 0.1)
 		{
 			int exponent = 0;
 
