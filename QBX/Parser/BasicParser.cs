@@ -3217,6 +3217,24 @@ public class BasicParser
 				return statement;
 			}
 
+			case TokenType.SYSTEM:
+			{
+				if (!tokenHandler.HasMoreTokens)
+					return new SystemStatement();
+				else
+				{
+					var end =
+						new SystemStatement()
+						{
+							ExitCodeExpression = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken)
+						};
+
+					end.ExitCodeExpression.ClaimTokens(end);
+
+					return end;
+				}
+			}
+
 			case TokenType.COM:
 			case TokenType.PEN:
 			case TokenType.SIGNAL:

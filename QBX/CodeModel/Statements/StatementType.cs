@@ -85,6 +85,7 @@ public enum StatementType
 	ScreenWidth,
 	SelectCase,
 	Sleep,
+	System,
 	Type,
 	TypeElement,
 	Unlock,

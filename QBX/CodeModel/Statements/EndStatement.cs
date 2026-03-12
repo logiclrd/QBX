@@ -10,9 +10,11 @@ public class EndStatement : Statement
 
 	public Expression? ExitCodeExpression { get; set; }
 
+	protected virtual string StatementName => "END";
+
 	protected override void RenderImplementation(TextWriter writer)
 	{
-		writer.Write("END");
+		writer.Write(StatementName);
 
 		if (ExitCodeExpression != null)
 		{
