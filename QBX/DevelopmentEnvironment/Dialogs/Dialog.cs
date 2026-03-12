@@ -22,6 +22,8 @@ public abstract class Dialog(Machine machine, Configuration configuration) : IFo
 
 	public List<Widget> Widgets = new List<Widget>();
 
+	public string? HelpContextString;
+
 	public IEnumerable<Widget> EnumerateAllWidgets()
 		=> Widgets.SelectMany(widget => widget.EnumerateAllWidgets());
 
@@ -86,6 +88,7 @@ public abstract class Dialog(Machine machine, Configuration configuration) : IFo
 		}
 	}
 
+	public event EventHandler<string>? ShowHelpPopup;
 	public event EventHandler? Closed;
 
 	protected virtual void OnClosed() => Closed?.Invoke(this, EventArgs.Empty);
@@ -134,6 +137,14 @@ public abstract class Dialog(Machine machine, Configuration configuration) : IFo
 
 		switch (input.ScanCode)
 		{
+			case ScanCode.F1:
+			{
+				if (HelpContextString != null)
+					ShowHelpPopup?.Invoke(this, HelpContextString);
+
+				break;
+			}
+
 			case ScanCode.Tab:
 			{
 				int newFocusedWidgetIndex = _focusedWidgetIndex;

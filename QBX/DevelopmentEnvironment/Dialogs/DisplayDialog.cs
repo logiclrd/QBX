@@ -34,6 +34,8 @@ public class DisplayDialog : Dialog
 	{
 		InitializeComponent();
 
+		HelpContextString = "-913";
+
 		_configuration = configuration;
 
 		chkScrollBars.IsChecked = configuration.ShowScrollBars;

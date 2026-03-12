@@ -54,6 +54,8 @@ public class OpenFileDialog : DialogWithDirectoryList
 	[MemberNotNull(nameof(cmdHelp))]
 	void InitializeComponent()
 	{
+		HelpContextString = "-920";
+
 		Width = 67;
 		Height = 21;
 

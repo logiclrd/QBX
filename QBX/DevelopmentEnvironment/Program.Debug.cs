@@ -78,10 +78,15 @@ public partial class Program
 
 	public void PresentError(RuntimeException error)
 	{
-		PresentError(error.Message, error.Context, avoidContext: true);
+		PresentError(error.Message, error.ErrorNumber, error.Context, avoidContext: true);
 	}
 
 	public void PresentError(string errorMessage, Token? context = null, bool avoidContext = false)
+	{
+		PresentError(errorMessage, errorNumber: null, context, avoidContext);
+	}
+
+	public void PresentError(string errorMessage, int? errorNumber, Token? context, bool avoidContext)
 	{
 		if ((context?.OwnerStatement is Statement statement)
 		 && (statement.CodeLine is CodeLine line)
@@ -99,7 +104,7 @@ public partial class Program
 
 		_errorToken = context;
 
-		var dialog = ShowDialog(new ErrorDialog(Machine, Configuration, errorMessage));
+		var dialog = ShowDialog(new ErrorDialog(Machine, Configuration, errorMessage, errorNumber));
 
 		if (avoidContext)
 		{

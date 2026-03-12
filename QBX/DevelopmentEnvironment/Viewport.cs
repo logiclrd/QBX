@@ -44,7 +44,7 @@ public class Viewport
 	public void UpdateHeading()
 	{
 		if (HelpTopic != null)
-			Heading = HelpTopic.GetStatementArgument(":n"); // TODO: argument not a bare string
+			Heading = HelpTopic.TopicName;
 		else if (CompilationElement == null)
 			Heading = DefaultHeading;
 		else if (CompilationElement.Name == null)

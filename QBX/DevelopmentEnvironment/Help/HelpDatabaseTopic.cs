@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 
 namespace QBX.DevelopmentEnvironment.Help;
 
@@ -21,6 +23,38 @@ public class HelpDatabaseTopic(HelpDatabase database)
 		return "";
 	}
 
+	static readonly Dictionary<HelpDatabaseTopicCommand, FieldInfo> s_commandFieldInfo =
+		typeof(HelpDatabaseTopicCommand).GetFields(BindingFlags.Static | BindingFlags.Public)
+		.Select(fieldInfo => (FieldInfo: fieldInfo, Value: fieldInfo.GetValue(default) as HelpDatabaseTopicCommand?))
+		.Where(item => item.Value.HasValue)
+		.ToDictionary(key => key.Value!.Value, element => element.FieldInfo);
+
+	static readonly string ImpossiblePrefix = new string('A', 300);
+
+	public string GetStatementArgument(HelpDatabaseTopicCommand command)
+	{
+		if (s_commandFieldInfo.TryGetValue(command, out var fieldInfo))
+		{
+			string dotPrefix = ImpossiblePrefix;
+			string colonPrefix = ImpossiblePrefix;
+
+			if (fieldInfo.GetCustomAttribute<DotAttribute>() is DotAttribute dot)
+				dotPrefix = dot.CommandName + " ";
+			if (fieldInfo.GetCustomAttribute<ColonAttribute>() is ColonAttribute colon)
+				colonPrefix = colon.CommandName; // No required space separator
+
+			foreach (string statement in Statements)
+			{
+				if (statement.StartsWith(dotPrefix))
+					return statement.Substring(dotPrefix.Length).TrimStart();
+				if (statement.StartsWith(colonPrefix))
+					return statement.Substring(colonPrefix.Length).TrimStart();
+			}
+		}
+
+		return "";
+	}
+
 	public static HelpDatabaseTopic Parse(HelpDatabase database, ReadOnlySpan<byte> data)
 	{
 		var topic = new HelpDatabaseTopic(database);
@@ -35,6 +69,8 @@ public class HelpDatabaseTopic(HelpDatabase database)
 				topic.Lines.Add(line);
 		}
 
+		topic.TopicName = topic.GetStatementArgument(HelpDatabaseTopicCommand.TopicName);
+
 		return topic;
 	}
 }
@@ -42,50 +78,4 @@ public class HelpDatabaseTopic(HelpDatabase database)
 public class CommandNameAttribute(string commandName) : Attribute
 {
 	public string CommandName => commandName;
-}
-
-[AttributeUsage(AttributeTargets.Field, AllowMultiple = true)]
-public class DotAttribute(string commandName) : CommandNameAttribute(commandName) { }
-public class ColonAttribute(string commandName) : CommandNameAttribute(commandName) { }
-
-public enum HelpDatabaseTopicCommand
-{
-	[Dot(".category"), Colon(":c")]
-	Category,
-	[Dot(".command"), Colon(":x")]
-	Command,
-	[Dot(".comment"), Dot("..")]
-	Comment,
-	[Dot(".context")]
-	Context,
-	[Dot(".end"), Colon(":e")]
-	EndPasteSection,
-	[Dot(".execute"), Colon(":y")]
-	Execute,
-	[Dot(".freeze"), Colon(":z")]
-	FreezeLines,
-	[Dot(".length"), Colon(":l")]
-	DefaultWindowSize,
-	[Dot(".line")]
-	SetLineNumber,
-	[Dot(".list"), Colon(":i")]
-	TopicList,
-	[Dot(".mark"), Colon(":m")]
-	Mark,
-	[Dot(".next"), Colon(":>")]
-	Next,
-	[Dot(".paste"), Colon(":p")]
-	BeginPasteSection,
-	[Dot(".popup"), Colon(":g")]
-	ShowAsPopUp,
-	[Dot(".previous"), Colon(":<")]
-	Previous,
-	[Dot(".raw"), Colon(":u")]
-	Raw,
-	[Dot(".ref"), Colon(":r")]
-	ShowInReferenceMenu,
-	[Dot(".source")]
-	ChainToSource,
-	[Dot(".topic"), Colon(":n")]
-	TopicName,
 }

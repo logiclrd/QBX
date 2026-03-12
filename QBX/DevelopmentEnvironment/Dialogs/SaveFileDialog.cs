@@ -43,6 +43,8 @@ public class SaveFileDialog : DialogWithDirectoryList
 	{
 		InitializeComponent(Path.GetFileName(filePath));
 
+		HelpContextString = "-902";
+
 		switch (title)
 		{
 			case SaveFileDialogTitle.Save: Title = "Save"; break;

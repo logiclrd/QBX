@@ -16,6 +16,8 @@ public class PromptToSaveDialog : Dialog
 	public PromptToSaveDialog(Machine machine, Configuration configuration)
 		: base(machine, configuration)
 	{
+		HelpContextString = "-215";
+
 		Width = 60;
 		Height = 7;
 

@@ -35,6 +35,7 @@ public class InstantWatchDialog : Dialog
 		: base(machine, configuration)
 	{
 		Title = "Instant Watch";
+		HelpContextString = "-915";
 
 		Width = 49;
 		Height = 12;

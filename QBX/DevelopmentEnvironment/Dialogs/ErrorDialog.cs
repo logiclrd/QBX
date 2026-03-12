@@ -5,9 +5,14 @@ namespace QBX.DevelopmentEnvironment.Dialogs;
 
 public class ErrorDialog : Dialog
 {
-	public ErrorDialog(Machine machine, Configuration configuration, string errorMessage)
+	public ErrorDialog(Machine machine, Configuration configuration, string errorMessage, int? errorNumber)
 		: base(machine, configuration)
 	{
+		if (errorNumber.HasValue)
+			HelpContextString = (-errorNumber.Value).ToString();
+		else
+			HelpContextString = "-121"; // Syntax Error
+
 		if (errorMessage.Length > 65)
 			errorMessage = errorMessage.Substring(0, 65) + "...";
 

@@ -23,6 +23,8 @@ public class AddWatchDialog : Dialog
 		: base(machine, configuration)
 	{
 		InitializeComponent();
+
+		HelpContextString = "-244";
 	}
 
 	[MemberNotNull(nameof(lblPrompt))]

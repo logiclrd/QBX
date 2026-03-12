@@ -1,4 +1,3 @@
-Open File Dialog: "-920"
 Merge Dialog: "-921"
 Save As Dialog: "-902"
 Create File Dialog: "-901"
@@ -11,20 +10,16 @@ Change Dialog: "-907"
 Change Match Dialog: "-909"
 Make EXE File Dialog: "-905"
 Make Library Dialog: "-906"
-Watch Dialog: "-915"
 Delete Watch Dialog: "-910"
 Run DOS Command Dialog: "-917"
 Customize Menu Overview Dialog: "-918"
 Customize Menu Add/Edit Item Dialog: "-919"
-Display Options Dialog: "-913"
 Path Options Dialog: "-914"
 Right Mouse Button Dialog: "-900"
 Unload File Dialog: "-264"
 Move SUB Dialog: "-263"
 Modify COMMAND$ Dialog: "-246"
 Set Main Module Dialog: "-266"
-Add Watch Dialog: "-244"
-Syntax Error Dialog: "-121"
 Cannot Continue Dialog: "-198"
 No Main Module Dialog: "-199"
 Help Not Available Dialog: "-203" => F1 but token doesn't match anything AND at least one error exists in program
@@ -37,7 +32,6 @@ Overwrite Prompt Dialog: "-211" => trying to Save As but the target file already
 Confirm Deletion of SUB Dialog: "-212" => trying to delete SUB from the SUBs dialog (F2)
 Confirm Remark Instead of Blank Line Dialog: "-213" => trying to insert a blank line before a routine's opening statement
 Confirm Discard Changes (Unload) Dialog: "-214" => trying to unload a file that is not pristine
-Confirm Discard Changes (New/Open) Dialog: "-215" => trying to start/open a new program when the edit state is not pristine
 Save Include File Prompt Dialog: "-216" => trying to run program with an include file open that is not pristine
 Save Include Files First Prompt Dialog: "-217" => trying to save a module from which an included file is open that is not pristine
 Cannot Cross Procedure/Module Boundary Dialog: "-218" => trying to Set Next Statement to a different routine

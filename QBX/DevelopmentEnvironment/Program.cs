@@ -564,6 +564,15 @@ public partial class Program : HostedProgram, IOvertypeFlag
 
 		Dialogs.Add(dialog);
 
+		dialog.ShowHelpPopup +=
+			(_, helpContextString) =>
+			{
+				if (!helpContextString.Contains('!'))
+					helpContextString = EnvironmentHelpFilePrefix + helpContextString;
+
+				ShowHelpTopicPopup(helpContextString);
+			};
+
 		dialog.Closed +=
 			(_, _) =>
 			{
@@ -578,7 +587,16 @@ public partial class Program : HostedProgram, IOvertypeFlag
 
 	public bool TryShowHelpTopicForTokenUnderCursor()
 	{
-		FocusedViewport.CommitCurrentLine();
+		try
+		{
+			FocusedViewport.CommitCurrentLine();
+		}
+		catch (SyntaxErrorException e)
+		{
+			PresentError(e);
+			return false;
+		}
+
 		FocusedViewport.EditCurrentLine();
 
 		var buffer = FocusedViewport.CurrentLineBuffer;
@@ -589,6 +607,9 @@ public partial class Program : HostedProgram, IOvertypeFlag
 		int startIndex = FocusedViewport.CursorX;
 
 		FindIdentifierExtent(buffer, ref startIndex, out var endIndex);
+
+		if (startIndex > endIndex)
+			return false;
 
 		string token = buffer.ToString(startIndex, endIndex - startIndex + 1);
 

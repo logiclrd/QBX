@@ -23,6 +23,8 @@ public class WatchpointDialog : Dialog
 		: base(machine, configuration)
 	{
 		InitializeComponent();
+
+		HelpContextString = "-245";
 	}
 
 	[MemberNotNull(nameof(lblPrompt))]
