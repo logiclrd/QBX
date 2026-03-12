@@ -4,4 +4,5 @@ public enum OpenFileDialogTitle
 {
 	OpenProgram,
 	LoadFile,
+	Merge,
 }
