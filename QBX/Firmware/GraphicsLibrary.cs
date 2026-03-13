@@ -339,6 +339,8 @@ public abstract class GraphicsLibrary : VisualLibrary
 		var translated = Window.TranslatePoint(x, y);
 
 		PixelSet(translated.X, translated.Y, attribute);
+
+		LastPoint = (x, y);
 	}
 
 	public abstract void PixelSet(int x, int y, int attribute);
@@ -2266,11 +2268,17 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 			try
 			{
-				GetSprite(
-					PointerRect.X1, PointerRect.Y1,
-					Math.Min(PointerRect.X2, Width - 1),
-					Math.Min(PointerRect.Y2, Height - 1),
-					_pointerSaved);
+				if ((PointerRect.X1 < Width)
+				 && (PointerRect.Y1 < Height)
+				 && (PointerRect.X2 >= PointerRect.X1)
+				 && (PointerRect.Y2 >= PointerRect.Y1))
+				{
+					GetSprite(
+						PointerRect.X1, PointerRect.Y1,
+						Math.Min(PointerRect.X2, Width - 1),
+						Math.Min(PointerRect.Y2, Height - 1),
+						_pointerSaved);
+				}
 
 				PutMaskedSprite(
 					_pointerAnd, _pointerXor,
@@ -2293,10 +2301,16 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 			try
 			{
-				PutSprite(
-					_pointerSaved,
-					PutSpriteAction.PixelSet,
-					PointerRect.X1, PointerRect.Y1);
+				if ((PointerRect.X1 < Width)
+				 && (PointerRect.Y1 < Height)
+				 && (PointerRect.X2 >= PointerRect.X1)
+				 && (PointerRect.Y2 >= PointerRect.Y1))
+				{
+					PutSprite(
+						_pointerSaved,
+						PutSpriteAction.PixelSet,
+						PointerRect.X1, PointerRect.Y1);
+				}
 
 				PointerIsDrawn = false;
 			}
