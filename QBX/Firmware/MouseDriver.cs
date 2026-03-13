@@ -14,8 +14,13 @@ public class MouseDriver
 {
 	public bool IsInitialized;
 
-	public int PointerX => Bounds.ConstrainX(_machine.Mouse.X * _width / _machine.Mouse.Width);
-	public int PointerY => Bounds.ConstrainY(_machine.Mouse.Y * _height / _machine.Mouse.Height);
+	public int PointerX => Bounds.ConstrainX(Quantize(_machine.Mouse.X * _width / _machine.Mouse.Width, _quantize));
+	public int PointerY => Bounds.ConstrainY(Quantize(_machine.Mouse.Y * _height / _machine.Mouse.Height, _quantize));
+
+	static int Quantize(int value, int resolution) => (value / resolution) * resolution;
+
+	public int ScaledPointerX => PointerX * _scaledWidth / _width;
+	public int ScaledPointerY => PointerY * _scaledHeight / _height;
 
 	public MouseButton LeftButton;
 	public MouseButton MiddleButton;
@@ -79,6 +84,9 @@ public class MouseDriver
 
 	int _width;
 	int _height;
+	int _scaledWidth;
+	int _scaledHeight;
+	int _quantize;
 	int _pointerVisible = -1;
 
 	public MouseDriver(Machine machine)
@@ -95,18 +103,25 @@ public class MouseDriver
 		machine.VideoFirmware.ModeChanged +=
 			_ =>
 			{
-				if (machine.GraphicsArray.Graphics.DisableText)
-				{
-					_width = machine.GraphicsArray.MiscellaneousOutput.BasePixelWidth >> (machine.GraphicsArray.Sequencer.DotDoubling ? 1 : 0);
-					_height = machine.GraphicsArray.CRTController.NumScanLines;
-				}
-				else
-				{
-					int dotWidth = machine.GraphicsArray.MiscellaneousOutput.BasePixelWidth >> (machine.GraphicsArray.Sequencer.DotDoubling ? 1 : 0);
-					int dotHeight = machine.GraphicsArray.CRTController.NumScanLines;
+				int xShift = machine.GraphicsArray.Sequencer.DotDoubling ? 1 : 0;
+				int yShift = machine.GraphicsArray.CRTController.ScanDoubling ? 1 : 0;
 
-					_width = dotWidth * 8 / machine.GraphicsArray.Sequencer.CharacterWidth;
-					_height = dotHeight * 8 / machine.GraphicsArray.CRTController.CharacterHeight;
+				_width = machine.GraphicsArray.MiscellaneousOutput.BasePixelWidth * 8 / machine.GraphicsArray.Sequencer.CharacterWidth;
+				_height = machine.GraphicsArray.CRTController.NumScanLines;
+
+				_scaledWidth = machine.GraphicsArray.MiscellaneousOutput.BasePixelWidth >> xShift;
+				_scaledHeight = machine.GraphicsArray.CRTController.NumScanLines;
+
+				_quantize = 1;
+
+				if (!machine.GraphicsArray.Graphics.DisableText)
+				{
+					_height = _height * 8 / machine.GraphicsArray.CRTController.CharacterHeight;
+
+					_scaledWidth = _scaledWidth / machine.GraphicsArray.Sequencer.CharacterWidth;
+					_scaledHeight = _height / 8;
+
+					_quantize = 8;
 				}
 
 				ResetBounds();
@@ -460,7 +475,7 @@ public class MouseDriver
 	public void HidePointer()
 	{
 		if (!IsInitialized)
-			return;
+			Reset();
 
 		_pointerVisible--;
 
@@ -533,7 +548,7 @@ public class MouseDriver
 		ExclusionArea.X2 = x2;
 		ExclusionArea.Y2 = y2;
 
-		if (ExclusionArea.Contains(PointerX, PointerY))
+		if (IsInitialized && ExclusionArea.Contains(PointerX, PointerY))
 		{
 			UpdateHardwareTextPointer();
 			PointerVisibleChanged?.Invoke();
@@ -544,7 +559,7 @@ public class MouseDriver
 	{
 		ExclusionArea = new IntegerRect(-1, -1, -1, -1);
 
-		if (IsExcluded)
+		if (IsInitialized && IsExcluded)
 		{
 			UpdateHardwareTextPointer();
 			PointerVisibleChanged?.Invoke();
@@ -553,7 +568,7 @@ public class MouseDriver
 		}
 	}
 
-	public const int StateBufferSize = 207;
+	public const int StateBufferSize = 219;
 
 	public byte[] CreateStateBuffer()
 	{
@@ -577,6 +592,9 @@ public class MouseDriver
 
 			writer.Write(_width);
 			writer.Write(_height);
+			writer.Write(_scaledWidth);
+			writer.Write(_scaledHeight);
+			writer.Write(_quantize);
 
 			LeftButton.SerializeTo(writer);
 			MiddleButton.SerializeTo(writer);
@@ -634,6 +652,9 @@ public class MouseDriver
 
 		_width = reader.ReadInt32();
 		_height = reader.ReadInt32();
+		_scaledWidth = reader.ReadInt32();
+		_scaledHeight = reader.ReadInt32();
+		_quantize = reader.ReadInt32();
 
 		LeftButton.DeserializeFrom(reader);
 		MiddleButton.DeserializeFrom(reader);

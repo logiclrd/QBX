@@ -2254,8 +2254,8 @@ public abstract class GraphicsLibrary : VisualLibrary
 			if ((_pointerSaved == null) || (_pointerSaved.Length < _pointerXor.Length))
 				_pointerSaved = new byte[_pointerXor.Length];
 
-			int pointerX = Machine.MouseDriver.PointerX - _pointerHotSpotX;
-			int pointerY = Machine.MouseDriver.PointerY - _pointerHotSpotY;
+			int pointerX = Machine.MouseDriver.ScaledPointerX - _pointerHotSpotX;
+			int pointerY = Machine.MouseDriver.ScaledPointerY - _pointerHotSpotY;
 
 			PointerRect.X1 = Math.Max(0, pointerX - 1);
 			PointerRect.Y1 = Math.Max(0, pointerY - 1);

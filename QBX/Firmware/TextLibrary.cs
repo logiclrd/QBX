@@ -730,8 +730,8 @@ public class TextLibrary : VisualLibrary
 	{
 		if (Machine.MouseDriver.PointerVisible && Machine.MouseDriver.TextPointerEnableSoftware && !PointerIsDrawn)
 		{
-			int pointerCharacterX = Machine.MouseDriver.PointerX / 8;
-			int pointerCharacterY = Machine.MouseDriver.PointerY / 8;
+			int pointerCharacterX = Machine.MouseDriver.ScaledPointerX;
+			int pointerCharacterY = Machine.MouseDriver.ScaledPointerY;
 
 			int pointerOffset = pointerCharacterY * CharacterWidth + pointerCharacterX;
 
