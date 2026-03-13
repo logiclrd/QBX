@@ -36,9 +36,9 @@ public class MouseButton(MouseDriver owner)
 		{
 			IsPressed = true;
 
-			ClickCounter.Count++;
 			ClickCounter.LastX = owner.PointerX;
 			ClickCounter.LastY = owner.PointerY;
+			ClickCounter.Count++;
 
 			owner.NotifyButtonStateChanged();
 		}
@@ -50,9 +50,9 @@ public class MouseButton(MouseDriver owner)
 		{
 			IsPressed = false;
 
-			ReleaseCounter.Count++;
 			ReleaseCounter.LastX = owner.PointerX;
 			ReleaseCounter.LastY = owner.PointerY;
+			ReleaseCounter.Count++;
 
 			owner.NotifyButtonStateChanged();
 		}
