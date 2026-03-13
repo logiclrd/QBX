@@ -12,7 +12,7 @@ public partial class Video(Machine machine)
 
 	public VisualLibrary VisualLibrary => _visualLibrary;
 
-	public event Action<ModeParameters>? ModeChanged;
+	public event Action<ModeParameters?>? ModeChanged;
 
 	// Can't initialize a VisualLibrary at construction time, but will be populated soon.
 	VisualLibrary _visualLibrary = null!;
@@ -448,6 +448,8 @@ public partial class Video(Machine machine)
 		var font = GetFont(maximumScanLineValue + 1);
 
 		LoadFontIntoCharacterGenerator(font);
+
+		ModeChanged?.Invoke(null);
 	}
 
 	public void SetCharacterWidth(int width)
@@ -480,6 +482,8 @@ public partial class Video(Machine machine)
 			(array.Sequencer.Registers[SequencerRegisters.ClockingMode]
 				& ~SequencerRegisters.ClockingMode_CharacterWidthMask) |
 			characterWidth));
+
+		ModeChanged?.Invoke(null);
 	}
 
 	public bool IsTextMode
