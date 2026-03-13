@@ -134,7 +134,8 @@ public partial class Program
 
 	void UnpauseExecution()
 	{
-		_executionContext!.Controls.WaitForInterruption();
+		using (Machine.DOS.EnableBreak())
+			_executionContext!.Controls.WaitForInterruption();
 
 		if (_executionContext.ExecutionState.IsTerminated)
 			ExecutionEpilogue();
