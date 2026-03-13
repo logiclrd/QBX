@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers;
 using System.Text;
+using System.Threading;
 
 using QBX.Firmware.Fonts;
 using QBX.Hardware;
@@ -33,36 +34,47 @@ public abstract class VisualLibrary : IDisposable
 		Machine.MouseDriver.PointerVisibleChanged -= MouseDriver_PointerVisibleChanged;
 	}
 
+	Lock _pointerLock = new Lock();
+
 	private void MouseDriver_DisplayPageNumberChanged()
 	{
-		try
+		lock (_pointerLock)
 		{
-			UndrawPointer();
-			DrawPointer();
+			try
+			{
+				UndrawPointer();
+				DrawPointer();
+			}
+			catch { }
 		}
-		catch { }
 	}
 
 	private void MouseDriver_PositionChanged()
 	{
-		try
+		lock (_pointerLock)
 		{
-			UndrawPointer();
-			DrawPointer();
+			try
+			{
+				UndrawPointer();
+				DrawPointer();
+			}
+			catch { }
 		}
-		catch { }
 	}
 
 	private void MouseDriver_PointerVisibleChanged()
 	{
-		try
+		lock (_pointerLock)
 		{
-			if (Machine.MouseDriver.PointerVisible)
-				DrawPointer();
-			else
-				UndrawPointer();
+			try
+			{
+				if (Machine.MouseDriver.PointerVisible)
+					DrawPointer();
+				else
+					UndrawPointer();
+			}
+			catch { }
 		}
-		catch { }
 	}
 
 	public int ActivePageNumber;
@@ -628,14 +640,16 @@ public abstract class VisualLibrary : IDisposable
 
 	void BeginOperation()
 	{
-		UndrawPointer();
+		lock (_pointerLock)
+			UndrawPointer();
 		PointerIsHiddenForOperation = true;
 	}
 
 	void EndOperation()
 	{
 		PointerIsHiddenForOperation = false;
-		DrawPointer();
+		lock (_pointerLock)
+			DrawPointer();
 	}
 
 	protected IDisposable? HidePointerForOperationIfPointerAware()
