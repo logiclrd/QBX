@@ -73,7 +73,7 @@ public partial class Program
 		try
 		{
 			foreach (var nativeProcedure in QLBs.SelectMany(qlb => qlb.Exports))
-				_compilation.RegisterNativeProcedure(nativeProcedure);
+				_compilation.RegisterNativeProcedure(nativeProcedure.Clone());
 
 			foreach (var file in LoadedFiles)
 				if (file.IncludeInBuild && (file is CompilationUnit unit))

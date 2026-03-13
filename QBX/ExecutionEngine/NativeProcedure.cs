@@ -19,6 +19,17 @@ public class NativeProcedure(object site, MethodInfo implementation)
 	public DataType[]? ParameterTypes;
 	public DataType? ReturnType = null;
 
+	public NativeProcedure Clone()
+	{
+		return
+			new NativeProcedure(site, implementation)
+			{
+				ParameterTypes = this.ParameterTypes,
+				ReturnType = this.ReturnType,
+				Invoke = this.Invoke,
+			};
+	}
+
 	public void BuildThunk(bool useDirectMarshalling)
 	{
 		if (ParameterTypes == null)
