@@ -23,6 +23,9 @@ public class ScreenStatement(CodeModel.Statements.Statement? source) : Executabl
 			if (!context.Machine.VideoFirmware.SetMode(hardwareMode))
 				throw RuntimeException.IllegalFunctionCall(ModeExpression.Source);
 
+			if (context.VisualLibrary is GraphicsLibrary graphics)
+				graphics.LastPoint = (graphics.Width / 2, graphics.Height / 2);
+
 			if (Video.Modes[hardwareMode] is ModeParameters modeParams)
 			{
 				context.RuntimeState.EnablePaletteRemapping = (hardwareMode < 0x12);
