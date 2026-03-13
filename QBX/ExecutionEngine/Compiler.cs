@@ -2563,7 +2563,8 @@ public class Compiler
 			default: throw new NotImplementedException("Statement not implemented: " + statement.Type);
 		}
 
-		iterator.Advance();
+		if (nextStatementInfo == null)
+			iterator.Advance();
 	}
 
 	[return: NotNullIfNotNull(nameof(expression))]
