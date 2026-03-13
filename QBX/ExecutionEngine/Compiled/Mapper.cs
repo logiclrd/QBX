@@ -611,20 +611,26 @@ public class Mapper
 		if (_isFrozen)
 			throw new Exception("The Mapper is frozen");
 
-		name = QualifyIdentifier(name, dataType);
+		string qualifiedName = QualifyIdentifier(name, dataType);
 
-		if (_arrayIndexByName.TryGetValue(name, out var index))
+		if (_arrayIndexByName.TryGetValue(name, out var index)
+		 || _arrayIndexByName.TryGetValue(qualifiedName, out index))
 			throw CompilerException.DuplicateDefinition(token);
 
 		index = _variables.Count;
 
-		var info = new VariableInfo(name, index);
+		var info = new VariableInfo(qualifiedName, index);
 
 		info.Type = dataType;
 
 		_variables.Add(info);
 
-		return _arrayIndexByName[name] = index;
+		_arrayIndexByName[name] = index;
+
+		if (qualifiedName != name)
+			_arrayIndexByName[qualifiedName] = index;
+
+		return index;
 	}
 
 	public int ResolveArray(string name, out bool implicitlyCreated, DataType? arrayType = null)
@@ -636,11 +642,11 @@ public class Mapper
 		if (_arrayIndexByName.TryGetValue(name, out index))
 			return index;
 
-		name = arrayType != null
+		string qualifiedName = arrayType != null
 			? QualifyIdentifier(name, arrayType)
 			: QualifyIdentifier(name);
 
-		if (_arrayIndexByName.TryGetValue(name, out index))
+		if (_arrayIndexByName.TryGetValue(qualifiedName, out index))
 			return index;
 
 		if (_isFrozen)
