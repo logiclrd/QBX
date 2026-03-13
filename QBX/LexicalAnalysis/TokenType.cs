@@ -312,6 +312,7 @@ public enum TokenType
 	[KeywordFunction]
 	[KeywordToken] VARSEG,
 	[KeywordToken] VIEW,
+	[KeywordToken] WAIT,
 	[KeywordToken] WEND,
 	[KeywordToken] WHILE,
 	[KeywordToken] WIDTH,

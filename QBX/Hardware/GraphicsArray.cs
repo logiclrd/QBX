@@ -345,6 +345,10 @@ public class GraphicsArray : IMemory
 	{
 		public const int InputStatus0Port = 0x3C2;
 		public const int InputStatus1Port = 0x3DA;
+
+		public const byte Register1_VerticalRetrace = 1;
+
+		public byte Register1;
 	}
 
 	public class CRTControllerRegisters
@@ -715,6 +719,7 @@ public class GraphicsArray : IMemory
 	public readonly GraphicsRegisters Graphics = new GraphicsRegisters();
 	public readonly SequencerRegisters Sequencer = new SequencerRegisters();
 	public readonly MiscellaneousOutputRegisters MiscellaneousOutput = new MiscellaneousOutputRegisters();
+	public readonly InputStatusRegisters InputStatus = new InputStatusRegisters();
 	public readonly CRTControllerRegisters CRTController = new CRTControllerRegisters();
 	public readonly AttributeControllerRegisters AttributeController = new AttributeControllerRegisters();
 	public readonly DACRegisters DAC = new DACRegisters();
@@ -862,7 +867,7 @@ public class GraphicsArray : IMemory
 			case InputStatusRegisters.InputStatus1Port:
 				handled = true;
 				_attributeControllerPortMode = AddressAndDataPortMode.Address;
-				break;
+				return InputStatus.Register1;
 			case MiscellaneousOutputRegisters.ReadPort:
 				handled = true;
 				return MiscellaneousOutput.Register;
@@ -887,6 +892,16 @@ public class GraphicsArray : IMemory
 
 		handled = false;
 		return 0;
+	}
+
+	public void BeginVerticalRetrace()
+	{
+		InputStatus.Register1 |= InputStatusRegisters.Register1_VerticalRetrace;
+	}
+
+	public void EndVerticalRetrace()
+	{
+		InputStatus.Register1 &= unchecked((byte)~InputStatusRegisters.Register1_VerticalRetrace);
 	}
 
 	public byte InPort2(int basePortNumber, byte index, out bool handled)

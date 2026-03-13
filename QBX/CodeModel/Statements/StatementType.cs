@@ -94,6 +94,7 @@ public enum StatementType
 	VariableScopeStatement,
 	View,
 	Viewport,
+	Wait,
 	WEnd,
 	While,
 }

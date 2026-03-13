@@ -3402,6 +3402,38 @@ public class BasicParser
 				}
 			}
 
+			case TokenType.WAIT:
+			{
+				var wait = new WaitStatement();
+
+				var arguments = SplitCommaDelimitedList(tokenHandler.RemainingTokens).ToList();
+
+				if (arguments.Count < 2)
+					throw new SyntaxErrorException(tokenHandler.PreviousToken, "Expected: expression");
+				if (arguments.Count > 3)
+				{
+					var blame = tokens[arguments[3].Unwrap().Offset - 1];
+
+					throw new SyntaxErrorException(blame, "Expected: end of statement");
+				}
+
+				var midToken = tokens[arguments[1].Unwrap().Offset - 1];
+
+				wait.PortExpression = ParseExpressionForStatement(wait, arguments[0], midToken);
+
+				if (arguments.Count == 2)
+					wait.AndExpression = ParseExpressionForStatement(wait, arguments[1], tokenHandler.PreviousToken);
+				else
+				{
+					midToken = tokens[arguments[2].Unwrap().Offset - 1];
+
+					wait.AndExpression = ParseExpressionForStatement(wait, arguments[1], midToken);
+					wait.XOrExpression = ParseExpressionForStatement(wait, arguments[2], tokenHandler.PreviousToken);
+				}
+
+				return wait;
+			}
+
 			case TokenType.WEND:
 			{
 				tokenHandler.ExpectEndOfTokens();

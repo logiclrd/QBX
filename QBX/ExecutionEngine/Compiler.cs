@@ -2476,6 +2476,21 @@ public class Compiler
 
 				break;
 			}
+			case CodeModel.Statements.WaitStatement waitStatement:
+			{
+				var translatedWaitStatement = new WaitStatement(waitStatement);
+
+				TranslateNumericArgumentExpression(
+					ref translatedWaitStatement.PortExpression, waitStatement.PortExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedWaitStatement.AndExpression, waitStatement.AndExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedWaitStatement.XOrExpression, waitStatement.XOrExpression);
+
+				container.Append(translatedWaitStatement);
+
+				break;
+			}
 			case CodeModel.Statements.WEndStatement:
 				throw CompilerException.WEndWithoutWhile(statement);
 			case CodeModel.Statements.WhileStatement whileStatement:

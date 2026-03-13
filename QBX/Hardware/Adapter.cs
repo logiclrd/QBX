@@ -52,6 +52,8 @@ public class Adapter
 
 	public unsafe void Render(IntPtr texture)
 	{
+		_array.EndVerticalRetrace();
+
 		if (!SDL.LockTexture(texture, default, out var pixelsPtr, out var pitch))
 			return;
 
@@ -64,6 +66,8 @@ public class Adapter
 		finally
 		{
 			SDL.UnlockTexture(texture);
+
+			_array.BeginVerticalRetrace();
 		}
 	}
 
