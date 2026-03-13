@@ -16,8 +16,8 @@ public class Adapter
 
 	long ElapsedTicks => DateTime.UtcNow.Ticks - Epoch;
 
-	const long TicksPerCursorSwitch = TimeSpan.TicksPerSecond * 8 / 70;
-	const long TicksPerBlinkSwitch = TimeSpan.TicksPerSecond * 16 / 70;
+	const long TicksPerCursorSwitch = TimeSpan.TicksPerSecond * 16 / 70;
+	const long TicksPerBlinkSwitch = TimeSpan.TicksPerSecond * 32 / 70;
 
 	ManualResetEvent _scanStart = new ManualResetEvent(initialState: false);
 	ManualResetEvent _scanEnd = new ManualResetEvent(initialState: false);
