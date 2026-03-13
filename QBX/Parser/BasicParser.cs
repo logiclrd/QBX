@@ -2168,21 +2168,30 @@ public class BasicParser
 				{
 					var onEvent = new OnEventStatement();
 
+					bool needSourceExpression = true;
+
 					switch (tokenHandler.NextToken.Type)
 					{
 						case TokenType.COM: onEvent.EventType = EventType.Com; break;
 						case TokenType.KEY: onEvent.EventType = EventType.Key; break;
-						case TokenType.PEN: onEvent.EventType = EventType.Pen; break;
-						case TokenType.PLAY: onEvent.EventType = EventType.Play; break;
+						case TokenType.PEN: onEvent.EventType = EventType.Pen; needSourceExpression = false; break;
+						case TokenType.PLAY: onEvent.EventType = EventType.Play; needSourceExpression = false; break;
 						case TokenType.SIGNAL: onEvent.EventType = EventType.OS2Signal; break;
 						case TokenType.STRIG: onEvent.EventType = EventType.JoystickTrigger; break;
 						case TokenType.TIMER: onEvent.EventType = EventType.Timer; break;
-						case TokenType.UEVENT: onEvent.EventType = EventType.UserDefinedEvent; break;
+						case TokenType.UEVENT: onEvent.EventType = EventType.UserDefinedEvent; needSourceExpression = false; break;
 
 						default: throw new SyntaxErrorException(tokenHandler.NextToken, "Syntax error");
 					}
 
 					tokenHandler.Advance();
+
+					if (needSourceExpression)
+					{
+						var sourceExpressionTokens = tokenHandler.ExpectParenthesizedTokens();
+
+						onEvent.SourceExpression = ParseExpressionForStatement(onEvent, sourceExpressionTokens, tokenHandler.PreviousToken);
+					}
 
 					var action = ParseStatement(tokenHandler.RemainingTokens, ignoreErrors);
 
