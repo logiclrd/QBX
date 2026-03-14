@@ -8,6 +8,7 @@ using System.Threading;
 using QBX.DevelopmentEnvironment.Dialogs;
 using QBX.DevelopmentEnvironment.Help;
 using QBX.ExecutionEngine;
+using QBX.ExecutionEngine.Execution.Events;
 using QBX.Firmware;
 using QBX.Hardware;
 using QBX.Parser;
@@ -68,7 +69,7 @@ public partial class Program : HostedProgram, IOvertypeFlag
 
 	void IOvertypeFlag.Toggle() => EnableOvertype = !EnableOvertype;
 
-	public Program(Machine machine)
+	public Program(Machine machine, IDispatcher dispatcher)
 		: base(machine)
 	{
 		Machine = machine;
@@ -86,6 +87,8 @@ public partial class Program : HostedProgram, IOvertypeFlag
 
 		PlayProcessor = new PlayProcessor(machine);
 		PlayProcessor.StartProcessingThread();
+
+		EventHub = new EventHub(dispatcher);
 
 		InitializeMenuBar();
 
@@ -237,6 +240,11 @@ public partial class Program : HostedProgram, IOvertypeFlag
 				// No high-intensity colours
 				Configuration.DisplayAttributes.LoadNoHighIntensityConfiguration();
 			}
+			else if (argument.Equals("/W"))
+			{
+				// From BC.EXE, only check for events every line number/label.
+				EventCheckGranularity = EventCheckGranularity.EveryLabel;
+			}
 			else if (argument.Equals("/RUN", StringComparison.OrdinalIgnoreCase))
 			{
 				// Automatically start loaded program
@@ -346,7 +354,7 @@ public partial class Program : HostedProgram, IOvertypeFlag
 			TextLibrary.NewLine();
 			TextLibrary.WriteText("    /AH /B /C:n {/Ea | /Es} /E:n /G /H /K:[file] /L [lib]");
 			TextLibrary.NewLine();
-			TextLibrary.WriteText("    /MBF /NOF[RILLS] /NOHI [/RUN] file /CMD string");
+			TextLibrary.WriteText("    /MBF /NOF[RILLS] /NOHI /W [/RUN] file /CMD string");
 			TextLibrary.NewLine();
 
 			Aborted = true;

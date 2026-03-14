@@ -10,6 +10,17 @@ namespace QBX;
 
 class Program
 {
+	class SDLDispatcher : IDispatcher
+	{
+		public void Dispatch(Action action)
+		{
+			SDL.RunOnMainThread(
+				_ => action(),
+				default,
+				waitComplete: false);
+		}
+	}
+
 	static int Main()
 	{
 		DebugExceptionHelper.Install();
@@ -18,7 +29,9 @@ class Program
 
 		var video = machine.VideoFirmware;
 
-		HostedProgram program = new DevelopmentEnvironment.Program(machine);
+		var dispatcher = new SDLDispatcher();
+
+		HostedProgram program = new DevelopmentEnvironment.Program(machine, dispatcher);
 		//HostedProgram program = new TestDrivers.GraphicsArrayTest(machine);
 
 		if (!program.EnableMainLoop)

@@ -7,6 +7,7 @@ public class LabelStatement(string labelName, CodeModel.Statements.Statement sou
 	public string LabelName = labelName;
 
 	public override bool CanBreak { get => false; set { } }
+	public override bool IsLabel => true;
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{

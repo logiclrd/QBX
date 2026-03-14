@@ -2179,7 +2179,7 @@ public class BasicParser
 						case TokenType.SIGNAL: onEvent.EventType = EventType.OS2Signal; break;
 						case TokenType.STRIG: onEvent.EventType = EventType.JoystickTrigger; break;
 						case TokenType.TIMER: onEvent.EventType = EventType.Timer; break;
-						case TokenType.UEVENT: onEvent.EventType = EventType.UserDefinedEvent; needSourceExpression = false; break;
+						case TokenType.UEVENT: onEvent.EventType = EventType.UserEvent; needSourceExpression = false; break;
 
 						default: throw new SyntaxErrorException(tokenHandler.NextToken, "Syntax error");
 					}
@@ -3262,7 +3262,7 @@ public class BasicParser
 					case TokenType.SIGNAL: eventControl.EventType = EventType.OS2Signal; break;
 					case TokenType.STRIG: eventControl.EventType = EventType.JoystickTrigger; break;
 					case TokenType.TIMER: eventControl.EventType = EventType.Timer; break;
-					case TokenType.UEVENT: eventControl.EventType = EventType.UserDefinedEvent; needSourceExpression = false; break;
+					case TokenType.UEVENT: eventControl.EventType = EventType.UserEvent; needSourceExpression = false; break;
 				}
 
 				if (needSourceExpression)

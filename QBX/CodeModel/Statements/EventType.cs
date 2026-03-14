@@ -11,5 +11,5 @@ public enum EventType
 	OS2Signal,
 	JoystickTrigger,
 	Timer,
-	UserDefinedEvent,
+	UserEvent,
 }

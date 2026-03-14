@@ -16,32 +16,38 @@ public class EventControlStatement : Statement
 	protected override void RenderImplementation(TextWriter writer)
 	{
 		bool needSourceExpression = false;
+		bool supportSourceExpression = false;
 
 		switch (EventType)
 		{
 			case EventType.Com: writer.Write("COM"); needSourceExpression = true; break;
-			case EventType.Key: writer.Write("KEY"); break;
+			case EventType.Key: writer.Write("KEY"); supportSourceExpression = true; break;
 			case EventType.Pen: writer.Write("PEN"); break;
 			case EventType.Play: writer.Write("PLAY"); break;
 			case EventType.OS2Signal: writer.Write("SIGNAL"); needSourceExpression = true; break;
 			case EventType.JoystickTrigger: writer.Write("STRIG"); needSourceExpression = true; break;
 			case EventType.Timer: writer.Write("TIMER"); break;
-			case EventType.UserDefinedEvent: writer.Write("UEVENT"); break;
+			case EventType.UserEvent: writer.Write("UEVENT"); break;
 
 			default: throw new Exception("Internal error: unrecognized EventType");
 		}
 
-		if (needSourceExpression)
+		supportSourceExpression |= needSourceExpression;
+
+		if (SourceExpression == null)
 		{
-			if (SourceExpression == null)
+			if (needSourceExpression)
 				throw new Exception("Internal error: Missing required SourceExpression");
+		}
+		else
+		{
+			if (!supportSourceExpression)
+				throw new Exception("Internal error: Unnecessary SourceExpression present");
 
 			writer.Write('(');
 			SourceExpression.Render(writer);
 			writer.Write(')');
 		}
-		else if (SourceExpression != null)
-			throw new Exception("Internal error: Unnecessary SourceExpression present");
 
 		switch (Action)
 		{

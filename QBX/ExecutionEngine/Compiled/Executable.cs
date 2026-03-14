@@ -46,6 +46,8 @@ public abstract class Executable
 
 	public virtual bool CanBreak { get; set; } = true;
 
+	public virtual bool IsLabel => false;
+
 	public abstract void Execute(ExecutionContext context, StackFrame stackFrame);
 
 	public virtual bool SelfSequenceDispatch => false;

@@ -411,7 +411,9 @@ public class DataParserTests
 
 		var playProcessor = new PlayProcessor(machine);
 
-		var executionContext = new ExecutionContext(machine, playProcessor);
+		var eventHub = new DummyEventHub();
+
+		var executionContext = new ExecutionContext(machine, playProcessor, eventHub);
 
 		var parser = new DataParser();
 
@@ -443,7 +445,9 @@ public class DataParserTests
 
 		var playProcessor = new PlayProcessor(machine);
 
-		var executionContext = new ExecutionContext(machine, playProcessor);
+		var eventHub = new DummyEventHub();
+
+		var executionContext = new ExecutionContext(machine, playProcessor, eventHub);
 
 		var parser = new DataParser();
 
@@ -475,7 +479,9 @@ public class DataParserTests
 
 		var playProcessor = new PlayProcessor(machine);
 
-		var executionContext = new ExecutionContext(machine, playProcessor);
+		var eventHub = new DummyEventHub();
+
+		var executionContext = new ExecutionContext(machine, playProcessor, eventHub);
 
 		var parser = new DataParser();
 
@@ -507,7 +513,9 @@ public class DataParserTests
 
 		var playProcessor = new PlayProcessor(machine);
 
-		var executionContext = new ExecutionContext(machine, playProcessor);
+		var eventHub = new DummyEventHub();
+
+		var executionContext = new ExecutionContext(machine, playProcessor, eventHub);
 
 		var parser = new DataParser();
 
@@ -539,7 +547,9 @@ public class DataParserTests
 
 		var playProcessor = new PlayProcessor(machine);
 
-		var executionContext = new ExecutionContext(machine, playProcessor);
+		var eventHub = new DummyEventHub();
+
+		var executionContext = new ExecutionContext(machine, playProcessor, eventHub);
 
 		var parser = new DataParser();
 
@@ -571,7 +581,9 @@ public class DataParserTests
 
 		var playProcessor = new PlayProcessor(machine);
 
-		var executionContext = new ExecutionContext(machine, playProcessor);
+		var eventHub = new DummyEventHub();
+
+		var executionContext = new ExecutionContext(machine, playProcessor, eventHub);
 
 		var parser = new DataParser();
 
@@ -611,7 +623,9 @@ public class DataParserTests
 
 		var playProcessor = new PlayProcessor(machine);
 
-		var executionContext = new ExecutionContext(machine, playProcessor);
+		var eventHub = new DummyEventHub();
+
+		var executionContext = new ExecutionContext(machine, playProcessor, eventHub);
 
 		var parser = new DataParser();
 

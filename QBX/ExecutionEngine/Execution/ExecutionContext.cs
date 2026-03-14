@@ -5,6 +5,7 @@ using System.Threading;
 
 using QBX.ExecutionEngine.Compiled;
 using QBX.ExecutionEngine.Compiled.Statements;
+using QBX.ExecutionEngine.Execution.Events;
 using QBX.ExecutionEngine.Execution.Variables;
 using QBX.Firmware;
 using QBX.Hardware;
@@ -135,12 +136,109 @@ public class ExecutionContext
 		}
 	}
 
-	public ExecutionContext(Machine machine, PlayProcessor playProcessor)
+	public EventHub EventHub { get; }
+	public EventCheckGranularity EventCheckGranularity { get; set; } = EventCheckGranularity.EveryStatement;
+
+	public ExecutionContext(Machine machine, PlayProcessor playProcessor, EventHub eventHub)
 	{
 		_executionState = new ExecutionState();
 
 		Machine = machine;
 		PlayProcessor = playProcessor;
+		EventHub = eventHub;
+
+		_executionState.EnterExecution += AttachKeyEventInterceptor;
+		_executionState.ExitExecution += DetachKeyEventInterceptor;
+	}
+
+	void AttachKeyEventInterceptor()
+	{
+		Machine.Keyboard.InterceptKeyEvent += Keyboard_InterceptKeyEvent;
+	}
+
+	void DetachKeyEventInterceptor()
+	{
+		Machine.Keyboard.InterceptKeyEvent -= Keyboard_InterceptKeyEvent;
+	}
+
+	bool Keyboard_InterceptKeyEvent(KeyEvent keyEvent)
+	{
+		if (keyEvent.IsRelease)
+			return false;
+
+		return EventHub.PostKeyEvent(keyEvent);
+	}
+
+	void AttachEvents()
+	{
+		Machine.MouseDriver.PositionChanged += MouseDriver_PositionChanged;
+		PlayProcessor.QueueLengthChanged += PlayProcessor_QueueLengthChanged;
+	}
+
+	void DetachEvents()
+	{
+		Machine.MouseDriver.PositionChanged -= MouseDriver_PositionChanged;
+		PlayProcessor.QueueLengthChanged -= PlayProcessor_QueueLengthChanged;
+	}
+
+	void MouseDriver_PositionChanged()
+	{
+		if (Machine.MouseDriver.LightPenEmulationEnabled
+			&& Machine.MouseDriver.LightPenIsDown)
+				EventHub.PostEvent(EventType.Pen);
+	}
+
+	int _lastPlayProcessorQueueLength;
+
+	void PlayProcessor_QueueLengthChanged()
+	{
+		int triggerLength = EventHub.Configuration.PlayQueueTriggerLength;
+
+		int currentPlayProcessorQueueLength = PlayProcessor.QueueLength;
+
+		if ((_lastPlayProcessorQueueLength > triggerLength)
+		 && (currentPlayProcessorQueueLength <= triggerLength))
+			EventHub.PostEvent(EventType.Play);
+
+		_lastPlayProcessorQueueLength = currentPlayProcessorQueueLength;
+	}
+
+	Dictionary<Event, StatementPath> _eventHandlers = new();
+
+	public void SetEventHandler(Event evt, StatementPath handlerPath)
+	{
+		_eventHandlers[evt] = handlerPath;
+	}
+
+	public void ClearEventHandler(Event evt)
+	{
+		_eventHandlers.Remove(evt);
+	}
+
+	StatementPath? _returnFromEventHandlerSurrogatePath = null;
+
+	void HandleEvent(Event evt, Executable currentStatement, StackFrame currentStackFrame)
+	{
+		if (_eventHandlers.TryGetValue(evt, out var handlerPath))
+		{
+			using (EventHub.SuspendAllEvents())
+			{
+				_returnFromEventHandlerSurrogatePath = new StatementPath();
+
+				try
+				{
+					RootFrame!.PushReturnPath(_returnFromEventHandlerSurrogatePath);
+
+					_goTo = handlerPath.Clone();
+
+					Call(RootFrame.Routine, RootFrame, enterRoutine: currentStackFrame != RootFrame);
+				}
+				finally
+				{
+					_returnFromEventHandlerSurrogatePath = null;
+				}
+			}
+		}
 	}
 
 	public void SetErrorHandler(ErrorResponse response, StatementPath? handlerPath = null)
@@ -252,6 +350,8 @@ public class ExecutionContext
 
 		try
 		{
+			AttachEvents();
+
 			try
 			{
 				Call(entrypoint, _rootFrame);
@@ -273,6 +373,8 @@ public class ExecutionContext
 		}
 		finally
 		{
+			DetachEvents();
+
 			_rootFrameEstablished.Reset();
 			_rootFrame = null;
 
@@ -316,6 +418,16 @@ public class ExecutionContext
 
 				do
 				{
+					bool shouldCheckForEvents =
+						(EventCheckGranularity == EventCheckGranularity.EveryStatement) ||
+						executable.IsLabel;
+
+					if (shouldCheckForEvents && EventHub.HaveEvents)
+					{
+						if (EventHub.TryGetEvent(out Event evt))
+							HandleEvent(evt, executable, stackFrame);
+					}
+
 					if (executable.CanBreak)
 						_executionState.NextStatement(executable.Source);
 
@@ -472,6 +584,9 @@ public class ExecutionContext
 			{
 				if ((goTo.TargetFrame != null) && (goTo.TargetFrame != frame))
 					throw; // "RESUME linenumber/label" in a different stack frame -- keep searching
+
+				if (goTo.StatementPath == _returnFromEventHandlerSurrogatePath)
+					return s_dummyVariable;
 
 				_goTo = goTo.StatementPath.Clone();
 				goto goTo_;

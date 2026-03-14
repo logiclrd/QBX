@@ -10,6 +10,8 @@ public abstract class TargetLineStatement : Statement
 
 	public virtual bool CanBeParameterless => false;
 
+	public bool TargetsLine0 => (TargetLineNumber == "0");
+
 	protected abstract string StatementName { get; }
 
 	protected override void RenderImplementation(TextWriter writer)

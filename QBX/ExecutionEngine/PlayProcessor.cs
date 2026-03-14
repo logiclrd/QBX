@@ -21,6 +21,10 @@ public class PlayProcessor
 	Queue<Note> _noteQueue = new Queue<Note>();
 	int _maxNoteQueue = 1;
 
+	public int QueueLength => _noteQueue.Count;
+
+	public event Action? QueueLengthChanged;
+
 	class Note
 	{
 		public double Frequency;
@@ -411,6 +415,8 @@ public class PlayProcessor
 			_noteQueue.Enqueue(note);
 
 			Monitor.PulseAll(_noteQueueSync);
+
+			QueueLengthChanged?.Invoke();
 		}
 	}
 
@@ -450,6 +456,8 @@ public class PlayProcessor
 					note = _noteQueue.Dequeue();
 
 					Monitor.PulseAll(_noteQueueSync);
+
+					QueueLengthChanged?.Invoke();
 				}
 
 				_machine.Speaker.WaitWhileQueued(threshold: TimeSpan.FromSeconds(0.05));

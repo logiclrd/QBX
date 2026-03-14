@@ -13,6 +13,9 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 	public RuntimeException? CurrentError => _currentError;
 	public bool IsTerminated => _isTerminated;
 
+	public event Action? EnterExecution;
+	public event Action? ExitExecution;
+
 	public event Func<StackFrame, bool>? CheckWatchpoints;
 
 	Stack<StackFrame> _stack = new Stack<StackFrame>();
@@ -104,6 +107,10 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 	public void StartExecution(StackFrame rootFrame)
 	{
 		_stack.Push(rootFrame);
+
+		DebugOut("PROGRAM: EnterExecution");
+
+		EnterExecution?.Invoke();
 	}
 
 	public void EnterRoutine(Routine routine, StackFrame stackFrame)
@@ -186,6 +193,10 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 
 			_isTerminated = true;
 
+			DebugOut("PROGRAM: ExitExecution");
+
+			ExitExecution?.Invoke();
+
 			DebugOut("PROGRAM: pulse");
 
 			Monitor.PulseAll(_sync);
@@ -200,6 +211,10 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 
 			_waiting = _currentWait;
 
+			DebugOut("PROGRAM: ExitExecution");
+
+			ExitExecution?.Invoke();
+
 			DebugOut("PROGRAM: pulse");
 
 			Monitor.PulseAll(_sync);
@@ -210,6 +225,10 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 				Monitor.Wait(_sync);
 				DebugOut("PROGRAM: woke up");
 			}
+
+			DebugOut("PROGRAM: EnterExecution");
+
+			EnterExecution?.Invoke();
 
 			_waiting = 0;
 

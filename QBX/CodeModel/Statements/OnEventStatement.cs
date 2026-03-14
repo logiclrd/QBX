@@ -33,7 +33,7 @@ public class OnEventStatement : Statement
 			case EventType.OS2Signal: writer.Write("SIGNAL"); break;
 			case EventType.JoystickTrigger: writer.Write("STRIG"); break;
 			case EventType.Timer: writer.Write("TIMER"); break;
-			case EventType.UserDefinedEvent: writer.Write("UEVENT"); needSourceExpression = false; break;
+			case EventType.UserEvent: writer.Write("UEVENT"); needSourceExpression = false; break;
 
 			default: throw new Exception("Internal error: OnStatement with unrecognized EventType");
 		}

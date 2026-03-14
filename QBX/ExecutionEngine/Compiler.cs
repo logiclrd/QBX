@@ -13,6 +13,7 @@ using QBX.ExecutionEngine.Compiled.Operations;
 using QBX.ExecutionEngine.Compiled.RelationalOperators;
 using QBX.ExecutionEngine.Compiled.Statements;
 using QBX.ExecutionEngine.Execution;
+using QBX.ExecutionEngine.Execution.Events;
 
 using QBX.LexicalAnalysis;
 
@@ -1211,6 +1212,52 @@ public class Compiler
 
 				break;
 			}
+			case CodeModel.Statements.EventControlStatement eventControlStatement:
+			{
+				switch (eventControlStatement.EventType)
+				{
+					case CodeModel.Statements.EventType.Key:
+					case CodeModel.Statements.EventType.Pen:
+					case CodeModel.Statements.EventType.Play:
+					case CodeModel.Statements.EventType.Timer:
+					case CodeModel.Statements.EventType.UserEvent:
+					{
+						var translatedEventControlStatement = new EventControlStatement(eventControlStatement);
+
+						translatedEventControlStatement.EventType =
+							eventControlStatement.EventType switch
+							{
+								CodeModel.Statements.EventType.Key => EventType.Key,
+								CodeModel.Statements.EventType.Pen => EventType.Pen,
+								CodeModel.Statements.EventType.Play => EventType.Play,
+								CodeModel.Statements.EventType.Timer => EventType.Timer,
+								CodeModel.Statements.EventType.UserEvent => EventType.UserEvent,
+
+								_ => throw new Exception("Internal error")
+							};
+
+						TranslateNumericArgumentExpression(
+							ref translatedEventControlStatement.SourceExpression, eventControlStatement.SourceExpression);
+
+						translatedEventControlStatement.EnabledState =
+							eventControlStatement.Action switch
+							{
+								CodeModel.Statements.EventControlAction.Enable => EventEnabledState.On,
+								CodeModel.Statements.EventControlAction.Disable => EventEnabledState.Off,
+								CodeModel.Statements.EventControlAction.Suspend => EventEnabledState.Stop,
+
+								_ => throw new Exception("Unrecognized EventControlAction value " + eventControlStatement.Action)
+							};
+
+						container.Append(translatedEventControlStatement);
+
+						break;
+					}
+				}
+
+
+				break;
+			}
 			case CodeModel.Statements.ExitScopeStatement exitScopeStatement:
 			{
 				// TODO: validation
@@ -1798,6 +1845,57 @@ public class Compiler
 
 				break;
 			}
+			case CodeModel.Statements.OnEventStatement onEventStatement:
+			{
+				IOnEventStatementConfigurator configurator;
+
+				if (!(onEventStatement.Action is CodeModel.Statements.GoSubStatement action))
+					throw new Exception("Internal error: OnEventStatement with no Action");
+
+				if (action.TargetsLine0)
+					configurator = new OnEventGoSub0Statement(onEventStatement);
+				else
+				{
+					configurator = new OnEventGoSubLineStatement(
+						action.TargetLabel ?? action.TargetLineNumber ?? throw new Exception("Internal error: OnEventStatement's Action has no target"),
+						onEventStatement);
+				}
+
+				switch (onEventStatement.EventType)
+				{
+					case CodeModel.Statements.EventType.Key:
+					case CodeModel.Statements.EventType.Pen:
+					case CodeModel.Statements.EventType.Play:
+					case CodeModel.Statements.EventType.Timer:
+					case CodeModel.Statements.EventType.UserEvent:
+					{
+						configurator.SetEventType(
+							onEventStatement.EventType switch
+							{
+								CodeModel.Statements.EventType.Key => EventType.Key,
+								CodeModel.Statements.EventType.Pen => EventType.Pen,
+								CodeModel.Statements.EventType.Play => EventType.Play,
+								CodeModel.Statements.EventType.Timer => EventType.Timer,
+								CodeModel.Statements.EventType.UserEvent => EventType.UserEvent,
+
+								_ => throw new Exception("Internal error")
+							});
+
+						Evaluable? sourceExpression = null;
+
+						TranslateNumericArgumentExpression(
+							ref sourceExpression, onEventStatement.SourceExpression);
+
+						configurator.SetSourceExpression(sourceExpression);
+
+						container.Append(configurator.AsExecutable());
+
+						break;
+					}
+				}
+
+				break;
+			}
 			case CodeModel.Statements.OpenStatement openStatement:
 			{
 				var translatedOpenStatement = new OpenStatement(openStatement);
@@ -2338,11 +2436,11 @@ public class Compiler
 			}
 			case CodeModel.Statements.SoftKeyConfigStatement softKeyConfigStatement:
 			{
-				var translatedSoftKeyConfigStatement = new SoftKeyConfigStatement(softKeyConfigStatement);
+				var translatedSoftKeyConfigStatement = new KeyConfigStatement(softKeyConfigStatement);
 
 				translatedSoftKeyConfigStatement.KeyExpression =
 					TranslateExpression(softKeyConfigStatement.KeyExpression, container, mapper, compilation);
-				translatedSoftKeyConfigStatement.MacroExpression =
+				translatedSoftKeyConfigStatement.ArgumentExpression =
 					TranslateExpression(softKeyConfigStatement.MacroExpression, container, mapper, compilation);
 
 				container.Append(translatedSoftKeyConfigStatement);

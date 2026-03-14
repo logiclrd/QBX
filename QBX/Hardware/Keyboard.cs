@@ -15,6 +15,7 @@ public class Keyboard(Machine machine)
 	bool _divertEvents = false;
 
 	public event Action? Break;
+	public event Func<KeyEvent, bool>? InterceptKeyEvent;
 
 	internal event Func<SDL.Keymod>? GetModStateTestHook;
 
@@ -112,6 +113,11 @@ public class Keyboard(Machine machine)
 
 		if (keyEvent.IsBreak)
 			Break?.Invoke();
+		else if (InterceptKeyEvent is Func<KeyEvent, bool> interceptKeyEvent)
+		{
+			if (interceptKeyEvent(keyEvent))
+				return;
+		}
 
 		if (_suppressNextIfIsRelease.HasValue || _suppressNextIfHasScanCode.HasValue)
 		{

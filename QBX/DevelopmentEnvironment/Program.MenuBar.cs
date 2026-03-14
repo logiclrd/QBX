@@ -3,6 +3,7 @@ using System.Linq;
 
 using QBX.CodeModel;
 using QBX.DevelopmentEnvironment.Dialogs;
+using QBX.ExecutionEngine.Execution.Events;
 using QBX.Hardware;
 
 namespace QBX.DevelopmentEnvironment;
@@ -42,6 +43,8 @@ public partial class Program
 	Menu mnuOptions;
 	MenuItem mnuOptionsDisplay;
 	MenuItem mnuOptionsDetectDelayLoops;
+	MenuItem mnuOptionsEventsEveryStatement;
+	MenuItem mnuOptionsEventsOnLabels;
 
 	Menu mnuHelp;
 	MenuItem mnuHelpIndex;
@@ -86,6 +89,8 @@ public partial class Program
 		nameof(mnuOptions),
 		nameof(mnuOptionsDisplay),
 		nameof(mnuOptionsDetectDelayLoops),
+		nameof(mnuOptionsEventsEveryStatement),
+		nameof(mnuOptionsEventsOnLabels),
 		nameof(mnuHelp),
 		nameof(mnuHelpIndex),
 		nameof(mnuHelpContents),
@@ -197,13 +202,16 @@ public partial class Program
 			};
 
 		mnuOptions =
-			new Menu("&Options", 18, "m.o")
+			new Menu("&Options", 22, "m.o")
 			{
 				(mnuOptionsDisplay = new MenuItem("&Display...", "-384")),
 				new MenuItem("Set &Paths...", "-385"),
 				new MenuItem("Right &Mouse...", "-386"),
 				new MenuItem("&Syntax Checking", "-387") { IsChecked = true },
 				(mnuOptionsDetectDelayLoops = new MenuItem("Detect Delay &Loops") { IsChecked = DetectDelayLoops }),
+				MenuItem.Separator,
+				(mnuOptionsEventsEveryStatement = new MenuItem("Events Every S&tatement") { IsChecked = (EventCheckGranularity == EventCheckGranularity.EveryStatement) }),
+				(mnuOptionsEventsOnLabels = new MenuItem("Events On &Labels") { IsChecked = (EventCheckGranularity == EventCheckGranularity.EveryLabel) }),
 			};
 
 		mnuHelp =
@@ -245,6 +253,8 @@ public partial class Program
 
 		mnuOptionsDisplay.Clicked = mnuOptionsDisplay_Clicked;
 		mnuOptionsDetectDelayLoops.Clicked = mnuOptionsDetectDelayLoops_Clicked;
+		mnuOptionsEventsEveryStatement.Clicked = mnuOptionsEventsEveryStatement_Clicked;
+		mnuOptionsEventsOnLabels.Clicked = mnuOptionsEventsOnLabels_Clicked;
 
 		mnuHelpIndex.Clicked = mnuHelpIndex_Clicked;
 		mnuHelpContents.Clicked = mnuHelpContent_Clicked;
@@ -324,6 +334,24 @@ public partial class Program
 		DetectDelayLoops = !DetectDelayLoops;
 
 		mnuOptionsDetectDelayLoops.IsChecked = DetectDelayLoops;
+	}
+
+	void UpdateEventsItems()
+	{
+		mnuOptionsEventsEveryStatement.IsChecked = (EventCheckGranularity == EventCheckGranularity.EveryStatement);
+		mnuOptionsEventsOnLabels.IsChecked = (EventCheckGranularity == EventCheckGranularity.EveryLabel);
+	}
+
+	private void mnuOptionsEventsEveryStatement_Clicked()
+	{
+		EventCheckGranularity = EventCheckGranularity.EveryStatement;
+		UpdateEventsItems();
+	}
+
+	private void mnuOptionsEventsOnLabels_Clicked()
+	{
+		EventCheckGranularity = EventCheckGranularity.EveryLabel;
+		UpdateEventsItems();
 	}
 
 	private void mnuHelpIndex_Clicked()

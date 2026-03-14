@@ -6,6 +6,7 @@ using System.Linq;
 using QBX.CodeModel;
 using QBX.ExecutionEngine;
 using QBX.ExecutionEngine.Execution;
+using QBX.ExecutionEngine.Execution.Events;
 using QBX.Firmware;
 using QBX.QuickLibraries;
 using QBX.Utility;
@@ -19,9 +20,13 @@ public partial class Program
 	Compiler? _compiler;
 	Compilation? _compilation;
 
+	public EventHub EventHub;
+
 	public List<QuickLibrary> QLBs = new List<QuickLibrary>();
 
 	public bool DetectDelayLoops = new SystemDetector().IsLaptop();
+
+	public EventCheckGranularity EventCheckGranularity = EventCheckGranularity.EveryStatement;
 
 	public string ProgramCommandLine = "";
 
@@ -91,7 +96,8 @@ public partial class Program
 
 		RestoreOutput();
 
-		_executionContext = new ExecutionContext(Machine, PlayProcessor);
+		_executionContext = new ExecutionContext(Machine, PlayProcessor, EventHub);
+		_executionContext.EventCheckGranularity = EventCheckGranularity;
 		_executionContext.CommandLine.Set(ProgramCommandLine);
 		_executionContext.Controls.Break();
 
