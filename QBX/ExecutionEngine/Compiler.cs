@@ -1631,7 +1631,7 @@ public class Compiler
 
 						idx = 0;
 
-						while (idx < ifStatement.ThenBody.Count)
+						while (idx < ifStatement.ElseBody.Count)
 							TranslateStatement(element, ifStatement.ElseBody, ref idx, elseBody, routine, compilation, module);
 
 						translatedIfStatement.ElseBody = elseBody;

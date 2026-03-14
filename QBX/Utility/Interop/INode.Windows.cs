@@ -77,9 +77,6 @@ public partial class FileIndexProvider : INodeProvider<FileIndex>
 		FileInfoByHandleClass FileInformationClass, ref FILE_ID_INFO lpFileInformation,
 		int dwBufferSize);
 
-	[DllImport("kernel32", SetLastError = true)]
-	static extern void CloseHandle(SafeFileHandle hObject);
-
 	public override bool TryGetINode(String path, out FileIndex fileIndex)
 	{
 		var handle = CreateFileW(
@@ -95,7 +92,7 @@ public partial class FileIndexProvider : INodeProvider<FileIndex>
 
 		if (!handle.IsInvalid)
 		{
-			try
+			using (handle)
 			{
 				var fileIdInfo = new FILE_ID_INFO();
 
@@ -113,10 +110,6 @@ public partial class FileIndexProvider : INodeProvider<FileIndex>
 				fileIndex.FileIdHigh = fileIdWords[1];
 
 				return success;
-			}
-			finally
-			{
-				CloseHandle(handle);
 			}
 		}
 

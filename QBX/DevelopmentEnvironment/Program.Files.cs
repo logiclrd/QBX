@@ -59,6 +59,8 @@ namespace QBX.DevelopmentEnvironment
 
 				if (File.Exists(makeFileName) && !FileIdentityUtility.IsSameFile(filePath, makeFileName))
 				{
+					reader.Dispose();
+
 					if (!TryLoadMakeFileItems(makeFileName))
 						PresentError(RuntimeException.BadFileName(), ErrorSource.DevelopmentEnvironment);
 
