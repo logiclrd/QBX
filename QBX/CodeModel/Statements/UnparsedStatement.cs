@@ -15,7 +15,7 @@ public class UnparsedStatement : Statement
 	public UnparsedStatement(string indentation, ListRange<Token> tokens)
 	{
 		Indentation = indentation;
-		Text = string.Concat(tokens.Select(token => token.Value));
+		Text = string.Concat(tokens.Select(token => token.PrecedingWhitespace + token.Value));
 	}
 
 	public override StatementType Type => StatementType.Unparsed;
