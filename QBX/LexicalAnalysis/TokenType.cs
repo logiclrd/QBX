@@ -145,6 +145,7 @@ public enum TokenType
 	[KeywordToken("IOCTL$")] IOCTL_s,
 	[KeywordToken] IS,
 	[KeywordToken] KEY,
+	[KeywordToken] KILL,
 	[KeywordFunction(maximumParameterCount: 2, arrayArgumentIndex: 0)]
 	[KeywordToken] LBOUND,
 	[KeywordFunction]

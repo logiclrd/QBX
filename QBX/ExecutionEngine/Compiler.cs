@@ -1786,6 +1786,17 @@ public class Compiler
 
 				break;
 			}
+			case CodeModel.Statements.KillStatement killStatement:
+			{
+				var translatedKillStatement = new KillStatement(killStatement);
+
+				TranslateStringArgumentExpression(
+					ref translatedKillStatement.FilePatternExpression, killStatement.PatternExpression);
+
+				container.Append(translatedKillStatement);
+
+				break;
+			}
 			case CodeModel.Statements.LineStatement lineStatement:
 			{
 				var translatedLineStatement = new LineStatement(lineStatement);

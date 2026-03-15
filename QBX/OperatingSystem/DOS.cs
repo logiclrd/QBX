@@ -1128,6 +1128,53 @@ public partial class DOS
 		}
 	}
 
+	public bool FileIsOpen(string fileName)
+	{
+		if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+			return FileIsOpen(fileName, new FileIndexProvider());
+		else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+			return FileIsOpen(fileName, new LinuxINodeProvider());
+		else if (RuntimeInformation.IsOSPlatform(OSPlatform.FreeBSD))
+			return FileIsOpen(fileName, new FreeBSDINodeProvider());
+		else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+			return FileIsOpen(fileName, new OSXINodeProvider());
+		else
+		{
+			// Quick & dirty fallback, probably not reliable, probably won't ever run.
+			string filePath = ShortFileNames.GetFullPath(fileName.ToString());
+
+			foreach (var fileDescriptor in Files.OfType<RegularFileDescriptor>())
+			{
+				if (filePath == fileDescriptor.Path)
+					return true;
+			}
+
+			return false;
+		}
+	}
+
+	bool FileIsOpen<TINode>(string fileName, INodeProvider<TINode> inodeProvider)
+		where TINode : INode<TINode>
+	{
+		try
+		{
+			if (inodeProvider.TryGetINode(ShortFileNames.Unmap(fileName.ToString()), out var fileINode))
+			{
+				foreach (var fileDescriptor in Files.OfType<RegularFileDescriptor>())
+				{
+					if (inodeProvider.TryGetINode(fileDescriptor.PhysicalPath, out var checkINode))
+					{
+						if (fileINode.IsSameVolumeAndFileAs(checkINode))
+							return true;
+					}
+				}
+			}
+		}
+		catch { }
+
+		return false;
+	}
+
 	public bool FileIsOpenAsOneOf(StringValue fileName, IEnumerable<int> fileHandles)
 	{
 		if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -1163,6 +1210,59 @@ public partial class DOS
 		try
 		{
 			if (inodeProvider.TryGetINode(ShortFileNames.Unmap(fileName.ToString()), out var fileINode))
+			{
+				foreach (int fileHandle in fileHandles)
+				{
+					if ((fileHandle >= 2) && (fileHandle < Files.Count)
+					 && (Files[fileHandle] is RegularFileDescriptor fileDescriptor))
+					{
+						if (inodeProvider.TryGetINode(fileDescriptor.PhysicalPath, out var checkINode))
+						{
+							if (fileINode.IsSameVolumeAndFileAs(checkINode))
+								return true;
+						}
+					}
+				}
+			}
+		}
+		catch { }
+
+		return false;
+	}
+
+	public bool FileIsOpenAsOneOf(string longPath, IEnumerable<int> fileHandles)
+	{
+		if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+			return FileIsOpenAsOneOf(longPath, fileHandles, new FileIndexProvider());
+		else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+			return FileIsOpenAsOneOf(longPath, fileHandles, new LinuxINodeProvider());
+		else if (RuntimeInformation.IsOSPlatform(OSPlatform.FreeBSD))
+			return FileIsOpenAsOneOf(longPath, fileHandles, new FreeBSDINodeProvider());
+		else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+			return FileIsOpenAsOneOf(longPath, fileHandles, new OSXINodeProvider());
+		else
+		{
+			// Quick & dirty fallback, probably not reliable, probably won't ever run.
+			foreach (int fileHandle in fileHandles)
+			{
+				if ((fileHandle >= 2) && (fileHandle < Files.Count)
+				 && (Files[fileHandle] is FileDescriptor fileDescriptor))
+				{
+					if (longPath == fileDescriptor.Path)
+						return true;
+				}
+			}
+
+			return false;
+		}
+	}
+
+	bool FileIsOpenAsOneOf<TINode>(string longPath, IEnumerable<int> fileHandles, INodeProvider<TINode> inodeProvider)
+		where TINode : INode<TINode>
+	{
+		try
+		{
+			if (inodeProvider.TryGetINode(longPath, out var fileINode))
 			{
 				foreach (int fileHandle in fileHandles)
 				{
@@ -1555,9 +1655,67 @@ public partial class DOS
 		{
 			fileName = ShortFileNames.Unmap(fileName);
 
+			if (FileIsOpen(fileName))
+				throw new DOSException(DOSError.AccessDenied);
+
 			File.Delete(fileName);
 
 			ShortFileNames.Forget(fileName);
+		});
+	}
+
+	public void DeleteFiles(string fileNamePattern, Action<string, string>? progress)
+	{
+		TranslateError(() =>
+		{
+			string fileNamePart = Path.GetFileNameWithoutExtension(fileNamePattern);
+			string extensionPart = Path.GetExtension(fileNamePattern);
+
+			if ((extensionPart.Length > 0) && (extensionPart[0] == '.'))
+				extensionPart = extensionPart.Substring(1);
+
+			string collapsedFileNamePart = NormalizeFileSearchPattern(ref fileNamePart, 8);
+			string collapsedExtensionPart = NormalizeFileSearchPattern(ref extensionPart, 3);
+
+			fileNamePattern = fileNamePart + "." + extensionPart;
+
+			string collapsedFileNamePattern = collapsedFileNamePart + "." + collapsedExtensionPart;
+
+			void PerformDeletion(FileSystemInfo fileSystemInfo, string shortName, FileAttributes searchAttributes, ReadOnlySpan<byte> searchPattern, int searchID)
+			{
+				string fullPath = fileSystemInfo.FullName;
+
+				if (fileSystemInfo is FileInfo fileInfo)
+				{
+					progress?.Invoke(shortName, fileInfo.FullName);
+
+					fileInfo.Delete();
+					ShortFileNames.Forget(fullPath);
+				}
+				else
+					throw new FileNotFoundException();
+			}
+
+			bool success = FindFirst(
+				collapsedFileNamePattern,
+				default,
+				stackalloc byte[11],
+				default,
+				PerformDeletion,
+				out var search);
+
+			if (success)
+			{
+				string rawFileNamePattern = collapsedFileNamePart + collapsedExtensionPart;
+
+				byte[] searchPatternBytes = s_cp437.GetBytes(rawFileNamePattern);
+
+				while (FindNext(search, default, searchPatternBytes, default, PerformDeletion))
+					;
+
+				if (_lastError == DOSError.NoMoreFiles)
+					ClearLastError();
+			}
 		});
 	}
 

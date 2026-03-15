@@ -1700,6 +1700,15 @@ public class BasicParser
 				}
 			}
 
+			case TokenType.KILL:
+			{
+				var killStatement = new KillStatement();
+
+				killStatement.PatternExpression = ParseExpressionForStatement(killStatement, tokenHandler.RemainingTokens, tokenHandler.EndToken);
+
+				return killStatement;
+			}
+
 			case TokenType.LET:
 			{
 				var letStatement = new LetStatement();

@@ -47,6 +47,7 @@ public enum StatementType
 	If,
 	Loop,
 	Input,
+	Kill,
 	Let,
 	LPrint,
 	LPrintWidth,
