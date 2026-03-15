@@ -111,7 +111,7 @@ public class Viewport
 	public void RenderLineAt(int y, TextWriter writer)
 	{
 		if (TryGetLineAt(y, out var line))
-			line.Render(writer);
+			line.Render(writer, includeCRLF: false);
 
 		if (HelpTopic != null)
 		{
