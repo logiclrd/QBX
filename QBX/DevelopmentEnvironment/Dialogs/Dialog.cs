@@ -202,6 +202,11 @@ public abstract class Dialog(Machine machine, Configuration configuration) : IFo
 	public void NotifyShown()
 	{
 		IsVisible = true;
+		OnShown();
+	}
+
+	protected virtual void OnShown()
+	{
 	}
 
 	protected virtual void OnActivated()

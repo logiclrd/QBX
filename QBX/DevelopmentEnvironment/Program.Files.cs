@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 
 using QBX.CodeModel;
+using QBX.DevelopmentEnvironment.Dialogs;
 using QBX.ExecutionEngine;
 using QBX.Firmware.Fonts;
 using QBX.Utility;
@@ -14,7 +15,6 @@ namespace QBX.DevelopmentEnvironment
 		void ClearProgram()
 		{
 			LoadedFiles.Clear();
-			MainModuleIndex = 0;
 		}
 
 		public void StartNewProgram()
@@ -49,6 +49,21 @@ namespace QBX.DevelopmentEnvironment
 			}
 		}
 
+		class NameComparer : IComparer<IEditableUnit>
+		{
+			public int Compare(IEditableUnit? x, IEditableUnit? y)
+			{
+				int result = StringComparer.OrdinalIgnoreCase.Compare(x?.Name, y?.Name);
+
+				if (result == 0)
+					result = StringComparer.OrdinalIgnoreCase.Compare(x?.FilePath, y?.FilePath);
+
+				return result;
+			}
+		}
+
+		static NameComparer s_nameComparer = new NameComparer();
+
 		public void Load(TextReader reader, string filePath, bool replaceExistingProgram)
 		{
 			if (replaceExistingProgram)
@@ -70,7 +85,21 @@ namespace QBX.DevelopmentEnvironment
 
 			var unit = CompilationUnit.Read(reader, filePath, Parser, ignoreErrors: true);
 
-			LoadedFiles.Add(unit);
+			int insertIndex = 0;
+
+			if (LoadedFiles.Count > 0)
+			{
+				insertIndex = LoadedFiles.BinarySearch(
+					index: 1,
+					count: LoadedFiles.Count - 1,
+					unit,
+					s_nameComparer);
+			}
+
+			if (insertIndex < 0)
+				insertIndex = ~insertIndex;
+
+			LoadedFiles.Insert(insertIndex, unit);
 
 			var mainModule = LoadedFiles.First(u => u.IncludeInBuild);
 
@@ -244,21 +273,48 @@ namespace QBX.DevelopmentEnvironment
 			if (unitIndex < 0)
 				return;
 
-			if (MainModuleIndex == unitIndex)
-				MainModuleIndex = 0;
-
 			LoadedFiles.RemoveAt(unitIndex);
 
-			var mainModule = LoadedFiles.FirstOrDefault(u => u.IncludeInBuild);
-
-			if (mainModule != null)
-				mainModule.IsPristine = false;
+			if (!LoadedFiles.Any(u => u.IncludeInBuild))
+				LoadedFiles.Insert(0, CompilationUnit.CreateNew());
 
 			if (PrimaryViewport.EditableUnit == unit)
 				PrimaryViewport.SwitchTo(LoadedFiles[0].Elements[0]);
-
 			if (SplitViewport?.EditableUnit == unit)
 				SplitViewport.SwitchTo(LoadedFiles[0].Elements[0]);
+
+			if (unitIndex == 0)
+				SetMainModule();
+			else
+			{
+				var mainModule = LoadedFiles.First(u => u.IncludeInBuild);
+
+				if (mainModule != LoadedFiles[0])
+				{
+					LoadedFiles.Remove(mainModule);
+					LoadedFiles.Insert(0, mainModule);
+				}
+
+				mainModule.IsPristine = false;
+			}
+		}
+
+		public SelectModuleDialog SetMainModule()
+		{
+			var dialog = new SelectModuleDialog(LoadedFiles, Machine, Configuration);
+
+			dialog.ModuleSelected +=
+				() =>
+				{
+					var unit = dialog.SelectedItem;
+
+					if (LoadedFiles.Remove(unit))
+						LoadedFiles.Insert(0, unit);
+
+					unit.IsPristine = false;
+				};
+
+			return ShowDialog(dialog);
 		}
 	}
 }

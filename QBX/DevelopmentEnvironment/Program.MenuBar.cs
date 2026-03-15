@@ -28,6 +28,7 @@ public partial class Program
 	Menu mnuSearch;
 
 	Menu mnuRun;
+	MenuItem mnuRunSetMainModule;
 
 	Menu mnuDebug;
 	MenuItem mnuDebugAddWatch;
@@ -78,6 +79,7 @@ public partial class Program
 		nameof(mnuView),
 		nameof(mnuSearch),
 		nameof(mnuRun),
+		nameof(mnuRunSetMainModule),
 		nameof(mnuDebug),
 		nameof(mnuDebugAddWatch),
 		nameof(mnuDebugInstantWatch),
@@ -167,7 +169,7 @@ public partial class Program
 				new MenuItem("Make E&XE File...", "-360"),
 				new MenuItem("Make &Library...", "-361"),
 				MenuItem.Separator,
-				new MenuItem("Set &Main Module...", "-362"),
+				(mnuRunSetMainModule = new MenuItem("Set &Main Module...", "-362")),
 			};
 
 		mnuDebug =
@@ -246,6 +248,8 @@ public partial class Program
 		mnuFileLoadFile.Clicked = mnuFileLoadFile_Clicked;
 		mnuFileExit.Clicked += mnuFileExit_Clicked;
 
+		mnuRunSetMainModule.Clicked += mnuRunSetMainModule_Clicked;
+
 		mnuDebugAddWatch.Clicked += mnuDebugAddWatch_Clicked;
 		mnuDebugInstantWatch.Clicked = mnuDebugInstantWatch_Clicked;
 		mnuDebugWatchpoint.Clicked = mnuDebugWatchpoint_Clicked;
@@ -302,6 +306,11 @@ public partial class Program
 	{
 		if (CommitViewportsOrPresentError())
 			ShowOpenFileDialog(replaceExistingProgram: false);
+	}
+
+	private void mnuRunSetMainModule_Clicked()
+	{
+		SetMainModule();
 	}
 
 	private void mnuDebugAddWatch_Clicked()

@@ -24,7 +24,6 @@ public partial class Program : HostedProgram, IOvertypeFlag
 	public Configuration Configuration = new Configuration();
 
 	public List<IEditableUnit> LoadedFiles = new List<IEditableUnit>();
-	public int MainModuleIndex;
 
 	public HelpSystem HelpSystem;
 
