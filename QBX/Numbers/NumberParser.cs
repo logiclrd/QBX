@@ -43,6 +43,9 @@ public static class NumberParser
 		{
 			if (!int.TryParse(noNegativeChars.Slice(2), NumberStyles.HexNumber, default, out parsed))
 				return false;
+
+			if (parsed >= 32768)
+				parsed -= 65536;
 		}
 		else if (noNegativeChars.StartsWith("&O", StringComparison.OrdinalIgnoreCase))
 		{
