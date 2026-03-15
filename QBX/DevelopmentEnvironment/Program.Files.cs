@@ -245,9 +245,14 @@ namespace QBX.DevelopmentEnvironment
 						string? relativePath = reader.ReadLine();
 
 						if (relativePath == null)
+						{
+							FocusedViewport.SwitchTo(LoadedFiles[0].Elements[0]);
 							break;
+						}
 
-						if (File.Exists(relativePath))
+						string resolvedPath = Path.Combine(makeFileDirectory, relativePath);
+
+						if (File.Exists(resolvedPath))
 						{
 							FocusedViewport.Heading = Path.GetFileName(resolvedPath);
 							Render();
