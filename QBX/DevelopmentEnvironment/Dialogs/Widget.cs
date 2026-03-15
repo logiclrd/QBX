@@ -114,6 +114,8 @@ public abstract class Widget
 		}
 	}
 
+	public virtual bool ProcessesReleaseEvents => false;
+
 	public virtual bool ProcessKey(KeyEvent input, IFocusContext focusContext, IOvertypeFlag overtypeFlag)
 	{
 		return false;

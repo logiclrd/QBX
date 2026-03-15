@@ -132,13 +132,18 @@ public abstract class Dialog(Machine machine, Configuration configuration) : IFo
 
 	public void ProcessKey(KeyEvent input, IOvertypeFlag overtypeFlag)
 	{
-		if (input.IsRelease)
-			return;
-
 		var focusedWidget = FocusedWidget;
 
-		if ((focusedWidget != null)
-		 && focusedWidget.ProcessKey(input, focusContext: this, overtypeFlag))
+		if (focusedWidget != null)
+		{
+			if ((input.IsRelease == false) || focusedWidget.ProcessesReleaseEvents)
+			{
+				if (focusedWidget.ProcessKey(input, focusContext: this, overtypeFlag))
+					return;
+			}
+		}
+
+		if (input.IsRelease)
 			return;
 
 		switch (input.ScanCode)

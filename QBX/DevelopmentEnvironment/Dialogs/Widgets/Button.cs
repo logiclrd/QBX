@@ -1,6 +1,7 @@
 ﻿using System;
 
 using QBX.Firmware;
+using QBX.Hardware;
 using QBX.Utility;
 
 namespace QBX.DevelopmentEnvironment.Dialogs.Widgets;
@@ -10,6 +11,7 @@ public class Button : Widget
 	public string Text = "";
 	public int AccessKeyIndex = -1;
 	public bool IsDefault = false;
+	public bool IsPressed = false;
 
 	public override bool IsEnabled
 	{
@@ -36,6 +38,26 @@ public class Button : Widget
 		return true;
 	}
 
+	public override bool ProcessesReleaseEvents => true;
+
+	public override bool ProcessKey(KeyEvent input, IFocusContext focusContext, IOvertypeFlag overtypeFlag)
+	{
+		if (input.ScanCode == ScanCode.Space)
+		{
+			if (IsEnabled)
+			{
+				IsPressed = !input.IsRelease;
+
+				if (!IsPressed)
+					Activate();
+
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	public override void Render(TextLibrary visual, IntegerRect bounds, Configuration configuration)
 	{
 		var textAttr =
@@ -52,6 +74,13 @@ public class Button : Widget
 			IsEnabled
 			? configuration.DisplayAttributes.DialogBoxAccessKeys
 			: configuration.DisplayAttributes.PullDownMenuandDialogBoxDisabledItems;
+
+		if (IsPressed)
+		{
+			textAttr = new DisplayAttribute(textAttr.Background, textAttr.Foreground, "Inverted");
+			borderAttr = textAttr;
+			accessKeyAttr = textAttr;
+		}
 
 		int x = X + bounds.X1;
 		int y = Y + bounds.Y1;
