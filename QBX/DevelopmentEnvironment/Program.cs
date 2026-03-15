@@ -618,7 +618,7 @@ public partial class Program : HostedProgram, IOvertypeFlag
 
 		FindIdentifierExtent(buffer, ref startIndex, out var endIndex);
 
-		if (startIndex > endIndex)
+		if ((startIndex < 0) || (startIndex > endIndex))
 			return false;
 
 		string token = buffer.ToString(startIndex, endIndex - startIndex + 1);

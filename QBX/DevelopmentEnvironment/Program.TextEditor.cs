@@ -1068,6 +1068,9 @@ public partial class Program
 	void FindIdentifierExtent(StringBuilder buffer, ref int startIndex, out int endIndex)
 	{
 		// Find identifier
+		if (startIndex >= buffer.Length)
+			startIndex = buffer.Length - 1;
+
 		if ((startIndex > 0)
 		 && !char.IsAsciiLetterOrDigit(buffer[startIndex])
 		 && char.IsAsciiLetterOrDigit(buffer[startIndex - 1]))
