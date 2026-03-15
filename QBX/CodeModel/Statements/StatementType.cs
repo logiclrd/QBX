@@ -55,6 +55,7 @@ public enum StatementType
 	LineInput,
 	Locate,
 	Lock,
+	Name,
 	Next,
 	OnError,
 	OnEvent,

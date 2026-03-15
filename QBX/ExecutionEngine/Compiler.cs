@@ -1925,6 +1925,19 @@ public class Compiler
 
 				break;
 			}
+			case CodeModel.Statements.NameStatement nameStatement:
+			{
+				var translatedNameStatement = new NameStatement(nameStatement);
+
+				TranslateStringArgumentExpression(
+					ref translatedNameStatement.OldFileSpecExpression, nameStatement.OldFileSpecExpression);
+				TranslateStringArgumentExpression(
+					ref translatedNameStatement.NewFileSpecExpression, nameStatement.NewFileSpecExpression);
+
+				container.Append(translatedNameStatement);
+
+				break;
+			}
 			case CodeModel.Statements.OnErrorStatement onErrorStatement:
 			{
 				Executable translatedOnErrorStatement;

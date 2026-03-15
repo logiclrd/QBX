@@ -272,6 +272,8 @@ public class RuntimeException : Exception
 		=> ForErrorNumber(63, context);
 	public static RuntimeException BadFileName()
 		=> ForErrorNumber(64, default(Token));
+	public static RuntimeException BadFileName(CodeModel.Expressions.Expression? expression)
+		=> ForErrorNumber(64, expression);
 	public static RuntimeException TooManyFiles(CodeModel.Statements.Statement? statement)
 		=> ForErrorNumber(67, statement);
 	public static RuntimeException TooManyFiles(CodeModel.Expressions.Expression? expression)

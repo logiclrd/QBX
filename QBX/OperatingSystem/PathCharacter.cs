@@ -76,6 +76,9 @@ public class PathCharacter
 	public static bool IsDirectorySeparator(char ch)
 		=> (ch == '\\') || (ch == '/');
 
+	public static bool IsDirectorySeparator(byte ch)
+		=> (ch == (byte)'\\') || (ch == (byte)'/');
+
 	public static string? GetDirectoryName(ReadOnlySpan<char> path)
 	{
 		int lastSeparator = path.LastIndexOfAny(DirectorySeparators);

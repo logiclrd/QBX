@@ -2099,6 +2099,30 @@ public class BasicParser
 				return lprint;
 			}
 
+			case TokenType.NAME:
+			{
+				var name = new NameStatement();
+
+				var fileSpecExpressions = SplitDelimitedList(tokenHandler.RemainingTokens, TokenType.AS).ToList();
+
+				if (fileSpecExpressions.Count < 2)
+					throw new SyntaxErrorException(tokenHandler.EndToken, "Expected: AS");
+
+				if (fileSpecExpressions.Count > 2)
+				{
+					var range = fileSpecExpressions[2].Unwrap();
+
+					throw new SyntaxErrorException(tokens[range.Offset - 1], "Expected: end of statement");
+				}
+
+				var midToken = tokens[fileSpecExpressions[1].Unwrap().Offset - 1];
+
+				name.OldFileSpecExpression = ParseExpressionForStatement(name, fileSpecExpressions[0], midToken);
+				name.NewFileSpecExpression = ParseExpressionForStatement(name, fileSpecExpressions[1], tokenHandler.EndToken);
+
+				return name;
+			}
+
 			case TokenType.NEXT:
 			{
 				var next = new NextStatement();
