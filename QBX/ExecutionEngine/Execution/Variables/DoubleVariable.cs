@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 
 using QBX.ExecutionEngine.Compiled;
+using QBX.Hardware;
 using QBX.Numbers;
 using QBX.Utility;
 
@@ -43,4 +45,34 @@ public class DoubleVariable : Variable
 	public override bool IsZero => (Value == 0);
 	public override bool IsPositive => (Value > 0);
 	public override bool IsNegative => (Value < 0);
+}
+
+public class PinnedDoubleVariable : DoubleVariable
+{
+	Machine _machine;
+	int _memoryAddress;
+
+	public Span<double> ValueSpan => MemoryMarshal.Cast<byte, double>(_machine.SystemMemory.AsSpan().Slice(_memoryAddress, 8));
+
+	public PinnedDoubleVariable(Machine machine, int memoryAddress)
+	{
+		_machine = machine;
+		_memoryAddress = memoryAddress;
+
+		Value = ValueSpan[0];
+	}
+
+	public override void ReadPinnedData() => Value = ValueSpan[0];
+	public override void WritePinnedData() => ValueSpan[0] = Value;
+
+	public override object GetData() => Value = ValueSpan[0];
+	public override void SetData(object value) => ValueSpan[0] = NumberConverter.ToDouble(value);
+
+	public override int Serialize(Span<byte> buffer)
+		=> BitConverterEx.WriteBytesThatFit(buffer, ValueSpan[0]);
+	public override int Deserialize(ReadOnlySpan<byte> buffer)
+	{
+		ValueSpan[0] = BitConverterEx.ReadAvailableBytesDouble(buffer);
+		return Math.Min(8, buffer.Length);
+	}
 }

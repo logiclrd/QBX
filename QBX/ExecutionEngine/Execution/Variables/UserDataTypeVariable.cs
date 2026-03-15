@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 
 using QBX.ExecutionEngine.Compiled;
+using QBX.Hardware;
 
 namespace QBX.ExecutionEngine.Execution.Variables;
 
@@ -10,6 +12,21 @@ public class UserDataTypeVariable : Variable
 
 	public UserDataTypeVariable(UserDataType dataType)
 		: base(new DataType(dataType))
+	{
+		ConstructConcreteInstance(dataType);
+	}
+
+	UserDataTypeVariable(UserDataType dataType, ExecutionContext context, int memoryAddress)
+		: base(new DataType(dataType))
+	{
+		ConstructPinnedInstance(dataType, context, memoryAddress);
+	}
+
+	public static UserDataTypeVariable Pinned(UserDataType dataType, ExecutionContext context, int memoryAddress)
+		=> new UserDataTypeVariable(dataType, context, memoryAddress);
+
+	[MemberNotNull(nameof(Fields))]
+	void ConstructConcreteInstance(UserDataType dataType)
 	{
 		Fields = new Variable[dataType.Fields.Count];
 
@@ -37,6 +54,51 @@ public class UserDataTypeVariable : Variable
 
 				Fields[i] = array;
 			}
+
+			Fields[i].PinnedMemoryOwner = this;
+		}
+	}
+
+	[MemberNotNull(nameof(Fields))]
+	void ConstructPinnedInstance(UserDataType dataType, ExecutionContext context, int memoryAddress)
+	{
+		var machine = context.Machine;
+
+		PinnedMemoryContext = context;
+		PinnedMemoryAddress = memoryAddress;
+
+		Fields = new Variable[dataType.Fields.Count];
+
+		for (int i = 0; i < dataType.Fields.Count; i++)
+		{
+			var field = dataType.Fields[i];
+
+			var arraySubscripts = field.ArraySubscripts;
+
+			if (arraySubscripts == null)
+			{
+				if (field.Type.IsString) // strings in UDTs are fixed length
+					Fields[i] = new PinnedStringVariable(machine, memoryAddress, fixedStringLength: field.Type.ByteSize);
+				else
+					Fields[i] = Variable.ConstructPinned(field.Type, context, memoryAddress);
+
+				memoryAddress += field.Type.ByteSize;
+			}
+			else
+			{
+				var array =
+					field.Type.IsString
+					? Variable.ConstructArrayOfFixedLengthString(fixedLength: field.Type.ByteSize)
+					: Variable.ConstructArray(field.Type);
+
+				array.InitializePinnedArray(arraySubscripts, context, memoryAddress);
+
+				Fields[i] = array;
+
+				memoryAddress += arraySubscripts.ElementCount * field.Type.ByteSize;
+			}
+
+			Fields[i].PinnedMemoryOwner = this;
 		}
 	}
 

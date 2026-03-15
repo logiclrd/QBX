@@ -74,6 +74,15 @@ public class MidFunction : Function
 		if ((start < 0) || (length < 0) || (start + length > stringLength))
 			throw RuntimeException.IllegalFunctionCall(Source);
 
-		return new Substring(stringVariable, start, length);
+		if (stringVariable is PinnedStringVariable pinned)
+		{
+			var pinnedSubstring = new PinnedStringVariable(pinned.Machine, pinned.MemoryAddress + start, length);
+
+			pinnedSubstring.PinnedMemoryOwner = pinned.PinnedMemoryOwner;
+
+			return pinnedSubstring;
+		}
+		else
+			return new Substring(stringVariable, start, length);
 	}
 }

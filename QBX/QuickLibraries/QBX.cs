@@ -11,6 +11,8 @@ public class QBX(Machine machine) : QuickLibrary
 	[Export]
 	public void Interrupt(short intnum, Registers inreg, out Registers outreg)
 	{
+		ExecutionContext?.ReleasePinnedMemory();
+
 		var interrupt = machine.InterruptHandlers[intnum];
 
 		if (interrupt != null)
@@ -22,6 +24,8 @@ public class QBX(Machine machine) : QuickLibrary
 	[Export]
 	public void InterruptX(short intnum, RegistersEx inreg, out RegistersEx outreg)
 	{
+		ExecutionContext?.ReleasePinnedMemory();
+
 		var interrupt = machine.InterruptHandlers[intnum];
 
 		if (interrupt != null)

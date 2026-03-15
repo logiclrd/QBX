@@ -141,6 +141,26 @@ public class ExecutionContext
 	public EventHub EventHub { get; }
 	public EventCheckGranularity EventCheckGranularity { get; set; } = EventCheckGranularity.EveryStatement;
 
+	List<int> _queuedPinnedMemoryReleases = new List<int>();
+	Lock _sync = new Lock();
+
+	public void QueuePinnedMemoryRelease(int pinnedMemoryAddress)
+	{
+		lock (_sync)
+			_queuedPinnedMemoryReleases.Add(pinnedMemoryAddress);
+	}
+
+	public void ReleasePinnedMemory()
+	{
+		lock (_sync)
+		{
+			foreach (var memoryAddress in _queuedPinnedMemoryReleases)
+				Machine.DOS.MemoryManager.FreeMemory(memoryAddress);
+
+			_queuedPinnedMemoryReleases.Clear();
+		}
+	}
+
 	public ExecutionContext(Machine machine, PlayProcessor playProcessor, EventHub eventHub)
 	{
 		_executionState = new ExecutionState();
@@ -717,5 +737,10 @@ public class ExecutionContext
 		Files.Clear();
 
 		_rootFrame?.Reset();
+
+		GC.Collect();
+		GC.WaitForPendingFinalizers();
+
+		ReleasePinnedMemory();
 	}
 }

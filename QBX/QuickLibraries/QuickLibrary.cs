@@ -5,12 +5,15 @@ using System.Linq;
 using System.Reflection;
 
 using QBX.ExecutionEngine;
+using QBX.ExecutionEngine.Execution;
 using QBX.Hardware;
 
 namespace QBX.QuickLibraries;
 
 public abstract class QuickLibrary
 {
+	public ExecutionContext? ExecutionContext;
+
 	public static bool TryGetQuickLibrary(string name, Machine machine, [NotNullWhen(true)] out QuickLibrary? qlb)
 	{
 		if (!s_libraryTypes.TryGetValue(name, out var type))

@@ -110,6 +110,9 @@ public partial class Program
 		_executionContext.CommandLine.Set(ProgramCommandLine);
 		_executionContext.Controls.Break();
 
+		foreach (var qlb in QLBs)
+			qlb.ExecutionContext = _executionContext;
+
 		_executionThread = new System.Threading.Thread(
 			() =>
 			{

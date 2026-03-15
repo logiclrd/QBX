@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 
 using QBX.ExecutionEngine.Compiled;
+using QBX.Hardware;
 
 namespace QBX.ExecutionEngine.Execution.Variables;
 
@@ -61,5 +62,12 @@ public class ArrayVariable(DataType type, int fixedStringLength = -1) : Variable
 	{
 		Array = new Array(ElementType, subscripts, fixedStringLength);
 		Array.IsDynamic = IsDynamic;
+		Array.PinnedMemoryOwner = this;
+	}
+
+	internal void InitializePinnedArray(ArraySubscripts subscripts, ExecutionContext context, int memoryAddress)
+	{
+		Array = Array.Pinned(ElementType, subscripts, fixedStringLength, context, memoryAddress);
+		Array.PinnedMemoryOwner = this;
 	}
 }

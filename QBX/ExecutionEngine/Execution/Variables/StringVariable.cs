@@ -3,6 +3,7 @@ using System.Text;
 
 using QBX.ExecutionEngine.Compiled;
 using QBX.Firmware.Fonts;
+using QBX.Hardware;
 
 namespace QBX.ExecutionEngine.Execution.Variables;
 
@@ -14,7 +15,7 @@ public class StringVariable : Variable
 	public virtual Span<byte> ValueSpan => Value.AsSpan();
 	public string ValueString => s_cp437.GetString(ValueSpan);
 
-	public virtual StringValue CloneValue() => new StringValue(RawValue);
+	public virtual StringValue CloneValue() => new StringValue(ValueSpan);
 
 	public int IsMappedFieldCount = 0;
 
@@ -171,5 +172,28 @@ public class Substring : StringVariable
 		}
 
 		return Math.Min(_length, buffer.Length);
+	}
+}
+
+public class PinnedStringVariable(Machine machine, int memoryAddress, int fixedStringLength) : StringVariable(fixedStringLength)
+{
+	public Machine Machine => machine;
+	public int MemoryAddress => memoryAddress;
+	public int Length => fixedStringLength;
+
+	public override StringValue Value => new StringValue(ValueSpan);
+	public override Span<byte> ValueSpan => Machine.SystemMemory.AsSpan().Slice(MemoryAddress, Length);
+
+	public override void SetValue(StringValue value)
+	{
+		var newValueSpan = value.AsSpan();
+
+		if (newValueSpan.Length > Length)
+			newValueSpan.Slice(0, Length).CopyTo(ValueSpan);
+		else
+		{
+			newValueSpan.CopyTo(ValueSpan);
+			ValueSpan.Slice(newValueSpan.Length).Clear();
+		}
 	}
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 using QBX.ExecutionEngine.Compiled;
 using QBX.ExecutionEngine.Execution.Variables;
+using QBX.Hardware;
 using QBX.Parser;
 
 namespace QBX.ExecutionEngine.Execution;
@@ -15,11 +16,33 @@ public class Array
 	public ArraySubscripts Subscripts;
 	public Variable?[] Elements;
 
+	public Variable? PinnedMemoryOwner;
+
 	public int FixedStringLength = -1;
+	public int ElementSize;
+
+	public bool IsPinned = false;
+	public Machine? PinnedToMachine;
+	public int PinnedToMemoryAddress;
 
 	public bool IsDynamic = true;
 
-	public Span<byte> PackedData => _packedData;
+	public Span<byte> PackedData
+	{
+		get
+		{
+			if (IsPinned)
+			{
+				var context = PinnedMemoryOwner!.PinnedMemoryContext!;
+				var address = PinnedMemoryOwner!.PinnedMemoryAddress;
+
+				return context.Machine.SystemMemory.AsSpan().Slice(address, PackedSize);
+			}
+			else
+				return _packedData;
+		}
+	}
+
 	public int PackedSize => Elements.Length * ElementType.ByteSize;
 
 	byte[]? _packedData;
@@ -49,20 +72,83 @@ public class Array
 		Subscripts = subscripts;
 		FixedStringLength = fixedStringLength;
 
-		int elementSize = fixedStringLength < 0 ? ElementType.ByteSize : fixedStringLength;
+		ElementSize = fixedStringLength < 0 ? ElementType.ByteSize : fixedStringLength;
 
-		if (subscripts.ElementCount * elementSize > MaximumSize)
+		if (subscripts.ElementCount * ElementSize > MaximumSize)
 			throw RuntimeException.SubscriptOutOfRange();
 
 		Elements = new Variable?[subscripts.ElementCount];
 	}
 
+	Array(DataType elementType, ArraySubscripts subscripts, int fixedStringLength, ExecutionContext context, int memoryAddress)
+	{
+		ElementType = elementType;
+		Subscripts = subscripts;
+		FixedStringLength = fixedStringLength;
+
+		IsPinned = true;
+		PinnedToMachine = context.Machine;
+		PinnedToMemoryAddress = memoryAddress;
+
+		Elements = System.Array.Empty<Variable?>();
+	}
+
+	public static Array Pinned(DataType elementType, ArraySubscripts subscripts, int fixedStringLength, ExecutionContext context, int memoryAddress)
+		=> new Array(elementType, subscripts, fixedStringLength, context, memoryAddress);
+
+	public void Pin(ExecutionContext context)
+	{
+		if (IsPinned)
+			return;
+
+		IsPinned = true;
+
+		PinnedMemoryOwner!.AllocatePinnedMemory(context, PackedSize);
+
+		PinnedToMachine = context.Machine;
+		PinnedToMemoryAddress = PinnedMemoryOwner.PinnedMemoryAddress;
+
+		Pack(PackedData);
+	}
+
+	public void Unpin()
+	{
+		if (!IsPinned)
+			return;
+
+		Unpack(PackedData);
+
+		PinnedMemoryOwner!.ReleasePinnedMemory();
+		IsPinned = false;
+	}
+
 	Variable ConstructElement()
 	{
+		Variable variable;
+
 		if ((FixedStringLength >= 0) && ElementType.IsString)
-			return new StringVariable(FixedStringLength);
+			variable = new StringVariable(FixedStringLength);
 		else
-			return Variable.Construct(ElementType);
+			variable = Variable.Construct(ElementType);
+
+		variable.PinnedMemoryOwner = PinnedMemoryOwner;
+
+		return variable;
+	}
+
+	Variable ConstructPinnedElement(int offset)
+	{
+		// Assumes IsPinned
+		Variable variable;
+
+		if ((FixedStringLength >= 0) && ElementType.IsString)
+			variable = new PinnedStringVariable(PinnedToMachine!, PinnedToMemoryAddress + offset, FixedStringLength);
+		else
+			variable = Variable.ConstructPinned(ElementType, PinnedMemoryOwner!.PinnedMemoryContext!, PinnedToMemoryAddress + offset);
+
+		variable.PinnedMemoryOwner = PinnedMemoryOwner;
+
+		return variable;
 	}
 
 	public void RedimensionPreservingData(ArraySubscripts newSubscripts)
@@ -86,6 +172,9 @@ public class Array
 
 		if (newSubscripts.Dimensions != Subscripts.Dimensions)
 			throw new Exception("Internal error: RedimensionPreservingData called with an ArraySubscripts with a different number of dimensions");
+
+		if (IsPinned)
+			Unpin();
 
 		for (int i = 0; i < Subscripts.Dimensions - 1; i++)
 		{
@@ -136,11 +225,14 @@ public class Array
 		if (_packedData != null)
 			throw new Exception("Array.Pack called when already packed");
 
-		_packedData = new byte[PackedSize];
+		if (!IsPinned)
+		{
+			_packedData = new byte[PackedSize];
 
-		Pack(_packedData);
+			Pack(_packedData);
 
-		_packedDataDirty = false;
+			_packedDataDirty = false;
+		}
 	}
 
 	public void Unpack()
@@ -148,17 +240,18 @@ public class Array
 		if (_packedData == null)
 			throw new Exception("Array.Unpack called when not packed");
 
-		if (_packedDataDirty)
-			Unpack(_packedData);
+		if (!IsPinned)
+		{
+			if (_packedDataDirty)
+				Unpack(_packedData);
 
-		_packedData = null;
+			_packedData = null;
+		}
 	}
 
 	int Pack(Span<byte> buffer)
 	{
 		int lengthAtStart = buffer.Length;
-
-		int elementSize = ElementType.ByteSize;
 
 		for (int i = 0; i < Elements.Length; i++)
 		{
@@ -166,19 +259,19 @@ public class Array
 				element.Serialize(buffer);
 			else
 			{
-				if (buffer.Length <= elementSize)
+				if (buffer.Length <= ElementSize)
 				{
 					buffer.Clear();
 					break;
 				}
 
-				buffer.Slice(0, elementSize).Clear();
+				buffer.Slice(0, ElementSize).Clear();
 			}
 
-			if (buffer.Length <= elementSize)
+			if (buffer.Length <= ElementSize)
 				break;
 
-			buffer = buffer.Slice(elementSize);
+			buffer = buffer.Slice(ElementSize);
 		}
 
 		return lengthAtStart - buffer.Length;
@@ -189,17 +282,15 @@ public class Array
 
 	void Unpack(ReadOnlySpan<byte> buffer)
 	{
-		int elementSize = ElementType.ByteSize;
+		if ((s_zeroes == null) || (s_zeroes.Length < ElementSize))
+			s_zeroes = new byte[ElementSize * 2];
 
-		if ((s_zeroes == null) || (s_zeroes.Length < elementSize))
-			s_zeroes = new byte[elementSize * 2];
-
-		var zeroElement = s_zeroes.AsSpan().Slice(0, elementSize);
+		var zeroElement = s_zeroes.AsSpan().Slice(0, ElementSize);
 
 		for (int i = 0; i < Elements.Length; i++)
 		{
-			if ((buffer.Length >= elementSize)
-			 && MemoryExtensions.SequenceEqual(buffer.Slice(0, elementSize), zeroElement))
+			if ((buffer.Length >= ElementSize)
+			 && MemoryExtensions.SequenceEqual(buffer.Slice(0, ElementSize), zeroElement))
 				Elements[i] = null;
 			else
 			{
@@ -209,27 +300,32 @@ public class Array
 				element.Deserialize(buffer);
 			}
 
-			if (buffer.Length <= elementSize)
+			if (buffer.Length <= ElementSize)
 				break;
 
-			buffer = buffer.Slice(elementSize);
+			buffer = buffer.Slice(ElementSize);
 		}
 	}
 
 	public Variable GetElement(int index)
 	{
-		EnsureUnpacked();
+		if (IsPinned)
+			return ConstructPinnedElement(offset: index * ElementSize);
+		else
+		{
+			EnsureUnpacked();
 
-		return Elements[index] ??= ConstructElement();
+			return Elements[index] ??= ConstructElement();
+		}
 	}
 
 	public Variable GetElement(Variable[] subscripts, IList<Evaluable> expressions) => GetElement(Subscripts.GetElementIndex(subscripts, expressions));
 
 	public int Serialize(Span<byte> buffer)
 	{
-		if (_packedData != null)
+		if ((_packedData != null) || IsPinned)
 		{
-			var source = _packedData.AsSpan();
+			var source = PackedData;
 
 			if (source.Length > buffer.Length)
 				source = source.Slice(0, buffer.Length);
@@ -248,7 +344,9 @@ public class Array
 
 		var packedSize = PackedSize;
 
-		if (_packedData == null)
+		if (IsPinned)
+			buffer.CopyTo(PackedData);
+		else if (_packedData == null)
 		{
 			if (buffer.Length >= packedSize)
 				_packedData = buffer.Slice(0, packedSize).ToArray();
