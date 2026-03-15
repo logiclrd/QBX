@@ -1,13 +1,17 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 using QBX.CodeModel;
+using QBX.CodeModel.Statements;
 using QBX.DevelopmentEnvironment.Dialogs;
 using QBX.ExecutionEngine;
 using QBX.Hardware;
+using QBX.LexicalAnalysis;
 using QBX.Parser;
+using QBX.Utility;
 
 namespace QBX.DevelopmentEnvironment;
 
@@ -716,6 +720,63 @@ public partial class Program
 			FocusedViewport.Clipboard.StartSelection(FocusedViewport.CursorX, FocusedViewport.CursorY);
 		else
 			FocusedViewport.Clipboard.ExtendSelection(FocusedViewport.CursorX, FocusedViewport.CursorY);
+	}
+
+	bool EnsureAllCodeIsParsed()
+	{
+		try
+		{
+			PrimaryViewport.CommitCurrentLine();
+			SplitViewport?.CommitCurrentLine();
+
+			var writer = new StringWriter();
+			var buffer = writer.GetStringBuilder();
+
+			foreach (var unit in LoadedFiles.Where(u => u.IncludeInBuild))
+			{
+				foreach (var element in unit.Elements)
+				{
+					for (int i = 0; i < element.Lines.Count; i++)
+					{
+						if (element.Lines[i] is CodeLine line)
+						{
+							if (line.Statements.OfType<UnparsedStatement>().Any())
+							{
+								buffer.Clear();
+
+								line.Render(new StringWriter(buffer), includeCRLF: false);
+
+								var lexer = new Lexer(new StringBuilderReader(buffer), startingLineNumber: i);
+
+								var parsedCodeLine = Parser.ParseCodeLines(lexer).SingleOrDefault();
+
+								element.ReplaceLine(i, parsedCodeLine ?? CodeLine.CreateEmpty());
+							}
+						}
+					}
+				}
+			}
+
+			return true;
+		}
+		catch (SyntaxErrorException error)
+		{
+			PresentError(error);
+		}
+		catch (CompilerException error)
+		{
+			PresentError(error);
+		}
+		catch (RuntimeException error)
+		{
+			PresentError(error);
+		}
+		catch (Exception exception)
+		{
+			PresentError(exception.Message);
+		}
+
+		return false;
 	}
 
 	private void SwitchToNextElement()

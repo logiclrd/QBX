@@ -70,6 +70,9 @@ public partial class Program
 	{
 		Terminate();
 
+		if (!EnsureAllCodeIsParsed())
+			return false;
+
 		_compiler = new Compiler();
 		_compilation = new Compilation();
 
