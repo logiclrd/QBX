@@ -102,6 +102,28 @@ public class UserDataTypeVariable : Variable
 		}
 	}
 
+	public override void AllocateAndPin(ExecutionContext context)
+	{
+		if (IsPinned)
+			return;
+
+		if (PinnedMemoryOwner != null)
+		{
+			PinnedMemoryOwner.AllocateAndPin(context);
+			return;
+		}
+
+		AllocatePinnedMemory(context);
+
+		var userDataType = base.DataType.UserType ?? throw new Exception("Internal error");
+
+		var pinSpan = context.Machine.SystemMemory.AsSpan().Slice(PinnedMemoryAddress, DataType.ByteSize);
+
+		Serialize(pinSpan);
+
+		ConstructPinnedInstance(userDataType, context, PinnedMemoryAddress);
+	}
+
 	public override void Reset()
 	{
 		foreach (var field in Fields)

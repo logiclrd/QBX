@@ -70,4 +70,9 @@ public class ArrayVariable(DataType type, int fixedStringLength = -1) : Variable
 		Array = Array.Pinned(ElementType, subscripts, fixedStringLength, context, memoryAddress);
 		Array.PinnedMemoryOwner = this;
 	}
+
+	public override void AllocateAndPin(ExecutionContext context)
+	{
+		Array.Pin(context);
+	}
 }

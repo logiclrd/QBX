@@ -3196,6 +3196,8 @@ public class Compiler
 					case TokenType.UBOUND: function = new UBoundFunction(); break;
 					case TokenType.UCASE: function = new UCaseFunction(); break;
 					case TokenType.VAL: function = new ValFunction(); break;
+					case TokenType.VARPTR: function = new VarPtrFunction(); break;
+					case TokenType.VARSEG: function = new VarSegFunction(); break;
 
 					default: throw new NotImplementedException("Keyword function: " + keywordFunction.Function);
 				}

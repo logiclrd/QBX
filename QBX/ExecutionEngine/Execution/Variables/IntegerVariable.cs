@@ -24,6 +24,12 @@ public class IntegerVariable : Variable
 		Value = value;
 	}
 
+	public IntegerVariable(ushort value)
+		: this()
+	{
+		Value = unchecked((short)value);
+	}
+
 	public IntegerVariable(bool value)
 		: this(value ? IntegerLiteralValue.True : IntegerLiteralValue.False)
 	{

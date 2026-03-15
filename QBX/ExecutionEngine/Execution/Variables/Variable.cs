@@ -94,6 +94,14 @@ public abstract class Variable
 		ReleasePinnedMemory();
 	}
 
+	public virtual void AllocateAndPin(ExecutionContext context)
+	{
+		if (PinnedMemoryOwner != null)
+			PinnedMemoryOwner.AllocateAndPin(context);
+		else
+			throw new Exception("Cannot allocate & pin a " + GetType().Name + " directly");
+	}
+
 	public virtual void ReadPinnedData() { }
 	public virtual void WritePinnedData() { }
 
