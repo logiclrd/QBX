@@ -20,7 +20,7 @@ buffer$ = SPACE$(200)
 rin.DS = SSEG(buffer$)
 rin.ES = SADD(buffer$)
 
-rin.AX = &H4700
+rin.AX = &H4700 ' Get current directory (unrooted)
 
 CALL InterruptX(&H21, rin, rout)
 
