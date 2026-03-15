@@ -168,7 +168,7 @@ public class OpenFileDialog : DialogWithDirectoryList
 				fileEntry =>
 				{
 					if (FilterExpression.IsMatch(fileEntry.Name))
-						lstFiles.Items.Add(ListBoxItem.Create(fileEntry.Name, fileEntry.Name));
+						lstFiles.Items.Add(ListBoxItem.Create(fileEntry.Name + " ", fileEntry.Name));
 				});
 
 			lstFiles.Items.Sort();
@@ -259,15 +259,17 @@ public class OpenFileDialog : DialogWithDirectoryList
 					}
 					else
 					{
+						RestoreCurrentDirectory = false;
+
 						var selectedFilePath = Path.Combine(CurrentDirectory, fileName);
 
 						if (!File.Exists(selectedFilePath)
 						 && !Path.GetFileName(selectedFilePath).Contains('.'))
 							selectedFilePath += Path.GetExtension(Filter) ?? ".BAS";
 
-						FileSelected?.Invoke(selectedFilePath);
+						IsVisible = false;
 
-						RestoreCurrentDirectory = false;
+						FileSelected?.Invoke(selectedFilePath);
 					}
 
 					break;
