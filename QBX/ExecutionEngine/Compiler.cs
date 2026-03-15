@@ -323,11 +323,13 @@ public class Compiler
 	{
 		var typeRepository = compilation.TypeRepository;
 
-		var udt = new UserDataType(typeStatement);
+		var udt = new UserDataType();
+
+		var fieldNames = new List<string>();
 
 		foreach (var typeElementStatement in elements)
 		{
-			var type = typeRepository.ResolveType(
+			var type = mapper.ResolveType(
 				typeElementStatement.ElementType,
 				typeElementStatement.ElementUserType,
 				typeElementStatement.FixedStringLength,
@@ -367,12 +369,17 @@ public class Compiler
 
 			udt.Fields.Add(
 				new UserDataTypeField(
-					typeElementStatement.Name,
 					type,
 					translatedSubscripts));
+
+			fieldNames.Add(typeElementStatement.Name);
 		}
 
-		typeRepository.RegisterType(udt);
+		udt = typeRepository.RegisterType(udt);
+
+		var udtFacade = new UserDataTypeFacade(udt, typeStatement.Name, fieldNames, typeStatement);
+
+		mapper.RegisterTypeFacade(udtFacade);
 	}
 
 	void TranslateStatement(CodeModel.CompilationElement element, ref int lineIndexRef, ref int statementIndexRef, Sequence container, Routine routine, Compilation compilation, Module module)
@@ -548,7 +555,7 @@ public class Compiler
 				if (valueExpression == null)
 					throw new BadModelException("AssignmentStatement with no ValueExpression");
 
-				if (targetExpression.Type != valueExpression.Type)
+				if (!targetExpression.Type.Equals(valueExpression.Type))
 				{
 					if (targetExpression.Type.IsString != valueExpression.Type.IsString)
 						throw CompilerException.TypeMismatch(assignmentStatement.ValueExpression?.Token);
@@ -666,7 +673,7 @@ public class Compiler
 						}
 
 						if (translatedCallStatement.Target != null)
-							translatedCallStatement.EnsureParameterTypes();
+							translatedCallStatement.EnsureParameterTypes(matchFacades);
 					}
 
 					container.Append(translatedCallStatement);
@@ -779,7 +786,7 @@ public class Compiler
 			case CodeModel.Statements.CommonStatement commonStatement:
 			{
 				var variableTypes = commonStatement.Declarations
-					.Select(declaration => typeRepository.ResolveType(declaration, mapper))
+					.Select(declaration => mapper.ResolveType(declaration))
 					.ToList();
 
 				var block = compilation.GetCommonBlock(commonStatement.BlockName);
@@ -856,7 +863,7 @@ public class Compiler
 				else
 				{
 					var parameterTypes = declareStatement.Parameters?.Parameters
-						.Select(parameterDefinition => compilation.TypeRepository.ResolveType(parameterDefinition, mapper))
+						.Select(parameterDefinition => mapper.ResolveType(parameterDefinition))
 						.ToList();
 
 					DataType? returnType = null;
@@ -1023,7 +1030,7 @@ public class Compiler
 					// TODO: it needs to be possible to DIM dotted identifiers
 
 					if (declaration.UserType != null)
-						dataType = compilation.TypeRepository.ResolveType(declaration.UserType);
+						dataType = mapper.ResolveType(declaration.UserType);
 					else if (declaration.Type != CodeModel.DataType.Unspecified)
 						dataType = DataType.FromCodeModelDataType(declaration.Type);
 					else
@@ -2590,7 +2597,7 @@ public class Compiler
 					DataType variableType;
 
 					if (declaration.UserType != null)
-						variableType = typeRepository.ResolveType(declaration.UserType, declaration.TypeToken);
+						variableType = mapper.ResolveType(declaration.UserType, declaration.TypeToken);
 					else if (declaration.Type != null)
 						variableType = DataType.FromCodeModelDataType(declaration.Type.Value);
 					else
@@ -3025,7 +3032,7 @@ public class Compiler
 						}
 
 						if (translatedCallExpression.Target != null)
-							translatedCallExpression.EnsureParameterTypes();
+							translatedCallExpression.EnsureParameterTypes(matchFacades);
 
 						return translatedCallExpression;
 					}

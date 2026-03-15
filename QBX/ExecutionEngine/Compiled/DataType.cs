@@ -9,12 +9,14 @@ public class DataType
 {
 	public readonly PrimitiveDataType PrimitiveType;
 	public readonly UserDataType? UserType;
+	public readonly UserDataTypeFacade? UserTypeFacade;
 	public readonly bool IsArray;
 	public readonly int ByteSize;
 
 	public bool IsPrimitiveType => (UserType == null);
 	[MemberNotNullWhen(true, nameof(UserType))]
-	public bool IsUserType => (UserType != null);
+	[MemberNotNullWhen(true, nameof(UserTypeFacade))]
+	public bool IsUserType => (UserType != null) && (UserTypeFacade != null);
 
 	public bool IsInteger => PrimitiveType == PrimitiveDataType.Integer;
 	public bool IsLong => PrimitiveType == PrimitiveDataType.Long;
@@ -56,11 +58,21 @@ public class DataType
 		}
 	}
 
+	public DataType(UserDataTypeFacade userTypeFacade, bool isArray = false)
+	{
+		UserTypeFacade = userTypeFacade;
+		UserType = userTypeFacade.UnderlyingType;
+		IsArray = isArray;
+
+		ByteSize = UserType.CalculateByteSize();
+	}
+
 	public DataType(UserDataType userType, bool isArray = false)
 	{
 		UserType = userType;
 		IsArray = isArray;
-		ByteSize = userType.CalculateByteSize();
+
+		ByteSize = UserType.CalculateByteSize();
 	}
 
 	private DataType(int fixedLength)
@@ -76,16 +88,16 @@ public class DataType
 
 	public DataType MakeArrayType()
 	{
-		if (UserType != null)
-			return new DataType(UserType, isArray: true);
+		if (UserTypeFacade != null)
+			return new DataType(UserTypeFacade, isArray: true);
 		else
 			return new DataType(PrimitiveType, isArray: true);
 	}
 
 	internal DataType MakeElementType()
 	{
-		if (UserType != null)
-			return new DataType(UserType, isArray: false);
+		if (UserTypeFacade != null)
+			return new DataType(UserTypeFacade, isArray: false);
 		else
 			return new DataType(PrimitiveType, isArray: false);
 	}
@@ -143,6 +155,8 @@ public class DataType
 			return PrimitiveType == otherType.PrimitiveType;
 		if ((UserType != null) && (otherType.UserType != null))
 			return UserType == otherType.UserType;
+		if ((UserTypeFacade != null) || (otherType.UserTypeFacade != null))
+			return UserTypeFacade == otherType.UserTypeFacade;
 
 		return false;
 	}

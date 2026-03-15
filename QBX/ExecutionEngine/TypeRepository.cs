@@ -1,65 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 
 using QBX.ExecutionEngine.Compiled;
-using QBX.LexicalAnalysis;
 
 namespace QBX.ExecutionEngine;
 
 public class TypeRepository
 {
-	Dictionary<string, DataType> _typeByName = new Dictionary<string, DataType>(StringComparer.OrdinalIgnoreCase);
+	Dictionary<UserDataType, UserDataType> _userDataTypes = new Dictionary<UserDataType, UserDataType>();
 
-	public void RegisterType(UserDataType userType)
+	public UserDataType RegisterType(UserDataType userType)
 	{
-		if (_typeByName.ContainsKey(userType.Name))
-			throw CompilerException.DuplicateDefinition(userType.Statement);
+		if (_userDataTypes.TryGetValue(userType, out var previousDefinition))
+			return previousDefinition;
 
-		_typeByName[userType.Name] = new DataType(userType);
-	}
+		_userDataTypes[userType] = userType;
 
-	public DataType ResolveType(string userType, Token? context = null)
-		=> ResolveType(CodeModel.DataType.UserDataType, userType, fixedStringLength: 0, isArray: false, context);
-
-	public DataType ResolveType(CodeModel.DataType primitiveType, string? userTypeName, int fixedStringLength, bool isArray, Token? context)
-	{
-		if (isArray)
-		{
-			var scalarType = ResolveType(primitiveType, userTypeName, fixedStringLength, isArray: false, context);
-
-			return scalarType.MakeArrayType();
-		}
-
-		if (userTypeName == null)
-			return DataType.FromCodeModelDataType(primitiveType, fixedStringLength);
-
-		if (_typeByName.TryGetValue(userTypeName, out var type))
-			return type;
-
-		throw CompilerException.TypeNotDefined(context);
-	}
-
-	public DataType ResolveType(CodeModel.ParameterDefinition param, Mapper mapper)
-	{
-		if (param.AnyType)
-			throw new Exception("Internal error: Cannot resolve ANY to a DataType");
-
-		if (CodeModel.TypeCharacter.TryParse(param.Name.Last(), out var typeCharacter))
-			return ResolveType(typeCharacter.Type, null, 0, param.IsArray, param.NameToken);
-		else if ((param.Type != CodeModel.DataType.Unspecified) || (param.UserType != null))
-			return ResolveType(param.Type, param.UserType, 0, param.IsArray, param.TypeToken);
-		else
-			return DataType.ForPrimitiveDataType(mapper.GetTypeForIdentifier(param.Name));
-	}
-
-	public DataType ResolveType(CodeModel.VariableDeclaration declaration, Mapper mapper)
-	{
-		if (CodeModel.TypeCharacter.TryParse(declaration.Name.Last(), out var typeCharacter))
-			return ResolveType(typeCharacter.Type, null, 0, declaration.Subscripts != null, declaration.NameToken);
-		else if ((declaration.Type != CodeModel.DataType.Unspecified) || (declaration.UserType != null))
-			return ResolveType(declaration.Type, declaration.UserType, 0, declaration.Subscripts != null, declaration.TypeToken);
-		else
-			return DataType.ForPrimitiveDataType(mapper.GetTypeForIdentifier(declaration.Name));
+		return userType;
 	}
 }

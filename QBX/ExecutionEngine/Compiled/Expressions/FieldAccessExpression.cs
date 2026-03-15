@@ -25,14 +25,16 @@ public class FieldAccessExpression(Evaluable expression, int fieldIndex, DataTyp
 			throw new CompilerException(expression.Source, "Left expression of a FieldAccessExpression must evaluate to a user-defined type");
 
 		var userType = dataType.UserType;
+		var userTypeFacade = dataType.UserTypeFacade;
 
 		string unqualifiedFieldName = Mapper.UnqualifyIdentifier(fieldName);
 
 		for (int fieldIndex = 0; fieldIndex < userType.Fields.Count; fieldIndex++)
 		{
-			var field = userType.Fields[fieldIndex];
+			var thisField = userType.Fields[fieldIndex];
+			var thisFieldName = userTypeFacade.FieldNames[fieldIndex];
 
-			if (field.Name.Equals(unqualifiedFieldName, StringComparison.OrdinalIgnoreCase))
+			if (thisFieldName.Equals(unqualifiedFieldName, StringComparison.OrdinalIgnoreCase))
 			{
 				if (fieldName != unqualifiedFieldName)
 				{
@@ -41,11 +43,11 @@ public class FieldAccessExpression(Evaluable expression, int fieldIndex, DataTyp
 
 					var typeFromName = DataType.FromCodeModelDataType(typeCharacter.Type);
 
-					if (!typeFromName.Equals(field.Type))
+					if (!typeFromName.Equals(thisField.Type))
 						throw CompilerException.TypeMismatch(fieldToken);
 				}
 
-				return new FieldAccessExpression(expression, fieldIndex, field.Type);
+				return new FieldAccessExpression(expression, fieldIndex, thisField.Type);
 			}
 		}
 

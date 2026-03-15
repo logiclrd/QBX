@@ -2,9 +2,16 @@
 
 namespace QBX.ExecutionEngine.Compiled;
 
-public class UserDataTypeField(string name, DataType type, ArraySubscripts? subscripts)
+public class UserDataTypeField(DataType type, ArraySubscripts? subscripts)
 {
-	public string Name => name;
 	public DataType Type => type;
 	public ArraySubscripts? ArraySubscripts => subscripts;
+
+	public override int GetHashCode()
+	{
+		if (subscripts != null)
+			return type.GetHashCode() ^ subscripts.GetHashCode();
+		else
+			return type.GetHashCode();
+	}
 }

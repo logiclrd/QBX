@@ -26,10 +26,11 @@ public class CallStatement(CodeModel.Statements.Statement? source) : Executable(
 		Target = routine;
 		UnresolvedTargetName = null;
 
-		EnsureParameterTypes();
+		// By definition we're crossing a module boundary; ignore user type facades.
+		EnsureParameterTypes(matchFacades: false);
 	}
 
-	public void EnsureParameterTypes()
+	public void EnsureParameterTypes(bool matchFacades)
 	{
 		if (Target == null)
 			throw new Exception("Internal error: EnsureParameterTypes called with no Target");
@@ -45,9 +46,14 @@ public class CallStatement(CodeModel.Statements.Statement? source) : Executable(
 			if (argument.Type.IsString != parameterType.IsString)
 				throw CompilerException.TypeMismatch(argument?.Source);
 
-			if (parameterType.IsUserType
-			 && (!argument.Type.IsUserType || (argument.Type.UserType != parameterType.UserType)))
-				throw CompilerException.TypeMismatch(argument?.Source);
+			if (parameterType.IsUserType)
+			{
+				if (!argument.Type.IsUserType || (argument.Type.UserType != parameterType.UserType))
+					throw CompilerException.TypeMismatch(argument?.Source);
+
+				if (matchFacades && (argument.Type.UserTypeFacade != parameterType.UserTypeFacade))
+					throw CompilerException.TypeMismatch(argument?.Source);
+			}
 
 			if (parameterType.IsNumeric)
 			{

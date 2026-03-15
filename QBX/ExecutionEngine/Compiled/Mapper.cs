@@ -57,6 +57,17 @@ namespace QBX.ExecutionEngine.Compiled;
 //
 //   Mapper tracks these defaults and automatically qualifies unqualified
 //   identifiers when defining and resolving them.
+//
+// User-defined types:
+//
+//   User-defined types do not have any names, neither for the types nor
+//   the fields, but within a compilation element, they are referenced
+//   exclusively by name. Mapper is in charge of these "facades" that
+//   assign names to UDTs.
+//
+//   Assignments and calls within a compilation element require the
+//   facade to match exactly. Calls across module boundaries only require
+//   the underlying user-defined type to match.
 
 public class Mapper
 {
@@ -89,6 +100,8 @@ public class Mapper
 	public IEnumerable<string> GlobalIdentifiers => _globalVariableNames.Concat(_globalArrayNames);
 
 	PrimitiveDataType[] _identifierTypes = new PrimitiveDataType[26];
+
+	Dictionary<string, DataType> _typeFacadeByName = new Dictionary<string, DataType>(StringComparer.OrdinalIgnoreCase);
 
 	// Slugs: avoid conflicts to do with dotted variable names.
 	//
@@ -435,6 +448,7 @@ public class Mapper
 	{
 		if (_isFrozen)
 			throw new Exception("The Mapper is frozen");
+
 		_disallowedSlugs.Add(slug);
 	}
 
@@ -696,4 +710,68 @@ public class Mapper
 				RemoteIndex = info.LinkedToRootVariableIndex,
 			})
 		.ToList();
+
+	public void RegisterTypeFacade(UserDataTypeFacade udtFacade)
+	{
+		if (_root != null)
+		{
+			_root.RegisterTypeFacade(udtFacade);
+			return;
+		}
+
+		if (_typeFacadeByName.ContainsKey(udtFacade.Name))
+			throw CompilerException.DuplicateDefinition(udtFacade.Statement?.FirstToken);
+
+		_typeFacadeByName.Add(udtFacade.Name, new DataType(udtFacade));
+	}
+
+	public DataType ResolveType(string userType, Token? context = null)
+		=> ResolveType(CodeModel.DataType.UserDataType, userType, fixedStringLength: 0, isArray: false, context);
+
+	public DataType ResolveType(CodeModel.DataType primitiveType, string? userTypeName, int fixedStringLength, bool isArray, Token? context)
+	{
+		if (isArray)
+		{
+			var scalarType = ResolveType(primitiveType, userTypeName, fixedStringLength, isArray: false, context);
+
+			return scalarType.MakeArrayType();
+		}
+
+		if (userTypeName == null)
+			return DataType.FromCodeModelDataType(primitiveType, fixedStringLength);
+
+		if (_root != null)
+			return _root.ResolveType(primitiveType, userTypeName, fixedStringLength, isArray, context);
+		else
+		{
+			if (_typeFacadeByName.TryGetValue(userTypeName, out var type))
+				return type;
+
+			throw CompilerException.TypeNotDefined(context);
+		}
+	}
+
+	public DataType ResolveType(CodeModel.ParameterDefinition param)
+	{
+		if (param.AnyType)
+			throw new Exception("Internal error: Cannot resolve ANY to a DataType");
+
+		if (CodeModel.TypeCharacter.TryParse(param.Name.Last(), out var typeCharacter))
+			return ResolveType(typeCharacter.Type, null, 0, param.IsArray, param.NameToken);
+		else if ((param.Type != CodeModel.DataType.Unspecified) || (param.UserType != null))
+			return ResolveType(param.Type, param.UserType, 0, param.IsArray, param.TypeToken);
+		else
+			return DataType.ForPrimitiveDataType(GetTypeForIdentifier(param.Name));
+	}
+
+	public DataType ResolveType(CodeModel.VariableDeclaration declaration)
+	{
+
+		if (CodeModel.TypeCharacter.TryParse(declaration.Name.Last(), out var typeCharacter))
+			return ResolveType(typeCharacter.Type, null, 0, declaration.Subscripts != null, declaration.NameToken);
+		else if ((declaration.Type != CodeModel.DataType.Unspecified) || (declaration.UserType != null))
+			return ResolveType(declaration.Type, declaration.UserType, 0, declaration.Subscripts != null, declaration.TypeToken);
+		else
+			return DataType.ForPrimitiveDataType(GetTypeForIdentifier(declaration.Name));
+	}
 }

@@ -8,7 +8,7 @@ using QBX.Utility;
 
 namespace QBX.ExecutionEngine.Execution;
 
-public class ArraySubscripts
+public class ArraySubscripts : IEquatable<ArraySubscripts>
 {
 	public List<ArraySubscript> Subscripts { get; } = new List<ArraySubscript>();
 
@@ -83,5 +83,36 @@ public class ArraySubscripts
 			s_subscriptValueBuffer[i] = subscriptValues[i].CoerceToInt(context: subscriptExpressions[i]);
 
 		return GetElementIndex(s_subscriptValueBuffer, subscriptExpressions);
+	}
+
+	public override bool Equals(object? obj)
+		=> Equals(obj as ArraySubscripts);
+
+	public bool Equals(ArraySubscripts? other)
+	{
+		if (other == null)
+			return (Subscripts.Count == 0);
+
+		if (Subscripts.Count != other.Subscripts.Count)
+			return false;
+
+		for (int i = 0; i < Subscripts.Count; i++)
+			if (!Subscripts[i].Equals(other.Subscripts[i]))
+				return false;
+
+		return true;
+	}
+
+	public override int GetHashCode()
+	{
+		int hashCode = 0;
+
+		for (int i = 0; i < Subscripts.Count; i++)
+		{
+			hashCode = unchecked((hashCode * 1049) ^ (hashCode >> 24));
+			hashCode ^= Subscripts[i].GetHashCode();
+		}
+
+		return hashCode;
 	}
 }

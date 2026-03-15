@@ -113,7 +113,7 @@ public class Routine : Sequence
 			// Can't have two functions whose names differ only by type character.
 			// In other words, the type character isn't actually part of the
 			// function's name.
-			ReturnType = typeRepository.ResolveType(typeCharacter.Type, null, fixedStringLength: 0, isArray: false, null);
+			ReturnType = mapper.ResolveType(typeCharacter.Type, null, fixedStringLength: 0, isArray: false, null);
 			Name = Name.Remove(Name.Length - 1);
 		}
 		else
@@ -146,7 +146,7 @@ public class Routine : Sequence
 			// Can't have two functions whose names differ only by type character.
 			// In other words, the type character isn't actually part of the
 			// function's name.
-			ReturnType = typeRepository.ResolveType(typeCharacter.Type, null, fixedStringLength: 0, isArray: false, null);
+			ReturnType = mapper.ResolveType(typeCharacter.Type, null, fixedStringLength: 0, isArray: false, null);
 			Name = Name.Remove(Name.Length - 1);
 		}
 
@@ -193,7 +193,7 @@ public class Routine : Sequence
 			{
 				var param = parameterDefinitions[i];
 
-				var paramType = compilation.TypeRepository.ResolveType(param, mapper);
+				var paramType = mapper.ResolveType(param);
 
 				ParameterTypes.Add(paramType);
 
