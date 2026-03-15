@@ -640,7 +640,21 @@ public class Compiler
 				{
 					var translatedCallStatement = new CallStatement(callStatement);
 
-					if (compilation.TryGetSub(callStatement.TargetName, out var sub))
+					bool matchFacades = false;
+					bool implicitForwardReference = false;
+
+					if (module.TryGetSubFacade(callStatement.TargetName, out var subFacade))
+					{
+						matchFacades = true;
+
+						int callArgumentCount = callStatement.Arguments?.Count ?? 0;
+
+						if (callArgumentCount != subFacade.ParameterTypes.Count)
+							throw CompilerException.ArgumentCountMismatch(callStatement.FirstToken);
+
+						translatedCallStatement.Target = subFacade.Routine;
+					}
+					else if (compilation.TryGetSub(callStatement.TargetName, out var sub))
 					{
 						int callArgumentCount = callStatement.Arguments?.Count ?? 0;
 
@@ -659,6 +673,8 @@ public class Compiler
 						translatedCallStatement.UnresolvedTargetName = callStatement.TargetName;
 						forwardReference.UnresolvedCalls.Add(translatedCallStatement);
 					}
+					else
+						implicitForwardReference = true;
 
 					if (callStatement.Arguments != null)
 					{
@@ -674,6 +690,24 @@ public class Compiler
 
 						if (translatedCallStatement.Target != null)
 							translatedCallStatement.EnsureParameterTypes(matchFacades);
+						else if (implicitForwardReference)
+						{
+							var parameterTypes = new DataType[translatedCallStatement.Arguments.Count];
+
+							for (int i=0; i < parameterTypes.Length; i++)
+								parameterTypes[i] = translatedCallStatement.Arguments[i].Type;
+
+							var forwardReference = module.UnresolvedReferences.DeclareSymbol(
+								callStatement.TargetName,
+								mapper,
+								null,
+								RoutineType.Sub,
+								parameterTypes,
+								returnType: null);
+
+							translatedCallStatement.UnresolvedTargetName = callStatement.TargetName;
+							forwardReference.UnresolvedCalls.Add(translatedCallStatement);
+						}
 					}
 
 					container.Append(translatedCallStatement);
@@ -898,6 +932,14 @@ public class Compiler
 							blameStatement: declareStatement,
 							blameName: declareStatement.NameToken,
 							getBlameParameterType: i => declareStatement.Parameters?.Parameters[i].TypeToken);
+
+						var facade = new RoutineFacade(declaredRoutine);
+
+						switch (declareStatement.DeclarationType.Type)
+						{
+							case TokenType.SUB: module.AddSubFacade(declaredRoutine.Name, facade); break;
+							case TokenType.FUNCTION: module.AddFunctionFacade(declaredRoutine.Name, facade); break;
+						}
 					}
 					else
 					{
@@ -2994,7 +3036,16 @@ public class Compiler
 						if (compilation.Subs.ContainsKey(unqualifiedIdentifier))
 							throw new CompilerException(callOrIndexExpression.Subject.Token, "Cannot invoke a SUB as a function");
 
-						if (!compilation.Functions.TryGetValue(unqualifiedIdentifier, out var function))
+						Routine? function;
+						bool matchFacades = false;
+						bool implicitForwardReference = false;
+
+						if (module.TryGetFunctionFacade(unqualifiedIdentifier, out var functionFacade))
+						{
+							matchFacades = true;
+							function = functionFacade.Routine;
+						}
+						else if (!compilation.Functions.TryGetValue(unqualifiedIdentifier, out function))
 						{
 							if (!isForwardReference)
 								throw new Exception("Internal error: identifier " + unqualifiedIdentifier + " is registered but is neither a SUB nor a FUNCTION?");
@@ -3004,6 +3055,8 @@ public class Compiler
 						}
 						else
 						{
+							implicitForwardReference = true;
+
 							if (callOrIndexExpression.Arguments.Count != function.ParameterTypes.Count)
 								throw CompilerException.ArgumentCountMismatch(callOrIndexExpression.Subject.Token);
 						}
@@ -3014,6 +3067,22 @@ public class Compiler
 
 						if (function == null)
 						{
+							if (implicitForwardReference)
+							{
+								var parameterTypes = new DataType[translatedCallExpression.Arguments.Count];
+
+								for (int i=0; i < parameterTypes.Length; i++)
+									parameterTypes[i] = translatedCallExpression.Arguments[i].Type;
+
+								forwardReference = module.UnresolvedReferences.DeclareSymbol(
+									unqualifiedIdentifier,
+									mapper,
+									null,
+									RoutineType.Function,
+									parameterTypes,
+									returnType: DataType.ForPrimitiveDataType(mapper.GetTypeForIdentifier(identifier)));
+							}
+
 							translatedCallExpression.UnresolvedTargetName = unqualifiedIdentifier;
 							if (forwardReference != null)
 								translatedCallExpression.UnresolvedTargetType = forwardReference.ReturnType;

@@ -16,17 +16,21 @@ public class UnresolvedReferences(Compilation compilation, Module module)
 	public bool TryGetDeclaration(string identifier, [NotNullWhen(true)] out ForwardReferenceList? forwardReference)
 		=> ForwardReferences.TryGetValue(identifier, out forwardReference);
 
-	public void DeclareSymbol(string identifier, Mapper mapper, CodeModel.Statements.Statement? statement, RoutineType routineType, DataType[] parameterTypes, DataType? returnType)
+	public ForwardReferenceList DeclareSymbol(string identifier, Mapper mapper, CodeModel.Statements.Statement? statement, RoutineType routineType, DataType[] parameterTypes, DataType? returnType)
 	{
 		if (ForwardReferences.ContainsKey(identifier)
 		 || module.IsRegistered(identifier))
 			throw CompilerException.DuplicateDefinition(statement);
 
-		ForwardReferences[identifier] = new ForwardReferenceList(
+		var forwardReference = new ForwardReferenceList(
 			identifier,
 			routineType,
 			parameterTypes,
 			returnType);
+
+		ForwardReferences[identifier] = forwardReference;
+
+		return forwardReference;
 	}
 
 	public bool ResolveCalls()
