@@ -390,7 +390,9 @@ public class DataParserTests
 
 		var dummySource = new QBX.CodeModel.CompilationElement(dummyUnit);
 
-		var dummyModule = new Module();
+		var dummyCompilation = new Compilation();
+
+		var dummyModule = new Module(dummyCompilation);
 
 		var dummyRoutine = new Routine(dummyModule, rootMapper: null, source: dummySource);
 

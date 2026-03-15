@@ -428,7 +428,7 @@ public partial class Program
 
 						var parsedSubject = Parser.ParseExpression(tokens, lexer.EndToken);
 
-						var evaluable = _compiler.CompileExpression(parsedSubject, currentRoutine.Mapper, _compilation);
+						var evaluable = _compiler.CompileExpression(parsedSubject, currentRoutine.Mapper, _compilation, currentRoutine.Module);
 
 						watch.LastValue = evaluable.Evaluate(_executionContext, stackFrame);
 

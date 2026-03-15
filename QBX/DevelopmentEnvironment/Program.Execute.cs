@@ -87,10 +87,10 @@ public partial class Program
 				if (file.IncludeInBuild && (file is CompilationUnit unit))
 					_compiler.Compile(unit, _compilation);
 
-			if (!_compilation.UnresolvedReferences.ResolveCalls())
+			if (!_compilation.ResolveUnresolvedCalls(out var errorModule))
 			{
 				throw CompilerException.SubprogramNotDefined(
-					_compilation.UnresolvedReferences.GetFirstUnresolvedStatementSourceToken());
+					errorModule.UnresolvedReferences.GetFirstUnresolvedStatementSourceToken());
 			}
 		}
 		catch (CompilerException error)

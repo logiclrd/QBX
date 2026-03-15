@@ -8,7 +8,7 @@ using QBX.LexicalAnalysis;
 
 namespace QBX.ExecutionEngine;
 
-public class UnresolvedReferences(Compilation compilation)
+public class UnresolvedReferences(Compilation compilation, Module module)
 {
 	public Dictionary<string, ForwardReferenceList> ForwardReferences =
 		new Dictionary<string, ForwardReferenceList>(StringComparer.OrdinalIgnoreCase);
@@ -19,7 +19,7 @@ public class UnresolvedReferences(Compilation compilation)
 	public void DeclareSymbol(string identifier, Mapper mapper, CodeModel.Statements.Statement? statement, RoutineType routineType, DataType[] parameterTypes, DataType? returnType)
 	{
 		if (ForwardReferences.ContainsKey(identifier)
-		 || compilation.IsRegistered(identifier))
+		 || module.IsRegistered(identifier))
 			throw CompilerException.DuplicateDefinition(statement);
 
 		ForwardReferences[identifier] = new ForwardReferenceList(

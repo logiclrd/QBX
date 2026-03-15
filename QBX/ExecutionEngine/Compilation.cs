@@ -12,7 +12,6 @@ public class Compilation
 	public List<Module> Modules;
 	public Dictionary<string, CommonBlock> CommonBlocks;
 	public TypeRepository TypeRepository;
-	public UnresolvedReferences UnresolvedReferences;
 	public Dictionary<string, Routine> Subs;
 	public Dictionary<string, Routine> Functions;
 	public Dictionary<string, NativeProcedure> NativeProcedures;
@@ -42,10 +41,22 @@ public class Compilation
 		Modules = new List<Module>();
 		CommonBlocks = new Dictionary<string, CommonBlock>();
 		TypeRepository = new TypeRepository();
-		UnresolvedReferences = new UnresolvedReferences(this);
 		Subs = new Dictionary<string, Routine>(StringComparer.OrdinalIgnoreCase);
 		Functions = new Dictionary<string, Routine>(StringComparer.OrdinalIgnoreCase);
 		NativeProcedures = new Dictionary<string, NativeProcedure>(StringComparer.OrdinalIgnoreCase);
+	}
+
+	public bool ResolveUnresolvedCalls([NotNullWhen(false)] out Module? errorModule)
+	{
+		foreach (var module in Modules)
+			if (!module.UnresolvedReferences.ResolveCalls())
+			{
+				errorModule = module;
+				return false;
+			}
+
+		errorModule = null;
+		return true;
 	}
 
 	public CommonBlock GetCommonBlock(string name)
