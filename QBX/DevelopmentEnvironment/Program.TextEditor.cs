@@ -264,6 +264,16 @@ public partial class Program
 
 					break;
 				}
+				case ScanCode.F2:
+				{
+					if (!input.Modifiers.CtrlKey && !input.Modifiers.AltKey)
+					{
+						if (input.Modifiers.ShiftKey)
+							SwitchToNextElement();
+					}
+
+					break;
+				}
 				case ScanCode.F4:
 				{
 					RestoreOutput();
@@ -702,6 +712,50 @@ public partial class Program
 			FocusedViewport.Clipboard.StartSelection(FocusedViewport.CursorX, FocusedViewport.CursorY);
 		else
 			FocusedViewport.Clipboard.ExtendSelection(FocusedViewport.CursorX, FocusedViewport.CursorY);
+	}
+
+	private void SwitchToNextElement()
+	{
+		IEditableElement? nextElement = null;
+
+		var unit = FocusedViewport.EditableUnit;
+
+		if (unit != null)
+		{
+			int elementIndex = -1;
+
+			for (int i = 0; i < unit.Elements.Count; i++)
+			{
+				if (unit.Elements[i] == FocusedViewport.EditableElement)
+				{
+					elementIndex = i;
+					break;
+				}
+			}
+
+			// Advance to next element.
+			elementIndex++;
+
+			if (elementIndex >= unit.Elements.Count)
+			{
+				int unitIndex = LoadedFiles.IndexOf(unit);
+
+				unitIndex++;
+
+				if (unitIndex >= LoadedFiles.Count)
+					unitIndex = 0;
+
+				unit = LoadedFiles[unitIndex];
+				elementIndex = 0;
+			}
+
+			nextElement = unit.Elements[elementIndex];
+		}
+
+		if (nextElement == null)
+			nextElement = LoadedFiles[0].Elements[0];
+
+		FocusedViewport.SwitchTo(nextElement);
 	}
 
 	private bool CommitViewportsOrPresentError()
