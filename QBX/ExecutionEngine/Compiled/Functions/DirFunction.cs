@@ -1,6 +1,4 @@
-﻿using System;
-
-using QBX.ExecutionEngine.Execution;
+﻿using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
 using QBX.OperatingSystem;
 using QBX.OperatingSystem.FileStructures;

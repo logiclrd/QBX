@@ -348,17 +348,11 @@ public class BasicParser
 	internal Statement ParseStatement(ListRange<Token> tokens, Func<IEnumerable<Token>> consumeTokensToEndOfLine, bool isNested, bool ignoreErrors)
 	{
 		// TODO: DRAW
-		// TODO: GET, PUT (graphics)
+		// TODO: BLOAD
+		// TODO: BSAVE
 		// TODO: OPTION BASE
-		// TODO: PAINT
 		// TODO: SWAP a, b
-		// TODO: WINDOW
 		// TODO: NAME a AS b
-		// TODO: SOUND a, b
-		//       => make a list
-		//
-		// TODO: functions, such as: ABS, COS, INKEY$, INPUT$(n), CHR$()
-		//       => go find/make a list of them
 
 		if (!tokens.Any(token => token.Type != TokenType.Whitespace))
 			return new EmptyStatement();
