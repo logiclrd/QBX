@@ -19,6 +19,12 @@ public class UnformattedPrintStatement(CodeModel.Statements.Statement? source) :
 	{
 		var emitter = CreateEmitter(context, stackFrame);
 
+		if (Arguments.Count == 0)
+		{
+			emitter.EmitNewLine();
+			return;
+		}
+
 		foreach (var argument in Arguments)
 		{
 			if (argument.Expression == null)
