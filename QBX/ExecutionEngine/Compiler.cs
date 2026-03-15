@@ -578,7 +578,7 @@ public class Compiler
 			}
 			case CodeModel.Statements.CallStatement callStatement:
 			{
-				if (compilation.TryGetNativeProcedure(callStatement.TargetName, out var nativeProcedure))
+				if (module.TryGetNativeProcedure(callStatement.TargetName, out var nativeProcedure))
 				{
 					var translatedCallStatement = new NativeProcedureCallStatement(callStatement);
 
@@ -849,7 +849,7 @@ public class Compiler
 				{
 					string unqualifiedName = Mapper.UnqualifyIdentifier(declareStatement.Name);
 
-					if (compilation.TryGetNativeProcedure(unqualifiedName, out var nativeProcedure)
+					if (module.TryGetNativeProcedure(unqualifiedName, out var nativeProcedure)
 					 || !compilation.TryGetRoutine(unqualifiedName, out _))
 						throw CompilerException.AnyIsNotSupported(declareStatement);
 				}
@@ -873,7 +873,7 @@ public class Compiler
 
 					string unqualifiedName = Mapper.UnqualifyIdentifier(declareStatement.Name);
 
-					if (compilation.TryGetNativeProcedure(unqualifiedName, out var nativeProcedure))
+					if (module.TryGetNativeProcedure(unqualifiedName, out var nativeProcedure))
 					{
 						if (nativeProcedure.ParameterTypes != null)
 							throw CompilerException.DuplicateDefinition(declareStatement);
@@ -2779,7 +2779,7 @@ public class Compiler
 				if (constantValue)
 					throw CompilerException.InvalidConstant(identifier.Token);
 
-				if (compilation.TryGetNativeProcedure(unqualifiedIdentifier, out var nativeProcedure))
+				if (module.TryGetNativeProcedure(unqualifiedIdentifier, out var nativeProcedure))
 				{
 					if (nativeProcedure.ParameterTypes == null)
 						throw CompilerException.SubprogramNotDefined(identifier.Token);
@@ -2925,7 +2925,7 @@ public class Compiler
 				{
 					string unqualifiedIdentifier = Mapper.UnqualifyIdentifier(identifier);
 
-					if (compilation.TryGetNativeProcedure(unqualifiedIdentifier, out var nativeProcedure))
+					if (module.TryGetNativeProcedure(unqualifiedIdentifier, out var nativeProcedure))
 					{
 						var translatedCallExpression = new NativeProcedureCallExpression();
 
