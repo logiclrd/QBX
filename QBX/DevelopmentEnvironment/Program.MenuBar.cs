@@ -24,6 +24,7 @@ public partial class Program
 	Menu mnuEdit;
 
 	Menu mnuView;
+	MenuItem mnuViewSplit;
 
 	Menu mnuSearch;
 
@@ -77,6 +78,7 @@ public partial class Program
 		nameof(mnuFileExit),
 		nameof(mnuEdit),
 		nameof(mnuView),
+		nameof(mnuViewSplit),
 		nameof(mnuSearch),
 		nameof(mnuRun),
 		nameof(mnuRunSetMainModule),
@@ -139,7 +141,7 @@ public partial class Program
 			{
 				new MenuItem("&SUBs...            F2", "-344"),
 				new MenuItem("N&ext SUB     Shift+F2", "-345"),
-				new MenuItem("S&plit", "-346"),
+				(mnuViewSplit = new MenuItem("S&plit", "-346")),
 				MenuItem.Separator,
 				new MenuItem("&Next Statement", "-347"),
 				new MenuItem("O&utput Screen      F4", "-348"),
@@ -248,6 +250,8 @@ public partial class Program
 		mnuFileLoadFile.Clicked = mnuFileLoadFile_Clicked;
 		mnuFileExit.Clicked += mnuFileExit_Clicked;
 
+		mnuViewSplit.Clicked += mnuViewSplit_Clicked;
+
 		mnuRunSetMainModule.Clicked += mnuRunSetMainModule_Clicked;
 
 		mnuDebugAddWatch.Clicked += mnuDebugAddWatch_Clicked;
@@ -306,6 +310,11 @@ public partial class Program
 	{
 		if (CommitViewportsOrPresentError())
 			ShowOpenFileDialog(replaceExistingProgram: false);
+	}
+
+	private void mnuViewSplit_Clicked()
+	{
+		ShowSplitViewport();
 	}
 
 	private void mnuRunSetMainModule_Clicked()

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text;
 
@@ -756,6 +757,18 @@ public partial class Program
 			nextElement = LoadedFiles[0].Elements[0];
 
 		FocusedViewport.SwitchTo(nextElement);
+	}
+
+	[MemberNotNull(nameof(SplitViewport))]
+	void ShowSplitViewport()
+	{
+		if (SplitViewport != null)
+			return;
+
+		SplitViewport = new Viewport(Parser);
+
+		if (FocusedViewport.EditableElement is IEditableElement element)
+			SplitViewport.SwitchTo(element);
 	}
 
 	private bool CommitViewportsOrPresentError()
