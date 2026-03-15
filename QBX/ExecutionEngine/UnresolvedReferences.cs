@@ -44,9 +44,10 @@ public class UnresolvedReferences(Compilation compilation, Module module)
 						forwardReference.UnresolvedCalls.Last().Resolve(routine);
 						forwardReference.UnresolvedCalls.RemoveAt(forwardReference.UnresolvedCalls.Count - 1);
 					}
-
-					resolvedIdentifiers.Add(forwardReference.Identifier);
 				}
+
+				if (forwardReference.UnresolvedCalls.Count == 0)
+					resolvedIdentifiers.Add(forwardReference.Identifier);
 			}
 		}
 		finally
