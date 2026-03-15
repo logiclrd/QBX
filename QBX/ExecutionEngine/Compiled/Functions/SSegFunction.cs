@@ -3,8 +3,8 @@ using QBX.OperatingSystem.Memory;
 
 namespace QBX.ExecutionEngine.Compiled.Functions;
 
-public class VarPtrFunction : VariableAddressFunction
+public class SSegFunction : StringAddressFunction
 {
 	protected override Variable CreateResult(SegmentedAddress address)
-		=> new IntegerVariable(address.Offset);
+		=> new IntegerVariable(address.Segment);
 }

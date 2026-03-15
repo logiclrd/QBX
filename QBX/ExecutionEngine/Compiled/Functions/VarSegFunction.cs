@@ -1,9 +1,10 @@
-﻿using QBX.OperatingSystem.Memory;
+﻿using QBX.ExecutionEngine.Execution.Variables;
+using QBX.OperatingSystem.Memory;
 
 namespace QBX.ExecutionEngine.Compiled.Functions;
 
 public class VarSegFunction : VariableAddressFunction
 {
-	protected override ushort GetAddressPart(SegmentedAddress address)
-		=> address.Segment;
+	protected override Variable CreateResult(SegmentedAddress address)
+		=> new IntegerVariable(address.Segment);
 }

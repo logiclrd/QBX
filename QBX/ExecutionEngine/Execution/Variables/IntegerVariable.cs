@@ -62,14 +62,14 @@ public class IntegerVariable : Variable
 public class PinnedIntegerVariable : IntegerVariable
 {
 	Machine _machine;
-	int _memoryAddress;
 
-	public Span<short> ValueSpan => MemoryMarshal.Cast<byte, short>(_machine.SystemMemory.AsSpan().Slice(_memoryAddress, 2));
+	public Span<short> ValueSpan => MemoryMarshal.Cast<byte, short>(_machine.SystemMemory.AsSpan().Slice(PinnedMemoryAddress, 2));
 
 	public PinnedIntegerVariable(Machine machine, int memoryAddress)
 	{
 		_machine = machine;
-		_memoryAddress = memoryAddress;
+
+		PinnedMemoryAddress = memoryAddress;
 
 		Value = ValueSpan[0];
 	}

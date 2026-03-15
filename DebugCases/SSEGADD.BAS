@@ -1,0 +1,11 @@
+PRINT HEX$(SSEG(a$))
+PRINT HEX$(SADD(a$))
+PRINT HEX$(SSEGADD(a$))
+
+a$ = "testing"
+
+PRINT HEX$(SSEG(a$))
+PRINT HEX$(SADD(a$))
+PRINT HEX$(SSEGADD(a$))
+
+PRINT VARPTR(a$)

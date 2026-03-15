@@ -3182,12 +3182,15 @@ public class Compiler
 					case TokenType.RIGHT: function = new RightFunction(); break;
 					case TokenType.RND: function = new RndFunction(); break;
 					case TokenType.RTRIM: function = new RTrimFunction(); break;
+					case TokenType.SADD: function = new SAddFunction(); break;
 					case TokenType.SCREEN: function = new ScreenFunction(); break;
 					case TokenType.SEEK: function = new SeekFunction(); break;
 					case TokenType.SGN: function = new SgnFunction(); break;
 					case TokenType.SIN: function = new SinFunction(); break;
 					case TokenType.SPACE: function = new SpaceFunction(); break;
 					case TokenType.SQR: function = new SqrFunction(); break;
+					case TokenType.SSEG: function = new SSegFunction(); break;
+					case TokenType.SSEGADD: function = new SSegAddFunction(); break;
 					case TokenType.STR: function = new StrFunction(); break;
 					case TokenType.STRING_s: function = new StringFunction(); break;
 					case TokenType.TAN: function = new TanFunction(); break;

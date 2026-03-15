@@ -71,6 +71,8 @@ public class ArrayVariable(DataType type, int fixedStringLength = -1) : Variable
 		Array.PinnedMemoryOwner = this;
 	}
 
+	public override bool SelfAllocateAndPin => true;
+
 	public override void AllocateAndPin(ExecutionContext context)
 	{
 		Array.Pin(context);

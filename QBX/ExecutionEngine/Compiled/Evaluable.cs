@@ -62,6 +62,17 @@ public abstract class Evaluable
 		 && stringVariable.IsMappedField)
 			context.UnlinkFieldVariable(stringVariable);
 
+		if ((targetVariable is PinnedStringVariable pinnedStringVariable)
+		 && (targetVariable.PinnedMemoryOwner == null))
+		{
+			if (this is not IdentifierExpression identifierExpression)
+				throw new Exception("Internal error: Somehow landed on assignment to a stand-alone pinned string value that's not through an IdentifierExpression");
+
+			targetVariable = new StringVariable(new StringValue(pinnedStringVariable.ValueSpan));
+
+			stackFrame.Variables[identifierExpression.VariableIndex] = targetVariable;
+		}
+
 		targetVariable.SetData(newValue.GetData());
 	}
 }

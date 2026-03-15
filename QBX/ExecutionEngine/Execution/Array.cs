@@ -144,7 +144,7 @@ public class Array
 		if ((FixedStringLength >= 0) && ElementType.IsString)
 			variable = new PinnedStringVariable(PinnedToMachine!, PinnedToMemoryAddress + offset, FixedStringLength);
 		else
-			variable = Variable.ConstructPinned(ElementType, PinnedMemoryOwner!.PinnedMemoryContext!, PinnedToMemoryAddress + offset);
+			variable = Variable.ConstructPinned(ElementType, PinnedMemoryOwner!.PinnedMemoryContext!, PinnedToMemoryAddress + offset, ElementType.ByteSize);
 
 		variable.PinnedMemoryOwner = PinnedMemoryOwner;
 

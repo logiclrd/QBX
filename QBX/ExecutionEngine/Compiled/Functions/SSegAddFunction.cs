@@ -3,8 +3,10 @@ using QBX.OperatingSystem.Memory;
 
 namespace QBX.ExecutionEngine.Compiled.Functions;
 
-public class VarPtrFunction : VariableAddressFunction
+public class SSegAddFunction : StringAddressFunction
 {
+	public override DataType Type => DataType.Long;
+
 	protected override Variable CreateResult(SegmentedAddress address)
-		=> new IntegerVariable(address.Offset);
+		=> new LongVariable(address.ToFarPointer());
 }

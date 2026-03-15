@@ -54,14 +54,14 @@ public class CurrencyVariable : Variable
 public class PinnedCurrencyVariable : CurrencyVariable
 {
 	Machine _machine;
-	int _memoryAddress;
 
-	public Span<long> ValueSpan => MemoryMarshal.Cast<byte, long>(_machine.SystemMemory.AsSpan().Slice(_memoryAddress, 8));
+	public Span<long> ValueSpan => MemoryMarshal.Cast<byte, long>(_machine.SystemMemory.AsSpan().Slice(PinnedMemoryAddress, 8));
 
 	public PinnedCurrencyVariable(Machine machine, int memoryAddress)
 	{
 		_machine = machine;
-		_memoryAddress = memoryAddress;
+
+		PinnedMemoryAddress = memoryAddress;
 
 		ReadPinnedData();
 	}

@@ -78,9 +78,9 @@ public class UserDataTypeVariable : Variable
 			if (arraySubscripts == null)
 			{
 				if (field.Type.IsString) // strings in UDTs are fixed length
-					Fields[i] = new PinnedStringVariable(machine, memoryAddress, fixedStringLength: field.Type.ByteSize);
+					Fields[i] = new PinnedStringVariable(machine, memoryAddress, length: field.Type.ByteSize);
 				else
-					Fields[i] = Variable.ConstructPinned(field.Type, context, memoryAddress);
+					Fields[i] = Variable.ConstructPinned(field.Type, context, memoryAddress, field.Type.ByteSize);
 
 				memoryAddress += field.Type.ByteSize;
 			}
@@ -101,6 +101,8 @@ public class UserDataTypeVariable : Variable
 			Fields[i].PinnedMemoryOwner = this;
 		}
 	}
+
+	public override bool SelfAllocateAndPin => true;
 
 	public override void AllocateAndPin(ExecutionContext context)
 	{

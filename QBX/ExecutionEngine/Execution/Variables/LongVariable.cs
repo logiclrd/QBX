@@ -23,6 +23,12 @@ public class LongVariable : Variable
 		Value = value;
 	}
 
+	public LongVariable(uint value)
+		: this()
+	{
+		Value = unchecked((int)value);
+	}
+
 	public override object GetData() => Value;
 	public override void SetData(object value) => Value = NumberConverter.ToLong(value);
 
@@ -50,14 +56,14 @@ public class LongVariable : Variable
 public class PinnedLongVariable : LongVariable
 {
 	Machine _machine;
-	int _memoryAddress;
 
-	public Span<int> ValueSpan => MemoryMarshal.Cast<byte, int>(_machine.SystemMemory.AsSpan().Slice(_memoryAddress, 4));
+	public Span<int> ValueSpan => MemoryMarshal.Cast<byte, int>(_machine.SystemMemory.AsSpan().Slice(PinnedMemoryAddress, 4));
 
 	public PinnedLongVariable(Machine machine, int memoryAddress)
 	{
 		_machine = machine;
-		_memoryAddress = memoryAddress;
+
+		PinnedMemoryAddress = memoryAddress;
 
 		Value = ValueSpan[0];
 	}

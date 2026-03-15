@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
 namespace QBX.OperatingSystem.Memory;
@@ -6,6 +7,8 @@ namespace QBX.OperatingSystem.Memory;
 [StructLayout(LayoutKind.Explicit)]
 public struct SegmentedAddress
 {
+	public static readonly SegmentedAddress Zero = default;
+
 	[FieldOffset(2)] public ushort Segment;
 	[FieldOffset(0)] public ushort Offset;
 
@@ -36,6 +39,7 @@ public struct SegmentedAddress
 	}
 
 	public int ToLinearAddress() => (Segment << 4) + Offset;
+	public uint ToFarPointer() => ((uint)Segment << 16) | Offset;
 
 	public static bool operator ==(SegmentedAddress left, SegmentedAddress right)
 		=> left.ToLinearAddress() == right.ToLinearAddress();

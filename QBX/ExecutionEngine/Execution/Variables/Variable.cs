@@ -28,7 +28,23 @@ public abstract class Variable
 		}
 	}
 
-	public static Variable ConstructPinned(DataType type, ExecutionContext context, int memoryAddress)
+	public static Variable AllocateAndConstructPinned(DataType type, int byteSize, ExecutionContext context)
+	{
+		if (type.IsArray)
+			throw new Exception("Internal error: Construct called instead of ConstructArray for array type");
+		if (byteSize < type.ByteSize)
+			throw new Exception("Internal error: Not allocating enough memory for pinned value");
+
+		int memoryAddress = context.Machine.DOS.MemoryManager.AllocateMemory(byteSize, context.Machine.DOS.CurrentPSPSegment);
+
+		var variable = ConstructPinned(type, context, memoryAddress, byteSize);
+
+		variable.PinnedMemoryContext = context;
+
+		return variable;
+	}
+
+	public static Variable ConstructPinned(DataType type, ExecutionContext context, int memoryAddress, int byteSize)
 	{
 		if (type.IsArray)
 			throw new Exception("Internal error: Construct called instead of ConstructArray for array type");
@@ -36,16 +52,22 @@ public abstract class Variable
 			return UserDataTypeVariable.Pinned(type.UserType, context, memoryAddress);
 		else
 		{
+			void ValidateByteSize(int required)
+			{
+				if (byteSize < required)
+					throw new Exception("Internal error: pinned variable buffer is not large enough");
+			}
+
 			var machine = context.Machine;
 
 			switch (type.PrimitiveType)
 			{
-				case PrimitiveDataType.Integer: return new PinnedIntegerVariable(machine, memoryAddress);
-				case PrimitiveDataType.Long: return new PinnedLongVariable(machine, memoryAddress);
-				case PrimitiveDataType.Single: return new PinnedSingleVariable(machine, memoryAddress);
-				case PrimitiveDataType.Double: return new PinnedDoubleVariable(machine, memoryAddress);
-				case PrimitiveDataType.Currency: return new PinnedCurrencyVariable(machine, memoryAddress);
-				case PrimitiveDataType.String: return new PinnedStringVariable(machine, memoryAddress, type.ByteSize);
+				case PrimitiveDataType.Integer: ValidateByteSize(2);  return new PinnedIntegerVariable(machine, memoryAddress);
+				case PrimitiveDataType.Long: ValidateByteSize(4);return new PinnedLongVariable(machine, memoryAddress);
+				case PrimitiveDataType.Single: ValidateByteSize(4);return new PinnedSingleVariable(machine, memoryAddress);
+				case PrimitiveDataType.Double: ValidateByteSize(8);return new PinnedDoubleVariable(machine, memoryAddress);
+				case PrimitiveDataType.Currency: ValidateByteSize(8);return new PinnedCurrencyVariable(machine, memoryAddress);
+				case PrimitiveDataType.String: return new PinnedStringVariable(machine, memoryAddress, byteSize);
 
 				default: throw new Exception("Internal error: Unrecognized data type in Variable.Construct " + type);
 			}
@@ -93,6 +115,8 @@ public abstract class Variable
 	{
 		ReleasePinnedMemory();
 	}
+
+	public virtual bool SelfAllocateAndPin => false;
 
 	public virtual void AllocateAndPin(ExecutionContext context)
 	{

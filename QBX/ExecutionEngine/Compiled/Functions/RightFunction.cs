@@ -58,6 +58,6 @@ public class RightFunction : Function
 		if (length < 0)
 			throw RuntimeException.IllegalFunctionCall(Source);
 
-		return new Substring(stringVariable, stringLength - length, length);
+		return stringVariable.Substring(stringLength - length, length);
 	}
 }

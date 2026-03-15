@@ -50,14 +50,14 @@ public class SingleVariable : Variable
 public class PinnedSingleVariable : SingleVariable
 {
 	Machine _machine;
-	int _memoryAddress;
 
-	public Span<float> ValueSpan => MemoryMarshal.Cast<byte, float>(_machine.SystemMemory.AsSpan().Slice(_memoryAddress, 4));
+	public Span<float> ValueSpan => MemoryMarshal.Cast<byte, float>(_machine.SystemMemory.AsSpan().Slice(PinnedMemoryAddress, 4));
 
 	public PinnedSingleVariable(Machine machine, int memoryAddress)
 	{
 		_machine = machine;
-		_memoryAddress = memoryAddress;
+
+		PinnedMemoryAddress = memoryAddress;
 
 		Value = ValueSpan[0];
 	}

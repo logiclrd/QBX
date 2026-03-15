@@ -50,14 +50,14 @@ public class DoubleVariable : Variable
 public class PinnedDoubleVariable : DoubleVariable
 {
 	Machine _machine;
-	int _memoryAddress;
 
-	public Span<double> ValueSpan => MemoryMarshal.Cast<byte, double>(_machine.SystemMemory.AsSpan().Slice(_memoryAddress, 8));
+	public Span<double> ValueSpan => MemoryMarshal.Cast<byte, double>(_machine.SystemMemory.AsSpan().Slice(PinnedMemoryAddress, 8));
 
 	public PinnedDoubleVariable(Machine machine, int memoryAddress)
 	{
 		_machine = machine;
-		_memoryAddress = memoryAddress;
+
+		PinnedMemoryAddress = memoryAddress;
 
 		Value = ValueSpan[0];
 	}

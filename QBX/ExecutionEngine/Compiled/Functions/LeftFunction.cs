@@ -58,6 +58,6 @@ public class LeftFunction : Function
 		if (length < 0)
 			throw RuntimeException.IllegalFunctionCall(Source);
 
-		return new Substring(stringVariable, 0, length);
+		return stringVariable.Substring(0, length);
 	}
 }

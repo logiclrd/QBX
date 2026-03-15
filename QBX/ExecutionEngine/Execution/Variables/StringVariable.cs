@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 using QBX.ExecutionEngine.Compiled;
@@ -26,7 +27,9 @@ public class StringVariable : Variable
 	public StringVariable(int fixedStringLength = 0)
 		: base(DataType.String)
 	{
-		if (fixedStringLength == 0)
+		if (fixedStringLength < 0)
+			RawValue = null!; // naughty naughty
+		else if (fixedStringLength == 0)
 			RawValue = new StringValue();
 		else
 			RawValue = StringValue.CreateFixedLength(fixedStringLength);
@@ -62,10 +65,10 @@ public class StringVariable : Variable
 
 	public override int Serialize(Span<byte> buffer)
 	{
-		if (!RawValue.IsFixedLength)
+		if ((RawValue != null) && !RawValue.IsFixedLength)
 			throw new Exception("Serialize called on a variable-length StringVariable");
 
-		var source = RawValue.AsSpan();
+		var source = ValueSpan;
 
 		if (source.Length > buffer.Length)
 			source = source.Slice(0, buffer.Length);
@@ -77,20 +80,20 @@ public class StringVariable : Variable
 
 	public override int Deserialize(ReadOnlySpan<byte> buffer)
 	{
-		if (!RawValue.IsFixedLength)
+		if ((RawValue != null) && !RawValue.IsFixedLength)
 			throw new Exception("Serialize called on a variable-length StringVariable");
 
-		var valueSpan = RawValue.AsSpan();
+		var valueSpan = ValueSpan;
 
-		if (buffer.Length >= RawValue.Length)
-			buffer.Slice(0, RawValue.Length).CopyTo(valueSpan);
+		if (buffer.Length >= valueSpan.Length)
+			buffer.Slice(0, valueSpan.Length).CopyTo(valueSpan);
 		else
 		{
 			buffer.CopyTo(valueSpan);
 			valueSpan.Slice(buffer.Length).Clear();
 		}
 
-		return Math.Min(RawValue.Length, buffer.Length);
+		return Math.Min(valueSpan.Length, buffer.Length);
 	}
 
 	public override void Reset()
@@ -101,6 +104,9 @@ public class StringVariable : Variable
 	public override bool IsZero => false;
 	public override bool IsPositive => false;
 	public override bool IsNegative => false;
+
+	public virtual StringVariable Substring(int start, int length)
+		=> new Substring(this, start, length);
 }
 
 public class Substring : StringVariable
@@ -175,25 +181,49 @@ public class Substring : StringVariable
 	}
 }
 
-public class PinnedStringVariable(Machine machine, int memoryAddress, int fixedStringLength) : StringVariable(fixedStringLength)
+public class PinnedStringVariable : StringVariable
 {
-	public Machine Machine => machine;
-	public int MemoryAddress => memoryAddress;
-	public int Length => fixedStringLength;
+	Machine _machine;
+	int _length;
+
+	public Machine Machine => _machine;
 
 	public override StringValue Value => new StringValue(ValueSpan);
-	public override Span<byte> ValueSpan => Machine.SystemMemory.AsSpan().Slice(MemoryAddress, Length);
+	public override Span<byte> ValueSpan => _machine.SystemMemory.AsSpan().Slice(PinnedMemoryAddress, _length);
+
+	public PinnedStringVariable(Machine machine, int memoryAddress, int length)
+		: base(fixedStringLength: -1)
+	{
+		_machine = machine;
+		_length = length;
+
+		PinnedMemoryAddress = memoryAddress;
+	}
 
 	public override void SetValue(StringValue value)
 	{
 		var newValueSpan = value.AsSpan();
 
-		if (newValueSpan.Length > Length)
-			newValueSpan.Slice(0, Length).CopyTo(ValueSpan);
+		if (newValueSpan.Length > _length)
+			newValueSpan.Slice(0, _length).CopyTo(ValueSpan);
 		else
 		{
 			newValueSpan.CopyTo(ValueSpan);
 			ValueSpan.Slice(newValueSpan.Length).Clear();
 		}
+	}
+
+	public override StringVariable Substring(int start, int length)
+	{
+		var pinnedSubstring = new PinnedStringVariable(Machine, PinnedMemoryAddress + start, length);
+
+		pinnedSubstring.PinnedMemoryOwner = PinnedMemoryOwner;
+
+		return pinnedSubstring;
+	}
+
+	public override void Reset()
+	{
+		ValueSpan.Clear();
 	}
 }

@@ -7,6 +7,8 @@ public class IdentifierExpression(int variableIndex, DataType type) : Evaluable
 {
 	public override DataType Type => type;
 
+	public int VariableIndex => variableIndex;
+
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
 		return stackFrame.Variables[variableIndex];
