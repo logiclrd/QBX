@@ -21,6 +21,8 @@ public class CallExpression : Evaluable, IUnresolvedCall
 		UnresolvedTargetType ??
 		throw new Exception("Internal error: CallExpression has no Type");
 
+	public Token? SourceToken => Source?.Token;
+
 	public void Resolve(Routine routine)
 	{
 		if (UnresolvedTargetName == null)

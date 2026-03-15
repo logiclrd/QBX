@@ -4,13 +4,12 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 using QBX.ExecutionEngine.Compiled;
+using QBX.LexicalAnalysis;
 
 namespace QBX.ExecutionEngine;
 
 public class UnresolvedReferences(Compilation compilation)
 {
-	// TODO: track uses of these SUBs/FUNCTIONs so they can be fixed up once
-	//       all modules have been compiled
 	public Dictionary<string, ForwardReferenceList> ForwardReferences =
 		new Dictionary<string, ForwardReferenceList>(StringComparer.OrdinalIgnoreCase);
 
@@ -41,7 +40,10 @@ public class UnresolvedReferences(Compilation compilation)
 				if (compilation.TryGetRoutine(forwardReference.Identifier, out var routine))
 				{
 					while (forwardReference.UnresolvedCalls.Count > 0)
+					{
 						forwardReference.UnresolvedCalls.Last().Resolve(routine);
+						forwardReference.UnresolvedCalls.RemoveAt(forwardReference.UnresolvedCalls.Count - 1);
+					}
 
 					resolvedIdentifiers.Add(forwardReference.Identifier);
 				}
@@ -54,5 +56,14 @@ public class UnresolvedReferences(Compilation compilation)
 		}
 
 		return (ForwardReferences.Count == 0);
+	}
+
+	public Token? GetFirstUnresolvedStatementSourceToken()
+	{
+		foreach (var forwardReference in ForwardReferences.Values)
+			if (forwardReference.UnresolvedCalls.Any())
+				return forwardReference.UnresolvedCalls[0].SourceToken;
+
+		return null;
 	}
 }

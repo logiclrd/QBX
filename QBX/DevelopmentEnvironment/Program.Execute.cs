@@ -83,6 +83,12 @@ public partial class Program
 			foreach (var file in LoadedFiles)
 				if (file.IncludeInBuild && (file is CompilationUnit unit))
 					_compiler.Compile(unit, _compilation);
+
+			if (!_compilation.UnresolvedReferences.ResolveCalls())
+			{
+				throw CompilerException.SubprogramNotDefined(
+					_compilation.UnresolvedReferences.GetFirstUnresolvedStatementSourceToken());
+			}
 		}
 		catch (CompilerException error)
 		{
