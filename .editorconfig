@@ -3,8 +3,10 @@ root = true
 
 [*.{cs,vb}]
 dotnet_diagnostic.CS8981.severity = none
+dotnet_diagnostic.IDE0002.severity = none
 dotnet_diagnostic.IDE0003.severity = none
 dotnet_diagnostic.IDE0017.severity = none
+dotnet_diagnostic.IDE0021.severity = none
 dotnet_diagnostic.IDE0034.severity = none
 dotnet_diagnostic.IDE0049.severity = none
 dotnet_diagnostic.IDE0200.severity = none
