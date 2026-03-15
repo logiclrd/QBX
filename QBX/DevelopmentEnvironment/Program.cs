@@ -587,6 +587,8 @@ public partial class Program : HostedProgram, IOvertypeFlag
 				Mode = previousMode;
 			};
 
+		dialog.NotifyShown();
+
 		return dialog;
 	}
 

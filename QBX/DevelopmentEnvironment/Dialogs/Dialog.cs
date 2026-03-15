@@ -18,6 +18,8 @@ public abstract class Dialog(Machine machine, Configuration configuration) : IFo
 	// X is implicit :-)
 	public int Y = 12;
 
+	public bool IsVisible = false;
+
 	public string Title = "";
 
 	public List<Widget> Widgets = new List<Widget>();
@@ -97,7 +99,11 @@ public abstract class Dialog(Machine machine, Configuration configuration) : IFo
 			ShowHelpPopup?.Invoke(this, HelpContextString);
 	}
 
-	protected virtual void OnClosed() => Closed?.Invoke(this, EventArgs.Empty);
+	protected virtual void OnClosed()
+	{
+		IsVisible = false;
+		Closed?.Invoke(this, EventArgs.Empty);
+	}
 
 	public void Close()
 	{
@@ -191,6 +197,11 @@ public abstract class Dialog(Machine machine, Configuration configuration) : IFo
 
 				break;
 		}
+	}
+
+	public void NotifyShown()
+	{
+		IsVisible = true;
 	}
 
 	protected virtual void OnActivated()

@@ -66,7 +66,7 @@ public partial class Program
 
 		bool hideCursor = (isMenuActive || isMenuOpen) && (currentDialog == null);
 
-		if ((currentDialog == null) || (currentDialog != _lastRenderDialog))
+		if ((currentDialog == null) || (currentDialog != _lastRenderDialog) || !currentDialog.IsVisible)
 		{
 			_lastRenderDialog = currentDialog;
 
@@ -93,10 +93,11 @@ public partial class Program
 				RenderOpenMenu();
 
 			for (int i = 0, l = Dialogs.Count - 1; i < l; i++)
-				Dialogs[i].Render(TextLibrary);
+				if (Dialogs[i].IsVisible)
+					Dialogs[i].Render(TextLibrary);
 		}
 
-		if (currentDialog != null)
+		if ((currentDialog != null) && currentDialog.IsVisible)
 			currentDialog.Render(TextLibrary);
 		else if (!hideCursor)
 		{
