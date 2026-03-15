@@ -150,7 +150,7 @@ public class HorizontalListBox<TValue> : ListBox<HorizontalListBox<TValue>, TVal
 
 		for (int columnIndex = 0, i = 0; columnIndex < numColumns; columnIndex++, i += columnHeight)
 		{
-			_columnWidths[columnIndex] = Items.Skip(i).Take(columnHeight).Max(item => item.Label.Length) + 2;
+			_columnWidths[columnIndex] = Items.Skip(i).Take(columnHeight).Max(item => item.Label.Length) + 1;
 
 			if (_columnWidths[columnIndex] < 14)
 				_columnWidths[columnIndex] = 14;
@@ -176,14 +176,22 @@ public class HorizontalListBox<TValue> : ListBox<HorizontalListBox<TValue>, TVal
 		int x = X + bounds.X1;
 		int y = Y + bounds.Y1;
 
+		int innerX1 = x + 1;
+		int innerY1 = y + 1;
+		int innerX2 = innerX1 + Width - 3;
+		int innerY2 = innerY1 + Height - 3;
+
+		int columnHeight = Height - 2;
+		int scrollOffsetX = ScrollPosition >= _columnOffsets.Length ? 0 : -_columnOffsets[ScrollPosition];
+
 		if (ShowScrollBar)
 		{
 			DialogPaint.DrawScrollableBox(
 				x, y, Width, Height,
 				title: "",
 				configuration, visual,
-				horizontalScrollValue: ScrollPosition,
-				horizontalScrollMax: _maxScrollColumnIndex + 1);
+				horizontalScrollValue: SelectedIndex / columnHeight,
+				horizontalScrollMax: (Items.Count + columnHeight - 1) / columnHeight);
 		}
 		else
 		{
@@ -193,39 +201,34 @@ public class HorizontalListBox<TValue> : ListBox<HorizontalListBox<TValue>, TVal
 				configuration, visual);
 		}
 
-		int innerX1 = x + 1;
-		int innerY1 = y + 1;
-		int innerX2 = innerX1 + Width - 3;
-		int innerY2 = innerY1 + Height - 3;
-
-		int columnHeight = Height - 2;
-		int scrollOffsetX = ScrollPosition >= _columnOffsets.Length ? 0 : -_columnOffsets[ScrollPosition];
-
 		using (visual.PushClipRect(bounds))
 		using (visual.PushClipRect(innerX1, innerY1, innerX2, innerY2))
 		{
 			for (int i = ScrollPosition * columnHeight, columnIndex = ScrollPosition; i < Items.Count; i += columnHeight, columnIndex++)
 			{
 				int columnX = _columnOffsets[columnIndex] + scrollOffsetX;
-				int w = _columnWidths[columnIndex];
-
-				if (columnX > innerX2)
-					break;
-				if (columnX + w > innerX2)
-					w = innerX2 - columnX;
 
 				columnX += innerX1;
 
+				int availableChars = innerX2 - columnX;
+
+				if (availableChars <= 1) // do not use final column if it's the only one visible
+					break;
+
 				for (int idx = i, itemY = innerY1; itemY <= innerY2; idx++, itemY++)
 				{
-					string label = ((idx >= 0) && (idx < Items.Count)) ? Items[idx].Label : "";
+					ReadOnlySpan<char> label = ((idx >= 0) && (idx < Items.Count)) ? Items[idx].Label : "";
 
-					int padRight = _columnWidths[columnIndex] - label.Length;
+					if (label.Length > availableChars - 1)
+						label = label.Slice(0, availableChars - 1);
+
+					int padRight = availableChars - label.Length;
 
 					visual.MoveCursor(columnX, itemY);
 					visual.WriteText(' ');
 					visual.WriteText(label);
-					DialogPaint.WriteSpaces(padRight, visual);
+					if (padRight > 0)
+						DialogPaint.WriteSpaces(padRight, visual);
 				}
 			}
 
