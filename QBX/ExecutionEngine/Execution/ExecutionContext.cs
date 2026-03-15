@@ -43,6 +43,8 @@ public class ExecutionContext
 
 	ExecutionState _executionState;
 
+	Dictionary<string, CommonBlockStorage> _commonBlocks;
+
 	StackFrame? _rootFrame;
 	StatementPath? _goTo;
 
@@ -149,6 +151,8 @@ public class ExecutionContext
 
 		_executionState.EnterExecution += AttachKeyEventInterceptor;
 		_executionState.ExitExecution += DetachKeyEventInterceptor;
+
+		_commonBlocks = new Dictionary<string, CommonBlockStorage>(StringComparer.OrdinalIgnoreCase);
 	}
 
 	void AttachKeyEventInterceptor()
@@ -338,6 +342,11 @@ public class ExecutionContext
 
 		if (entrypoint == null)
 			throw new Exception("The Compilation's EntrypointRoutine is not set");
+
+		_commonBlocks.Clear();
+
+		foreach (var block in compilation.CommonBlocks)
+			_commonBlocks[block.Key] = block.Value.CreateStorage();
 
 		_rootFrame = CreateFrame(
 			entrypoint.Module,
@@ -636,6 +645,7 @@ public class ExecutionContext
 	StackFrame CreateFrame(Module module, Routine routine, Variable[] arguments)
 	{
 		var variableTypes = routine.VariableTypes;
+		var commonVariableLinkGroups = routine.CommonVariableLinkGroups;
 		var linkedVariables = routine.LinkedVariables;
 
 		if (arguments.Length > variableTypes.Count)
@@ -651,13 +661,25 @@ public class ExecutionContext
 
 		if (_rootFrame != null)
 		{
+			if (commonVariableLinkGroups.Count > 0)
+				throw new Exception("Internal error: Creating frame with common variable link groups when this is not a root frame");
+
 			foreach (var link in linkedVariables)
-				variables[link.LocalIndex] = _rootFrame.Variables[link.RootIndex];
+				variables[link.LocalIndex] = _rootFrame.Variables[link.RemoteIndex];
 		}
 		else
 		{
 			if (linkedVariables.Count > 0)
 				throw new Exception("Internal error: Creating frame with linked variables when there is no root frame");
+
+			foreach (var linkGroup in commonVariableLinkGroups)
+			{
+				if (!_commonBlocks.TryGetValue(linkGroup.CommonBlockName, out var commonBlock))
+					throw new Exception("Internal error: Couldn't find common block /" + linkGroup.CommonBlockName + "/");
+
+				foreach (var link in linkGroup.LinkedVariables)
+					variables[link.LocalIndex] = commonBlock.Variables[link.RemoteIndex];
+			}
 		}
 
 		for (int i = 0; i < variableTypes.Count; i++)

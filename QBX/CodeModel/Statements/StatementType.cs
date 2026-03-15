@@ -14,6 +14,7 @@ public enum StatementType
 	Cls,
 	Color,
 	Comment,
+	Common,
 	Const,
 	Data,
 	Declare,

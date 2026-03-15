@@ -16,6 +16,7 @@ public class Routine : Sequence
 	public SubroutineOpeningStatement? OpeningStatement;
 	public List<DataType> ParameterTypes = new List<DataType>();
 	public List<DataType> VariableTypes = new List<DataType>();
+	public List<CommonVariableLinkGroup> CommonVariableLinkGroups = new List<CommonVariableLinkGroup>();
 	public List<VariableLink> LinkedVariables = new List<VariableLink>();
 	public List<DimensionArrayStatement> StaticArrays = new List<DimensionArrayStatement>();
 	public DataType? ReturnType;

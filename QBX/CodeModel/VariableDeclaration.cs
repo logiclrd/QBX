@@ -9,7 +9,7 @@ public class VariableDeclaration : IRenderableCode
 {
 	public string Name { get; set; } = "";
 	public VariableDeclarationSubscriptList? Subscripts { get; set; }
-	public DataType? Type { get; set; }
+	public DataType Type { get; set; } = DataType.Unspecified;
 	public string? UserType { get; set; }
 
 	public Token? NameToken;
@@ -20,10 +20,10 @@ public class VariableDeclaration : IRenderableCode
 		writer.Write(Name);
 		Subscripts?.Render(writer);
 
-		if (Type.HasValue && (UserType != null))
-			throw new Exception("Internal error: VariableDeclaration specifies both Type and UserTYpe");
+		if ((Type != DataType.Unspecified) && (UserType != null))
+			throw new Exception("Internal error: VariableDeclaration specifies both Type and UserType");
 
-		if (Type.HasValue)
+		if (Type != DataType.Unspecified)
 		{
 			writer.Write(" AS ");
 			writer.Write(Type);

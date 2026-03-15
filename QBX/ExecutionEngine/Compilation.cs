@@ -10,6 +10,7 @@ namespace QBX.ExecutionEngine;
 public class Compilation
 {
 	public List<Module> Modules;
+	public Dictionary<string, CommonBlock> CommonBlocks;
 	public TypeRepository TypeRepository;
 	public UnresolvedReferences UnresolvedReferences;
 	public Dictionary<string, Routine> Subs;
@@ -39,11 +40,20 @@ public class Compilation
 	public Compilation()
 	{
 		Modules = new List<Module>();
+		CommonBlocks = new Dictionary<string, CommonBlock>();
 		TypeRepository = new TypeRepository();
 		UnresolvedReferences = new UnresolvedReferences(this);
 		Subs = new Dictionary<string, Routine>(StringComparer.OrdinalIgnoreCase);
 		Functions = new Dictionary<string, Routine>(StringComparer.OrdinalIgnoreCase);
 		NativeProcedures = new Dictionary<string, NativeProcedure>(StringComparer.OrdinalIgnoreCase);
+	}
+
+	public CommonBlock GetCommonBlock(string name)
+	{
+		if (!CommonBlocks.TryGetValue(name, out var block))
+			block = CommonBlocks[name] = new CommonBlock(name);
+
+		return block;
 	}
 
 	public bool IsRegistered(string name)

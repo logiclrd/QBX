@@ -646,6 +646,66 @@ public class BasicParser
 				return color;
 			}
 
+			case TokenType.COMMON:
+			case TokenType.DIM:
+			case TokenType.REDIM:
+			{
+				DimStatement dim;
+
+				tokenHandler.ExpectMoreTokens();
+
+				bool requireSubscripts = false;
+
+				switch (token.Type)
+				{
+					case TokenType.COMMON: dim = new CommonStatement(); break;
+					case TokenType.DIM: dim = new DimStatement(); break;
+					case TokenType.REDIM:
+					{
+						requireSubscripts = true;
+
+						var redim = new RedimStatement();
+
+						if (tokenHandler.NextTokenIs(TokenType.PRESERVE))
+						{
+							redim.Preserve = true;
+							tokenHandler.Advance();
+						}
+
+						dim = redim;
+
+						break;
+					}
+
+					default: throw new Exception("Internal error");
+				}
+
+				if (tokenHandler.NextTokenIs(TokenType.SHARED))
+				{
+					dim.Shared = true;
+					tokenHandler.Advance();
+				}
+
+				if (dim is CommonStatement common)
+				{
+					if (tokenHandler.NextTokenIs(TokenType.Slash))
+					{
+						tokenHandler.Expect(TokenType.Slash);
+
+						common.BlockName = tokenHandler.ExpectIdentifier(allowTypeCharacter: false);
+
+						tokenHandler.Expect(TokenType.Slash);
+					}
+				}
+
+				var endTokenRef = new TokenRef();
+
+				foreach (var range in SplitCommaDelimitedList(tokenHandler.RemainingTokens, endTokenRef))
+					dim.Declarations.Add(ParseVariableDeclaration(range, endTokenRef.Token ?? tokenHandler.EndToken, requireSubscripts));
+
+				return dim;
+			}
+
 			case TokenType.CONST:
 			{
 				var declarationSyntax = ParseExpressionList(tokenHandler.RemainingTokens, tokenHandler.EndToken);
@@ -850,51 +910,6 @@ public class BasicParser
 				return defType;
 			}
 
-			case TokenType.DIM:
-			case TokenType.REDIM:
-			{
-				DimStatement dim;
-
-				tokenHandler.ExpectMoreTokens();
-
-				bool requireSubscripts = false;
-
-				switch (token.Type)
-				{
-					case TokenType.DIM: dim = new DimStatement(); break;
-					case TokenType.REDIM:
-					{
-						requireSubscripts = true;
-
-						var redim = new RedimStatement();
-
-						if (tokenHandler.NextTokenIs(TokenType.PRESERVE))
-						{
-							redim.Preserve = true;
-							tokenHandler.Advance();
-						}
-
-						dim = redim;
-
-						break;
-					}
-
-					default: throw new Exception("Internal error");
-				}
-
-				if (tokenHandler.NextTokenIs(TokenType.SHARED))
-				{
-					dim.Shared = true;
-					tokenHandler.Advance();
-				}
-
-				var endTokenRef = new TokenRef();
-
-				foreach (var range in SplitCommaDelimitedList(tokenHandler.RemainingTokens, endTokenRef))
-					dim.Declarations.Add(ParseVariableDeclaration(range, endTokenRef.Token ?? tokenHandler.EndToken, requireSubscripts));
-
-				return dim;
-			}
 			case TokenType.DO:
 			case TokenType.LOOP:
 			{

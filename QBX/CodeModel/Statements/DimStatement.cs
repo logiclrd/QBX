@@ -20,6 +20,11 @@ public class DimStatement : Statement
 		// Empty base implementation for DIM.
 	}
 
+	protected virtual void RenderBlockName(TextWriter writer)
+	{
+		// Empty base implementation for DIM.
+	}
+
 	protected override void RenderImplementation(TextWriter writer)
 	{
 		writer.Write(StatementName);
@@ -28,6 +33,8 @@ public class DimStatement : Statement
 
 		if (Shared)
 			writer.Write(" SHARED");
+
+		RenderBlockName(writer);
 
 		writer.Write(' ');
 

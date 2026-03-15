@@ -52,4 +52,14 @@ public class TypeRepository
 		else
 			return DataType.ForPrimitiveDataType(mapper.GetTypeForIdentifier(param.Name));
 	}
+
+	public DataType ResolveType(CodeModel.VariableDeclaration declaration, Mapper mapper)
+	{
+		if (CodeModel.TypeCharacter.TryParse(declaration.Name.Last(), out var typeCharacter))
+			return ResolveType(typeCharacter.Type, null, 0, declaration.Subscripts != null, declaration.NameToken);
+		else if ((declaration.Type != CodeModel.DataType.Unspecified) || (declaration.UserType != null))
+			return ResolveType(declaration.Type, declaration.UserType, 0, declaration.Subscripts != null, declaration.TypeToken);
+		else
+			return DataType.ForPrimitiveDataType(mapper.GetTypeForIdentifier(declaration.Name));
+	}
 }

@@ -46,6 +46,7 @@ public enum TokenType
 	[KeywordFunction]
 	[KeywordToken("COMMAND$")] COMMAND,
 	[KeywordToken] COMMITTRANS,
+	[KeywordToken] COMMON,
 	[KeywordToken] CONST,
 	[KeywordFunction]
 	[KeywordToken] COS,

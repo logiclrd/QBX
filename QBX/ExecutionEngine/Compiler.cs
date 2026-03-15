@@ -775,6 +775,45 @@ public class Compiler
 				ProcessCommentForDirectives(commentStatement.Comment, compilation);
 				break;
 			}
+			case CodeModel.Statements.CommonStatement commonStatement:
+			{
+				var variableTypes = commonStatement.Declarations
+					.Select(declaration => typeRepository.ResolveType(declaration, mapper))
+					.ToList();
+
+				var block = compilation.GetCommonBlock(commonStatement.BlockName);
+
+				try
+				{
+					block.MapVariables(variableTypes);
+				}
+				catch (CompilerException ex)
+				{
+					throw ex.AddContext(commonStatement);
+				}
+
+				for (int i=0; i < commonStatement.Declarations.Count; i++)
+				{
+					var declaration = commonStatement.Declarations[i];
+
+					int variableIndex = mapper.DeclareVariable(
+						declaration.Name,
+						variableTypes[i],
+						declaration.NameToken);
+
+					mapper.LinkCommonVariable(variableIndex, block, i);
+
+					if (commonStatement.Shared)
+					{
+						if (variableTypes[i].IsArray)
+							mapper.MakeGlobalArray(declaration.Name, variableTypes[i]);
+						else
+							mapper.MakeGlobalVariable(declaration.Name);
+					}
+				}
+
+				break;
+			}
 			case CodeModel.Statements.ConstStatement constStatement:
 			{
 				// Gathered centrally before main translation begins.
@@ -984,8 +1023,8 @@ public class Compiler
 
 					if (declaration.UserType != null)
 						dataType = compilation.TypeRepository.ResolveType(declaration.UserType);
-					else if (declaration.Type != null)
-						dataType = DataType.FromCodeModelDataType(declaration.Type.Value);
+					else if (declaration.Type != CodeModel.DataType.Unspecified)
+						dataType = DataType.FromCodeModelDataType(declaration.Type);
 					else
 						dataType = DataType.ForPrimitiveDataType(mapper.GetTypeForIdentifier(declaration.Name));
 

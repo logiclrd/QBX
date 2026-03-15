@@ -124,7 +124,11 @@ public class Mapper
 		public string Name => name;
 		public int Index => index;
 		public DataType Type = DataType.Integer;
+
 		public int LinkedToRootVariableIndex = -1;
+
+		public CommonBlock? LinkedToCommonBlock;
+		public int LinkedToCommonBlockVariableIndex;
 	}
 
 	public Mapper(Routine mainRoutine)
@@ -381,6 +385,19 @@ public class Mapper
 			throw new InvalidOperationException("Cannot create a mapper scope off of a scope");
 
 		return new Mapper(this, subroutine);
+	}
+
+	public void LinkCommonVariable(int variableIndex, CommonBlock commonBlock, int commonBlockVariableIndex)
+	{
+		if (_isFrozen)
+			throw new Exception("The Mapper is frozen");
+		if (_root != null)
+			throw new Exception("Can only link to a common variable from the root");
+
+		var variableInfo = _variables[variableIndex];
+
+		variableInfo.LinkedToCommonBlock = commonBlock;
+		variableInfo.LinkedToCommonBlockVariableIndex = commonBlockVariableIndex;
 	}
 
 	public void LinkRootVariable(string name)
@@ -676,7 +693,7 @@ public class Mapper
 			new VariableLink()
 			{
 				LocalIndex = info.Index,
-				RootIndex = info.LinkedToRootVariableIndex,
+				RemoteIndex = info.LinkedToRootVariableIndex,
 			})
 		.ToList();
 }
