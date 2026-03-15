@@ -935,6 +935,9 @@ public class Compiler
 
 						var facade = new RoutineFacade(declaredRoutine);
 
+						if (parameterTypes != null)
+							facade.ParameterTypes.AddRange(parameterTypes);
+
 						switch (declareStatement.DeclarationType.Type)
 						{
 							case TokenType.SUB: module.AddSubFacade(declaredRoutine.Name, facade); break;

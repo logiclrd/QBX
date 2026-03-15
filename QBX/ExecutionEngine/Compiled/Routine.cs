@@ -220,6 +220,9 @@ public class Routine : Sequence
 					ParameterVariableIndices[i] = mapper.DeclareVariable(name, paramType);
 				else
 					ParameterVariableIndices[i] = mapper.DeclareArray(name, paramType);
+
+				if (paramType.IsUserType)
+					mapper.AddDisallowedSlug(name);
 			}
 		}
 	}
