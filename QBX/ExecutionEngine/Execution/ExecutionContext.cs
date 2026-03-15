@@ -705,7 +705,16 @@ public class ExecutionContext
 
 	public void Reset()
 	{
-		// TODO: close all open files
+		foreach (var openFile in Files.Values)
+		{
+			try
+			{
+				Machine.DOS.CloseFile(openFile.FileHandle);
+			}
+			catch { }
+		}
+
+		Files.Clear();
 
 		_rootFrame?.Reset();
 	}
