@@ -237,7 +237,7 @@ public enum TokenType
 	[KeywordToken] ROLLBACK,
 	[KeywordFunction]
 	[KeywordToken("RTRIM$")] RTRIM,
-	[KeywordFunction]
+	[KeywordFunction(requiresLValue: true)]
 	[KeywordToken] SADD,
 	[KeywordFunction(parameterCount: 0)]
 	[KeywordToken] SAVEPOINT,
@@ -264,9 +264,9 @@ public enum TokenType
 	[KeywordToken] SPC,
 	[KeywordFunction]
 	[KeywordToken] SQR,
-	[KeywordFunction]
+	[KeywordFunction(requiresLValue: true)]
 	[KeywordToken] SSEG,
-	[KeywordFunction]
+	[KeywordFunction(requiresLValue: true)]
 	[KeywordToken] SSEGADD,
 	[KeywordFunction(parameterCount: 0)] // can also be a statement
 	[KeywordToken] STACK,
@@ -306,11 +306,11 @@ public enum TokenType
 	[KeywordToken] USING,
 	[KeywordFunction]
 	[KeywordToken] VAL,
-	[KeywordFunction]
+	[KeywordFunction(requiresLValue: true)]
 	[KeywordToken] VARPTR,
-	[KeywordFunction]
+	[KeywordFunction(requiresLValue: true)]
 	[KeywordToken("VARPTR$")] VARPTR_s,
-	[KeywordFunction]
+	[KeywordFunction(requiresLValue: true)]
 	[KeywordToken] VARSEG,
 	[KeywordToken] VIEW,
 	[KeywordToken] WAIT,

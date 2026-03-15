@@ -3200,6 +3200,13 @@ public class Compiler
 					default: throw new NotImplementedException("Keyword function: " + keywordFunction.Function);
 				}
 
+				if (keywordFunction.Token?.KeywordFunctionAttribute?.RequiresLValue ?? false)
+				{
+					foreach (var arg in arguments)
+						if (!arg.IsAssignable)
+							throw CompilerException.ExpectedVariable(arg.Source?.Token);
+				}
+
 				if (function is not ConstructibleFunction)
 					function.SetArguments(arguments);
 
