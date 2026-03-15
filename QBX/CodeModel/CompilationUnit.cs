@@ -55,6 +55,11 @@ public class CompilationUnit : IRenderableCode, IEditableUnit
 		}
 	}
 
+	public CompilationUnit()
+	{
+		IsPristine = true;
+	}
+
 	public void Render(TextWriter writer)
 	{
 		foreach (var element in Elements)
