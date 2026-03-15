@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 
 using QBX.DevelopmentEnvironment;
@@ -58,6 +59,23 @@ public class CompilationUnit : IRenderableCode, IEditableUnit
 			element.Render(writer);
 			writer.WriteLine();
 		}
+	}
+
+	public void SortElements()
+	{
+		Elements.Sort(
+			(left, right) =>
+			{
+				bool leftIsMain = (left.Type == CompilationElementType.Main);
+				bool rightIsMain = (right.Type == CompilationElementType.Main);
+
+				int order = -leftIsMain.CompareTo(rightIsMain);
+
+				if (order == 0)
+					order = StringComparer.OrdinalIgnoreCase.Compare(left.Name, right.Name);
+
+				return order;
+			});
 	}
 
 	public static CompilationUnit CreateNew()
