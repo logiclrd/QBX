@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 
 using QBX.CodeModel;
+using QBX.DevelopmentEnvironment.Dialogs;
 using QBX.ExecutionEngine;
 using QBX.Hardware;
 using QBX.Parser;
@@ -271,6 +272,8 @@ public partial class Program
 					{
 						if (input.Modifiers.ShiftKey)
 							SwitchToNextElement();
+						else
+							ShowSubsDialog();
 					}
 
 					break;
@@ -757,6 +760,108 @@ public partial class Program
 			nextElement = LoadedFiles[0].Elements[0];
 
 		FocusedViewport.SwitchTo(nextElement);
+	}
+
+	private void ShowSubsDialog()
+	{
+		foreach (var unit in LoadedFiles)
+			unit.SortElements();
+
+		var dialog = new SubsDialog(LoadedFiles, Machine, Configuration);
+
+		if (FocusedViewport.EditableElement is IEditableElement element)
+			dialog.SelectedItem = element;
+
+		dialog.EditInActive +=
+			() =>
+			{
+				FocusedViewport.SwitchTo(dialog.SelectedItem);
+			};
+
+		dialog.EditInSplit +=
+			() =>
+			{
+				if (SplitViewport == null)
+					ShowSplitViewport();
+
+				var unfocusedViewport =
+					FocusedViewport == PrimaryViewport
+					? SplitViewport
+					: PrimaryViewport;
+
+				unfocusedViewport.SwitchTo(dialog.SelectedItem);
+			};
+
+		dialog.ShowDialog +=
+			dialog => ShowDialog(dialog);
+
+		dialog.RemoveElement +=
+			() =>
+			{
+				var element = dialog.SelectedItem;
+
+				element.Owner.RemoveElement(element);
+			};
+
+		dialog.PromptToSaveChanges +=
+			(configure, continuation, cancellation) =>
+			{
+				bool wasContinued = false;
+
+				var prompt = PromptToSaveChanges(
+					dialog.SelectedItem.Owner,
+					() =>
+					{
+						wasContinued = true;
+						continuation();
+					});
+
+				if (prompt != null)
+				{
+					prompt.Closed +=
+						(_, _) =>
+						{
+							if (!wasContinued)
+								cancellation();
+						};
+				}
+			};
+
+		dialog.UnloadFile +=
+			() =>
+			{
+				RemoveFile(dialog.SelectedItem.Owner);
+			};
+
+		dialog.SelectNewMainModule +=
+			(configure, continuation, cancellation) =>
+			{
+				var dialog = SetMainModule();
+
+				bool wasContinued = false;
+
+				dialog.ModuleSelected +=
+					() =>
+					{
+						wasContinued = true;
+						continuation();
+					};
+
+				dialog.Closed +=
+					(_, _) =>
+					{
+						if (!wasContinued)
+							cancellation();
+					};
+
+				configure(dialog);
+
+				ShowDialog(dialog);
+			};
+
+		dialog.RestartDialog += ShowSubsDialog;
+
+		ShowDialog(dialog);
 	}
 
 	[MemberNotNull(nameof(SplitViewport))]

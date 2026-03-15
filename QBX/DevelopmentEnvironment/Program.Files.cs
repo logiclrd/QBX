@@ -339,7 +339,7 @@ namespace QBX.DevelopmentEnvironment
 			}
 		}
 
-		public void RemoveFile(CompilationUnit unit)
+		public void RemoveFile(IEditableUnit unit)
 		{
 			var unitIndex = LoadedFiles.IndexOf(unit);
 

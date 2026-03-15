@@ -15,6 +15,11 @@ public interface IEditableUnit
 
 	IReadOnlyList<IEditableElement> Elements { get; }
 
+	IEditableElement MainElement { get; }
+
 	void Write(TextWriter writer);
+
+	void AddElement(IEditableElement element);
+	void RemoveElement(IEditableElement element);
 	void SortElements();
 }

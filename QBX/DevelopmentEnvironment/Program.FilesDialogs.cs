@@ -32,12 +32,12 @@ namespace QBX.DevelopmentEnvironment
 			Continue();
 		}
 
-		public void PromptToSaveChanges(IEditableUnit unit, Action continuation, Action? notifySave = null)
+		public Dialog? PromptToSaveChanges(IEditableUnit unit, Action continuation, Action? notifySave = null)
 		{
 			if (unit.IsPristine)
 			{
 				continuation();
-				return;
+				return null;
 			}
 
 			var dialog = new PromptToSaveDialog(Machine, Configuration);
@@ -51,7 +51,7 @@ namespace QBX.DevelopmentEnvironment
 
 			dialog.DoNotSave += continuation;
 
-			ShowDialog(dialog);
+			return ShowDialog(dialog);
 		}
 
 		public void SaveAll()

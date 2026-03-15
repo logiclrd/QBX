@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 using QBX.DevelopmentEnvironment;
 using QBX.LexicalAnalysis;
@@ -39,6 +40,8 @@ public class CompilationUnit : IRenderableCode, IEditableUnit
 
 	IReadOnlyList<IEditableElement> IEditableUnit.Elements => Elements;
 
+	public IEditableElement MainElement => Elements.First(element => element.Type == CompilationElementType.Main);
+
 	public bool IsEmpty
 	{
 		get
@@ -59,6 +62,16 @@ public class CompilationUnit : IRenderableCode, IEditableUnit
 			element.Render(writer);
 			writer.WriteLine();
 		}
+	}
+
+	public void AddElement(IEditableElement element)
+	{
+		Elements.Add((CompilationElement)element);
+	}
+
+	public void RemoveElement(IEditableElement element)
+	{
+		Elements.Remove((CompilationElement)element);
 	}
 
 	public void SortElements()

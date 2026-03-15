@@ -6,6 +6,7 @@ using System.Text;
 
 using QBX.CodeModel.Statements;
 using QBX.DevelopmentEnvironment;
+using QBX.Firmware.Fonts;
 using QBX.Utility;
 
 namespace QBX.CodeModel;
@@ -39,6 +40,35 @@ public class CodeLine : IRenderableCode, IEditableLine
 		((Statements.Count == 0) && !string.IsNullOrWhiteSpace(EndOfLineComment));
 
 	public bool IsDefTypeLine => (Statements.Count == 1) && (Statements[0].Type == StatementType.DefType);
+
+	class CharCounter : TextWriter
+	{
+		public int Count = 0;
+
+		static readonly CP437Encoding s_cp437 = new CP437Encoding(ControlCharacterInterpretation.Semantic);
+
+		public override Encoding Encoding => s_cp437;
+
+		public override void Write(char value) => Count++;
+		public override void Write(char[] buffer, int index, int count) => Count += count;
+		public override void Write(char[]? buffer) { if (buffer != null) Count += buffer.Length; }
+		public override void Write(ReadOnlySpan<char> buffer) => Count += buffer.Length;
+		public override void Write(string? value) { if (value != null) Count += value.Length; }
+		public override void Write(StringBuilder? value) { if (value != null) Count += value.Length; }
+		public override void WriteLine() => Count += 2;
+	}
+
+	public int SizeInBytes
+	{
+		get
+		{
+			var counter = new CharCounter();
+
+			Render(counter);
+
+			return counter.Count;
+		}
+	}
 
 	public static CodeLine CreateEmpty() => new CodeLine();
 

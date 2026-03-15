@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 
@@ -8,11 +9,11 @@ using QBX.DevelopmentEnvironment;
 
 namespace QBX.CodeModel;
 
-public class CompilationElement(CompilationUnit owner) : IRenderableCode, IEditableElement
+public class CompilationElement : IRenderableCode, IEditableElement
 {
-	public CompilationUnit Owner => owner;
+	public CompilationUnit Owner { get; }
 
-	IEditableUnit IEditableElement.Owner => owner;
+	IEditableUnit IEditableElement.Owner => Owner;
 
 	public string? Name { get; set; }
 
@@ -21,6 +22,17 @@ public class CompilationElement(CompilationUnit owner) : IRenderableCode, IEdita
 
 	IReadOnlyList<IEditableLine> IEditableElement.Lines => _lines;
 
+	Lazy<int> _sizeInBytes;
+
+	public int SizeInBytes => _sizeInBytes.Value;
+
+	[MemberNotNull(nameof(_sizeInBytes))]
+	void ClearSizeInBytesCache()
+	{
+		_sizeInBytes = new Lazy<int>(
+			() => Lines.Sum(line => line.SizeInBytes));
+	}
+
 	public int FirstLineIndex { get; set; }
 	public int CachedCursorLine { get; set; }
 
@@ -28,9 +40,16 @@ public class CompilationElement(CompilationUnit owner) : IRenderableCode, IEdita
 
 	List<CodeLine> _lines = new List<CodeLine>();
 
+	public CompilationElement(CompilationUnit owner)
+	{
+		this.Owner = owner;
+
+		ClearSizeInBytesCache();
+	}
+
 	public CompilationElement Clone()
 	{
-		var clone = new CompilationElement(owner);
+		var clone = new CompilationElement(Owner);
 
 		clone.Type = Type;
 		clone.AddLines(Lines);
@@ -40,7 +59,7 @@ public class CompilationElement(CompilationUnit owner) : IRenderableCode, IEdita
 
 	public void Dirty()
 	{
-		owner.IsPristine = false;
+		Owner.IsPristine = false;
 	}
 
 	void IEditableElement.AddLine(IEditableLine line) => AddLine((CodeLine)line);
