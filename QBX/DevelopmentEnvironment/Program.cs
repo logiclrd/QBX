@@ -566,8 +566,6 @@ public partial class Program : HostedProgram, IOvertypeFlag
 
 		dialog.Y = (TextLibrary.Height - dialog.Height) / 2;
 
-		int dialogPoint = Dialogs.Count;
-
 		Dialogs.Add(dialog);
 
 		dialog.ShowHelpPopup +=
@@ -582,7 +580,11 @@ public partial class Program : HostedProgram, IOvertypeFlag
 		dialog.Closed +=
 			(_, _) =>
 			{
-				Dialogs.RemoveRange(dialogPoint, Dialogs.Count - dialogPoint);
+				int index = Dialogs.IndexOf(dialog);
+
+				if (index >= 0)
+					Dialogs.RemoveRange(index, Dialogs.Count - index);
+
 				Mode = previousMode;
 			};
 
