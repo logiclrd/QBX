@@ -36,6 +36,9 @@ public class IntegerImplies(Evaluable left, Evaluable right) : BinaryExpression(
 		var leftValue = (IntegerVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (IntegerVariable)right.Evaluate(context, stackFrame);
 
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
+
 		int result = (int)rightValue.Value | ~leftValue.Value;
 
 		return new IntegerVariable(unchecked((short)result));
@@ -60,6 +63,9 @@ public class LongImplies(Evaluable left, Evaluable right) : BinaryExpression(lef
 	{
 		var leftValue = (LongVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (LongVariable)right.Evaluate(context, stackFrame);
+
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
 
 		return new LongVariable(rightValue.Value | ~leftValue.Value);
 	}

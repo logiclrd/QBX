@@ -65,6 +65,9 @@ public class IntegerGreaterThan(Evaluable left, Evaluable right) : BinaryExpress
 		var leftValue = (IntegerVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (IntegerVariable)right.Evaluate(context, stackFrame);
 
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
+
 		bool result = leftValue.Value > rightValue.Value;
 
 		return new IntegerVariable(result);
@@ -89,6 +92,9 @@ public class LongGreaterThan(Evaluable left, Evaluable right) : BinaryExpression
 	{
 		var leftValue = (LongVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (LongVariable)right.Evaluate(context, stackFrame);
+
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
 
 		bool result = leftValue.Value > rightValue.Value;
 
@@ -115,6 +121,9 @@ public class SingleGreaterThan(Evaluable left, Evaluable right) : BinaryExpressi
 		var leftValue = (SingleVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (SingleVariable)right.Evaluate(context, stackFrame);
 
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
+
 		bool result = leftValue.Value > rightValue.Value;
 
 		return new IntegerVariable(result);
@@ -140,6 +149,9 @@ public class DoubleGreaterThan(Evaluable left, Evaluable right) : BinaryExpressi
 		var leftValue = (DoubleVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (DoubleVariable)right.Evaluate(context, stackFrame);
 
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
+
 		bool result = leftValue.Value > rightValue.Value;
 
 		return new IntegerVariable(result);
@@ -164,6 +176,9 @@ public class CurrencyGreaterThan(Evaluable left, Evaluable right) : BinaryExpres
 	{
 		var leftValue = (CurrencyVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (CurrencyVariable)right.Evaluate(context, stackFrame);
+
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
 
 		bool result = leftValue.Value > rightValue.Value;
 

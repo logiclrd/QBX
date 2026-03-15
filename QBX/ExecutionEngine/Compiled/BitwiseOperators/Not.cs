@@ -31,6 +31,8 @@ public class IntegerNot(Evaluable right) : UnaryExpression(right)
 	{
 		var rightValue = (IntegerVariable)right.Evaluate(context, stackFrame);
 
+		rightValue.ReadPinnedData();
+
 		return new IntegerVariable(unchecked((short)~rightValue.Value));
 	}
 
@@ -49,6 +51,8 @@ public class LongNot(Evaluable right) : UnaryExpression(right)
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
 		var rightValue = (LongVariable)right.Evaluate(context, stackFrame);
+
+		rightValue.ReadPinnedData();
 
 		return new LongVariable(~rightValue.Value);
 	}

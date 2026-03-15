@@ -35,6 +35,8 @@ public class RandomizeStatement(CodeModel.Statements.Statement source) : Executa
 		{
 			var argumentValue = ArgumentExpression.Evaluate(context, stackFrame);
 
+			argumentValue.ReadPinnedData();
+
 			switch (argumentValue)
 			{
 				case IntegerVariable integerValue: seedValue = integerValue.Value; break;

@@ -311,6 +311,8 @@ public class NumericFormatDirective(string pattern, char leftPadChar, bool leadi
 
 	public override void Emit(Variable argument, CodeModel.Statements.PrintStatement? statement, PrintEmitter emitter)
 	{
+		argument.ReadPinnedData();
+
 		switch (argument)
 		{
 			case IntegerVariable integerValue: Emit((decimal)integerValue.Value, emitter); break;

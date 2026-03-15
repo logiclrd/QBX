@@ -14,7 +14,7 @@ public static class NumberConverter
 	public static short ToInteger(IntegerLiteralValue value, Token? context = null) => value.Value;
 	public static short ToInteger(short value, Token? context = null) => value;
 
-	public static short ToInteger(LongVariable value, Token? context = null) => ToInteger(value.Value, context);
+	public static short ToInteger(LongVariable value, Token? context = null) { value.ReadPinnedData(); return ToInteger(value.Value, context); }
 	public static short ToInteger(LongLiteralValue value, Token? context = null) => ToInteger(value.Value, context);
 	public static short ToInteger(int value, Token? context = null)
 	{
@@ -24,7 +24,7 @@ public static class NumberConverter
 		return (short)value;
 	}
 
-	public static short ToInteger(SingleVariable value, Token? context = null) => ToInteger(value.Value, context);
+	public static short ToInteger(SingleVariable value, Token? context = null) { value.ReadPinnedData(); return ToInteger(value.Value, context); }
 	public static short ToInteger(SingleLiteralValue value, Token? context = null) => ToInteger(value.Value, context);
 	public static short ToInteger(float value, Token? context = null)
 	{
@@ -36,7 +36,7 @@ public static class NumberConverter
 		return (short)value;
 	}
 
-	public static short ToInteger(DoubleVariable value, Token? context = null) => ToInteger(value.Value, context);
+	public static short ToInteger(DoubleVariable value, Token? context = null) { value.ReadPinnedData(); return ToInteger(value.Value, context); }
 	public static short ToInteger(DoubleLiteralValue value, Token? context = null) => ToInteger(value.Value, context);
 	public static short ToInteger(double value, Token? context = null)
 	{
@@ -48,7 +48,7 @@ public static class NumberConverter
 		return (short)value;
 	}
 
-	public static short ToInteger(CurrencyVariable value, Token? context = null) => ToInteger(value.Value, context);
+	public static short ToInteger(CurrencyVariable value, Token? context = null) { value.ReadPinnedData(); return ToInteger(value.Value, context); }
 	public static short ToInteger(CurrencyLiteralValue value, Token? context = null) => ToInteger(value.Value, context);
 	public static short ToInteger(decimal value, Token? context = null)
 	{
@@ -60,7 +60,7 @@ public static class NumberConverter
 		return (short)value;
 	}
 
-	public static int ToLong(IntegerVariable value, Token? context = null) => ToLong(value.Value, context);
+	public static int ToLong(IntegerVariable value, Token? context = null) { value.ReadPinnedData(); return ToLong(value.Value, context); }
 	public static int ToLong(IntegerLiteralValue value, Token? context = null) => ToLong(value.Value, context);
 	public static int ToLong(short value, Token? context = null) => value;
 
@@ -68,7 +68,7 @@ public static class NumberConverter
 	public static int ToLong(LongLiteralValue value, Token? context = null) => value.Value;
 	public static int ToLong(int value, Token? context = null) => value;
 
-	public static int ToLong(SingleVariable value, Token? context = null) => ToLong(value.Value, context);
+	public static int ToLong(SingleVariable value, Token? context = null) { value.ReadPinnedData(); return ToLong(value.Value, context); }
 	public static int ToLong(SingleLiteralValue value, Token? context = null) => ToLong(value.Value, context);
 	public static int ToLong(float value, Token? context = null)
 	{
@@ -80,7 +80,7 @@ public static class NumberConverter
 		return (int)value;
 	}
 
-	public static int ToLong(DoubleVariable value, Token? context = null) => ToLong(value.Value, context);
+	public static int ToLong(DoubleVariable value, Token? context = null) { value.ReadPinnedData(); return ToLong(value.Value, context); }
 	public static int ToLong(DoubleLiteralValue value, Token? context = null) => ToLong(value.Value, context);
 	public static int ToLong(double value, Token? context = null)
 	{
@@ -92,7 +92,7 @@ public static class NumberConverter
 		return (int)value;
 	}
 
-	public static int ToLong(CurrencyVariable value, Token? context = null) => ToLong(value.Value, context);
+	public static int ToLong(CurrencyVariable value, Token? context = null) { value.ReadPinnedData(); return ToLong(value.Value, context); }
 	public static int ToLong(CurrencyLiteralValue value, Token? context = null) => ToLong(value.Value, context);
 	public static int ToLong(decimal value, Token? context = null)
 	{
@@ -104,11 +104,11 @@ public static class NumberConverter
 		return (int)value;
 	}
 
-	public static float ToSingle(IntegerVariable value, Token? context = null) => ToSingle(value.Value, context);
+	public static float ToSingle(IntegerVariable value, Token? context = null) { value.ReadPinnedData(); return ToSingle(value.Value, context); }
 	public static float ToSingle(IntegerLiteralValue value, Token? context = null) => ToSingle(value.Value, context);
 	public static float ToSingle(short value, Token? context = null) => value;
 
-	public static float ToSingle(LongVariable value, Token? context = null) => ToSingle(value.Value, context);
+	public static float ToSingle(LongVariable value, Token? context = null) { value.ReadPinnedData(); return ToSingle(value.Value, context); }
 	public static float ToSingle(LongLiteralValue value, Token? context = null) => ToSingle(value.Value, context);
 	public static float ToSingle(int value, Token? context = null) => value;
 
@@ -116,7 +116,7 @@ public static class NumberConverter
 	public static float ToSingle(SingleLiteralValue value, Token? context = null) => value.Value;
 	public static float ToSingle(float value, Token? context = null) => value;
 
-	public static float ToSingle(DoubleVariable value, Token? context = null) => ToSingle(value.Value, context);
+	public static float ToSingle(DoubleVariable value, Token? context = null) { value.ReadPinnedData(); return ToSingle(value.Value, context); }
 	public static float ToSingle(DoubleLiteralValue value, Token? context = null) => ToSingle(value.Value, context);
 	public static float ToSingle(double value, Token? context = null)
 	{
@@ -130,7 +130,7 @@ public static class NumberConverter
 		}
 	}
 
-	public static float ToSingle(CurrencyVariable value, Token? context = null) => ToSingle(value.Value, context);
+	public static float ToSingle(CurrencyVariable value, Token? context = null) { value.ReadPinnedData(); return ToSingle(value.Value, context); }
 	public static float ToSingle(CurrencyLiteralValue value, Token? context = null) => ToSingle(value.Value, context);
 	public static float ToSingle(decimal value, Token? context = null)
 	{
@@ -144,15 +144,15 @@ public static class NumberConverter
 		}
 	}
 
-	public static double ToDouble(IntegerVariable value, Token? context = null) => ToDouble(value.Value, context);
+	public static double ToDouble(IntegerVariable value, Token? context = null) { value.ReadPinnedData(); return ToDouble(value.Value, context); }
 	public static double ToDouble(IntegerLiteralValue value, Token? context = null) => ToDouble(value.Value, context);
 	public static double ToDouble(short value, Token? context = null) => value;
 
-	public static double ToDouble(LongVariable value, Token? context = null) => ToDouble(value.Value, context);
+	public static double ToDouble(LongVariable value, Token? context = null) { value.ReadPinnedData(); return ToDouble(value.Value, context); }
 	public static double ToDouble(LongLiteralValue value, Token? context = null) => ToDouble(value.Value, context);
 	public static double ToDouble(int value, Token? context = null) => value;
 
-	public static double ToDouble(SingleVariable value, Token? context = null) => ToDouble(value.Value, context);
+	public static double ToDouble(SingleVariable value, Token? context = null) { value.ReadPinnedData(); return ToDouble(value.Value, context); }
 	public static double ToDouble(SingleLiteralValue value, Token? context = null) => ToDouble(value.Value, context);
 	public static double ToDouble(float value, Token? context = null) => value;
 
@@ -160,7 +160,7 @@ public static class NumberConverter
 	public static double ToDouble(DoubleLiteralValue value, Token? context = null) => value.Value;
 	public static double ToDouble(double value, Token? context = null) => value;
 
-	public static double ToDouble(CurrencyVariable value, Token? context = null) => ToDouble(value.Value, context);
+	public static double ToDouble(CurrencyVariable value, Token? context = null) { value.ReadPinnedData(); return ToDouble(value.Value, context); }
 	public static double ToDouble(CurrencyLiteralValue value, Token? context = null) => ToDouble(value.Value, context);
 	public static double ToDouble(decimal value, Token? context = null)
 	{
@@ -174,15 +174,15 @@ public static class NumberConverter
 		}
 	}
 
-	public static decimal ToCurrency(IntegerVariable value, Token? context = null) => ToCurrency(value.Value, context);
+	public static decimal ToCurrency(IntegerVariable value, Token? context = null) { value.ReadPinnedData(); return ToCurrency(value.Value, context); }
 	public static decimal ToCurrency(IntegerLiteralValue value, Token? context = null) => ToCurrency(value.Value, context);
 	public static decimal ToCurrency(short value, Token? context = null) => value;
 
-	public static decimal ToCurrency(LongVariable value, Token? context = null) => ToCurrency(value.Value, context);
+	public static decimal ToCurrency(LongVariable value, Token? context = null) { value.ReadPinnedData(); return ToCurrency(value.Value, context); }
 	public static decimal ToCurrency(LongLiteralValue value, Token? context = null) => ToCurrency(value.Value, context);
 	public static decimal ToCurrency(int value, Token? context = null) => value;
 
-	public static decimal ToCurrency(SingleVariable value, Token? context = null) => ToCurrency(value.Value, context);
+	public static decimal ToCurrency(SingleVariable value, Token? context = null) { value.ReadPinnedData(); return ToCurrency(value.Value, context); }
 	public static decimal ToCurrency(SingleLiteralValue value, Token? context = null) => ToCurrency(value.Value, context);
 	public static decimal ToCurrency(float value, Token? context = null)
 	{
@@ -201,7 +201,7 @@ public static class NumberConverter
 		}
 	}
 
-	public static decimal ToCurrency(DoubleVariable value, Token? context = null) => ToCurrency(value.Value, context);
+	public static decimal ToCurrency(DoubleVariable value, Token? context = null) { value.ReadPinnedData(); return ToCurrency(value.Value, context); }
 	public static decimal ToCurrency(DoubleLiteralValue value, Token? context = null) => ToCurrency(value.Value, context);
 	public static decimal ToCurrency(double value, Token? context = null)
 	{

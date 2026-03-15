@@ -60,6 +60,8 @@ public class SingleFixFunction(Evaluable argument) : FixFunction(argument)
 	{
 		var value = (SingleVariable)argument.Evaluate(context, stackFrame);
 
+		value.ReadPinnedData();
+
 		return new SingleVariable(float.Truncate(value.Value));
 	}
 
@@ -79,6 +81,8 @@ public class DoubleFixFunction(Evaluable argument) : FixFunction(argument)
 	{
 		var value = (DoubleVariable)argument.Evaluate(context, stackFrame);
 
+		value.ReadPinnedData();
+
 		return new DoubleVariable(double.Truncate(value.Value));
 	}
 
@@ -97,6 +101,8 @@ public class CurrencyFixFunction(Evaluable argument) : FixFunction(argument)
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
 		var value = (CurrencyVariable)argument.Evaluate(context, stackFrame);
+
+		value.ReadPinnedData();
 
 		return new CurrencyVariable(decimal.Truncate(value.Value));
 	}

@@ -66,6 +66,9 @@ public class CurrencyExponentiation(Evaluable left, Evaluable right) : BinaryExp
 		var leftValue = (CurrencyVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (LongVariable)right.Evaluate(context, stackFrame);
 
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
+
 		try
 		{
 			decimal result = CalculateResult(leftValue.Value, rightValue.Value);
@@ -110,6 +113,9 @@ public class DoubleExponentiation(Evaluable left, Evaluable right) : BinaryExpre
 	{
 		var leftValue = (DoubleVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (DoubleVariable)right.Evaluate(context, stackFrame);
+
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
 
 		try
 		{

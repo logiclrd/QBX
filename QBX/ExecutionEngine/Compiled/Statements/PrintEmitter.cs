@@ -83,6 +83,8 @@ public abstract class PrintEmitter
 
 	public void Emit(Variable value)
 	{
+		value.ReadPinnedData();
+
 		switch (value)
 		{
 			case IntegerVariable integerValue: Emit(integerValue.Value); break;

@@ -132,23 +132,38 @@ public class DataParser
 			{
 				case IntegerVariable targetIntegerVariable:
 					if (NumberParser.TryAsInteger(valueString, out targetIntegerVariable.Value))
+					{
+						targetVariable.WritePinnedData();
 						return;
+					}
 					break;
 				case LongVariable targetLongVariable:
 					if (NumberParser.TryAsLong(valueString, out targetLongVariable.Value))
+					{
+						targetVariable.WritePinnedData();
 						return;
+					}
 					break;
 				case SingleVariable targetSingleVariable:
 					if (NumberParser.TryAsSingle(valueString, out targetSingleVariable.Value))
+					{
+						targetVariable.WritePinnedData();
 						return;
+					}
 					break;
 				case DoubleVariable targetDoubleVariable:
 					if (NumberParser.TryAsDouble(valueString, out targetDoubleVariable.Value))
+					{
+						targetVariable.WritePinnedData();
 						return;
+					}
 					break;
 				case CurrencyVariable targetCurrencyVariable:
 					if (NumberParser.TryAsCurrency(valueString, out targetCurrencyVariable.Value))
+					{
+						targetVariable.WritePinnedData();
 						return;
+					}
 					break;
 			}
 
@@ -158,7 +173,6 @@ public class DataParser
 			targetVariable.SetData(value);
 		}
 	}
-
 
 	public static IEnumerable<string> ParseDataItems(string rawString)
 	{

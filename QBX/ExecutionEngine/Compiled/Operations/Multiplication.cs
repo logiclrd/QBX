@@ -88,6 +88,9 @@ public class IntegerMultiplication(Evaluable left, Evaluable right) : BinaryExpr
 		var leftValue = (IntegerVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (IntegerVariable)right.Evaluate(context, stackFrame);
 
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
+
 		int product = leftValue.Value * rightValue.Value;
 
 		if ((product < short.MinValue) || (product > short.MaxValue))
@@ -118,6 +121,9 @@ public class LongMultiplication(Evaluable left, Evaluable right) : BinaryExpress
 	{
 		var leftValue = (LongVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (LongVariable)right.Evaluate(context, stackFrame);
+
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
 
 		try
 		{
@@ -154,6 +160,9 @@ public class SingleMultiplication(Evaluable left, Evaluable right) : BinaryExpre
 		var leftValue = (SingleVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (SingleVariable)right.Evaluate(context, stackFrame);
 
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
+
 		try
 		{
 			return new SingleVariable(leftValue.Value * rightValue.Value);
@@ -189,6 +198,9 @@ public class DoubleMultiplication(Evaluable left, Evaluable right) : BinaryExpre
 		var leftValue = (DoubleVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (DoubleVariable)right.Evaluate(context, stackFrame);
 
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
+
 		try
 		{
 			return new DoubleVariable(leftValue.Value * rightValue.Value);
@@ -223,6 +235,9 @@ public class CurrencyMultiplication(Evaluable left, Evaluable right) : BinaryExp
 	{
 		var leftValue = (CurrencyVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (CurrencyVariable)right.Evaluate(context, stackFrame);
+
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
 
 		try
 		{

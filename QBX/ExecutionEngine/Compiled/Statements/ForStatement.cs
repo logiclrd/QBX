@@ -232,6 +232,10 @@ public class IntegerForStatement(CodeModel.Statements.ForStatement? sourceForSta
 		var toVariable = ToExpression?.Evaluate(context, stackFrame) ?? throw new Exception("IntegerForStatement with no ToExpression");
 		var stepVariable = StepExpression?.Evaluate(context, stackFrame);
 
+		fromVariable.ReadPinnedData();
+		toVariable.ReadPinnedData();
+		stepVariable?.ReadPinnedData();
+
 		short from = ((IntegerVariable)fromVariable).Value;
 		short to = ((IntegerVariable)toVariable).Value;
 		short step = (stepVariable as IntegerVariable)?.Value ?? 1;
@@ -269,6 +273,7 @@ public class IntegerForStatement(CodeModel.Statements.ForStatement? sourceForSta
 				System.Threading.Thread.Yield();
 
 				iteratorVariable.Value = nextStatement.NextValue;
+				iteratorVariable.WritePinnedData();
 
 				for (int i = statementIndex; i < Body!.Count; i++)
 					context.Dispatch(Body[i], stackFrame);
@@ -327,6 +332,10 @@ public class LongForStatement(CodeModel.Statements.ForStatement? sourceForStatem
 		var toVariable = ToExpression?.Evaluate(context, stackFrame) ?? throw new Exception("LongForStatement with no ToExpression");
 		var stepVariable = StepExpression?.Evaluate(context, stackFrame);
 
+		fromVariable.ReadPinnedData();
+		toVariable.ReadPinnedData();
+		stepVariable?.ReadPinnedData();
+
 		int from = ((LongVariable)fromVariable).Value;
 		int to = ((LongVariable)toVariable).Value;
 		int step = (stepVariable as LongVariable)?.Value ?? 1;
@@ -364,6 +373,7 @@ public class LongForStatement(CodeModel.Statements.ForStatement? sourceForStatem
 				System.Threading.Thread.Yield();
 
 				iteratorVariable.Value = nextStatement.NextValue;
+				iteratorVariable.WritePinnedData();
 
 				for (int i = statementIndex; i < Body!.Count; i++)
 					context.Dispatch(Body[i], stackFrame);
@@ -422,6 +432,10 @@ public class SingleForStatement(CodeModel.Statements.ForStatement? sourceForStat
 		var toVariable = ToExpression?.Evaluate(context, stackFrame) ?? throw new Exception("SingleForStatement with no ToExpression");
 		var stepVariable = StepExpression?.Evaluate(context, stackFrame);
 
+		fromVariable.ReadPinnedData();
+		toVariable.ReadPinnedData();
+		stepVariable?.ReadPinnedData();
+
 		float from = ((SingleVariable)fromVariable).Value;
 		float to = ((SingleVariable)toVariable).Value;
 		float step = (stepVariable as SingleVariable)?.Value ?? 1;
@@ -459,6 +473,7 @@ public class SingleForStatement(CodeModel.Statements.ForStatement? sourceForStat
 				System.Threading.Thread.Yield();
 
 				iteratorVariable.Value = nextStatement.NextValue;
+				iteratorVariable.WritePinnedData();
 
 				for (int i = statementIndex; i < Body!.Count; i++)
 					context.Dispatch(Body[i], stackFrame);
@@ -517,6 +532,10 @@ public class DoubleForStatement(CodeModel.Statements.ForStatement? sourceForStat
 		var toVariable = ToExpression?.Evaluate(context, stackFrame) ?? throw new Exception("DoubleForStatement with no ToExpression");
 		var stepVariable = StepExpression?.Evaluate(context, stackFrame);
 
+		fromVariable.ReadPinnedData();
+		toVariable.ReadPinnedData();
+		stepVariable?.ReadPinnedData();
+
 		double from = ((DoubleVariable)fromVariable).Value;
 		double to = ((DoubleVariable)toVariable).Value;
 		double step = (stepVariable as DoubleVariable)?.Value ?? 1;
@@ -554,6 +573,7 @@ public class DoubleForStatement(CodeModel.Statements.ForStatement? sourceForStat
 				System.Threading.Thread.Yield();
 
 				iteratorVariable.Value = nextStatement.NextValue;
+				iteratorVariable.WritePinnedData();
 
 				for (int i = statementIndex; i < Body!.Count; i++)
 					context.Dispatch(Body[i], stackFrame);
@@ -612,6 +632,10 @@ public class CurrencyForStatement(CodeModel.Statements.ForStatement? sourceForSt
 		var toVariable = ToExpression?.Evaluate(context, stackFrame) ?? throw new Exception("CurrencyForStatement with no ToExpression");
 		var stepVariable = StepExpression?.Evaluate(context, stackFrame);
 
+		fromVariable.ReadPinnedData();
+		toVariable.ReadPinnedData();
+		stepVariable?.ReadPinnedData();
+
 		decimal from = ((CurrencyVariable)fromVariable).Value;
 		decimal to = ((CurrencyVariable)toVariable).Value;
 		decimal step = (stepVariable as CurrencyVariable)?.Value ?? 1;
@@ -649,6 +673,7 @@ public class CurrencyForStatement(CodeModel.Statements.ForStatement? sourceForSt
 				System.Threading.Thread.Yield();
 
 				iteratorVariable.Value = nextStatement.NextValue;
+				iteratorVariable.WritePinnedData();
 
 				for (int i = statementIndex; i < Body!.Count; i++)
 					context.Dispatch(Body[i], stackFrame);
@@ -707,6 +732,10 @@ public class DelayLoopForStatement(CodeModel.Statements.ForStatement? sourceForS
 		var fromVariable = FromExpression?.Evaluate(context, stackFrame) ?? throw new Exception("DelayLoopForStatement with no FromExpression");
 		var toVariable = ToExpression?.Evaluate(context, stackFrame) ?? throw new Exception("DelayLoopForStatement with no ToExpression");
 		var stepVariable = StepExpression?.Evaluate(context, stackFrame);
+
+		fromVariable.ReadPinnedData();
+		toVariable.ReadPinnedData();
+		stepVariable?.ReadPinnedData();
 
 		double from = NumberConverter.ToDouble(fromVariable);
 		double to = NumberConverter.ToDouble(toVariable);

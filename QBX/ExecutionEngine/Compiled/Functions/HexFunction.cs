@@ -34,7 +34,10 @@ public class HexFunction : Function
 		string formatted;
 
 		if (argumentValue is IntegerVariable integerVariable)
+		{
+			argumentValue.ReadPinnedData();
 			formatted = unchecked((ushort)integerVariable.Value).ToString("X");
+		}
 		else
 			formatted = argumentValue.CoerceToInt(Argument).ToString("X");
 

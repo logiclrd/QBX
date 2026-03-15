@@ -88,6 +88,9 @@ public class IntegerSubtraction(Evaluable left, Evaluable right) : BinaryExpress
 		var leftValue = (IntegerVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (IntegerVariable)right.Evaluate(context, stackFrame);
 
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
+
 		int difference = leftValue.Value - rightValue.Value;
 
 		if ((difference < short.MinValue) || (difference > short.MaxValue))
@@ -118,6 +121,9 @@ public class LongSubtraction(Evaluable left, Evaluable right) : BinaryExpression
 	{
 		var leftValue = (LongVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (LongVariable)right.Evaluate(context, stackFrame);
+
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
 
 		try
 		{
@@ -154,6 +160,9 @@ public class SingleSubtraction(Evaluable left, Evaluable right) : BinaryExpressi
 		var leftValue = (SingleVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (SingleVariable)right.Evaluate(context, stackFrame);
 
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
+
 		try
 		{
 			return new SingleVariable(leftValue.Value - rightValue.Value);
@@ -189,6 +198,9 @@ public class DoubleSubtraction(Evaluable left, Evaluable right) : BinaryExpressi
 		var leftValue = (DoubleVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (DoubleVariable)right.Evaluate(context, stackFrame);
 
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
+
 		try
 		{
 			return new DoubleVariable(leftValue.Value - rightValue.Value);
@@ -223,6 +235,9 @@ public class CurrencySubtraction(Evaluable left, Evaluable right) : BinaryExpres
 	{
 		var leftValue = (CurrencyVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (CurrencyVariable)right.Evaluate(context, stackFrame);
+
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
 
 		try
 		{

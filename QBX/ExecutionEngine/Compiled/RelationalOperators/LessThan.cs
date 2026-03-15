@@ -64,6 +64,9 @@ public class IntegerLessThan(Evaluable left, Evaluable right) : BinaryExpression
 		var leftValue = (IntegerVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (IntegerVariable)right.Evaluate(context, stackFrame);
 
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
+
 		bool result = leftValue.Value < rightValue.Value;
 
 		return new IntegerVariable(result);
@@ -88,6 +91,9 @@ public class LongLessThan(Evaluable left, Evaluable right) : BinaryExpression(le
 	{
 		var leftValue = (LongVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (LongVariable)right.Evaluate(context, stackFrame);
+
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
 
 		bool result = leftValue.Value < rightValue.Value;
 
@@ -114,6 +120,9 @@ public class SingleLessThan(Evaluable left, Evaluable right) : BinaryExpression(
 		var leftValue = (SingleVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (SingleVariable)right.Evaluate(context, stackFrame);
 
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
+
 		bool result = leftValue.Value < rightValue.Value;
 
 		return new IntegerVariable(result);
@@ -139,6 +148,9 @@ public class DoubleLessThan(Evaluable left, Evaluable right) : BinaryExpression(
 		var leftValue = (DoubleVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (DoubleVariable)right.Evaluate(context, stackFrame);
 
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
+
 		bool result = leftValue.Value < rightValue.Value;
 
 		return new IntegerVariable(result);
@@ -163,6 +175,9 @@ public class CurrencyLessThan(Evaluable left, Evaluable right) : BinaryExpressio
 	{
 		var leftValue = (CurrencyVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (CurrencyVariable)right.Evaluate(context, stackFrame);
+
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
 
 		bool result = leftValue.Value < rightValue.Value;
 

@@ -51,7 +51,10 @@ public class IntegerPrimitiveMarshaller : PrimitiveMarshaller
 				assignment.Assign(value);
 		}
 		else if (to is IntegerVariable targetVariable)
+		{
 			targetVariable.Value = value;
+			targetVariable.WritePinnedData();
+		}
 		else
 			to = value;
 	}
@@ -76,7 +79,10 @@ public class LongPrimitiveMarshaller : PrimitiveMarshaller
 				assignment.Assign(value);
 		}
 		else if (to is LongVariable targetVariable)
+		{
 			targetVariable.Value = value;
+			targetVariable.WritePinnedData();
+		}
 		else
 			to = value;
 	}
@@ -101,7 +107,10 @@ public class SinglePrimitiveMarshaller : PrimitiveMarshaller
 				assignment.Assign(value);
 		}
 		else if (to is SingleVariable targetVariable)
+		{
 			targetVariable.Value = value;
+			targetVariable.WritePinnedData();
+		}
 		else
 			to = value;
 	}
@@ -126,7 +135,10 @@ public class DoublePrimitiveMarshaller : PrimitiveMarshaller
 				assignment.Assign(value);
 		}
 		else if (to is DoubleVariable targetVariable)
+		{
 			targetVariable.Value = value;
+			targetVariable.WritePinnedData();
+		}
 		else
 			to = value;
 	}
@@ -151,7 +163,10 @@ public class CurrencyPrimitiveMarshaller : PrimitiveMarshaller
 				assignment.Assign(value);
 		}
 		else if (to is CurrencyVariable targetVariable)
+		{
 			targetVariable.Value = value;
+			targetVariable.WritePinnedData();
+		}
 		else
 			to = value;
 	}

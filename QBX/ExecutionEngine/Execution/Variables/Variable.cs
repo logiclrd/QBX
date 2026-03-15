@@ -41,6 +41,9 @@ public abstract class Variable
 		DataType = dataType;
 	}
 
+	public virtual void ReadPinnedData() { }
+	public virtual void WritePinnedData() { }
+
 	public abstract object GetData();
 	public abstract void SetData(object value);
 	public abstract int CoerceToInt(Evaluable? context);

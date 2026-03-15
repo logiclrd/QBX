@@ -2,7 +2,6 @@
 using QBX.ExecutionEngine.Compiled.Operations;
 using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
-using System;
 
 namespace QBX.ExecutionEngine.Compiled.BitwiseOperators;
 
@@ -36,6 +35,9 @@ public class IntegerOr(Evaluable left, Evaluable right) : BinaryExpression(left,
 		var leftValue = (IntegerVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (IntegerVariable)right.Evaluate(context, stackFrame);
 
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
+
 		int result = leftValue.Value | rightValue.Value;
 
 		return new IntegerVariable(unchecked((short)result));
@@ -60,6 +62,9 @@ public class LongOr(Evaluable left, Evaluable right) : BinaryExpression(left, ri
 	{
 		var leftValue = (LongVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (LongVariable)right.Evaluate(context, stackFrame);
+
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
 
 		return new LongVariable(leftValue.Value | rightValue.Value);
 	}

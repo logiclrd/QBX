@@ -36,6 +36,9 @@ public class IntegerExclusiveOr(Evaluable left, Evaluable right) : BinaryExpress
 		var leftValue = (IntegerVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (IntegerVariable)right.Evaluate(context, stackFrame);
 
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
+
 		int result = leftValue.Value ^ rightValue.Value;
 
 		return new IntegerVariable(unchecked((short)result));
@@ -60,6 +63,9 @@ public class LongExclusiveOr(Evaluable left, Evaluable right) : BinaryExpression
 	{
 		var leftValue = (LongVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (LongVariable)right.Evaluate(context, stackFrame);
+
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
 
 		return new LongVariable(leftValue.Value ^ rightValue.Value);
 	}

@@ -72,6 +72,9 @@ public class IntegerDivision(Evaluable left, Evaluable right) : BinaryExpression
 		var leftValue = (IntegerVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (IntegerVariable)right.Evaluate(context, stackFrame);
 
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
+
 		if (rightValue.Value == 0)
 			throw RuntimeException.DivisionByZero(Source);
 
@@ -102,6 +105,9 @@ public class LongDivision(Evaluable left, Evaluable right) : BinaryExpression(le
 	{
 		var leftValue = (LongVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (LongVariable)right.Evaluate(context, stackFrame);
+
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
 
 		if (rightValue.Value == 0)
 			throw RuntimeException.DivisionByZero(Source);
@@ -144,6 +150,9 @@ public class SingleDivision(Evaluable left, Evaluable right) : BinaryExpression(
 		var leftValue = (SingleVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (SingleVariable)right.Evaluate(context, stackFrame);
 
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
+
 		try
 		{
 			return new SingleVariable(leftValue.Value / rightValue.Value);
@@ -179,6 +188,9 @@ public class DoubleDivision(Evaluable left, Evaluable right) : BinaryExpression(
 		var leftValue = (DoubleVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (DoubleVariable)right.Evaluate(context, stackFrame);
 
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
+
 		try
 		{
 			return new DoubleVariable(leftValue.Value / rightValue.Value);
@@ -213,6 +225,9 @@ public class CurrencyDivision(Evaluable left, Evaluable right) : BinaryExpressio
 	{
 		var leftValue = (CurrencyVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (CurrencyVariable)right.Evaluate(context, stackFrame);
+
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
 
 		try
 		{

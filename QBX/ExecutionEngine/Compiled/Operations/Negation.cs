@@ -36,6 +36,8 @@ public class IntegerNegation(Evaluable right) : UnaryExpression(right)
 	{
 		var rightValue = (IntegerVariable)right.Evaluate(context, stackFrame);
 
+		rightValue.ReadPinnedData();
+
 		if (rightValue.Value == short.MinValue) // -MinValue is larger than MaxValue
 			throw RuntimeException.Overflow(Source?.Token);
 
@@ -60,6 +62,8 @@ public class LongNegation(Evaluable right) : UnaryExpression(right)
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
 		var rightValue = (LongVariable)right.Evaluate(context, stackFrame);
+
+		rightValue.ReadPinnedData();
 
 		if (rightValue.Value == int.MinValue) // -MinValue is larger than MaxValue
 			throw RuntimeException.Overflow(Source?.Token);
@@ -86,6 +90,8 @@ public class SingleNegation(Evaluable right) : UnaryExpression(right)
 	{
 		var rightValue = (SingleVariable)right.Evaluate(context, stackFrame);
 
+		rightValue.ReadPinnedData();
+
 		return new SingleVariable(-rightValue.Value);
 	}
 
@@ -105,6 +111,8 @@ public class DoubleNegation(Evaluable right) : UnaryExpression(right)
 	{
 		var rightValue = (DoubleVariable)right.Evaluate(context, stackFrame);
 
+		rightValue.ReadPinnedData();
+
 		return new DoubleVariable(-rightValue.Value);
 	}
 
@@ -123,6 +131,8 @@ public class CurrencyNegation(Evaluable right) : UnaryExpression(right)
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
 		var rightValue = (CurrencyVariable)right.Evaluate(context, stackFrame);
+
+		rightValue.ReadPinnedData();
 
 		return new CurrencyVariable(-rightValue.Value);
 	}

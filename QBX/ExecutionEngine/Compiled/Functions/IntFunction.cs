@@ -60,6 +60,8 @@ public class SingleIntFunction(Evaluable argument) : IntFunction(argument)
 	{
 		var value = (SingleVariable)argument.Evaluate(context, stackFrame);
 
+		value.ReadPinnedData();
+
 		return new SingleVariable(float.Floor(value.Value));
 	}
 
@@ -79,6 +81,8 @@ public class DoubleIntFunction(Evaluable argument) : IntFunction(argument)
 	{
 		var value = (DoubleVariable)argument.Evaluate(context, stackFrame);
 
+		value.ReadPinnedData();
+
 		return new DoubleVariable(double.Floor(value.Value));
 	}
 
@@ -97,6 +101,8 @@ public class CurrencyIntFunction(Evaluable argument) : IntFunction(argument)
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
 		var value = (CurrencyVariable)argument.Evaluate(context, stackFrame);
+
+		value.ReadPinnedData();
 
 		return new CurrencyVariable(decimal.Floor(value.Value));
 	}

@@ -32,6 +32,9 @@ public class IntegerModulo(Evaluable left, Evaluable right) : BinaryExpression(l
 		var leftValue = (IntegerVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (IntegerVariable)right.Evaluate(context, stackFrame);
 
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
+
 		if (rightValue.Value == 0)
 			throw RuntimeException.DivisionByZero(Source);
 
@@ -62,6 +65,9 @@ public class LongModulo(Evaluable left, Evaluable right) : BinaryExpression(left
 	{
 		var leftValue = (LongVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (LongVariable)right.Evaluate(context, stackFrame);
+
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
 
 		if (rightValue.Value == 0)
 			throw RuntimeException.DivisionByZero(Source);

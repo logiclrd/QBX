@@ -72,6 +72,9 @@ public abstract class IntegerRelativeCaseExpression(Evaluable expression, Relati
 		{
 			var conditionValue = expression.Evaluate(context, stackFrame);
 
+			testValue.ReadPinnedData();
+			conditionValue.ReadPinnedData();
+
 			return ((IntegerVariable)testValue).Value == ((IntegerVariable)conditionValue).Value;
 		}
 	}
@@ -81,6 +84,9 @@ public abstract class IntegerRelativeCaseExpression(Evaluable expression, Relati
 		public override bool IsMatch(Variable testValue, ExecutionContext context, StackFrame stackFrame)
 		{
 			var conditionValue = expression.Evaluate(context, stackFrame);
+
+			testValue.ReadPinnedData();
+			conditionValue.ReadPinnedData();
 
 			return ((IntegerVariable)testValue).Value != ((IntegerVariable)conditionValue).Value;
 		}
@@ -92,6 +98,9 @@ public abstract class IntegerRelativeCaseExpression(Evaluable expression, Relati
 		{
 			var conditionValue = expression.Evaluate(context, stackFrame);
 
+			testValue.ReadPinnedData();
+			conditionValue.ReadPinnedData();
+
 			return ((IntegerVariable)testValue).Value > ((IntegerVariable)conditionValue).Value;
 		}
 	}
@@ -101,6 +110,9 @@ public abstract class IntegerRelativeCaseExpression(Evaluable expression, Relati
 		public override bool IsMatch(Variable testValue, ExecutionContext context, StackFrame stackFrame)
 		{
 			var conditionValue = expression.Evaluate(context, stackFrame);
+
+			testValue.ReadPinnedData();
+			conditionValue.ReadPinnedData();
 
 			return ((IntegerVariable)testValue).Value < ((IntegerVariable)conditionValue).Value;
 		}
@@ -112,6 +124,9 @@ public abstract class IntegerRelativeCaseExpression(Evaluable expression, Relati
 		{
 			var conditionValue = expression.Evaluate(context, stackFrame);
 
+			testValue.ReadPinnedData();
+			conditionValue.ReadPinnedData();
+
 			return ((IntegerVariable)testValue).Value >= ((IntegerVariable)conditionValue).Value;
 		}
 	}
@@ -121,6 +136,9 @@ public abstract class IntegerRelativeCaseExpression(Evaluable expression, Relati
 		public override bool IsMatch(Variable testValue, ExecutionContext context, StackFrame stackFrame)
 		{
 			var conditionValue = expression.Evaluate(context, stackFrame);
+
+			testValue.ReadPinnedData();
+			conditionValue.ReadPinnedData();
 
 			return ((IntegerVariable)testValue).Value <= ((IntegerVariable)conditionValue).Value;
 		}
@@ -150,6 +168,9 @@ public abstract class LongCaseExpression(Evaluable expression, RelationalOperato
 		{
 			var conditionValue = expression.Evaluate(context, stackFrame);
 
+			testValue.ReadPinnedData();
+			conditionValue.ReadPinnedData();
+
 			return ((LongVariable)testValue).Value == ((LongVariable)conditionValue).Value;
 		}
 	}
@@ -159,6 +180,9 @@ public abstract class LongCaseExpression(Evaluable expression, RelationalOperato
 		public override bool IsMatch(Variable testValue, ExecutionContext context, StackFrame stackFrame)
 		{
 			var conditionValue = expression.Evaluate(context, stackFrame);
+
+			testValue.ReadPinnedData();
+			conditionValue.ReadPinnedData();
 
 			return ((LongVariable)testValue).Value != ((LongVariable)conditionValue).Value;
 		}
@@ -170,6 +194,9 @@ public abstract class LongCaseExpression(Evaluable expression, RelationalOperato
 		{
 			var conditionValue = expression.Evaluate(context, stackFrame);
 
+			testValue.ReadPinnedData();
+			conditionValue.ReadPinnedData();
+
 			return ((LongVariable)testValue).Value > ((LongVariable)conditionValue).Value;
 		}
 	}
@@ -179,6 +206,9 @@ public abstract class LongCaseExpression(Evaluable expression, RelationalOperato
 		public override bool IsMatch(Variable testValue, ExecutionContext context, StackFrame stackFrame)
 		{
 			var conditionValue = expression.Evaluate(context, stackFrame);
+
+			testValue.ReadPinnedData();
+			conditionValue.ReadPinnedData();
 
 			return ((LongVariable)testValue).Value < ((LongVariable)conditionValue).Value;
 		}
@@ -190,6 +220,9 @@ public abstract class LongCaseExpression(Evaluable expression, RelationalOperato
 		{
 			var conditionValue = expression.Evaluate(context, stackFrame);
 
+			testValue.ReadPinnedData();
+			conditionValue.ReadPinnedData();
+
 			return ((LongVariable)testValue).Value >= ((LongVariable)conditionValue).Value;
 		}
 	}
@@ -199,6 +232,9 @@ public abstract class LongCaseExpression(Evaluable expression, RelationalOperato
 		public override bool IsMatch(Variable testValue, ExecutionContext context, StackFrame stackFrame)
 		{
 			var conditionValue = expression.Evaluate(context, stackFrame);
+
+			testValue.ReadPinnedData();
+			conditionValue.ReadPinnedData();
 
 			return ((LongVariable)testValue).Value <= ((LongVariable)conditionValue).Value;
 		}
@@ -228,6 +264,9 @@ public abstract class SingleCaseExpression(Evaluable expression, RelationalOpera
 		{
 			var conditionValue = expression.Evaluate(context, stackFrame);
 
+			testValue.ReadPinnedData();
+			conditionValue.ReadPinnedData();
+
 			return ((SingleVariable)testValue).Value == ((SingleVariable)conditionValue).Value;
 		}
 	}
@@ -237,6 +276,9 @@ public abstract class SingleCaseExpression(Evaluable expression, RelationalOpera
 		public override bool IsMatch(Variable testValue, ExecutionContext context, StackFrame stackFrame)
 		{
 			var conditionValue = expression.Evaluate(context, stackFrame);
+
+			testValue.ReadPinnedData();
+			conditionValue.ReadPinnedData();
 
 			return ((SingleVariable)testValue).Value != ((SingleVariable)conditionValue).Value;
 		}
@@ -248,6 +290,9 @@ public abstract class SingleCaseExpression(Evaluable expression, RelationalOpera
 		{
 			var conditionValue = expression.Evaluate(context, stackFrame);
 
+			testValue.ReadPinnedData();
+			conditionValue.ReadPinnedData();
+
 			return ((SingleVariable)testValue).Value > ((SingleVariable)conditionValue).Value;
 		}
 	}
@@ -257,6 +302,9 @@ public abstract class SingleCaseExpression(Evaluable expression, RelationalOpera
 		public override bool IsMatch(Variable testValue, ExecutionContext context, StackFrame stackFrame)
 		{
 			var conditionValue = expression.Evaluate(context, stackFrame);
+
+			testValue.ReadPinnedData();
+			conditionValue.ReadPinnedData();
 
 			return ((SingleVariable)testValue).Value < ((SingleVariable)conditionValue).Value;
 		}
@@ -268,6 +316,9 @@ public abstract class SingleCaseExpression(Evaluable expression, RelationalOpera
 		{
 			var conditionValue = expression.Evaluate(context, stackFrame);
 
+			testValue.ReadPinnedData();
+			conditionValue.ReadPinnedData();
+
 			return ((SingleVariable)testValue).Value >= ((SingleVariable)conditionValue).Value;
 		}
 	}
@@ -277,6 +328,9 @@ public abstract class SingleCaseExpression(Evaluable expression, RelationalOpera
 		public override bool IsMatch(Variable testValue, ExecutionContext context, StackFrame stackFrame)
 		{
 			var conditionValue = expression.Evaluate(context, stackFrame);
+
+			testValue.ReadPinnedData();
+			conditionValue.ReadPinnedData();
 
 			return ((SingleVariable)testValue).Value <= ((SingleVariable)conditionValue).Value;
 		}
@@ -306,6 +360,9 @@ public abstract class DoubleCaseExpression(Evaluable expression, RelationalOpera
 		{
 			var conditionValue = expression.Evaluate(context, stackFrame);
 
+			testValue.ReadPinnedData();
+			conditionValue.ReadPinnedData();
+
 			return ((DoubleVariable)testValue).Value == ((DoubleVariable)conditionValue).Value;
 		}
 	}
@@ -315,6 +372,9 @@ public abstract class DoubleCaseExpression(Evaluable expression, RelationalOpera
 		public override bool IsMatch(Variable testValue, ExecutionContext context, StackFrame stackFrame)
 		{
 			var conditionValue = expression.Evaluate(context, stackFrame);
+
+			testValue.ReadPinnedData();
+			conditionValue.ReadPinnedData();
 
 			return ((DoubleVariable)testValue).Value != ((DoubleVariable)conditionValue).Value;
 		}
@@ -326,6 +386,9 @@ public abstract class DoubleCaseExpression(Evaluable expression, RelationalOpera
 		{
 			var conditionValue = expression.Evaluate(context, stackFrame);
 
+			testValue.ReadPinnedData();
+			conditionValue.ReadPinnedData();
+
 			return ((DoubleVariable)testValue).Value > ((DoubleVariable)conditionValue).Value;
 		}
 	}
@@ -335,6 +398,9 @@ public abstract class DoubleCaseExpression(Evaluable expression, RelationalOpera
 		public override bool IsMatch(Variable testValue, ExecutionContext context, StackFrame stackFrame)
 		{
 			var conditionValue = expression.Evaluate(context, stackFrame);
+
+			testValue.ReadPinnedData();
+			conditionValue.ReadPinnedData();
 
 			return ((DoubleVariable)testValue).Value < ((DoubleVariable)conditionValue).Value;
 		}
@@ -346,6 +412,9 @@ public abstract class DoubleCaseExpression(Evaluable expression, RelationalOpera
 		{
 			var conditionValue = expression.Evaluate(context, stackFrame);
 
+			testValue.ReadPinnedData();
+			conditionValue.ReadPinnedData();
+
 			return ((DoubleVariable)testValue).Value >= ((DoubleVariable)conditionValue).Value;
 		}
 	}
@@ -355,6 +424,9 @@ public abstract class DoubleCaseExpression(Evaluable expression, RelationalOpera
 		public override bool IsMatch(Variable testValue, ExecutionContext context, StackFrame stackFrame)
 		{
 			var conditionValue = expression.Evaluate(context, stackFrame);
+
+			testValue.ReadPinnedData();
+			conditionValue.ReadPinnedData();
 
 			return ((DoubleVariable)testValue).Value <= ((DoubleVariable)conditionValue).Value;
 		}
@@ -384,6 +456,9 @@ public abstract class CurrencyCaseExpression(Evaluable expression, RelationalOpe
 		{
 			var conditionValue = expression.Evaluate(context, stackFrame);
 
+			testValue.ReadPinnedData();
+			conditionValue.ReadPinnedData();
+
 			return ((CurrencyVariable)testValue).Value == ((CurrencyVariable)conditionValue).Value;
 		}
 	}
@@ -393,6 +468,9 @@ public abstract class CurrencyCaseExpression(Evaluable expression, RelationalOpe
 		public override bool IsMatch(Variable testValue, ExecutionContext context, StackFrame stackFrame)
 		{
 			var conditionValue = expression.Evaluate(context, stackFrame);
+
+			testValue.ReadPinnedData();
+			conditionValue.ReadPinnedData();
 
 			return ((CurrencyVariable)testValue).Value != ((CurrencyVariable)conditionValue).Value;
 		}
@@ -404,6 +482,9 @@ public abstract class CurrencyCaseExpression(Evaluable expression, RelationalOpe
 		{
 			var conditionValue = expression.Evaluate(context, stackFrame);
 
+			testValue.ReadPinnedData();
+			conditionValue.ReadPinnedData();
+
 			return ((CurrencyVariable)testValue).Value > ((CurrencyVariable)conditionValue).Value;
 		}
 	}
@@ -413,6 +494,9 @@ public abstract class CurrencyCaseExpression(Evaluable expression, RelationalOpe
 		public override bool IsMatch(Variable testValue, ExecutionContext context, StackFrame stackFrame)
 		{
 			var conditionValue = expression.Evaluate(context, stackFrame);
+
+			testValue.ReadPinnedData();
+			conditionValue.ReadPinnedData();
 
 			return ((CurrencyVariable)testValue).Value < ((CurrencyVariable)conditionValue).Value;
 		}
@@ -424,6 +508,9 @@ public abstract class CurrencyCaseExpression(Evaluable expression, RelationalOpe
 		{
 			var conditionValue = expression.Evaluate(context, stackFrame);
 
+			testValue.ReadPinnedData();
+			conditionValue.ReadPinnedData();
+
 			return ((CurrencyVariable)testValue).Value >= ((CurrencyVariable)conditionValue).Value;
 		}
 	}
@@ -433,6 +520,9 @@ public abstract class CurrencyCaseExpression(Evaluable expression, RelationalOpe
 		public override bool IsMatch(Variable testValue, ExecutionContext context, StackFrame stackFrame)
 		{
 			var conditionValue = expression.Evaluate(context, stackFrame);
+
+			testValue.ReadPinnedData();
+			conditionValue.ReadPinnedData();
 
 			return ((CurrencyVariable)testValue).Value <= ((CurrencyVariable)conditionValue).Value;
 		}
@@ -570,6 +660,10 @@ public class IntegerRangeCaseExpression(Evaluable rangeStartExpression, Evaluabl
 
 		var test = (IntegerVariable)testValue;
 
+		rangeStart.ReadPinnedData();
+		rangeEnd.ReadPinnedData();
+		test.ReadPinnedData();
+
 		return
 			(rangeStart.Value <= test.Value) &&
 			(test.Value <= rangeEnd.Value);
@@ -584,6 +678,10 @@ public class LongRangeCaseExpression(Evaluable rangeStartExpression, Evaluable r
 		var rangeEnd = (LongVariable)rangeEndExpression.Evaluate(context, stackFrame);
 
 		var test = (LongVariable)testValue;
+
+		rangeStart.ReadPinnedData();
+		rangeEnd.ReadPinnedData();
+		test.ReadPinnedData();
 
 		return
 			(rangeStart.Value <= test.Value) &&
@@ -600,6 +698,10 @@ public class SingleRangeCaseExpression(Evaluable rangeStartExpression, Evaluable
 
 		var test = (SingleVariable)testValue;
 
+		rangeStart.ReadPinnedData();
+		rangeEnd.ReadPinnedData();
+		test.ReadPinnedData();
+
 		return
 			(rangeStart.Value <= test.Value) &&
 			(test.Value <= rangeEnd.Value);
@@ -615,6 +717,10 @@ public class DoubleRangeCaseExpression(Evaluable rangeStartExpression, Evaluable
 
 		var test = (DoubleVariable)testValue;
 
+		rangeStart.ReadPinnedData();
+		rangeEnd.ReadPinnedData();
+		test.ReadPinnedData();
+
 		return
 			(rangeStart.Value <= test.Value) &&
 			(test.Value <= rangeEnd.Value);
@@ -629,6 +735,10 @@ public class CurrencyRangeCaseExpression(Evaluable rangeStartExpression, Evaluab
 		var rangeEnd = (CurrencyVariable)rangeEndExpression.Evaluate(context, stackFrame);
 
 		var test = (CurrencyVariable)testValue;
+
+		rangeStart.ReadPinnedData();
+		rangeEnd.ReadPinnedData();
+		test.ReadPinnedData();
 
 		return
 			(rangeStart.Value <= test.Value) &&

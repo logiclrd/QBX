@@ -86,6 +86,9 @@ public class IntegerAddition(Evaluable left, Evaluable right) : BinaryExpression
 		var leftValue = (IntegerVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (IntegerVariable)right.Evaluate(context, stackFrame);
 
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
+
 		int sum = leftValue.Value + rightValue.Value;
 
 		if ((sum < short.MinValue) || (sum > short.MaxValue))
@@ -116,6 +119,9 @@ public class LongAddition(Evaluable left, Evaluable right) : BinaryExpression(le
 	{
 		var leftValue = (LongVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (LongVariable)right.Evaluate(context, stackFrame);
+
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
 
 		try
 		{
@@ -152,6 +158,9 @@ public class SingleAddition(Evaluable left, Evaluable right) : BinaryExpression(
 		var leftValue = (SingleVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (SingleVariable)right.Evaluate(context, stackFrame);
 
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
+
 		try
 		{
 			return new SingleVariable(leftValue.Value + rightValue.Value);
@@ -187,6 +196,9 @@ public class DoubleAddition(Evaluable left, Evaluable right) : BinaryExpression(
 		var leftValue = (DoubleVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (DoubleVariable)right.Evaluate(context, stackFrame);
 
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
+
 		try
 		{
 			return new DoubleVariable(leftValue.Value + rightValue.Value);
@@ -221,6 +233,9 @@ public class CurrencyAddition(Evaluable left, Evaluable right) : BinaryExpressio
 	{
 		var leftValue = (CurrencyVariable)left.Evaluate(context, stackFrame);
 		var rightValue = (CurrencyVariable)right.Evaluate(context, stackFrame);
+
+		leftValue.ReadPinnedData();
+		rightValue.ReadPinnedData();
 
 		try
 		{

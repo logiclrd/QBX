@@ -61,6 +61,8 @@ public class IntegerAbsFunction(Evaluable argument) : AbsFunction(argument)
 	{
 		var value = (IntegerVariable)argument.Evaluate(context, stackFrame);
 
+		value.ReadPinnedData();
+
 		return new IntegerVariable(short.Abs(value.Value));
 	}
 
@@ -79,6 +81,8 @@ public class LongAbsFunction(Evaluable argument) : AbsFunction(argument)
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
 		var value = (LongVariable)argument.Evaluate(context, stackFrame);
+
+		value.ReadPinnedData();
 
 		return new LongVariable(int.Abs(value.Value));
 	}
@@ -99,6 +103,8 @@ public class SingleAbsFunction(Evaluable argument) : AbsFunction(argument)
 	{
 		var value = (SingleVariable)argument.Evaluate(context, stackFrame);
 
+		value.ReadPinnedData();
+
 		return new SingleVariable(float.Abs(value.Value));
 	}
 
@@ -118,6 +124,8 @@ public class DoubleAbsFunction(Evaluable argument) : AbsFunction(argument)
 	{
 		var value = (DoubleVariable)argument.Evaluate(context, stackFrame);
 
+		value.ReadPinnedData();
+
 		return new DoubleVariable(double.Abs(value.Value));
 	}
 
@@ -136,6 +144,8 @@ public class CurrencyAbsFunction(Evaluable argument) : AbsFunction(argument)
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
 		var value = (CurrencyVariable)argument.Evaluate(context, stackFrame);
+
+		value.ReadPinnedData();
 
 		return new CurrencyVariable(decimal.Abs(value.Value));
 	}
