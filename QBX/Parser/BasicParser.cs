@@ -3802,14 +3802,23 @@ public class BasicParser
 
 		if (tokenHandler.NextTokenIs(TokenType.OpenParenthesis))
 		{
-			var subscriptTokens = tokenHandler.ExpectParenthesizedTokens();
-
 			declaration.Subscripts = new VariableDeclarationSubscriptList();
 
-			var endTokenRef = new TokenRef();
+			var subscriptTokens = tokenHandler.ExpectParenthesizedTokens();
 
-			foreach (var subscript in SplitCommaDelimitedList(subscriptTokens, endTokenRef))
-				declaration.Subscripts.Add(ParseVariableDeclarationSubscript(subscript, endTokenRef.Token ?? endToken));
+			if (subscriptTokens.Count > 0)
+			{
+				var endTokenRef = new TokenRef();
+
+				foreach (var subscript in SplitCommaDelimitedList(subscriptTokens, endTokenRef))
+					declaration.Subscripts.Add(ParseVariableDeclarationSubscript(subscript, endTokenRef.Token ?? endToken));
+			}
+			else if (requireSubscripts)
+			{
+				throw new SyntaxErrorException(
+					tokenHandler.PreviousToken,
+					"Expected: expression");
+			}
 		}
 		else if (requireSubscripts)
 		{
