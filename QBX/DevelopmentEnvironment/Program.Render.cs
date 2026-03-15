@@ -87,7 +87,9 @@ public partial class Program
 
 			row += RenderViewport(row, ImmediateViewport, connectUp: true, horizontalScrollBar: false);
 
-			RenderReferenceBar(row);
+			TextLibrary.MoveCursor(0, TextLibrary.Height - 1);
+
+			RenderReferenceBar();
 
 			if (isMenuOpen)
 				RenderOpenMenu();
@@ -721,10 +723,13 @@ public partial class Program
 
 	static byte[]? _statusCharBuffer;
 
-	void RenderReferenceBar(int row)
+	void RenderReferenceBar(int? overrideLineNumber = null)
 	{
 		int cursorX = (FocusedViewport?.CursorX ?? 0) + 1;
 		int cursorY = (FocusedViewport?.CursorY ?? 0) + 1;
+
+		if (overrideLineNumber.HasValue)
+			cursorY = overrideLineNumber.Value;
 
 		int referenceBarRemainingChars = TextLibrary.Width
 			- 10 // cursor position
@@ -772,7 +777,6 @@ public partial class Program
 			TextLibrary.WriteText(_spaces, 0, referenceBarRemainingChars);
 		}
 
-
 		if ((_statusCharBuffer == null) || (_statusCharBuffer.Length < 8))
 			_statusCharBuffer = new byte[8];
 
@@ -785,10 +789,10 @@ public partial class Program
 		Configuration.DisplayAttributes.ReferenceBarStatusIndicators.Set(TextLibrary);
 		TextLibrary.WriteText(_statusCharBuffer, 0, 8);
 
-		if (cursorX > 99999)
-			cursorX = 99999;
-		if (cursorY > 999)
-			cursorY = 999;
+		if (cursorX > 999)
+			cursorX = 999;
+		if (cursorY > 99999)
+			cursorY = 99999;
 
 		Configuration.DisplayAttributes.ReferenceBarNormalText.Set(TextLibrary);
 		TextLibrary.WriteNumber(cursorY, 5);

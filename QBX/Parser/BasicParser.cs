@@ -13,7 +13,7 @@ namespace QBX.Parser;
 
 public class BasicParser
 {
-	public CompilationUnit Parse(IEnumerable<Token> tokenStream, bool ignoreErrors = false)
+	public CompilationUnit Parse(IEnumerable<Token> tokenStream, bool ignoreErrors = false, Action<int>? lineCountCallback = null)
 	{
 		var unit = new CompilationUnit();
 
@@ -33,6 +33,8 @@ public class BasicParser
 		foreach (var line in ParseCodeLines(tokenStream, ignoreErrors))
 		{
 			lineIndex++;
+
+			lineCountCallback?.Invoke(lineIndex);
 
 			if (((element == mainElement) || betweenElements)
 			 && (line.IsCommentLine || line.IsDefTypeLine))

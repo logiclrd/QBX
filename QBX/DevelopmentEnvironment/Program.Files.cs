@@ -35,12 +35,12 @@ namespace QBX.DevelopmentEnvironment
 				SplitViewport.SwitchTo(unit.Elements[0]);
 		}
 
-		public void LoadFile(string path, bool replaceExistingProgram)
+		public void LoadFile(string path, bool replaceExistingProgram, Action<int>? lineCountCallback = null)
 		{
 			try
 			{
 				using (var reader = new StreamReader(path, new CP437Encoding(ControlCharacterInterpretation.Semantic)))
-					Load(reader, path, replaceExistingProgram);
+					Load(reader, path, replaceExistingProgram, lineCountCallback);
 			}
 			catch (IOException e)
 			{
@@ -67,7 +67,7 @@ namespace QBX.DevelopmentEnvironment
 
 		static NameComparer s_nameComparer = new NameComparer();
 
-		public void Load(TextReader reader, string filePath, bool replaceExistingProgram)
+		public void Load(TextReader reader, string filePath, bool replaceExistingProgram, Action<int>? lineCountCallback = null)
 		{
 			if (replaceExistingProgram)
 			{
@@ -92,7 +92,7 @@ namespace QBX.DevelopmentEnvironment
 				return;
 			}
 
-			var unit = CompilationUnit.Read(reader, filePath, Parser, ignoreErrors: true);
+			var unit = CompilationUnit.Read(reader, filePath, Parser, ignoreErrors: true, lineCountCallback);
 
 			int insertIndex = 0;
 
@@ -232,6 +232,12 @@ namespace QBX.DevelopmentEnvironment
 
 			try
 			{
+				var dummyUnit = CompilationUnit.CreateNew();
+
+				FocusedViewport.SwitchTo(dummyUnit.Elements[0]);
+
+				string makeFileDirectory = Path.GetDirectoryName(Path.GetFullPath(makeFilePath)) ?? ".";
+
 				using (var reader = new StreamReader(makeFilePath))
 				{
 					while (true)
@@ -243,8 +249,22 @@ namespace QBX.DevelopmentEnvironment
 
 						if (File.Exists(relativePath))
 						{
-							LoadFile(relativePath, replaceExistingProgram: false);
+							FocusedViewport.Heading = Path.GetFileName(resolvedPath);
+							Render();
+
+							LoadFile(
+								resolvedPath,
+								replaceExistingProgram: false,
+								lineCountCallback:
+									lineCount =>
+									{
+										TextLibrary.MoveCursor(0, TextLibrary.Height - 1);
+										RenderReferenceBar(overrideLineNumber: lineCount);
+									});
+
 							success = true;
+
+							FocusedViewport.SwitchTo(dummyUnit.Elements[0]);
 						}
 					}
 				}

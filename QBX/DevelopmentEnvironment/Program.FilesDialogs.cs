@@ -137,7 +137,26 @@ namespace QBX.DevelopmentEnvironment
 			dialog.FileSelected +=
 				(filePath) =>
 				{
-					LoadFile(filePath, replaceExistingProgram);
+					dialog.IsVisible = false;
+
+					var dummyUnit = CompilationUnit.CreateNew();
+
+					dummyUnit.FilePath = filePath;
+
+					FocusedViewport.SwitchTo(dummyUnit.Elements[0]);
+
+					Render();
+
+					LoadFile(
+						filePath,
+						replaceExistingProgram,
+						lineCountCallback:
+							lineCount =>
+							{
+								TextLibrary.MoveCursor(0, TextLibrary.Height - 1);
+								RenderReferenceBar(overrideLineNumber: lineCount);
+							});
+
 					dialog.Close();
 				};
 

@@ -116,11 +116,11 @@ public class CompilationUnit : IRenderableCode, IEditableUnit
 	//
 	// These methods, Read and Write, perform these translations.
 
-	public static CompilationUnit Read(TextReader reader, string filePath, BasicParser parser, bool ignoreErrors = false)
+	public static CompilationUnit Read(TextReader reader, string filePath, BasicParser parser, bool ignoreErrors = false, Action<int>? lineCountCallback = null)
 	{
 		var lexer = new Lexer(reader);
 
-		var unit = parser.Parse(lexer, ignoreErrors);
+		var unit = parser.Parse(lexer, ignoreErrors, lineCountCallback);
 
 		unit.FilePath = filePath;
 
