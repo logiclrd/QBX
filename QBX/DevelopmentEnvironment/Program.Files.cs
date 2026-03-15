@@ -1,12 +1,15 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 using QBX.CodeModel;
 using QBX.DevelopmentEnvironment.Dialogs;
 using QBX.ExecutionEngine;
 using QBX.Firmware.Fonts;
 using QBX.Utility;
+using QBX.Utility.Interop;
 
 namespace QBX.DevelopmentEnvironment
 {
@@ -83,6 +86,12 @@ namespace QBX.DevelopmentEnvironment
 				}
 			}
 
+			if (FileIsAlreadyLoaded(filePath))
+			{
+				ShowDialog(new FilePreviouslyLoadedDialog(Machine, Configuration, filePath));
+				return;
+			}
+
 			var unit = CompilationUnit.Read(reader, filePath, Parser, ignoreErrors: true);
 
 			int insertIndex = 0;
@@ -110,6 +119,44 @@ namespace QBX.DevelopmentEnvironment
 
 			if (SplitViewport != null)
 				SplitViewport.SwitchTo(unit.Elements[0]);
+		}
+
+		private bool FileIsAlreadyLoaded(string filePath)
+		{
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+				return FileIsAlreadyLoaded(filePath, new FileIndexProvider());
+			else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+				return FileIsAlreadyLoaded(filePath, new LinuxINodeProvider());
+			else if (RuntimeInformation.IsOSPlatform(OSPlatform.FreeBSD))
+				return FileIsAlreadyLoaded(filePath, new FreeBSDINodeProvider());
+			else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+				return FileIsAlreadyLoaded(filePath, new OSXINodeProvider());
+			else
+			{
+				filePath = Path.GetFullPath(filePath);
+
+				return LoadedFiles.Any(u => u.FilePath.Equals(filePath));
+			}
+		}
+
+		private bool FileIsAlreadyLoaded<TINode>(string filePath, INodeProvider<TINode> inodeProvider)
+			where TINode : INode<TINode>
+		{
+			if (inodeProvider.TryGetINode(filePath, out var inode))
+			{
+				foreach (var file in LoadedFiles)
+				{
+					if (inodeProvider.TryGetINode(file.FilePath, out var loadedINode)
+					 && (inode == loadedINode))
+						return true;
+				}
+
+				return false;
+			}
+
+			filePath = Path.GetFullPath(filePath);
+
+			return LoadedFiles.Any(u => u.FilePath.Equals(filePath));
 		}
 
 		public void SaveFile(IEditableUnit editable, string filePath, bool saveBackup = true)
