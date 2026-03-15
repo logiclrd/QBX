@@ -81,6 +81,7 @@ public class InstantWatchDialog : Dialog
 		cmdHelp.Width = 8;
 		cmdHelp.Text = "Help";
 		cmdHelp.AccessKeyIndex = 0;
+		cmdHelp.Activated = OnShowHelpPopup;
 
 		Widgets.Add(bdrExpression);
 		Widgets.Add(bdrValue);

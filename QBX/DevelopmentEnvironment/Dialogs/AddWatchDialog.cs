@@ -77,6 +77,7 @@ public class AddWatchDialog : Dialog
 		cmdHelp.Width = 8;
 		cmdHelp.Height = 1;
 		cmdHelp.Text = "Help";
+		cmdHelp.Activated += cmdHelp_Activated;
 
 		Widgets.Add(lblPrompt);
 		Widgets.Add(bdrExpression);
@@ -101,5 +102,10 @@ public class AddWatchDialog : Dialog
 	void cmdCancel_Activated()
 	{
 		Close();
+	}
+
+	void cmdHelp_Activated()
+	{
+		OnShowHelpPopup();
 	}
 }

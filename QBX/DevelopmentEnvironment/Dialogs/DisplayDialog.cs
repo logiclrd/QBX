@@ -201,6 +201,7 @@ public class DisplayDialog : Dialog
 		cmdHelp.Height = 1;
 		cmdHelp.Text = "Help";
 		cmdHelp.AccessKeyIndex = 0;
+		cmdHelp.Activated += cmdHelp_Activated;
 
 		Widgets.Add(bdrColour);
 		Widgets.Add(lblUserInterfaceElement);
@@ -309,5 +310,10 @@ public class DisplayDialog : Dialog
 	void cmdCancel_Activated()
 	{
 		Close();
+	}
+
+	void cmdHelp_Activated()
+	{
+		OnShowHelpPopup();
 	}
 }

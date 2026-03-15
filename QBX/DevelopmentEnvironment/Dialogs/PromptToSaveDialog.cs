@@ -70,6 +70,7 @@ public class PromptToSaveDialog : Dialog
 				Text = "Help",
 				Width = 8,
 				AccessKeyIndex = 0,
+				Activated = OnShowHelpPopup,
 			});
 
 		SetFocus(Widgets[1]);

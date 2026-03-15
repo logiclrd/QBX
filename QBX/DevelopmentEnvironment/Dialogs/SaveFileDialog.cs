@@ -196,6 +196,7 @@ public class SaveFileDialog : DialogWithDirectoryList
 		cmdHelp.Height = 1;
 		cmdHelp.Text = "Help";
 		cmdHelp.AccessKeyIndex = 0;
+		cmdHelp.Activated = cmdHelp_Activated;
 
 		Widgets.Add(lblFileName);
 		Widgets.Add(bdrFileName);
@@ -358,5 +359,10 @@ public class SaveFileDialog : DialogWithDirectoryList
 	private void cmdCancel_Activated()
 	{
 		Close();
+	}
+
+	private void cmdHelp_Activated()
+	{
+		OnShowHelpPopup();
 	}
 }
