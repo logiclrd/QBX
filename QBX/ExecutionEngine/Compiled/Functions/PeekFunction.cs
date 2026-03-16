@@ -28,7 +28,9 @@ public class PeekFunction : Function
 
 		var addressValue = AddressExpression.Evaluate(context, stackFrame);
 
+		int address = 0xFFFF & addressValue.CoerceToInt(context: AddressExpression);
+
 		return new IntegerVariable(context.Machine.MemoryBus[
-			context.RuntimeState.SegmentBase + addressValue.CoerceToInt(context: AddressExpression)]);
+			context.RuntimeState.SegmentBase + address]);
 	}
 }

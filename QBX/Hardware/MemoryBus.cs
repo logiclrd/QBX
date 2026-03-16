@@ -46,4 +46,29 @@ public class MemoryBus : IMemory
 		span = Span<byte>.Empty;
 		return false;
 	}
+
+	public bool TryGetReadOnlySpan(int offset, int length, out ReadOnlySpan<byte> span)
+	{
+		int segment = offset >> 4;
+
+		if ((segment >= 0) || (segment < _segmentMap.Length))
+		{
+			var map = _segmentMap[segment];
+
+			bool allSameMap = true;
+
+			for (int i = 16 - (offset & 15), testSegment = segment + 1; i < length; i += 16, testSegment++)
+				if (_segmentMap[testSegment] != map)
+				{
+					allSameMap = false;
+					break;
+				}
+
+			if (allSameMap)
+				return map.TryGetReadOnlySpan(offset, length, out span);
+		}
+
+		span = Span<byte>.Empty;
+		return false;
+	}
 }

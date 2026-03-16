@@ -650,6 +650,9 @@ public partial class DOS
 
 	public int Write(int fileHandle, IMemory systemMemory, int address, int count)
 	{
+		if (systemMemory.TryGetReadOnlySpan(address, count, out var bufferSpan))
+			return Write(fileHandle, bufferSpan, out _);
+
 		byte b = default;
 
 		if ((fileHandle < 0) || (fileHandle >= Files.Count)

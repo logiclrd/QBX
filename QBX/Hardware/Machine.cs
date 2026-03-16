@@ -9,6 +9,7 @@ public class Machine
 	public SystemClock SystemClock { get; }
 	public SystemMemory SystemMemory { get; }
 	public GraphicsArray GraphicsArray { get; }
+	public FirmwareROM FirmwareROM { get; }
 	public Adapter Display { get; }
 	public Video VideoFirmware { get; }
 	public MouseDriver MouseDriver { get; }
@@ -44,7 +45,10 @@ public class Machine
 
 		MemoryBus = new MemoryBus();
 
+		VideoFirmware = new Video(this);
+
 		GraphicsArray = new GraphicsArray();
+		FirmwareROM = new FirmwareROM(VideoFirmware);
 		Display = new Adapter(GraphicsArray);
 		Keyboard = new Keyboard(this);
 		Mouse = new Mouse();
@@ -53,8 +57,8 @@ public class Machine
 
 		MemoryBus.MapRange(0x0000, SystemMemory.Length, SystemMemory);
 		MemoryBus.MapRange(0xA000, GraphicsArray.VRAM.Length, GraphicsArray);
+		MemoryBus.MapRange(0xF000, FirmwareROM.Length, FirmwareROM);
 
-		VideoFirmware = new Video(this);
 		MouseDriver = new MouseDriver(this);
 
 		InterruptHandlers[0x10] = new Interrupt0x10(this);

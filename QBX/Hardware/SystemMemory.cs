@@ -56,6 +56,14 @@ public class SystemMemory : IMemory
 		}
 	}
 
+	public bool TryGetReadOnlySpan(int offset, int length, out ReadOnlySpan<byte> span)
+	{
+		bool result = TryGetSpan(offset, length, out var readWriteSpan);
+
+		span = readWriteSpan;
+		return result;
+	}
+
 	public bool TryGetSpan(int offset, int length, out Span<byte> span)
 	{
 		if ((offset >= 0)

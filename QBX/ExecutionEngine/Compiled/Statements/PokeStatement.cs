@@ -19,6 +19,8 @@ public class PokeStatement(CodeModel.Statements.Statement source) : Executable(s
 		int address = AddressExpression.EvaluateAndCoerceToInt(context, stackFrame);
 		int value = ValueExpression.EvaluateAndCoerceToInt(context, stackFrame);
 
+		address &= 0xFFFF;
+
 		context.Machine.MemoryBus[context.RuntimeState.SegmentBase + address] =
 			unchecked((byte)value);
 	}

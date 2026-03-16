@@ -894,6 +894,12 @@ public class GraphicsArray : IMemory
 		return 0;
 	}
 
+	public byte InPort2(int basePortNumber, byte index, out bool handled)
+	{
+		OutPort(basePortNumber, index);
+		return InPort(basePortNumber + 1, out handled);
+	}
+
 	public void BeginVerticalRetrace()
 	{
 		InputStatus.Register1 |= InputStatusRegisters.Register1_VerticalRetrace;
@@ -902,12 +908,6 @@ public class GraphicsArray : IMemory
 	public void EndVerticalRetrace()
 	{
 		InputStatus.Register1 &= unchecked((byte)~InputStatusRegisters.Register1_VerticalRetrace);
-	}
-
-	public byte InPort2(int basePortNumber, byte index, out bool handled)
-	{
-		OutPort(basePortNumber, index);
-		return InPort(basePortNumber + 1, out handled);
 	}
 
 	public byte this[int address]
@@ -953,6 +953,14 @@ public class GraphicsArray : IMemory
 				}
 			}
 		}
+	}
+
+	public bool TryGetReadOnlySpan(int offset, int length, out ReadOnlySpan<byte> span)
+	{
+		bool result = TryGetSpan(offset, length, out var readWriteSpan);
+
+		span = readWriteSpan;
+		return result;
 	}
 
 	public bool TryGetSpan(int offset, int length, out Span<byte> span)
