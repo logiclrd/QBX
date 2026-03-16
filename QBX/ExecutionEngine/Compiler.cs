@@ -866,10 +866,22 @@ public class Compiler
 				{
 					var declaration = commonStatement.Declarations[i];
 
-					int variableIndex = mapper.DeclareVariable(
-						declaration.Name,
-						variableTypes[i],
-						declaration.NameToken);
+					int variableIndex;
+
+					if (declaration.Subscripts == null)
+					{
+						variableIndex = mapper.DeclareVariable(
+							declaration.Name,
+							variableTypes[i],
+							declaration.NameToken);
+					}
+					else
+					{
+						variableIndex = mapper.DeclareArray(
+							declaration.Name,
+							variableTypes[i],
+							declaration.NameToken);
+					}
 
 					mapper.LinkCommonVariable(variableIndex, block, i);
 
@@ -1176,19 +1188,21 @@ public class Compiler
 								}
 							}
 
-							// When the following conditions are met, arrays are configured prior to execution commenting:
+							// When the following conditions are met, arrays are configured prior to execution commencing:
 							// - '$STATIC
 							// - The DIM statement is not in any sort of conditional compilation clause (IF, FOR, etc.)
 							// - The DIM statement is not inside a SUB, FUNCTION or DEF FN
 							// - All of the bounds expressions are evaluable at compile time
 							// - There is no preceding DIM statement for the same identifier
+							// - The variable is not part of a COMMON block.
 
 							bool isStatic =
 								compilation.UseStaticArrays &&
 								(container == routine) && // not in any subsequence
 								routine.IsMainRoutine &&
 								constantBounds &&
-								isNewArrayVariable;
+								isNewArrayVariable &&
+								!mapper.IsLinkedToCommonBlock(variableIndex);
 
 							if (isStatic)
 								routine.AddStaticArray(translatedDimStatement);

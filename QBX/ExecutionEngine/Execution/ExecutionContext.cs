@@ -572,6 +572,9 @@ public class ExecutionContext
 	{
 		retryStatement = false;
 
+		ErrVariable.Value = (short)error.ErrorNumber;
+		ErlVariable.Value = error.LineNumber;
+
 		if (handler.Response == ErrorResponse.SkipStatement)
 			return;
 
@@ -581,9 +584,6 @@ public class ExecutionContext
 		try
 		{
 			stackFrame.IsHandlingError = true;
-
-			ErrVariable.Value = (short)error.ErrorNumber;
-			ErlVariable.Value = error.LineNumber;
 
 			_goTo = handler.HandlerPath.Clone();
 

@@ -138,6 +138,8 @@ public class Mapper
 		public int Index => index;
 		public DataType Type = DataType.Integer;
 
+		public bool IsStaticArray = false;
+
 		public int LinkedToRootVariableIndex = -1;
 
 		public CommonBlock? LinkedToCommonBlock;
@@ -181,6 +183,19 @@ public class Mapper
 			throw new Exception("Can only make global variables working with the root Mapper");
 
 		_globalArrayNames.Add(identifier);
+	}
+
+	public void MakeStaticArray(int variableIndex)
+	{
+		if (_variables[variableIndex].IsStaticArray)
+			throw new Exception("Internal error: Making the same variable index a static array more than once");
+
+		_variables[variableIndex].IsStaticArray = true;
+	}
+
+	public bool IsStaticArray(int variableIndex)
+	{
+		return _variables[variableIndex].IsStaticArray;
 	}
 
 	public void LinkGlobalVariablesAndArrays()
@@ -398,6 +413,11 @@ public class Mapper
 			throw new InvalidOperationException("Cannot create a mapper scope off of a scope");
 
 		return new Mapper(this, subroutine);
+	}
+
+	public bool IsLinkedToCommonBlock(int variableIndex)
+	{
+		return (_variables[variableIndex].LinkedToCommonBlock != null);
 	}
 
 	public void LinkCommonVariable(int variableIndex, CommonBlock commonBlock, int commonBlockVariableIndex)
@@ -646,7 +666,12 @@ public class Mapper
 
 		if (_arrayIndexByName.TryGetValue(name, out var index)
 		 || _arrayIndexByName.TryGetValue(qualifiedName, out index))
-			throw CompilerException.DuplicateDefinition(token);
+		{
+			if (IsStaticArray(index))
+				throw CompilerException.DuplicateDefinition(token);
+
+			return index;
+		}
 
 		index = _variables.Count;
 

@@ -235,6 +235,8 @@ public class Routine : Sequence
 		dimStatement.IsDynamic = false;
 
 		StaticArrays.Add(dimStatement);
+
+		Mapper.MakeStaticArray(dimStatement.VariableIndex);
 	}
 
 	public bool IsStaticArray(int variableIndex)

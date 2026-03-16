@@ -50,7 +50,7 @@ public class UBoundFunction : Function
 		var array = arrayVariable.Array;
 
 		if (array.IsUninitialized)
-			throw new Exception("Internal error: array is uninitialized");
+			throw RuntimeException.SubscriptOutOfRange(Source);
 
 		int dimension = 1;
 

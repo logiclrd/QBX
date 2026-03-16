@@ -8,5 +8,13 @@ namespace QBX.ExecutionEngine;
 
 public class CommonBlockStorage(IEnumerable<DataType> variableTypes)
 {
-	public readonly Variable[] Variables = variableTypes.Select(Variable.Construct).ToArray();
+	public readonly Variable[] Variables = variableTypes.Select(Construct).ToArray();
+
+	static Variable Construct(DataType dataType)
+	{
+		if (dataType.IsArray)
+			return Variable.ConstructArray(dataType);
+		else
+			return Variable.Construct(dataType);
+	}
 }
