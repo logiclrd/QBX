@@ -152,7 +152,7 @@ public class ConsoleFileDescriptor(DOS owner) : FileDescriptor("CON")
 
 		try
 		{
-			visual.ProcessControlCharacters = true;
+			visual.ProcessControlCharacters = (IOMode == IOMode.ASCII);
 			visual.WriteText(buffer);
 
 			return buffer.Length;

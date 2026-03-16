@@ -60,7 +60,7 @@ public class SystemMemory : IMemory
 	{
 		if ((offset >= 0)
 		 && (offset < _ram.Length)
-		 && (_ram.Length - offset <= length))
+		 && (offset + length <= _ram.Length))
 		{
 			span = _ram.AsSpan().Slice(offset, length);
 			return true;
