@@ -809,7 +809,7 @@ public class BasicParser
 				var endTokenRef = new TokenRef();
 
 				foreach (var range in SplitCommaDelimitedList(tokenHandler.RemainingTokens, endTokenRef))
-					dim.Declarations.Add(ParseVariableDeclaration(range, endTokenRef.Token ?? tokenHandler.EndToken, requireSubscripts));
+					dim.AddDeclaration(ParseVariableDeclaration(range, endTokenRef.Token ?? tokenHandler.EndToken, requireSubscripts));
 
 				return dim;
 			}

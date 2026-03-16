@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -13,6 +14,11 @@ public class VariableDeclarationSubscriptList : IRenderableCode
 	public void Add(VariableDeclarationSubscript subscript)
 	{
 		Subscripts.Add(subscript);
+	}
+
+	public void Clear()
+	{
+		Subscripts.Clear();
 	}
 
 	public void Render(TextWriter writer)

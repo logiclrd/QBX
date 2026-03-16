@@ -13,6 +13,13 @@ public class CommonStatement : DimStatement
 	public override bool AlwaysDeclareArrays => false;
 	public override bool DeclareScalars => false;
 
+	public override void AddDeclaration(VariableDeclaration declaration)
+	{
+		declaration.Subscripts?.Clear();
+
+		base.AddDeclaration(declaration);
+	}
+
 	protected override string StatementName => "COMMON";
 
 	protected override void RenderBlockName(TextWriter writer)

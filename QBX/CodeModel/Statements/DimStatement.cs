@@ -8,10 +8,17 @@ public class DimStatement : Statement
 	public override StatementType Type => StatementType.Dim;
 
 	public bool Shared { get; set; }
-	public List<VariableDeclaration> Declarations { get; } = new List<VariableDeclaration>();
+	public IReadOnlyList<VariableDeclaration> Declarations => _declarations;
+
+	List<VariableDeclaration> _declarations = new List<VariableDeclaration>();
 
 	public virtual bool AlwaysDeclareArrays => true;
 	public virtual bool DeclareScalars => true;
+
+	public virtual void AddDeclaration(VariableDeclaration declaration)
+	{
+		_declarations.Add(declaration);
+	}
 
 	protected virtual string StatementName => "DIM";
 
