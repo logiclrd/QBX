@@ -31,6 +31,7 @@ public class ExecutionContext
 {
 	public Machine Machine;
 	public PlayProcessor PlayProcessor;
+	public DrawProcessor DrawProcessor;
 
 	public VisualLibrary VisualLibrary => Machine.VideoFirmware.VisualLibrary;
 
@@ -60,50 +61,50 @@ public class ExecutionContext
 
 	public readonly StringValue CommandLine = new StringValue();
 
-	public readonly Dictionary<int, SurfacedString> SurfacedStrings = new Dictionary<int, SurfacedString>();
-	public int NextSurfacedStringKey = 1;
+	public readonly Dictionary<ushort, SurfacedVariable> SurfacedVariables = new();
+	public ushort NextSurfacedVariableKey = 1;
 
-	int AddSurfacedString(SurfacedString surfacedString)
+	ushort AddSurfacedVariable(SurfacedVariable surfacedVariable)
 	{
-		int key = NextSurfacedStringKey++;
+		ushort key = NextSurfacedVariableKey++;
 
-		SurfacedStrings[key] = surfacedString;
+		SurfacedVariables[key] = surfacedVariable;
 
 		return key;
 	}
 
-	public int SurfaceString(StackFrame stackFrame, int variableIndex)
+	public ushort SurfaceVariable(StackFrame stackFrame, int variableIndex)
 	{
-		var surfacedString = new SurfacedString();
+		var surfacedVariable = new SurfacedVariable();
 
-		surfacedString.StackFrame = new WeakReference<StackFrame>(stackFrame);
-		surfacedString.Index = variableIndex;
+		surfacedVariable.StackFrame = new WeakReference<StackFrame>(stackFrame);
+		surfacedVariable.Index = variableIndex;
 
-		return AddSurfacedString(surfacedString);
+		return AddSurfacedVariable(surfacedVariable);
 	}
 
-	public int SurfaceString(ArrayVariable array, int arrayIndex)
+	public ushort SurfaceVariable(ArrayVariable array, int arrayIndex)
 	{
-		var surfacedString = new SurfacedString();
+		var surfacedVariable = new SurfacedVariable();
 
-		surfacedString.Array = new WeakReference<ArrayVariable>(array);
-		surfacedString.Index = arrayIndex;
+		surfacedVariable.Array = new WeakReference<ArrayVariable>(array);
+		surfacedVariable.Index = arrayIndex;
 
-		return AddSurfacedString(surfacedString);
+		return AddSurfacedVariable(surfacedVariable);
 	}
 
-	public StringVariable? GetSurfacedString(int key)
+	public Variable? GetSurfacedVariable(ushort key)
 	{
-		if (!SurfacedStrings.TryGetValue(key, out var surfacedString))
+		if (!SurfacedVariables.TryGetValue(key, out var surfacedVariable))
 			return null;
 
-		if (surfacedString.Get() is not StringVariable stringVariable)
+		if (surfacedVariable.Get() is not Variable variable)
 		{
-			SurfacedStrings.Remove(key);
+			SurfacedVariables.Remove(key);
 			return null;
 		}
 
-		return stringVariable;
+		return variable;
 	}
 
 	public readonly Dictionary<int, OpenFile> Files = new Dictionary<int, OpenFile>();
@@ -214,6 +215,8 @@ public class ExecutionContext
 		Machine = machine;
 		PlayProcessor = playProcessor;
 		EventHub = eventHub;
+
+		DrawProcessor = new DrawProcessor();
 
 		_executionState.EnterExecution += AttachKeyEventInterceptor;
 		_executionState.ExitExecution += DetachKeyEventInterceptor;

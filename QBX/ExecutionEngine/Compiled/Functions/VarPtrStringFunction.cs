@@ -10,6 +10,7 @@ namespace QBX.ExecutionEngine.Compiled.Functions;
 public class VarPtrStringFunction : Function
 {
 	public Evaluable? VariableExpression;
+	public SurfacedVariableType SurfacedVariableType;
 
 	protected override void SetArgument(int index, Evaluable value)
 	{
@@ -21,6 +22,19 @@ public class VarPtrStringFunction : Function
 			throw CompilerException.ExpectedVariable(value.Source);
 
 		VariableExpression = value;
+
+		SurfacedVariableType =
+			value.Type.PrimitiveType switch
+			{
+				PrimitiveDataType.Integer => SurfacedVariableType.Integer,
+				PrimitiveDataType.Long => SurfacedVariableType.Long,
+				PrimitiveDataType.Single => SurfacedVariableType.Single,
+				PrimitiveDataType.Double => SurfacedVariableType.Double,
+				PrimitiveDataType.Currency => SurfacedVariableType.Currency,
+				PrimitiveDataType.String => SurfacedVariableType.String,
+
+				_ => SurfacedVariableType.Unknown,
+			};
 	}
 
 	public override void CollapseConstantSubexpressions()
@@ -32,10 +46,27 @@ public class VarPtrStringFunction : Function
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
-		int key;
+		if (VariableExpression == null)
+			throw new Exception("VarPtrStringFunction with no VariableExpression");
+
+		var variable = VariableExpression.Evaluate(context, stackFrame);
+
+		if (variable.SurfacedVariable != null)
+		{
+			if (variable.SurfacedVariable.IsValid)
+			{
+				var existingDescriptorSpan = new Span<SurfacedVariableDescriptor>(ref variable.SurfacedVariableDescriptor);
+
+				var existingDescriptorBytes = MemoryMarshal.AsBytes(existingDescriptorSpan);
+
+				return new StringVariable(new StringValue(existingDescriptorBytes));
+			}
+		}
+
+		ushort key;
 
 		if (VariableExpression is IdentifierExpression identifierExpression)
-			key = context.SurfaceString(stackFrame, identifierExpression.VariableIndex);
+			key = context.SurfaceVariable(stackFrame, identifierExpression.VariableIndex);
 		else if (VariableExpression is ArrayElementExpression arrayElementExpression)
 		{
 			var array = (ArrayVariable)arrayElementExpression.ArrayExpression.Evaluate(context, stackFrame);
@@ -47,15 +78,23 @@ public class VarPtrStringFunction : Function
 
 			int elementIndex = array.Array.Subscripts.GetElementIndex(subscriptValues, arrayElementExpression.SubscriptExpressions);
 
-			key = context.SurfaceString(array, elementIndex);
+			key = context.SurfaceVariable(array, elementIndex);
 		}
 		else
 			throw RuntimeException.IllegalFunctionCall(Source);
 
-		var keySpan = new Span<int>(ref key);
+		var descriptor = new SurfacedVariableDescriptor();
 
-		var keyBytes = MemoryMarshal.AsBytes(keySpan).Slice(0, 3);
+		descriptor.Key = key;
+		descriptor.Type = SurfacedVariableType;
 
-		return new StringVariable(new StringValue(keyBytes));
+		variable.SurfacedVariable = context.SurfacedVariables[key];
+		variable.SurfacedVariableDescriptor = descriptor;
+
+		var descriptorSpan = new Span<SurfacedVariableDescriptor>(ref descriptor);
+
+		var descriptorBytes = MemoryMarshal.AsBytes(descriptorSpan);
+
+		return new StringVariable(new StringValue(descriptorBytes));
 	}
 }

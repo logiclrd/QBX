@@ -5,7 +5,7 @@ using System.Text;
 
 namespace QBX.Firmware.Fonts;
 
-class CP437Encoding : Encoding
+public class CP437Encoding : Encoding
 {
 	Dictionary<char, byte> _charToByte;
 	char[] _byteToChar;

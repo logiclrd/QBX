@@ -991,6 +991,15 @@ public class BasicParser
 				return statement;
 			}
 
+			case TokenType.DRAW:
+			{
+				var draw = new DrawStatement();
+
+				draw.CommandExpression = ParseExpressionForStatement(draw, tokenHandler.RemainingTokens, tokenHandler.EndToken);
+
+				return draw;
+			}
+
 			case TokenType.ELSE:
 			{
 				if (isNested)

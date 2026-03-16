@@ -23,8 +23,9 @@ public class ScreenStatement(CodeModel.Statements.Statement? source) : Executabl
 			if (!context.Machine.VideoFirmware.SetMode(hardwareMode))
 				throw RuntimeException.IllegalFunctionCall(ModeExpression.Source);
 
-			if (context.VisualLibrary is GraphicsLibrary graphics)
-				graphics.LastPoint = (graphics.Width / 2, graphics.Height / 2);
+			var graphics = context.VisualLibrary as GraphicsLibrary;
+
+			graphics?.LastPoint = (graphics.Width / 2, graphics.Height / 2);
 
 			if (Video.Modes[hardwareMode] is ModeParameters modeParams)
 			{
@@ -40,6 +41,11 @@ public class ScreenStatement(CodeModel.Statements.Statement? source) : Executabl
 				else if (modeParams.IsMonochrome)
 					context.RuntimeState.MaximumAttribute = 1;
 			}
+
+			if (graphics != null)
+				context.DrawProcessor.Initialize(graphics, context.RuntimeState.MaximumAttribute);
+			else
+				context.DrawProcessor.Disable();
 		}
 
 		if (ActivePageExpression != null)

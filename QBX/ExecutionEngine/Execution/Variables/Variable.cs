@@ -6,6 +6,9 @@ namespace QBX.ExecutionEngine.Execution.Variables;
 
 public abstract class Variable
 {
+	public SurfacedVariable? SurfacedVariable;
+	public SurfacedVariableDescriptor SurfacedVariableDescriptor;
+
 	public static Variable Construct(DataType type)
 	{
 		if (type.IsArray)

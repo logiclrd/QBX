@@ -1263,6 +1263,18 @@ public class Compiler
 
 				break;
 			}
+			case CodeModel.Statements.DrawStatement drawStatement:
+			{
+				var translatedDrawStatement = new DrawStatement(drawStatement);
+
+				TranslateStringArgumentExpression(
+					ref translatedDrawStatement.CommandStringExpression,
+					drawStatement.CommandExpression);
+
+				container.Append(translatedDrawStatement);
+
+				break;
+			}
 			case CodeModel.Statements.ElseStatement: // these are normally subsumed by IfStatement parsing
 			case CodeModel.Statements.ElseIfStatement:
 				throw new RuntimeException(statement, "ELSE without IF");

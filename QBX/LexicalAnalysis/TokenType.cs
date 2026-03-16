@@ -87,6 +87,7 @@ public enum TokenType
 	[KeywordToken("DIR$")] DIR,
 	[KeywordToken] DO,
 	[KeywordToken] DOUBLE,
+	[KeywordToken] DRAW,
 	[KeywordToken] ELSE,
 	[KeywordToken] ELSEIF,
 	[KeywordToken] END,

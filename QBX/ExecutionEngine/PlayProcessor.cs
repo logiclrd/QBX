@@ -4,14 +4,15 @@ using System.Runtime.InteropServices;
 using System.Threading;
 
 using QBX.ExecutionEngine.Execution;
-using QBX.Firmware.Fonts;
+using QBX.ExecutionEngine.Execution.Variables;
+
 using QBX.Hardware;
 
 using ExecutionContext = QBX.ExecutionEngine.Execution.ExecutionContext;
 
 namespace QBX.ExecutionEngine;
 
-public class PlayProcessor
+public class PlayProcessor : ProcessorCommon
 {
 	Machine _machine;
 
@@ -55,8 +56,6 @@ public class PlayProcessor
 
 	TimeSpan _noteOnDuration, _noteOffDuration;
 
-	static readonly CP437Encoding s_cp437 = new CP437Encoding(ControlCharacterInterpretation.Semantic);
-
 	public double GetZNoteFrequency(int znote)
 	{
 		const int ZNote440 = 34;
@@ -93,82 +92,13 @@ public class PlayProcessor
 
 	public void PlayCommandString(Span<byte> commandString, ExecutionContext? executionContext, CodeModel.Statements.Statement? source)
 	{
+		CurrentSource = source;
+
 		var input = commandString;
-
-		static void Advance(ref Span<byte> i)
-			=> i = i.Slice(1);
-
-		static void SkipWhitespace(ref Span<byte> i)
-		{
-			// PLAY statements ignore spaces (32) and tabs (9)
-			while ((i.Length > 0) && ((i[0] == 32) || (i[0] == 9)))
-				i = i.Slice(1);
-		}
-
-		static void AdvanceAndSkipWhitespace(ref Span<byte> i)
-		{
-			Advance(ref i);
-			SkipWhitespace(ref i);
-		}
-
-		Exception Fail() => throw RuntimeException.IllegalFunctionCall(source);
-
-		int ExpectNumber(ref Span<byte> input)
-		{
-			SkipWhitespace(ref input);
-
-			if (input.Length == 0)
-				Fail();
-
-			byte ch = input[0];
-
-			if (!s_cp437.IsDigit(ch))
-				Fail();
-
-			int value = s_cp437.DigitValue(ch);
-			int numDigits = 1;
-
-			Advance(ref input);
-
-			while (input.Length > 0)
-			{
-				ch = input[0];
-
-				if (!s_cp437.IsDigit(ch))
-					break;
-
-				Advance(ref input);
-
-				if (numDigits == 4)
-					Fail();
-
-				value = value * 10 + s_cp437.DigitValue(ch);
-				numDigits++;
-			}
-
-			return value;
-		}
-
-		void ExpectRange(int n, int min, int max)
-		{
-			if ((n < min) || (n > max))
-				Fail();
-		}
-
-		int ExpectNumberInRange(ref Span<byte> input, int min, int max)
-		{
-			int value = ExpectNumber(ref input);
-
-			ExpectRange(value, min, max);
-
-			return value;
-		}
-
-		Span<byte> surfacedStringKeyBytes = stackalloc byte[4];
 
 		while (input.Length > 0)
 		{
-			byte ch = s_cp437.ToUpper(input[0]);
+			byte ch = Encoding.ToUpper(input[0]);
 
 			switch (ch)
 			{
@@ -178,15 +108,15 @@ public class PlayProcessor
 					SkipWhitespace(ref input);
 					break;
 				}
-				case (byte)'O': // octave
+				case O: // octave
 				{
 					AdvanceAndSkipWhitespace(ref input);
 
-					_octave = ExpectNumberInRange(ref input, 0, 6);
+					_octave = ExpectIntegerInRange(ref input, 0, 6, executionContext);
 
 					break;
 				}
-				case (byte)'<': // octave down
+				case LeftAngle: // octave down
 				{
 					AdvanceAndSkipWhitespace(ref input);
 
@@ -196,7 +126,7 @@ public class PlayProcessor
 
 					break;
 				}
-				case (byte)'>': // octave up
+				case RightAngle: // octave up
 				{
 					AdvanceAndSkipWhitespace(ref input);
 
@@ -207,11 +137,11 @@ public class PlayProcessor
 					break;
 				}
 
-				case (byte)'N': // znote
+				case N: // znote
 				{
 					AdvanceAndSkipWhitespace(ref input);
 
-					int znote = ExpectNumberInRange(ref input, 0, 84);
+					int znote = ExpectIntegerInRange(ref input, 0, 84, executionContext);
 
 					if (znote == 0)
 						PlayRest(_noteOnDuration + _noteOffDuration);
@@ -224,25 +154,25 @@ public class PlayProcessor
 					break;
 				}
 
-				case (byte)'C': // note in current octave
-				case (byte)'D':
-				case (byte)'E':
-				case (byte)'F':
-				case (byte)'G':
-				case (byte)'A':
-				case (byte)'B':
+				case C: // note in current octave
+				case D:
+				case E:
+				case F:
+				case G:
+				case A:
+				case B:
 				{
 					int znote = _octave * 12;
 
 					switch (ch)
 					{
-						case (byte)'C': znote += 1; break;
-						case (byte)'D': znote += 3; break;
-						case (byte)'E': znote += 5; break;
-						case (byte)'F': znote += 6; break;
-						case (byte)'G': znote += 8; break;
-						case (byte)'A': znote += 10; break;
-						case (byte)'B': znote += 12; break;
+						case C: znote += 1; break;
+						case D: znote += 3; break;
+						case E: znote += 5; break;
+						case F: znote += 6; break;
+						case G: znote += 8; break;
+						case A: znote += 10; break;
+						case B: znote += 12; break;
 					}
 
 					AdvanceAndSkipWhitespace(ref input);
@@ -251,12 +181,12 @@ public class PlayProcessor
 					{
 						switch (input[0])
 						{
-							case (byte)'+':
-							case (byte)'#':
+							case Plus:
+							case Sharp:
 								znote++;
 								AdvanceAndSkipWhitespace(ref input);
 								break;
-							case (byte)'-':
+							case Minus:
 								znote--;
 								AdvanceAndSkipWhitespace(ref input);
 								break;
@@ -268,9 +198,9 @@ public class PlayProcessor
 
 					if (input.Length > 0)
 					{
-						if (s_cp437.IsDigit(input[0]))
+						if (Encoding.IsDigit(input[0]))
 						{
-							int duration = ExpectNumberInRange(ref input, 1, 64);
+							int duration = ExpectIntegerInRange(ref input, 1, 64, null);
 
 							CalculateNoteDurations(duration, out on, out off);
 						}
@@ -279,7 +209,7 @@ public class PlayProcessor
 					var onDot = on / 2;
 					var offDot = off / 2;
 
-					while ((input.Length > 0) && (input[0] == (byte)'.'))
+					while ((input.Length > 0) && (input[0] == Dot))
 					{
 						on += onDot;
 						off += offDot;
@@ -297,37 +227,37 @@ public class PlayProcessor
 					break;
 				}
 
-				case (byte)'L': // note length, as divisor -- 64 == 1/64 note
+				case L: // note length, as divisor -- 64 == 1/64 note
 				{
 					AdvanceAndSkipWhitespace(ref input);
 
-					_noteLengthDivisor = ExpectNumberInRange(ref input, 1, 64);
+					_noteLengthDivisor = ExpectIntegerInRange(ref input, 1, 64, executionContext);
 
 					UpdateNoteDurations();
 
 					break;
 				}
 
-				case (byte)'M': // music style -- staccato, normal, legato and foreground/background
+				case M: // music style -- staccato, normal, legato and foreground/background
 				{
 					AdvanceAndSkipWhitespace(ref input);
 
 					if (input.Length == 0)
 						Fail();
 
-					ch = s_cp437.ToUpper(input[0]);
+					ch = Encoding.ToUpper(input[0]);
 
 					switch (ch)
 					{
-						case (byte)'S': _noteStyleFractionOutOf8 = 6; break;
-						case (byte)'N': _noteStyleFractionOutOf8 = 7; break;
-						case (byte)'L': _noteStyleFractionOutOf8 = 8; break;
+						case S: _noteStyleFractionOutOf8 = 6; break;
+						case N: _noteStyleFractionOutOf8 = 7; break;
+						case L: _noteStyleFractionOutOf8 = 8; break;
 
-						case (byte)'F':
+						case F:
 							_maxNoteQueue = 1;
 							DrainNoteQueue();
 							break;
-						case (byte)'B':
+						case B:
 							_maxNoteQueue = 32;
 							break;
 
@@ -341,11 +271,11 @@ public class PlayProcessor
 					break;
 				}
 
-				case (byte)'P': // pause for n quarter notes
+				case P: // pause for n quarter notes
 				{
 					AdvanceAndSkipWhitespace(ref input);
 
-					int numQuarterNotes = ExpectNumberInRange(ref input, 1, 64);
+					int numQuarterNotes = ExpectIntegerInRange(ref input, 1, 64, executionContext);
 
 					var quarterNoteDuration = TimeSpan.FromMinutes(1) / _tempo;
 
@@ -354,34 +284,31 @@ public class PlayProcessor
 					break;
 				}
 
-				case (byte)'T': // set tempo
+				case T: // set tempo
 				{
 					AdvanceAndSkipWhitespace(ref input);
 
-					_tempo = ExpectNumberInRange(ref input, 32, 255);
+					_tempo = ExpectIntegerInRange(ref input, 32, 255, executionContext);
 
 					UpdateNoteDurations();
 
 					break;
 				}
 
-				case (byte)'X':
+				case X:
 				{
 					Advance(ref input);
 
-					surfacedStringKeyBytes.Clear();
+					var descriptorBytes = input.Slice(0, 3);
+					var descriptorSpan = MemoryMarshal.Cast<byte, SurfacedVariableDescriptor>(descriptorBytes);
 
-					for (int i = 0; (i < 3) && (input.Length > 0); i++)
-					{
-						surfacedStringKeyBytes[i] = input[0];
-						Advance(ref input);
-					}
+					var descriptor = descriptorSpan[0];
 
-					int key = MemoryMarshal.Cast<byte, int>(surfacedStringKeyBytes)[0];
+					input = input.Slice(3);
 
-					var surfacedString = executionContext?.GetSurfacedString(key);
+					var surfaced = executionContext?.GetSurfacedVariable(descriptor.Key);
 
-					if (surfacedString != null)
+					if (surfaced is StringVariable surfacedString)
 						PlayCommandString(surfacedString.ValueSpan, executionContext, source);
 
 					break;

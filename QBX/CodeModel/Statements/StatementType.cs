@@ -24,6 +24,7 @@ public enum StatementType
 	DeviceWidth,
 	Dim,
 	Do,
+	Draw,
 	Else,
 	ElseIf,
 	End,
