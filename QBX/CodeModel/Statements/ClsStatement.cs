@@ -21,12 +21,10 @@ public class ClsStatement : Statement
 
 	protected override void RenderImplementation(TextWriter writer)
 	{
-		if (Mode == null)
-			writer.Write("CLS");
-		else
-		{
-			writer.Write("CLS ");
+		// Trailing space with no argument is correct.
+		writer.Write("CLS ");
+
+		if (Mode != null)
 			Mode.Render(writer);
-		}
 	}
 }

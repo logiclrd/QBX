@@ -123,7 +123,7 @@ public class CodeLine : IRenderableCode, IEditableLine
 
 	public void Render(TextWriter baseWriter, bool includeCRLF = true)
 	{
-		var writer = new ColumnTrackingTextWriter(baseWriter) { NewLine = baseWriter.NewLine };
+		var writer = new ColumnTrackingTextWriter(new TrimEndTextWriter(baseWriter)) { NewLine = baseWriter.NewLine };
 
 		if (LineNumber != null)
 			writer.Write(LineNumber);
@@ -181,6 +181,6 @@ public class CodeLine : IRenderableCode, IEditableLine
 		}
 
 		if (includeCRLF)
-			writer.WriteLine();
+			baseWriter.WriteLine();
 	}
 }
