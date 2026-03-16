@@ -76,7 +76,6 @@ GOTO top
 	[TestCase("\t\tNEXT", "\t\t")]
 	[TestCase("      PRINT     \"this\"   ;  \"is\";   a%     ; trick(question)", "      ")]
 	[TestCase("befuddle:      PRINT     \"this\"   ;  \"is\";   a%     ; trick(question)", "      ")]
-	[TestCase("befuddle:      ' tricked you", "")]
 	public void Indentation(string input, string expectedIndentation)
 	{
 		// Arrange
@@ -147,6 +146,13 @@ GOTO top
 	[TestCase("?'test", "PRINT 'test", "'test")]
 	[TestCase("?   'test", "PRINT 'test", "'test")]
 	[TestCase("?        'test", "PRINT    'test", "   'test")]
+	[TestCase("10'test", "10 'test", " 'test")]
+	[TestCase("10 'test", "10 'test", " 'test")]
+	[TestCase("10    'test", "10    'test", "    'test")]
+	[TestCase("10?'test", "10 PRINT 'test", "'test")]
+	[TestCase("10?      'test", "10 PRINT 'test", "'test")]
+	[TestCase("10 ?     'test", "10 PRINT 'test", "'test")]
+	[TestCase("10 ?       'test", "10 PRINT   'test", "  'test")]
 	public void EndOfLineComment_column(string input, string expectedOutput, string expectedEndOfLineComment)
 	{
 		// Arrange

@@ -196,9 +196,6 @@ public class CodeLine : IRenderableCode, IEditableLine
 
 	public int ComputeLength()
 	{
-		if (Statements.Count == 0)
-			return EndOfLineComment?.Length ?? 0;
-
 		s_testBuffer ??= new StringWriter();
 
 		var testBuffer = s_testBuffer.GetStringBuilder();

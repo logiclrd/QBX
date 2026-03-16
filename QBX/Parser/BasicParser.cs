@@ -137,8 +137,18 @@ public class BasicParser
 
 				if ((line.EndOfLineComment == null) && !lineConsumed)
 				{
-					line.AppendStatement(
-						ParseStatementWithIndentation(buffer, isNested: false, token, ignoreErrors));
+					var parsedStatement = ParseStatementWithIndentation(
+						buffer,
+						isNested: false,
+						token,
+						ignoreErrors);
+
+					if ((line.Statements.Count == 0)
+					 && (!string.IsNullOrEmpty(line.LineNumber) || (line.Label != null))
+					 && (parsedStatement.Indentation == ""))
+						parsedStatement.Indentation = " ";
+
+					line.AppendStatement(parsedStatement);
 				}
 
 				buffer.Clear();
@@ -221,8 +231,19 @@ public class BasicParser
 							lineConsumed = true;
 						}
 
-						line.AppendStatement(
-							ParseStatementWithIndentation(buffer, ConsumeTokensToEndOfLine, isNested: false, precedingWhitespaceToken ?? token, ignoreErrors));
+						var parsedStatement = ParseStatementWithIndentation(
+							buffer,
+							ConsumeTokensToEndOfLine,
+							isNested: false,
+							precedingWhitespaceToken ?? token,
+							ignoreErrors);
+
+						if ((line.Statements.Count == 0)
+						 && (!string.IsNullOrEmpty(line.LineNumber) || (line.Label != null))
+						 && (parsedStatement.Indentation == ""))
+							parsedStatement.Indentation = " ";
+
+						line.AppendStatement(parsedStatement);
 						buffer.Clear();
 					}
 
@@ -234,18 +255,32 @@ public class BasicParser
 				{
 					if (buffer.Any() || line.Statements.Any())
 					{
-						line.AppendStatement(ParseStatementWithIndentation(buffer, precedingWhitespaceToken ?? token, ignoreErrors));
+						var parsedStatement = ParseStatementWithIndentation(
+							buffer,
+							precedingWhitespaceToken ?? token,
+							ignoreErrors);
+
+						if ((line.Statements.Count == 0)
+						 && (!string.IsNullOrEmpty(line.LineNumber) || (line.Label != null))
+						 && (parsedStatement.Indentation == ""))
+							parsedStatement.Indentation = " ";
+
+						line.AppendStatement(parsedStatement);
 						buffer.Clear();
-						haveContent = false;
 					}
-					else
-						haveContent = true;
+
+					haveContent = false;
 
 					int commentColumn = token.Column;
 
 					int charsSoFar = line.ComputeLength();
 
 					int spacesNeeded = commentColumn - charsSoFar;
+
+					if ((line.Statements.Count == 0)
+					 && (!string.IsNullOrEmpty(line.LineNumber) || (line.Label != null))
+					 && (spacesNeeded == 0))
+						spacesNeeded = 1;
 
 					var precedingWhitespace =
 						(spacesNeeded > 0)
@@ -294,7 +329,18 @@ public class BasicParser
 				TokenType.Empty,
 				"");
 
-			line.AppendStatement(ParseStatementWithIndentation(buffer, isNested: false, endToken, ignoreErrors));
+			var parsedStatement = ParseStatementWithIndentation(
+				buffer,
+				isNested: false,
+				endToken,
+				ignoreErrors);
+
+			if ((line.Statements.Count == 0)
+			 && (!string.IsNullOrEmpty(line.LineNumber) || (line.Label != null))
+			 && (parsedStatement.Indentation == ""))
+				parsedStatement.Indentation = " ";
+
+			line.AppendStatement(parsedStatement);
 		}
 
 		if (!line.IsEmpty)
