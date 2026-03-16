@@ -52,7 +52,15 @@ public class ArrayElementExpression(Evaluable arrayExpression, DataType type) : 
 
 		EvaluateInParts(context, stackFrame, out var array, out var subscripts);
 
-		return array.GetElement(subscripts, SubscriptExpressions);
+		try
+		{
+			return array.GetElement(subscripts, SubscriptExpressions);
+		}
+		catch (RuntimeException error)
+		{
+			error.AddContext(Source);
+			throw;
+		}
 	}
 
 	public override bool IsAssignable => true;

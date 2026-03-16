@@ -24,6 +24,9 @@ public class ArraySubscripts : IEquatable<ArraySubscripts>
 
 	public int GetElementIndex(int[] subscriptValues, IList<Evaluable>? subscriptExpressions = null)
 	{
+		if (Subscripts.Count == 0)
+			throw RuntimeException.SubscriptOutOfRange();
+
 		int index = 0;
 
 		// By processing the subscripts in reverse order, a multidimensional array is effectively an array
