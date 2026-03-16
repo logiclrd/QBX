@@ -352,7 +352,6 @@ public class BasicParser
 		// TODO: BSAVE
 		// TODO: OPTION BASE
 		// TODO: SWAP a, b
-		// TODO: NAME a AS b
 
 		if (!tokens.Any(token => token.Type != TokenType.Whitespace))
 			return new EmptyStatement();
