@@ -140,4 +140,34 @@ GOTO top
 
 		lines[0].EndOfLineComment.Should().Be(comment);
 	}
+
+	[TestCase("'test", "'test", "'test")]
+	[TestCase("    'test", "    'test", "    'test")]
+	[TestCase("PRINT \"hi\"    'test", "PRINT \"hi\"    'test", "    'test")]
+	[TestCase("?'test", "PRINT 'test", "'test")]
+	[TestCase("?   'test", "PRINT 'test", "'test")]
+	[TestCase("?        'test", "PRINT    'test", "   'test")]
+	public void EndOfLineComment_column(string input, string expectedOutput, string expectedEndOfLineComment)
+	{
+		// Arrange
+		var lexer = new Lexer(input);
+
+		var tokens = lexer.ToList();
+
+		var sut = new BasicParser();
+
+		// Act
+		var lines = sut.ParseCodeLines(tokens).ToList();
+
+		// Assert
+		lines.Should().HaveCount(1);
+
+		lines[0].EndOfLineComment.Should().Be(expectedEndOfLineComment);
+
+		var renderBuffer = new StringWriter();
+
+		lines[0].Render(renderBuffer, includeCRLF: false);
+
+		renderBuffer.ToString().Should().Be(expectedOutput);
+	}
 }

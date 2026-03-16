@@ -236,11 +236,23 @@ public class BasicParser
 					{
 						line.AppendStatement(ParseStatementWithIndentation(buffer, precedingWhitespaceToken ?? token, ignoreErrors));
 						buffer.Clear();
+						haveContent = false;
 					}
 					else
 						haveContent = true;
 
-					line.EndOfLineComment = precedingWhitespaceToken?.Value + token.Value;
+					int commentColumn = token.Column;
+
+					int charsSoFar = line.ComputeLength();
+
+					int spacesNeeded = commentColumn - charsSoFar;
+
+					var precedingWhitespace =
+						(spacesNeeded > 0)
+						? new string(' ', spacesNeeded)
+						: null;
+
+					line.EndOfLineComment = precedingWhitespace + token.Value;
 					precedingWhitespaceToken = null;
 				}
 				else if (token.Type == TokenType.Whitespace)

@@ -121,9 +121,16 @@ public class CodeLine : IRenderableCode, IEditableLine
 
 	public void Render(TextWriter writer) => Render(writer, includeCRLF: true);
 
-	public void Render(TextWriter baseWriter, bool includeCRLF = true)
+	public void Render(TextWriter writer, bool includeCRLF = true) => Render(writer, includeCRLF, trimEnd: true);
+
+	void Render(TextWriter baseWriter, bool includeCRLF, bool trimEnd)
 	{
-		var writer = new ColumnTrackingTextWriter(new TrimEndTextWriter(baseWriter)) { NewLine = baseWriter.NewLine };
+		var filteredWriter = baseWriter;
+
+		if (trimEnd)
+			filteredWriter = new TrimEndTextWriter(filteredWriter);
+
+		var writer = new ColumnTrackingTextWriter(filteredWriter) { NewLine = baseWriter.NewLine };
 
 		if (LineNumber != null)
 			writer.Write(LineNumber);
@@ -182,5 +189,24 @@ public class CodeLine : IRenderableCode, IEditableLine
 
 		if (includeCRLF)
 			baseWriter.WriteLine();
+	}
+
+	[ThreadStatic]
+	static StringWriter? s_testBuffer;
+
+	public int ComputeLength()
+	{
+		if (Statements.Count == 0)
+			return EndOfLineComment?.Length ?? 0;
+
+		s_testBuffer ??= new StringWriter();
+
+		var testBuffer = s_testBuffer.GetStringBuilder();
+
+		testBuffer.Clear();
+
+		Render(s_testBuffer, includeCRLF: false, trimEnd: false);
+
+		return testBuffer.Length;
 	}
 }

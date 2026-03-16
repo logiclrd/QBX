@@ -35,8 +35,8 @@ public class PrintArgument : IRenderableCode
 
 		switch (CursorAction)
 		{
-			case PrintCursorAction.None: writer.Write(';'); break;
-			case PrintCursorAction.NextZone: writer.Write(','); break;
+			case PrintCursorAction.None: writer.Write("; "); break;
+			case PrintCursorAction.NextZone: writer.Write(", "); break;
 		}
 	}
 }

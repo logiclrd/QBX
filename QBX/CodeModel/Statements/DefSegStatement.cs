@@ -12,11 +12,11 @@ public class DefSegStatement : Statement
 
 	protected override void RenderImplementation(TextWriter writer)
 	{
-		writer.Write("DEF SEG");
+		writer.Write("DEF SEG ");
 
 		if (SegmentExpression != null)
 		{
-			writer.Write(" = ");
+			writer.Write("= ");
 			SegmentExpression.Render(writer);
 		}
 	}
