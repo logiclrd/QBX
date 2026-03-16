@@ -284,6 +284,7 @@ public enum TokenType
 	[KeywordFunction(parameterCount: 2)]
 	[KeywordToken("STRING$")] STRING_s,
 	[KeywordToken] SUB,
+	[KeywordToken] SWAP,
 	[KeywordToken] SYSTEM,
 	[KeywordToken] TAB,
 	[KeywordFunction]

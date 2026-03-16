@@ -2611,6 +2611,44 @@ public class Compiler
 
 				break;
 			}
+			case CodeModel.Statements.SwapStatement swapStatement:
+			{
+				var translatedSwapStatement = new SwapStatement(swapStatement);
+
+				translatedSwapStatement.Variable1Expression = TranslateExpression(
+					swapStatement.Variable1Expression,
+					container,
+					mapper,
+					compilation,
+					module);
+
+				translatedSwapStatement.Variable2Expression = TranslateExpression(
+					swapStatement.Variable2Expression,
+					container,
+					mapper,
+					compilation,
+					module);
+
+				if (translatedSwapStatement.Variable1Expression is null)
+					throw new Exception("SwapStatement is missing Variable1Expression");
+				if (translatedSwapStatement.Variable2Expression is null)
+					throw new Exception("SwapStatement is missing Variable2Expression");
+
+				if (!translatedSwapStatement.Variable1Expression.IsAssignable)
+					throw CompilerException.ExpectedVariable(swapStatement.Variable1Expression);
+				if (!translatedSwapStatement.Variable2Expression.IsAssignable)
+					throw CompilerException.ExpectedVariable(swapStatement.Variable2Expression);
+
+				var type1 = translatedSwapStatement.Variable1Expression.Type;
+				var type2 = translatedSwapStatement.Variable2Expression.Type;
+
+				if (!type1.Equals(type2))
+					throw CompilerException.TypeMismatch(swapStatement.Variable2Expression);
+
+				container.Append(translatedSwapStatement);
+
+				break;
+			}
 			case CodeModel.Statements.TextViewportStatement textViewportStatement:
 			{
 				var translatedTextViewportStatement = new TextViewportStatement(textViewportStatement);

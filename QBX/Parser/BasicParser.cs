@@ -3334,6 +3334,30 @@ public class BasicParser
 				return statement;
 			}
 
+
+			case TokenType.SWAP:
+			{
+				var swap = new SwapStatement();
+
+				var arguments = SplitCommaDelimitedList(tokenHandler.RemainingTokens).ToList();
+
+				if (arguments.Count == 1)
+					throw new SyntaxErrorException(tokenHandler.PreviousToken, "Expected: expression");
+				if (arguments.Count > 2)
+				{
+					var blame = tokens[arguments[2].Unwrap().Offset - 1];
+
+					throw new SyntaxErrorException(blame, "Expected: end of statement");
+				}
+
+				var midToken = tokens[arguments[1].Unwrap().Offset - 1];
+
+				swap.Variable1Expression = ParseExpressionForStatement(swap, arguments[0], midToken);
+				swap.Variable2Expression = ParseExpressionForStatement(swap, arguments[1], tokenHandler.PreviousToken);
+
+				return swap;
+			}
+
 			case TokenType.SYSTEM:
 			{
 				if (!tokenHandler.HasMoreTokens)

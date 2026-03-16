@@ -80,6 +80,7 @@ public enum StatementType
 	SoftKeyList,
 	Sound,
 	Sub,
+	Swap,
 	Read,
 	Redim,
 	Reset,

@@ -15,7 +15,7 @@ public class SoundStatement(CodeModel.Statements.Statement source)
 		if (FrequencyExpression == null)
 			throw new Exception("SoundStatement with no FrequencyExpression");
 		if (DurationExpression == null)
-			throw new Exception("SoundStatement with no Durationxpression");
+			throw new Exception("SoundStatement with no DurationExpression");
 
 		int frequency = FrequencyExpression.EvaluateAndCoerceToInt(context, stackFrame);
 		int duration = DurationExpression.EvaluateAndCoerceToInt(context, stackFrame);
