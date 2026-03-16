@@ -583,6 +583,34 @@ public class Compiler
 
 				break;
 			}
+			case CodeModel.Statements.BLoadStatement bloadStatement:
+			{
+				var translatedBLoadStatement = new BLoadStatement(bloadStatement);
+
+				TranslateStringArgumentExpression(
+					ref translatedBLoadStatement.FileNameExpression, bloadStatement.FileNameExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedBLoadStatement.OffsetExpression, bloadStatement.OffsetExpression);
+
+				container.Append(translatedBLoadStatement);
+
+				break;
+			}
+			case CodeModel.Statements.BSaveStatement bsaveStatement:
+			{
+				var translatedBSaveStatement = new BSaveStatement(bsaveStatement);
+
+				TranslateStringArgumentExpression(
+					ref translatedBSaveStatement.FileNameExpression, bsaveStatement.FileNameExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedBSaveStatement.OffsetExpression, bsaveStatement.OffsetExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedBSaveStatement.LengthExpression, bsaveStatement.LengthExpression);
+
+				container.Append(translatedBSaveStatement);
+
+				break;
+			}
 			case CodeModel.Statements.CallStatement callStatement:
 			{
 				if (module.TryGetNativeProcedure(callStatement.TargetName, out var nativeProcedure))

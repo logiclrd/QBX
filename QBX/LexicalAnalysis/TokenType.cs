@@ -21,8 +21,10 @@ public enum TokenType
 	[KeywordToken] BEEP,
 	[KeywordToken] BEGINTRANS,
 	[KeywordToken] BINARY,
+	[KeywordToken] BLOAD,
 	[KeywordFunction(fileNumberParameter: 0)]
 	[KeywordToken] BOF,
+	[KeywordToken] BSAVE,
 	[KeywordToken] BYVAL,
 	[KeywordToken] CALL,
 	[KeywordToken] CASE,

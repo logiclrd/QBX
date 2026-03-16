@@ -6,6 +6,8 @@ public enum StatementType
 
 	Assignment,
 	Beep,
+	BLoad,
+	BSave,
 	Call,
 	Case,
 	Circle,

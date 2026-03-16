@@ -405,11 +405,7 @@ public class BasicParser
 
 	internal Statement ParseStatement(ListRange<Token> tokens, Func<IEnumerable<Token>> consumeTokensToEndOfLine, bool isNested, bool ignoreErrors)
 	{
-		// TODO: DRAW
-		// TODO: BLOAD
-		// TODO: BSAVE
 		// TODO: OPTION BASE
-		// TODO: SWAP a, b
 
 		if (!tokens.Any(token => token.Type != TokenType.Whitespace))
 			return new EmptyStatement();
@@ -456,6 +452,64 @@ public class BasicParser
 				tokenHandler.ExpectEndOfTokens();
 
 				return new BeepStatement();
+			}
+
+			case TokenType.BLOAD:
+			{
+				var bloadStatement = new BLoadStatement();
+
+				var arguments = SplitCommaDelimitedList(tokenHandler.RemainingTokens).ToList();
+
+				if (arguments.Count < 1)
+					throw new SyntaxErrorException(tokenHandler.EndToken, "Expected: expression");
+				else if (arguments.Count > 2)
+				{
+					var blame = tokens[arguments[2].Unwrap().Offset - 1];
+
+					throw new SyntaxErrorException(blame, "Expected: end of statement");
+				}
+				else if (arguments.Count == 1)
+				{
+					bloadStatement.FileNameExpression = ParseExpressionForStatement(bloadStatement, arguments[0], tokenHandler.EndToken);
+				}
+				else
+				{
+					var midToken = tokens[arguments[1].Unwrap().Offset - 1];
+
+					bloadStatement.FileNameExpression = ParseExpressionForStatement(bloadStatement, arguments[0], midToken);
+					bloadStatement.OffsetExpression = ParseExpressionForStatement(bloadStatement, arguments[1], tokenHandler.EndToken);
+				}
+
+				return bloadStatement;
+			}
+
+			case TokenType.BSAVE:
+			{
+				var bsaveStatement = new BSaveStatement();
+
+				var arguments = SplitCommaDelimitedList(tokenHandler.RemainingTokens).ToList();
+
+				if (arguments.Count < 3)
+					throw new SyntaxErrorException(tokenHandler.EndToken, "Expected: expression");
+				else if (arguments.Count > 3)
+				{
+					var blame = tokens[arguments[3].Unwrap().Offset - 1];
+
+					throw new SyntaxErrorException(blame, "Expected: end of statement");
+				}
+				else
+				{
+					var midToken = tokens[arguments[1].Unwrap().Offset - 1];
+
+					bsaveStatement.FileNameExpression = ParseExpressionForStatement(bsaveStatement, arguments[0], midToken);
+
+					midToken = tokens[arguments[2].Unwrap().Offset - 1];
+					bsaveStatement.OffsetExpression = ParseExpressionForStatement(bsaveStatement, arguments[1], midToken);
+
+					bsaveStatement.LengthExpression = ParseExpressionForStatement(bsaveStatement, arguments[2], tokenHandler.EndToken);
+				}
+
+				return bsaveStatement;
 			}
 
 			case TokenType.CALL:

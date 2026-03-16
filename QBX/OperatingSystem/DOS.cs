@@ -501,8 +501,6 @@ public partial class DOS
 
 	public void WriteByte(int fileHandle, byte b, out byte lastByteWritten)
 	{
-		lastByteWritten = (b == 9) ? (byte)32 : b; // Tabs get expanded to spaces.
-
 		if ((fileHandle < 0) || (fileHandle >= Files.Count)
 			|| (Files[fileHandle] is not FileDescriptor fileDescriptor))
 		{
@@ -512,26 +510,15 @@ public partial class DOS
 
 		TranslateError(() =>
 		{
-			if (b != 9)
-			{
-				fileDescriptor.WriteByte(b);
-				if (b == 13)
-					fileDescriptor.Column = 0;
-				else if (b != 10)
-					fileDescriptor.Column++;
-			}
-			else
-			{
-				do
-				{
-					fileDescriptor.WriteByte(32);
-					fileDescriptor.Column++;
-				} while ((fileDescriptor.Column & 7) != 0);
-			}
+			fileDescriptor.WriteByte(b);
+
+			fileDescriptor.TranslateByte(ref b);
 
 			if (VerifyWrites)
 				fileDescriptor.FlushWriteBuffer(true);
 		});
+
+		lastByteWritten = b;
 	}
 
 	public int Read(int fileHandle, IMemory systemMemory, int address, int count)

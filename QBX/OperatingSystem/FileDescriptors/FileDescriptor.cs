@@ -385,4 +385,6 @@ public abstract class FileDescriptor
 			IsClosed = true;
 		}
 	}
+
+	public virtual void TranslateByte(ref byte b) { }
 }

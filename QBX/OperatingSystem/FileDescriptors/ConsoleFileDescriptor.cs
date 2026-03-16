@@ -162,4 +162,11 @@ public class ConsoleFileDescriptor(DOS owner) : FileDescriptor("CON")
 			visual.ProcessControlCharacters = savedControlCharacterFlag;
 		}
 	}
+
+	public override void TranslateByte(ref byte b)
+	{
+		if ((IOMode == IOMode.ASCII)
+		 && (b == 9))
+			b = 32;
+	}
 }
