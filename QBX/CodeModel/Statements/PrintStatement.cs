@@ -15,37 +15,32 @@ public class PrintStatement : Statement
 
 	protected override void RenderImplementation(TextWriter writer)
 	{
-		if ((FileNumberExpression == null) && (UsingExpression == null) && (Arguments.Count == 0))
-			writer.Write("PRINT");
-		else
+		writer.Write("PRINT ");
+
+		if (FileNumberExpression != null)
 		{
-			writer.Write("PRINT ");
+			writer.Write('#');
+			FileNumberExpression.Render(writer);
+			writer.Write(", ");
+		}
 
-			if (FileNumberExpression != null)
-			{
-				writer.Write('#');
-				FileNumberExpression.Render(writer);
-				writer.Write(", ");
-			}
+		if (UsingExpression != null)
+		{
+			writer.Write("USING ");
+			UsingExpression.Render(writer);
+			writer.Write("; ");
+		}
 
-			if (UsingExpression != null)
-			{
-				writer.Write("USING ");
-				UsingExpression.Render(writer);
-				writer.Write("; ");
-			}
+		for (int i = 0; i < Arguments.Count; i++)
+		{
+			if (i > 0)
+				writer.Write(' ');
 
-			for (int i = 0; i < Arguments.Count; i++)
-			{
-				if (i > 0)
-					writer.Write(' ');
+			if ((UsingExpression != null)
+			 && (Arguments[i].CursorAction == PrintCursorAction.NextZone))
+				Arguments[i].CursorAction = PrintCursorAction.None;
 
-				if ((UsingExpression != null)
-				 && (Arguments[i].CursorAction == PrintCursorAction.NextZone))
-					Arguments[i].CursorAction = PrintCursorAction.None;
-
-				Arguments[i].Render(writer);
-			}
+			Arguments[i].Render(writer);
 		}
 	}
 }
