@@ -1333,6 +1333,30 @@ public class Compiler
 
 				break;
 			}
+			case CodeModel.Statements.EraseStatement eraseStatement:
+			{
+				var translatedEraseStatement = new EraseStatement(eraseStatement);
+
+				foreach (var arrayExpression in eraseStatement.ArrayExpressions)
+				{
+					var translatedArrayExpression = TranslateExpression(
+						arrayExpression,
+						container,
+						mapper,
+						compilation,
+						module,
+						parseIdentifiersAsArrays: true);
+
+					if (!translatedArrayExpression.Type.IsArray)
+						throw CompilerException.TypeMismatch(arrayExpression);
+
+					translatedEraseStatement.ArrayExpressions.Add(translatedArrayExpression);
+				}
+
+				container.Append(translatedEraseStatement);
+
+				break;
+			}
 			case CodeModel.Statements.ErrorStatement errorStatement:
 			{
 				var translatedErrorStatement = new ErrorStatement(errorStatement);

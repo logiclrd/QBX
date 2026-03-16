@@ -36,6 +36,7 @@ public enum StatementType
 	EndScope,
 	EndType,
 	Empty,
+	Erase,
 	Error,
 	EventControl,
 	ExitScope,

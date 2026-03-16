@@ -1,4 +1,5 @@
 ﻿using System;
+using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -1119,6 +1120,32 @@ public class BasicParser
 			{
 				tokenHandler.ExpectEndOfTokens();
 				return new EndIfStatement();
+			}
+
+			case TokenType.ERASE:
+			{
+				var eraseStatement = new EraseStatement();
+
+				if (!tokenHandler.HasMoreTokens)
+					throw new SyntaxErrorException(tokenHandler.EndToken, "Expected: variable");
+
+				var arguments = SplitCommaDelimitedList(tokenHandler.RemainingTokens).ToList();
+
+				for (int i = 0; i < arguments.Count; i++)
+				{
+					var midToken =
+						(i + 1 < arguments.Count)
+						? tokens[arguments[i + 1].Unwrap().Offset - 1]
+						: tokenHandler.EndToken;
+
+					if (arguments[i].Count == 0)
+						throw new SyntaxErrorException(midToken, "Expected: expression");
+
+					eraseStatement.ArrayExpressions.Add(
+						ParseExpressionForStatement(eraseStatement, arguments[i], midToken));
+				}
+
+				return eraseStatement;
 			}
 
 			case TokenType.ERROR:

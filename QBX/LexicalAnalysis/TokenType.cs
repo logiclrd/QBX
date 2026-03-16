@@ -98,6 +98,7 @@ public enum TokenType
 	[KeywordToken("ENVIRON$")] ENVIRON,
 	[KeywordFunction(fileNumberParameter: 0)]
 	[KeywordToken] EOF,
+	[KeywordToken] ERASE,
 	[KeywordFunction(parameterCount: 0)]
 	[KeywordToken] ERDEV,
 	[KeywordFunction(parameterCount: 0)]
