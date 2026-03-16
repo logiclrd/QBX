@@ -132,6 +132,8 @@ public class CompilerException : Exception
 		=> new CompilerException(statement, "Illegal outside of SUB/FUNCTION");
 	public static CompilerException ExpectedStatement(Token? context)
 		=> new CompilerException(context, "Expected: statement");
+	public static CompilerException ExpectedVariable(CodeModel.Expressions.Expression? expression)
+		=> new CompilerException(expression, "Expected: variable");
 	public static CompilerException ExpectedVariable(Token? context)
 		=> new CompilerException(context, "Expected: variable");
 	public static CompilerException ArrayNotDefined(Token? context)

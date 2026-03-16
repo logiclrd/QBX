@@ -24,6 +24,7 @@ public class ArrayElementExpression(Evaluable arrayExpression, DataType type) : 
 		}
 	}
 
+	public Evaluable ArrayExpression => arrayExpression;
 	public List<Evaluable> SubscriptExpressions = new List<Evaluable>();
 
 	public override void CollapseConstantSubexpressions()

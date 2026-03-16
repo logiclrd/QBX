@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Threading;
 
 using QBX.ExecutionEngine.Execution;
 using QBX.Firmware.Fonts;
 using QBX.Hardware;
+
+using ExecutionContext = QBX.ExecutionEngine.Execution.ExecutionContext;
 
 namespace QBX.ExecutionEngine;
 
@@ -83,6 +86,12 @@ public class PlayProcessor
 		=> PlayCommandString(commandString.AsSpan(), source);
 
 	public void PlayCommandString(Span<byte> commandString, CodeModel.Statements.Statement? source)
+		=> PlayCommandString(commandString, executionContext: null, source);
+
+	public void PlayCommandString(StringValue commandString, ExecutionContext? executionContext, CodeModel.Statements.Statement? source)
+		=> PlayCommandString(commandString.AsSpan(), executionContext, source);
+
+	public void PlayCommandString(Span<byte> commandString, ExecutionContext? executionContext, CodeModel.Statements.Statement? source)
 	{
 		var input = commandString;
 
@@ -154,6 +163,8 @@ public class PlayProcessor
 
 			return value;
 		}
+
+		Span<byte> surfacedStringKeyBytes = stackalloc byte[4];
 
 		while (input.Length > 0)
 		{
@@ -355,9 +366,26 @@ public class PlayProcessor
 				}
 
 				case (byte)'X':
-					// TODO: VARPTR$() as a way to inject strings
-					AdvanceAndSkipWhitespace(ref input);
+				{
+					Advance(ref input);
+
+					surfacedStringKeyBytes.Clear();
+
+					for (int i = 0; (i < 3) && (input.Length > 0); i++)
+					{
+						surfacedStringKeyBytes[i] = input[0];
+						Advance(ref input);
+					}
+
+					int key = MemoryMarshal.Cast<byte, int>(surfacedStringKeyBytes)[0];
+
+					var surfacedString = executionContext?.GetSurfacedString(key);
+
+					if (surfacedString != null)
+						PlayCommandString(surfacedString.ValueSpan, executionContext, source);
+
 					break;
+				}
 
 				default:
 					throw Fail();

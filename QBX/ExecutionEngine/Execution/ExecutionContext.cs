@@ -60,6 +60,52 @@ public class ExecutionContext
 
 	public readonly StringValue CommandLine = new StringValue();
 
+	public readonly Dictionary<int, SurfacedString> SurfacedStrings = new Dictionary<int, SurfacedString>();
+	public int NextSurfacedStringKey = 1;
+
+	int AddSurfacedString(SurfacedString surfacedString)
+	{
+		int key = NextSurfacedStringKey++;
+
+		SurfacedStrings[key] = surfacedString;
+
+		return key;
+	}
+
+	public int SurfaceString(StackFrame stackFrame, int variableIndex)
+	{
+		var surfacedString = new SurfacedString();
+
+		surfacedString.StackFrame = new WeakReference<StackFrame>(stackFrame);
+		surfacedString.Index = variableIndex;
+
+		return AddSurfacedString(surfacedString);
+	}
+
+	public int SurfaceString(ArrayVariable array, int arrayIndex)
+	{
+		var surfacedString = new SurfacedString();
+
+		surfacedString.Array = new WeakReference<ArrayVariable>(array);
+		surfacedString.Index = arrayIndex;
+
+		return AddSurfacedString(surfacedString);
+	}
+
+	public StringVariable? GetSurfacedString(int key)
+	{
+		if (!SurfacedStrings.TryGetValue(key, out var surfacedString))
+			return null;
+
+		if (surfacedString.Get() is not StringVariable stringVariable)
+		{
+			SurfacedStrings.Remove(key);
+			return null;
+		}
+
+		return stringVariable;
+	}
+
 	public readonly Dictionary<int, OpenFile> Files = new Dictionary<int, OpenFile>();
 
 	public void CloseAllFiles()
