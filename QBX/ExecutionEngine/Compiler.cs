@@ -229,7 +229,35 @@ public class Compiler
 			while (lineIndex < element.Lines.Count)
 				TranslateStatement(element, ref lineIndex, ref statementIndex, routine, routine, compilation, module);
 
-			// Defer processing of the main module unfrozen for now in case later routines want
+			// If the SUB or FUNCTION declaration contains the STATIC keyword, then all
+			// local variables are implicitly STATIC, as though they'd all been listed
+			// in a comprehensive STATIC declaration.
+			if ((routine.OpeningStatement != null)
+			 && routine.OpeningStatement.IsStatic)
+			{
+				foreach (var variable in mapper.GetVariableNames())
+				{
+					if (variable.IsLinked)
+						continue;
+
+					var variableType = mapper.GetVariableType(variable.VariableIndex);
+
+					string hiddenVariableName = "<" + element.Name + ">" + variable.Name;
+
+					if (!variableType.IsArray)
+					{
+						rootMapper.DeclareVariable(hiddenVariableName, variableType, variable.NameToken);
+						mapper.LinkRootVariable(variable.Name, hiddenVariableName);
+					}
+					else
+					{
+						rootMapper.DeclareArray(hiddenVariableName, variableType, variable.NameToken);
+						mapper.LinkRootArray(variable.Name, hiddenVariableName);
+					}
+				}
+			}
+
+			// Keep the main module unfrozen for now in case later routines want
 			// to add variables to make them STATIC.
 			if (routine.Source.Type != CodeModel.CompilationElementType.Main)
 			{

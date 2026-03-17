@@ -132,9 +132,10 @@ public class Mapper
 	// QuickBASIC applies this logic to arrays of user-defined types as
 	// well, even though there isn't a possibility of collision.
 
-	class VariableInfo(string name, int index)
+	class VariableInfo(string name, Token? nameToken, int index)
 	{
 		public string Name => name;
+		public Token? NameToken => nameToken;
 		public int Index => index;
 		public DataType Type = DataType.Integer;
 
@@ -144,6 +145,8 @@ public class Mapper
 
 		public CommonBlock? LinkedToCommonBlock;
 		public int LinkedToCommonBlockVariableIndex;
+
+		public bool IsLinked => (LinkedToRootVariableIndex >= 0) || (LinkedToCommonBlock != null);
 	}
 
 	public Mapper(Routine mainRoutine)
@@ -641,7 +644,7 @@ public class Mapper
 
 		int index = _variables.Count;
 
-		var info = new VariableInfo(name, index);
+		var info = new VariableInfo(name, token, index);
 
 		info.Type = dataType;
 
@@ -708,7 +711,7 @@ public class Mapper
 
 		index = _variables.Count;
 
-		var info = new VariableInfo(qualifiedName, index);
+		var info = new VariableInfo(qualifiedName, token, index);
 
 		info.Type = dataType;
 
@@ -761,6 +764,9 @@ public class Mapper
 
 		return DeclareArray(name, arrayType);
 	}
+
+	public IEnumerable<VariableName> GetVariableNames() =>
+		_variables.Select(variable => new VariableName(variable.Name, variable.NameToken, variable.Index, variable.IsLinked));
 
 	public List<DataType> GetVariableTypes() =>
 		Enumerable.Range(0, _variables.Count)
