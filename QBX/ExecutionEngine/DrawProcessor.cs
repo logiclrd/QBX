@@ -3,7 +3,10 @@ using System.Runtime.InteropServices;
 
 using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
+
 using QBX.Firmware;
+
+using static QBX.Firmware.Fonts.CP437Encoding;
 
 using ExecutionContext = QBX.ExecutionEngine.Execution.ExecutionContext;
 
@@ -63,7 +66,7 @@ public class DrawProcessor : ProcessorCommon
 
 		while (input.Length > 0)
 		{
-			byte ch = Encoding.ToUpper(input[0]);
+			byte ch = ToUpper(input[0]);
 
 			switch (ch)
 			{
@@ -157,7 +160,7 @@ public class DrawProcessor : ProcessorCommon
 								_ => throw new Exception("Sanity failure")
 							};
 
-						if ((input.Length > 0) && Encoding.IsDigit(input[0]))
+						if ((input.Length > 0) && IsDigit(input[0]))
 							commandLength *= ExpectInteger(ref input, executionContext);
 
 						commandLength *= _scale;
@@ -220,7 +223,7 @@ public class DrawProcessor : ProcessorCommon
 				{
 					AdvanceAndSkipWhitespace(ref input);
 
-					if ((input.Length == 0) || Encoding.ToUpper(input[0]) != 'A')
+					if ((input.Length == 0) || ToUpper(input[0]) != 'A')
 						Fail();
 
 					Advance(ref input);

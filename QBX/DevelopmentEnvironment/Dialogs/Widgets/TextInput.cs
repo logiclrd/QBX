@@ -22,8 +22,6 @@ public class TextInput : Widget
 		IsTabStop = true;
 	}
 
-	static CP437Encoding s_cp437 = new CP437Encoding(ControlCharacterInterpretation.Semantic);
-
 	public override bool ProcessKey(KeyEvent input, IFocusContext focusContext, IOvertypeFlag overtypeFlag)
 	{
 		if (input.IsRelease)
@@ -125,7 +123,7 @@ public class TextInput : Widget
 	}
 
 	bool IsWordCharacter(byte ch)
-		=> (ch == (byte)'.') || s_cp437.IsAsciiLetterOrDigit(ch);
+		=> (ch == (byte)'.') || CP437Encoding.IsAsciiLetterOrDigit(ch);
 
 	void WordLeft()
 	{

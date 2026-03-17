@@ -8,6 +8,8 @@ using QBX.ExecutionEngine.Execution.Variables;
 
 using QBX.Hardware;
 
+using static QBX.Firmware.Fonts.CP437Encoding;
+
 using ExecutionContext = QBX.ExecutionEngine.Execution.ExecutionContext;
 
 namespace QBX.ExecutionEngine;
@@ -98,7 +100,7 @@ public class PlayProcessor : ProcessorCommon
 
 		while (input.Length > 0)
 		{
-			byte ch = Encoding.ToUpper(input[0]);
+			byte ch = ToUpper(input[0]);
 
 			switch (ch)
 			{
@@ -198,7 +200,7 @@ public class PlayProcessor : ProcessorCommon
 
 					if (input.Length > 0)
 					{
-						if (Encoding.IsDigit(input[0]))
+						if (IsDigit(input[0]))
 						{
 							int duration = ExpectIntegerInRange(ref input, 1, 64, null);
 
@@ -245,7 +247,7 @@ public class PlayProcessor : ProcessorCommon
 					if (input.Length == 0)
 						Fail();
 
-					ch = Encoding.ToUpper(input[0]);
+					ch = ToUpper(input[0]);
 
 					switch (ch)
 					{

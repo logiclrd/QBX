@@ -3,15 +3,14 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
 using QBX.ExecutionEngine.Execution;
-using QBX.Firmware.Fonts;
+
+using static QBX.Firmware.Fonts.CP437Encoding;
 
 namespace QBX.ExecutionEngine;
 
 public abstract class ProcessorCommon
 {
 	protected CodeModel.Statements.Statement? CurrentSource;
-
-	protected static readonly CP437Encoding Encoding = new CP437Encoding(ControlCharacterInterpretation.Semantic);
 
 	protected static void Advance(ref Span<byte> i)
 		=> i = i.Slice(1);
@@ -134,10 +133,10 @@ public abstract class ProcessorCommon
 			ch = input[0];
 		}
 
-		if (!Encoding.IsDigit(ch))
+		if (!IsDigit(ch))
 			Fail();
 
-		int value = Encoding.DigitValue(ch);
+		int value = DigitValue(ch);
 		int numDigits = 1;
 
 		Advance(ref input);
@@ -146,7 +145,7 @@ public abstract class ProcessorCommon
 		{
 			ch = input[0];
 
-			if (!Encoding.IsDigit(ch))
+			if (!IsDigit(ch))
 				break;
 
 			Advance(ref input);
@@ -154,7 +153,7 @@ public abstract class ProcessorCommon
 			if (numDigits == 4)
 				Fail();
 
-			value = value * 10 + Encoding.DigitValue(ch);
+			value = value * 10 + DigitValue(ch);
 			numDigits++;
 		}
 

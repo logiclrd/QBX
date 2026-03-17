@@ -644,22 +644,22 @@ public class CP437Encoding : Encoding
 	}
 
 
-	public bool IsAsciiLetterOrDigit(byte v)
+	public static bool IsAsciiLetterOrDigit(byte v)
 		=> IsAsciiLetter(v) || IsDigit(v);
-	public bool IsAsciiLetter(byte v)
+	public static bool IsAsciiLetter(byte v)
 		=> IsAsciiLetterLower(v) || IsAsciiLetterUpper(v);
-	public bool IsAsciiLetterUpper(byte v)
+	public static bool IsAsciiLetterUpper(byte v)
 		=> (v >= (byte)'A') && (v <= (byte)'Z');
-	public bool IsAsciiLetterLower(byte v)
+	public static bool IsAsciiLetterLower(byte v)
 		=> (v >= (byte)'a') && (v <= (byte)'z');
-	public bool IsDigit(byte v)
+	public static bool IsDigit(byte v)
 		=> (v >= (byte)'0') && (v <= (byte)'9');
 
-	public byte ToUpper(byte v)
+	public static byte ToUpper(byte v)
 		=> IsAsciiLetterLower(v) ? unchecked((byte)(v & ~0x20)) : v;
-	public byte ToLower(byte v)
+	public static byte ToLower(byte v)
 		=> IsAsciiLetterUpper(v) ? unchecked((byte)(v | 0x20)) : v;
 
-	public int DigitValue(byte v)
+	public static int DigitValue(byte v)
 		=> (int)(v - (byte)'0');
 }

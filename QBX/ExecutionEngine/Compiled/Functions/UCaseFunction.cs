@@ -25,8 +25,6 @@ public class UCaseFunction : Function
 
 	public override DataType Type => DataType.String;
 
-	static CP437Encoding s_cp437 = new CP437Encoding(ControlCharacterInterpretation.Semantic);
-
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (ArgumentExpression == null)
@@ -41,7 +39,7 @@ public class UCaseFunction : Function
 
 		for (int i = 0, l = stringValue.Length; i < l; i++)
 		{
-			if (s_cp437.IsAsciiLetterLower(stringValue[i]))
+			if (CP437Encoding.IsAsciiLetterLower(stringValue[i]))
 			{
 				if (translatedValue == null)
 				{
@@ -49,7 +47,7 @@ public class UCaseFunction : Function
 					translated = new StringVariable(translatedValue, adopt: true);
 				}
 
-				translatedValue[i] = s_cp437.ToUpper(stringValue[i]);
+				translatedValue[i] = CP437Encoding.ToUpper(stringValue[i]);
 			}
 		}
 
