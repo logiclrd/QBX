@@ -28,14 +28,30 @@ public class Canvas : Widget, IFocusContext
 		int newFocusedChildIndex = Children.IndexOf(widget);
 
 		if (newFocusedChildIndex != FocusedChildIndex)
+			SetFocus(newFocusedChildIndex);
+	}
+
+	public void SetFocus(int newFocusedChildIndex)
+	{
+		if ((newFocusedChildIndex >= 0) && (newFocusedChildIndex < Children.Count))
 		{
 			if ((FocusedChildIndex >= 0) && (FocusedChildIndex < Children.Count))
-				Children[FocusedChildIndex].NotifyLostFocus(this);
+			{
+				var child = Children[FocusedChildIndex];
+
+				child.IsFocused = false;
+				child.NotifyLostFocus(this);
+			}
 
 			FocusedChildIndex = newFocusedChildIndex;
 
 			if ((FocusedChildIndex >= 0) && (FocusedChildIndex < Children.Count))
-				Children[FocusedChildIndex].NotifyGotFocus(this);
+			{
+				var child = Children[FocusedChildIndex];
+
+				child.IsFocused = true;
+				child.NotifyGotFocus(this);
+			}
 		}
 	}
 
@@ -132,24 +148,35 @@ public class Canvas : Widget, IFocusContext
 		switch (input.ScanCode)
 		{
 			case ScanCode.Tab:
+				// Don't alter FocusedChildIndex if we don't find a tab stop.
 				if (!input.Modifiers.ShiftKey)
 				{
-					while (FocusedChildIndex + 1 < Children.Count)
-					{
-						FocusedChildIndex++;
+					int newFocusedChildIndex = FocusedChildIndex + 1;
 
-						if (Children[FocusedChildIndex].IsTabStop)
+					while (newFocusedChildIndex < Children.Count)
+					{
+						if (Children[newFocusedChildIndex].IsTabStop)
+						{
+							SetFocus(newFocusedChildIndex);
 							return true;
+						}
+
+						newFocusedChildIndex++;
 					}
 				}
 				else
 				{
-					while (FocusedChildIndex - 1 >= 0)
-					{
-						FocusedChildIndex--;
+					int newFocusedChildIndex = FocusedChildIndex - 1;
 
-						if (Children[FocusedChildIndex].IsTabStop)
+					while (newFocusedChildIndex >= 0)
+					{
+						if (Children[newFocusedChildIndex].IsTabStop)
+						{
+							SetFocus(newFocusedChildIndex);
 							return true;
+						}
+
+						newFocusedChildIndex--;
 					}
 				}
 

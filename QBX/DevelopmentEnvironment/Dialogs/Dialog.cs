@@ -81,12 +81,22 @@ public abstract class Dialog(Machine machine, Configuration configuration) : IFo
 		if (index != _focusedWidgetIndex)
 		{
 			if ((_focusedWidgetIndex >= 0) && (_focusedWidgetIndex < Widgets.Count))
-				Widgets[_focusedWidgetIndex].NotifyLostFocus(this);
+			{
+				var widget = Widgets[_focusedWidgetIndex];
+
+				widget.IsFocused = false;
+				widget.NotifyLostFocus(this);
+			}
 
 			_focusedWidgetIndex = index;
 
 			if ((_focusedWidgetIndex >= 0) && (_focusedWidgetIndex < Widgets.Count))
-				Widgets[_focusedWidgetIndex].NotifyGotFocus(this);
+			{
+				var widget = Widgets[_focusedWidgetIndex];
+
+				widget.IsFocused = true;
+				widget.NotifyGotFocus(this);
+			}
 		}
 	}
 

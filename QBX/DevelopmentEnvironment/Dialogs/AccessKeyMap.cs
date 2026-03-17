@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+
 using QBX.Firmware.Fonts;
 
 namespace QBX.DevelopmentEnvironment.Dialogs;
