@@ -90,9 +90,9 @@ public class DrawProcessor : ProcessorCommon
 				case L: // left
 				case R: // right
 				case E: // up-right
-				case F: // up-left
+				case F: // down-right
 				case G: // down-left
-				case H: // down-right
+				case H: // up-left
 				case M: // move
 				{
 					AdvanceAndSkipWhitespace(ref input);
@@ -141,11 +141,11 @@ public class DrawProcessor : ProcessorCommon
 								R => 0,
 								E => 45,
 								U => 90,
-								F => 135,
+								H => 135,
 								L => 180,
 								G => 225,
 								D => 270,
-								H => 315,
+								F => 315,
 								_ => throw new Exception("Sanity failure")
 							};
 
@@ -160,14 +160,35 @@ public class DrawProcessor : ProcessorCommon
 						if ((input.Length > 0) && Encoding.IsDigit(input[0]))
 							commandLength *= ExpectInteger(ref input, executionContext);
 
-						commandAngle += _angle;
 						commandLength *= _scale;
 
+						commandAngle = double.DegreesToRadians(commandAngle);
+
+						// First calculate the position
 						dx = commandLength * Math.Cos(commandAngle);
 						dy = -commandLength * Math.Sin(commandAngle);
+
+						// Then scale it to normalize pixel size
+						double aspect = (_graphics.Height / (double)_graphics.PhysicalHeight) / (_graphics.Width / (double)_graphics.PhysicalWidth);
+
+						dy /= aspect;
+
+						// Then apply rotation
+						double a = double.DegreesToRadians(_angle);
+
+						double ca = Math.Cos(a);
+						double sa = -Math.Sin(a);
+
+						double udx = dx;
+						double udy = dy;
+
+						dx = udx * ca + udy * sa;
+						dy = udx * sa - udy * ca;
+
+						// Then undo the scaling
+						dy *= aspect;
 					}
 
-					dy = (dy * _graphics.PhysicalHeight + 240) / 480;
 
 					newPoint =
 						relative
