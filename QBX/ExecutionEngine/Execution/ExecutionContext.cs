@@ -17,7 +17,7 @@ namespace QBX.ExecutionEngine.Execution;
 //   the root frame if "LOCAL" isn't specified
 // - handler must live in the same Routine as the stack frame it's registered in
 // - ON ERROR (non-local) can be run at any time in any context and changes the
-//   registered handler in the root frame
+//   registered handler in the module frame
 // - execution of the handler re-enters the associated stack frame if necessary
 // - the execution of the handler is modelled as a type of Call
 // - RESUME retries the statement that failed
@@ -51,7 +51,6 @@ public class ExecutionContext
 
 	ManualResetEvent _rootFrameEstablished = new ManualResetEvent(initialState: false);
 
-	ErrorHandler? _mainErrorHandler = null;
 	Stack<ErrorHandler> _localErrorHandlers = new Stack<ErrorHandler>();
 
 	RuntimeState _runtimeState = new RuntimeState();
@@ -316,30 +315,6 @@ public class ExecutionContext
 		}
 	}
 
-	public void SetErrorHandler(ErrorResponse response, StatementPath? handlerPath = null)
-	{
-		if ((response == ErrorResponse.ExecuteHandler) && (handlerPath == null))
-			throw new Exception("Internal error: SetErrorHandler called with ErrorResponse.ExecuteHandler but no handlerPath");
-
-		_mainErrorHandler ??= new ErrorHandler() { StackFrame = _rootFrame };
-		_mainErrorHandler.Response = response;
-		_mainErrorHandler.HandlerPath = handlerPath;
-	}
-
-	public void ClearErrorHandler(CodeModel.Statements.Statement source)
-	{
-		if (_rootFrame!.IsHandlingError)
-		{
-			// If this stack frame is already handling an error, the dispatch
-			// has pulled the handler off of the error handlers stack and
-			// will be reinstalling it on resume. That reinstallation doesn't
-			// support clearing the handler. This matches QuickBASIC's behaviour.
-			throw RuntimeException.IllegalFunctionCall(source);
-		}
-
-		_mainErrorHandler = null;
-	}
-
 	public void SetLocalErrorHandler(StackFrame stackFrame, ErrorResponse response, StatementPath? handlerPath = null)
 	{
 		if ((response == ErrorResponse.ExecuteHandler) && (handlerPath == null))
@@ -363,7 +338,7 @@ public class ExecutionContext
 			newHandler.Response = response;
 			newHandler.HandlerPath = handlerPath;
 
-			stackFrame.NewErrorHandler = newHandler;
+			stackFrame.NewLocalErrorHandler = newHandler;
 
 			return;
 		}
@@ -419,10 +394,16 @@ public class ExecutionContext
 		foreach (var block in compilation.CommonBlocks)
 			_commonBlocks[block.Key] = block.Value.CreateStorage();
 
-		_rootFrame = CreateFrame(
-			entrypoint.Module,
-			entrypoint,
-			System.Array.Empty<Variable>());
+		foreach (var module in compilation.Modules)
+		{
+			module.SetModuleFrame(CreateFrame(
+				module,
+				module.MainRoutine ?? throw new Exception("Internal error: Module has no MainRoutine"),
+				arguments: System.Array.Empty<Variable>(),
+				isModuleFrame: true));
+		}
+
+		_rootFrame = entrypoint.Module.ModuleFrame!;
 
 		_executionState.StartExecution(_rootFrame);
 
@@ -531,7 +512,7 @@ public class ExecutionContext
 									handler = null;
 							}
 
-							handler ??= _mainErrorHandler;
+							handler ??= stackFrame.Module.MainErrorHandler;
 						}
 
 						if (handler != null)
@@ -603,10 +584,8 @@ public class ExecutionContext
 		{
 			stackFrame.IsHandlingError = false;
 
-			if (handler.StackFrame == _rootFrame)
-				_mainErrorHandler = _rootFrame.NewErrorHandler ?? handler;
-			else
-				_localErrorHandlers.Push(stackFrame.NewErrorHandler ?? handler);
+			if (!handler.StackFrame.IsModuleFrame)
+				_localErrorHandlers.Push(stackFrame.NewLocalErrorHandler ?? handler);
 
 			if (resume.GoTo != null)
 				throw resume.GoTo;
@@ -628,9 +607,9 @@ public class ExecutionContext
 	{
 		StackFrame frame;
 
-		if (routine.UseRootFrame)
+		if (routine.UseModuleFrame)
 		{
-			frame = _rootFrame ?? throw new Exception("No root frame");
+			frame = routine.Module.ModuleFrame ?? throw new Exception("No module frame");
 
 			for (int i=0; i < arguments.Length; i++)
 				frame.Variables[routine.ParameterVariableIndices[i]] = arguments[i];
@@ -713,7 +692,7 @@ public class ExecutionContext
 		}
 	}
 
-	StackFrame CreateFrame(Module module, Routine routine, Variable[] arguments)
+	StackFrame CreateFrame(Module module, Routine routine, Variable[] arguments, bool isModuleFrame = false)
 	{
 		var variableTypes = routine.VariableTypes;
 		var commonVariableLinkGroups = routine.CommonVariableLinkGroups;
@@ -730,18 +709,20 @@ public class ExecutionContext
 
 		arguments.CopyTo(variables, argumentOffset);
 
-		if (_rootFrame != null)
+		if (!isModuleFrame)
 		{
 			if (commonVariableLinkGroups.Count > 0)
-				throw new Exception("Internal error: Creating frame with common variable link groups when this is not a root frame");
+				throw new Exception("Internal error: Creating frame with common variable link groups when this is not a module frame");
+
+			var moduleFrame = module.ModuleFrame ?? throw new Exception("Internal: Module should already have ModuleFrame");
 
 			foreach (var link in linkedVariables)
-				variables[link.LocalIndex] = _rootFrame.Variables[link.RemoteIndex];
+				variables[link.LocalIndex] = moduleFrame.Variables[link.RemoteIndex];
 		}
 		else
 		{
 			if (linkedVariables.Count > 0)
-				throw new Exception("Internal error: Creating frame with linked variables when there is no root frame");
+				throw new Exception("Internal error: Creating frame with linked variables when there is no module frame yet");
 
 			foreach (var linkGroup in commonVariableLinkGroups)
 			{
@@ -767,6 +748,8 @@ public class ExecutionContext
 		}
 
 		var stackFrame = new StackFrame(routine, variables);
+
+		stackFrame.IsModuleFrame = isModuleFrame;
 
 		foreach (var staticArrayInitializer in routine.StaticArrays)
 			staticArrayInitializer.Execute(this, stackFrame);

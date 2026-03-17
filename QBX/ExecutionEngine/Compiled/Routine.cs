@@ -58,18 +58,18 @@ public class Routine : Sequence
 
 	public bool IsDefFn => (OpeningStatement is DefFnStatement);
 
-	public bool UseRootFrame = false;
+	public bool UseModuleFrame = false;
 
 	// SUB or FUNCTION
-	public Routine(Module module, Mapper? rootMapper, CodeModel.CompilationElement source)
+	public Routine(Module module, Mapper? moduleMapper, CodeModel.CompilationElement source)
 	{
 		Module = module;
 
 		Source = source;
 
-		Mapper = (rootMapper == null)
+		Mapper = (moduleMapper == null)
 			? new Mapper(this)
-			: rootMapper.CreateScope(this);
+			: moduleMapper.CreateScope(this);
 
 		Name = GetName(source);
 

@@ -7,7 +7,7 @@ public class OnErrorResumeNextStatement(bool local, CodeModel.Statements.Stateme
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (!local)
-			context.SetErrorHandler(ErrorResponse.SkipStatement);
+			stackFrame.Module.SetErrorHandler(ErrorResponse.SkipStatement);
 		else
 			context.SetLocalErrorHandler(stackFrame, ErrorResponse.SkipStatement);
 	}

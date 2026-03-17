@@ -15,7 +15,7 @@ public class OnErrorGoToLineStatement(string target, bool local, CodeModel.State
 			throw new Exception("Internal error: Executing an unresolved OnErrorGoToLineStatement");
 
 		if (!local)
-			context.SetErrorHandler(ErrorResponse.ExecuteHandler, TargetPath);
+			stackFrame.Module.SetErrorHandler(ErrorResponse.ExecuteHandler, TargetPath);
 		else
 			context.SetLocalErrorHandler(stackFrame, ErrorResponse.ExecuteHandler, TargetPath);
 	}

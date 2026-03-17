@@ -71,9 +71,9 @@ namespace QBX.ExecutionEngine.Compiled;
 
 public class Mapper
 {
-	Mapper? _root;
+	Mapper? _moduleMapper;
 
-	public Mapper RootMapper => _root ?? this;
+	public Mapper ModuleMapper => _moduleMapper ?? this;
 
 	public readonly Routine Routine;
 
@@ -141,12 +141,12 @@ public class Mapper
 
 		public bool IsStaticArray = false;
 
-		public int LinkedToRootVariableIndex = -1;
+		public int LinkedToModuleVariableIndex = -1;
 
 		public CommonBlock? LinkedToCommonBlock;
 		public int LinkedToCommonBlockVariableIndex;
 
-		public bool IsLinked => (LinkedToRootVariableIndex >= 0) || (LinkedToCommonBlock != null);
+		public bool IsLinked => (LinkedToModuleVariableIndex >= 0) || (LinkedToCommonBlock != null);
 	}
 
 	public Mapper(Routine mainRoutine)
@@ -158,22 +158,22 @@ public class Mapper
 		DeclareVariable("@ExitCode", DataType.Long);
 	}
 
-	Mapper(Mapper root, Routine subroutine)
+	Mapper(Mapper moduleMapper, Routine subroutine)
 	{
-		_root = root;
+		_moduleMapper = moduleMapper;
 
 		Routine = subroutine;
 
 		_identifierTypes.AsSpan().Fill(PrimitiveDataType.Single);
-		_constantValueByName = new Dictionary<string, LiteralValue>(root._constantValueByName);
+		_constantValueByName = new Dictionary<string, LiteralValue>(moduleMapper._constantValueByName);
 	}
 
 	public void MakeGlobalVariable(string identifier)
 	{
 		if (_isFrozen)
 			throw new Exception("The Mapper is frozen");
-		if (_root != null)
-			throw new Exception("Can only make global variables working with the root Mapper");
+		if (_moduleMapper != null)
+			throw new Exception("Can only make global variables working with the Module Mapper");
 
 		_globalVariableNames.Add(identifier);
 	}
@@ -182,8 +182,8 @@ public class Mapper
 	{
 		if (_isFrozen)
 			throw new Exception("The Mapper is frozen");
-		if (_root != null)
-			throw new Exception("Can only make global variables working with the root Mapper");
+		if (_moduleMapper != null)
+			throw new Exception("Can only make global variables working with the Module Mapper");
 
 		_globalArrayNames.Add(identifier);
 	}
@@ -205,33 +205,33 @@ public class Mapper
 	{
 		if (_isFrozen)
 			throw new Exception("The Mapper is frozen");
-		if (_root == null)
-			throw new InvalidOperationException("Cannot call LinkGlobalVariable on the root Mapper");
+		if (_moduleMapper == null)
+			throw new InvalidOperationException("Cannot call LinkGlobalVariable on the Module Mapper");
 
-		foreach (string name in _root._globalVariableNames)
+		foreach (string name in _moduleMapper._globalVariableNames)
 		{
-			int rootIndex = _root.ResolveVariable(name);
+			int moduleIndex = _moduleMapper.ResolveVariable(name);
 
-			var variableType = _root.GetVariableType(rootIndex);
+			var variableType = _moduleMapper.GetVariableType(moduleIndex);
 
 			int localIndex = ResolveVariable(name, variableType);
 
 			var info = _variables[localIndex];
 
-			info.LinkedToRootVariableIndex = rootIndex;
+			info.LinkedToModuleVariableIndex = moduleIndex;
 		}
 
-		foreach (string name in _root._globalArrayNames)
+		foreach (string name in _moduleMapper._globalArrayNames)
 		{
-			int rootIndex = _root.ResolveArray(name, out _);
+			int moduleIndex = _moduleMapper.ResolveArray(name, out _);
 
-			var arrayType = _root.GetVariableType(rootIndex);
+			var arrayType = _moduleMapper.GetVariableType(moduleIndex);
 
 			int localIndex = ResolveArray(name, out _, arrayType);
 
 			var info = _variables[localIndex];
 
-			info.LinkedToRootVariableIndex = rootIndex;
+			info.LinkedToModuleVariableIndex = moduleIndex;
 		}
 	}
 
@@ -239,14 +239,14 @@ public class Mapper
 	{
 		return
 			_variableIndexByName.TryGetValue(name, out var index) &&
-			(_variables[index].LinkedToRootVariableIndex >= 0);
+			(_variables[index].LinkedToModuleVariableIndex >= 0);
 	}
 
 	public bool IsLinkedArray(string name)
 	{
 		return
 			_arrayIndexByName.TryGetValue(name, out var index) &&
-			(_variables[index].LinkedToRootVariableIndex >= 0);
+			(_variables[index].LinkedToModuleVariableIndex >= 0);
 	}
 
 	Stack<PrimitiveDataType[]> _identifierTypesStack = new Stack<PrimitiveDataType[]>();
@@ -419,7 +419,7 @@ public class Mapper
 
 	public Mapper CreateScope(Routine subroutine)
 	{
-		if (_root != null)
+		if (_moduleMapper != null)
 			throw new InvalidOperationException("Cannot create a mapper scope off of a scope");
 
 		return new Mapper(this, subroutine);
@@ -434,8 +434,8 @@ public class Mapper
 	{
 		if (_isFrozen)
 			throw new Exception("The Mapper is frozen");
-		if (_root != null)
-			throw new Exception("Can only link to a common variable from the root");
+		if (_moduleMapper != null)
+			throw new Exception("Can only link to a common variable from the Module Mapper");
 
 		var variableInfo = _variables[variableIndex];
 
@@ -443,51 +443,51 @@ public class Mapper
 		variableInfo.LinkedToCommonBlockVariableIndex = commonBlockVariableIndex;
 	}
 
-	public void LinkRootVariable(string name)
-		=> LinkRootVariable(name, name);
+	public void LinkModuleVariable(string name)
+		=> LinkModuleVariable(name, name);
 
-	public void LinkRootVariable(string localName, string rootName)
+	public void LinkModuleVariable(string localName, string moduleName)
 	{
 		if (_isFrozen)
 			throw new Exception("The Mapper is frozen");
-		if (_root == null)
-			throw new Exception("Cannot link to a root variable from the root");
+		if (_moduleMapper == null)
+			throw new Exception("Cannot link to a module variable from the Module Mapper");
 
 		localName = QualifyIdentifier(localName);
-		rootName = QualifyIdentifier(rootName);
+		moduleName = QualifyIdentifier(moduleName);
 
 		int localIndex = ResolveVariable(localName);
-		int rootIndex = _root.ResolveVariable(rootName);
+		int moduleIndex = _moduleMapper.ResolveVariable(moduleName);
 
 		var variableInfo = _variables[localIndex];
 
-		variableInfo.LinkedToRootVariableIndex = rootIndex;
+		variableInfo.LinkedToModuleVariableIndex = moduleIndex;
 	}
 
-	public void LinkRootArray(string localName, string rootName, DataType? arrayType = null)
+	public void LinkModuleArray(string localName, string moduleName, DataType? arrayType = null)
 	{
 		if (_isFrozen)
 			throw new Exception("The Mapper is frozen");
-		if (_root == null)
-			throw new Exception("Cannot link to a root variable from the root");
+		if (_moduleMapper == null)
+			throw new Exception("Cannot link to a module variable from the Module Mapper");
 
 		if (arrayType == null)
 		{
 			localName = QualifyIdentifier(localName);
-			rootName = QualifyIdentifier(rootName);
+			moduleName = QualifyIdentifier(moduleName);
 		}
 		else if (arrayType.IsPrimitiveType)
 		{
 			localName = QualifyIdentifier(localName, arrayType.PrimitiveType);
-			rootName = QualifyIdentifier(rootName, arrayType.PrimitiveType);
+			moduleName = QualifyIdentifier(moduleName, arrayType.PrimitiveType);
 		}
 
 		int localIndex = ResolveArray(localName);
-		int rootIndex = _root.ResolveArray(rootName);
+		int moduleIndex = _moduleMapper.ResolveArray(moduleName);
 
 		var variableInfo = _variables[localIndex];
 
-		variableInfo.LinkedToRootVariableIndex = rootIndex;
+		variableInfo.LinkedToModuleVariableIndex = moduleIndex;
 	}
 
 	string? GetSlug(string identifier)
@@ -515,9 +515,9 @@ public class Mapper
 
 	public void ScanForDisallowedSlugs(IEnumerable<CodeModel.Statements.Statement> statements)
 	{
-		if (_root != null)
+		if (_moduleMapper != null)
 		{
-			foreach (var global in _root.GlobalIdentifiers)
+			foreach (var global in _moduleMapper.GlobalIdentifiers)
 				AddDisallowedSlug(global);
 		}
 
@@ -568,8 +568,8 @@ public class Mapper
 	{
 		if (_constantValueByName.TryGetValue(name, out literalValue))
 			return true;
-		else if (_root != null)
-			return _root.TryResolveConstant(name, out literalValue);
+		else if (_moduleMapper != null)
+			return _moduleMapper.TryResolveConstant(name, out literalValue);
 		else
 		{
 			literalValue = default;
@@ -627,8 +627,8 @@ public class Mapper
 
 		if (_constantValueByName.TryGetValue(unqualifiedName, out _))
 			throw CompilerException.DuplicateDefinition(token);
-		if ((_root != null)
-		 && _root._constantValueByName.TryGetValue(unqualifiedName, out _))
+		if ((_moduleMapper != null)
+		 && _moduleMapper._constantValueByName.TryGetValue(unqualifiedName, out _))
 			throw CompilerException.DuplicateDefinition(token);
 
 		// During semiscope setup, we allow new declarations to shadow
@@ -775,20 +775,20 @@ public class Mapper
 
 	public List<VariableLink> GetLinkedVariables() =>
 		_variables
-		.Where(info => info.LinkedToRootVariableIndex >= 0)
+		.Where(info => info.LinkedToModuleVariableIndex >= 0)
 		.Select(info =>
 			new VariableLink()
 			{
 				LocalIndex = info.Index,
-				RemoteIndex = info.LinkedToRootVariableIndex,
+				RemoteIndex = info.LinkedToModuleVariableIndex,
 			})
 		.ToList();
 
 	public void RegisterTypeFacade(UserDataTypeFacade udtFacade)
 	{
-		if (_root != null)
+		if (_moduleMapper != null)
 		{
-			_root.RegisterTypeFacade(udtFacade);
+			_moduleMapper.RegisterTypeFacade(udtFacade);
 			return;
 		}
 
@@ -813,8 +813,8 @@ public class Mapper
 		if (userTypeName == null)
 			return DataType.FromCodeModelDataType(primitiveType, fixedStringLength);
 
-		if (_root != null)
-			return _root.ResolveType(primitiveType, userTypeName, fixedStringLength, isArray, context);
+		if (_moduleMapper != null)
+			return _moduleMapper.ResolveType(primitiveType, userTypeName, fixedStringLength, isArray, context);
 		else
 		{
 			if (_typeFacadeByName.TryGetValue(userTypeName, out var type))

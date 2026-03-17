@@ -30,24 +30,24 @@ public class Compiler
 	{
 		var module = new Module(compilation);
 
-		Mapper? rootMapper = null;
+		Mapper? moduleMapper = null;
 
 		var routines = new List<Routine>();
 
 		// First pass: collect all routines
 		foreach (var element in unit.Elements)
 		{
-			var routine = new Routine(module, rootMapper, element);
+			var routine = new Routine(module, moduleMapper, element);
 
 			if (compilation.IsRegistered(routine.Name))
 				throw CompilerException.DuplicateDefinition(element.AllStatements.FirstOrDefault());
 
-			if (rootMapper == null)
+			if (moduleMapper == null)
 			{
 				if (routine.Name != Routine.MainRoutineName)
 					throw new Exception("First routine is not the main routine");
 
-				rootMapper = routine.Mapper;
+				moduleMapper = routine.Mapper;
 			}
 
 			if (routine.Name == Routine.MainRoutineName)
@@ -66,7 +66,7 @@ public class Compiler
 			routines.Add(routine);
 		}
 
-		if (rootMapper == null)
+		if (moduleMapper == null)
 			throw new Exception("CompilationUnit does not have any CompilationElements");
 
 		// Second pass: process all TYPE definitions
@@ -89,7 +89,7 @@ public class Compiler
 						break;
 
 					case CodeModel.Statements.EndTypeStatement:
-						TranslateTypeDefinition(typeStatement, typeElementStatements, rootMapper, compilation, module);
+						TranslateTypeDefinition(typeStatement, typeElementStatements, moduleMapper, compilation, module);
 
 						typeStatement = null;
 						typeElementStatements.Clear();
@@ -246,13 +246,13 @@ public class Compiler
 
 					if (!variableType.IsArray)
 					{
-						rootMapper.DeclareVariable(hiddenVariableName, variableType, variable.NameToken);
-						mapper.LinkRootVariable(variable.Name, hiddenVariableName);
+						moduleMapper.DeclareVariable(hiddenVariableName, variableType, variable.NameToken);
+						mapper.LinkModuleVariable(variable.Name, hiddenVariableName);
 					}
 					else
 					{
-						rootMapper.DeclareArray(hiddenVariableName, variableType, variable.NameToken);
-						mapper.LinkRootArray(variable.Name, hiddenVariableName);
+						moduleMapper.DeclareArray(hiddenVariableName, variableType, variable.NameToken);
+						mapper.LinkModuleArray(variable.Name, hiddenVariableName);
 					}
 				}
 			}
@@ -1109,7 +1109,7 @@ public class Compiler
 					mapper.ExitSemiscope();
 				}
 
-				defFnRoutine.UseRootFrame = true;
+				defFnRoutine.UseModuleFrame = true;
 
 				compilation.RegisterFunction(defFnRoutine);
 
@@ -2803,7 +2803,7 @@ public class Compiler
 			{
 				bool createNewVariables = (variableScopeStatement.ScopeType == CodeModel.Statements.VariableScopeType.Static);
 
-				var rootMapper = mapper.RootMapper;
+				var rootMapper = mapper.ModuleMapper;
 
 				foreach (var declaration in variableScopeStatement.Declarations)
 				{
@@ -2836,7 +2836,7 @@ public class Compiler
 							rootVariableName = hiddenVariableName;
 						}
 
-						mapper.LinkRootVariable(declaration.Name, rootVariableName);
+						mapper.LinkModuleVariable(declaration.Name, rootVariableName);
 					}
 					else
 					{
@@ -2858,7 +2858,7 @@ public class Compiler
 							rootVariableName = hiddenVariableName;
 						}
 
-						mapper.LinkRootArray(declaration.Name, rootVariableName, variableType);
+						mapper.LinkModuleArray(declaration.Name, rootVariableName, variableType);
 					}
 				}
 

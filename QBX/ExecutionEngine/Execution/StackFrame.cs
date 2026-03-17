@@ -9,11 +9,16 @@ namespace QBX.ExecutionEngine.Execution;
 public class StackFrame(Routine routine, Variable[] variables)
 {
 	public readonly Routine Routine = routine;
+	public readonly Module Module = routine.Module;
 	public readonly Variable[] Variables = variables;
 	public CodeModel.Statements.Statement? CurrentStatement;
 
+	public bool IsModuleFrame;
+
+	public StackFrame ModuleFrame => Routine.Module.ModuleFrame ?? throw new Exception("Internal error: Module frame is not initialized");
+
 	public bool IsHandlingError;
-	public ErrorHandler? NewErrorHandler;
+	public ErrorHandler? NewLocalErrorHandler;
 
 	// FOR loops have this interesting property that they capture
 	// state pertinent to the current stack frame. The from, to and

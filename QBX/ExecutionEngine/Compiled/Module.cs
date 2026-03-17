@@ -14,6 +14,20 @@ public class Module
 	public DataParser DataParser = new DataParser();
 	public UnresolvedReferences UnresolvedReferences;
 
+	public StackFrame? ModuleFrame => _moduleFrame;
+
+	StackFrame? _moduleFrame;
+
+	public void SetModuleFrame(StackFrame moduleFrame)
+	{
+		if (!moduleFrame.IsModuleFrame)
+			throw new Exception("Internal error: Trying to set a non-module frame as module frame");
+
+		_moduleFrame = moduleFrame;
+	}
+
+	public ErrorHandler? MainErrorHandler;
+
 	// SUBs and FUNCTIONs:
 	//   In each module, each SUB/FUNCTION can have its own declared signature.
 	//   These must line up in order to be compatible, but the names of
@@ -50,4 +64,30 @@ public class Module
 
 	public bool TryGetNativeProcedure(string name, [NotNullWhen(true)] out NativeProcedure? procedure)
 		=> NativeProcedures.TryGetValue(name, out procedure);
+
+	// Error handling: module-level error handlers are assigned per-module and only handle
+	// errors that occur within that module
+	public void SetErrorHandler(ErrorResponse response, StatementPath? handlerPath = null)
+	{
+		if ((response == ErrorResponse.ExecuteHandler) && (handlerPath == null))
+			throw new Exception("Internal error: SetErrorHandler called with ErrorResponse.ExecuteHandler but no handlerPath");
+
+		MainErrorHandler ??= new ErrorHandler() { StackFrame = ModuleFrame };
+		MainErrorHandler.Response = response;
+		MainErrorHandler.HandlerPath = handlerPath;
+	}
+
+	public void ClearErrorHandler(CodeModel.Statements.Statement source)
+	{
+		if (ModuleFrame!.IsHandlingError)
+		{
+			// If this stack frame is already handling an error, the dispatch
+			// has pulled the handler off of the error handlers stack and
+			// will be reinstalling it on resume. That reinstallation doesn't
+			// support clearing the handler. This matches QuickBASIC's behaviour.
+			throw RuntimeException.IllegalFunctionCall(source);
+		}
+
+		MainErrorHandler = null;
+	}
 }
