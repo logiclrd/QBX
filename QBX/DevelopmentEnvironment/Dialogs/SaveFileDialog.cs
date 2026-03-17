@@ -353,7 +353,7 @@ public class SaveFileDialog : DialogWithDirectoryList
 
 	private void cmdOK_Activated()
 	{
-		txtFileName.Activate();
+		OnActivated();
 	}
 
 	private void cmdCancel_Activated()
