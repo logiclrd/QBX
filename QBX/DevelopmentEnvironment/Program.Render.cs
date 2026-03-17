@@ -510,8 +510,8 @@ public partial class Program
 			else
 			{
 				// Draw line that contains no selected characters but might have some highlighted characters.
-				int highlightStart = -1;
-				int highlightEnd = -1;
+				int highlightStart = viewportContentWidth;
+				int highlightEnd = viewportContentWidth - 1;
 
 				if (lineIndex == nextLineIndex)
 				{
@@ -519,79 +519,77 @@ public partial class Program
 					highlightEnd = nextEndColumn - viewport.ScrollX;
 				}
 
-				if ((highlightStart >= viewportContentWidth) || (highlightEnd < 0))
-				{
-					rowAttr.Set(TextLibrary);
+				int visibleLineStart = viewport.ScrollX;
 
-					int virtualChars = viewportContentWidth - chars;
+				int unhighlightedLeft;
+				int highlightedChars;
+				int unhighlightedRight;
 
-					TextLibrary.WriteText(buffer, viewport.ScrollX, chars);
-					TextLibrary.WriteText(_spaces, 0, virtualChars);
-				}
+				if (highlightStart >= 0)
+					unhighlightedLeft = highlightStart;
 				else
 				{
-					if (viewport.ScrollX + highlightStart > buffer.Length)
-						highlightStart = buffer.Length - viewport.ScrollX;
-
-					int unhighlightedLeft = highlightStart;
-					int highlightedChars = highlightEnd - highlightStart + 1;
-					int unhighlightedRight = viewportContentWidth - highlightEnd - 1;
-
-					if (unhighlightedRight < 0)
-					{
-						highlightedChars += unhighlightedRight;
-						unhighlightedRight = 0;
-					}
-
-					// Unhighlighted portion to the left
-					int realChars = unhighlightedLeft;
-
-					if (viewport.ScrollX + realChars > buffer.Length)
-						realChars = buffer.Length - viewport.ScrollX;
-
-					int virtualChars = unhighlightedLeft - realChars;
-
-					rowAttr.Set(TextLibrary);
-
-					TextLibrary.WriteText(buffer, viewport.ScrollX, realChars);
-					TextLibrary.WriteText(_spaces, 0, virtualChars);
-
-					// Highlighted portion
-					realChars = highlightedChars;
-
-					if (viewport.ScrollX + highlightStart + realChars > buffer.Length)
-					{
-						realChars = buffer.Length - viewport.ScrollX - highlightStart;
-
-						if (realChars < 0)
-							realChars = 0;
-					}
-
-					virtualChars = highlightedChars - realChars;
-
-					rowHighlightAttr.Set(TextLibrary);
-
-					TextLibrary.WriteText(buffer, viewport.ScrollX + highlightStart, realChars);
-					TextLibrary.WriteText(_spaces, 0, virtualChars);
-
-					// Unhighlighted portion to the right
-					rowAttr.Set(TextLibrary);
-
-					realChars = unhighlightedRight;
-
-					if (viewport.ScrollX + highlightEnd + 1 + realChars > buffer.Length)
-					{
-						realChars = buffer.Length - viewport.ScrollX - highlightEnd - 1;
-
-						if (realChars < 0)
-							realChars = 0;
-					}
-
-					virtualChars = unhighlightedRight - realChars;
-
-					TextLibrary.WriteText(buffer, viewport.ScrollX + highlightEnd + 1, realChars);
-					TextLibrary.WriteText(_spaces, 0, virtualChars);
+					unhighlightedLeft = 0;
+					highlightStart = 0;
 				}
+
+				highlightedChars = highlightEnd - highlightStart + 1;
+
+				if (highlightedChars < 0)
+					highlightedChars = 0;
+
+				int remainingChars = viewportContentWidth - (unhighlightedLeft + highlightedChars);
+
+				if (remainingChars > 0)
+					unhighlightedRight = remainingChars;
+				else
+				{
+					highlightEnd += remainingChars;
+					highlightedChars += remainingChars;
+					unhighlightedRight = 0;
+				}
+
+				void WriteTextPadded(ref int index, int length)
+				{
+					if (index < 0)
+					{
+						TextLibrary.WriteText(_spaces, 0, -index);
+						length += index;
+						index = 0;
+					}
+
+					int realChars = Math.Min(length, buffer.Length - index);
+					int virtualChars = length - realChars;
+
+					if (realChars < 0)
+					{
+						virtualChars += realChars;
+						realChars = 0;
+					}
+
+					TextLibrary.WriteText(buffer, index, realChars);
+					TextLibrary.WriteText(_spaces, 0, virtualChars);
+
+					index += length;
+				}
+
+				rowAttr.Set(TextLibrary);
+
+				int charIndex = visibleLineStart;
+
+				// Unhighlighted portion to the left
+				WriteTextPadded(ref charIndex, unhighlightedLeft);
+
+				// Highlighted portion
+				if (highlightedChars > 0)
+				{
+					rowHighlightAttr.Set(TextLibrary);
+					WriteTextPadded(ref charIndex, highlightedChars);
+					rowAttr.Set(TextLibrary);
+				}
+
+				// Unhighlighted portion to the right
+				WriteTextPadded(ref charIndex, unhighlightedRight);
 			}
 
 			if (!verticalScrollBar)
