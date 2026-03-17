@@ -36,27 +36,34 @@ public class HelpSystem
 
 	public bool ProbeForFileAtPath(string path)
 	{
-		// Embedded paths could conceivably contain DOS directory separator characters.
-		path = path.Replace('\\', '/');
-
-		// Need to process the filename case-insensitively even if the underlying platform is case-sensitive.
-		string containerPath = Path.GetDirectoryName(path) ?? ".";
-		string requestedFileName = Path.GetFileName(path);
-
-		if (string.IsNullOrWhiteSpace(containerPath))
-			containerPath = ".";
-
-		string[] files = Directory.GetFiles(containerPath, "*");
-
-		var matchingFile = Array.Find(
-			files,
-			name => string.Equals(Path.GetFileName(name), requestedFileName, StringComparison.InvariantCultureIgnoreCase));
-
-		if ((matchingFile != null) && File.Exists(matchingFile))
+		try
 		{
-			LoadFile(matchingFile);
-			return true;
+			// Embedded paths could conceivably contain DOS directory separator characters.
+			path = path.Replace('\\', '/');
+
+			// Need to process the filename case-insensitively even if the underlying platform is case-sensitive.
+			string containerPath = Path.GetDirectoryName(path) ?? ".";
+			string requestedFileName = Path.GetFileName(path);
+
+			if (!Directory.Exists(containerPath))
+				return false;
+
+			if (string.IsNullOrWhiteSpace(containerPath))
+				containerPath = ".";
+
+			string[] files = Directory.GetFiles(containerPath, "*");
+
+			var matchingFile = Array.Find(
+				files,
+				name => string.Equals(Path.GetFileName(name), requestedFileName, StringComparison.InvariantCultureIgnoreCase));
+
+			if ((matchingFile != null) && File.Exists(matchingFile))
+			{
+				LoadFile(matchingFile);
+				return true;
+			}
 		}
+		catch { }
 
 		return false;
 	}
