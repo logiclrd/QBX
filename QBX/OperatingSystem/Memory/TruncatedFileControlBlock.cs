@@ -13,14 +13,24 @@ public struct TruncatedFileControlBlock
 	[FieldOffset(12)] public ushort CurrentBlockNumber;
 	[FieldOffset(14)] public ushort RecordSize;
 
-	public void ParseFileName(ReadOnlySpan<byte> bytes)
+	public bool TryParseFileName(ReadOnlySpan<byte> bytes)
 	{
-		if ((bytes.Length >= 2) && (bytes[1] == (byte)':'))
+		const byte NotSpecified = 0xFF;
+
+		byte driveIdentifier = NotSpecified;
+
+		if (PathCharacter.TryGetDriveLetter(bytes, out byte driveLetter))
 		{
-			DriveIdentifier = (byte)(PathCharacter.ToUpper(bytes[0]) - 'A' + 1);
+			driveIdentifier = (byte)(PathCharacter.ToUpper(driveLetter) - 'A' + 1);
 			bytes = bytes.Slice(2);
 		}
 
-		FileControlBlock.SetFileName(bytes, FileNameBytes);
+		if (!FileControlBlock.TrySetFileName(bytes, FileNameBytes))
+			return false;
+
+		if (driveIdentifier != NotSpecified)
+			DriveIdentifier = driveIdentifier;
+
+		return true;
 	}
 }

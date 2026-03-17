@@ -27,7 +27,7 @@ public class PathCharacter
 		return driveLetter;
 	}
 
-	public static bool TryGetDriveLetter(string path, out char driveLetter)
+	public static bool TryGetDriveLetter(ReadOnlySpan<char> path, out char driveLetter)
 	{
 		if ((path.Length >= 2)
 		 && char.IsAsciiLetter(path[0])
@@ -39,6 +39,22 @@ public class PathCharacter
 		else
 		{
 			driveLetter = 'C'; // "C:/" synthetic drive on platforms with no drive letters
+			return false;
+		}
+	}
+
+	public static bool TryGetDriveLetter(ReadOnlySpan<byte> path, out byte driveLetter)
+	{
+		if ((path.Length >= 2)
+		 && CP437Encoding.IsAsciiLetter(path[0])
+		 && (path[1] == VolumeSeparatorChar))
+		{
+			driveLetter = CP437Encoding.ToUpper(path[0]);
+			return true;
+		}
+		else
+		{
+			driveLetter = (byte)'C'; // "C:/" synthetic drive on platforms with no drive letters
 			return false;
 		}
 	}

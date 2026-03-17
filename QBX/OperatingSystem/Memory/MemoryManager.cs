@@ -387,11 +387,7 @@ public class MemoryManager : IMemoryManager
 
 		if (firstArgumentStart < commandLine.Length)
 		{
-			try
-			{
-				psp.FCB1.ParseFileName(commandLine.AsSpan().Slice(firstArgumentStart, firstArgumentEnd - firstArgumentStart + 1));
-			}
-			catch { }
+			psp.FCB1.TryParseFileName(commandLine.AsSpan().Slice(firstArgumentStart, firstArgumentEnd - firstArgumentStart + 1));
 
 			int secondArgumentStart = firstArgumentEnd + 1;
 
@@ -404,13 +400,7 @@ public class MemoryManager : IMemoryManager
 				secondArgumentEnd++;
 
 			if (secondArgumentStart < commandLine.Length)
-			{
-				try
-				{
-					psp.FCB2.ParseFileName(commandLine.AsSpan().Slice(secondArgumentStart, secondArgumentEnd - secondArgumentStart + 1));
-				}
-				catch { }
-			}
+				psp.FCB2.TryParseFileName(commandLine.AsSpan().Slice(secondArgumentStart, secondArgumentEnd - secondArgumentStart + 1));
 		}
 
 		var commandLineBytes = commandLine.AsSpan();
