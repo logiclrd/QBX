@@ -235,8 +235,16 @@ public class Compiler
 			if ((routine.OpeningStatement != null)
 			 && routine.OpeningStatement.IsStatic)
 			{
+				int parameterCount = routine.ParameterTypes.Count;
+
 				foreach (var variable in mapper.GetVariableNames())
 				{
+					if (parameterCount > 0)
+					{
+						parameterCount--;
+						continue;
+					}
+
 					if (variable.IsLinked)
 						continue;
 
