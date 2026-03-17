@@ -43,8 +43,6 @@ public class CompilationElementStatementIterator(CompilationElement element, Cod
 
 			line = element.Lines[lineIndex];
 
-			line.SourceLineIndex = new Utility.MutableBox<int>(LineIndex);
-
 			if (line.LineNumber != null)
 				SetLineNumberStatement(new LabelStatement(line.LineNumber, line.Statements.First()));
 			if (line.Label != null)

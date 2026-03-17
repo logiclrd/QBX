@@ -66,16 +66,16 @@ public class CompilationElement : IRenderableCode, IEditableElement
 
 	public void AddLine(CodeLine line)
 	{
-		_lines.Add(line);
 		line.CompilationElement = this;
+		line.SourceLineIndex = _lines.Count;
+
+		_lines.Add(line);
 	}
 
 	public void AddLines(IEnumerable<CodeLine> lines)
 	{
-		_lines.AddRange(lines);
-
 		foreach (var line in lines)
-			line.CompilationElement = this;
+			AddLine(line);
 	}
 
 	void IEditableElement.InsertLine(int index, IEditableLine line) => InsertLine(index, (CodeLine)line);
@@ -85,8 +85,8 @@ public class CompilationElement : IRenderableCode, IEditableElement
 		_lines.Insert(index, line);
 		line.CompilationElement = this;
 
-		for (int lineNumber = index; lineNumber < _lines.Count; lineNumber++)
-			_lines[lineNumber].SourceLineIndex.Value = lineNumber;
+		for (int lineIndex = index; lineIndex < _lines.Count; lineIndex++)
+			_lines[lineIndex].SourceLineIndex = lineIndex;
 	}
 
 	void IEditableElement.ReplaceLine(int index, IEditableLine line) => ReplaceLine(index, (CodeLine)line);
@@ -101,7 +101,7 @@ public class CompilationElement : IRenderableCode, IEditableElement
 		_lines[index] = newLine;
 
 		newLine.CompilationElement = this;
-		newLine.SourceLineIndex.Value = index;
+		newLine.SourceLineIndex = index;
 	}
 
 	public void RemoveLineAt(int index)
@@ -111,8 +111,8 @@ public class CompilationElement : IRenderableCode, IEditableElement
 			_lines[index].CompilationElement = null;
 			_lines.RemoveAt(index);
 
-			for (int lineNumber = index; lineNumber < _lines.Count; lineNumber++)
-				_lines[lineNumber].SourceLineIndex.Value = lineNumber;
+			for (int lineIndex = index; lineIndex < _lines.Count; lineIndex++)
+				_lines[lineIndex].SourceLineIndex = lineIndex;
 		}
 	}
 
@@ -193,7 +193,7 @@ public class CompilationElement : IRenderableCode, IEditableElement
 
 			if ((line.Statements.Count == 0) && (line.EndOfLineComment == null))
 			{
-				_lines.RemoveAt(lineIndex);
+				RemoveLineAt(lineIndex);
 				lineIndex--;
 			}
 		}

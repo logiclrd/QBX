@@ -404,7 +404,6 @@ public class Compiler
 				ProcessCommentForDirectives(commentText, compilation);
 			}
 
-			line.SourceLineIndex ??= new MutableBox<int>(lineIndex); // Just in case there are no statements on this line
 			lineIndexRef = lineIndex + 1;
 			statementIndexRef = 0;
 			return;
@@ -413,9 +412,6 @@ public class Compiler
 		try
 		{
 			var statement = line.Statements[statementIndex];
-
-			if (statement.FirstToken != null) // should always be true
-				line.SourceLineIndex = statement.FirstToken.LineNumberBox;
 
 			if (statementIndex == 0)
 			{

@@ -289,7 +289,7 @@ public partial class Program
 			 && (nextStatement.CodeLine is CodeLine codeLine)
 			 && (viewport.EditableElement == codeLine.CompilationElement))
 			{
-				nextLineIndex = codeLine.SourceLineIndex.Value;
+				nextLineIndex = codeLine.SourceLineIndex;
 
 				if (_errorToken != null)
 				{

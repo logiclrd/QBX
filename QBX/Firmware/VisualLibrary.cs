@@ -399,15 +399,20 @@ public abstract class VisualLibrary : IDisposable
 				if (thisChunkLength > count)
 					thisChunkLength = count;
 
-				var thisChunk = chunk.Slice(offset, thisChunkLength);
+				if (thisChunkLength < 0)
+					offset += thisChunkLength;
+				else
+				{
+					var thisChunk = chunk.Slice(offset, thisChunkLength);
 
-				WriteText(thisChunk);
+					WriteText(thisChunk);
 
-				offset = 0;
-				count -= thisChunk.Length;
+					offset = 0;
+					count -= thisChunkLength;
 
-				if (count == 0)
-					break;
+					if (count == 0)
+						break;
+				}
 			}
 		}
 	}

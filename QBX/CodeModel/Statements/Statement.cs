@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -25,6 +26,14 @@ public abstract class Statement : IRenderableCode
 	public int LineNumberForErrorReporting { get; set; }
 
 	public virtual IEnumerable<Statement> Substatements => Enumerable.Empty<Statement>();
+
+	public void SetCodeLineRecursive(CodeLine codeLine)
+	{
+		CodeLine = codeLine;
+
+		foreach (var substatement in Substatements)
+			substatement.SetCodeLineRecursive(codeLine);
+	}
 
 	public void Render(TextWriter writer)
 	{

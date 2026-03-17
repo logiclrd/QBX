@@ -16,9 +16,7 @@ public class CodeLine : IRenderableCode, IEditableLine
 	public CompilationElement? CompilationElement { get; set; }
 
 	// Populated by Compiler
-	public MutableBox<int> SourceLineIndex = DummySourceLineNumberBox;
-
-	static MutableBox<int> DummySourceLineNumberBox = new MutableBox<int>();
+	public int SourceLineIndex;
 
 	// Line number must be numeric in format, but in practice is
 	// parsed as any string ###.### with total length <= 40.
@@ -105,7 +103,7 @@ public class CodeLine : IRenderableCode, IEditableLine
 	public void AppendStatement(Statement statement)
 	{
 		_statements.Add(statement);
-		statement.CodeLine = this;
+		statement.SetCodeLineRecursive(this);
 	}
 
 	public Statement RemoveStatementAt(int statementIndex)
