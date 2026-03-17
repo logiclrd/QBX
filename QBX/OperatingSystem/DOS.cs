@@ -876,7 +876,16 @@ public partial class DOS
 
 	int AllocateFileHandleForOpenFile(string path, string physicalPath, FileStream stream)
 	{
-		return AllocateFileHandleForFileDescriptor(new RegularFileDescriptor(path, physicalPath, stream));
+		return AllocateFileHandleForOpenFile(path, physicalPath, stream, IOMode.Binary);
+	}
+
+	int AllocateFileHandleForOpenFile(string path, string physicalPath, FileStream stream, IOMode ioMode)
+	{
+		var fileDescriptor = new RegularFileDescriptor(path, physicalPath, stream);
+
+		fileDescriptor.SetIOMode(ioMode);
+
+		return AllocateFileHandleForFileDescriptor(fileDescriptor);
 	}
 
 	int AllocateFileHandleForFileDescriptor(FileDescriptor fileDescriptor)
@@ -1013,7 +1022,7 @@ public partial class DOS
 								GatherFileInfo();
 							}
 
-							fcb.FileHandle = AllocateFileHandleForOpenFile(shortPath, fileInfo.FullName, stream);
+							fcb.FileHandle = AllocateFileHandleForOpenFile(shortPath, fileInfo.FullName, stream, IOMode.ASCII);
 
 							fcb.CurrentBlockNumber = 0;
 							fcb.CurrentRecordNumber = 0;
