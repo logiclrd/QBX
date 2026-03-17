@@ -136,6 +136,9 @@ public class Token(MutableBox<int> line, int column, TokenType type, string valu
 		writer.Write(keyword);
 	}
 
+	public static Token ForIdentifier(MutableBox<int> line, int column, string identifier, DataType dataType)
+		=> new Token(line, column, TokenType.Identifier, identifier, dataType);
+
 	public static Token ForCharacter(MutableBox<int> line, int column, char ch) => s_characterTokens[ch].Emplace(line, column);
 
 	public static bool TryForCharacter(MutableBox<int> line, int column, char ch, [NotNullWhen(true)] out Token? token)

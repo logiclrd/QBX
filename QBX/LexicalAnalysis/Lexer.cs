@@ -503,7 +503,7 @@ public class Lexer(TextReader input, int startingLineNumber = 0) : IEnumerable<T
 							if (Token.TryForKeyword(line, tokenStartColumn, word, out var keyword))
 								yield return keyword;
 							else
-								yield return new Token(line, tokenStartColumn, TokenType.Identifier, word, dataType);
+								yield return Token.ForIdentifier(line, tokenStartColumn, word, dataType);
 
 							buffer.Clear();
 							mode = Mode.Any;
