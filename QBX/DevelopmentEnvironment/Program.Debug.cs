@@ -119,6 +119,12 @@ public partial class Program
 			 && (TextLibrary.CursorY <= dialog.Y + dialog.Height)) // include the shadow
 				dialog.Y = TextLibrary.Height - dialog.Height - 1;
 		}
+
+		dialog.Closed +=
+			(_, _) =>
+			{
+				_errorToken = null;
+			};
 	}
 
 	public void ToggleBreakpoint(CodeLine codeLine)
