@@ -1,8 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-
-using QBX.CodeModel.Expressions;
 
 namespace QBX.CodeModel.Statements;
 
@@ -10,23 +7,18 @@ public class CloseStatement : Statement
 {
 	public override StatementType Type => StatementType.Close;
 
-	public List<Expression> FileNumberExpressions { get; } = new List<Expression>();
+	public List<CloseArgument> Arguments { get; } = new List<CloseArgument>();
 
 	protected override void RenderImplementation(TextWriter writer)
 	{
-		writer.Write("CLOSE");
+		writer.Write("CLOSE ");
 
-		if (FileNumberExpressions.Any())
+		for (int i = 0; i < Arguments.Count; i++)
 		{
-			writer.Write(" #");
+			if (i > 0)
+				writer.Write(", ");
 
-			for (int i = 0; i < FileNumberExpressions.Count; i++)
-			{
-				if (i > 0)
-					writer.Write(", #");
-
-				FileNumberExpressions[i].Render(writer);
-			}
+			Arguments[i].Render(writer);
 		}
 	}
 }

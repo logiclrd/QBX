@@ -704,11 +704,18 @@ public class BasicParser
 						if (arguments[i].Count == 0)
 							throw new SyntaxErrorException(midToken, "Expected: expression");
 
-						if (arguments[i].First().Type == TokenType.NumberSign)
-							arguments[i] = arguments[i].Slice(1);
+						bool numberSign = false;
 
-						closeStatement.FileNumberExpressions.Add(
-							ParseExpressionForStatement(closeStatement, arguments[i], midToken));
+						if (arguments[i].First().Type == TokenType.NumberSign)
+						{
+							numberSign = true;
+							arguments[i] = arguments[i].Slice(1);
+						}
+
+						var fileNumberExpression =
+							ParseExpressionForStatement(closeStatement, arguments[i], midToken);
+
+						closeStatement.Arguments.Add(new CloseArgument(numberSign, fileNumberExpression));
 					}
 				}
 

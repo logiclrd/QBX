@@ -27,6 +27,14 @@ public class CloseStatementTests
 
 		var closeResult = (CloseStatement)result;
 
-		closeResult.FileNumberExpressions.Should().HaveCount(argCount);
+		closeResult.Arguments.Should().HaveCount(argCount);
+
+		var buffer = new StringWriter();
+
+		closeResult.Render(buffer);
+
+		string rerenderedStatement = buffer.ToString().TrimEnd();
+
+		rerenderedStatement.Should().Be(statement);
 	}
 }

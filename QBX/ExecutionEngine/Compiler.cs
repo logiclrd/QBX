@@ -796,12 +796,12 @@ public class Compiler
 			{
 				var translatedCloseStatement = new CloseStatement(closeStatement);
 
-				foreach (var fileNumberExpression in closeStatement.FileNumberExpressions)
+				foreach (var closeArgument in closeStatement.Arguments)
 				{
 					Evaluable? translatedFileNumberExpression = null;
 
 					TranslateNumericArgumentExpression(
-						ref translatedFileNumberExpression, fileNumberExpression);
+						ref translatedFileNumberExpression, closeArgument.FileNumberExpression);
 
 					if (translatedFileNumberExpression == null)
 						throw new Exception("Internal error: FileNumberExpression translated to null");
