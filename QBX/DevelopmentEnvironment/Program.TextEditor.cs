@@ -452,6 +452,9 @@ public partial class Program
 								newLine = new StringBuilder();
 								newLine.Append(buffer, FocusedViewport.CursorX, buffer.Length - FocusedViewport.CursorX);
 
+								while ((newLine.Length > 0) && char.IsWhiteSpace(newLine[newLine.Length - 1]))
+									newLine.Length--;
+
 								buffer.Remove(FocusedViewport.CursorX, buffer.Length - FocusedViewport.CursorX);
 
 								FocusedViewport.CurrentLineBuffer = buffer;
@@ -462,9 +465,24 @@ public partial class Program
 							}
 
 							// Step 1: Try to commit left part
+							bool commitRightPart = false;
+
 							try
 							{
-								FocusedViewport.CommitCurrentLine();
+								bool reloadViewport = FocusedViewport.CommitCurrentLine();
+
+								if (reloadViewport)
+								{
+									ReloadViewportParameters();
+									commitRightPart = true;
+
+									if (newLine.Length == 0)
+									{
+										newCursorX = 0;
+										newCursorY = 1;
+										break;
+									}
+								}
 							}
 							catch (SyntaxErrorException error)
 							{
@@ -501,6 +519,15 @@ public partial class Program
 
 							FocusedViewport.CurrentLineBuffer = newLine;
 							FocusedViewport.CurrentLineChanged = true;
+
+							if (commitRightPart)
+							{
+								try
+								{
+									FocusedViewport.CommitCurrentLine();
+								}
+								catch { }
+							}
 						}
 
 						newCursorX = indentation;

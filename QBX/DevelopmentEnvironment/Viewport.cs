@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 
 using QBX.CodeModel;
+using QBX.CodeModel.Statements;
 using QBX.DevelopmentEnvironment.Help;
 using QBX.LexicalAnalysis;
 using QBX.Parser;
@@ -209,18 +210,18 @@ public class Viewport
 		CurrentLineChanged = false;
 	}
 
-	public void CommitCurrentLine(StringBuilder? buffer = null)
+	public bool CommitCurrentLine(StringBuilder? buffer = null)
 	{
 		if (!CurrentLineChanged)
 		{
 			CurrentLineBuffer = null;
-			return;
+			return false;
 		}
 
 		buffer ??= CurrentLineBuffer;
 
 		if (buffer == null)
-			return;
+			return false;
 
 		try
 		{
@@ -228,7 +229,42 @@ public class Viewport
 
 			var parsedCodeLine = Parser.ParseCodeLines(lexer).SingleOrDefault();
 
-			ReplaceCurrentLine(parsedCodeLine ?? CodeLine.CreateEmpty());
+			if ((parsedCodeLine?.Statements.FirstOrDefault() is ProperSubroutineOpeningStatement startScopeStatement)
+			 && (EditableUnit is CompilationUnit compilationUnit))
+			{
+				ReplaceCurrentLine(CodeLine.CreateEmpty());
+
+				var endScopeLine = new CodeLine();
+
+				endScopeLine.AppendStatement(
+					new EndScopeStatement() { ScopeType = startScopeStatement.ScopeType });
+
+				var newElement = new CompilationElement(compilationUnit);
+
+				newElement.Name = startScopeStatement.Name;
+
+				newElement.AddLine(parsedCodeLine);
+				newElement.AddLine(CodeLine.CreateEmpty());
+				newElement.AddLine(endScopeLine);
+
+				compilationUnit.AddElement(newElement);
+
+				SwitchTo(newElement);
+
+				CursorX = parsedCodeLine.ComputeLength(); // cursor at the end of the SUB/FUNCTION line
+				CursorY = 0;
+
+				ScrollX = 0;
+				ScrollY = 0;
+
+				return true; // reload viewport parameters, if we were in the middle of handling a text editor key
+			}
+			else
+			{
+				ReplaceCurrentLine(parsedCodeLine ?? CodeLine.CreateEmpty());
+
+				return false;
+			}
 
 			// TODO: the user alters the capitalization of an identifier, alter all others
 			// in the program to match
