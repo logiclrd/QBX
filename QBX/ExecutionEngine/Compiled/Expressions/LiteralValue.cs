@@ -61,6 +61,8 @@ public abstract class LiteralValue : Evaluable
 
 	public abstract object GetData();
 
+	public abstract bool IsZero { get; }
+
 	public override bool IsConstant => true;
 
 	public override LiteralValue EvaluateConstant() => this;
@@ -77,6 +79,7 @@ public abstract class LiteralValue<T>(T value) : LiteralValue
 public class IntegerLiteralValue(short value) : LiteralValue<short>(value)
 {
 	public override DataType Type => DataType.Integer;
+	public override bool IsZero => (value == 0);
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame) => new IntegerVariable(Value);
 
 	public const short True = -1;
@@ -91,29 +94,34 @@ public class IntegerLiteralValue(short value) : LiteralValue<short>(value)
 public class LongLiteralValue(int value) : LiteralValue<int>(value)
 {
 	public override DataType Type => DataType.Long;
+	public override bool IsZero => (value == 0);
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame) => new LongVariable(Value);
 }
 
 public class SingleLiteralValue(float value) : LiteralValue<float>(value)
 {
 	public override DataType Type => DataType.Single;
+	public override bool IsZero => (value == 0);
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame) => new SingleVariable(Value);
 }
 
 public class DoubleLiteralValue(double value) : LiteralValue<double>(value)
 {
 	public override DataType Type => DataType.Double;
+	public override bool IsZero => (value == 0);
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame) => new DoubleVariable(Value);
 }
 
 public class CurrencyLiteralValue(decimal value) : LiteralValue<decimal>(value)
 {
 	public override DataType Type => DataType.Currency;
+	public override bool IsZero => (value == 0);
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame) => new CurrencyVariable(Value);
 }
 
 public class StringLiteralValue(StringValue value) : LiteralValue<StringValue>(value)
 {
 	public override DataType Type => DataType.String;
+	public override bool IsZero => throw RuntimeException.TypeMismatch();
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame) => new StringVariable(Value);
 }

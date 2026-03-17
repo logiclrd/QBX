@@ -812,7 +812,7 @@ public class GraphicsArray : IMemory
 			}
 			case DACRegisters.ReadIndexPort:
 			{
-				_dacReadIndex = data * 4;
+				_dacReadIndex = data * 3;
 				break;
 			}
 			case DACRegisters.WriteIndexPort:

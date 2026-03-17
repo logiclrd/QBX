@@ -239,6 +239,13 @@ public class Mapper
 			(_variables[index].LinkedToRootVariableIndex >= 0);
 	}
 
+	public bool IsLinkedArray(string name)
+	{
+		return
+			_arrayIndexByName.TryGetValue(name, out var index) &&
+			(_variables[index].LinkedToRootVariableIndex >= 0);
+	}
+
 	Stack<PrimitiveDataType[]> _identifierTypesStack = new Stack<PrimitiveDataType[]>();
 
 	public void PushIdentifierTypes()
@@ -448,6 +455,32 @@ public class Mapper
 
 		int localIndex = ResolveVariable(localName);
 		int rootIndex = _root.ResolveVariable(rootName);
+
+		var variableInfo = _variables[localIndex];
+
+		variableInfo.LinkedToRootVariableIndex = rootIndex;
+	}
+
+	public void LinkRootArray(string localName, string rootName, DataType? arrayType = null)
+	{
+		if (_isFrozen)
+			throw new Exception("The Mapper is frozen");
+		if (_root == null)
+			throw new Exception("Cannot link to a root variable from the root");
+
+		if (arrayType == null)
+		{
+			localName = QualifyIdentifier(localName);
+			rootName = QualifyIdentifier(rootName);
+		}
+		else if (arrayType.IsPrimitiveType)
+		{
+			localName = QualifyIdentifier(localName, arrayType.PrimitiveType);
+			rootName = QualifyIdentifier(rootName, arrayType.PrimitiveType);
+		}
+
+		int localIndex = ResolveArray(localName);
+		int rootIndex = _root.ResolveArray(rootName);
 
 		var variableInfo = _variables[localIndex];
 
@@ -689,7 +722,13 @@ public class Mapper
 		return index;
 	}
 
+	public int ResolveArray(string name, DataType? arrayType = null)
+		=> ResolveArray(name, createImplicitly: false, out _, arrayType);
+
 	public int ResolveArray(string name, out bool implicitlyCreated, DataType? arrayType = null)
+		=> ResolveArray(name, createImplicitly: true, out implicitlyCreated, arrayType);
+
+	int ResolveArray(string name, bool createImplicitly, out bool implicitlyCreated, DataType? arrayType = null)
 	{
 		implicitlyCreated = false;
 
@@ -706,6 +745,9 @@ public class Mapper
 			return index;
 
 		if (_isFrozen)
+			return -1;
+
+		if (!createImplicitly)
 			return -1;
 
 		implicitlyCreated = true;
@@ -791,7 +833,6 @@ public class Mapper
 
 	public DataType ResolveType(CodeModel.VariableDeclaration declaration)
 	{
-
 		if (CodeModel.TypeCharacter.TryParse(declaration.Name.Last(), out var typeCharacter))
 			return ResolveType(typeCharacter.Type, null, 0, declaration.Subscripts != null, declaration.NameToken);
 		else if ((declaration.Type != CodeModel.DataType.Unspecified) || (declaration.UserType != null))

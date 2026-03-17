@@ -79,7 +79,7 @@ public class DrawProcessor : ProcessorCommon
 					suppressNextDraw = true;
 					break;
 				}
-				case N: // octave down
+				case N: // plot but do not move
 				{
 					AdvanceAndSkipWhitespace(ref input);
 					suppressNextMove = true;
@@ -189,7 +189,6 @@ public class DrawProcessor : ProcessorCommon
 						dy *= aspect;
 					}
 
-
 					newPoint =
 						relative
 						? lastPoint + (dx, dy)
@@ -197,7 +196,7 @@ public class DrawProcessor : ProcessorCommon
 
 					if (!suppressNextDraw)
 					{
-						_graphics.LineTo(newPoint);
+						_graphics.LineTo(newPoint, _colour);
 
 						if (suppressNextMove)
 							_graphics.LastPoint = lastPoint;
