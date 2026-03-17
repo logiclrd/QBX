@@ -1,7 +1,6 @@
 Create File Dialog: "-901"
 Print Dialog: "-904"
 New Procedure Dialog: "-912"
-SUBs Dialog: "-911"
 Find Dialog: "-908"
 Change Dialog: "-907"
 Change Match Dialog: "-909"
@@ -16,17 +15,14 @@ Right Mouse Button Dialog: "-900"
 Unload File Dialog: "-264"
 Move SUB Dialog: "-263"
 Modify COMMAND$ Dialog: "-246"
-Set Main Module Dialog: "-266"
 Cannot Continue Dialog: "-198"
 No Main Module Dialog: "-199"
 Help Not Available Dialog: "-203" => F1 but token doesn't match anything AND at least one error exists in program
-File Already Loaded Dialog: "-204" => trying to use Load File on a file that's already in the loaded set
 Duplicate SUB or FUNCTION Dialog: "-205" => trying to use Load File but the target file has a conflicting routine with already-loaded units
 Module Missing Dialog: "-206" => trying to load a .MAK file and one of the modules couldn't be found
 Cannot Edit Included Lines Dialog: "-207" => trying to edit included lines when "Show Included Lines" is on
 Cannot Edit With Included Lines Visible Dialog: "-208" => trying to edit program when "Show Included Lines" is on
 Overwrite Prompt Dialog: "-211" => trying to Save As but the target file already exists
-Confirm Deletion of SUB Dialog: "-212" => trying to delete SUB from the SUBs dialog (F2)
 Confirm Remark Instead of Blank Line Dialog: "-213" => trying to insert a blank line before a routine's opening statement
 Confirm Discard Changes (Unload) Dialog: "-214" => trying to unload a file that is not pristine
 Save Include File Prompt Dialog: "-216" => trying to run program with an include file open that is not pristine
