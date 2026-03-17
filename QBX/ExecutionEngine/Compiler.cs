@@ -1231,7 +1231,7 @@ public class Compiler
 
 					if (doStatement.ConditionType == CodeModel.Statements.DoConditionType.Until)
 					{
-						preCondition = Not.Construct(preCondition);
+						preCondition = new IsZero(preCondition);
 						Evaluable.CollapseConstantExpression(ref preCondition);
 					}
 				}
