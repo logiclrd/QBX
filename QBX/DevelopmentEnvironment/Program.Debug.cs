@@ -64,7 +64,7 @@ public partial class Program
 					ActivateViewportForElement(element);
 
 					FocusedViewport.CursorX = _nextStatement.SourceColumn;
-					FocusedViewport.CursorY = line.SourceLineIndex;
+					FocusedViewport.CursorY = line.SourceLineIndex.Value;
 				}
 
 				// We are invoked as part of a key handler in ProcessTextEditorKey.

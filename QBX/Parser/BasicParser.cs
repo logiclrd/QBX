@@ -127,6 +127,8 @@ public class BasicParser
 
 			var token = enumerator.Current;
 
+			line.SourceLineIndex = token.LineNumberBox;
+
 			if (token.Type == TokenType.NewLine)
 			{
 				if (precedingWhitespaceToken != null)

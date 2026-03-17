@@ -15,8 +15,9 @@ public class CodeLine : IRenderableCode, IEditableLine
 {
 	public CompilationElement? CompilationElement { get; set; }
 
-	// Populated by Compiler
-	public int SourceLineIndex;
+	// Linked to the shared line index boxes in Tokens by the parser,
+	// used to keep line indexes up-to-date when lines are added/removed.
+	public MutableBox<int> SourceLineIndex = new MutableBox<int>();
 
 	// Line number must be numeric in format, but in practice is
 	// parsed as any string ###.### with total length <= 40.
