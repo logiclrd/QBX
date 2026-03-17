@@ -36,6 +36,6 @@ public class OnEventGoSubLineStatement(string target, CodeModel.Statements.State
 
 		var evt = new Event(EventType, source);
 
-		context.SetEventHandler(evt, TargetPath);
+		context.SetEventHandler(evt, stackFrame.Module, TargetPath);
 	}
 }

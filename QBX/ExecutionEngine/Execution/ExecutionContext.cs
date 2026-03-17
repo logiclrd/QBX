@@ -277,11 +277,11 @@ public class ExecutionContext
 		_lastPlayProcessorQueueLength = currentPlayProcessorQueueLength;
 	}
 
-	Dictionary<Event, StatementPath> _eventHandlers = new();
+	Dictionary<Event, (Module Module, StatementPath Path)> _eventHandlers = new();
 
-	public void SetEventHandler(Event evt, StatementPath handlerPath)
+	public void SetEventHandler(Event evt, Module module, StatementPath handlerPath)
 	{
-		_eventHandlers[evt] = handlerPath;
+		_eventHandlers[evt] = (module, handlerPath);
 	}
 
 	public void ClearEventHandler(Event evt)
@@ -293,7 +293,7 @@ public class ExecutionContext
 
 	void HandleEvent(Event evt, Executable currentStatement, StackFrame currentStackFrame)
 	{
-		if (_eventHandlers.TryGetValue(evt, out var handlerPath))
+		if (_eventHandlers.TryGetValue(evt, out var handler))
 		{
 			using (EventHub.SuspendAllEvents())
 			{
@@ -301,11 +301,13 @@ public class ExecutionContext
 
 				try
 				{
-					RootFrame!.PushReturnPath(_returnFromEventHandlerSurrogatePath);
+					var handlerFrame = handler.Module.ModuleFrame ?? throw new Exception("Internal error: Module with no ModuleFrame");
 
-					_goTo = handlerPath.Clone();
+					handlerFrame.PushReturnPath(_returnFromEventHandlerSurrogatePath);
 
-					Call(RootFrame.Routine, RootFrame, enterRoutine: currentStackFrame != RootFrame);
+					_goTo = handler.Path.Clone();
+
+					Call(handlerFrame.Routine, handlerFrame, enterRoutine: currentStackFrame != handlerFrame);
 				}
 				finally
 				{
