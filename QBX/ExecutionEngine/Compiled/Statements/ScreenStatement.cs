@@ -23,6 +23,8 @@ public class ScreenStatement(CodeModel.Statements.Statement? source) : Executabl
 			if (!context.Machine.VideoFirmware.SetMode(hardwareMode))
 				throw RuntimeException.IllegalFunctionCall(ModeExpression.Source);
 
+			context.VisualLibrary = context.Machine.VideoFirmware.VisualLibrary;
+
 			var graphics = context.VisualLibrary as GraphicsLibrary;
 
 			graphics?.LastPoint = (graphics.Width / 2, graphics.Height / 2);

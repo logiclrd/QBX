@@ -33,7 +33,7 @@ public class ExecutionContext
 	public PlayProcessor PlayProcessor;
 	public DrawProcessor DrawProcessor;
 
-	public VisualLibrary VisualLibrary => Machine.VideoFirmware.VisualLibrary;
+	public VisualLibrary VisualLibrary;
 
 	public StackFrame? RootFrame => _rootFrame;
 
@@ -215,6 +215,8 @@ public class ExecutionContext
 		Machine = machine;
 		PlayProcessor = playProcessor;
 		EventHub = eventHub;
+
+		VisualLibrary = Machine.VideoFirmware.VisualLibrary;
 
 		DrawProcessor = new DrawProcessor();
 
