@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 
 using QBX.CodeModel;
 using QBX.DevelopmentEnvironment.Dialogs;
@@ -158,6 +159,35 @@ namespace QBX.DevelopmentEnvironment
 							});
 
 					dialog.Close();
+				};
+
+			ShowDialog(dialog);
+		}
+
+		public void ShowCreateFileDialog()
+		{
+			var dialog = new CreateFileDialog(Machine, Configuration);
+
+			dialog.CreateFile +=
+				() =>
+				{
+					CompilationUnit newUnit;
+
+					if ((LoadedFiles.Count == 1)
+					 && (LoadedFiles[0] is CompilationUnit existingUnit)
+					 && existingUnit.IsEmpty
+					 && existingUnit.IsPristine)
+						newUnit = existingUnit;
+					else
+						newUnit = CompilationUnit.CreateNew();
+
+					newUnit.FilePath = Path.GetFullPath(dialog.FileName);
+					newUnit.IsPristine = false;
+
+					if (newUnit != LoadedFiles[0])
+						LoadedFiles.Add(newUnit);
+
+					FocusedViewport.SwitchTo(newUnit.Elements[0]);
 				};
 
 			ShowDialog(dialog);

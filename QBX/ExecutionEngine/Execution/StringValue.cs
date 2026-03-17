@@ -370,6 +370,11 @@ public class StringValue : IComparable<StringValue>, IEquatable<StringValue>
 		return AsSpan().Slice(start).IndexOf(searchFor.AsSpan()) + start;
 	}
 
+	public bool Contains(byte searchFor)
+	{
+		return AsSpan().Contains(searchFor);
+	}
+
 	public static StringValue operator +(StringValue left, StringValue right)
 	{
 		var ret = new StringValue();

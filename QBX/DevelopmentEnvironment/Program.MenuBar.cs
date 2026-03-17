@@ -18,6 +18,7 @@ public partial class Program
 	MenuItem mnuFileSaveAs;
 	MenuItem mnuFileSaveAll;
 	MenuItem mnuFileOpenProgram;
+	MenuItem mnuFileCreateFile;
 	MenuItem mnuFileLoadFile;
 	MenuItem mnuFileExit;
 
@@ -74,6 +75,7 @@ public partial class Program
 		nameof(mnuFileSaveAs),
 		nameof(mnuFileSaveAll),
 		nameof(mnuFileOpenProgram),
+		nameof(mnuFileCreateFile),
 		nameof(mnuFileLoadFile),
 		nameof(mnuFileExit),
 		nameof(mnuEdit),
@@ -112,7 +114,7 @@ public partial class Program
 				(mnuFileSaveAs = new MenuItem("Save &As...", "-328")),
 				(mnuFileSaveAll = new MenuItem("Sa&ve All", "-329")),
 				MenuItem.Separator,
-				new MenuItem("&Create File...", "-330"),
+				(mnuFileCreateFile = new MenuItem("&Create File...", "-330")),
 				(mnuFileLoadFile = new MenuItem("&Load File...", "-331")),
 				new MenuItem("&Unload File...", "-332"),
 				MenuItem.Separator,
@@ -247,6 +249,7 @@ public partial class Program
 		mnuFileSaveAs.Clicked = mnuFileSaveAs_Clicked;
 		mnuFileSaveAll.Clicked = mnuFileSaveAll_Clicked;
 		mnuFileOpenProgram.Clicked = mnuFileOpenProgram_Clicked;
+		mnuFileCreateFile.Clicked = mnuFileCreateFile_Clicked;
 		mnuFileLoadFile.Clicked = mnuFileLoadFile_Clicked;
 		mnuFileExit.Clicked += mnuFileExit_Clicked;
 
@@ -304,6 +307,12 @@ public partial class Program
 	{
 		if (CommitViewportsOrPresentError())
 			ShowOpenFileDialog(replaceExistingProgram: true);
+	}
+
+	private void mnuFileCreateFile_Clicked()
+	{
+		if (CommitViewportsOrPresentError())
+			ShowCreateFileDialog();
 	}
 
 	private void mnuFileLoadFile_Clicked()
