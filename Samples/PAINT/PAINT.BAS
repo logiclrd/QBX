@@ -736,7 +736,7 @@ savepic:
          CLOSE #1: text$ = text$ + ".BSV": default% = 4
         END IF
        ELSE
-        CLOSE #1, text$ = text$ + ".BAS": default% = 3
+        CLOSE #1: text$ = text$ + ".BAS": default% = 3
        END IF
       ELSE
        CLOSE #1: text$ = text$ + ".ACG": default% = 2
@@ -1754,4 +1754,3 @@ FOR i% = 0 TO 199
 NEXT i%
 CLOSE #25
 END SUB
-
