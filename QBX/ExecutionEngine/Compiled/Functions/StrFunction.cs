@@ -34,7 +34,12 @@ public class StrFunction : Function
 
 		var formatted = NumberFormatter.Format(argumentValue, qualify: false, Source);
 
-		var stringValue = new StringValue(formatted);
+		var stringValue = new StringValue();
+
+		if (!formatted.StartsWith("-"))
+			stringValue.Append((byte)' ');
+
+		stringValue.Append(formatted);
 
 		return new StringVariable(stringValue);
 	}
