@@ -742,24 +742,28 @@ public class Compiler
 
 						if (translatedCallStatement.Target != null)
 							translatedCallStatement.EnsureParameterTypes(matchFacades);
-						else if (implicitForwardReference)
-						{
-							var parameterTypes = new DataType[translatedCallStatement.Arguments.Count];
+					}
 
-							for (int i=0; i < parameterTypes.Length; i++)
-								parameterTypes[i] = translatedCallStatement.Arguments[i].Type;
+					if (implicitForwardReference)
+					{
+						if (translatedCallStatement.Target != null)
+							throw new Exception("Internal error: implicit forward reference flag set but call statement has a target");
 
-							var forwardReference = module.UnresolvedReferences.DeclareSymbol(
-								callStatement.TargetName,
-								mapper,
-								null,
-								RoutineType.Sub,
-								parameterTypes,
-								returnType: null);
+						var parameterTypes = new DataType[translatedCallStatement.Arguments.Count];
 
-							translatedCallStatement.UnresolvedTargetName = callStatement.TargetName;
-							forwardReference.UnresolvedCalls.Add(translatedCallStatement);
-						}
+						for (int i=0; i < parameterTypes.Length; i++)
+							parameterTypes[i] = translatedCallStatement.Arguments[i].Type;
+
+						var forwardReference = module.UnresolvedReferences.DeclareSymbol(
+							callStatement.TargetName,
+							mapper,
+							null,
+							RoutineType.Sub,
+							parameterTypes,
+							returnType: null);
+
+						translatedCallStatement.UnresolvedTargetName = callStatement.TargetName;
+						forwardReference.UnresolvedCalls.Add(translatedCallStatement);
 					}
 
 					container.Append(translatedCallStatement);
