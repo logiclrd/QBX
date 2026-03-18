@@ -7,15 +7,19 @@ CONST DirLeft% = 2
 CONST DirDown% = 3
 
 CONST AverageStraightLength% = 20
+CONST AverageColourLength% = 100
 
 DIM SHARED CharacterMap%(0 TO 3, 0 TO 3)
 
 InitializeScreen
 InitializeDrawingCharacters
 
+PickRandomStartingPoint x%, y%, direction%
+
 DO
-  SelectRandomColour
-  DrawRandomPipe
+  DrawRandomPipe x%, y%, direction%
+  Wrap x%, y%
+
   Delay
 LOOP WHILE INKEY$ = ""
 
@@ -35,10 +39,14 @@ st! = TIMER
 WHILE st! = TIMER: WEND
 END SUB
 
-SUB DrawRandomPipe
-PickRandomStartingPoint x%, y%, direction%
+SUB DrawRandomPipe (x%, y%, direction%)
+STATIC c%
+
+IF c% = 0 THEN c% = 1: COLOR c%:
 
 WHILE IsOnScreen%(x%, y%)
+  MaybePickNewColour c%
+
   newdirection% = MaybePickNewDirection%(direction%)
   reversedirection% = (direction% + 2) MOD 4
 
@@ -107,6 +115,21 @@ FOR y% = y1% TO y2%
 NEXT y%
 END SUB
 
+SUB HueToRGB (hue%, r%, g%, b%)
+x% = 64 * (1! - ABS((hue% MOD 120) / 60! - 1))
+
+IF x% = 64 THEN x% = 63
+
+SELECT CASE hue%
+  CASE 0 TO 60: r% = 63: g% = x%: b% = 0
+  CASE 60 TO 120: r% = x%: g% = 63: b% = 0
+  CASE 120 TO 180: r% = 0: g% = 63: b% = x%
+  CASE 180 TO 240: r% = 0: g% = x%: b% = 63
+  CASE 240 TO 300: r% = x%: g% = 0: b% = 63
+  CASE 300 TO 360: r% = 63: g% = 0: b% = x%
+END SELECT
+END SUB
+
 SUB InitializeDrawingCharacters
 nextchar% = 128
 
@@ -122,6 +145,21 @@ FOR i% = 0 TO 3
       END IF
     END IF
   NEXT j%
+NEXT i%
+END SUB
+
+SUB InitializePalette
+FOR i% = 1 TO 15
+  hue% = i% * 360 \ 15
+
+  HueToRGB hue%, r%, g%, b%
+
+  PALETTE i%, i%
+
+  OUT &H3C8, i%
+  OUT &H3C9, r%
+  OUT &H3C9, g%
+  OUT &H3C9, b%
 NEXT i%
 END SUB
 
@@ -152,6 +190,8 @@ mode% = INP(SequencerDataPort%)
 
 OUT SequencerIndexPort%, ClockingModeRegister%
 OUT SequencerDataPort%, mode% OR ClockingModeCharacterWidth8%
+
+InitializePalette
 END SUB
 
 FUNCTION IsOnScreen% (x%, y%)
@@ -165,6 +205,14 @@ IF x% >= 1 THEN
   END IF
 END IF
 END FUNCTION
+
+SUB MaybePickNewColour (c%)
+IF INT(RND * AverageColourLength%) = 0 THEN
+  c% = c% + 1
+  IF c% = 16 THEN c% = 1
+  COLOR c%
+END IF
+END SUB
 
 FUNCTION MaybePickNewDirection% (direction%)
 IF INT(RND * AverageStraightLength%) = 0 THEN
@@ -239,10 +287,6 @@ SELECT CASE direction%
 END SELECT
 END SUB
 
-SUB SelectRandomColour
-COLOR INT(RND * 15) + 1
-END SUB
-
 SUB SetFontCharacter (charcode%, pixels%())
 CONST SequencerIndexPort% = &H3C4
 CONST SequencerDataPort% = &H3C5
@@ -285,4 +329,12 @@ OUT SequencerDataPort%, savedmask%
 
 OUT SequencerIndexPort%, MemoryModeRegister%
 OUT SequencerDataPort%, savedmode%
+END SUB
+
+SUB Wrap (x%, y%)
+IF x% = 0 THEN x% = NumColumns%
+IF x% > NumColumns% THEN x% = 1
+
+IF y% = 0 THEN y% = NumRows%
+IF y% > NumRows% THEN y% = 1
 END SUB
