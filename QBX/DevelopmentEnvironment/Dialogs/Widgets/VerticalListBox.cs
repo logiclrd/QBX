@@ -82,7 +82,7 @@ public class VerticalListBox<TValue> : ListBox<VerticalListBox<TValue>, TValue>
 					{
 						int idx = (newSelectedIndex + i) % Items.Count;
 
-						if (Items[idx].Label.StartsWith(s_charBuffer, StringComparison.OrdinalIgnoreCase))
+						if (Items[idx].Label.SkipSpaces().StartsWith(s_charBuffer, StringComparison.OrdinalIgnoreCase))
 						{
 							newSelectedIndex = idx;
 							break;
