@@ -16,6 +16,7 @@ InitializeDrawingCharacters
 DO
   SelectRandomColour
   DrawRandomPipe
+  Delay
 LOOP WHILE INKEY$ = ""
 
 WIDTH 80, 25
@@ -27,6 +28,11 @@ SELECT CASE direction%
   CASE DirLeft%: x% = x% - 1
   CASE DirDown%: y% = y% + 1
 END SELECT
+END SUB
+
+SUB Delay
+st! = TIMER
+WHILE st! = TIMER: WEND
 END SUB
 
 SUB DrawRandomPipe
