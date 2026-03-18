@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 using QBX.CodeModel;
@@ -72,6 +73,18 @@ public partial class Program
 				// necessary.
 			}
 		}
+	}
+
+	public void PresentError(Exception e, ErrorSource errorSource = ErrorSource.Program)
+	{
+		if (e is SyntaxErrorException syntaxError)
+			PresentError(syntaxError);
+		else if (e is CompilerException compileError)
+			PresentError(compileError);
+		else if (e is RuntimeException runtimeError)
+			PresentError(runtimeError, errorSource);
+		else
+			PresentError(e.Message);
 	}
 
 	public void PresentError(SyntaxErrorException error)

@@ -226,8 +226,12 @@ public class RuntimeException : Exception
 		=> ForErrorNumber(9, default(Token));
 	public static RuntimeException DuplicateDefinition(CodeModel.Statements.Statement? statement)
 		=> ForErrorNumber(10, statement);
+	public static RuntimeException DuplicateDefinition(Token? context)
+		=> ForErrorNumber(10, context);
 	public static RuntimeException DivisionByZero(CodeModel.Expressions.Expression? expression)
 		=> ForErrorNumber(11, expression);
+	public static RuntimeException IllegalInDirectMode(CodeModel.Statements.Statement? statement)
+		=> ForErrorNumber(12, statement);
 	public static RuntimeException TypeMismatch(CodeModel.Statements.Statement? statement)
 		=> ForErrorNumber(13, statement);
 	public static RuntimeException TypeMismatch(CodeModel.Expressions.Expression? expression)

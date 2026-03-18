@@ -58,8 +58,7 @@ public class ArrayElementExpression(Evaluable arrayExpression, DataType type) : 
 		}
 		catch (RuntimeException error)
 		{
-			error.AddContext(Source);
-			throw;
+			throw error.AddContext(Source);
 		}
 	}
 

@@ -212,11 +212,7 @@ public partial class Program
 		{
 			select = false;
 
-			if (FocusedViewport.HelpTopic != null)
-			{
-				// TODO: navigation
-			}
-			else
+			if (FocusedViewport.IsEditable)
 			{
 				if (FocusedViewport.Clipboard.HasSelection)
 				{
@@ -490,7 +486,7 @@ public partial class Program
 									}
 								}
 							}
-							catch (SyntaxErrorException error)
+							catch (Exception exception)
 							{
 								// No syntax checking applied when splitting an existing line,
 								// and if the user tries twice in a row without altering the
@@ -499,20 +495,7 @@ public partial class Program
 								 && Configuration.EnableSyntaxChecking)
 								{
 									_alreadyPresentedError = true;
-									PresentError(error);
-									return;
-								}
-							}
-							catch (CompilerException error)
-							{
-								// No syntax checking applied when splitting an existing line,
-								// and if the user tries twice in a row without altering the
-								// line, they are allowed to keep it the second time.
-								if ((newLine.Length == 0) && !_alreadyPresentedError
-								 && Configuration.EnableSyntaxChecking)
-								{
-									_alreadyPresentedError = true;
-									PresentError(error);
+									PresentError(exception);
 									return;
 								}
 							}
@@ -743,9 +726,9 @@ public partial class Program
 				viewportWidth,
 				ignoreErrors: _alreadyPresentedError || !Configuration.EnableSyntaxChecking);
 		}
-		catch (SyntaxErrorException error)
+		catch (Exception exception)
 		{
-			PresentError(error);
+			PresentError(exception);
 			_alreadyPresentedError = true;
 		}
 
@@ -794,21 +777,9 @@ public partial class Program
 
 			return true;
 		}
-		catch (SyntaxErrorException error)
-		{
-			PresentError(error);
-		}
-		catch (CompilerException error)
-		{
-			PresentError(error);
-		}
-		catch (RuntimeException error)
-		{
-			PresentError(error);
-		}
 		catch (Exception exception)
 		{
-			PresentError(exception.Message);
+			PresentError(exception);
 		}
 
 		return false;
@@ -984,13 +955,37 @@ public partial class Program
 		ShowDialog(dialog);
 	}
 
+	Viewport AttachViewport(Viewport viewport)
+	{
+		viewport.GetElementByName += viewport_GetElementByName;
+
+		return viewport;
+	}
+
+	IEditableElement? viewport_GetElementByName(string name)
+	{
+		var identifier = Identifier.Standalone(name);
+
+		if (identifier is QualifiedIdentifier qualifiedIdentifier)
+			identifier = qualifiedIdentifier.UnqualifiedIdentifier;
+
+		foreach (var unit in LoadedFiles)
+		{
+			foreach (var element in unit.Elements)
+				if (element.DisplayName == identifier)
+					return element;
+		}
+
+		return null;
+	}
+
 	[MemberNotNull(nameof(SplitViewport))]
 	void ShowSplitViewport()
 	{
 		if (SplitViewport != null)
 			return;
 
-		SplitViewport = new Viewport();
+		SplitViewport = AttachViewport(new Viewport());
 
 		if (FocusedViewport.EditableElement is IEditableElement element)
 			SplitViewport.SwitchTo(element);
@@ -1007,21 +1002,9 @@ public partial class Program
 			viewport?.CommitCurrentLine();
 			return true;
 		}
-		catch (SyntaxErrorException error)
-		{
-			PresentError(error);
-		}
-		catch (CompilerException error)
-		{
-			PresentError(error);
-		}
-		catch (RuntimeException error)
-		{
-			PresentError(error);
-		}
 		catch (Exception exception)
 		{
-			PresentError(exception.Message);
+			PresentError(exception);
 		}
 
 		return false;
@@ -1029,7 +1012,15 @@ public partial class Program
 
 	private void InstantWatchAtCurrentCursorLocation()
 	{
-		FocusedViewport.CommitCurrentLine();
+		try
+		{
+			FocusedViewport.CommitCurrentLine();
+		}
+		catch (Exception exception)
+		{
+			PresentError(exception);
+			return;
+		}
 
 		// If there is a selection, use the selection.
 		// If there isn't a selection, walk backward until we find an

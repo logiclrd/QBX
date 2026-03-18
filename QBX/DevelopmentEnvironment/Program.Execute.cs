@@ -97,9 +97,9 @@ public partial class Program
 					errorModule.UnresolvedReferences.GetFirstUnresolvedStatementSourceToken());
 			}
 		}
-		catch (CompilerException error)
+		catch (Exception e)
 		{
-			PresentError(error);
+			PresentError(e);
 			return false;
 		}
 

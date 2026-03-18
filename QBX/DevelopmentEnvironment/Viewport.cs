@@ -7,6 +7,7 @@ using System.Text;
 using QBX.CodeModel;
 using QBX.CodeModel.Statements;
 using QBX.DevelopmentEnvironment.Help;
+using QBX.ExecutionEngine;
 using QBX.LexicalAnalysis;
 using QBX.Parser;
 using QBX.Utility;
@@ -22,6 +23,7 @@ public class Viewport
 	public IEditableElement? EditableElement;
 	public HelpDatabaseTopic? HelpTopic;
 	public bool IsEditable = true;
+	public bool IsDirectMode = false;
 	public bool ShowMaximize = true;
 	public int Height; // Ignored for the first, which fills available space.
 	public int ScrollX, ScrollY;
@@ -29,6 +31,8 @@ public class Viewport
 	public bool CurrentLineChanged;
 	public StringBuilder? CurrentLineBuffer;
 	public Clipboard Clipboard;
+
+	public event Func<string, IEditableElement?>? GetElementByName;
 
 	public Viewport()
 	{
@@ -236,56 +240,107 @@ public class Viewport
 
 			var parsedCodeLine = parser.ParseCodeLines(lexer).SingleOrDefault();
 
-			if ((parsedCodeLine?.Statements.FirstOrDefault() is ProperSubroutineOpeningStatement startScopeStatement)
-			 && (EditableUnit is CompilationUnit compilationUnit))
+			if (parsedCodeLine?.Statements.FirstOrDefault() is ProperSubroutineOpeningStatement startScopeStatement)
 			{
-				ReplaceCurrentLine(CodeLine.CreateEmpty());
+				if (IsDirectMode)
+					throw RuntimeException.IllegalInDirectMode(startScopeStatement);
 
-				var endScopeLine = new CodeLine();
+				if ((EditableUnit is CompilationUnit compilationUnit)
+				 && (EditableElement is CompilationElement compilationElement))
+				{
+					// The user has typed/edited a SUB or FUNCTION line. The question is, which one is it?
+					// If the line being edited currently contains the old SubroutineOpeningStatement OR
+					// the element _doesn't have a SubroutineOpeningStatement presently_, then this new
+					// one applies to the current CompilationElement. Otherwise, treat this as a request
+					// to create a new SUB/FUNCTION.
 
-				endScopeLine.AppendStatement(
-					new EndScopeStatement() { ScopeType = startScopeStatement.ScopeType });
+					IEditableElement? existingCodeElement = null;
+					CodeLine? existingOpeningLine = null;
 
-				var newElement = new CompilationElement(compilationUnit);
+					bool isSubOrFunction =
+						(compilationElement.Type == CompilationElementType.Sub) ||
+						(compilationElement.Type == CompilationElementType.Function);
 
-				newElement.Name = startScopeStatement.Name;
-				newElement.Type =
-					startScopeStatement.Type switch
+					if (isSubOrFunction)
 					{
-						StatementType.Sub => CompilationElementType.Sub,
-						StatementType.Function => CompilationElementType.Function,
-						_ => CompilationElementType.Unknown,
-					};
+						existingCodeElement = GetElementByName?.Invoke(startScopeStatement.Name);
 
-				newElement.AddLine(parsedCodeLine);
-				newElement.AddLine(CodeLine.CreateEmpty());
-				newElement.AddLine(endScopeLine);
+						existingOpeningLine = compilationElement.Lines.FirstOrDefault(
+							line => line.Statements.OfType<SubroutineOpeningStatement>().Any());
+					}
 
-				compilationUnit.AddElement(newElement);
+					TryGetLineAt(CursorY, out var currentLine);
 
-				SwitchTo(newElement);
+					bool isForThisElement = isSubOrFunction && ((existingOpeningLine is null) || (existingOpeningLine == currentLine));
 
-				CursorX = parsedCodeLine.ComputeLength(); // cursor at the end of the SUB/FUNCTION line
-				CursorY = 0;
+					if (isForThisElement)
+					{
+						if ((existingCodeElement is not null) && (existingCodeElement != compilationElement))
+							throw RuntimeException.DuplicateDefinition(startScopeStatement.NameToken);
 
-				ScrollX = 0;
-				ScrollY = 0;
+						ReplaceCurrentLine(parsedCodeLine);
 
-				return true; // reload viewport parameters, if we were in the middle of handling a text editor key
+						compilationElement.Name = startScopeStatement.Name;
+
+						UpdateHeading();
+					}
+					else
+					{
+						if (existingCodeElement is not null)
+							throw RuntimeException.DuplicateDefinition(startScopeStatement.NameToken);
+
+						ReplaceCurrentLine(CodeLine.CreateEmpty());
+
+						var endScopeLine = new CodeLine();
+
+						endScopeLine.AppendStatement(
+							new EndScopeStatement() { ScopeType = startScopeStatement.ScopeType });
+
+						var newElement = new CompilationElement(compilationUnit);
+
+						newElement.Name = startScopeStatement.Name;
+						newElement.Type =
+							startScopeStatement.Type switch
+							{
+								StatementType.Sub => CompilationElementType.Sub,
+								StatementType.Function => CompilationElementType.Function,
+								_ => CompilationElementType.Unknown,
+							};
+
+						newElement.AddLine(parsedCodeLine);
+						newElement.AddLine(CodeLine.CreateEmpty());
+						newElement.AddLine(endScopeLine);
+
+						compilationUnit.AddElement(newElement);
+
+						SwitchTo(newElement);
+
+						CursorX = parsedCodeLine.ComputeLength(); // cursor at the end of the SUB/FUNCTION line
+						CursorY = 0;
+
+						ScrollX = 0;
+						ScrollY = 0;
+					}
+
+					return true; // reload viewport parameters, if we were in the middle of handling a text editor key
+				}
 			}
-			else
-			{
-				ReplaceCurrentLine(parsedCodeLine ?? CodeLine.CreateEmpty());
 
-				return false;
-			}
+			ReplaceCurrentLine(parsedCodeLine ?? CodeLine.CreateEmpty());
+			return false;
 
 			// TODO: fancy code to rip out the statements for a modified line and replace them
+			// => don't know if this is going to be possible, but if it is, it's probably
+			// going to involve transplanting execution state and reconstructing call stacks
 		}
 		catch
 		{
 			ReplaceCurrentLine(CodeLine.CreateUnparsed(buffer.ToString()));
-			throw;
+
+			if (!IsDirectMode)
+				throw;
+
+			return false;
 		}
 	}
 

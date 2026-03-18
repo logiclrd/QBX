@@ -102,15 +102,16 @@ public partial class Program : HostedProgram, IOvertypeFlag
 
 		SaveOutput();
 
-		PrimaryViewport = new Viewport();
+		PrimaryViewport = AttachViewport(new Viewport());
 
-		ImmediateViewport =
+		ImmediateViewport = AttachViewport(
 			new Viewport()
 			{
 				Heading = "Immediate",
 				ShowMaximize = false,
-				Height = 2
-			};
+				Height = 2,
+				IsDirectMode = true,
+			});
 
 		FocusedViewport = PrimaryViewport;
 
@@ -597,9 +598,9 @@ public partial class Program : HostedProgram, IOvertypeFlag
 		{
 			FocusedViewport.CommitCurrentLine();
 		}
-		catch (SyntaxErrorException e)
+		catch (Exception exception)
 		{
-			PresentError(e);
+			PresentError(exception, ErrorSource.DevelopmentEnvironment);
 			return false;
 		}
 
@@ -693,7 +694,7 @@ public partial class Program : HostedProgram, IOvertypeFlag
 		int splitViewportLines = (SplitViewport != null) ? remainingLines / 2 : 0;
 		int immediateViewportLines = remainingLines - splitViewportLines;
 
-		HelpViewport ??= new Viewport() { IsEditable = false };
+		HelpViewport ??= AttachViewport(new Viewport() { IsEditable = false });
 		HelpViewport.HelpTopic = topic;
 		HelpViewport.Height = helpViewportHeight;
 		HelpViewport.UpdateHeading();
