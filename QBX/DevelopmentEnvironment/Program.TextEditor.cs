@@ -863,9 +863,33 @@ public partial class Program
 		foreach (var unit in LoadedFiles)
 			unit.SortElements();
 
+		string? identifierUnderCursor = null;
+
+		FocusedViewport.EditCurrentLine();
+
+		var buffer = FocusedViewport.CurrentLineBuffer;
+
+		if (buffer != null)
+		{
+			int startIndex = FocusedViewport.CursorX;
+
+			FindIdentifierExtent(buffer, ref startIndex, out var endIndex);
+
+			if ((startIndex >= 0) && (startIndex < endIndex))
+				identifierUnderCursor = buffer.ToString(startIndex, endIndex - startIndex + 1);
+		}
+
+		FocusedViewport.CancelEdit();
+
 		var dialog = new SubsDialog(LoadedFiles, Machine, Configuration);
 
-		if (FocusedViewport.EditableElement is IEditableElement element)
+		if ((identifierUnderCursor != null)
+		 && (LoadedFiles
+		     .SelectMany(unit => unit.Elements)
+		     .Select(element => (Element: element, Name: element.DisplayName))
+		     .Where(item => (item.Name != null) && item.Name.Value.Equals(identifierUnderCursor, StringComparison.OrdinalIgnoreCase))
+		     .Select(item => item.Element)
+		     .FirstOrDefault() is IEditableElement element))
 			dialog.SelectedItem = element;
 
 		dialog.EditInActive +=
