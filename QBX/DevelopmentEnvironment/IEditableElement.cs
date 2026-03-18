@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Text;
 
 using QBX.Parser;
 
@@ -18,6 +19,8 @@ public interface IEditableElement
 	IReadOnlyList<IEditableLine> Lines { get; }
 
 	int SizeInBytes { get; }
+
+	IEditableLine ConstructLine(StringBuilder buffer);
 
 	void AddLine(IEditableLine line);
 	void InsertLine(int index, IEditableLine line);

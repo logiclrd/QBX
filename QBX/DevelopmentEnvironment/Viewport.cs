@@ -208,7 +208,10 @@ public class Viewport
 
 	public bool CommitCurrentLine(StringBuilder? buffer = null)
 	{
-		if (!CurrentLineChanged)
+		if (!IsEditable || (EditableElement == null))
+			return false;
+
+		if (!CurrentLineChanged || (CursorY < 0))
 		{
 			CurrentLineBuffer = null;
 			return false;
@@ -220,7 +223,11 @@ public class Viewport
 			return false;
 
 		if (EditableUnit is not CompilationUnit unit)
+		{
+			EditableElement.ReplaceLine(CursorY, EditableElement.ConstructLine(buffer));
 			return false;
+		}
+
 		try
 		{
 			var lexer = new Lexer(new StringBuilderReader(buffer), startingLineNumber: CursorY);

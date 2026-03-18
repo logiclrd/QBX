@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 using QBX.CodeModel.Statements;
 using QBX.DevelopmentEnvironment;
@@ -51,6 +52,9 @@ public class CompilationElement : IRenderableCode, IEditableElement
 	public IEnumerable<Statement> AllStatements => _lines.SelectMany(line => line.Statements);
 
 	List<CodeLine> _lines = new List<CodeLine>();
+
+	public IEditableLine ConstructLine(StringBuilder buffer)
+		=> CodeLine.CreateUnparsed(buffer);
 
 	public CompilationElement(CompilationUnit owner)
 	{
