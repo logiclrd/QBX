@@ -1,6 +1,7 @@
 ﻿using System.IO;
 
 using QBX.CodeModel.Expressions;
+using QBX.Parser;
 
 namespace QBX.CodeModel.Statements;
 
@@ -10,9 +11,11 @@ public class DefFnStatement : SubroutineOpeningStatement
 
 	protected override string StatementName => "DEF";
 
+	static readonly Identifier UninitializedName = Identifier.Standalone("FN");
+
 	public DefFnStatement()
 	{
-		Name = "FN";
+		Name = UninitializedName;
 	}
 
 	public Expression? ExpressionBody { get; set; }

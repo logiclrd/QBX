@@ -1,16 +1,18 @@
 ﻿using System;
 using System.IO;
 
+using QBX.Parser;
+
 namespace QBX.CodeModel.Statements;
 
 public abstract class TargetLineStatement : Statement
 {
-	public string? TargetLineNumber;
-	public string? TargetLabel;
+	public Identifier? TargetLineNumber;
+	public Identifier? TargetLabel;
 
 	public virtual bool CanBeParameterless => false;
 
-	public bool TargetsLine0 => (TargetLineNumber == "0");
+	public bool TargetsLine0 => (TargetLineNumber?.Value == "0");
 
 	protected abstract string StatementName { get; }
 

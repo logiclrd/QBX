@@ -1,15 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 using QBX.ExecutionEngine.Compiled;
+using QBX.Parser;
 
 namespace QBX.ExecutionEngine;
 
-public class CommonBlock(string name)
+public class CommonBlock(Identifier name)
 {
-	public const string DefaultBlockName = "COMMON$";
+	public const string DefaultBlockNameValue = "COMMON$";
 
-	public string Name => name;
+	public static readonly Identifier DefaultBlockName = Identifier.Standalone(DefaultBlockNameValue);
+
+	public Identifier Name => name;
 	public List<DataType> VariableTypes = new List<DataType>();
 
 	public void MapVariables(IEnumerable<DataType> declaredTypes)

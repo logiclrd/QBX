@@ -6,6 +6,7 @@ using System.Linq;
 
 using QBX.CodeModel.Statements;
 using QBX.DevelopmentEnvironment;
+using QBX.Parser;
 
 namespace QBX.CodeModel;
 
@@ -15,7 +16,7 @@ public class CompilationElement : IRenderableCode, IEditableElement
 
 	IEditableUnit IEditableElement.Owner => Owner;
 
-	public string? Name { get; set; }
+	public Identifier? Name { get; set; }
 
 	public CompilationElementType Type { get; set; }
 	public IReadOnlyList<CodeLine> Lines => _lines;

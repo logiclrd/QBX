@@ -759,8 +759,10 @@ public partial class Program
 			var writer = new StringWriter();
 			var buffer = writer.GetStringBuilder();
 
-			foreach (var unit in LoadedFiles.Where(u => u.IncludeInBuild))
+			foreach (var unit in LoadedFiles.OfType<CompilationUnit>().Where(u => u.IncludeInBuild))
 			{
+				var parser = new BasicParser(unit.IdentifierRepository);
+
 				foreach (var element in unit.Elements)
 				{
 					for (int i = 0; i < element.Lines.Count; i++)
@@ -775,7 +777,7 @@ public partial class Program
 
 								var lexer = new Lexer(new StringBuilderReader(buffer), startingLineNumber: i);
 
-								var parsedCodeLine = Parser.ParseCodeLines(lexer).SingleOrDefault();
+								var parsedCodeLine = parser.ParseCodeLines(lexer).SingleOrDefault();
 
 								element.ReplaceLine(i, parsedCodeLine ?? CodeLine.CreateEmpty());
 							}
@@ -958,7 +960,7 @@ public partial class Program
 		if (SplitViewport != null)
 			return;
 
-		SplitViewport = new Viewport(Parser);
+		SplitViewport = new Viewport();
 
 		if (FocusedViewport.EditableElement is IEditableElement element)
 			SplitViewport.SwitchTo(element);

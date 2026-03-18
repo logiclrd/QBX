@@ -1,15 +1,16 @@
 ﻿using System.IO;
 
 using QBX.CodeModel.Expressions;
+using QBX.Parser;
 
 namespace QBX.CodeModel.Statements;
 
 public class ConstDefinition : IRenderableCode
 {
-	public string Identifier { get; set; }
+	public Identifier Identifier { get; set; }
 	public Expression Value { get; set; }
 
-	public ConstDefinition(string identifier, Expression value)
+	public ConstDefinition(Identifier identifier, Expression value)
 	{
 		Identifier = identifier;
 		Value = value;

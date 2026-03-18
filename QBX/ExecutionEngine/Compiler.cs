@@ -18,11 +18,12 @@ using QBX.ExecutionEngine.Execution.Events;
 using QBX.LexicalAnalysis;
 
 using QBX.Numbers;
+using QBX.Parser;
 using QBX.Utility;
 
 namespace QBX.ExecutionEngine;
 
-public class Compiler
+public class Compiler(IdentifierRepository identifierRepository)
 {
 	public bool DetectDelayLoops { get; set; }
 
@@ -112,7 +113,7 @@ public class Compiler
 			if (routine.Source.Type != CodeModel.CompilationElementType.Main)
 				routine.TranslateParameters(routine.Mapper, compilation);
 
-			string unqualifiedName = Mapper.UnqualifyIdentifier(routine.Name);
+			var unqualifiedName = Mapper.UnqualifyIdentifier(routine.Name);
 
 			if (module.UnresolvedReferences.TryGetDeclaration(unqualifiedName, out var forwardReference))
 			{
@@ -250,7 +251,8 @@ public class Compiler
 
 					var variableType = mapper.GetVariableType(variable.VariableIndex);
 
-					string hiddenVariableName = "<" + element.Name + ">" + variable.Name;
+					var hiddenVariableName = Identifier.Standalone(
+						"<" + element.Name + ">" + variable.Name);
 
 					if (!variableType.IsArray)
 					{
@@ -361,7 +363,7 @@ public class Compiler
 
 		var udt = new UserDataType();
 
-		var fieldNames = new List<string>();
+		var fieldNames = new List<Identifier>();
 
 		foreach (var typeElementStatement in elements)
 		{
@@ -453,7 +455,9 @@ public class Compiler
 			{
 				if (line.LineNumber != null)
 				{
-					var labelStatement = new LabelStatement(line.LineNumber, statement);
+					var lineNumber = identifierRepository.GetOrAddCanonicalIdentifier(line.LineNumber);
+
+					var labelStatement = new LabelStatement(lineNumber, statement);
 
 					module.DataParser.AddLabel(labelStatement);
 					container.Append(labelStatement);
@@ -964,7 +968,7 @@ public class Compiler
 				if ((declareStatement.Parameters != null)
 				 && declareStatement.Parameters.Parameters.Any(definition => definition.AnyType))
 				{
-					string unqualifiedName = Mapper.UnqualifyIdentifier(declareStatement.Name);
+					var unqualifiedName = Mapper.UnqualifyIdentifier(declareStatement.Name);
 
 					if (module.TryGetNativeProcedure(unqualifiedName, out var nativeProcedure)
 					 || !compilation.TryGetRoutine(unqualifiedName, out _))
@@ -988,7 +992,7 @@ public class Compiler
 								mapper.GetTypeForIdentifier(declareStatement.Name));
 					}
 
-					string unqualifiedName = Mapper.UnqualifyIdentifier(declareStatement.Name);
+					var unqualifiedName = Mapper.UnqualifyIdentifier(declareStatement.Name);
 
 					if (module.TryGetNativeProcedure(unqualifiedName, out var nativeProcedure))
 					{
@@ -1060,7 +1064,7 @@ public class Compiler
 
 				mapper.StartSemiscopeSetup();
 
-				string qualifiedName = mapper.QualifyIdentifier(
+				var qualifiedName = mapper.QualifyIdentifier(
 					defFnRoutine.Name,
 					defFnRoutine.ReturnType);
 
@@ -1684,9 +1688,9 @@ public class Compiler
 			}
 			case CodeModel.Statements.GoToStatement goToStatement:
 			{
-				string target =
+				var target =
 					goToStatement.TargetLabel ??
-					goToStatement.TargetLineNumber?.ToString() ??
+					goToStatement.TargetLineNumber ??
 					throw new Exception("CodeModel GoToStatement has no target");
 
 				var translatedGoToStatement = new GoToStatement(target, goToStatement);
@@ -1697,9 +1701,9 @@ public class Compiler
 			}
 			case CodeModel.Statements.GoSubStatement goSubStatement:
 			{
-				string target =
+				var target =
 					goSubStatement.TargetLabel ??
-					goSubStatement.TargetLineNumber?.ToString() ??
+					goSubStatement.TargetLineNumber ??
 					throw new Exception("CodeModel GoToStatement has no target");
 
 				var translatedGoSubStatement = new GoSubStatement(target, goSubStatement);
@@ -2485,9 +2489,9 @@ public class Compiler
 			}
 			case CodeModel.Statements.ReturnStatement returnStatement:
 			{
-				string? target =
+				Identifier? target =
 					returnStatement.TargetLabel ??
-					returnStatement.TargetLineNumber?.ToString();
+					returnStatement.TargetLineNumber;
 
 				Executable translatedReturnStatement;
 
@@ -2833,11 +2837,12 @@ public class Compiler
 
 						mapper.DeclareVariable(declaration.Name, variableType, declaration.NameToken);
 
-						string rootVariableName = declaration.Name;
+						var rootVariableName = declaration.Name;
 
 						if (createNewVariables)
 						{
-							string hiddenVariableName = "<" + element.Name + ">" + declaration.Name;
+							var hiddenVariableName = Identifier.Standalone(
+								"<" + element.Name + ">" + declaration.Name);
 
 							rootMapper.DeclareVariable(hiddenVariableName, variableType, declaration.NameToken);
 
@@ -2855,11 +2860,12 @@ public class Compiler
 
 						mapper.DeclareArray(declaration.Name, variableType, declaration.NameToken);
 
-						string rootVariableName = declaration.Name;
+						var rootVariableName = declaration.Name;
 
 						if (createNewVariables)
 						{
-							string hiddenVariableName = "<" + element.Name + ">" + declaration.Name;
+							var hiddenVariableName = Identifier.Standalone(
+								"<" + element.Name + ">" + declaration.Name);
 
 							rootMapper.DeclareArray(hiddenVariableName, variableType, declaration.NameToken);
 
@@ -3023,8 +3029,8 @@ public class Compiler
 
 			case CodeModel.Expressions.IdentifierExpression identifier:
 			{
-				string qualifiedIdentifier = mapper.QualifyIdentifier(identifier.Identifier);
-				string unqualifiedIdentifier = Mapper.UnqualifyIdentifier(identifier.Identifier);
+				var qualifiedIdentifier = mapper.QualifyIdentifier(identifier.Identifier);
+				var unqualifiedIdentifier = Mapper.UnqualifyIdentifier(identifier.Identifier);
 
 				if (mapper.TryResolveConstant(unqualifiedIdentifier, out var literal))
 					return literal;
@@ -3123,20 +3129,22 @@ public class Compiler
 				if (constantValue)
 					throw CompilerException.InvalidConstant(callOrIndexExpression.Token);
 
-				string? identifier = (callOrIndexExpression.Subject as CodeModel.Expressions.IdentifierExpression)?.Identifier;
+				Identifier? identifier = (callOrIndexExpression.Subject as CodeModel.Expressions.IdentifierExpression)?.Identifier;
 				Token? identifierToken = callOrIndexExpression.Subject.Token;
 
 				if (identifier == null)
 				{
-					identifier = CollapseDottedIdentifierExpression(callOrIndexExpression.Subject, mapper, out int column);
+					var collapsedIdentifier = CollapseDottedIdentifierExpression(callOrIndexExpression.Subject, mapper, out int column);
 
-					if (identifier != null)
+					if (collapsedIdentifier != null)
 					{
+						identifier = identifierRepository.GetOrAddCanonicalIdentifier(collapsedIdentifier);
+
 						identifierToken = new Token(
 							BlameLineNumber(callOrIndexExpression.Subject.Token),
 							column,
 							TokenType.Identifier,
-							identifier);
+							identifier.Value);
 
 						identifierToken.OwnerStatement = expression.Token?.OwnerStatement;
 					}
@@ -3176,7 +3184,7 @@ public class Compiler
 
 				if (identifier != null)
 				{
-					string unqualifiedIdentifier = Mapper.UnqualifyIdentifier(identifier);
+					var unqualifiedIdentifier = Mapper.UnqualifyIdentifier(identifier);
 
 					if (module.TryGetNativeProcedure(unqualifiedIdentifier, out var nativeProcedure))
 					{
@@ -3522,7 +3530,7 @@ public class Compiler
 			{
 				if (binaryExpression.Operator == CodeModel.Expressions.Operator.Field)
 				{
-					string? dottedIdentifier = CollapseDottedIdentifierExpression(binaryExpression, mapper, out int column);
+					var dottedIdentifier = CollapseDottedIdentifierExpression(binaryExpression, mapper, out int column);
 
 					if (dottedIdentifier != null)
 					{
@@ -3535,7 +3543,7 @@ public class Compiler
 								BlameLineNumber(binaryExpression.Token),
 								column,
 								TokenType.Identifier,
-								dottedIdentifier);
+								dottedIdentifier.Value);
 
 							blameToken.OwnerStatement = expression.Token?.OwnerStatement;
 
@@ -3567,7 +3575,7 @@ public class Compiler
 						if (binaryExpression.Right is not CodeModel.Expressions.IdentifierExpression identifierExpression)
 							throw new Exception("Member access expressions require the right-hand operand to be an identifier");
 
-						string identifier = identifierExpression.Identifier;
+						var identifier = identifierExpression.Identifier;
 						var identifierToken = identifierExpression.Token;
 
 						return FieldAccessExpression.Construct(subjectExpression, identifier, identifierToken);
@@ -3635,7 +3643,7 @@ public class Compiler
 		throw new Exception("Internal error: Can't translate expression");
 	}
 
-	string? CollapseDottedIdentifierExpression(CodeModel.Expressions.Expression expression, Mapper mapper, out int column)
+	Identifier? CollapseDottedIdentifierExpression(CodeModel.Expressions.Expression expression, Mapper mapper, out int column)
 	{
 		if (expression is CodeModel.Expressions.BinaryExpression binaryExpression)
 			return CollapseDottedIdentifierExpression(binaryExpression, mapper, out column);
@@ -3646,13 +3654,16 @@ public class Compiler
 		}
 	}
 
-	internal string? CollapseDottedIdentifierExpression(CodeModel.Expressions.BinaryExpression binaryExpression, Mapper mapper, out int column)
+	internal Identifier? CollapseDottedIdentifierExpression(CodeModel.Expressions.BinaryExpression binaryExpression, Mapper mapper, out int column)
 	{
 		StringBuilder? builder = null;
 
 		CollapseDottedIdentifierExpression(binaryExpression, mapper, ref builder, out column);
 
-		return builder?.ToString();
+		if (builder == null)
+			return null;
+
+		return identifierRepository.GetOrAddCanonicalIdentifier(builder.ToString());
 	}
 
 	void CollapseDottedIdentifierExpression(CodeModel.Expressions.BinaryExpression binaryExpression, Mapper mapper, ref StringBuilder? identifierBuilder, out int column)
@@ -3675,7 +3686,7 @@ public class Compiler
 		switch (binaryExpression.Left)
 		{
 			case CodeModel.Expressions.IdentifierExpression leftIdentifier:
-				if (!mapper.IsDisallowedSlug(leftIdentifier.Identifier))
+				if (!mapper.IsDisallowedSlug(leftIdentifier.Identifier.Value))
 				{
 					identifierBuilder = new StringBuilder(leftIdentifier.Identifier);
 					column = leftIdentifier.Token?.Column ?? -1;

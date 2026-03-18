@@ -8,12 +8,13 @@ using QBX.ExecutionEngine.Compiled;
 using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
 using QBX.ExecutionEngine.Marshalling;
+using QBX.Parser;
 
 namespace QBX.ExecutionEngine;
 
 public class NativeProcedure(object site, MethodInfo implementation)
 {
-	public string Name => implementation.Name;
+	public Identifier Name => Identifier.Standalone(implementation.Name);
 
 	// Supplied by DECLARE SUB/DECLARE FUNCTION
 	public DataType[]? ParameterTypes;

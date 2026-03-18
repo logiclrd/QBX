@@ -30,13 +30,9 @@ public class Viewport
 	public StringBuilder? CurrentLineBuffer;
 	public Clipboard Clipboard;
 
-	public BasicParser Parser;
-
-	public Viewport(BasicParser parser)
+	public Viewport()
 	{
 		Clipboard = new Clipboard(this);
-
-		Parser = parser;
 	}
 
 	public int CachedContentTopY;
@@ -223,11 +219,15 @@ public class Viewport
 		if (buffer == null)
 			return false;
 
+		if (EditableUnit is not CompilationUnit unit)
+			return false;
 		try
 		{
 			var lexer = new Lexer(new StringBuilderReader(buffer), startingLineNumber: CursorY);
 
-			var parsedCodeLine = Parser.ParseCodeLines(lexer).SingleOrDefault();
+			var parser = new BasicParser(unit.IdentifierRepository);
+
+			var parsedCodeLine = parser.ParseCodeLines(lexer).SingleOrDefault();
 
 			if ((parsedCodeLine?.Statements.FirstOrDefault() is ProperSubroutineOpeningStatement startScopeStatement)
 			 && (EditableUnit is CompilationUnit compilationUnit))

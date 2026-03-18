@@ -2,6 +2,7 @@
 using System.IO;
 
 using QBX.LexicalAnalysis;
+using QBX.Parser;
 
 namespace QBX.CodeModel.Statements;
 
@@ -9,11 +10,11 @@ public class TypeElementStatement : Statement
 {
 	public override StatementType Type => StatementType.TypeElement;
 
-	public string Name { get; set; } = "";
+	public Identifier Name { get; set; } = Identifier.Empty;
 	public VariableDeclarationSubscriptList? Subscripts { get; set; }
 	public DataType ElementType { get; set; }
 	public int FixedStringLength { get; set; }
-	public string? ElementUserType { get; set; }
+	public Identifier? ElementUserType { get; set; }
 	public string? AlignmentWhitespace { get; set; }
 
 	public Token? TypeToken { get; set; }

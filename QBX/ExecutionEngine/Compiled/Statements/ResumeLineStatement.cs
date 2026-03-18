@@ -1,10 +1,11 @@
 ﻿using System;
 
 using QBX.ExecutionEngine.Execution;
+using QBX.Parser;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class ResumeLineStatement(string target, CodeModel.Statements.Statement source)
+public class ResumeLineStatement(Identifier target, CodeModel.Statements.Statement source)
 	: JumpStatement(target, source)
 {
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)

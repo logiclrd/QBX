@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using QBX.ExecutionEngine.Compiled.Operations;
 using QBX.ExecutionEngine.Execution.Variables;
 using QBX.LexicalAnalysis;
+using QBX.Parser;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
@@ -12,7 +13,7 @@ public class CallStatement(CodeModel.Statements.Statement? source) : Executable(
 	public Routine? Target;
 	public readonly List<Evaluable> Arguments = new List<Evaluable>();
 
-	public string? UnresolvedTargetName;
+	public Identifier? UnresolvedTargetName;
 
 	public Token? SourceToken => Source?.FirstToken;
 

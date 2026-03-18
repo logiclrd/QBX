@@ -2,15 +2,16 @@
 using System.IO;
 
 using QBX.LexicalAnalysis;
+using QBX.Parser;
 
 namespace QBX.CodeModel;
 
 public class VariableDeclaration : IRenderableCode
 {
-	public string Name { get; set; } = "";
+	public Identifier Name { get; set; } = Identifier.Empty;
 	public VariableDeclarationSubscriptList? Subscripts { get; set; }
 	public DataType Type { get; set; } = DataType.Unspecified;
-	public string? UserType { get; set; }
+	public Identifier? UserType { get; set; }
 
 	public Token? NameToken;
 	public Token? TypeToken;

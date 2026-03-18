@@ -5,6 +5,7 @@ using System.Linq;
 using QBX.CodeModel.Statements;
 using QBX.ExecutionEngine.Compiled.Statements;
 using QBX.LexicalAnalysis;
+using QBX.Parser;
 
 namespace QBX.ExecutionEngine.Compiled;
 
@@ -12,7 +13,7 @@ public class Routine : Sequence
 {
 	public Module Module;
 
-	public string Name;
+	public Identifier Name;
 	public SubroutineOpeningStatement? OpeningStatement;
 	public List<DataType> ParameterTypes = new List<DataType>();
 	public List<DataType> VariableTypes = new List<DataType>();
@@ -52,9 +53,9 @@ public class Routine : Sequence
 	//   the ResolveJumpStatements function recomputes all the mappings following
 	//   any change to the code.
 
-	public const string MainRoutineName = "@Main";
+	public static readonly Identifier MainRoutineName = Identifier.Standalone("@Main");
 
-	public bool IsMainRoutine => (Name == MainRoutineName);
+	public bool IsMainRoutine => Name.Equals(MainRoutineName);
 
 	public bool IsDefFn => (OpeningStatement is DefFnStatement);
 
@@ -106,15 +107,13 @@ public class Routine : Sequence
 
 	public void SetReturnType(Mapper mapper, TypeRepository typeRepository)
 	{
-		char lastChar = Name.Last();
-
-		if (CodeModel.TypeCharacter.TryParse(lastChar, out var typeCharacter))
+		if (Name is QualifiedIdentifier qualifiedName)
 		{
 			// Can't have two functions whose names differ only by type character.
 			// In other words, the type character isn't actually part of the
 			// function's name.
-			ReturnType = mapper.ResolveType(typeCharacter.Type, null, fixedStringLength: 0, isArray: false, null);
-			Name = Name.Remove(Name.Length - 1);
+			ReturnType = mapper.ResolveType(qualifiedName.TypeCharacter.Type, null, fixedStringLength: 0, isArray: false, null);
+			Name = qualifiedName.UnqualifiedIdentifier;
 		}
 		else
 			ReturnType = DataType.ForPrimitiveDataType(mapper.GetTypeForIdentifier(Name));
@@ -139,21 +138,19 @@ public class Routine : Sequence
 		else
 			ParameterVariableIndices = Array.Empty<int>();
 
-		char lastChar = Name.Last();
-
-		if (CodeModel.TypeCharacter.TryParse(lastChar, out var typeCharacter))
+		if (Name is QualifiedIdentifier qualifiedName)
 		{
 			// Can't have two functions whose names differ only by type character.
 			// In other words, the type character isn't actually part of the
 			// function's name.
-			ReturnType = mapper.ResolveType(typeCharacter.Type, null, fixedStringLength: 0, isArray: false, null);
-			Name = Name.Remove(Name.Length - 1);
+			ReturnType = mapper.ResolveType(qualifiedName.TypeCharacter.Type, null, fixedStringLength: 0, isArray: false, null);
+			Name = qualifiedName.UnqualifiedIdentifier;
 		}
 
 		module.Routines.Add(Name, this);
 	}
 
-	public static string GetName(CodeModel.CompilationElement source)
+	public static Identifier GetName(CodeModel.CompilationElement source)
 	{
 		foreach (var line in source.Lines)
 			if (line.Statements.FirstOrDefault() is ProperSubroutineOpeningStatement subOrFunction)
@@ -197,17 +194,17 @@ public class Routine : Sequence
 
 				ParameterTypes.Add(paramType);
 
-				string name = param.Name;
-				string nameWithoutTypeCharacter = name;
+				Identifier name = param.Name;
+				Identifier nameWithoutTypeCharacter = name;
 
-				bool typeCharacterPresent = CodeModel.TypeCharacter.TryParse(name.Last(), out var _);
+				var qualifiedName = name as QualifiedIdentifier;
 
-				if (typeCharacterPresent)
-					nameWithoutTypeCharacter = name.Remove(name.Length - 1);
+				if (qualifiedName != null)
+					nameWithoutTypeCharacter = qualifiedName.UnqualifiedIdentifier;
 
 				if (compilation.TryGetFunction(nameWithoutTypeCharacter, out var function))
 				{
-					if (typeCharacterPresent || param.IsArray)
+					if ((qualifiedName != null) || param.IsArray)
 						throw CompilerException.DuplicateDefinition(param.NameToken);
 
 					var functionType = function.ReturnType;
@@ -222,7 +219,7 @@ public class Routine : Sequence
 					ParameterVariableIndices[i] = mapper.DeclareArray(name, paramType);
 
 				if (paramType.IsUserType)
-					mapper.AddDisallowedSlug(name);
+					mapper.AddDisallowedSlug(name.Value);
 			}
 		}
 	}
@@ -264,13 +261,13 @@ public class Routine : Sequence
 			throw CompilerException.TypeMismatch(blameName);
 	}
 
-	Dictionary<string, StatementPath>? _cachedLabels = null;
+	Dictionary<Identifier, StatementPath>? _cachedLabels = null;
 
-	public Dictionary<string, StatementPath> CollectLabels()
+	public Dictionary<Identifier, StatementPath> CollectLabels()
 	{
 		if (_cachedLabels == null)
 		{
-			_cachedLabels = new Dictionary<string, StatementPath>();
+			_cachedLabels = new Dictionary<Identifier, StatementPath>();
 
 			foreach (var label in AllStatements.OfType<LabelStatement>())
 			{

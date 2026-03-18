@@ -1,12 +1,14 @@
 using System.Collections.Generic;
 
+using QBX.Parser;
+
 namespace QBX.DevelopmentEnvironment;
 
 public interface IEditableElement
 {
 	IEditableUnit Owner { get; }
 
-	string? Name { get; }
+	Identifier? Name { get; }
 
 	int FirstLineIndex { get; }
 	int CachedCursorLine { get; set; }

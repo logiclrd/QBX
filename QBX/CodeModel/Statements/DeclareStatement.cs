@@ -2,6 +2,7 @@
 using System.Linq;
 
 using QBX.LexicalAnalysis;
+using QBX.Parser;
 
 namespace QBX.CodeModel.Statements;
 
@@ -10,7 +11,7 @@ public class DeclareStatement : Statement
 	public override StatementType Type => StatementType.Declare;
 
 	public Token DeclarationType { get; set; }
-	public string Name { get; set; }
+	public Identifier Name { get; set; }
 	public bool IsCDecl { get; set; }
 	public string? Alias { get; set; }
 	public TypeCharacter? TypeCharacter { get; set; }
@@ -18,19 +19,19 @@ public class DeclareStatement : Statement
 
 	public Token? NameToken;
 
-	public DeclareStatement(Token declarationType, string name, Token? nameToken, ParameterList? parameters)
+	public DeclareStatement(Token declarationType, Identifier name, Token? nameToken, ParameterList? parameters)
 	{
 		DeclarationType = declarationType;
 		Name = name;
 		NameToken = nameToken;
 		Parameters = parameters;
 
-		char lastChar = name.Last();
+		char lastChar = name.Value.Last();
 
-		if (TypeCharacter.TryParse(lastChar, out var typeCharacter))
+		if (name is QualifiedIdentifier qualifiedName)
 		{
-			TypeCharacter = typeCharacter;
-			Name = Name.Remove(Name.Length - 1);
+			TypeCharacter = qualifiedName.TypeCharacter;
+			Name = qualifiedName.UnqualifiedIdentifier;
 		}
 	}
 

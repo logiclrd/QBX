@@ -1,11 +1,12 @@
 using QBX.ExecutionEngine.Execution;
 using QBX.LexicalAnalysis;
+using QBX.Parser;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
 public class RestoreStatement(Module module, CodeModel.Statements.Statement source) : Executable(source), IUnresolvedLineReference
 {
-	public string? LabelName { get; set; }
+	public Identifier? LabelName { get; set; }
 
 	public Token? LabelToken { get; set; }
 

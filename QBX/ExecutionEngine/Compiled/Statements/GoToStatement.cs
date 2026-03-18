@@ -1,6 +1,8 @@
+using QBX.Parser;
+
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class GoToStatement(string labelName, CodeModel.Statements.Statement source)
+public class GoToStatement(Identifier labelName, CodeModel.Statements.Statement source)
 	: JumpStatement(labelName, source)
 {
 }

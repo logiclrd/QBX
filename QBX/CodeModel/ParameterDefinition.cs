@@ -1,17 +1,17 @@
 ﻿using System.IO;
 
 using QBX.LexicalAnalysis;
+using QBX.Parser;
 
 namespace QBX.CodeModel;
 
 public class ParameterDefinition : IRenderableCode
 {
 	public bool IsByVal { get; set; }
-	public string Name { get; set; } = "";
-	public string ActualName { get; set; } = "";
+	public Identifier Name { get; set; } = Identifier.Empty;
 	public bool IsArray { get; set; }
 	public DataType Type { get; set; } = DataType.Unspecified;
-	public string? UserType { get; set; }
+	public Identifier? UserType { get; set; }
 	public bool AnyType { get; set; }
 
 	public Token? NameToken { get; set; }

@@ -11,11 +11,13 @@ using QBX.Numbers;
 
 namespace QBX.Parser;
 
-public class BasicParser
+public class BasicParser(IdentifierRepository identifierRepository)
 {
-	public CompilationUnit Parse(IEnumerable<Token> tokenStream, bool ignoreErrors = false, Action<int>? lineCountCallback = null)
+	public static CompilationUnit Parse(IEnumerable<Token> tokenStream, bool ignoreErrors = false, Action<int>? lineCountCallback = null)
 	{
 		var unit = new CompilationUnit();
+
+		var parser = new BasicParser(unit.IdentifierRepository);
 
 		var mainElement = new CompilationElement(unit);
 
@@ -30,7 +32,7 @@ public class BasicParser
 
 		int lineIndex = -1; // increment at start of loop because there are paths that skip the end of the loop
 
-		foreach (var line in ParseCodeLines(tokenStream, ignoreErrors))
+		foreach (var line in parser.ParseCodeLines(tokenStream, ignoreErrors))
 		{
 			lineIndex++;
 
@@ -77,7 +79,7 @@ public class BasicParser
 								break;
 							case FunctionStatement function:
 								element.Type = CompilationElementType.Function;
-								element.Name = function.Name; // TODO: strip type character
+								element.Name = function.Name;
 								break;
 						}
 
@@ -176,7 +178,7 @@ public class BasicParser
 				if (line.LineNumber != null)
 					throw new SyntaxErrorException(token, "Expected: statement");
 
-				line.LineNumber = token.Value;
+				line.LineNumber = identifierRepository.UpdateCanonicalIdentifier(token.Value);
 
 				precedingWhitespaceToken = null;
 			}
@@ -206,7 +208,7 @@ public class BasicParser
 							new Label()
 							{
 								Indentation = whitespace,
-								Name = labelName,
+								Name = identifierRepository.UpdateCanonicalIdentifier(labelName),
 							};
 
 						buffer.Clear();
@@ -415,7 +417,7 @@ public class BasicParser
 		if (tokens.Any(token => token.Type == TokenType.Whitespace))
 			tokens = tokens.Where(token => token.Type != TokenType.Whitespace).ToList();
 
-		var tokenHandler = new TokenHandler(tokens);
+		var tokenHandler = new TokenHandler(tokens, identifierRepository);
 
 		var token = tokenHandler.NextToken;
 
@@ -516,7 +518,7 @@ public class BasicParser
 
 			case TokenType.CALL:
 			{
-				string targetName = tokenHandler.ExpectIdentifier(allowTypeCharacter: false);
+				var targetName = tokenHandler.ExpectIdentifier(allowTypeCharacter: false);
 
 				ExpressionList? arguments = null;
 
@@ -931,7 +933,7 @@ public class BasicParser
 				{
 					var identifier = tokenHandler.ExpectIdentifier(allowTypeCharacter: true, out var identifierToken);
 
-					if (!identifier.StartsWith("FN", StringComparison.OrdinalIgnoreCase))
+					if (!identifier.Value.StartsWith("FN", StringComparison.OrdinalIgnoreCase))
 						throw new SyntaxErrorException(identifierToken, "DEF function name must begin with FN");
 
 					if (isNested)
@@ -986,19 +988,20 @@ public class BasicParser
 
 				foreach (var rangeTokens in SplitCommaDelimitedList(tokenHandler.RemainingTokens, endTokenRef))
 				{
-					var rangeTokenHandler = new TokenHandler(rangeTokens);
+					var rangeTokenHandler = new TokenHandler(rangeTokens, identifierRepository);
 
 					var range = new DefTypeRange();
 
-					string? rangeStart = null;
-					string? rangeEnd = null;
+					Identifier? rangeStart = null;
+					Identifier? rangeEnd = null;
 
 					rangeStart = rangeTokenHandler.ExpectIdentifier(allowTypeCharacter: false, out var identifierToken);
 
-					if (rangeStart.Length != 1)
+					if ((rangeStart.Value.Length != 1)
+					 || !char.IsAsciiLetter(rangeStart.Value[0]))
 						throw new SyntaxErrorException(identifierToken, "Expected: letter");
 
-					range.Start = char.ToUpperInvariant(rangeStart[0]);
+					range.Start = char.ToUpperInvariant(rangeStart.Value[0]);
 
 					if (rangeTokenHandler.HasMoreTokens)
 					{
@@ -1007,10 +1010,11 @@ public class BasicParser
 
 						rangeEnd = rangeTokenHandler.ExpectIdentifier(allowTypeCharacter: false, out identifierToken);
 
-						if (rangeEnd.Length != 1)
+						if ((rangeEnd.Value.Length != 1)
+						 || !char.IsAsciiLetter(rangeEnd.Value[0]))
 							throw new SyntaxErrorException(identifierToken, "Expected: letter");
 
-						range.End = char.ToUpperInvariant(rangeEnd[0]);
+						range.End = char.ToUpperInvariant(rangeEnd.Value[0]);
 					}
 
 					range.Normalize();
@@ -1543,7 +1547,7 @@ public class BasicParser
 				switch (tokenHandler.NextToken.Type)
 				{
 					case TokenType.Number:
-						statement.TargetLineNumber = tokenHandler.NextToken.Value;
+						statement.TargetLineNumber = identifierRepository.UpdateCanonicalIdentifier(tokenHandler.NextToken.Value);
 						break;
 
 					case TokenType.Identifier:
@@ -1555,7 +1559,7 @@ public class BasicParser
 						if (char.IsSymbol(labelName.Last()))
 							throw new SyntaxErrorException(tokenHandler.NextToken, "Expected: label");
 
-						statement.TargetLabel = labelName;
+						statement.TargetLabel = identifierRepository.UpdateCanonicalIdentifier(labelName);
 
 						break;
 				}
@@ -1571,7 +1575,7 @@ public class BasicParser
 			{
 				tokens = tokens.Concat(consumeTokensToEndOfLine()).ToList();
 
-				tokenHandler = new TokenHandler(tokens);
+				tokenHandler = new TokenHandler(tokens, identifierRepository);
 				tokenHandler.Advance();
 
 				var statement =
@@ -1624,7 +1628,7 @@ public class BasicParser
 
 							var statement = new BareLineNumberGoToStatement();
 
-							statement.TargetLineNumber = tokens[0].Value;
+							statement.TargetLineNumber = identifierRepository.UpdateCanonicalIdentifier(tokens[0].Value);
 
 							list.Add(statement);
 						}
@@ -2332,7 +2336,7 @@ public class BasicParser
 								 && (parsedLineNumber == 0))
 									onError.Action = OnErrorAction.DoNotHandle;
 								else
-									onError.TargetLineNumber = tokenHandler.NextToken.Value;
+									onError.TargetLineNumber = identifierRepository.UpdateCanonicalIdentifier(tokenHandler.NextToken.Value);
 
 								break;
 
@@ -2345,7 +2349,7 @@ public class BasicParser
 								if (char.IsSymbol(labelName.Last()))
 									throw new SyntaxErrorException(tokenHandler.NextToken, "Expected: label");
 
-								onError.TargetLabel = labelName;
+								onError.TargetLabel = identifierRepository.UpdateCanonicalIdentifier(labelName);
 
 								break;
 						}
@@ -3141,7 +3145,7 @@ public class BasicParser
 							break;
 
 						case TokenType.Number:
-							resume.TargetLineNumber = tokenHandler.NextToken.Value;
+							resume.TargetLineNumber = identifierRepository.UpdateCanonicalIdentifier(tokenHandler.NextToken.Value);
 							break;
 
 						case TokenType.Identifier:
@@ -3153,7 +3157,7 @@ public class BasicParser
 							if (char.IsSymbol(labelName.Last()))
 								throw new SyntaxErrorException(tokenHandler.NextToken, "Expected: label");
 
-							resume.TargetLabel = labelName;
+							resume.TargetLabel = identifierRepository.UpdateCanonicalIdentifier(labelName);
 
 							break;
 					}
@@ -3304,7 +3308,7 @@ public class BasicParser
 						throw new SyntaxErrorException(tokens[range.Offset], "Expected: identifier");
 					}
 
-					var declarationHandler = new TokenHandler(declarationTokens);
+					var declarationHandler = new TokenHandler(declarationTokens, identifierRepository);
 
 					var declaration = new VariableScopeDeclaration();
 
@@ -3320,7 +3324,8 @@ public class BasicParser
 
 					if (declarationHandler.NextTokenIs(TokenType.AS))
 					{
-						if (char.IsSymbol(declaration.Name.Last()))
+						if ((declaration.Name is QualifiedIdentifier qualifiedName)
+						 && (qualifiedName.TypeCharacter != null))
 							throw new SyntaxErrorException(declarationTokens[0], "Identifier cannot end with %, &, !, #, $ or @");
 
 						declarationHandler.Advance();
@@ -3898,7 +3903,7 @@ public class BasicParser
 				// But, if identifier has a type character, then the desired
 				// error message is one that assumes this is actually an
 				// assignment statement missing its equals sign.
-				string targetName;
+				Identifier targetName;
 
 				try
 				{
@@ -3931,7 +3936,7 @@ public class BasicParser
 
 	private FieldDefinition ParseFieldDefinition(ListRange<Token> argument, Token endToken)
 	{
-		var tokenHandler = new TokenHandler(argument);
+		var tokenHandler = new TokenHandler(argument, identifierRepository);
 
 		var midTokenIndex = tokenHandler.FindNextUnparenthesizedOf(TokenType.AS);
 
@@ -3998,7 +4003,7 @@ public class BasicParser
 
 	VariableDeclaration ParseVariableDeclaration(ListRange<Token> tokens, Token endToken, bool requireSubscripts)
 	{
-		var tokenHandler = new TokenHandler(tokens);
+		var tokenHandler = new TokenHandler(tokens, identifierRepository);
 
 		var declaration = new VariableDeclaration();
 
@@ -4035,7 +4040,7 @@ public class BasicParser
 
 		if (tokenHandler.NextTokenIs(TokenType.AS))
 		{
-			if (char.IsSymbol(declaration.Name.Last()))
+			if (declaration.Name is QualifiedIdentifier)
 			{
 				throw new SyntaxErrorException(
 					tokenHandler.NextToken,
@@ -4134,18 +4139,15 @@ public class BasicParser
 			if (nameToken.Type != TokenType.Identifier)
 				throw new SyntaxErrorException(nameToken, "Expected identifier");
 
-			param.Name = nameToken.Value ?? throw new Exception("Internal error: identifier token with no value");
+			string name = nameToken.Value ?? throw new Exception("Internal error: identifier token with no value");
+
+			param.Name = identifierRepository.UpdateCanonicalIdentifier(name);
 			param.NameToken = nameToken;
 
 			tokenIndex++;
 
-			char lastChar = param.Name.Last();
-
-			if (TypeCharacter.TryParse(lastChar, out var typeCharacter))
-			{
-				param.ActualName = param.Name;
+			if (param.Name is QualifiedIdentifier)
 				param.TypeToken = nameToken;
-			}
 
 			if (tokenIndex < tokens.Count)
 			{
@@ -4181,9 +4183,9 @@ public class BasicParser
 						param.AnyType = true;
 					else if (typeToken.Type == TokenType.Identifier)
 					{
-						param.UserType = typeToken.Value;
+						param.UserType = identifierRepository.UpdateCanonicalIdentifier(typeToken.Value);
 
-						if (!char.IsAsciiLetterOrDigit(param.UserType!.Last()))
+						if (param.UserType is QualifiedIdentifier)
 							throw new SyntaxErrorException(typeToken, "Type name may only contain letters and digits");
 					}
 					else
@@ -4192,7 +4194,6 @@ public class BasicParser
 							throw new SyntaxErrorException(tokens[tokenIndex], "Expected data type");
 
 						param.Type = DataTypeConverter.FromToken(typeToken);
-						param.ActualName = param.Name + new TypeCharacter(param.Type).Character;
 					}
 
 					param.TypeToken = typeToken;
@@ -4228,7 +4229,7 @@ public class BasicParser
 	{
 		CaseExpression caseExpression = new CaseExpression();
 
-		var tokenHandler = new TokenHandler(tokens);
+		var tokenHandler = new TokenHandler(tokens, identifierRepository);
 
 		if (!tokenHandler.HasMoreTokens)
 			throw new SyntaxErrorException(endToken, "Expected: case expression");
@@ -4462,8 +4463,10 @@ public class BasicParser
 			{
 				if ((tokens[0].Type == TokenType.Number) || (tokens[0].Type == TokenType.String))
 					return new LiteralExpression(tokens[0]);
+
 				if (tokens[0].Type == TokenType.Identifier)
-					return new IdentifierExpression(tokens[0]);
+					return new IdentifierExpression(tokens[0], identifierRepository.UpdateCanonicalIdentifier(tokens[0].Value));
+
 				if (tokens[0].IsParameterlessKeywordFunction)
 					return new KeywordFunctionExpression(tokens[0]);
 			}

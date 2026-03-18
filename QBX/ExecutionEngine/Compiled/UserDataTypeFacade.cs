@@ -1,18 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 
+using QBX.Parser;
+
 namespace QBX.ExecutionEngine.Compiled;
 
 public class UserDataTypeFacade
 {
 	public UserDataType UnderlyingType { get; }
 
-	public string Name { get; }
-	public List<string> FieldNames { get; } = new List<string>();
+	public Identifier Name { get; }
+	public List<Identifier> FieldNames { get; }
 
 	public CodeModel.Statements.TypeStatement? Statement { get; }
 
-	public UserDataTypeFacade(UserDataType underlyingType, string name, List<string> fieldNames, CodeModel.Statements.TypeStatement typeStatement)
+	public UserDataTypeFacade(UserDataType underlyingType, Identifier name, List<Identifier> fieldNames, CodeModel.Statements.TypeStatement typeStatement)
 	{
 		UnderlyingType = underlyingType;
 
@@ -25,7 +27,7 @@ public class UserDataTypeFacade
 	public override string ToString()
 	{
 		if (Statement?.CodeLine?.CompilationElement is CodeModel.CompilationElement containingElement)
-			return containingElement.Name + ":TYPE " + Name;
+			return containingElement.Name?.ToString() + ":TYPE " + Name;
 		else
 			return "TYPE " + Name;
 	}

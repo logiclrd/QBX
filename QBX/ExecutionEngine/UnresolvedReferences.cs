@@ -1,22 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 using QBX.ExecutionEngine.Compiled;
 using QBX.LexicalAnalysis;
+using QBX.Parser;
 
 namespace QBX.ExecutionEngine;
 
 public class UnresolvedReferences(Compilation compilation, Module module)
 {
-	public Dictionary<string, ForwardReferenceList> ForwardReferences =
-		new Dictionary<string, ForwardReferenceList>(StringComparer.OrdinalIgnoreCase);
+	public Dictionary<Identifier, ForwardReferenceList> ForwardReferences = new();
 
-	public bool TryGetDeclaration(string identifier, [NotNullWhen(true)] out ForwardReferenceList? forwardReference)
+	public bool TryGetDeclaration(Identifier identifier, [NotNullWhen(true)] out ForwardReferenceList? forwardReference)
 		=> ForwardReferences.TryGetValue(identifier, out forwardReference);
 
-	public ForwardReferenceList DeclareSymbol(string identifier, Mapper mapper, CodeModel.Statements.Statement? statement, RoutineType routineType, DataType[] parameterTypes, DataType? returnType)
+	public ForwardReferenceList DeclareSymbol(Identifier identifier, Mapper mapper, CodeModel.Statements.Statement? statement, RoutineType routineType, DataType[] parameterTypes, DataType? returnType)
 	{
 		if (ForwardReferences.ContainsKey(identifier)
 		 || module.IsRegistered(identifier))
@@ -35,7 +34,7 @@ public class UnresolvedReferences(Compilation compilation, Module module)
 
 	public bool ResolveCalls()
 	{
-		var resolvedIdentifiers = new List<string>();
+		var resolvedIdentifiers = new List<Identifier>();
 
 		try
 		{

@@ -413,11 +413,15 @@ public partial class Program
 		foreach (var watch in _watches)
 			watch.LastValueFormatted = null;
 
-		if ((_compiler != null)
-		 && (_compilation != null)
+		if ((_compilation != null)
 		 && (_executionContext != null)
 		 && (currentRoutine != null))
 		{
+			var unit = currentRoutine.Source.Owner;
+
+			var parser = new BasicParser(unit.IdentifierRepository);
+			var compiler = new Compiler(unit.IdentifierRepository);
+
 			foreach (var watch in watches)
 			{
 				watch.LastValueFormatted = null;
@@ -432,9 +436,9 @@ public partial class Program
 
 						tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
 
-						var parsedSubject = Parser.ParseExpression(tokens, lexer.EndToken);
+						var parsedSubject = parser.ParseExpression(tokens, lexer.EndToken);
 
-						var evaluable = _compiler.CompileExpression(parsedSubject, currentRoutine.Mapper, _compilation, currentRoutine.Module);
+						var evaluable = compiler.CompileExpression(parsedSubject, currentRoutine.Mapper, _compilation, currentRoutine.Module);
 
 						watch.LastValue = evaluable.Evaluate(_executionContext, stackFrame);
 

@@ -56,8 +56,6 @@ public partial class Program : HostedProgram, IOvertypeFlag
 
 	public List<Dialog> Dialogs = new List<Dialog>();
 
-	public BasicParser Parser;
-
 	public PlayProcessor PlayProcessor;
 
 	bool IOvertypeFlag.Value
@@ -104,12 +102,10 @@ public partial class Program : HostedProgram, IOvertypeFlag
 
 		SaveOutput();
 
-		Parser = new BasicParser();
-
-		PrimaryViewport = new Viewport(Parser);
+		PrimaryViewport = new Viewport();
 
 		ImmediateViewport =
-			new Viewport(Parser)
+			new Viewport()
 			{
 				Heading = "Immediate",
 				ShowMaximize = false,
@@ -697,7 +693,7 @@ public partial class Program : HostedProgram, IOvertypeFlag
 		int splitViewportLines = (SplitViewport != null) ? remainingLines / 2 : 0;
 		int immediateViewportLines = remainingLines - splitViewportLines;
 
-		HelpViewport ??= new Viewport(Parser) { IsEditable = false };
+		HelpViewport ??= new Viewport() { IsEditable = false };
 		HelpViewport.HelpTopic = topic;
 		HelpViewport.Height = helpViewportHeight;
 		HelpViewport.UpdateHeading();

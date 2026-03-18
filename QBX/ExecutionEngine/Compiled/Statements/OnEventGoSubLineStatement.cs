@@ -2,10 +2,11 @@
 
 using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Events;
+using QBX.Parser;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class OnEventGoSubLineStatement(string target, CodeModel.Statements.Statement source)
+public class OnEventGoSubLineStatement(Identifier target, CodeModel.Statements.Statement source)
 	: JumpStatement(target, source), IOnEventStatementConfigurator
 {
 	public override bool TargetIsInMainModule => true;

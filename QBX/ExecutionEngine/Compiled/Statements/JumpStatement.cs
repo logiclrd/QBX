@@ -1,13 +1,14 @@
 using System;
 
 using QBX.ExecutionEngine.Execution;
+using QBX.Parser;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public abstract class JumpStatement(string targetLabelName, CodeModel.Statements.Statement source) : Executable(source)
+public abstract class JumpStatement(Identifier targetLabelName, CodeModel.Statements.Statement source) : Executable(source)
 {
 	public StatementPath? TargetPath;
-	public string TargetLabelName => targetLabelName;
+	public Identifier TargetLabelName => targetLabelName;
 
 	public virtual bool TargetIsInMainModule => false;
 

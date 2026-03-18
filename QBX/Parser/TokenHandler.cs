@@ -5,7 +5,7 @@ using QBX.LexicalAnalysis;
 
 namespace QBX.Parser;
 
-public class TokenHandler(ListRange<Token> tokens)
+public class TokenHandler(ListRange<Token> tokens, IdentifierRepository identifierRepository)
 {
 	ListRange<Token> _tokens = tokens;
 	int _tokenIndex = 0;
@@ -110,10 +110,10 @@ public class TokenHandler(ListRange<Token> tokens)
 
 	public bool NextTokenIs(TokenType type) => HasMoreTokens && (_tokens[_tokenIndex].Type == type);
 
-	public string ExpectIdentifier(bool allowTypeCharacter)
+	public Identifier ExpectIdentifier(bool allowTypeCharacter)
 		=> ExpectIdentifier(allowTypeCharacter, out _);
 
-	public string ExpectIdentifier(bool allowTypeCharacter, out Token identifierToken)
+	public Identifier ExpectIdentifier(bool allowTypeCharacter, out Token identifierToken)
 	{
 		if (!HasMoreTokens)
 			throw new SyntaxErrorException(FindTokenToBlame(), "Unexpected end of statement");
@@ -128,12 +128,14 @@ public class TokenHandler(ListRange<Token> tokens)
 		if (identifier.Length == 0)
 			throw new Exception("Internal error: Identifier token with no value");
 
-		if (!allowTypeCharacter && char.IsSymbol(identifier.Last()))
+		char lastCh = identifier.Last();
+
+		if (!allowTypeCharacter && char.IsSymbol(lastCh))
 			throw new SyntaxErrorException(identifierToken, "Identifier cannot end with %, &, !, #, $, or @");
 
 		_tokenIndex++;
 
-		return identifier;
+		return identifierRepository.UpdateCanonicalIdentifier(identifier);
 	}
 
 	public Token Expect(TokenType expectedTokenType)

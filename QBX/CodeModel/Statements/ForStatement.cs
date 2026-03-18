@@ -3,6 +3,7 @@ using System.IO;
 
 using QBX.CodeModel.Expressions;
 using QBX.LexicalAnalysis;
+using QBX.Parser;
 
 namespace QBX.CodeModel.Statements;
 
@@ -10,7 +11,7 @@ public class ForStatement : Statement
 {
 	public override StatementType Type => StatementType.For;
 
-	public string CounterVariable { get; set; } = "";
+	public Identifier CounterVariable { get; set; } = Identifier.Empty;
 	public Expression? StartExpression { get; set; }
 	public Expression? EndExpression { get; set; }
 	public Expression? StepExpression { get; set; }

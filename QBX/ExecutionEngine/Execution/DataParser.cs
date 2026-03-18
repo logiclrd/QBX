@@ -7,13 +7,14 @@ using QBX.ExecutionEngine.Compiled;
 using QBX.ExecutionEngine.Compiled.Statements;
 using QBX.ExecutionEngine.Execution.Variables;
 using QBX.Numbers;
+using QBX.Parser;
 
 namespace QBX.ExecutionEngine.Execution;
 
 public class DataParser
 {
 	public List<IEnumerable<string>> DataSources = new List<IEnumerable<string>>();
-	public Dictionary<string, int> Labels = new Dictionary<string, int>();
+	public Dictionary<Identifier, int> Labels = new Dictionary<Identifier, int>();
 
 	IEnumerator<IEnumerable<string>>? _dataSourceEnumerator = null;
 	IEnumerator<string>? _currentDataSource;
@@ -30,7 +31,7 @@ public class DataParser
 			AddLabel(labelStatement.LabelName);
 	}
 
-	public void AddLabel(string label)
+	public void AddLabel(Identifier label)
 	{
 		Labels[label] = DataSources.Count;
 	}
@@ -42,10 +43,10 @@ public class DataParser
 		_dataSourceEnumerator = DataSources.GetEnumerator();
 	}
 
-	public bool TryGetLineNumber(string label, out int lineNumber) => Labels.TryGetValue(label, out lineNumber);
+	public bool TryGetLineNumber(Identifier label, out int lineNumber) => Labels.TryGetValue(label, out lineNumber);
 
 	[MemberNotNull(nameof(_dataSourceEnumerator))]
-	public void RestartAtLine(string label)
+	public void RestartAtLine(Identifier label)
 	{
 		if (!Labels.TryGetValue(label, out var lineNumber))
 			throw new Exception("Internal error: trying to restart DATA at non-existent line number " + lineNumber);

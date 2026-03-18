@@ -1,6 +1,7 @@
 ﻿using System.IO;
 
 using QBX.ExecutionEngine;
+using QBX.Parser;
 
 namespace QBX.CodeModel.Statements;
 
@@ -8,7 +9,7 @@ public class CommonStatement : DimStatement
 {
 	public override StatementType Type => StatementType.Common;
 
-	public string BlockName { get; set; } = CommonBlock.DefaultBlockName;
+	public Identifier BlockName { get; set; } = CommonBlock.DefaultBlockName;
 
 	public override bool AlwaysDeclareArrays => false;
 	public override bool DeclareScalars => false;

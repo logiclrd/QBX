@@ -4,6 +4,7 @@ using QBX.CodeModel;
 using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
 using QBX.LexicalAnalysis;
+using QBX.Parser;
 
 namespace QBX.ExecutionEngine.Compiled.Expressions;
 
@@ -14,7 +15,7 @@ public class FieldAccessExpression(Evaluable expression, int fieldIndex, DataTyp
 		expression.CollapseConstantSubexpressions();
 	}
 
-	public static Evaluable Construct(Evaluable? expression, string fieldName, Token? fieldToken)
+	public static Evaluable Construct(Evaluable? expression, Identifier fieldName, Token? fieldToken)
 	{
 		if (expression == null)
 			throw new Exception("FieldAccessExpression.Construct requires expression");
@@ -27,21 +28,21 @@ public class FieldAccessExpression(Evaluable expression, int fieldIndex, DataTyp
 		var userType = dataType.UserType;
 		var userTypeFacade = dataType.UserTypeFacade;
 
-		string unqualifiedFieldName = Mapper.UnqualifyIdentifier(fieldName);
+		var unqualifiedFieldName = Mapper.UnqualifyIdentifier(fieldName);
 
 		for (int fieldIndex = 0; fieldIndex < userType.Fields.Count; fieldIndex++)
 		{
 			var thisField = userType.Fields[fieldIndex];
 			var thisFieldName = userTypeFacade.FieldNames[fieldIndex];
 
-			if (thisFieldName.Equals(unqualifiedFieldName, StringComparison.OrdinalIgnoreCase))
+			if (thisFieldName == unqualifiedFieldName)
 			{
 				if (fieldName != unqualifiedFieldName)
 				{
-					if (!TypeCharacter.TryParse(fieldName[fieldName.Length - 1], out var typeCharacter))
-						throw new Exception("Internal error: name changed when unqualifying but type character unrecognized: " + fieldName);
+					if (fieldName is not QualifiedIdentifier qualifiedFieldName)
+						throw new Exception("Internal error: name changed when unqualifying but field name is not a QualifiedIdentifier");
 
-					var typeFromName = DataType.FromCodeModelDataType(typeCharacter.Type);
+					var typeFromName = DataType.FromCodeModelDataType(qualifiedFieldName.TypeCharacter.Type);
 
 					if (!typeFromName.Equals(thisField.Type))
 						throw CompilerException.TypeMismatch(fieldToken);

@@ -9,6 +9,7 @@ using QBX.ExecutionEngine.Execution.Events;
 using QBX.ExecutionEngine.Execution.Variables;
 using QBX.Firmware;
 using QBX.Hardware;
+using QBX.Parser;
 
 namespace QBX.ExecutionEngine.Execution;
 
@@ -44,7 +45,7 @@ public class ExecutionContext
 
 	ExecutionState _executionState;
 
-	Dictionary<string, CommonBlockStorage> _commonBlocks;
+	Dictionary<Identifier, CommonBlockStorage> _commonBlocks;
 
 	StackFrame? _rootFrame;
 	StatementPath? _goTo;
@@ -222,7 +223,7 @@ public class ExecutionContext
 		_executionState.EnterExecution += AttachKeyEventInterceptor;
 		_executionState.ExitExecution += DetachKeyEventInterceptor;
 
-		_commonBlocks = new Dictionary<string, CommonBlockStorage>(StringComparer.OrdinalIgnoreCase);
+		_commonBlocks = new Dictionary<Identifier, CommonBlockStorage>();
 	}
 
 	void AttachKeyEventInterceptor()

@@ -7,6 +7,7 @@ using System.Text;
 using QBX.CodeModel.Statements;
 using QBX.DevelopmentEnvironment;
 using QBX.Firmware.Fonts;
+using QBX.Parser;
 using QBX.Utility;
 
 namespace QBX.CodeModel;
@@ -21,7 +22,7 @@ public class CodeLine : IRenderableCode, IEditableLine
 
 	// Line number must be numeric in format, but in practice is
 	// parsed as any string ###.### with total length <= 40.
-	public string? LineNumber { get; set; }
+	public Identifier? LineNumber { get; set; }
 	public Label? Label { get; set; }
 	public IReadOnlyList<Statement> Statements => _statements;
 	public string? EndOfLineComment { get; set; }

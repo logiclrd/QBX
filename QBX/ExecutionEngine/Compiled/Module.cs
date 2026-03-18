@@ -4,13 +4,14 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 using QBX.ExecutionEngine.Execution;
+using QBX.Parser;
 
 namespace QBX.ExecutionEngine.Compiled;
 
 public class Module
 {
 	public Routine? MainRoutine;
-	public Dictionary<string, Routine> Routines = new Dictionary<string, Routine>();
+	public Dictionary<Identifier, Routine> Routines = new Dictionary<Identifier, Routine>();
 	public DataParser DataParser = new DataParser();
 	public UnresolvedReferences UnresolvedReferences;
 
@@ -32,37 +33,33 @@ public class Module
 	//   In each module, each SUB/FUNCTION can have its own declared signature.
 	//   These must line up in order to be compatible, but the names of
 	//   parameters and any user-defined type facades can vary.
-	public Dictionary<string, RoutineFacade> SubFacades;
-	public Dictionary<string, RoutineFacade> FunctionFacades;
-	public Dictionary<string, NativeProcedure> NativeProcedures;
+	public Dictionary<Identifier, RoutineFacade> SubFacades = new();
+	public Dictionary<Identifier, RoutineFacade> FunctionFacades = new();
+	public Dictionary<Identifier, NativeProcedure> NativeProcedures;
 
 	public Module(Compilation compilation)
 	{
 		UnresolvedReferences = new UnresolvedReferences(compilation, this);
 
-		SubFacades = new Dictionary<string, RoutineFacade>(StringComparer.OrdinalIgnoreCase);
-		FunctionFacades = new Dictionary<string, RoutineFacade>(StringComparer.OrdinalIgnoreCase);
-
 		NativeProcedures = compilation.NativeProcedures.ToDictionary(
 			key => key.Name,
-			element => element.Clone(),
-			StringComparer.OrdinalIgnoreCase);
+			element => element.Clone());
 	}
 
-	public bool IsRegistered(string identifier)
+	public bool IsRegistered(Identifier identifier)
 		=> Routines.ContainsKey(identifier) || NativeProcedures.ContainsKey(identifier);
 
-	public void AddSubFacade(string name, RoutineFacade facade)
+	public void AddSubFacade(Identifier name, RoutineFacade facade)
 		=> SubFacades.Add(name, facade);
-	public void AddFunctionFacade(string name, RoutineFacade facade)
+	public void AddFunctionFacade(Identifier name, RoutineFacade facade)
 		=> FunctionFacades.Add(name, facade);
 
-	public bool TryGetSubFacade(string name, [NotNullWhen(true)] out RoutineFacade? facade)
+	public bool TryGetSubFacade(Identifier name, [NotNullWhen(true)] out RoutineFacade? facade)
 		=> SubFacades.TryGetValue(name, out facade);
-	public bool TryGetFunctionFacade(string name, [NotNullWhen(true)] out RoutineFacade? facade)
+	public bool TryGetFunctionFacade(Identifier name, [NotNullWhen(true)] out RoutineFacade? facade)
 		=> FunctionFacades.TryGetValue(name, out facade);
 
-	public bool TryGetNativeProcedure(string name, [NotNullWhen(true)] out NativeProcedure? procedure)
+	public bool TryGetNativeProcedure(Identifier name, [NotNullWhen(true)] out NativeProcedure? procedure)
 		=> NativeProcedures.TryGetValue(name, out procedure);
 
 	// Error handling: module-level error handlers are assigned per-module and only handle

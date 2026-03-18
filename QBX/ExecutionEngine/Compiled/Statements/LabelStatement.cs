@@ -1,10 +1,11 @@
 using QBX.ExecutionEngine.Execution;
+using QBX.Parser;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class LabelStatement(string labelName, CodeModel.Statements.Statement source) : Executable(source)
+public class LabelStatement(Identifier labelName, CodeModel.Statements.Statement source) : Executable(source)
 {
-	public string LabelName = labelName;
+	public Identifier LabelName = labelName;
 
 	public override bool CanBreak { get => false; set { } }
 	public override bool IsLabel => true;

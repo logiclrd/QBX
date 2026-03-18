@@ -1,6 +1,8 @@
 ﻿using System;
 using System.IO;
 
+using QBX.Parser;
+
 namespace QBX.CodeModel.Statements;
 
 public class ResumeStatement : Statement
@@ -8,8 +10,8 @@ public class ResumeStatement : Statement
 	public override StatementType Type => StatementType.Resume;
 
 	public bool NextStatement { get; set; }
-	public string? TargetLineNumber;
-	public string? TargetLabel;
+	public Identifier? TargetLineNumber;
+	public Identifier? TargetLabel;
 
 	public bool SameStatement =>
 		(TargetLineNumber == null)
@@ -37,7 +39,7 @@ public class ResumeStatement : Statement
 				writer.Write(' ');
 				writer.Write(TargetLineNumber);
 			}
-			else
+			else if (TargetLabel != null)
 			{
 				writer.Write(' ');
 				writer.Write(TargetLabel);

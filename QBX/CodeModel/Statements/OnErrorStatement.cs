@@ -1,6 +1,8 @@
 ﻿using System;
 using System.IO;
 
+using QBX.Parser;
+
 namespace QBX.CodeModel.Statements;
 
 public class OnErrorStatement : Statement
@@ -9,8 +11,8 @@ public class OnErrorStatement : Statement
 
 	public bool LocalHandler { get; set; }
 	public OnErrorAction Action { get; set; }
-	public string? TargetLineNumber;
-	public string? TargetLabel;
+	public Identifier? TargetLineNumber;
+	public Identifier? TargetLabel;
 
 	protected override void RenderImplementation(TextWriter writer)
 	{

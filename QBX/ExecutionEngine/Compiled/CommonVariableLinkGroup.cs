@@ -1,7 +1,9 @@
-﻿namespace QBX.ExecutionEngine.Compiled;
+﻿using QBX.Parser;
 
-public class CommonVariableLinkGroup(string commonBlockName, VariableLink[] links)
+namespace QBX.ExecutionEngine.Compiled;
+
+public class CommonVariableLinkGroup(Identifier commonBlockName, VariableLink[] links)
 {
-	public string CommonBlockName => commonBlockName;
+	public Identifier CommonBlockName => commonBlockName;
 	public VariableLink[] LinkedVariables => links;
 }

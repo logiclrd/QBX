@@ -1,10 +1,11 @@
 ﻿using System;
 
 using QBX.ExecutionEngine.Execution;
+using QBX.Parser;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class OnErrorGoToLineStatement(string target, bool local, CodeModel.Statements.Statement source)
+public class OnErrorGoToLineStatement(Identifier target, bool local, CodeModel.Statements.Statement source)
 	: JumpStatement(target, source)
 {
 	public override bool TargetIsInMainModule => !local;

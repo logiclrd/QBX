@@ -4,16 +4,17 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 using QBX.ExecutionEngine.Compiled;
+using QBX.Parser;
 
 namespace QBX.ExecutionEngine;
 
 public class Compilation
 {
 	public List<Module> Modules;
-	public Dictionary<string, CommonBlock> CommonBlocks;
+	public Dictionary<Identifier, CommonBlock> CommonBlocks;
 	public TypeRepository TypeRepository;
-	public Dictionary<string, Routine> Subs;
-	public Dictionary<string, Routine> Functions;
+	public Dictionary<Identifier, Routine> Subs;
+	public Dictionary<Identifier, Routine> Functions;
 	public List<NativeProcedure> NativeProcedures;
 	public bool UseStaticArrays = true;
 	public bool UseDirectMarshalling = true;
@@ -39,10 +40,10 @@ public class Compilation
 	public Compilation()
 	{
 		Modules = new List<Module>();
-		CommonBlocks = new Dictionary<string, CommonBlock>();
+		CommonBlocks = new Dictionary<Identifier, CommonBlock>();
 		TypeRepository = new TypeRepository();
-		Subs = new Dictionary<string, Routine>(StringComparer.OrdinalIgnoreCase);
-		Functions = new Dictionary<string, Routine>(StringComparer.OrdinalIgnoreCase);
+		Subs = new Dictionary<Identifier, Routine>();
+		Functions = new Dictionary<Identifier, Routine>();
 		NativeProcedures = new List<NativeProcedure>();
 	}
 
@@ -59,7 +60,7 @@ public class Compilation
 		return true;
 	}
 
-	public CommonBlock GetCommonBlock(string name)
+	public CommonBlock GetCommonBlock(Identifier name)
 	{
 		if (!CommonBlocks.TryGetValue(name, out var block))
 			block = CommonBlocks[name] = new CommonBlock(name);
@@ -67,12 +68,12 @@ public class Compilation
 		return block;
 	}
 
-	public bool IsRegistered(string name)
+	public bool IsRegistered(Identifier name)
 	{
 		return
 			Subs.ContainsKey(name) ||
 			Functions.ContainsKey(name) ||
-			NativeProcedures.Any(nativeProcedure => nativeProcedure.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+			NativeProcedures.Any(nativeProcedure => nativeProcedure.Name == name);
 	}
 
 	public void RegisterSub(Routine routine)
@@ -90,13 +91,13 @@ public class Compilation
 		NativeProcedures.Add(procedure);
 	}
 
-	public bool TryGetSub(string name, [NotNullWhen(true)] out Routine? sub)
+	public bool TryGetSub(Identifier name, [NotNullWhen(true)] out Routine? sub)
 		=> Subs.TryGetValue(name, out sub);
 
-	public bool TryGetFunction(string name, [NotNullWhen(true)] out Routine? function)
+	public bool TryGetFunction(Identifier name, [NotNullWhen(true)] out Routine? function)
 		=> Functions.TryGetValue(Mapper.UnqualifyIdentifier(name), out function);
 
-	public bool TryGetRoutine(string name, [NotNullWhen(true)] out Routine? routine)
+	public bool TryGetRoutine(Identifier name, [NotNullWhen(true)] out Routine? routine)
 		=> TryGetSub(name, out routine) || TryGetFunction(name, out routine);
 
 	public void SetDefaultEntrypoint()

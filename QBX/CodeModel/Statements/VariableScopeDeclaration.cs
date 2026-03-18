@@ -2,15 +2,16 @@
 using System.IO;
 
 using QBX.LexicalAnalysis;
+using QBX.Parser;
 
 namespace QBX.CodeModel.Statements;
 
 public class VariableScopeDeclaration : IRenderableCode
 {
-	public string Name { get; set; } = "";
+	public Identifier Name { get; set; } = Identifier.Empty;
 	public bool IsArray { get; set; }
 	public DataType? Type { get; set; }
-	public string? UserType { get; set; }
+	public Identifier? UserType { get; set; }
 
 	public Token? NameToken;
 	public Token? TypeToken;

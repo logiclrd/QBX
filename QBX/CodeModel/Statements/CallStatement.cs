@@ -3,6 +3,7 @@ using System.Linq;
 
 using QBX.CodeModel.Expressions;
 using QBX.LexicalAnalysis;
+using QBX.Parser;
 
 namespace QBX.CodeModel.Statements;
 
@@ -11,12 +12,12 @@ public class CallStatement : Statement
 	public override StatementType Type => StatementType.Call;
 
 	public CallStatementType CallStatementType { get; set; }
-	public string TargetName { get; set; }
+	public Identifier TargetName { get; set; }
 	public ExpressionList? Arguments { get; set; }
 
 	public Token? TargetNameToken { get; set; }
 
-	public CallStatement(CallStatementType type, string targetName, ExpressionList? arguments)
+	public CallStatement(CallStatementType type, Identifier targetName, ExpressionList? arguments)
 	{
 		CallStatementType = type;
 		TargetName = targetName;

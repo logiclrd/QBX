@@ -2,21 +2,22 @@
 using System.IO;
 
 using QBX.LexicalAnalysis;
+using QBX.Parser;
 
 namespace QBX.CodeModel.Expressions;
 
 public class IdentifierExpression : Expression
 {
-	public string Identifier { get; set; }
+	public Identifier Identifier { get; set; }
 
 	public override bool IsValidAssignmentTarget() => true;
 	public override bool IsValidIndexSubject() => true;
 	public override bool IsValidFieldSubject() => true;
 
-	public IdentifierExpression(Token token)
+	public IdentifierExpression(Token token, Identifier identifier)
 	{
 		Token = token;
-		Identifier = token.Value ?? throw new Exception("Internal error: Identifier token has no value");
+		Identifier = identifier;
 	}
 
 	protected override void RenderImplementation(TextWriter writer)

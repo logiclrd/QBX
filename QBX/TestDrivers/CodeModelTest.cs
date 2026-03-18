@@ -21,7 +21,9 @@ public class CodeModelTest(Machine machine) : HostedProgram(machine)
 		{
 			var lexer = new Lexer(reader1);
 
-			var parser = new BasicParser();
+			var identifierRepository = new IdentifierRepository();
+
+			var parser = new BasicParser(identifierRepository);
 
 			int lineNumber = 1;
 

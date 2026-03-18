@@ -17,7 +17,6 @@ public partial class Program
 {
 	System.Threading.Thread? _executionThread;
 	ExecutionContext? _executionContext;
-	Compiler? _compiler;
 	Compilation? _compilation;
 
 	public EventHub EventHub;
@@ -73,10 +72,7 @@ public partial class Program
 		if (!EnsureAllCodeIsParsed())
 			return false;
 
-		_compiler = new Compiler();
 		_compilation = new Compilation();
-
-		_compiler.DetectDelayLoops = DetectDelayLoops;
 
 		try
 		{
@@ -84,8 +80,16 @@ public partial class Program
 				_compilation.RegisterNativeProcedure(nativeProcedure);
 
 			foreach (var file in LoadedFiles)
+			{
 				if (file.IncludeInBuild && (file is CompilationUnit unit))
-					_compiler.Compile(unit, _compilation);
+				{
+					var compiler = new Compiler(unit.IdentifierRepository);
+
+					compiler.DetectDelayLoops = DetectDelayLoops;
+
+					compiler.Compile(unit, _compilation);
+				}
+			}
 
 			if (!_compilation.ResolveUnresolvedCalls(out var errorModule))
 			{
