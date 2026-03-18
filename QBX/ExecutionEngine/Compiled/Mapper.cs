@@ -318,7 +318,7 @@ public class Mapper
 
 	public PrimitiveDataType GetTypeForIdentifier(string name)
 	{
-		if (CodeModel.TypeCharacter.TryParse(name.Last(), out var typeCharacter))
+		if (TypeCharacter.TryParse(name.Last(), out var typeCharacter))
 		{
 			switch (typeCharacter.Type)
 			{

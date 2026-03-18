@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+
+using QBX.CodeModel;
 
 namespace QBX.Parser;
 
@@ -21,7 +24,21 @@ public class Identifier(string value, IdentifierRepository repository) : IEquata
 	}
 
 	public static Identifier Standalone(string value)
-		=> new Identifier(value, new IdentifierRepository());
+	{
+		if (value.Length == 0)
+			return Identifier.Empty;
+
+		var repository = new IdentifierRepository();
+
+		if (!TypeCharacter.TryParse(value.Last(), out var typeCharacter))
+			return new Identifier(value, repository);
+		else
+		{
+			var baseIdentifier = new Identifier(value.Remove(value.Length - 1), repository);
+
+			return new QualifiedIdentifier(baseIdentifier, typeCharacter);
+		}
+	}
 
 	public override bool Equals(object? obj)
 	{
