@@ -175,11 +175,11 @@ public partial class Program
 	int RenderWatch(int row, Watch watch)
 	{
 		string location =
-			watch.CompilationElement?.Name ??
+			watch.CompilationElement?.DisplayName ??
 			watch.CompilationUnit?.Name ??
 			"<unknown>";
 
-		string label = " " + location + " " + watch.Expression + ": ";
+		string label = "  " + location + " " + watch.Expression + ": ";
 
 		Configuration.DisplayAttributes.DebugWatchWindowNormalText.Set(TextLibrary);
 

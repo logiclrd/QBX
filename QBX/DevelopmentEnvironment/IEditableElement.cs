@@ -10,6 +10,8 @@ public interface IEditableElement
 
 	Identifier? Name { get; }
 
+	Identifier? DisplayName => Name;
+
 	int FirstLineIndex { get; }
 	int CachedCursorLine { get; set; }
 

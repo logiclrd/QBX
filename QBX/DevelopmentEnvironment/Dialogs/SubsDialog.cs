@@ -75,12 +75,12 @@ public class SubsDialog : Dialog
 
 			var elements = unit.Elements
 				.Where(e => e != mainElement)
-				.OrderBy(e => e.Name, StringComparer.OrdinalIgnoreCase);
+				.OrderBy(e => e.DisplayName?.ToString(), StringComparer.OrdinalIgnoreCase);
 
 			AddItem(mainElement, unit.Name);
 
 			foreach (var element in elements)
-				AddItem(element, "  " + (element.Name ?? "<unknown>"));
+				AddItem(element, "  " + (element.DisplayName ?? "<unknown>"));
 		}
 
 		lstItems.RecalculateColumns();
@@ -247,7 +247,7 @@ public class SubsDialog : Dialog
 					}
 				}
 
-				return element.Name + " is a " + elementType + " in " + unit.Name;
+				return element.DisplayName?.ToString() + " is a " + elementType + " in " + unit.Name;
 			}
 		}
 		else if (unit.EnableSmartEditor)

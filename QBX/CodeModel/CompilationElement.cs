@@ -18,6 +18,17 @@ public class CompilationElement : IRenderableCode, IEditableElement
 
 	public Identifier? Name { get; set; }
 
+	public Identifier? DisplayName
+	{
+		get
+		{
+			if (Name is QualifiedIdentifier qualifiedName)
+				return qualifiedName.UnqualifiedIdentifier;
+			else
+				return Name;
+		}
+	}
+
 	public CompilationElementType Type { get; set; }
 	public IReadOnlyList<CodeLine> Lines => _lines;
 
