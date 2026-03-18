@@ -2,6 +2,8 @@ using QBX.CodeModel.Statements;
 using QBX.LexicalAnalysis;
 using QBX.Parser;
 
+using static QBX.Tests.Utility.IdentifierHelpers;
+
 namespace QBX.Tests.Parser.Statements;
 
 public class ResumeStatementTests
@@ -18,7 +20,9 @@ public class ResumeStatementTests
 
 		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseStatement(tokens, ignoreErrors: false);
@@ -30,7 +34,7 @@ public class ResumeStatementTests
 
 		resumeResult.SameStatement.Should().Be(expectedSameStatement);
 		resumeResult.NextStatement.Should().Be(expectedNextStatement);
-		resumeResult.TargetLineNumber.Should().Be(expectedTargetLineNumber);
-		resumeResult.TargetLabel.Should().Be(expectedTargetLabel);
+		resumeResult.TargetLineNumber.Should().Be(ID(expectedTargetLineNumber));
+		resumeResult.TargetLabel.Should().Be(ID(expectedTargetLabel));
 	}
 }

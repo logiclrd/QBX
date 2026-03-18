@@ -18,7 +18,9 @@ public class GetStatementTests
 
 		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseStatement(tokens, ignoreErrors: false);

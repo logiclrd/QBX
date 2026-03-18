@@ -2,6 +2,8 @@ using QBX.CodeModel.Statements;
 using QBX.LexicalAnalysis;
 using QBX.Parser;
 
+using static QBX.Tests.Utility.IdentifierHelpers;
+
 namespace QBX.Tests.Parser.Statements;
 
 public class SubStatementTests
@@ -17,7 +19,9 @@ public class SubStatementTests
 
 		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseStatement(tokens, ignoreErrors: false);
@@ -27,7 +31,7 @@ public class SubStatementTests
 
 		var subResult = (SubStatement)result;
 
-		subResult.Name.Should().Be(subName);
+		subResult.Name.Should().Be(ID(subName));
 
 		if (arguments == null)
 			subResult.Parameters.Should().BeNull();
@@ -37,7 +41,7 @@ public class SubStatementTests
 			subResult.Parameters!.Parameters.Should().HaveCount(arguments.Length);
 
 			for (int i = 0; i < arguments.Length; i++)
-				subResult.Parameters!.Parameters[i].Name.Should().Be(arguments[i]);
+				subResult.Parameters!.Parameters[i].Name.Should().Be(ID(arguments[i]));
 		}
 
 		subResult.IsStatic.Should().Be(expectIsStatic);

@@ -3,6 +3,8 @@ using QBX.CodeModel.Statements;
 using QBX.LexicalAnalysis;
 using QBX.Parser;
 
+using static QBX.Tests.Utility.IdentifierHelpers;
+
 namespace QBX.Tests.Parser.Statements;
 
 public class RedimStatementTests
@@ -46,7 +48,9 @@ public class RedimStatementTests
 
 		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseStatement(tokens, ignoreErrors: false);
@@ -63,7 +67,7 @@ public class RedimStatementTests
 
 		redimResult.Declarations.Should().HaveCount(expectedCount);
 
-		redimResult.Declarations[0].Name.Should().Be(variable1Name);
+		redimResult.Declarations[0].Name.Should().Be(ID(variable1Name));
 
 		if (lowerBounds.Length == 0)
 			redimResult.Declarations[0].Subscripts.Should().BeNull();
@@ -95,11 +99,11 @@ public class RedimStatementTests
 		}
 
 		if (variable1Type != null)
-			redimResult.Declarations[0].UserType.Should().Be(variable1Type);
+			redimResult.Declarations[0].UserType.Should().Be(ID(variable1Type));
 
 		if (variable2Name != null)
 		{
-			redimResult.Declarations[1].Name.Should().Be(variable2Name);
+			redimResult.Declarations[1].Name.Should().Be(ID(variable2Name));
 
 			if (upperBounds2.Length > 0)
 			{

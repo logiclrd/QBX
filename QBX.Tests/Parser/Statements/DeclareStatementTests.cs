@@ -3,6 +3,8 @@ using QBX.CodeModel.Statements;
 using QBX.LexicalAnalysis;
 using QBX.Parser;
 
+using static QBX.Tests.Utility.IdentifierHelpers;
+
 namespace QBX.Tests.Parser.Statements;
 
 public class DeclareStatementTests
@@ -146,7 +148,9 @@ public class DeclareStatementTests
 
 		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseStatement(tokens, ignoreErrors: false);
@@ -157,7 +161,7 @@ public class DeclareStatementTests
 		var declareResult = (DeclareStatement)result;
 
 		declareResult.DeclarationType.Type.Should().Be(declarationTypeTokenType);
-		declareResult.Name.Should().Be(name);
+		declareResult.Name.Should().Be(ID(name));
 		declareResult.IsCDecl.Should().Be(expectCDecl);
 
 		if (expectAlias == null)
@@ -177,7 +181,7 @@ public class DeclareStatementTests
 				string param = parameters[i];
 
 				DataType dataType = DataType.Unspecified;
-				string? userType = null;
+				Identifier? userType = null;
 				bool anyType = false;
 				bool isArray = false;
 
@@ -192,7 +196,7 @@ public class DeclareStatementTests
 					else if (Enum.TryParse<DataType>(typeName, out var expectedDataType))
 						dataType = expectedDataType;
 					else
-						userType = typeName;
+						userType = ID(typeName);
 
 					param = param.Remove(asIndex);
 				}
@@ -205,7 +209,7 @@ public class DeclareStatementTests
 
 				var declaredParameter = declareResult.Parameters.Parameters[i];
 
-				declaredParameter.Name.Should().Be(param);
+				declaredParameter.Name.Should().Be(ID(param));
 				declaredParameter.IsArray.Should().Be(isArray);
 				declaredParameter.Type.Should().Be(dataType);
 				declaredParameter.UserType.Should().Be(userType);

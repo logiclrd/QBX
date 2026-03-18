@@ -2,6 +2,8 @@ using QBX.CodeModel.Statements;
 using QBX.LexicalAnalysis;
 using QBX.Parser;
 
+using static QBX.Tests.Utility.IdentifierHelpers;
+
 namespace QBX.Tests.Parser.Statements;
 
 public class GoSubStatementTests
@@ -15,7 +17,9 @@ public class GoSubStatementTests
 
 		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseStatement(tokens, ignoreErrors: false);
@@ -25,7 +29,7 @@ public class GoSubStatementTests
 
 		var goSubResult = (GoSubStatement)result;
 
-		goSubResult.TargetLineNumber.Should().Be(expectedLineNumber);
-		goSubResult.TargetLabel.Should().Be(expectedLabel);
+		goSubResult.TargetLineNumber.Should().Be(ID(expectedLineNumber));
+		goSubResult.TargetLabel.Should().Be(ID(expectedLabel));
 	}
 }

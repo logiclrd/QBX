@@ -29,21 +29,19 @@ internal class DefTypesTests
 	public void ShouldTranslateCorrectlyOnLoad()
 	{
 		// Arrange
-		var parser = new BasicParser();
-
 		using (var inMemoryStream = OpenInMemoryReference())
 		using (var onDiskStream = OpenOnDiskReference())
 		{
 			var reader = new StreamReader(inMemoryStream);
 
-			var expectedLoadedUnit = parser.Parse(new Lexer(reader));
+			var expectedLoadedUnit = BasicParser.Parse(new Lexer(reader));
 
 			reader = new StreamReader(onDiskStream);
 
 			string unitName = "Untitled";
 
 			// Act
-			var result = CompilationUnit.Read(reader, unitName, parser);
+			var result = CompilationUnit.Read(reader, unitName);
 
 			// Assert
 			var expectedWriter = new StringWriter();
@@ -63,8 +61,6 @@ internal class DefTypesTests
 	public void ShouldTranslateCorrectlyOnSave()
 	{
 		// Arrange
-		var parser = new BasicParser();
-
 		using (var inMemoryStream = OpenInMemoryReference())
 		using (var onDiskStream = OpenOnDiskReference())
 		{
@@ -74,7 +70,7 @@ internal class DefTypesTests
 
 			reader = new StreamReader(inMemoryStream);
 
-			var unit = parser.Parse(new Lexer(reader));
+			var unit = BasicParser.Parse(new Lexer(reader));
 
 			var writer = new StringWriter() { NewLine = "\r\n"};
 
@@ -106,12 +102,10 @@ internal class DefTypesTests
 
 			var unitName = "test";
 
-			var parser = new BasicParser();
-
 			var writer = new StringWriter() { NewLine = "\r\n" };
 
 			// Act
-			var unit = CompilationUnit.Read(reader, unitName, parser);
+			var unit = CompilationUnit.Read(reader, unitName);
 			unit.Write(writer);
 
 			// Assert

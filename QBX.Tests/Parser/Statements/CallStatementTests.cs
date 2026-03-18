@@ -20,7 +20,9 @@ public class CallStatementTests
 
 		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseStatement(tokens, ignoreErrors: false);
@@ -31,7 +33,7 @@ public class CallStatementTests
 		var callResult = (CallStatement)result;
 
 		callResult.CallStatementType.Should().Be(callStatementType);
-		callResult.TargetName = "MySub";
+		callResult.TargetName.Value.Should().Be("MySub");
 
 		if (numArguments == 0)
 			callResult.Arguments.Should().BeNull();

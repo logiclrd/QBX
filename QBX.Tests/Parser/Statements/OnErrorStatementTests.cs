@@ -2,6 +2,8 @@ using QBX.CodeModel.Statements;
 using QBX.LexicalAnalysis;
 using QBX.Parser;
 
+using static QBX.Tests.Utility.IdentifierHelpers;
+
 namespace QBX.Tests.Parser.Statements;
 
 public class OnErrorStatementTests
@@ -21,7 +23,9 @@ public class OnErrorStatementTests
 
 		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseStatement(tokens, ignoreErrors: false);
@@ -33,7 +37,7 @@ public class OnErrorStatementTests
 
 		onErrorResult.LocalHandler.Should().Be(expectedLocalOnly);
 		onErrorResult.Action.Should().Be(expectedAction);
-		onErrorResult.TargetLineNumber.Should().Be(expectedTargetLineNumber);
-		onErrorResult.TargetLabel.Should().Be(expectedTargetLabel);
+		onErrorResult.TargetLineNumber.Should().Be(ID(expectedTargetLineNumber));
+		onErrorResult.TargetLabel.Should().Be(ID(expectedTargetLabel));
 	}
 }

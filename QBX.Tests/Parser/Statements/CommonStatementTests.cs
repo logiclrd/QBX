@@ -3,12 +3,14 @@ using QBX.ExecutionEngine;
 using QBX.LexicalAnalysis;
 using QBX.Parser;
 
+using static QBX.Tests.Utility.IdentifierHelpers;
+
 namespace QBX.Tests.Parser.Statements;
 
 public class CommonStatementTests
 {
 	[TestCase("COMMON SHARED arena() AS arenaType",
-		CommonBlock.DefaultBlockName,
+		CommonBlock.DefaultBlockNameValue,
 		"arena",
 		true,
 		"arenaType",
@@ -22,7 +24,7 @@ public class CommonStatementTests
 		null,
 		false)]
 	[TestCase("COMMON curLevel, colorTable()",
-		CommonBlock.DefaultBlockName,
+		CommonBlock.DefaultBlockNameValue,
 		"curLevel",
 		false,
 		null,
@@ -42,7 +44,9 @@ public class CommonStatementTests
 
 		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseStatement(tokens, ignoreErrors: false);
@@ -52,13 +56,13 @@ public class CommonStatementTests
 
 		var commonResult = (CommonStatement)result;
 
-		commonResult.BlockName.Should().Be(expectedBlockName);
+		commonResult.BlockName.Should().Be(ID(expectedBlockName));
 
 		int expectedCount = (variable2Name == null) ? 1 : 2;
 
 		commonResult.Declarations.Should().HaveCount(expectedCount);
 
-		commonResult.Declarations[0].Name.Should().Be(variable1Name);
+		commonResult.Declarations[0].Name.Should().Be(ID(variable1Name));
 
 		if (variable1ShouldBeArray == false)
 			commonResult.Declarations[0].Subscripts.Should().BeNull();
@@ -69,11 +73,11 @@ public class CommonStatementTests
 		}
 
 		if (variable1Type != null)
-			commonResult.Declarations[0].UserType.Should().Be(variable1Type);
+			commonResult.Declarations[0].UserType.Should().Be(ID(variable1Type));
 
 		if (variable2Name != null)
 		{
-			commonResult.Declarations[1].Name.Should().Be(variable2Name);
+			commonResult.Declarations[1].Name.Should().Be(ID(variable2Name));
 
 			if (variable2ShouldBeArray == false)
 				commonResult.Declarations[1].Subscripts.Should().BeNull();

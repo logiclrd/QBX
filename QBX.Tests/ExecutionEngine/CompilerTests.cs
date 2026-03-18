@@ -2,6 +2,9 @@
 using QBX.ExecutionEngine;
 using QBX.ExecutionEngine.Compiled;
 using QBX.LexicalAnalysis;
+using QBX.Parser;
+
+using static QBX.Tests.Utility.IdentifierHelpers;
 
 namespace QBX.Tests.ExecutionEngine;
 
@@ -11,9 +14,13 @@ public class CompilerTests
 	{
 		int column = 0;
 
+		var identifierRepository = new IdentifierRepository();
+
 		IdentifierExpression Identifier(string identifier)
 		{
-			var ret = new IdentifierExpression(new Token(Token.CreateDummyLine(), column, TokenType.Identifier, identifier));
+			var ret = new IdentifierExpression(
+				new Token(Token.CreateDummyLine(), column, TokenType.Identifier, identifier),
+				identifierRepository.GetOrAddCanonicalIdentifier(identifier));
 
 			column += ret.Token!.Length;
 
@@ -266,14 +273,16 @@ public class CompilerTests
 		if (disallowedSlug != null)
 			mapper.AddDisallowedSlug(disallowedSlug);
 
-		var sut = new Compiler();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new Compiler(identifierRepository);
 
 		// Act
 		var actual = sut.CollapseDottedIdentifierExpression(expression, mapper, out int column);
 
 		// Assert
 		expression.Token!.Column.Should().NotBe(expectedColumn);
-		actual.Should().Be(expectedIdentifier);
+		actual.Should().Be(ID(expectedIdentifier));
 		column.Should().Be(expectedColumn);
 	}
 }

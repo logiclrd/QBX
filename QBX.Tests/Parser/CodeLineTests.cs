@@ -1,7 +1,8 @@
-﻿using QBX.CodeModel;
-using QBX.CodeModel.Statements;
+﻿using QBX.CodeModel.Statements;
 using QBX.LexicalAnalysis;
 using QBX.Parser;
+
+using static QBX.Tests.Utility.IdentifierHelpers;
 
 namespace QBX.Tests.Parser;
 
@@ -21,15 +22,17 @@ PRINT ""Look ma, no line number""";
 
 		var tokens = lexer.ToList();
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var lines = sut.ParseCodeLines(tokens).ToList();
 
 		// Assert
 		lines.Should().HaveCount(4);
-		lines[0].LineNumber.Should().Be("10");
-		lines[1].LineNumber.Should().Be("20");
+		lines[0].LineNumber.Should().Be(ID("10"));
+		lines[1].LineNumber.Should().Be(ID("20"));
 		lines[2].LineNumber.Should().BeNull();
 		lines[3].LineNumber.Should().BeNull();
 	}
@@ -49,7 +52,9 @@ GOTO top
 
 		var tokens = lexer.ToList();
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var lines = sut.ParseCodeLines(tokens).ToList();
@@ -57,7 +62,7 @@ GOTO top
 		// Assert
 		lines.Should().HaveCount(5);
 		lines[0].Label.Should().NotBeNull();
-		lines[0].Label!.Name.Should().Be("top");
+		lines[0].Label!.Name.Should().Be(ID("top"));
 		lines[0].Label!.Indentation.Should().Be("");
 		lines[0].Statements.Should().HaveCount(1);
 		lines[0].Statements[0].Should().BeOfType<EmptyStatement>();
@@ -65,7 +70,7 @@ GOTO top
 		lines[2].Label.Should().BeNull();
 		lines[3].Label.Should().BeNull();
 		lines[4].Label.Should().NotBeNull();
-		lines[4].Label!.Name.Should().Be("retry");
+		lines[4].Label!.Name.Should().Be(ID("retry"));
 		lines[4].Label!.Indentation.Should().Be("    ");
 		lines[4].Statements.Should().HaveCount(1);
 		lines[4].Statements[0].Should().BeOfType<PrintStatement>();
@@ -83,7 +88,9 @@ GOTO top
 
 		var tokens = lexer.ToList();
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var lines = sut.ParseCodeLines(tokens).ToList();
@@ -104,7 +111,9 @@ GOTO top
 
 		var tokens = lexer.ToList();
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var lines = sut.ParseCodeLines(tokens).ToList();
@@ -129,7 +138,9 @@ GOTO top
 
 		var tokens = lexer.ToList();
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var lines = sut.ParseCodeLines(tokens).ToList();
@@ -160,7 +171,9 @@ GOTO top
 
 		var tokens = lexer.ToList();
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var lines = sut.ParseCodeLines(tokens).ToList();

@@ -3,6 +3,8 @@ using QBX.CodeModel.Statements;
 using QBX.LexicalAnalysis;
 using QBX.Parser;
 
+using static QBX.Tests.Utility.IdentifierHelpers;
+
 namespace QBX.Tests.Parser.Statements;
 
 public class DimStatementTests
@@ -28,7 +30,9 @@ public class DimStatementTests
 
 		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseStatement(tokens, ignoreErrors: false);
@@ -42,7 +46,7 @@ public class DimStatementTests
 
 		dimResult.Declarations.Should().HaveCount(expectedCount);
 
-		dimResult.Declarations[0].Name.Should().Be(variable1Name);
+		dimResult.Declarations[0].Name.Should().Be(ID(variable1Name));
 
 		if (lowerBounds.Length == 0)
 			dimResult.Declarations[0].Subscripts.Should().BeNull();
@@ -69,11 +73,11 @@ public class DimStatementTests
 		}
 
 		if (variable1Type != null)
-			dimResult.Declarations[0].UserType.Should().Be(variable1Type);
+			dimResult.Declarations[0].UserType.Should().Be(ID(variable1Type));
 
 		if (variable2Name != null)
 		{
-			dimResult.Declarations[1].Name.Should().Be(variable2Name);
+			dimResult.Declarations[1].Name.Should().Be(ID(variable2Name));
 
 			if (upperBounds2.Length > 0)
 			{

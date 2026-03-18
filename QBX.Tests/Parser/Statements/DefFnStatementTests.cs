@@ -4,6 +4,8 @@ using QBX.CodeModel.Statements;
 using QBX.LexicalAnalysis;
 using QBX.Parser;
 
+using static QBX.Tests.Utility.IdentifierHelpers;
+
 namespace QBX.Tests.Parser.Statements;
 
 public class DefFnStatementTests
@@ -18,7 +20,9 @@ public class DefFnStatementTests
 
 		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseStatement(tokens, ignoreErrors: false);
@@ -42,7 +46,9 @@ public class DefFnStatementTests
 
 		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseStatement(tokens, ignoreErrors: false);
@@ -56,10 +62,10 @@ public class DefFnStatementTests
 
 		defFnResult.Parameters.Should().NotBeNull();
 		defFnResult.Parameters.Parameters.Should().HaveCount(2);
-		defFnResult.Parameters.Parameters[0].Name.Should().Be("TineLength!");
+		defFnResult.Parameters.Parameters[0].Name.Should().Be(ID("TineLength!"));
 		defFnResult.Parameters.Parameters[0].Type.Should().Be(DataType.Unspecified);
 		defFnResult.Parameters.Parameters[0].IsArray.Should().BeFalse();
-		defFnResult.Parameters.Parameters[1].Name.Should().Be("TineCount");
+		defFnResult.Parameters.Parameters[1].Name.Should().Be(ID("TineCount"));
 		defFnResult.Parameters.Parameters[1].Type.Should().Be(DataType.INTEGER);
 		defFnResult.Parameters.Parameters[1].IsArray.Should().BeFalse();
 	}
@@ -74,7 +80,9 @@ public class DefFnStatementTests
 
 		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseStatement(tokens, ignoreErrors: false);
@@ -101,7 +109,9 @@ public class DefFnStatementTests
 
 		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseStatement(tokens, ignoreErrors: false);
@@ -113,7 +123,7 @@ public class DefFnStatementTests
 
 		defFnResult.Parameters.Should().NotBeNull();
 		defFnResult.Parameters.Parameters.Should().HaveCount(1);
-		defFnResult.Parameters.Parameters[0].Name.Should().Be("x");
+		defFnResult.Parameters.Parameters[0].Name.Should().Be(ID("x"));
 		defFnResult.Parameters.Parameters[0].Type.Should().Be(DataType.Unspecified);
 		defFnResult.Parameters.Parameters[0].IsArray.Should().BeFalse();
 

@@ -2,6 +2,8 @@ using QBX.CodeModel.Statements;
 using QBX.LexicalAnalysis;
 using QBX.Parser;
 
+using static QBX.Tests.Utility.IdentifierHelpers;
+
 namespace QBX.Tests.Parser.Statements;
 
 public class TypeStatementTests
@@ -18,13 +20,15 @@ public class TypeStatementTests
 
 		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseStatement(tokens, ignoreErrors: false);
 
 		// Assert
 		result.Should().BeOfType<TypeStatement>()
-			.Which.Name.Should().Be(TypeName);
+			.Which.Name.Should().Be(ID(TypeName));
 	}
 }

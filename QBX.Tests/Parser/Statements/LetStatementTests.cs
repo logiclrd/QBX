@@ -23,7 +23,9 @@ public class LetStatementTests
 
 		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseStatement(tokens, ignoreErrors: false);
@@ -34,7 +36,7 @@ public class LetStatementTests
 		var letResult = (LetStatement)result;
 
 		letResult.TargetExpression.Should().BeOfType<IdentifierExpression>()
-			.Which.Identifier.Should().Be(targetVariableName);
+			.Which.Identifier.Value.Should().Be(targetVariableName);
 	}
 
 	[TestCase("3", 1)]
@@ -46,7 +48,9 @@ public class LetStatementTests
 
 		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseStatement(tokens, ignoreErrors: false);
@@ -75,7 +79,9 @@ public class LetStatementTests
 
 		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseStatement(tokens, ignoreErrors: false);

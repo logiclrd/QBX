@@ -6,6 +6,8 @@ using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
 using QBX.Hardware;
 
+using static QBX.Tests.Utility.IdentifierHelpers;
+
 using ExecutionContext = QBX.ExecutionEngine.Execution.ExecutionContext;
 
 namespace QBX.Tests.ExecutionEngine;
@@ -61,11 +63,11 @@ public class DataParserTests
 
 		var parser = new DataParser();
 
-		var label1 = new LabelStatement("label1", dummy);
-		var label2 = new LabelStatement("label2", dummy);
-		var label3 = new LabelStatement("label3", dummy);
-		var label4 = new LabelStatement("label4", dummy);
-		var label5 = new LabelStatement("label5", dummy);
+		var label1 = new LabelStatement(ID("label1"), dummy);
+		var label2 = new LabelStatement(ID("label2"), dummy);
+		var label3 = new LabelStatement(ID("label3"), dummy);
+		var label4 = new LabelStatement(ID("label4"), dummy);
+		var label5 = new LabelStatement(ID("label5"), dummy);
 
 		parser.AddLabel(label1);
 		parser.AddDataSource(["foo"]);
@@ -113,14 +115,14 @@ public class DataParserTests
 
 		var parser = new DataParser();
 
-		var label = new LabelStatement("label1", dummy);
+		var label = new LabelStatement(ID("label1"), dummy);
 
 		parser.AddDataSource(["foo"]);
 		parser.AddLabel(label);
 		parser.AddDataSource(["foo"]);
 
 		// Act
-		bool result = parser.TryGetLineNumber("no such label", out var lineNumber);
+		bool result = parser.TryGetLineNumber(ID("no such label"), out var lineNumber);
 
 		// Assert
 		result.Should().BeFalse();
@@ -134,11 +136,11 @@ public class DataParserTests
 
 		var parser = new DataParser();
 
-		var label1 = new LabelStatement("label1", dummy);
-		var label2 = new LabelStatement("label2", dummy);
-		var label3 = new LabelStatement("label3", dummy);
-		var label4 = new LabelStatement("label4", dummy);
-		var label5 = new LabelStatement("label5", dummy);
+		var label1 = new LabelStatement(ID("label1"), dummy);
+		var label2 = new LabelStatement(ID("label2"), dummy);
+		var label3 = new LabelStatement(ID("label3"), dummy);
+		var label4 = new LabelStatement(ID("label4"), dummy);
+		var label5 = new LabelStatement(ID("label5"), dummy);
 
 		parser.AddLabel(label1);
 		parser.AddDataSource(["one"]);

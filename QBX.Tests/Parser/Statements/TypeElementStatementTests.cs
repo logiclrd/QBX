@@ -4,6 +4,8 @@ using QBX.CodeModel.Statements;
 using QBX.LexicalAnalysis;
 using QBX.Parser;
 
+using static QBX.Tests.Utility.IdentifierHelpers;
+
 namespace QBX.Tests.Parser.Statements;
 
 public class TypeElementStatementTests
@@ -24,7 +26,9 @@ public class TypeElementStatementTests
 
 		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseStatement(tokens, ignoreErrors: false);
@@ -34,7 +38,7 @@ public class TypeElementStatementTests
 
 		var typeElementResult = (TypeElementStatement)result;
 
-		typeElementResult.Name.Should().Be(expectedName);
+		typeElementResult.Name.Should().Be(ID(expectedName));
 
 		if (expectedSubscripts == null)
 			typeElementResult.Subscripts.Should().BeNull();
@@ -61,6 +65,6 @@ public class TypeElementStatementTests
 		}
 
 		typeElementResult.ElementType.Should().Be(expectedType);
-		typeElementResult.ElementUserType.Should().Be(expectedUserType);
+		typeElementResult.ElementUserType.Should().Be(ID(expectedUserType));
 	}
 }

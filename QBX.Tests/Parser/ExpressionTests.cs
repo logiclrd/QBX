@@ -46,7 +46,9 @@ public class ExpressionTests
 
 		var endToken = MakeEndToken(tokens);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseExpression(tokens, endToken);
@@ -65,7 +67,9 @@ public class ExpressionTests
 
 		var endToken = MakeEndToken(tokens);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseExpression(tokens, endToken);
@@ -85,7 +89,9 @@ public class ExpressionTests
 
 		var endToken = MakeEndToken(tokens);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseExpression(tokens, endToken);
@@ -108,7 +114,9 @@ public class ExpressionTests
 
 		var endToken = MakeEndToken(tokens);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseExpression(tokens, endToken);
@@ -134,7 +142,9 @@ public class ExpressionTests
 
 		var endToken = MakeEndToken(tokens);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseExpression(tokens, endToken);
@@ -167,7 +177,9 @@ public class ExpressionTests
 
 		var endToken = MakeEndToken(tokens);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseExpression(tokens, endToken);
@@ -214,7 +226,9 @@ public class ExpressionTests
 
 		var endToken = MakeEndToken(tokens);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseExpression(tokens, endToken);
@@ -235,7 +249,9 @@ public class ExpressionTests
 
 		var endToken = MakeEndToken(tokens);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseExpression(tokens, endToken);
@@ -255,7 +271,9 @@ public class ExpressionTests
 
 		var endToken = MakeEndToken(tokens);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseExpression(tokens, endToken);
@@ -276,7 +294,9 @@ public class ExpressionTests
 
 		var endToken = MakeEndToken(tokens);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseExpression(tokens, endToken);
@@ -299,7 +319,9 @@ public class ExpressionTests
 
 		var endToken = MakeEndToken(tokens);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseExpression(tokens, endToken);
@@ -341,7 +363,9 @@ public class ExpressionTests
 
 		var endToken = MakeEndToken(tokens);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseExpression(tokens, endToken);
@@ -372,7 +396,9 @@ public class ExpressionTests
 
 		var endToken = MakeEndToken(tokens);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseExpression(tokens, endToken);
@@ -385,9 +411,9 @@ public class ExpressionTests
 		binaryResult.Operator.Should().Be(Operator.Field);
 
 		binaryResult.Left.Should().BeOfType<IdentifierExpression>()
-			.Which.Identifier.Should().Be("struct");
+			.Which.Identifier.Value.Should().Be("struct");
 		binaryResult.Right.Should().BeOfType<IdentifierExpression>()
-			.Which.Identifier.Should().Be("field");
+			.Which.Identifier.Value.Should().Be("field");
 	}
 
 	[Test]
@@ -403,7 +429,9 @@ public class ExpressionTests
 
 		var endToken = MakeEndToken(tokens);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseExpression(tokens, endToken);
@@ -422,11 +450,11 @@ public class ExpressionTests
 		subBinaryResult.Operator.Should().Be(Operator.Field);
 
 		subBinaryResult.Left.Should().BeOfType<IdentifierExpression>()
-			.Which.Identifier.Should().Be("struct");
+			.Which.Identifier.Value.Should().Be("struct");
 		subBinaryResult.Right.Should().BeOfType<IdentifierExpression>()
-			.Which.Identifier.Should().Be("field");
+			.Which.Identifier.Value.Should().Be("field");
 		binaryResult.Right.Should().BeOfType<IdentifierExpression>()
-			.Which.Identifier.Should().Be("subfield");
+			.Which.Identifier.Value.Should().Be("subfield");
 	}
 
 	[Test]
@@ -443,7 +471,9 @@ public class ExpressionTests
 
 		var endToken = MakeEndToken(tokens);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseExpression(tokens, endToken);
@@ -475,7 +505,9 @@ public class ExpressionTests
 
 		var endToken = MakeEndToken(tokens);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseExpression(tokens, endToken);
@@ -512,7 +544,9 @@ public class ExpressionTests
 
 		var endToken = MakeEndToken(tokens);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseExpression(tokens, endToken);
@@ -531,9 +565,9 @@ public class ExpressionTests
 		subBinaryResult.Operator.Should().Be(Operator.Field);
 
 		subBinaryResult.Left.Should().BeOfType<IdentifierExpression>()
-			.Which.Identifier.Should().Be("struct");
+			.Which.Identifier.Value.Should().Be("struct");
 		subBinaryResult.Right.Should().BeOfType<IdentifierExpression>()
-			.Which.Identifier.Should().Be("field");
+			.Which.Identifier.Value.Should().Be("field");
 		binaryResult.Right.Should().BeOfType<LiteralExpression>()
 			.Which.Token!.Value.Should().Be("2");
 	}
@@ -545,7 +579,9 @@ public class ExpressionTests
 		var tokens = Tokens(
 			(TokenType.Number, "-3"));
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		var endToken = MakeEndToken(tokens);
 
@@ -565,7 +601,9 @@ public class ExpressionTests
 			(TokenType.Number, "2"),
 			(TokenType.Number, "-3"));
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		var endToken = MakeEndToken(tokens);
 
@@ -593,7 +631,9 @@ public class ExpressionTests
 			(TokenType.Number, "-4"),
 			(TokenType.Number, "-5"));
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		var endToken = MakeEndToken(tokens);
 
@@ -635,7 +675,9 @@ public class ExpressionTests
 			(TokenType.CloseParenthesis, ")"),
 			(TokenType.Number, "-4"));
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		var endToken = MakeEndToken(tokens);
 

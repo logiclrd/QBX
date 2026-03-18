@@ -2,6 +2,8 @@ using QBX.CodeModel.Statements;
 using QBX.LexicalAnalysis;
 using QBX.Parser;
 
+using static QBX.Tests.Utility.IdentifierHelpers;
+
 namespace QBX.Tests.Parser.Statements;
 
 public class FunctionStatementTests
@@ -17,7 +19,9 @@ public class FunctionStatementTests
 
 		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
 
-		var sut = new BasicParser();
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
 
 		// Act
 		var result = sut.ParseStatement(tokens, ignoreErrors: false);
@@ -27,7 +31,7 @@ public class FunctionStatementTests
 
 		var functionResult = (FunctionStatement)result;
 
-		functionResult.Name.Should().Be(functionName);
+		functionResult.Name.Should().Be(ID(functionName));
 
 		if (arguments == null)
 			functionResult.Parameters.Should().BeNull();
@@ -37,7 +41,7 @@ public class FunctionStatementTests
 			functionResult.Parameters!.Parameters.Should().HaveCount(arguments.Length);
 
 			for (int i = 0; i < arguments.Length; i++)
-				functionResult.Parameters!.Parameters[i].Name.Should().Be(arguments[i]);
+				functionResult.Parameters!.Parameters[i].Name.Should().Be(ID(arguments[i]));
 		}
 
 		functionResult.IsStatic.Should().Be(expectIsStatic);
