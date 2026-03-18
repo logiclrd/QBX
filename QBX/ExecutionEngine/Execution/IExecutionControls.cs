@@ -9,4 +9,5 @@ public interface IExecutionControls
 	void Terminate();
 
 	void WaitForInterruption();
+	void WaitForStartUp();
 }

@@ -244,6 +244,23 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 		}
 	}
 
+	public void WaitForStartUp()
+	{
+		lock (_sync)
+		{
+			DebugOut("DEBUGGER: waiting for startup (assuming no stale wait on the program thread");
+
+			while ((_waiting == 0) && !_isTerminated)
+			{
+				DebugOut("DEBUGGER: going to sleep");
+				Monitor.Wait(_sync);
+				DebugOut("DEBUGGER: woke up");
+			}
+
+			DebugOut("DEBUGGER: resuming waiting=" + _waiting + " isterminated=" + _isTerminated);
+		}
+	}
+
 	public void WaitForInterruption()
 	{
 		lock (_sync)
@@ -252,10 +269,10 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 
 			_currentWait++;
 
-			DebugOut("DEBUGGER: => _waiting is zero, setting _currentWait to " + _currentWait);
-
 			if (_currentWait == int.MaxValue) // ha ha!
 				_currentWait = 1;
+
+			DebugOut("DEBUGGER: => _waiting is " + _waiting + ", setting _currentWait to " + _currentWait);
 
 			while ((_waiting != _currentWait) && !_isTerminated)
 			{

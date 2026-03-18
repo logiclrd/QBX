@@ -202,7 +202,7 @@ public partial class Program
 			if (!Restart())
 				return;
 
-			_executionContext.Controls.WaitForInterruption();
+			_executionContext.Controls.WaitForStartUp();
 
 			if (_executionContext.ExecutionState.IsTerminated)
 				ExecutionEpilogue();
