@@ -274,6 +274,12 @@ public partial class Program
 				{
 					if (!input.Modifiers.CtrlKey && !input.Modifiers.AltKey)
 					{
+						try
+						{
+							FocusedViewport.CommitCurrentLine();
+						}
+						catch { }
+
 						if (input.Modifiers.ShiftKey)
 							SwitchToNextElement();
 						else
