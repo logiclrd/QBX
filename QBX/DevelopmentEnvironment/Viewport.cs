@@ -242,6 +242,13 @@ public class Viewport
 				var newElement = new CompilationElement(compilationUnit);
 
 				newElement.Name = startScopeStatement.Name;
+				newElement.Type =
+					startScopeStatement.Type switch
+					{
+						StatementType.Sub => CompilationElementType.Sub,
+						StatementType.Function => CompilationElementType.Function,
+						_ => CompilationElementType.Unknown,
+					};
 
 				newElement.AddLine(parsedCodeLine);
 				newElement.AddLine(CodeLine.CreateEmpty());
