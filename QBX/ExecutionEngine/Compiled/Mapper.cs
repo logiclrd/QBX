@@ -89,22 +89,22 @@ public class Mapper
 		_isFrozen = true;
 	}
 
-	Dictionary<Identifier, LiteralValue> _constantValueByName = new();
+	Dictionary<string, LiteralValue> _constantValueByName = new(StringComparer.OrdinalIgnoreCase);
 
 	List<VariableInfo> _variables = new List<VariableInfo>();
 
-	Dictionary<Identifier, int> _variableIndexByName = new();
-	Dictionary<Identifier, int> _arrayIndexByName = new();
+	Dictionary<string, int> _variableIndexByName = new(StringComparer.OrdinalIgnoreCase);
+	Dictionary<string, int> _arrayIndexByName = new(StringComparer.OrdinalIgnoreCase);
 	HashSet<string> _disallowedSlugs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-	HashSet<Identifier> _globalVariableNames = new HashSet<Identifier>();
-	HashSet<Identifier> _globalArrayNames = new HashSet<Identifier>();
+	HashSet<string> _globalVariableNames = new HashSet<string>();
+	HashSet<string> _globalArrayNames = new HashSet<string>();
 
-	public IEnumerable<Identifier> GlobalIdentifiers => _globalVariableNames.Concat(_globalArrayNames);
+	public IEnumerable<string> GlobalIdentifiers => _globalVariableNames.Concat(_globalArrayNames);
 
 	PrimitiveDataType[] _identifierTypes = new PrimitiveDataType[26];
 
-	Dictionary<Identifier, DataType> _typeFacadeByName = new Dictionary<Identifier, DataType>();
+	Dictionary<string, DataType> _typeFacadeByName = new(StringComparer.OrdinalIgnoreCase);
 
 	// Slugs: avoid conflicts to do with dotted variable names.
 	//
@@ -135,9 +135,9 @@ public class Mapper
 	// QuickBASIC applies this logic to arrays of user-defined types as
 	// well, even though there isn't a possibility of collision.
 
-	class VariableInfo(Identifier name, Token? nameToken, int index)
+	class VariableInfo(string name, Token? nameToken, int index)
 	{
-		public Identifier Name => name;
+		public string Name => name;
 		public Token? NameToken => nameToken;
 		public int Index => index;
 		public DataType Type = DataType.Integer;
@@ -158,7 +158,7 @@ public class Mapper
 
 		_identifierTypes.AsSpan().Fill(PrimitiveDataType.Single);
 
-		DeclareVariable(Identifier.Standalone("@ExitCode"), DataType.Long);
+		DeclareVariable("@ExitCode", DataType.Long);
 	}
 
 	Mapper(Mapper moduleMapper, Routine subroutine)
@@ -168,10 +168,10 @@ public class Mapper
 		Routine = subroutine;
 
 		_identifierTypes.AsSpan().Fill(PrimitiveDataType.Single);
-		_constantValueByName = new Dictionary<Identifier, LiteralValue>(moduleMapper._constantValueByName);
+		_constantValueByName = new Dictionary<string, LiteralValue>(moduleMapper._constantValueByName);
 	}
 
-	public void MakeGlobalVariable(Identifier identifier)
+	public void MakeGlobalVariable(string identifier)
 	{
 		if (_isFrozen)
 			throw new Exception("The Mapper is frozen");
@@ -181,7 +181,7 @@ public class Mapper
 		_globalVariableNames.Add(identifier);
 	}
 
-	public void MakeGlobalArray(Identifier identifier, DataType type)
+	public void MakeGlobalArray(string identifier, DataType type)
 	{
 		if (_isFrozen)
 			throw new Exception("The Mapper is frozen");
@@ -238,14 +238,14 @@ public class Mapper
 		}
 	}
 
-	public bool IsLinkedVariable(Identifier name)
+	public bool IsLinkedVariable(string name)
 	{
 		return
 			_variableIndexByName.TryGetValue(name, out var index) &&
 			(_variables[index].LinkedToModuleVariableIndex >= 0);
 	}
 
-	public bool IsLinkedArray(Identifier name)
+	public bool IsLinkedArray(string name)
 	{
 		return
 			_arrayIndexByName.TryGetValue(name, out var index) &&
@@ -316,6 +316,35 @@ public class Mapper
 		_identifierTypes.AsSpan().Slice(index, count).Fill(type);
 	}
 
+	public PrimitiveDataType GetTypeForIdentifier(string name)
+	{
+		if (CodeModel.TypeCharacter.TryParse(name.Last(), out var typeCharacter))
+		{
+			switch (typeCharacter.Type)
+			{
+				case CodeModel.DataType.INTEGER: return PrimitiveDataType.Integer;
+				case CodeModel.DataType.LONG: return PrimitiveDataType.Long;
+				case CodeModel.DataType.SINGLE: return PrimitiveDataType.Single;
+				case CodeModel.DataType.DOUBLE: return PrimitiveDataType.Double;
+				case CodeModel.DataType.STRING: return PrimitiveDataType.String;
+				case CodeModel.DataType.CURRENCY: return PrimitiveDataType.Currency;
+
+				default: throw new Exception("Unrecognized type " + typeCharacter.Type);
+			}
+		}
+
+		char first = char.ToUpperInvariant(name.First());
+
+		if (first == '@') // special case for @ExitCode
+			return PrimitiveDataType.Long;
+		else
+		{
+			int index = (first - 'A');
+
+			return _identifierTypes[index];
+		}
+	}
+
 	public PrimitiveDataType GetTypeForIdentifier(Identifier name)
 	{
 		if (name is QualifiedIdentifier qualifiedIdentifier)
@@ -371,6 +400,81 @@ public class Mapper
 			throw new Exception("Sanity failure");
 
 		return typeCharacter;
+	}
+
+	public string QualifyIdentifier(string name, PrimitiveDataType type)
+	{
+		switch (name[name.Length - 1])
+		{
+			case '%':
+				if (type != PrimitiveDataType.Integer)
+					throw new Exception("Internal error: Trying to qualify " + name + " as " + type);
+				return name;
+			case '&':
+				if (type != PrimitiveDataType.Long)
+					throw new Exception("Internal error: Trying to qualify " + name + " as " + type);
+				return name;
+			case '!':
+				if (type != PrimitiveDataType.Single)
+					throw new Exception("Internal error: Trying to qualify " + name + " as " + type);
+				return name;
+			case '#':
+				if (type != PrimitiveDataType.Double)
+					throw new Exception("Internal error: Trying to qualify " + name + " as " + type);
+				return name;
+			case '@':
+				if (type != PrimitiveDataType.Currency)
+					throw new Exception("Internal error: Trying to qualify " + name + " as " + type);
+				return name;
+			case '$':
+				if (type != PrimitiveDataType.String)
+					throw new Exception("Internal error: Trying to qualify " + name + " as " + type);
+				return name;
+
+			default:
+			{
+				switch (type)
+				{
+					case PrimitiveDataType.Integer: return name + '%';
+					case PrimitiveDataType.Long: return name + '&';
+					case PrimitiveDataType.Single: return name + '!';
+					case PrimitiveDataType.Double: return name + '#';
+					case PrimitiveDataType.String: return name + '$';
+					case PrimitiveDataType.Currency: return name + '@';
+				}
+
+				break;
+			}
+		}
+
+		throw new Exception("Internal error");
+	}
+
+	public string QualifyIdentifier(string name, DataType type)
+	{
+		if (type.IsUserType)
+			return name;
+
+		return QualifyIdentifier(name, type.PrimitiveType);
+	}
+
+	public string QualifyIdentifier(string name)
+	{
+		if (name.StartsWith("<")) // hidden variables for static scopes
+			return name;
+
+		if (CodeModel.TypeCharacter.TryParse(name.Last(), out var typeCharacter))
+			return name;
+
+		return QualifyIdentifier(name, GetTypeForIdentifier(name));
+	}
+
+	public static string UnqualifyIdentifier(string name)
+	{
+		if (CodeModel.TypeCharacter.TryParse(name[name.Length - 1], out _))
+			name = name.Remove(name.Length - 1);
+
+		return name;
 	}
 
 	public QualifiedIdentifier QualifyIdentifier(Identifier name, PrimitiveDataType type)
@@ -441,10 +545,10 @@ public class Mapper
 		variableInfo.LinkedToCommonBlockVariableIndex = commonBlockVariableIndex;
 	}
 
-	public void LinkModuleVariable(Identifier name)
+	public void LinkModuleVariable(string name)
 		=> LinkModuleVariable(name, name);
 
-	public void LinkModuleVariable(Identifier localName, Identifier moduleName)
+	public void LinkModuleVariable(string localName, string moduleName)
 	{
 		if (_isFrozen)
 			throw new Exception("The Mapper is frozen");
@@ -462,7 +566,7 @@ public class Mapper
 		variableInfo.LinkedToModuleVariableIndex = moduleIndex;
 	}
 
-	public void LinkModuleArray(Identifier localName, Identifier moduleName, DataType? arrayType = null)
+	public void LinkModuleArray(string localName, string moduleName, DataType? arrayType = null)
 	{
 		if (_isFrozen)
 			throw new Exception("The Mapper is frozen");
@@ -516,7 +620,7 @@ public class Mapper
 		if (_moduleMapper != null)
 		{
 			foreach (var global in _moduleMapper.GlobalIdentifiers)
-				AddDisallowedSlug(global.Value);
+				AddDisallowedSlug(global);
 		}
 
 		foreach (var statement in statements)
@@ -543,7 +647,7 @@ public class Mapper
 		}
 	}
 
-	public void DefineConstant(Identifier name, LiteralValue literalValue)
+	public void DefineConstant(string name, LiteralValue literalValue)
 	{
 		if (_isFrozen)
 			throw new Exception("The Mapper is frozen");
@@ -583,7 +687,7 @@ public class Mapper
 	}
 
 	SemiscopeMode _semiscopeMode;
-	Dictionary<Identifier, int>? _semiscopeOverlay;
+	Dictionary<string, int>? _semiscopeOverlay;
 
 	public void StartSemiscopeSetup()
 	{
@@ -591,7 +695,7 @@ public class Mapper
 			throw new Exception("The Mapper is frozen");
 
 		_semiscopeMode = SemiscopeMode.Setup;
-		_semiscopeOverlay = new Dictionary<Identifier, int>();
+		_semiscopeOverlay = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 	}
 
 	public void EnterSemiscope()
@@ -611,12 +715,12 @@ public class Mapper
 		_semiscopeOverlay = null;
 	}
 
-	public int DeclareVariable(Identifier name, DataType dataType, Token? token = null)
+	public int DeclareVariable(string name, DataType dataType, Token? token = null)
 	{
 		if (_isFrozen)
 			throw new Exception("The Mapper is frozen");
 
-		if ((GetSlug(name.Value) is string slug)
+		if ((GetSlug(name) is string slug)
 		 && _disallowedSlugs.Contains(slug))
 			throw CompilerException.IdentifierCannotIncludePeriod(token);
 
@@ -664,7 +768,7 @@ public class Mapper
 		return index;
 	}
 
-	public int ResolveVariable(Identifier name, DataType? dataType = null)
+	public int ResolveVariable(string name, DataType? dataType = null)
 	{
 		int index;
 
@@ -691,7 +795,7 @@ public class Mapper
 		return DeclareVariable(name, dataType ?? DataType.ForPrimitiveDataType(GetTypeForIdentifier(name)));
 	}
 
-	public int DeclareArray(Identifier name, DataType dataType, Token? token = null)
+	public int DeclareArray(string name, DataType dataType, Token? token = null)
 	{
 		if (_isFrozen)
 			throw new Exception("The Mapper is frozen");
@@ -723,13 +827,13 @@ public class Mapper
 		return index;
 	}
 
-	public int ResolveArray(Identifier name, DataType? arrayType = null)
+	public int ResolveArray(string name, DataType? arrayType = null)
 		=> ResolveArray(name, createImplicitly: false, out _, arrayType);
 
-	public int ResolveArray(Identifier name, out bool implicitlyCreated, DataType? arrayType = null)
+	public int ResolveArray(string name, out bool implicitlyCreated, DataType? arrayType = null)
 		=> ResolveArray(name, createImplicitly: true, out implicitlyCreated, arrayType);
 
-	int ResolveArray(Identifier name, bool createImplicitly, out bool implicitlyCreated, DataType? arrayType = null)
+	int ResolveArray(string name, bool createImplicitly, out bool implicitlyCreated, DataType? arrayType = null)
 	{
 		implicitlyCreated = false;
 
@@ -796,10 +900,10 @@ public class Mapper
 		_typeFacadeByName.Add(udtFacade.Name, new DataType(udtFacade));
 	}
 
-	public DataType ResolveType(Identifier userType, Token? context = null)
+	public DataType ResolveType(string userType, Token? context = null)
 		=> ResolveType(CodeModel.DataType.UserDataType, userType, fixedStringLength: 0, isArray: false, context);
 
-	public DataType ResolveType(CodeModel.DataType primitiveType, Identifier? userTypeName, int fixedStringLength, bool isArray, Token? context)
+	public DataType ResolveType(CodeModel.DataType primitiveType, string? userTypeName, int fixedStringLength, bool isArray, Token? context)
 	{
 		if (isArray)
 		{
