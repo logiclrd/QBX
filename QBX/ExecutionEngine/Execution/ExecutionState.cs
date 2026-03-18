@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Threading;
 
 using QBX.ExecutionEngine.Compiled;
@@ -267,5 +269,68 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 	}
 
 	[Conditional("TRACEDEBUGCONTROL")]
-	void DebugOut(string str) => Debug.WriteLine(str);
+	void DebugOut(string str)
+	{
+		if (DebugLog == null)
+		{
+			DebugLog = new List<(long, string)>();
+			DebugLogByThreadID[Thread.CurrentThread.ManagedThreadId] = DebugLog;
+		}
+
+		DebugLog.Add((DateTime.Now.Ticks, str));
+	}
+
+	[ThreadStatic]
+	static List<(long, string)>? DebugLog;
+
+	static Dictionary<int, List<(long, string)>> DebugLogByThreadID = new();
+
+	public static string GetMergedLog(int debuggerThreadID, int executionThreadID)
+	{
+		var combined = new List<(long, string)>();
+
+		var debugger = DebugLogByThreadID[debuggerThreadID];
+		var execution = DebugLogByThreadID[executionThreadID];
+
+		int debuggerIndex = 0;
+		int executionIndex = 0;
+
+		while ((debuggerIndex < debugger.Count) && (executionIndex < execution.Count))
+		{
+			var debuggerLine = debugger[debuggerIndex];
+			var executionLine = execution[executionIndex];
+
+			if (debuggerLine.Item1 < executionLine.Item1)
+			{
+				combined.Add(debuggerLine);
+				debuggerIndex++;
+			}
+			else
+			{
+				combined.Add(executionLine);
+				executionIndex++;
+			}
+		}
+
+		combined.AddRange(debugger.Skip(debuggerIndex));
+		combined.AddRange(execution.Skip(executionIndex));
+
+		var buffer = new StringWriter();
+
+		var lastTime = new DateTime(combined[0].Item1);
+
+		foreach (var item in combined)
+		{
+			var thisTime = new DateTime(item.Item1);
+
+			if ((thisTime - lastTime).TotalMilliseconds > 50)
+				buffer.WriteLine();
+
+			lastTime = thisTime;
+
+			buffer.WriteLine("{0}|{1}", item.Item1, item.Item2);
+		}
+
+		return buffer.ToString();
+	}
 }
