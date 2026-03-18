@@ -27,6 +27,9 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 	int _stepOverNesting;
 
 	object _sync = new object();
+
+	public object Sync => _sync;
+
 	volatile bool _break = false;
 	volatile bool _breakOnReturn = false;
 	volatile bool _step = false;

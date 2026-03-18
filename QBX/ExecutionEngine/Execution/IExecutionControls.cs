@@ -2,6 +2,8 @@
 
 public interface IExecutionControls
 {
+	object Sync { get; }
+
 	void ContinueExecution();
 	void StepOverNextRoutine();
 	void ExecuteOneStatement();

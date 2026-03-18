@@ -154,10 +154,15 @@ public partial class Program
 		return true;
 	}
 
-	void UnpauseExecution()
+	void UnpauseExecution(Action action)
 	{
-		using (Machine.DOS.EnableBreak())
-			_executionContext!.Controls.WaitForInterruption();
+		lock (_executionContext!.Controls.Sync)
+		{
+			action();
+
+			using (Machine.DOS.EnableBreak())
+				_executionContext.Controls.WaitForInterruption();
+		}
 
 		if (_executionContext.ExecutionState.IsTerminated)
 			ExecutionEpilogue();
@@ -189,9 +194,8 @@ public partial class Program
 			ExecutionEpilogue();
 		else
 		{
-			_executionContext.Controls.ContinueExecution();
-
-			UnpauseExecution();
+			UnpauseExecution(
+				action: _executionContext.Controls.ContinueExecution);
 		}
 	}
 
@@ -218,9 +222,8 @@ public partial class Program
 		{
 			RestoreOutput();
 
-			_executionContext.Controls.ExecuteOneStatement();
-
-			UnpauseExecution();
+			UnpauseExecution(
+				action: _executionContext.Controls.ExecuteOneStatement);
 		}
 	}
 
