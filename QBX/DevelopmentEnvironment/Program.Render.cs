@@ -4,6 +4,7 @@ using System.Text;
 
 using QBX.CodeModel;
 using QBX.DevelopmentEnvironment.Dialogs;
+using QBX.ExecutionEngine.Execution;
 using QBX.Firmware;
 using QBX.Firmware.Fonts;
 using QBX.Utility;
@@ -191,19 +192,24 @@ public partial class Program
 
 			int remainingColumns = TextLibrary.CharacterWidth - TextLibrary.CursorX;
 
-			var value = watch.ToStringValue(out bool highlight);
-
-			if (highlight)
-				Configuration.DisplayAttributes.DebugWatchWindowHighlightedText.Set(TextLibrary);
-
-			if (value.Length >= remainingColumns)
-				TextLibrary.WriteText(value.AsSpan().Slice(0, remainingColumns));
+			if (_executionContext == null)
+				TextLibrary.WriteText(_spaces.AsSpan().Slice(0, remainingColumns));
 			else
 			{
-				int spaces = remainingColumns - value.Length;
+				var value = watch.ToStringValue(out bool highlight);
 
-				TextLibrary.WriteText(value.AsSpan());
-				TextLibrary.WriteText(_spaces.AsSpan().Slice(0, spaces));
+				if (highlight)
+					Configuration.DisplayAttributes.DebugWatchWindowHighlightedText.Set(TextLibrary);
+
+				if (value.Length >= remainingColumns)
+					TextLibrary.WriteText(value.AsSpan().Slice(0, remainingColumns));
+				else
+				{
+					int spaces = remainingColumns - value.Length;
+
+					TextLibrary.WriteText(value.AsSpan());
+					TextLibrary.WriteText(_spaces.AsSpan().Slice(0, spaces));
+				}
 			}
 		}
 
