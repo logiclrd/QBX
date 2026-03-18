@@ -1,4 +1,3 @@
-Create File Dialog: "-901"
 Print Dialog: "-904"
 New Procedure Dialog: "-912"
 Find Dialog: "-908"
