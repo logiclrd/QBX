@@ -361,7 +361,7 @@ public partial class DOS
 			searchPrototype = searchPrototype.Where(
 				info =>
 					ShortFileNames.TryMap(info.FullName, out var shortPath) &&
-					FileSystemName.MatchesSimpleExpression(fileNamePattern, Path.GetFileName(shortPath)));
+					FileSystemName.MatchesSimpleExpression(fileNamePattern, ShortPath.GetFileName(shortPath)));
 
 			search = searchPrototype.GetEnumerator();
 
