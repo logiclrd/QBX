@@ -35,7 +35,7 @@ public class ShellExecute
 
 	static IEnumerable<string> EnumeratePathVariableEntriesForLaunchingProgram()
 	{
-		yield return ""; // try relative path from CWD
+		yield return "."; // try relative path from CWD
 
 		if (Environment.GetEnvironmentVariable("PATH") is string path)
 		{
