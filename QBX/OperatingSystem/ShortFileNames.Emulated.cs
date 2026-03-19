@@ -89,7 +89,9 @@ public partial class ShortFileNames
 				return relativePath;
 		}
 
-		return basePath.TrimEnd(PathCharacter.DirectorySeparators) + PathCharacter.DirectorySeparators[0] + relativePath.TrimStart(PathCharacter.DirectorySeparators);
+		return PathCharacter.Join(
+			basePath.TrimEnd(PathCharacter.DirectorySeparators),
+			relativePath.TrimStart(PathCharacter.DirectorySeparators));
 	}
 
 	static readonly string DirectorySeparatorString = Path.DirectorySeparatorChar.ToString();
@@ -163,7 +165,7 @@ public partial class ShortFileNames
 
 	static bool TryMapEmulated(string path, out string shortPath)
 	{
-		if (s_longToShort.TryGetValue(GetCanonicalPath(path), out var existingShortPath)
+		if (s_longToShort.TryGetValue(Path.GetFullPath(path), out var existingShortPath)
 		 && (existingShortPath != null))
 		{
 			shortPath = existingShortPath;
@@ -191,7 +193,7 @@ public partial class ShortFileNames
 		}
 		else
 		{
-			builder.Append("C:" + Path.DirectorySeparatorChar);
+			builder.Append("C:" + PathCharacter.DirectorySeparators[0]);
 
 			while ((startIndex < path.Length)
 			    && ((path[startIndex] == Path.DirectorySeparatorChar) || (path[startIndex] == Path.AltDirectorySeparatorChar)))
@@ -200,13 +202,15 @@ public partial class ShortFileNames
 
 		for (int i = startIndex; i < path.Length; i++)
 		{
-			if (path[i] == Path.DirectorySeparatorChar)
+			if (!PathCharacter.IsDirectorySeparator(path[i]))
+				builder.Append(path[i]);
+			else
 			{
 				if (builder.Length > 0)
 					MapLastComponent(builder, longPath: path.Substring(0, i));
-			}
 
-			builder.Append(path[i]);
+				builder.Append(PathCharacter.DirectorySeparators[0]);
+			}
 		}
 
 		MapLastComponent(builder, longPath: path);
@@ -240,7 +244,7 @@ public partial class ShortFileNames
 		}
 		else
 		{
-			builder.Append("C:" + Path.DirectorySeparatorChar);
+			builder.Append("C:" + PathCharacter.DirectorySeparators[0]);
 
 			while ((startIndex < path.Length)
 			    && ((path[startIndex] == Path.DirectorySeparatorChar) || (path[startIndex] == Path.AltDirectorySeparatorChar)))
@@ -249,13 +253,15 @@ public partial class ShortFileNames
 
 		for (int i = startIndex; i < path.Length; i++)
 		{
-			if (path[i] == PathCharacter.VolumeSeparatorChar)
+			if (!PathCharacter.IsDirectorySeparator(path[i]))
+				builder.Append(path[i]);
+			else
 			{
 				if (builder.Length > 0)
 					MapLastComponent(builder, longPath: path.Substring(0, i));
-			}
 
-			builder.Append(path[i]);
+				builder.Append(PathCharacter.DirectorySeparators[0]);
+			}
 		}
 
 		MapLastComponent(builder, longPath: path, shortName: shortPath);
@@ -268,8 +274,8 @@ public partial class ShortFileNames
 	{
 		int componentLength = 0;
 
-		while ((componentLength < builder.Length)
-		    && (builder[builder.Length - componentLength - 1] != Path.DirectorySeparatorChar))
+		while ((componentLength < builder.Length
+		    && !PathCharacter.IsDirectorySeparator(builder[builder.Length - componentLength - 1])))
 			componentLength++;
 
 		if (componentLength > 0)
@@ -280,16 +286,15 @@ public partial class ShortFileNames
 
 			string normalizedComponent = component;
 
-			if ((shortName != null)
-			 || !IsValidShortPathComponent(ref normalizedComponent)
+			bool componentIsValidShortPathComponent = (shortName == null) ? IsValidShortPathComponent(ref normalizedComponent) : false;
+
+			if (!componentIsValidShortPathComponent
+			 || (shortName != null)
 			 || (normalizedComponent != component))
 			{
 				int containerLength = builder.Length - componentLength;
 
-				while ((containerLength > 0) && (builder[containerLength - 1] == PathCharacter.VolumeSeparatorChar))
-					containerLength--;
-
-				if (containerLength > 0)
+				while ((containerLength > 0) && PathCharacter.IsDirectorySeparator(builder[containerLength - 1]))
 					containerLength--;
 
 				string containerShortPath = "";
@@ -311,15 +316,12 @@ public partial class ShortFileNames
 
 				string shortPath;
 
-				if (shortName == null)
+				if (componentIsValidShortPathComponent)
 				{
 					shortName = normalizedComponent;
 
 					shortPath = PathCharacter.Join(containerShortPath, shortName);
 					shortPath = GetCanonicalPath(shortPath);
-
-					//if (s_shortToLong.ContainsKey(shortPath))
-					//	throw new DOSException(DOSError.FileExists);
 				}
 				else
 				{
@@ -341,7 +343,7 @@ public partial class ShortFileNames
 
 					if (createMapping)
 					{
-						CreateMapping(longPath, containerShortPath, out shortName);
+						CreateMapping(longName, containerShortPath, out shortName);
 
 						shortPath = PathCharacter.Join(containerShortPath, shortName);
 					}
@@ -366,8 +368,39 @@ public partial class ShortFileNames
 
 		if (dot >= 0)
 		{
-			namePart = longName.Substring(0, dot).Replace(".", "");
-			extensionPart = longName.Substring(dot);
+			var partBuilder = new StringBuilder(capacity: 8);
+
+			string GetPart(int offset, int length, int maxLength, bool leadingDot)
+			{
+				partBuilder.Length = 0;
+
+				if (length > maxLength)
+					length = maxLength;
+
+				for (int i=0; i < length; i++)
+				{
+					char ch = longName[offset + i];
+
+					if ((ch != ' ') && ((ch != '.') || leadingDot))
+					{
+						leadingDot = false;
+
+						partBuilder.Append(ch);
+						if (partBuilder.Length == partBuilder.Capacity)
+							break;
+					}
+				}
+
+				return partBuilder.ToString();
+			}
+
+			int extensionLength = longName.Length - dot;
+
+			if (extensionLength > 4) // ".EXT"
+				extensionLength = 4;
+
+			namePart = GetPart(0, 8, dot, leadingDot: false);
+			extensionPart = GetPart(dot, 4, extensionLength, leadingDot: true);
 		}
 		else
 		{
@@ -376,6 +409,7 @@ public partial class ShortFileNames
 		}
 
 		namePart = namePart.ToUpperInvariant();
+		extensionPart = extensionPart.ToUpperInvariant();
 
 		// Will map up to four with FIRSTS~n.EXT, as long as we have at least 3 characters.
 		if (namePart.Length >= 3)
@@ -404,12 +438,12 @@ public partial class ShortFileNames
 				if (indexChars.Length >= 8)
 					throw new Win32Exception(ERROR_FILE_SYSTEM_LIMITATION);
 
-				prefix = prefix.Substring(8 - indexChars.Length);
+				prefix = prefix.Substring(0, 8 - indexChars.Length);
 			}
 
 			string candidate = prefix + indexChars + extension;
 
-			string candidatePath = containerShortPath + PathCharacter.VolumeSeparatorChar + candidate;
+			string candidatePath = PathCharacter.Join(containerShortPath, candidate);
 
 			if (!s_shortToLong.ContainsKey(candidatePath))
 			{

@@ -428,7 +428,7 @@ public partial class DOS
 		} while (!ShortFileNames.TryMap(search.Current.FullName, out shortPath));
 
 		formatResult(
-			search.Current, Path.GetFileName(shortPath),
+			search.Current, PathCharacter.GetFileName(shortPath),
 			searchAttributes, searchPattern, searchID);
 
 		return true;
