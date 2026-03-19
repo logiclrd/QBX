@@ -64,10 +64,18 @@ public class EventHub
 		PostEvent(evt);
 	}
 
+	Semaphore _configurationInFlight = new(initialCount: 0, maximumCount: int.MaxValue);
+
 	public void DispatchConfigurationChange(EventConfigurationChange change)
 	{
 		_dispatcher.Dispatch(
-			() => ApplyConfigurationChange(change));
+			() =>
+			{
+				ApplyConfigurationChange(change);
+				_configurationInFlight.Release();
+			});
+
+		_configurationInFlight.WaitOne();
 	}
 
 	public void ApplyConfigurationChange(EventConfigurationChange change)

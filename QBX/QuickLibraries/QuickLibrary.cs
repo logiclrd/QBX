@@ -6,6 +6,7 @@ using System.Reflection;
 
 using QBX.ExecutionEngine;
 using QBX.ExecutionEngine.Execution;
+using QBX.ExecutionEngine.Execution.Events;
 using QBX.Hardware;
 
 namespace QBX.QuickLibraries;
@@ -14,7 +15,7 @@ public abstract class QuickLibrary
 {
 	public ExecutionContext? ExecutionContext;
 
-	public static bool TryGetQuickLibrary(string name, Machine machine, [NotNullWhen(true)] out QuickLibrary? qlb)
+	public static bool TryGetQuickLibrary(string name, Machine machine, EventHub eventHub, [NotNullWhen(true)] out QuickLibrary? qlb)
 	{
 		if (!s_libraryTypes.TryGetValue(name, out var type))
 		{
@@ -22,7 +23,7 @@ public abstract class QuickLibrary
 			return false;
 		}
 
-		qlb = (QuickLibrary)Activator.CreateInstance(type, machine)!;
+		qlb = (QuickLibrary)Activator.CreateInstance(type, machine, eventHub)!;
 
 		s_libraries.Add(name, qlb);
 

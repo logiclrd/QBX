@@ -1,4 +1,5 @@
 ﻿using QBX.ExecutionEngine;
+using QBX.ExecutionEngine.Execution.Events;
 using QBX.ExecutionEngine.Marshalling;
 using QBX.Hardware;
 using QBX.Interrupts;
@@ -6,7 +7,7 @@ using QBX.Interrupts;
 namespace QBX.QuickLibraries;
 
 [QuickLibraryName("QBX.QLB")]
-public class QBX(Machine machine) : QuickLibrary
+public class QBX(Machine machine, EventHub eventHub) : QuickLibrary
 {
 	[Export]
 	public void Interrupt(short intnum, Registers inreg, out Registers outreg)
@@ -107,5 +108,11 @@ public class QBX(Machine machine) : QuickLibrary
 			outarray[8] = inarray[8];
 			outarray[9] = inarray[9];
 		}
+	}
+
+	[Export]
+	public void SetUEvent()
+	{
+		eventHub.PostEvent(EventType.UserEvent);
 	}
 }

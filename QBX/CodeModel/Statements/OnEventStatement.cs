@@ -47,8 +47,13 @@ public class OnEventStatement : Statement
 			SourceExpression.Render(writer);
 			writer.Write(") ");
 		}
-		else if (SourceExpression != null)
-			throw new Exception("Internal error: OnStatement has an unnecessary SourceExpression");
+		else
+		{
+			if (SourceExpression != null)
+				throw new Exception("Internal error: OnStatement has an unnecessary SourceExpression");
+
+			writer.Write(' ');
+		}
 
 		Action.Render(writer);
 	}

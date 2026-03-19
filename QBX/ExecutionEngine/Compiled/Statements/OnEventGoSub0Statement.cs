@@ -18,7 +18,7 @@ public class OnEventGoSub0Statement(CodeModel.Statements.Statement source) : Exe
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
-		int source = 0;
+		int source = Event.NoSource;
 
 		if (EventType == EventType.Key)
 		{

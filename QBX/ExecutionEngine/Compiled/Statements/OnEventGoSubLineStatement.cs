@@ -25,7 +25,7 @@ public class OnEventGoSubLineStatement(Identifier target, CodeModel.Statements.S
 		if (TargetPath == null)
 			throw new Exception("Internal error: Executing an unresolved OnErrorGoSubLineStatement");
 
-		int source = 0;
+		int source = Event.NoSource;
 
 		if (EventType == EventType.Key)
 		{

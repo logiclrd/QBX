@@ -375,7 +375,7 @@ public partial class Program : HostedProgram, IOvertypeFlag
 					qlbName = qlbName.Substring(0, dotIndex);
 			}
 
-			if (QuickLibrary.TryGetQuickLibrary(qlbName, Machine, out var qlb))
+			if (QuickLibrary.TryGetQuickLibrary(qlbName, Machine, EventHub, out var qlb))
 			{
 				QLBs.Add(qlb);
 				return;

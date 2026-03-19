@@ -3,8 +3,10 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace QBX.ExecutionEngine.Execution.Events;
 
-public struct Event(EventType type, int source = -1) : IEquatable<Event>
+public struct Event(EventType type, int source = Event.NoSource) : IEquatable<Event>
 {
+	public const int NoSource = -1;
+
 	public EventType Type => type;
 	public int Source => source;
 
