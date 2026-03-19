@@ -168,5 +168,15 @@ public class EventHub
 			return Events.TryDequeue(out evt);
 		}
 	}
+
+	public void ClearAllEvents()
+	{
+		lock (_eventsLock)
+		{
+			Events.Clear();
+			HeldEvents.Clear();
+			HaveEvents = false;
+		}
+	}
 }
 

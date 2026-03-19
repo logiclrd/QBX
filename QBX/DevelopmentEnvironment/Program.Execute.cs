@@ -122,6 +122,7 @@ public partial class Program
 			{
 				try
 				{
+					EventHub.ClearAllEvents();
 					_executionContext.Run(_compilation);
 				}
 				catch (Exception e)
