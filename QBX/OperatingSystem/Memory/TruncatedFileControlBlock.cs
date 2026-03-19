@@ -19,9 +19,9 @@ public struct TruncatedFileControlBlock
 
 		byte driveIdentifier = NotSpecified;
 
-		if (PathCharacter.TryGetDriveLetter(bytes, out byte driveLetter))
+		if (ShortPath.TryGetDriveLetter(bytes, out byte driveLetter))
 		{
-			driveIdentifier = (byte)(PathCharacter.ToUpper(driveLetter) - 'A' + 1);
+			driveIdentifier = (byte)(ShortPath.ToUpper(driveLetter) - 'A' + 1);
 			bytes = bytes.Slice(2);
 		}
 

@@ -1,12 +1,11 @@
 ﻿using System;
-using System.IO;
 using System.Text;
 
 using QBX.Firmware.Fonts;
 
 namespace QBX.OperatingSystem;
 
-public class PathCharacter
+public class ShortPath
 {
 	public const char VolumeSeparatorChar = ':';
 

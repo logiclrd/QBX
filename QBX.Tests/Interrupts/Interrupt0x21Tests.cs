@@ -1752,7 +1752,7 @@ public class Interrupt0x21Tests
 		// Assert
 		int al = rout.AX & 0xFF;
 
-		int driveIdentifier = PathCharacter.GetDriveLetter(Environment.CurrentDirectory) - 'A';
+		int driveIdentifier = ShortPath.GetDriveLetter(Environment.CurrentDirectory) - 'A';
 
 		al.Should().Be(driveIdentifier);
 	}
@@ -3061,7 +3061,7 @@ public class Interrupt0x21Tests
 		// Arrange
 		var pathToDOSBinary = Path.GetFullPath(typeof(DOS).Assembly.Location);
 
-		int expectedStartupDrive = PathCharacter.GetDriveLetter(pathToDOSBinary) - 'A' + 1;
+		int expectedStartupDrive = ShortPath.GetDriveLetter(pathToDOSBinary) - 'A' + 1;
 
 		var machine = new Machine();
 
@@ -3166,7 +3166,7 @@ public class Interrupt0x21Tests
 
 		for (char driveLetter = 'A'; driveLetter <= 'Z'; driveLetter++)
 		{
-			if (new DriveInfo(string.Concat(driveLetter, PathCharacter.VolumeSeparatorChar)).DriveType != DriveType.NoRootDirectory)
+			if (new DriveInfo(string.Concat(driveLetter, ShortPath.VolumeSeparatorChar)).DriveType != DriveType.NoRootDirectory)
 			{
 				driveIdentifier = driveLetter - 'A' + 1;
 				break;
@@ -3205,7 +3205,7 @@ public class Interrupt0x21Tests
 		{
 			if (driveLetter != 'C')
 			{
-				if (new DriveInfo(string.Concat(driveLetter, PathCharacter.VolumeSeparatorChar)).DriveType == DriveType.NoRootDirectory)
+				if (new DriveInfo(string.Concat(driveLetter, ShortPath.VolumeSeparatorChar)).DriveType == DriveType.NoRootDirectory)
 				{
 					driveIdentifier = driveLetter - 'A' + 1;
 					break;
@@ -7036,7 +7036,7 @@ public class Interrupt0x21Tests
 			Assume.That(ShortFileNames.TryMap(Environment.CurrentDirectory, out var shortCurrentDirectory) == true);
 
 			// GetCurrentDirectory does not include a drive letter.
-			if (PathCharacter.HasDriveLetter(shortCurrentDirectory))
+			if (ShortPath.HasDriveLetter(shortCurrentDirectory))
 				shortCurrentDirectory = shortCurrentDirectory.Substring(3);
 
 			// GetCurrentDirectory always uses backslashes.

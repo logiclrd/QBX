@@ -113,7 +113,7 @@ public partial class DOS
 
 		var eligibleDrives = drives
 			.Select(drive => (Drive: drive, RootPath: drive.RootDirectoryPath))
-			.Where(drive => (drive.RootPath.Length < 2) || (drive.RootPath[1] == PathCharacter.VolumeSeparatorChar))
+			.Where(drive => (drive.RootPath.Length < 2) || (drive.RootPath[1] == ShortPath.VolumeSeparatorChar))
 			.Select(drive => drive.Drive)
 			.ToArray();
 
@@ -134,7 +134,7 @@ public partial class DOS
 
 			// This is all nonsense data, because modern drives don't
 			// fit into the fields described by a DPB at all. :-P
-			dpb.DriveIdentifier = (byte)(PathCharacter.GetDriveLetter(drive.RootDirectoryPath) - 'A');
+			dpb.DriveIdentifier = (byte)(ShortPath.GetDriveLetter(drive.RootDirectoryPath) - 'A');
 			dpb.SectorSize = 512;
 			dpb.ClusterMask = 255; // ClusterMask == (1 << ClusterShift) - 1
 			dpb.ClusterShift = 8;
@@ -736,7 +736,7 @@ public partial class DOS
 		 && (pathRoot.Length >= 2))
 			path = pathRoot;
 
-		return PathCharacter.GetDriveLetter(path) - 'A';
+		return ShortPath.GetDriveLetter(path) - 'A';
 	}
 
 	public SegmentedAddress GetDefaultDriveParameterBlock()
@@ -851,7 +851,7 @@ public partial class DOS
 
 			if ((path.Length >= 3)
 			 && (path[1] == ':')
-			 && PathCharacter.DirectorySeparators.Contains(path[2]))
+			 && ShortPath.DirectorySeparators.Contains(path[2]))
 				path = path.Substring(3);
 
 			path = path.Replace('/', '\\');

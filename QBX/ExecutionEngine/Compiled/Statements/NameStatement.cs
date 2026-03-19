@@ -57,8 +57,8 @@ public class NameStatement(CodeModel.Statements.Statement source) : Executable(s
 			}
 			else
 			{
-				if (!PathCharacter.IsDirectorySeparator(ch)
-				 && !PathCharacter.IsValid(ch)
+				if (!ShortPath.IsDirectorySeparator(ch)
+				 && !ShortPath.IsValid(ch)
 				 && (ch != (byte)'.'))
 					return false;
 			}

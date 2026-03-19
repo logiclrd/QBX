@@ -55,10 +55,10 @@ public partial class ShortFileNames
 
 	static string GetFullPathEmulated(string shortRelativePath)
 	{
-		if (PathCharacter.TryGetDriveLetter(shortRelativePath, out var driveLetter))
+		if (ShortPath.TryGetDriveLetter(shortRelativePath, out var driveLetter))
 		{
 			if ((driveLetter == 'C')
-			 && ((shortRelativePath.Length < 3) || !PathCharacter.DirectorySeparators.Contains(shortRelativePath[2])))
+			 && ((shortRelativePath.Length < 3) || !ShortPath.DirectorySeparators.Contains(shortRelativePath[2])))
 				shortRelativePath = ".\\" + shortRelativePath.Substring(2);
 			else
 				return GetCanonicalPath(shortRelativePath);
@@ -78,20 +78,20 @@ public partial class ShortFileNames
 
 	static string CombinePath(string basePath, string relativePath)
 	{
-		if (PathCharacter.HasDriveLetter(relativePath))
+		if (ShortPath.HasDriveLetter(relativePath))
 			return relativePath;
 
-		if ((relativePath.Length > 0) && PathCharacter.DirectorySeparators.Contains(relativePath[0]))
+		if ((relativePath.Length > 0) && ShortPath.DirectorySeparators.Contains(relativePath[0]))
 		{
-			if (PathCharacter.TryGetDriveLetter(basePath, out char driveLetter))
+			if (ShortPath.TryGetDriveLetter(basePath, out char driveLetter))
 				return driveLetter + ":" + relativePath;
 			else
 				return relativePath;
 		}
 
-		return PathCharacter.Join(
-			basePath.TrimEnd(PathCharacter.DirectorySeparators),
-			relativePath.TrimStart(PathCharacter.DirectorySeparators));
+		return ShortPath.Join(
+			basePath.TrimEnd(ShortPath.DirectorySeparators),
+			relativePath.TrimStart(ShortPath.DirectorySeparators));
 	}
 
 	static readonly string DirectorySeparatorString = Path.DirectorySeparatorChar.ToString();
@@ -109,11 +109,11 @@ public partial class ShortFileNames
 			return longPath;
 		else
 		{
-			var container = PathCharacter.GetDirectoryName(possibleShortPath);
+			var container = ShortPath.GetDirectoryName(possibleShortPath);
 
 			if (!string.IsNullOrEmpty(container))
 			{
-				string fileName = PathCharacter.GetFileName(possibleShortPath);
+				string fileName = ShortPath.GetFileName(possibleShortPath);
 
 				string containerLongPath = UnmapEmulated(container);
 
@@ -133,7 +133,7 @@ public partial class ShortFileNames
 					char firstCharacter = fileName[0];
 
 					byte firstByte = CP437Encoding.GetByteSemantic(firstCharacter);
-					byte firstByteUpper = PathCharacter.ToUpper(firstByte);
+					byte firstByteUpper = ShortPath.ToUpper(firstByte);
 
 					char firstCharacterUpper = CP437Encoding.GetCharSemantic(firstByteUpper);
 
@@ -146,7 +146,7 @@ public partial class ShortFileNames
 						{
 							if (TryMapEmulated(fileSystemInfo.FullName, out var newShortPath))
 							{
-								if (PathCharacter.EqualsCaseInsensitive(possibleShortPath, newShortPath))
+								if (ShortPath.EqualsCaseInsensitive(possibleShortPath, newShortPath))
 								{
 									longPath = fileSystemInfo.FullName;
 									break;
@@ -176,8 +176,8 @@ public partial class ShortFileNames
 
 		int startIndex = 0;
 
-		if (PathCharacter.HasDriveLetter(path)
-		 && ((path.Length == 2) || PathCharacter.IsDirectorySeparator(path[2])))
+		if (ShortPath.HasDriveLetter(path)
+		 && ((path.Length == 2) || ShortPath.IsDirectorySeparator(path[2])))
 		{
 			builder.Append(path.AsSpan().Slice(0, 2));
 
@@ -187,13 +187,13 @@ public partial class ShortFileNames
 			{
 				startIndex = 4;
 
-				while ((startIndex < path.Length) && PathCharacter.IsDirectorySeparator(path[startIndex]))
+				while ((startIndex < path.Length) && ShortPath.IsDirectorySeparator(path[startIndex]))
 					startIndex++;
 			}
 		}
 		else
 		{
-			builder.Append("C:" + PathCharacter.DirectorySeparators[0]);
+			builder.Append("C:" + ShortPath.DirectorySeparators[0]);
 
 			while ((startIndex < path.Length)
 			    && ((path[startIndex] == Path.DirectorySeparatorChar) || (path[startIndex] == Path.AltDirectorySeparatorChar)))
@@ -202,14 +202,14 @@ public partial class ShortFileNames
 
 		for (int i = startIndex; i < path.Length; i++)
 		{
-			if (!PathCharacter.IsDirectorySeparator(path[i]))
+			if (!ShortPath.IsDirectorySeparator(path[i]))
 				builder.Append(path[i]);
 			else
 			{
 				if (builder.Length > 0)
 					MapLastComponent(builder, longPath: path.Substring(0, i));
 
-				builder.Append(PathCharacter.DirectorySeparators[0]);
+				builder.Append(ShortPath.DirectorySeparators[0]);
 			}
 		}
 
@@ -227,8 +227,8 @@ public partial class ShortFileNames
 
 		if ((path.Length >= 2)
 		 && char.IsAsciiLetter(path[0])
-		 && (path[1] == PathCharacter.VolumeSeparatorChar)
-		 && ((path.Length == 2) || PathCharacter.IsDirectorySeparator(path[2])))
+		 && (path[1] == ShortPath.VolumeSeparatorChar)
+		 && ((path.Length == 2) || ShortPath.IsDirectorySeparator(path[2])))
 		{
 			builder.Append(path.AsSpan().Slice(0, 2));
 
@@ -238,13 +238,13 @@ public partial class ShortFileNames
 			{
 				startIndex = 4;
 
-				while ((startIndex < path.Length) && PathCharacter.IsDirectorySeparator(path[startIndex]))
+				while ((startIndex < path.Length) && ShortPath.IsDirectorySeparator(path[startIndex]))
 					startIndex++;
 			}
 		}
 		else
 		{
-			builder.Append("C:" + PathCharacter.DirectorySeparators[0]);
+			builder.Append("C:" + ShortPath.DirectorySeparators[0]);
 
 			while ((startIndex < path.Length)
 			    && ((path[startIndex] == Path.DirectorySeparatorChar) || (path[startIndex] == Path.AltDirectorySeparatorChar)))
@@ -253,14 +253,14 @@ public partial class ShortFileNames
 
 		for (int i = startIndex; i < path.Length; i++)
 		{
-			if (!PathCharacter.IsDirectorySeparator(path[i]))
+			if (!ShortPath.IsDirectorySeparator(path[i]))
 				builder.Append(path[i]);
 			else
 			{
 				if (builder.Length > 0)
 					MapLastComponent(builder, longPath: path.Substring(0, i));
 
-				builder.Append(PathCharacter.DirectorySeparators[0]);
+				builder.Append(ShortPath.DirectorySeparators[0]);
 			}
 		}
 
@@ -275,7 +275,7 @@ public partial class ShortFileNames
 		int componentLength = 0;
 
 		while ((componentLength < builder.Length
-		    && !PathCharacter.IsDirectorySeparator(builder[builder.Length - componentLength - 1])))
+		    && !ShortPath.IsDirectorySeparator(builder[builder.Length - componentLength - 1])))
 			componentLength++;
 
 		if (componentLength > 0)
@@ -294,7 +294,7 @@ public partial class ShortFileNames
 			{
 				int containerLength = builder.Length - componentLength;
 
-				while ((containerLength > 0) && PathCharacter.IsDirectorySeparator(builder[containerLength - 1]))
+				while ((containerLength > 0) && ShortPath.IsDirectorySeparator(builder[containerLength - 1]))
 					containerLength--;
 
 				string containerShortPath = "";
@@ -320,7 +320,7 @@ public partial class ShortFileNames
 				{
 					shortName = normalizedComponent;
 
-					shortPath = PathCharacter.Join(containerShortPath, shortName);
+					shortPath = ShortPath.Join(containerShortPath, shortName);
 					shortPath = GetCanonicalPath(shortPath);
 				}
 				else
@@ -335,7 +335,7 @@ public partial class ShortFileNames
 					else
 					{
 						shortName = normalizedComponent;
-						shortPath = PathCharacter.Join(containerShortPath, shortName);
+						shortPath = ShortPath.Join(containerShortPath, shortName);
 
 						if (Path.Exists(shortPath))
 							createMapping = true;
@@ -345,7 +345,7 @@ public partial class ShortFileNames
 					{
 						CreateMapping(longName, containerShortPath, out shortName);
 
-						shortPath = PathCharacter.Join(containerShortPath, shortName);
+						shortPath = ShortPath.Join(containerShortPath, shortName);
 					}
 
 					shortPath = GetCanonicalPath(shortPath);
@@ -443,7 +443,7 @@ public partial class ShortFileNames
 
 			string candidate = prefix + indexChars + extension;
 
-			string candidatePath = PathCharacter.Join(containerShortPath, candidate);
+			string candidatePath = ShortPath.Join(containerShortPath, candidate);
 
 			if (!s_shortToLong.ContainsKey(candidatePath))
 			{
@@ -493,10 +493,10 @@ public partial class ShortFileNames
 		{
 			byte byteValue = shortPathASCII[i];
 
-			if (!PathCharacter.IsValid(byteValue) && (byteValue != '.'))
+			if (!ShortPath.IsValid(byteValue) && (byteValue != '.'))
 				return false;
 
-			shortPathASCII[i] = PathCharacter.ToUpper(byteValue);
+			shortPathASCII[i] = ShortPath.ToUpper(byteValue);
 		}
 
 		shortPath = s_cp437.GetString(shortPathASCII);
@@ -557,9 +557,9 @@ public partial class ShortFileNames
 		if (path.Length == 0)
 			return path;
 
-		bool prependRoot = PathCharacter.DirectorySeparators.Contains(path[0]);
+		bool prependRoot = ShortPath.DirectorySeparators.Contains(path[0]);
 
-		var components = path.Split(PathCharacter.DirectorySeparators, StringSplitOptions.RemoveEmptyEntries).ToList();
+		var components = path.Split(ShortPath.DirectorySeparators, StringSplitOptions.RemoveEmptyEntries).ToList();
 
 		for (int i=0; i < components.Count; i++)
 		{
@@ -567,7 +567,7 @@ public partial class ShortFileNames
 				components.RemoveAt(i);
 			else if (components[i] == "..")
 			{
-				if ((i > 0) && !PathCharacter.IsDriveLetter(components[i - 1]))
+				if ((i > 0) && !ShortPath.IsDriveLetter(components[i - 1]))
 				{
 					components.RemoveRange(i - 1, 2);
 					i--;
@@ -578,13 +578,13 @@ public partial class ShortFileNames
 		}
 
 		if ((components.Count > 0)
-		 && PathCharacter.HasDriveLetter(components[0]))
+		 && ShortPath.HasDriveLetter(components[0]))
 			prependRoot = false;
 
-		path = PathCharacter.Join(CollectionsMarshal.AsSpan(components));
+		path = ShortPath.Join(CollectionsMarshal.AsSpan(components));
 
 		if (prependRoot)
-			path = PathCharacter.DirectorySeparators[0] + path;
+			path = ShortPath.DirectorySeparators[0] + path;
 
 		return path;
 	}

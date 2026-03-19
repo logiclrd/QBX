@@ -50,7 +50,7 @@ public partial class ShortFileNames
 		if (fullPath.StartsWith("\\\\.\\"))
 		{
 			// Windows does this weird thing with devices. GetFullPath("CON") => @"\\.\CON"
-			int lastSeparator = fullPath.LastIndexOfAny(PathCharacter.DirectorySeparators);
+			int lastSeparator = fullPath.LastIndexOfAny(ShortPath.DirectorySeparators);
 
 			fullPath = Path.Join(Path.GetFullPath("."), Path.GetDirectoryName(shortRelativePath), fullPath.Substring(lastSeparator + 1));
 		}

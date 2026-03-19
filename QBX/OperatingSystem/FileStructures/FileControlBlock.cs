@@ -43,12 +43,12 @@ public class FileControlBlock
 
 		int length = 8;
 
-		while ((length > 0) && PathCharacter.IsSpace(fileNameBytes[length - 1]))
+		while ((length > 0) && ShortPath.IsSpace(fileNameBytes[length - 1]))
 			length--;
 
 		int offset = 0;
 
-		while ((offset < length) && PathCharacter.IsValidOrWildcard(fileNameBytes[offset]))
+		while ((offset < length) && ShortPath.IsValidOrWildcard(fileNameBytes[offset]))
 		{
 			s_fileNameBuffer[offset] = CP437Encoding.GetCharSemantic(fileNameBytes[offset]);
 			offset++;
@@ -56,16 +56,16 @@ public class FileControlBlock
 
 		length = 3;
 
-		while ((length > 0) && PathCharacter.IsSpace(fileNameBytes[8 + length - 1]))
+		while ((length > 0) && ShortPath.IsSpace(fileNameBytes[8 + length - 1]))
 			length--;
 
-		if ((length > 0) && PathCharacter.IsValidOrWildcard(fileNameBytes[8]))
+		if ((length > 0) && ShortPath.IsValidOrWildcard(fileNameBytes[8]))
 		{
 			s_fileNameBuffer[offset++] = '.';
 
 			int extensionOffset = 0;
 
-			while ((extensionOffset < length) && PathCharacter.IsValidOrWildcard(fileNameBytes[8 + extensionOffset]))
+			while ((extensionOffset < length) && ShortPath.IsValidOrWildcard(fileNameBytes[8 + extensionOffset]))
 			{
 				s_fileNameBuffer[offset] = CP437Encoding.GetCharSemantic(fileNameBytes[8 + extensionOffset]);
 				offset++;
@@ -142,13 +142,13 @@ public class FileControlBlock
 		{
 			if (lengthIsAtLeast(1))
 			{
-				if (PathCharacter.IsFileNameSeparator(readInputChar(0)))
+				if (ShortPath.IsFileNameSeparator(readInputChar(0)))
 					advanceInput(1);
 			}
 		}
 
 		if (lengthIsAtLeast(2)
-		 && PathCharacter.IsLetter(readInputChar(0))
+		 && ShortPath.IsLetter(readInputChar(0))
 		 && (readInputChar(1) == (byte)':'))
 		{
 			driveIdentifier = unchecked((byte)(readInputChar(0) - 64));
@@ -180,7 +180,7 @@ public class FileControlBlock
 
 			if (!atEnd)
 			{
-				if (PathCharacter.IsFileNameSeparator(b))
+				if (ShortPath.IsFileNameSeparator(b))
 					atEnd = true;
 				else
 				{
@@ -219,7 +219,7 @@ public class FileControlBlock
 
 		for (i = 0; i < nameLength; i++)
 		{
-			outSpan[i] = PathCharacter.ToUpper(readInputChar(i));
+			outSpan[i] = ShortPath.ToUpper(readInputChar(i));
 
 			if (outSpan[i] == (byte)'*')
 			{
@@ -247,7 +247,7 @@ public class FileControlBlock
 
 		for (i = 0; i < extLength; i++)
 		{
-			outSpan[i] = PathCharacter.ToUpper(readInputChar(i));
+			outSpan[i] = ShortPath.ToUpper(readInputChar(i));
 
 			if (outSpan[i] == (byte)'*')
 			{
@@ -280,7 +280,7 @@ public class FileControlBlock
 	{
 		for (int i = 0; i < fileName.Length; i++)
 		{
-			if ((fileName[i] != '.') && !PathCharacter.IsValidOrWildcard(fileName[i]))
+			if ((fileName[i] != '.') && !ShortPath.IsValidOrWildcard(fileName[i]))
 				return false;
 		}
 
