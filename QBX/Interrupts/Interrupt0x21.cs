@@ -1007,16 +1007,16 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 						}
 						case Function33.GetStartupDrive:
 						{
+							result.DX = 3; // C:\, if something goes wrong
+
 							try
 							{
 								string binaryPath = Path.GetFullPath(typeof(DOS).Assembly.Location);
 
-								result.DX = (ushort)(char.ToUpper(ShortPath.GetDriveLetter(binaryPath)) - 'A' + 1);
+								if (ShortFileNames.TryMap(binaryPath, out var shortPath))
+									result.DX = (ushort)(char.ToUpper(ShortPath.GetDriveLetter(shortPath)) - 'A' + 1);
 							}
-							catch
-							{
-								result.DX = 3; // C:\, if something goes wrong
-							}
+							catch { }
 
 							break;
 						}
@@ -2020,7 +2020,7 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 							{
 								// Append filename onto the caller-supplied buffer.
 
-								string fileName = Path.GetFileName(regularFile.Path);
+								string fileName = ShortPath.GetFileName(regularFile.Path);
 
 								int offset = pathBufferAddress.ToLinearAddress() + directory.Length;
 
