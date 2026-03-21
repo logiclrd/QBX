@@ -555,6 +555,24 @@ public class BasicParser(IdentifierRepository identifierRepository)
 				}
 			}
 
+			case TokenType.CHDIR:
+			{
+				var chDirStatement = new ChDirStatement();
+
+				chDirStatement.PathExpression = ParseExpressionForStatement(chDirStatement, tokenHandler.RemainingTokens, tokenHandler.EndToken);
+
+				return chDirStatement;
+			}
+
+			case TokenType.CHDRIVE:
+			{
+				var chDriveStatement = new ChDriveStatement();
+
+				chDriveStatement.DriveLetterExpression = ParseExpressionForStatement(chDriveStatement, tokenHandler.RemainingTokens, tokenHandler.EndToken);
+
+				return chDriveStatement;
+			}
+
 			case TokenType.CIRCLE:
 			{
 				var circle = new CircleStatement();

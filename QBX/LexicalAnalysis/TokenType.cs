@@ -33,6 +33,8 @@ public enum TokenType
 	[KeywordFunction]
 	[KeywordToken] CDBL,
 	[KeywordToken] CDECL,
+	[KeywordToken] CHDIR,
+	[KeywordToken] CHDRIVE,
 	[KeywordFunction]
 	[KeywordToken("CHR$")] CHR,
 	[KeywordFunction]

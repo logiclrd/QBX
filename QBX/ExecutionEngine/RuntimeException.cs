@@ -284,6 +284,8 @@ public class RuntimeException : Exception
 		=> ForErrorNumber(67, expression);
 	public static RuntimeException DeviceUnavailable()
 		=> ForErrorNumber(68, default(Token));
+	public static RuntimeException DeviceUnavailable(CodeModel.Statements.Statement? statement)
+		=> ForErrorNumber(68, statement);
 	public static RuntimeException PathFileAccessError(CodeModel.Statements.Statement? statement)
 		=> ForErrorNumber(75, statement);
 	public static RuntimeException PathNotFound()

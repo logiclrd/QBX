@@ -10,6 +10,8 @@ public enum StatementType
 	BSave,
 	Call,
 	Case,
+	ChDir,
+	ChDrive,
 	Circle,
 	Clear,
 	Close,

@@ -783,6 +783,28 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 				break;
 			}
+			case CodeModel.Statements.ChDirStatement chDirStatement:
+			{
+				var translatedChDirStatement = new ChDirStatement(chDirStatement);
+
+				TranslateStringArgumentExpression(
+					ref translatedChDirStatement.PathExpression, chDirStatement.PathExpression);
+
+				container.Append(translatedChDirStatement);
+
+				break;
+			}
+			case CodeModel.Statements.ChDriveStatement chDriveStatement:
+			{
+				var translatedChDriveStatement = new ChDriveStatement(chDriveStatement);
+
+				TranslateStringArgumentExpression(
+					ref translatedChDriveStatement.DriveLetterExpression, chDriveStatement.DriveLetterExpression);
+
+				container.Append(translatedChDriveStatement);
+
+				break;
+			}
 			case CodeModel.Statements.CircleStatement circleStatement:
 			{
 				var translatedCircleStatement = new CircleStatement(circleStatement);
