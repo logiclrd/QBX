@@ -10,6 +10,7 @@ public class RuntimeState
 	public bool EnablePaletteRemapping = true;
 	public PaletteMode PaletteMode = PaletteMode.Attribute;
 	public int MaximumAttribute = 15;
+	public int MaximumColour = 63;
 	public StringValue?[] SoftKeyMacros = new StringValue?[12];
 	public bool DisplaySoftKeyMacroLine = false;
 

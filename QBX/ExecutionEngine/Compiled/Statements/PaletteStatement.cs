@@ -58,7 +58,6 @@ public class PaletteStatement(CodeModel.Statements.Statement source) : Executabl
 				if ((colour < 0) || (colour > 63))
 					throw RuntimeException.IllegalFunctionCall();
 
-
 				machine.InPort(InputStatusRegisters.InputStatus1Port);
 				machine.OutPort(AttributeControllerRegisters.IndexAndDataWritePort, unchecked((byte)attribute));
 				machine.OutPort(AttributeControllerRegisters.IndexAndDataWritePort, unchecked((byte)colour));

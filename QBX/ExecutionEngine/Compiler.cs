@@ -2232,14 +2232,52 @@ public class Compiler(IdentifierRepository identifierRepository)
 			}
 			case CodeModel.Statements.PaletteStatement paletteStatement:
 			{
-				var translatedPaletteStatement = new PaletteStatement(paletteStatement);
+				if (paletteStatement.ArrayExpression == null)
+				{
+					var translatedPaletteStatement = new PaletteStatement(paletteStatement);
 
-				TranslateNumericArgumentExpression(
-					ref translatedPaletteStatement.AttributeExpression, paletteStatement.AttributeExpression);
-				TranslateNumericArgumentExpression(
-					ref translatedPaletteStatement.ColourExpression, paletteStatement.ColourExpression);
+					TranslateNumericArgumentExpression(
+						ref translatedPaletteStatement.AttributeExpression, paletteStatement.AttributeExpression);
+					TranslateNumericArgumentExpression(
+						ref translatedPaletteStatement.ColourExpression, paletteStatement.ColourExpression);
 
-				container.Append(translatedPaletteStatement);
+					container.Append(translatedPaletteStatement);
+				}
+				else
+				{
+					PaletteUsingStatement translatedPaletteUsingStatement;
+
+					if (paletteStatement.ArrayExpression is CodeModel.Expressions.IdentifierExpression identifierExpression)
+					{
+						// PALETTE USING arrayName%
+						var translated = new PaletteUsingArrayStatement(paletteStatement);
+
+						translated.ArrayVariableIndex = mapper.ResolveArray(identifierExpression.Identifier.ToString());
+
+						if (translated.ArrayVariableIndex < 0)
+							throw CompilerException.ArrayNotDefined(identifierExpression.Token);
+
+						translatedPaletteUsingStatement = translated;
+					}
+					else
+					{
+						// PALETTE USING arrayName%(index%)
+
+						var expression =
+							TranslateExpression(paletteStatement.ArrayExpression, container, mapper, compilation, module, createImplicitArray: false);
+
+						if (expression is not ArrayElementExpression arrayElementExpression)
+							throw CompilerException.ArrayNotDefined(paletteStatement.ArrayExpression);
+
+						var translated = new PaletteUsingArrayElementStatement(paletteStatement);
+
+						translated.ArrayElementExpression = arrayElementExpression;
+
+						translatedPaletteUsingStatement = translated;
+					}
+
+					container.Append(translatedPaletteUsingStatement);
+				}
 
 				break;
 			}

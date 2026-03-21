@@ -136,6 +136,8 @@ public class CompilerException : Exception
 		=> new CompilerException(expression, "Expected: variable");
 	public static CompilerException ExpectedVariable(Token? context)
 		=> new CompilerException(context, "Expected: variable");
+	public static CompilerException ArrayNotDefined(CodeModel.Expressions.Expression? expression)
+		=> new CompilerException(expression, "Array not defined");
 	public static CompilerException ArrayNotDefined(Token? context)
 		=> new CompilerException(context, "Array not defined");
 	public static CompilerException ArrayAlreadyDimensioned(Token? context)
