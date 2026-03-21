@@ -2722,6 +2722,17 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 				break;
 			}
+			case CodeModel.Statements.ShellStatement shellStatement:
+			{
+				var translatedShellStatement = new ShellStatement(shellStatement);
+
+				TranslateStringArgumentExpression(
+					ref translatedShellStatement.CommandStringExpression, shellStatement.CommandStringExpression);
+
+				container.Append(translatedShellStatement);
+
+				break;
+			}
 			case CodeModel.Statements.SleepStatement sleepStatement:
 			{
 				var translatedSleepStatement = new SleepStatement(sleepStatement);

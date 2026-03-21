@@ -3370,6 +3370,16 @@ public class BasicParser(IdentifierRepository identifierRepository)
 				return scopeStatement;
 			}
 
+			case TokenType.SHELL:
+			{
+				var shellStatement = new ShellStatement();
+
+				if (tokenHandler.HasMoreTokens)
+					shellStatement.CommandStringExpression = ParseExpressionForStatement(shellStatement, tokenHandler.RemainingTokens, tokenHandler.EndToken);
+
+				return shellStatement;
+			}
+
 			case TokenType.SLEEP:
 			{
 				if (tokenHandler.HasMoreTokens)

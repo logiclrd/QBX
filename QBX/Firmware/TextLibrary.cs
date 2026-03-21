@@ -85,6 +85,29 @@ public class TextLibrary : VisualLibrary
 		Attributes = unchecked((byte)((Attributes & 0x0F) | ((background & 15) << 4)));
 	}
 
+	class CursorVisibleScope(TextLibrary owner) : IDisposable
+	{
+		public void Dispose() => owner.HideCursor();
+	}
+
+	public IDisposable? ShowCursorForScope()
+	{
+		if (IsCursorVisible)
+			return null;
+
+		ShowCursor();
+
+		return new CursorVisibleScope(this);
+	}
+
+	public bool IsCursorVisible
+	{
+		get
+		{
+			return Array.CRTController.CursorVisible;
+		}
+	}
+
 	public void ShowCursor()
 	{
 		Array.CRTController.Registers[GraphicsArray.CRTControllerRegisters.CursorStart]
@@ -260,8 +283,6 @@ public class TextLibrary : VisualLibrary
 		if (buffer.Length == 0)
 			return;
 
-		ResolvePassiveNewLine();
-
 		int o = CursorAddress;
 
 		int startAddress = StartAddress;
@@ -346,13 +367,17 @@ public class TextLibrary : VisualLibrary
 						continue;
 				}
 
+				ResolvePassiveNewLine();
+
 				int remainingChars = Width - cursorX;
 
 				int spanLength = Math.Min(buffer.Length, remainingChars);
 
+				int controlCharacterOffset = -1;
+
 				if (ProcessControlCharacters)
 				{
-					int controlCharacterOffset = buffer.Slice(0, spanLength).IndexOfAny(ControlCharacters);
+					controlCharacterOffset = buffer.Slice(0, spanLength).IndexOfAny(ControlCharacters);
 
 					if (controlCharacterOffset >= 0)
 						spanLength = controlCharacterOffset;
@@ -373,7 +398,7 @@ public class TextLibrary : VisualLibrary
 
 				buffer = buffer.Slice(spanLength);
 
-				if (!buffer.IsEmpty)
+				if (spanLength < controlCharacterOffset)
 					BeginNewLine();
 			}
 

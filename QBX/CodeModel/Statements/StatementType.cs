@@ -94,6 +94,7 @@ public enum StatementType
 	Screen,
 	ScreenWidth,
 	SelectCase,
+	Shell,
 	Sleep,
 	System,
 	Type,

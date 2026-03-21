@@ -280,6 +280,9 @@ public class Keyboard(Machine machine)
 			{
 				while (_inputQueue.Count == 0)
 				{
+					if (cancellationToken.IsCancellationRequested)
+						return false;
+
 					Monitor.Wait(_sync);
 
 					if (_interruptCount > 0)
@@ -287,9 +290,6 @@ public class Keyboard(Machine machine)
 
 					if (eatReleaseEvents)
 						EatReleaseEvents(_inputQueue);
-
-					if (cancellationToken.IsCancellationRequested)
-						return false;
 				}
 			}
 			finally

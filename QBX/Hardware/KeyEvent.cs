@@ -1,4 +1,6 @@
-﻿using SDL3;
+﻿using System.IO;
+
+using SDL3;
 
 namespace QBX.Hardware;
 
@@ -687,5 +689,41 @@ public class KeyEvent
 					SDLScanCode = SDLScanCode,
 				};
 		}
+	}
+
+	public void Serialize(BinaryWriter writer)
+	{
+		writer.Write((short)TextCharacter);
+		writer.Write((byte)ScanCode);
+		writer.Write(Modifiers.Pack());
+		writer.Write(IsRight);
+		writer.Write(IsRelease);
+		writer.Write(IsKeyPad);
+		writer.Write(IsEphemeral);
+		writer.Write((int)SDLScanCode);
+	}
+
+	public static KeyEvent Deserialize(BinaryReader reader)
+	{
+		char textCharacter = (char)reader.ReadInt16();
+		byte scanCode = reader.ReadByte();
+		byte packedModifiers = reader.ReadByte();
+		bool isRight = reader.ReadBoolean();
+		bool isRelease = reader.ReadBoolean();
+		bool isKeyPad = reader.ReadBoolean();
+		bool isEphemeral = reader.ReadBoolean();
+		int sdlScanCode = reader.ReadInt32();
+
+		var ret = new KeyEvent(KeyModifiers.Unpack(packedModifiers));
+
+		ret.TextCharacter = textCharacter;
+		ret.ScanCode = (ScanCode)scanCode;
+		ret.IsRight = isRight;
+		ret.IsRelease = isRelease;
+		ret.IsKeyPad = isKeyPad;
+		ret.IsEphemeral = isEphemeral;
+		ret.SDLScanCode = (SDL.Scancode)sdlScanCode;
+
+		return ret;
 	}
 }

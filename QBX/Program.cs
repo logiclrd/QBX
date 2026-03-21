@@ -6,6 +6,8 @@ using SDL3;
 
 using QBX.Hardware;
 
+using ShellStatement = QBX.ExecutionEngine.Compiled.Statements.ShellStatement;
+
 namespace QBX;
 
 class Program
@@ -23,6 +25,14 @@ class Program
 
 	static int Main()
 	{
+		if (ShellStatement.IsProxyCommandLine(Environment.CommandLine))
+		{
+			if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+				return 1;
+
+			return ShellStatement.ExecuteInputProxy();
+		}
+
 		DebugExceptionHelper.Install();
 
 		var machine = new Machine();

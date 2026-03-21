@@ -35,7 +35,36 @@ public partial class DOS
 {
 	public bool IsTerminated = false;
 
-	public event Action? Break;
+	Action? _breakEventHandlers;
+
+	public event Action? Break
+	{
+		add => _breakEventHandlers += value;
+		remove => _breakEventHandlers -= value;
+	}
+
+	class BreakEventHandlerScope(DOS owner, Action? restoreHandlers) : IDisposable
+	{
+		bool _disposed = false;
+
+		public void Dispose()
+		{
+			if (!_disposed)
+			{
+				_disposed = true;
+				owner._breakEventHandlers = restoreHandlers;
+			}
+		}
+	}
+
+	public IDisposable TakeOverBreakEventForScope(Action scopeHandler)
+	{
+		var oldHandlers = _breakEventHandlers;
+
+		_breakEventHandlers = scopeHandler;
+
+		return new BreakEventHandlerScope(this, oldHandlers);
+	}
 
 	DOSError _lastError = DOSError.None;
 
@@ -241,12 +270,12 @@ public partial class DOS
 	void OnExternalBreak()
 	{
 		if (_enableBreak)
-			Break?.Invoke();
+			_breakEventHandlers?.Invoke();
 	}
 
 	void OnInternalBreak()
 	{
-		Break?.Invoke();
+		_breakEventHandlers?.Invoke();
 		throw new Break();
 	}
 

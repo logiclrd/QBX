@@ -174,6 +174,8 @@ public abstract class VisualLibrary : IDisposable
 
 	public bool ProcessControlCharacters = true;
 
+	public CRLFSemantics CRLFSemantics = CRLFSemantics.File;
+
 	protected bool ProcessControlCharacter(
 		ref ReadOnlySpan<byte> buffer,
 		ref int cursorX, ref int cursorY,
@@ -210,9 +212,21 @@ public abstract class VisualLibrary : IDisposable
 				buffer = buffer.Slice(1);
 				return true;
 			case 10: // LF
-			case 13: // CR
-				beginNewLine();
-				updateOffset();
+				switch (CRLFSemantics)
+				{
+					case CRLFSemantics.File:
+						beginNewLine();
+						updateOffset();
+						break;
+					case CRLFSemantics.Terminal:
+						if (cursorY < CharacterLineWindowEnd)
+							cursorY++;
+						else
+							ScrollText();
+						break;
+				}
+
+				_delayedNewLine = false;
 
 				buffer = buffer.Slice(1);
 				return true;
@@ -228,6 +242,22 @@ public abstract class VisualLibrary : IDisposable
 				cursorX = 0;
 				cursorY = CharacterLineWindowStart;
 				updateOffset();
+
+				buffer = buffer.Slice(1);
+				return true;
+			case 13: // CR
+				switch (CRLFSemantics)
+				{
+					case CRLFSemantics.File:
+						beginNewLine();
+						updateOffset();
+						break;
+					case CRLFSemantics.Terminal:
+						cursorX = 0;
+						break;
+				}
+
+				_delayedNewLine = false;
 
 				buffer = buffer.Slice(1);
 				return true;
@@ -318,7 +348,10 @@ public abstract class VisualLibrary : IDisposable
 		WriteText(text);
 	}
 
-	Encoding _cp437 = new CP437Encoding(ControlCharacterInterpretation.Graphic);
+	Encoding _cp437Graphic = new CP437Encoding(ControlCharacterInterpretation.Graphic);
+	Encoding _cp437Semantic = new CP437Encoding(ControlCharacterInterpretation.Semantic);
+
+	Encoding CP437 => ProcessControlCharacters ? _cp437Semantic : _cp437Graphic;
 
 	[ThreadStatic]
 	static ArrayBufferWriter<byte>? s_buffer;
@@ -354,7 +387,7 @@ public abstract class VisualLibrary : IDisposable
 	{
 		var buffer = PrepareBuffer();
 
-		_cp437.GetBytes(text.AsSpan(), buffer);
+		CP437.GetBytes(text.AsSpan(), buffer);
 
 		WriteText(buffer.WrittenSpan);
 	}
@@ -363,7 +396,7 @@ public abstract class VisualLibrary : IDisposable
 	{
 		var buffer = PrepareBuffer();
 
-		_cp437.GetBytes(text.Span, buffer);
+		CP437.GetBytes(text.Span, buffer);
 
 		WriteText(buffer.WrittenSpan);
 	}
@@ -372,7 +405,7 @@ public abstract class VisualLibrary : IDisposable
 	{
 		var buffer = PrepareBuffer();
 
-		_cp437.GetBytes(text, buffer);
+		CP437.GetBytes(text, buffer);
 
 		WriteText(buffer.WrittenSpan);
 	}
@@ -381,7 +414,7 @@ public abstract class VisualLibrary : IDisposable
 	{
 		var buffer = PrepareBuffer();
 
-		_cp437.GetBytes(text.AsSpan().Slice(offset, count), buffer);
+		CP437.GetBytes(text.AsSpan().Slice(offset, count), buffer);
 
 		WriteText(buffer.WrittenSpan);
 	}
@@ -419,13 +452,13 @@ public abstract class VisualLibrary : IDisposable
 
 	public void WriteText(char ch)
 	{
-		int byteCount = _cp437.GetMaxByteCount(1);
+		int byteCount = CP437.GetMaxByteCount(1);
 
 		var buffer = PrepareBuffer();
 
 		Span<char> chars = stackalloc char[] { ch };
 
-		_cp437.GetBytes(chars, buffer);
+		CP437.GetBytes(chars, buffer);
 
 		WriteText(buffer.WrittenSpan);
 	}
@@ -595,8 +628,7 @@ public abstract class VisualLibrary : IDisposable
 
 	public void PassiveNewLine()
 	{
-		if ((CursorX + 1 >= CharacterWidth)
-		 && (CursorY >= CharacterLineWindowEnd))
+		if (CursorY >= CharacterLineWindowEnd)
 		{
 			CursorX = CharacterWidth - 1;
 			_delayedNewLine = true;
