@@ -93,6 +93,7 @@ public class SystemDetector
 			psi.FileName = "/usr/sbin/system_profiler";
 			psi.Arguments = "SPHardwareDataType";
 			psi.RedirectStandardOutput = true;
+			psi.UseShellExecute = false;
 
 			using (var process = Process.Start(psi))
 			{
