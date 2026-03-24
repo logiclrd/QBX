@@ -46,3 +46,28 @@ VtInputThread::_InputThread
 }
 -> InteractDispatch::WriteCtrlKey
 -> HandleGenericKeyEvent
+-> HandleCtrlEvent
+{
+  sets a flag in the CtrlFlags member of CONSOLE_INFORMATION
+}
+
+then later, when unwinding the call stack, the console is unlocked:
+
+UnlockConsole
+-> ProcessCtrlEvents
+{
+  uses a service locator to find an implementation of IConsoleControl
+  I am assuming the call then flows into the Win32-specific implementation,
+  which seems to be supported by observations with a debugger attached
+}
+-> ConsoleControl::EndTask(process ID, e.g. CTRL_C_EVENT, CtrlFlags)
+{
+  populates a CONSOLEENDTASK structure
+}
+-> ConsoleControl::Control(ControlType::ConsoleEndTask, &params, sizeof)
+-> kernel API: ConsoleControl(command, ptr, len)
+
+I don't have access to the source code of ConsoleControl, I think exported
+by user32.dll, but a glance at its disassembly suggests that it hands off
+the request to csrss.exe using LPC
+
