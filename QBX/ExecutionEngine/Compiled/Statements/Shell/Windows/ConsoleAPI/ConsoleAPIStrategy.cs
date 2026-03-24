@@ -62,6 +62,7 @@ public class ConsoleAPIStrategy : ShellStrategy
 							context.Machine.Keyboard,
 							context.VisualLibrary,
 							cancellationToken,
+							ptyStdinPipe,
 							ptyStdoutPipe,
 							targetProcessID: processInformation.dwProcessId);
 
@@ -102,7 +103,7 @@ public class ConsoleAPIStrategy : ShellStrategy
 	public const string ProxyCommandLineSwitch = "/SHELLPROXYPROCESS ";
 
 	[SupportedOSPlatform(PlatformNames.Windows)]
-	public int StartProxy(Keyboard keyboard, VisualLibrary visualLibrary, CancellationToken cancellationToken, PipeStream ptyStdoutStream, int targetProcessID)
+	public int StartProxy(Keyboard keyboard, VisualLibrary visualLibrary, CancellationToken cancellationToken, PipeStream ptyStdinStream, PipeStream ptyStdoutStream, int targetProcessID)
 	{
 		var stdinPipe = new AnonymousPipeServerStream(PipeDirection.Out, HandleInheritability.Inheritable);
 		var stdoutPipe = new AnonymousPipeServerStream(PipeDirection.In, HandleInheritability.Inheritable);
@@ -116,9 +117,21 @@ public class ConsoleAPIStrategy : ShellStrategy
 			stdoutPipe,
 			visualLibrary);
 
-		// The PTY stdout pipe handle is not inheritable (per the design of AnonymousPipeServerStream).
-		// We need to make an inheritable duplicate and then close it once the child has inherited it.
+		// The PTY stdout pipe handles are not inheritable (per the design of AnonymousPipeServerStream).
+		// We need to make inheritable duplicates and then close them once the child has inherited them.
 		bool success = DuplicateHandle(
+			hSourceProcessHandle: GetCurrentProcess(),
+			hSourceHandle: ptyStdinStream.SafePipeHandle.DangerousGetHandle(),
+			hTargetProcessHandle: GetCurrentProcess(),
+			lpTargetHandle: out var ptyStdinHandleInheritable,
+			dwDesiredAccess: default,
+			bInheritHandle: true,
+			dwOptions: DuplicateOptions.DUPLICATE_SAME_ACCESS);
+
+		if (!success)
+			throw new Win32Exception();
+
+		success = DuplicateHandle(
 			hSourceProcessHandle: GetCurrentProcess(),
 			hSourceHandle: ptyStdoutStream.SafePipeHandle.DangerousGetHandle(),
 			hTargetProcessHandle: GetCurrentProcess(),
@@ -135,6 +148,7 @@ public class ConsoleAPIStrategy : ShellStrategy
 			string arguments = string.Join(" ",
 				stdinPipe.GetClientHandleAsString(),
 				stdoutPipe.GetClientHandleAsString(),
+				(long)ptyStdinHandleInheritable,
 				(long)ptyStdoutHandleInheritable,
 				targetProcessID);
 
@@ -143,10 +157,12 @@ public class ConsoleAPIStrategy : ShellStrategy
 				arguments: ProxyCommandLineSwitch + arguments,
 				stdinPipe.ClientSafePipeHandle.DangerousGetHandle(),
 				stdoutPipe.ClientSafePipeHandle.DangerousGetHandle(),
+				ptyStdinHandleInheritable,
 				ptyStdoutHandleInheritable);
 		}
 		finally
 		{
+			CloseHandle(ptyStdinHandleInheritable);
 			CloseHandle(ptyStdoutHandleInheritable);
 		}
 	}
@@ -313,8 +329,9 @@ public class ConsoleAPIStrategy : ShellStrategy
 
 		string stdinClientHandleString = arguments[0];
 		string stdoutClientHandleString = arguments[1];
-		string ptyStdoutHandleString = arguments[2];
-		string processIDAsString = arguments[3];
+		string ptyStdinHandleString = arguments[2];
+		string ptyStdoutHandleString = arguments[3];
+		string processIDAsString = arguments[4];
 
 		if (!int.TryParse(processIDAsString, out int processID))
 			return 3;
@@ -335,7 +352,8 @@ public class ConsoleAPIStrategy : ShellStrategy
 		var inputEventInputPipe = new AnonymousPipeClientStream(PipeDirection.In, stdinClientHandleString);
 		var snapshotOutputPipe = new AnonymousPipeClientStream(PipeDirection.Out, stdoutClientHandleString);
 
-		var ptyStdoutPipe = new AnonymousPipeClientStream(ptyStdoutHandleString);
+		var ptyStdinPipe = new AnonymousPipeClientStream(PipeDirection.Out, ptyStdinHandleString);
+		var ptyStdoutPipe = new AnonymousPipeClientStream(PipeDirection.In, ptyStdoutHandleString);
 
 		var triggerEvent = new AutoResetEvent(initialState: true);
 
@@ -343,7 +361,7 @@ public class ConsoleAPIStrategy : ShellStrategy
 		CreateBufferSnapshotSenderTask(snapshotOutputPipe, triggerEvent);
 
 		PumpInput(
-			() => new ConsoleInputInjector(processID),
+			() => new ConsoleInputInjector(ptyStdinPipe),
 			new ProxyKeyEventReceiver(inputEventInputPipe),
 			CancellationToken.None);
 

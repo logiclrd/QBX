@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.IO;
 using System.Runtime.Versioning;
 
 using QBX.Hardware;
@@ -14,18 +15,18 @@ namespace QBX.ExecutionEngine.Compiled.Statements.Shell.Windows.ConsoleAPI;
 [SupportedOSPlatform(PlatformNames.Windows)]
 class ConsoleInputInjector : InputInjector
 {
-	public ConsoleInputInjector(int processID)
+	public ConsoleInputInjector(Stream ptyStdinPipe)
 	{
-		_processID = processID;
-
 		_hStdIn = GetStdHandle(StandardHandles.STD_INPUT_HANDLE);
 
 		if (_hStdIn == INVALID_HANDLE_VALUE)
 			throw new Win32Exception();
+
+		_ptyStdinPipe = ptyStdinPipe;
 	}
 
 	IntPtr _hStdIn;
-	int _processID;
+	Stream _ptyStdinPipe;
 
 	public override void Inject(KeyEvent evt)
 	{
@@ -35,7 +36,7 @@ class ConsoleInputInjector : InputInjector
 		bool isCtrlKey = evt.Modifiers.CtrlKey && !evt.Modifiers.AltKey;
 
 		if (isCtrlKey && (evt.ScanCode == ScanCode.C))
-			GenerateConsoleCtrlEvent(ConsoleCtrlEvent.CTRL_C_EVENT, 0);
+			_ptyStdinPipe.WriteByte(3);
 		else if (isCtrlKey && (evt.SDLScanCode == SDL3.SDL.Scancode.Pause))
 			GenerateConsoleCtrlEvent(ConsoleCtrlEvent.CTRL_BREAK_EVENT, 0);
 		else
