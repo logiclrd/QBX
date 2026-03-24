@@ -1,0 +1,48 @@
+Client side:
+
+WM_KEYDOWN/WM_KEYUP handlers in TerminalContainer_MessageHook in TerminalContainer.cs
+-> TerminalSendKeyEvent
+-> HwndTerminal::_SendKeyEvent
+-> Terminal::SendKeyEvent
+{
+  receives { isKeyDown, VK, scanCode, character }, builds INPUT_RECORD structure
+}
+-> TerminalInput::HandleKey
+-> _makeWin32Output OR _encodeKitty OR _encodeRegular
+
+
+Server side:
+
+VtInputThread::_InputThread
+-> StateMachine::ProcessString
+{
+  calls FindActionableControlCharacter
+  calls _ActionPrintString on non-control-characters at the front of the string
+  calls ProcessCharacter for each remaining character in the string
+}
+-> StateMachine::ProcessCharacter
+{
+  checks for C1 control characters
+  checks for ESC introducing escape sequences
+  dispatches the event based on the state
+}
+-> StateMachine::_EventGround
+{
+  checks for C0 control characters
+}
+-> StateMachine::_ActionExecute
+{
+  calls ActionExecute on an injected implementation of IStateMachineEngine
+}
+-> InputStateMachineEngine::ActionExecute
+-> InputStateMachineEngine::_DoControlCharacter
+{
+  checks for C0 control characters
+  calls _GenerateKeyFromChar
+}
+-> InputStateMachineEngine::_WriteSingleKey
+{
+  calls WriteCtrlKey on an injected implementation of IInteractDispatch
+}
+-> InteractDispatch::WriteCtrlKey
+-> HandleGenericKeyEvent
