@@ -25,12 +25,12 @@ class Program
 
 	static int Main()
 	{
-		if (ShellStatement.IsProxyCommandLine(Environment.CommandLine))
+		if (ConsoleAPIStrategy.IsProxyCommandLine(Environment.CommandLine))
 		{
 			if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 				return 1;
 
-			return ShellStatement.ExecuteInputProxy();
+			return ConsoleAPIStrategy.ExecuteProxy();
 		}
 
 		DebugExceptionHelper.Install();
