@@ -11,7 +11,6 @@ using QBX.ExecutionEngine;
 using QBX.ExecutionEngine.Execution.Events;
 using QBX.Firmware;
 using QBX.Hardware;
-using QBX.Parser;
 using QBX.QuickLibraries;
 
 namespace QBX.DevelopmentEnvironment;

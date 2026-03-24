@@ -1,5 +1,4 @@
 ﻿using System;
-using System.ComponentModel.DataAnnotations;
 using System.Runtime.InteropServices;
 
 using QBX.Hardware;
@@ -847,6 +846,62 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 
 				plane.Slice(copyOffset).CopyTo(plane);
 				plane.Slice(plane.Length - copyOffset).Fill(0);
+			}
+		}
+	}
+
+	public override void ScrollDown(int scanCount, int windowStart, int windowEnd)
+	{
+		using (HidePointerForOperationIfPointerAware(0, windowStart, Width, windowEnd + scanCount))
+		{
+			var vramSpan = Array.VRAM.AsSpan();
+
+			int planeMask = Array.Graphics.Registers.BitMask;
+
+			int windowOffset = windowStart * _stride;
+			int windowLength = (windowEnd - windowStart + 1) * _stride;
+
+			int copyOffset = scanCount * _stride;
+			int copySize = windowLength - copyOffset;
+
+			if ((planeMask & 1) != 0)
+			{
+				var plane = vramSpan.Slice(_plane0Offset, _planeBytesUsed);
+
+				plane = plane.Slice(windowOffset, windowLength);
+
+				plane.Slice(0, copySize).CopyTo(plane.Slice(copyOffset));
+				plane.Slice(0, copyOffset).Fill(0);
+			}
+
+			if ((planeMask & 2) != 0)
+			{
+				var plane = vramSpan.Slice(_plane1Offset, _planeBytesUsed);
+
+				plane = plane.Slice(windowOffset, windowLength);
+
+				plane.Slice(0, copySize).CopyTo(plane.Slice(copyOffset));
+				plane.Slice(0, copyOffset).Fill(0);
+			}
+
+			if ((planeMask & 4) != 0)
+			{
+				var plane = vramSpan.Slice(_plane2Offset, _planeBytesUsed);
+
+				plane = plane.Slice(windowOffset, windowLength);
+
+				plane.Slice(0, copySize).CopyTo(plane.Slice(copyOffset));
+				plane.Slice(0, copyOffset).Fill(0);
+			}
+
+			if ((planeMask & 8) != 0)
+			{
+				var plane = vramSpan.Slice(_plane3Offset, _planeBytesUsed);
+
+				plane = plane.Slice(windowOffset, windowLength);
+
+				plane.Slice(0, copySize).CopyTo(plane.Slice(copyOffset));
+				plane.Slice(0, copyOffset).Fill(0);
 			}
 		}
 	}

@@ -6,7 +6,7 @@ using SDL3;
 
 using QBX.Hardware;
 
-using ShellStatement = QBX.ExecutionEngine.Compiled.Statements.ShellStatement;
+using QBX.ExecutionEngine.Compiled.Statements.Shell.Windows.ConsoleAPI;
 
 namespace QBX;
 

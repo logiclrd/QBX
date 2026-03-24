@@ -395,6 +395,23 @@ public class GraphicsLibrary_8bppFlat : GraphicsLibrary
 		}
 	}
 
+	public override void ScrollDown(int scanCount, int windowStart, int windowEnd)
+	{
+		using (HidePointerForOperationIfPointerAware(0, windowStart, Width, windowEnd + scanCount))
+		{
+			int windowOffset = windowStart * Width;
+			int windowLength = (windowEnd - windowStart + 1) * Width;
+
+			int copyOffset = scanCount * Width;
+			int copySize = windowLength - copyOffset;
+
+			var vram = Array.VRAM.AsSpan().Slice(StartAddress + windowOffset, windowLength);
+
+			vram.Slice(0, copySize).CopyTo(vram.Slice(copyOffset));
+			vram.Slice(0, copyOffset).Fill(0);
+		}
+	}
+
 	protected override void DrawCharacterScan(int x, int y, int characterWidth, byte glyphScan)
 	{
 		int o = y * Width + x;

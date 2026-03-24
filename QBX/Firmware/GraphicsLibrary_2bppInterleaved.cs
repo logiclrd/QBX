@@ -704,8 +704,6 @@ public class GraphicsLibrary_2bppInterleaved : GraphicsLibrary
 					oddFillScanCount = scanCount >> 1;
 				}
 
-				int halfHeight = (windowEnd - windowStart + 1) >> 1;
-
 				int oddFillOffset = (oddTotalScanCount - oddFillScanCount) * _stride;
 				int evenFillOffset = (evenTotalScanCount - evenFillScanCount) * _stride;
 
@@ -719,6 +717,160 @@ public class GraphicsLibrary_2bppInterleaved : GraphicsLibrary
 				{
 					plane0.Slice(evenFillOffset).Fill(0);
 					plane2.Slice(evenFillOffset).Fill(0);
+				}
+			}
+		}
+	}
+
+	public override void ScrollDown(int scanCount, int windowStart, int windowEnd)
+	{
+		if (scanCount == 0)
+			return;
+
+		using (HidePointerForOperationIfPointerAware(0, windowStart, Width, windowEnd + scanCount))
+		{
+			var vramSpan = Array.VRAM.AsSpan();
+
+			var plane0 = vramSpan.Slice(_plane0Offset, _planeBytesUsed);
+			var plane1 = vramSpan.Slice(_plane1Offset, _planeBytesUsed);
+			var plane2 = vramSpan.Slice(_plane2Offset, _planeBytesUsed);
+			var plane3 = vramSpan.Slice(_plane3Offset, _planeBytesUsed);
+
+			int windowOffset = windowStart * _stride;
+			int windowLength = (windowEnd - windowStart + 1) * _stride;
+
+			plane0 = plane0.Slice(windowOffset, windowLength);
+			plane1 = plane1.Slice(windowOffset, windowLength);
+			plane2 = plane2.Slice(windowOffset, windowLength);
+			plane3 = plane3.Slice(windowOffset, windowLength);
+
+			if ((scanCount & 1) == 0)
+			{
+				// Even number of scans: planes do not swap.
+				int copyOffset = (scanCount >> 1) * _stride;
+				int copySize = windowLength - copyOffset;
+
+				plane0.Slice(0, copySize).CopyTo(plane0.Slice(copyOffset));
+				plane2.Slice(0, copySize).CopyTo(plane2.Slice(copyOffset));
+				plane1.Slice(0, copySize).CopyTo(plane1.Slice(copyOffset));
+				plane3.Slice(0, copySize).CopyTo(plane3.Slice(copyOffset));
+
+				plane0.Slice(0, copyOffset).Fill(0);
+				plane1.Slice(0, copyOffset).Fill(0);
+				plane2.Slice(0, copyOffset).Fill(0);
+				plane3.Slice(0, copyOffset).Fill(0);
+			}
+			else
+			{
+				// Odd number of scans: planes do swap.
+				int windowScans = windowEnd - windowStart + 1;
+
+				int evenFirstScan;
+				int oddFirstScan;
+
+				int evenTotalScanCount;
+				int oddTotalScanCount;
+
+				if ((windowStart & 1) == 0)
+				{
+					evenFirstScan = windowStart >> 1;
+					oddFirstScan = evenFirstScan;
+
+					evenTotalScanCount = windowScans >> 1;
+					oddTotalScanCount = ((windowScans - 1) >> 1) + 1;
+				}
+				else
+				{
+					evenFirstScan = (windowStart >> 1) + 1;
+					oddFirstScan = evenFirstScan - 1;
+
+					evenTotalScanCount = (windowScans - 1) >> 1;
+					oddTotalScanCount = (windowScans >> 1) + 1;
+				}
+
+				int evenLastScan = evenFirstScan + evenTotalScanCount - 1;
+				int oddLastScan = oddFirstScan + oddTotalScanCount - 1;
+
+				plane0 = plane0.Slice(evenFirstScan * _stride, evenTotalScanCount * _stride);
+				plane1 = plane1.Slice(oddFirstScan * _stride, oddTotalScanCount * _stride);
+				plane2 = plane2.Slice(evenFirstScan * _stride, evenTotalScanCount * _stride);
+				plane3 = plane3.Slice(oddFirstScan * _stride, oddTotalScanCount * _stride);
+
+				int offset02 = (evenTotalScanCount - 1) * _stride;
+				int offset13 = (oddTotalScanCount - 1) * _stride;
+
+				int copyCount = Height - scanCount;
+				int copyOffset = (scanCount >> 1) * _stride;
+
+				var copy0 = plane0;
+				var copy1 = plane1;
+				var copy2 = plane2;
+				var copy3 = plane3;
+
+				if (evenLastScan < oddLastScan)
+				{
+					Span<byte> tmp;
+
+					tmp = copy0;
+					copy0 = copy1;
+					copy1 = tmp;
+
+					tmp = copy2;
+					copy2 = copy3;
+					copy3 = tmp;
+
+					int tmpOffset;
+
+					tmpOffset = offset02;
+					offset02 = offset13;
+					offset13 = tmpOffset;
+				}
+
+				for (int i = 0; i < copyCount; i++)
+				{
+					copy0.Slice(offset02, _stride).CopyTo(copy1.Slice(offset13));
+					copy2.Slice(offset02, _stride).CopyTo(copy3.Slice(offset13));
+
+					Span<byte> tmp;
+
+					tmp = copy0;
+					copy0 = copy1;
+					copy1 = tmp.Slice(_stride);
+
+					tmp = copy2;
+					copy2 = copy3;
+					copy3 = tmp.Slice(_stride);
+
+					int tmpOffset = offset02;
+
+					offset02 = offset13 - _stride;
+					offset13 = tmpOffset;
+				}
+
+				int evenFillScanCount;
+				int oddFillScanCount;
+
+				if ((windowStart & 1) == 0)
+				{
+					evenFillScanCount = scanCount >> 1;
+					oddFillScanCount = (scanCount - 1) >> 1;
+				}
+				else
+				{
+					evenFillScanCount = (scanCount - 1) >> 1;
+					oddFillScanCount = scanCount >> 1;
+				}
+
+				if (oddFillScanCount > 0)
+				{
+					plane1.Slice(oddFirstScan * _stride, oddFillScanCount * _stride).Fill(0);
+					plane3.Slice(oddFirstScan * _stride, oddFillScanCount * _stride).Fill(0);
+				}
+
+				if (evenFillScanCount > 0)
+				{
+					plane0.Slice(evenFirstScan * _stride, evenFillScanCount * _stride).Fill(0);
+					plane2.Slice(evenFirstScan * _stride, evenFillScanCount * _stride).Fill(0);
 				}
 			}
 		}

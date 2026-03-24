@@ -122,15 +122,6 @@ public partial class ShellStatement(CodeModel.Statements.Statement source) : Exe
 		}
 	}
 
-	abstract class InputInjector : IDisposable
-	{
-		public abstract void Inject(KeyEvent evt);
-
-		public virtual void Dispose()
-		{
-		}
-	}
-
 	class TextWriterInjector(TextWriter sink) : InputInjector
 	{
 		public void InjectByte(byte b)

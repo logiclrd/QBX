@@ -2,14 +2,13 @@
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Runtime.Versioning;
 using System.Text;
 using System.Text.RegularExpressions;
 
-using Microsoft.Win32.SafeHandles;
-
 using QBX.DevelopmentEnvironment.Dialogs.Widgets;
 using QBX.Hardware;
+
+using static QBX.Platform.Windows.NativeMethods;
 
 namespace QBX.DevelopmentEnvironment.Dialogs;
 
@@ -336,39 +335,4 @@ public abstract class DialogWithDirectoryList : Dialog
 			}
 		}
 	}
-
-	const string Windows = "Windows";
-
-	const uint FILE_SHARE_READWRITE = 0x00000003;
-	const uint FILE_SHARE_DELETE = 0x00000004;
-
-	const uint OPEN_EXISTING = 3;
-
-	const uint FILE_FLAG_BACKUP_SEMANTICS = 0x02000000;
-
-	[DllImport("kernel32", CharSet = CharSet.Unicode, SetLastError = true)]
-	[SupportedOSPlatform(Windows)]
-	static extern SafeFileHandle CreateFileW(
-		string lpFileName,
-		uint dwDesiredAccess,
-		uint dwShareMode,
-		IntPtr lpSecurityAttributes,
-		uint dwCreationDisposition,
-		uint dwFlagsAndAttributes,
-		IntPtr hTemplateFile);
-
-	const uint FILE_NAME_NORMALIZED = 0x0;
-
-	const uint VOLUME_NAME_NONE = 0x4;
-
-	[DllImport("kernel32", CharSet = CharSet.Unicode, SetLastError = true)]
-	[SupportedOSPlatform(Windows)]
-	static extern int GetFinalPathNameByHandleW(
-		SafeFileHandle hFile,
-		StringBuilder lpszFilePath,
-		int cchFilePath,
-		uint dwFlags);
-
-	const int ERROR_NONE = 0;
-	const int ERROR_INSUFFICIENT_BUFFER = 122;
 }

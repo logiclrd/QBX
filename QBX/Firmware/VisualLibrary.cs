@@ -147,8 +147,8 @@ public abstract class VisualLibrary : IDisposable
 		if (windowStart > windowEnd)
 			(windowStart, windowEnd) = (windowEnd, windowStart);
 
-		CharacterLineWindowStart = int.Clamp(windowStart, 0, Height - 1);
-		CharacterLineWindowEnd = int.Clamp(windowEnd, 0, Height - 1);
+		CharacterLineWindowStart = windowStart.Clamp(0, Height - 1);
+		CharacterLineWindowEnd = windowEnd.Clamp(0, Height - 1);
 
 		// Clamp CursorY
 		MoveCursor(CursorX, CursorY);
@@ -161,8 +161,8 @@ public abstract class VisualLibrary : IDisposable
 
 	public void MoveCursor(int x, int y)
 	{
-		x = Math.Clamp(x, 0, CharacterWidth - 1);
-		y = Math.Clamp(y, CharacterLineWindowStart, CharacterLineWindowEnd);
+		x = x.Clamp(0, CharacterWidth - 1);
+		y = y.Clamp(CharacterLineWindowStart, CharacterLineWindowEnd);
 
 		CursorX = x;
 		CursorY = y;
@@ -220,9 +220,12 @@ public abstract class VisualLibrary : IDisposable
 						break;
 					case CRLFSemantics.Terminal:
 						if (cursorY < CharacterLineWindowEnd)
+						{
 							cursorY++;
+							updateOffset();
+						}
 						else
-							ScrollText();
+							ScrollTextUp();
 						break;
 				}
 
@@ -254,6 +257,7 @@ public abstract class VisualLibrary : IDisposable
 						break;
 					case CRLFSemantics.Terminal:
 						cursorX = 0;
+						updateOffset();
 						break;
 				}
 
@@ -313,7 +317,7 @@ public abstract class VisualLibrary : IDisposable
 				if (cursorY < CharacterLineWindowEnd)
 					cursorY++;
 				else
-					ScrollText();
+					ScrollTextUp();
 
 				updateOffset();
 
@@ -617,7 +621,7 @@ public abstract class VisualLibrary : IDisposable
 		newX = 0;
 
 		if (newY == CharacterLineWindowEnd)
-			ScrollText();
+			ScrollTextUp();
 		else
 			newY++;
 
@@ -646,7 +650,8 @@ public abstract class VisualLibrary : IDisposable
 	public abstract byte GetCharacter(int x, int y);
 	public abstract byte GetAttribute(int x, int y);
 
-	public abstract void ScrollText();
+	public abstract void ScrollTextUp();
+	public abstract void ScrollTextDown();
 	public abstract void ScrollTextWindow(int x1, int y1, int x2, int y2, int numLines, byte fillAttribute);
 
 	public bool EnablePointerAwareDrawing = false;

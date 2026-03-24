@@ -1977,7 +1977,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 					if (CursorY < CharacterLineWindowEnd)
 						CursorY++;
 					else
-						ScrollText();
+						ScrollTextUp();
 				};
 
 			Action updateOffset = () => { };
@@ -2025,9 +2025,17 @@ public abstract class GraphicsLibrary : VisualLibrary
 		}
 	}
 
-	public override void ScrollText()
+	public override void ScrollTextUp()
 	{
 		ScrollUp(
+			CharacterScans,
+			CharacterScans * CharacterLineWindowStart,
+			CharacterScans * (CharacterLineWindowEnd + 1) - 1);
+	}
+
+	public override void ScrollTextDown()
+	{
+		ScrollDown(
 			CharacterScans,
 			CharacterScans * CharacterLineWindowStart,
 			CharacterScans * (CharacterLineWindowEnd + 1) - 1);
@@ -2038,7 +2046,13 @@ public abstract class GraphicsLibrary : VisualLibrary
 		ScrollUp(scanCount, 0, Height - 1);
 	}
 
+	public void ScrollDown(int scanCount)
+	{
+		ScrollDown(scanCount, 0, Height - 1);
+	}
+
 	public abstract void ScrollUp(int scanCount, int windowStart, int windowEnd);
+	public abstract void ScrollDown(int scanCount, int windowStart, int windowEnd);
 
 	[ThreadStatic]
 	static byte[]? s_scrollSpriteBuffer;

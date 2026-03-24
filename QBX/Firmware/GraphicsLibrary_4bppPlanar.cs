@@ -955,6 +955,56 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 		}
 	}
 
+	public override void ScrollDown(int scanCount, int windowStart, int windowEnd)
+	{
+		var vramSpan = Array.VRAM.AsSpan();
+
+		using (HidePointerForOperationIfPointerAware(0, windowStart, Width, windowEnd + scanCount))
+		{
+			int windowOffset = windowStart * _stride;
+			int windowLength = (windowEnd - windowStart + 1) * _stride;
+
+			int copyOffset = scanCount * _stride;
+			int copySize = windowLength - copyOffset;
+
+			{
+				var plane = vramSpan.Slice(_plane0Offset, _planeBytesUsed);
+
+				plane = plane.Slice(windowOffset, windowLength);
+
+				plane.Slice(0, copySize).CopyTo(plane.Slice(copyOffset));
+				plane.Slice(0, copyOffset).Fill(0);
+			}
+
+			{
+				var plane = vramSpan.Slice(_plane1Offset, _planeBytesUsed);
+
+				plane = plane.Slice(windowOffset, windowLength);
+
+				plane.Slice(0, copySize).CopyTo(plane.Slice(copyOffset));
+				plane.Slice(0, copyOffset).Fill(0);
+			}
+
+			{
+				var plane = vramSpan.Slice(_plane2Offset, _planeBytesUsed);
+
+				plane = plane.Slice(windowOffset, windowLength);
+
+				plane.Slice(0, copySize).CopyTo(plane.Slice(copyOffset));
+				plane.Slice(0, copyOffset).Fill(0);
+			}
+
+			{
+				var plane = vramSpan.Slice(_plane3Offset, _planeBytesUsed);
+
+				plane = plane.Slice(windowOffset, windowLength);
+
+				plane.Slice(0, copySize).CopyTo(plane.Slice(copyOffset));
+				plane.Slice(0, copyOffset).Fill(0);
+			}
+		}
+	}
+
 	protected override void DrawCharacterScan(int x, int y, int characterWidth, byte glyphScan)
 	{
 		if ((x & 7) != 0)

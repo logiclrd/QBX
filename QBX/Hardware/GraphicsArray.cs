@@ -916,13 +916,15 @@ public class GraphicsArray : IMemory
 		{
 			int offset = address - Graphics.MemoryMapBaseAddress;
 
+			if (offset >= Graphics.MemoryMapSize)
+				return 0;
+
 			if (Graphics.HostOddEvenRead)
 				offset = (offset >> 1) | ((offset & 1) << 16);
 
 			int linearOffset = offset + Graphics.MemoryMapReadOffset;
 
-			if ((offset < Graphics.MemoryMapSize)
-			 && (linearOffset < VRAM.Length))
+			if (linearOffset < VRAM.Length)
 				return VRAM[linearOffset];
 
 			return 0;
@@ -931,16 +933,15 @@ public class GraphicsArray : IMemory
 		{
 			int offset = address - Graphics.MemoryMapBaseAddress;
 
-			if (Sequencer.HostOddEvenWrite)
+			if (offset < Graphics.MemoryMapSize)
 			{
-				offset = (offset >> 1) | ((offset & 1) << 16);
+				if (Sequencer.HostOddEvenWrite)
+				{
+					offset = (offset >> 1) | ((offset & 1) << 16);
 
-				if (offset < Graphics.MemoryMapSize)
 					VRAM[offset] = value;
-			}
-			else
-			{
-				if (offset < Graphics.MemoryMapSize)
+				}
+				else
 				{
 					if (Sequencer.Plane0WriteEnable)
 						VRAM[offset] = value;

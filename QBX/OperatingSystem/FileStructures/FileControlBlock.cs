@@ -3,6 +3,7 @@ using System.IO;
 
 using QBX.Firmware.Fonts;
 using QBX.Hardware;
+using QBX.Utility;
 
 namespace QBX.OperatingSystem.FileStructures;
 
@@ -213,7 +214,9 @@ public class FileControlBlock
 			dot = inputLength;
 
 		int nameLength = Math.Min(dot, 8);
-		int extLength = Math.Clamp(inputLength - dot - 1, 0, 3);
+		int extLength = inputLength - dot - 1;
+
+		extLength = extLength.Clamp(0, 3);
 
 		var outSpan = fileNameBytes;
 

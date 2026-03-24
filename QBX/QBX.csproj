@@ -47,4 +47,8 @@
 		<EmbeddedResource Include="DevelopmentEnvironment\WindowIcon.ppm" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="ExecutionEngine\Compiled\Statements\Shell\Windows\Platform\" />
+	</ItemGroup>
+
 </Project>

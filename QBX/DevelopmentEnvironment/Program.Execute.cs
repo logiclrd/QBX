@@ -256,7 +256,7 @@ public partial class Program
 
 			if (savedCursorY == outputLibrary.CharacterHeight - 1)
 			{
-				outputLibrary.ScrollText();
+				outputLibrary.ScrollTextUp();
 				savedCursorY--;
 			}
 		}

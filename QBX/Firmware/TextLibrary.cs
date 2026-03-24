@@ -100,6 +100,21 @@ public class TextLibrary : VisualLibrary
 		return new CursorVisibleScope(this);
 	}
 
+	class CursorHiddenScope(TextLibrary owner) : IDisposable
+	{
+		public void Dispose() => owner.ShowCursor();
+	}
+
+	public IDisposable? HideCursorForScope()
+	{
+		if (!IsCursorVisible)
+			return null;
+
+		HideCursor();
+
+		return new CursorHiddenScope(this);
+	}
+
 	public bool IsCursorVisible
 	{
 		get
@@ -336,7 +351,7 @@ public class TextLibrary : VisualLibrary
 					var plane0 = vramSpan.Slice(0x00000, windowEndOffset);
 					var plane1 = vramSpan.Slice(0x10000, windowEndOffset);
 
-					ScrollText(
+					ScrollTextUp(
 						plane0.Slice(scrollOffset, plane0.Length - scrollOffset),
 						plane1.Slice(scrollOffset, plane1.Length - scrollOffset),
 						clearLastLineOnScroll);
@@ -469,7 +484,7 @@ public class TextLibrary : VisualLibrary
 						cursorY++;
 					else
 					{
-						ScrollText(Span<byte>.Empty, plane1.Slice(scrollOffset, plane1.Length - scrollOffset), clearLastLineOnScroll);
+						ScrollTextUp(Span<byte>.Empty, plane1.Slice(scrollOffset, plane1.Length - scrollOffset), clearLastLineOnScroll);
 						o -= Width;
 					}
 				}
@@ -513,7 +528,7 @@ public class TextLibrary : VisualLibrary
 		return plane1[offset];
 	}
 
-	public override void ScrollText()
+	public override void ScrollTextUp()
 	{
 		Span<byte> vramSpan = Array.VRAM;
 
@@ -556,11 +571,11 @@ public class TextLibrary : VisualLibrary
 			plane0 = plane0.Slice(windowOffset, windowLength);
 			plane1 = plane1.Slice(windowOffset, windowLength);
 
-			ScrollText(plane0, plane1, clearLastLine);
+			ScrollTextUp(plane0, plane1, clearLastLine);
 		}
 	}
 
-	void ScrollText(Span<byte> plane0, Span<byte> plane1, bool clearLastLine)
+	void ScrollTextUp(Span<byte> plane0, Span<byte> plane1, bool clearLastLine)
 	{
 		using (HidePointerForOperationIfPointerAware())
 		{
@@ -607,6 +622,111 @@ public class TextLibrary : VisualLibrary
 				}
 
 				if (clearLastLine)
+					plane1.Slice(x1, width).Fill(Attributes);
+			}
+		}
+	}
+
+	public override void ScrollTextDown()
+	{
+		Span<byte> vramSpan = Array.VRAM;
+
+		vramSpan = vramSpan.Slice(StartAddress);
+
+		var plane0 = vramSpan.Slice(0x00000, 0x10000);
+		var plane1 = vramSpan.Slice(0x10000, 0x10000);
+
+		int characterLineWindowLines = CharacterLineWindowEnd - CharacterLineWindowStart + 1;
+
+		int windowOffset = CharacterLineWindowStart * Width;
+		int windowLength = characterLineWindowLines * Width;
+
+		bool clearLastLine = true;
+
+		if (CharacterLineWindowStart < _clipRect.Y1)
+		{
+			int difference = _clipRect.Y1 - CharacterLineWindowStart;
+
+			windowOffset += difference * Width;
+			windowLength -= difference * Width;
+		}
+
+		if (CharacterLineWindowEnd > _clipRect.Y2)
+		{
+			int difference = _clipRect.Y2 - CharacterLineWindowEnd - 1;
+
+			if (difference > 0)
+			{
+				windowLength -= difference * Width;
+				clearLastLine = false;
+			}
+		}
+
+		if (windowOffset + windowLength > plane0.Length)
+			windowLength = plane0.Length - windowOffset;
+
+		if (windowLength > 0)
+		{
+			plane0 = plane0.Slice(windowOffset, windowLength);
+			plane1 = plane1.Slice(windowOffset, windowLength);
+
+			ScrollTextDown(plane0, plane1, clearLastLine);
+		}
+	}
+
+	void ScrollTextDown(Span<byte> plane0, Span<byte> plane1, bool clearFirstLine)
+	{
+		using (HidePointerForOperationIfPointerAware())
+		{
+			int x1 = Math.Max(0, _clipRect.X1);
+			int x2 = Math.Min(CharacterWidth - 1, _clipRect.X2);
+
+			int width = x2 - x1 + 1;
+
+			if (width == Width)
+			{
+				if (plane0.Length > Width)
+				{
+					plane0.Slice(0, plane0.Length - Width).CopyTo(plane0.Slice(Width));
+					if (clearFirstLine)
+						plane0.Slice(0, Width).Fill((byte)' ');
+				}
+				else if (clearFirstLine)
+					plane0.Fill((byte)' ');
+
+				if (plane1.Length > Width)
+				{
+					plane1.Slice(0, plane1.Length - Width).CopyTo(plane1.Slice(Width));
+					if (clearFirstLine)
+						plane1.Slice(0, Width).Fill((byte)' ');
+				}
+				else if (clearFirstLine)
+					plane1.Fill(Attributes);
+			}
+			else
+			{
+				int lineOffset = plane0.Length - (plane0.Length % Width);
+
+				while (plane0.Length > Width)
+				{
+					lineOffset -= Width;
+
+					plane0.Slice(x1 + lineOffset, width).CopyTo(plane0.Slice(x1 + lineOffset + Width));
+				}
+
+				if (clearFirstLine)
+					plane0.Slice(x1, width).Fill((byte)' ');
+
+				lineOffset = plane1.Length - (plane1.Length % Width);
+
+				while (plane1.Length > Width)
+				{
+					lineOffset -= Width;
+
+					plane1.Slice(x1 + lineOffset, width).CopyTo(plane1.Slice(x1 + lineOffset + Width));
+				}
+
+				if (clearFirstLine)
 					plane1.Slice(x1, width).Fill(Attributes);
 			}
 		}
