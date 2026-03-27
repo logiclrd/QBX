@@ -20,7 +20,7 @@ using ExecutionContext = QBX.ExecutionEngine.Execution.ExecutionContext;
 
 namespace QBX.ExecutionEngine.Compiled.Statements.Shell.Windows.ConsoleAPI;
 
-public class ConsoleAPIStrategy : ShellStrategy
+public class ConsoleAPIStrategy : WindowsConsoleShellStrategy
 {
 	//public override ProcessCreationFlags AdditionalProcessCreationFlags => ProcessCreationFlags.NewProcessGroup;
 

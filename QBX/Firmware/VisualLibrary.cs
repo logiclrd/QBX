@@ -215,10 +215,11 @@ public abstract class VisualLibrary : IDisposable
 				switch (CRLFSemantics)
 				{
 					case CRLFSemantics.File:
+					case CRLFSemantics.Terminal:
 						beginNewLine();
 						updateOffset();
 						break;
-					case CRLFSemantics.Terminal:
+					case CRLFSemantics.Serial:
 						if (cursorY < CharacterLineWindowEnd)
 						{
 							cursorY++;
@@ -256,6 +257,7 @@ public abstract class VisualLibrary : IDisposable
 						updateOffset();
 						break;
 					case CRLFSemantics.Terminal:
+					case CRLFSemantics.Serial:
 						cursorX = 0;
 						updateOffset();
 						break;

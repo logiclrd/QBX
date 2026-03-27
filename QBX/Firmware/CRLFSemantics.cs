@@ -3,5 +3,6 @@
 public enum CRLFSemantics
 {
 	File,
+	Serial,
 	Terminal,
 }

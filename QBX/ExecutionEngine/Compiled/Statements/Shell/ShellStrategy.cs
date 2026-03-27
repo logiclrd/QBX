@@ -1,21 +1,13 @@
 ﻿using System;
-using System.IO.Pipes;
 using System.Threading;
 using System.Threading.Tasks;
 
-using QBX.Platform.Windows;
 using QBX.Terminal;
-
-using ExecutionContext = QBX.ExecutionEngine.Execution.ExecutionContext;
 
 namespace QBX.ExecutionEngine.Compiled.Statements.Shell;
 
 public abstract class ShellStrategy
 {
-	public virtual ProcessCreationFlags AdditionalProcessCreationFlags => 0;
-
-	public abstract void Execute(ExecutionContext context, SafePseudoConsoleHandle hPC, AnonymousPipeServerStream stdinPipe, AnonymousPipeServerStream stdoutPipe, PROCESS_INFORMATION processInformation);
-
 	protected static Task CreateInputTask<TInjector>(IKeyEventSource keyboard, CancellationToken cancellationToken)
 		where TInjector : InputInjector, new()
 	{
@@ -51,11 +43,34 @@ public abstract class ShellStrategy
 		catch { }
 	}
 
+	static IDisposable? MaybeLock(Lock? maybeLock)
+	{
+		if (maybeLock == null)
+			return null;
+
+		maybeLock.Enter();
+
+		return new LockScope(maybeLock);
+	}
+
+	class LockScope(Lock @lock) : IDisposable
+	{
+		bool _isDisposed;
+
+		public void Dispose()
+		{
+			if (!_isDisposed)
+			{
+				_isDisposed = true;
+				@lock.Exit();
+			}
+		}
+	}
+
 	protected Task CreateOutputTask(
 		Func<int> read,
-		Func<int, byte> convertToByte,
 		Action<byte, Action<byte>> processControlSequenceBytes,
-		Lock ioSync,
+		Lock? ioSync,
 		TerminalEmulator target)
 	{
 		return Task.Run(
@@ -64,7 +79,7 @@ public abstract class ShellStrategy
 				Action<byte> emit =
 					b =>
 					{
-						lock (ioSync)
+						using (MaybeLock(ioSync))
 							target.Write(b);
 					};
 
@@ -75,7 +90,7 @@ public abstract class ShellStrategy
 					if (b < 0)
 						break;
 
-					processControlSequenceBytes(convertToByte(b), emit);
+					processControlSequenceBytes(unchecked((byte)b), emit);
 				}
 			});
 	}

@@ -1,21 +1,21 @@
-using System.IO.Pipes;
+using System.Diagnostics;
+using System.IO;
 using System.Threading;
 
 using QBX.Firmware;
-using QBX.Platform.Windows;
 using QBX.Terminal;
 
 using ExecutionContext = QBX.ExecutionEngine.Execution.ExecutionContext;
 
-namespace QBX.ExecutionEngine.Compiled.Statements.Shell.Windows.ConsolePTY;
+namespace QBX.ExecutionEngine.Compiled.Statements.Shell.Unix;
 
-public class ConsolePTYStrategy : WindowsConsoleShellStrategy
+public class TTYStrategy : ShellStrategy
 {
-	public override void Execute(ExecutionContext context, SafePseudoConsoleHandle hPC, AnonymousPipeServerStream stdinPipe, AnonymousPipeServerStream stdoutPipe, PROCESS_INFORMATION processInformation)
+	public void Execute(ExecutionContext context, Stream ptyPipe, int processID)
 	{
 		const byte ETX = 3;
 
-		void SendCtrlC() => stdinPipe.WriteByte(ETX);
+		void SendCtrlC() => ptyPipe.WriteByte(ETX);
 
 		using (context.Machine.DOS.TakeOverBreakEventForScope(SendCtrlC))
 		{
@@ -33,7 +33,7 @@ public class ConsolePTYStrategy : WindowsConsoleShellStrategy
 
 				using (textLibrary?.ShowCursorForScope())
 				{
-					var terminalInput = new TerminalInput(stdinPipe, context.Machine);
+					var terminalInput = new TerminalInput(ptyPipe, context.Machine);
 
 					var terminal = new TerminalEmulator(context.VisualLibrary);
 
@@ -45,14 +45,12 @@ public class ConsolePTYStrategy : WindowsConsoleShellStrategy
 						cancellationToken);
 
 					var outputTask = CreateOutputTask(
-						stdoutPipe.ReadByte,
+						() => ptyPipe.ReadByte(),
 						controlSequenceProcessor.ProcessByte,
 						ioSync: null,
 						terminal);
 
-					new ProcessWaitHandle(processInformation.hProcess).WaitOne();
-
-					hPC.Close();
+					Process.GetProcessById(processID).WaitForExit();
 
 					outputTask.Wait();
 
@@ -66,4 +64,3 @@ public class ConsolePTYStrategy : WindowsConsoleShellStrategy
 		}
 	}
 }
-

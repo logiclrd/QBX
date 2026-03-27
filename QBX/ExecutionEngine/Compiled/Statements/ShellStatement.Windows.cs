@@ -8,13 +8,13 @@ using System.Runtime.Versioning;
 using QBX.Platform.Windows;
 using QBX.Utility;
 
+using QBX.ExecutionEngine.Compiled.Statements.Shell.Windows;
 using QBX.ExecutionEngine.Compiled.Statements.Shell.Windows.ConsoleAPI;
 using QBX.ExecutionEngine.Compiled.Statements.Shell.Windows.ConsolePTY;
 
 using ExecutionContext = QBX.ExecutionEngine.Execution.ExecutionContext;
 
 using static QBX.Platform.Windows.NativeMethods;
-using QBX.ExecutionEngine.Compiled.Statements.Shell;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
@@ -25,7 +25,7 @@ public partial class ShellStatement : Executable
 	[SupportedOSPlatform(PlatformNames.Windows)]
 	public void RunChildProcessWindows(ExecutionContext context, string fileName, string arguments)
 	{
-		ShellStrategy strategy =
+		WindowsConsoleShellStrategy strategy =
 			UseConsolePTYStrategy
 			? new ConsolePTYStrategy()
 			: new ConsoleAPIStrategy();
