@@ -61,7 +61,6 @@ public static class NumberParser
 		}
 		else
 		{
-			sign = 1;
 			if (!int.TryParse(chars, out parsed))
 				return false;
 		}
@@ -126,7 +125,6 @@ public static class NumberParser
 		}
 		else
 		{
-			negate = false;
 			if (!int.TryParse(chars, out value))
 				return false;
 		}
