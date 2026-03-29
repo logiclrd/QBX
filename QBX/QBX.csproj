@@ -23,6 +23,7 @@
 			<NoWarn>NU1701</NoWarn>
 		</PackageReference>
 		<PackageReference Include="System.Management" Version="10.0.*" />
+		<PackageReference Include="DQD.ForkPTY" Version="1.1.*" />
 	</ItemGroup>
 
 	<ItemGroup>

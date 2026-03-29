@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
+using System.Text;
 
 using QBX.Platform.Windows;
 using QBX.Utility;
@@ -23,7 +24,7 @@ public partial class ShellStatement : Executable
 	public bool UseConsolePTYStrategy = false;
 
 	[SupportedOSPlatform(PlatformNames.Windows)]
-	public void RunChildProcessWindows(ExecutionContext context, string fileName, string arguments)
+	public void RunChildProcessWindows(ExecutionContext context, string fileName, string[] arguments)
 	{
 		WindowsConsoleShellStrategy strategy =
 			UseConsolePTYStrategy
@@ -108,9 +109,19 @@ public partial class ShellStatement : Executable
 						if (!success)
 							throw new Win32Exception();
 
-						char[] argumentsBuffer = new char[arguments.Length + 1];
+						var argumentsBuilder = new StringBuilder();
 
-						arguments.CopyTo(argumentsBuffer);
+						foreach (var argument in arguments)
+						{
+							if (argumentsBuilder.Length > 0)
+								argumentsBuilder.Append(' ');
+
+							argumentsBuilder.Append(argument);
+						}
+
+						char[] argumentsBuffer = new char[argumentsBuilder.Length + 1];
+
+						argumentsBuilder.CopyTo(0, argumentsBuffer, argumentsBuffer.Length);
 
 						var processSecurityAttributes = new SECURITY_ATTRIBUTES();
 						var threadSecurityAttributes = new SECURITY_ATTRIBUTES();

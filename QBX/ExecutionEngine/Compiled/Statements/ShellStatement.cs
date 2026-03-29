@@ -50,16 +50,21 @@ public partial class ShellStatement(CodeModel.Statements.Statement source) : Exe
 
 		try
 		{
-			string arguments = commandString == "" ? "" : (commandSwitch + " " + commandString);
+			string[] arguments = commandString == "" ? [] : [commandSwitch, commandString];
 
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 				RunChildProcessWindows(context, shell, arguments);
-			else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-				RunChildProcessLinux(context, shell, arguments);
-			else if (RuntimeInformation.IsOSPlatform(OSPlatform.FreeBSD) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-				RunChildProcessFreeBSD(context, shell, arguments);
 			else
-				RunChildProcessFallback(context, shell, arguments);
+			{
+				try
+				{
+					RunChildProcessUnix(context, shell, arguments);
+				}
+				catch (PlatformNotSupportedException)
+				{
+					RunChildProcessFallback(context, shell, arguments);
+				}
+			}
 		}
 		catch
 		{
@@ -112,7 +117,7 @@ public partial class ShellStatement(CodeModel.Statements.Statement source) : Exe
 		}
 	}
 
-	void RunChildProcessFallback(ExecutionContext context, string shell, string arguments)
+	void RunChildProcessFallback(ExecutionContext context, string shell, string[] arguments)
 	{
 		var psi = new ProcessStartInfo(shell, arguments);
 

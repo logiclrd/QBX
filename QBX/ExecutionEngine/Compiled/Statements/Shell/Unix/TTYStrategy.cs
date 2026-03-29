@@ -11,7 +11,7 @@ namespace QBX.ExecutionEngine.Compiled.Statements.Shell.Unix;
 
 public class TTYStrategy : ShellStrategy
 {
-	public void Execute(ExecutionContext context, Stream ptyPipe, int processID)
+	public void Execute(ExecutionContext context, Stream ptyPipe, WaitHandle processExit)
 	{
 		const byte ETX = 3;
 
@@ -50,7 +50,7 @@ public class TTYStrategy : ShellStrategy
 						ioSync: null,
 						terminal);
 
-					Process.GetProcessById(processID).WaitForExit();
+					processExit.WaitOne();
 
 					outputTask.Wait();
 

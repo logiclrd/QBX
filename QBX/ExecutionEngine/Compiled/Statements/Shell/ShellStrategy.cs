@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -76,21 +77,29 @@ public abstract class ShellStrategy
 		return Task.Run(
 			() =>
 			{
-				Action<byte> emit =
-					b =>
-					{
-						using (MaybeLock(ioSync))
-							target.Write(b);
-					};
-
-				while (true)
+				try
 				{
-					int b = read();
+					Action<byte> emit =
+						b =>
+						{
+							using (MaybeLock(ioSync))
+								target.Write(b);
+						};
 
-					if (b < 0)
-						break;
+					while (true)
+					{
+						int b = read();
 
-					processControlSequenceBytes(unchecked((byte)b), emit);
+						if (b < 0)
+							break;
+
+						processControlSequenceBytes(unchecked((byte)b), emit);
+					}
+				}
+				catch (IOException) { }
+				catch (Exception ex)
+				{
+					Console.WriteLine(ex);
 				}
 			});
 	}
