@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;
@@ -31,32 +30,30 @@ public static class NumberParser
 
 		int sign = 1;
 
-		var noNegativeChars = chars;
-
-		if (chars[0] == '-')
+		while (chars[0] == '-')
 		{
-			sign = -1;
-			noNegativeChars = chars.Slice(1);
+			sign = -sign;
+			chars = chars.Slice(1);
 		}
 
-		if (noNegativeChars.StartsWith("&H", StringComparison.OrdinalIgnoreCase))
+		if (chars.StartsWith("&H", StringComparison.OrdinalIgnoreCase))
 		{
-			if (!int.TryParse(noNegativeChars.Slice(2), NumberStyles.HexNumber, default, out parsed))
+			if (!int.TryParse(chars.Slice(2), NumberStyles.HexNumber, default, out parsed))
 				return false;
 
 			if (parsed >= 32768)
 				parsed -= 65536;
 		}
-		else if (noNegativeChars.StartsWith("&O", StringComparison.OrdinalIgnoreCase))
+		else if (chars.StartsWith("&O", StringComparison.OrdinalIgnoreCase))
 		{
 			parsed = 0;
 
-			for (int i = 2; i < noNegativeChars.Length; i++)
+			for (int i = 2; i < chars.Length; i++)
 			{
-				if (!char.IsAsciiDigit(noNegativeChars[i]))
+				if (!char.IsAsciiDigit(chars[i]))
 					return false;
 
-				parsed = (parsed * 8) + (noNegativeChars[i] - '0');
+				parsed = (parsed * 8) + (chars[i] - '0');
 
 				if (parsed > short.MaxValue)
 					return false;
@@ -99,29 +96,27 @@ public static class NumberParser
 
 		bool negate = false;
 
-		var noNegativeChars = chars;
-
-		if (chars[0] == '-')
+		while (chars[0] == '-')
 		{
-			negate = true;
-			noNegativeChars = chars.Slice(1);
+			negate = !negate;
+			chars = chars.Slice(1);
 		}
 
-		if (noNegativeChars.StartsWith("&H", StringComparison.OrdinalIgnoreCase))
+		if (chars.StartsWith("&H", StringComparison.OrdinalIgnoreCase))
 		{
-			if (!int.TryParse(noNegativeChars.Slice(2), NumberStyles.HexNumber, default, out value))
+			if (!int.TryParse(chars.Slice(2), NumberStyles.HexNumber, default, out value))
 				return false;
 		}
-		else if (noNegativeChars.StartsWith("&O", StringComparison.OrdinalIgnoreCase))
+		else if (chars.StartsWith("&O", StringComparison.OrdinalIgnoreCase))
 		{
 			value = 0;
 
-			for (int i = 2; i < noNegativeChars.Length; i++)
+			for (int i = 2; i < chars.Length; i++)
 			{
-				if (!char.IsAsciiDigit(noNegativeChars[i]))
+				if (!char.IsAsciiDigit(chars[i]))
 					return false;
 
-				long parsedLong = (long)(value * 8) + (noNegativeChars[i] - '0');
+				long parsedLong = (long)(value * 8) + (chars[i] - '0');
 
 				if (parsedLong > int.MaxValue)
 					return false;
@@ -161,6 +156,14 @@ public static class NumberParser
 			chars = chars.Slice(0, chars.Length - 1);
 		}
 
+		float sign = +1f;
+
+		while (chars[0] == '-')
+		{
+			sign = -sign;
+			chars = chars.Slice(1);
+		}
+
 		if (!coerce)
 		{
 			var trimmed = new StringBuilder(new string(chars));
@@ -188,7 +191,12 @@ public static class NumberParser
 				return false;
 		}
 
-		return float.TryParse(chars, out value);
+		if (!float.TryParse(chars, out value))
+			return false;
+
+		value *= sign;
+
+		return true;
 	}
 
 	public static bool TryAsDouble(ReadOnlySpan<char> chars, out double value)
@@ -208,7 +216,17 @@ public static class NumberParser
 			chars = chars.Slice(0, chars.Length - 1);
 		}
 
-		return double.TryParse(chars, out value);
+		double sign = +1d;
+
+		while (chars[0] == '-')
+		{
+			sign = -sign;
+			chars = chars.Slice(1);
+		}
+
+		value *= sign;
+
+		return true;
 	}
 
 	public static bool TryAsCurrency(ReadOnlySpan<char> chars, out decimal value)
@@ -231,6 +249,14 @@ public static class NumberParser
 			chars = chars.Slice(0, chars.Length - 1);
 		}
 
+		bool negate = false;
+
+		while (chars[0] == '-')
+		{
+			negate = !negate;
+			chars = chars.Slice(1);
+		}
+
 		if (decimal.TryParse(chars, out value))
 		{
 			if (value.IsInCurrencyRange())
@@ -239,6 +265,10 @@ public static class NumberParser
 					return false;
 
 				value = value.Fix();
+
+				if (negate)
+					value = decimal.Negate(value);
+
 				return true;
 			}
 		}

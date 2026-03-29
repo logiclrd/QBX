@@ -127,7 +127,7 @@ public class LiteralExpression : Expression
 
 		var chars = str.AsSpan();
 
-		if (chars[0] == '-')
+		while (chars[0] == '-')
 		{
 			writer.Write('-');
 			chars = chars.Slice(1);
@@ -166,9 +166,13 @@ public class LiteralExpression : Expression
 		else
 		{
 			// We previously greedily emitted the '-' to allow for negative hex and octal sequences.
-			bool skipMinus = (str[0] == '-');
+			int offset = 0;
 
-			int offset = skipMinus ? 1 : 0;
+			while ((offset < str.Length) && (str[offset] == '-'))
+				offset++;
+
+			// Two '-' cancel each other out.
+			offset &= 1;
 
 			if (TypeCharacter.TryParse(chars[chars.Length - 1], out var typeCharacter))
 			{
