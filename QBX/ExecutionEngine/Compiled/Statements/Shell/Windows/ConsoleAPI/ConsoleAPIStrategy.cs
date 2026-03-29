@@ -237,16 +237,17 @@ public class ConsoleAPIStrategy : WindowsConsoleShellStrategy
 				if (!success)
 					throw new Win32Exception();
 
-				var commandLineBuilder = new StringBuilder();
+				// CreateProcessW requires the arguments to include the program filename as the
+				// first token, and also expects a mutable buffer for arguments, so we can
+				// just use the StringBuilder used to build the string as the arguments parameter.
+				var commandLineBuffer = new StringBuilder();
 
 				if (fileName.Contains(' '))
-					commandLineBuilder.Append('"').Append(fileName).Append('"');
+					commandLineBuffer.Append('"').Append(fileName).Append('"');
 				else
-					commandLineBuilder.Append(fileName);
+					commandLineBuffer.Append(fileName);
 
-				commandLineBuilder.Append(' ').Append(arguments).Append('\0');
-
-				char[] commandLineBuffer = commandLineBuilder.ToString().ToCharArray();
+				commandLineBuffer.Append(' ').Append(arguments).Append('\0');
 
 				var processSecurityAttributes = new SECURITY_ATTRIBUTES();
 				var threadSecurityAttributes = new SECURITY_ATTRIBUTES();

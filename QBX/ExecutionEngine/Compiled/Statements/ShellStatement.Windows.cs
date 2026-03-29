@@ -109,19 +109,18 @@ public partial class ShellStatement : Executable
 						if (!success)
 							throw new Win32Exception();
 
-						var argumentsBuilder = new StringBuilder();
+						// CreateProcessW expects a mutable buffer for arguments.
+						var argumentsBuffer = new StringBuilder();
 
 						foreach (var argument in arguments)
 						{
-							if (argumentsBuilder.Length > 0)
-								argumentsBuilder.Append(' ');
+							if (argumentsBuffer.Length > 0)
+								argumentsBuffer.Append(' ');
 
-							argumentsBuilder.Append(argument);
+							argumentsBuffer.Append(argument);
 						}
 
-						char[] argumentsBuffer = new char[argumentsBuilder.Length + 1];
-
-						argumentsBuilder.CopyTo(0, argumentsBuffer, argumentsBuffer.Length);
+						argumentsBuffer.Append('\0');
 
 						var processSecurityAttributes = new SECURITY_ATTRIBUTES();
 						var threadSecurityAttributes = new SECURITY_ATTRIBUTES();

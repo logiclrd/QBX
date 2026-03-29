@@ -24,7 +24,7 @@ public static class NativeMethods
 	[SupportedOSPlatform(PlatformNames.Windows), DllImport("kernel32")]
 	public static extern void DeleteProcThreadAttributeList(IntPtr lpAttributeList);
 	[SupportedOSPlatform(PlatformNames.Windows), DllImport("kernel32", CharSet = CharSet.Unicode, SetLastError = true)]
-	public static extern bool CreateProcessW(string? lpApplicationName, char[] lpCommandLine, ref SECURITY_ATTRIBUTES lpProcessAttributes, ref SECURITY_ATTRIBUTES lpThreadAttributes, bool bInheritHandles, ProcessCreationFlags dwCreationFlags, IntPtr lpEnvironment, string? lpCurrentDirectory, ref STARTUPINFOEX lpStartupInfo, ref PROCESS_INFORMATION lpProcessInformation);
+	public static extern bool CreateProcessW(string? lpApplicationName, [In] StringBuilder lpCommandLine, ref SECURITY_ATTRIBUTES lpProcessAttributes, ref SECURITY_ATTRIBUTES lpThreadAttributes, bool bInheritHandles, ProcessCreationFlags dwCreationFlags, IntPtr lpEnvironment, string? lpCurrentDirectory, ref STARTUPINFOEX lpStartupInfo, ref PROCESS_INFORMATION lpProcessInformation);
 	[SupportedOSPlatform(PlatformNames.Windows), DllImport("kernel32", SetLastError = true)]
 	public static extern bool GenerateConsoleCtrlEvent(ConsoleCtrlEvent dwCtrlEvent, int dwProcessGroupId);
 	[SupportedOSPlatform(PlatformNames.Windows), DllImport("kernel32", SetLastError = true)]
