@@ -160,4 +160,18 @@ public class Token(MutableBox<int> line, int column, TokenType type, string valu
 		line = newLine;
 		column = newColumn;
 	}
+
+	internal Token SplitMinusToken()
+	{
+		if ((type != TokenType.Number)
+		 || !value.StartsWith('-'))
+			throw new InvalidOperationException("Cannot split a minus sign off of a token that doesn't start with a minus sign");
+
+		var minusToken = new Token(line, column, TokenType.Minus, "-");
+
+		column++;
+		value = value.Substring(1);
+
+		return minusToken;
+	}
 }
