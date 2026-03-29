@@ -224,6 +224,28 @@ public static class NumberParser
 			chars = chars.Slice(1);
 		}
 
+		if (chars.Contains("d", StringComparison.OrdinalIgnoreCase))
+		{
+			// BASIC allows 'D' for the exponent in DOUBLE values.
+			Span<char> translated = stackalloc char[chars.Length];
+
+			for (int i = 0; i < chars.Length; i++)
+			{
+				if ((chars[i] == 'd') || (chars[i] == 'D'))
+					translated[i] = 'e';
+				else
+					translated[i] = chars[i];
+			}
+
+			if (!double.TryParse(translated, out value))
+				return false;
+		}
+		else
+		{
+			if (!double.TryParse(chars, out value))
+				return false;
+		}
+
 		value *= sign;
 
 		return true;

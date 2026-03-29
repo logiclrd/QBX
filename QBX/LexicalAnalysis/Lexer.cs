@@ -31,6 +31,7 @@ public class Lexer(TextReader input, int startingLineNumber = 0) : IEnumerable<T
 		RawStringToEndOfLine,
 		Number,
 		NumberAfterDecimal,
+		NumberAfterExponent,
 		NumberWithBase, // &H or &O
 		HexNumber,
 		OctalNumber,
@@ -276,7 +277,13 @@ public class Lexer(TextReader input, int startingLineNumber = 0) : IEnumerable<T
 							buffer.Append(ch);
 						else
 						{
-							if (ch == '.')
+							if ((ch == 'e') || (ch == 'E')
+							 || (ch == 'd') || (ch == 'D'))
+							{
+								buffer.Append(ch);
+								mode = Mode.NumberAfterExponent;
+							}
+							else if (ch == '.')
 							{
 								buffer.Append(ch);
 								mode = Mode.NumberAfterDecimal;
@@ -288,6 +295,55 @@ public class Lexer(TextReader input, int startingLineNumber = 0) : IEnumerable<T
 						break;
 					}
 					case Mode.NumberAfterDecimal:
+					{
+						if (char.IsDigit(ch))
+							buffer.Append(ch);
+						else
+						{
+							if ((ch == 'e') || (ch == 'E')
+							 || (ch == 'd') || (ch == 'D'))
+							{
+								buffer.Append(ch);
+								mode = Mode.NumberAfterExponent;
+							}
+							else
+							{
+								var dataType = DataType.Unspecified;
+
+								switch (ch)
+								{
+									case '%':
+									case '&':
+									case '!':
+									case '#':
+									case '@':
+										buffer.Append(ch);
+
+										switch (ch)
+										{
+											case '%': dataType = DataType.INTEGER; break;
+											case '&': dataType = DataType.LONG; break;
+											case '!': dataType = DataType.SINGLE; break;
+											case '#': dataType = DataType.DOUBLE; break;
+											case '@': dataType = DataType.CURRENCY; break;
+										}
+
+										break;
+									default:
+										reparse = true;
+										break;
+								}
+
+								yield return new Token(line, tokenStartColumn, TokenType.Number, buffer.ToString(), dataType);
+								buffer.Clear();
+								mode = Mode.Any;
+								tokenStartColumn = column;
+							}
+						}
+
+						break;
+					}
+					case Mode.NumberAfterExponent:
 					{
 						if (char.IsDigit(ch))
 							buffer.Append(ch);
