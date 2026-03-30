@@ -329,19 +329,16 @@ public class TextLibrary : VisualLibrary
 			clearLastLineOnScroll = false;
 		}
 
-		int cursorX = CursorX;
-		int cursorY = CursorY;
-
 		var attributes = Attributes;
 
 		using (HidePointerForOperationIfPointerAware())
 		{
 			void BeginNewLine()
 			{
-				cursorX = 0;
+				CursorX = 0;
 
-				if (cursorY + 1 <= CharacterLineWindowEnd)
-					cursorY++;
+				if (CursorY + 1 <= CharacterLineWindowEnd)
+					CursorY++;
 				else
 				{
 					Span<byte> vramSpan = Array.VRAM;
@@ -363,7 +360,7 @@ public class TextLibrary : VisualLibrary
 			Action updateOffset =
 				() =>
 				{
-					o = cursorY * CharacterWidth + cursorX;
+					o = CursorY * CharacterWidth + CursorX;
 				};
 
 			Action<Span<byte>, Span<byte>> writeSpace =
@@ -378,13 +375,14 @@ public class TextLibrary : VisualLibrary
 			{
 				if (ProcessControlCharacters)
 				{
-					if (ProcessControlCharacter(ref buffer, ref cursorX, ref cursorY, updateOffset, writeSpace, BeginNewLine, plane0, plane1))
+					if (ProcessControlCharacter(ref buffer, ref CursorX, ref CursorY, updateOffset, writeSpace, BeginNewLine, plane0, plane1))
 						continue;
 				}
 
-				ResolvePassiveNewLine();
+				if (ResolvePassiveNewLine())
+					updateOffset();
 
-				int remainingChars = Width - cursorX;
+				int remainingChars = Width - CursorX;
 
 				int spanLength = Math.Min(buffer.Length, remainingChars);
 
@@ -400,7 +398,7 @@ public class TextLibrary : VisualLibrary
 
 				for (int i = 0; i < spanLength; i++)
 				{
-					if (_clipRect.Contains(cursorX, cursorY))
+					if (_clipRect.Contains(CursorX, CursorY))
 					{
 						plane0[o] = buffer[i];
 						if (EnableWriteAttributes)
@@ -408,17 +406,17 @@ public class TextLibrary : VisualLibrary
 					}
 
 					o++;
-					cursorX++;
+					CursorX++;
 				}
 
 				buffer = buffer.Slice(spanLength);
 
-				if (spanLength < controlCharacterOffset)
-					BeginNewLine();
+				if (CursorX == Width)
+					PassiveNewLine();
 			}
 
-			if (cursorX < CharacterWidth)
-				MoveCursor(cursorX, cursorY);
+			if (CursorX < CharacterWidth)
+				MoveCursor(CursorX, CursorY);
 			else
 				PassiveNewLine();
 		}
@@ -452,36 +450,33 @@ public class TextLibrary : VisualLibrary
 			clearLastLineOnScroll = false;
 		}
 
-		int cursorX = CursorX;
-		int cursorY = CursorY;
-
 		var attributes = Attributes;
 
 		using (HidePointerForOperationIfPointerAware())
 		{
 			while (charCount > 0)
 			{
-				int remainingChars = Width - cursorX;
+				int remainingChars = Width - CursorX;
 
 				int spanLength = Math.Min(charCount, remainingChars);
 
 				for (int i = 0; i < spanLength; i++)
 				{
-					if (_clipRect.Contains(cursorX, cursorY))
+					if (_clipRect.Contains(CursorX, CursorY))
 						plane1[o] = attributes;
 
 					o++;
-					cursorX++;
+					CursorX++;
 				}
 
 				charCount -= spanLength;
 
 				if (charCount > 0)
 				{
-					cursorX = 0;
+					CursorX = 0;
 
-					if (cursorY + 1 <= CharacterLineWindowEnd)
-						cursorY++;
+					if (CursorY + 1 <= CharacterLineWindowEnd)
+						CursorY++;
 					else
 					{
 						ScrollTextUp(Span<byte>.Empty, plane1.Slice(scrollOffset, plane1.Length - scrollOffset), clearLastLineOnScroll);
@@ -490,7 +485,7 @@ public class TextLibrary : VisualLibrary
 				}
 			}
 
-			MoveCursor(cursorX, cursorY);
+			MoveCursor(CursorX, CursorY);
 		}
 	}
 

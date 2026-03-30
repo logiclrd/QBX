@@ -4,7 +4,6 @@ using System.Text;
 
 using QBX.CodeModel;
 using QBX.DevelopmentEnvironment.Dialogs;
-using QBX.ExecutionEngine.Execution;
 using QBX.Firmware;
 using QBX.Firmware.Fonts;
 using QBX.Utility;

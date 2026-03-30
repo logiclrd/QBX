@@ -634,19 +634,21 @@ public abstract class VisualLibrary : IDisposable
 
 	public void PassiveNewLine()
 	{
-		if (CursorY >= CharacterLineWindowEnd)
-		{
+		if (CursorX >= CharacterWidth)
 			CursorX = CharacterWidth - 1;
-			_delayedNewLine = true;
-		}
-		else
-			NewLine();
+
+		_delayedNewLine = true;
 	}
 
-	public void ResolvePassiveNewLine()
+	public bool ResolvePassiveNewLine()
 	{
 		if (_delayedNewLine)
+		{
 			NewLine();
+			return true;
+		}
+
+		return false;
 	}
 
 	public abstract byte GetCharacter(int x, int y);

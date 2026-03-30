@@ -7,7 +7,6 @@ using System.Text;
 using QBX.CodeModel;
 using QBX.CodeModel.Statements;
 using QBX.DevelopmentEnvironment.Dialogs;
-using QBX.ExecutionEngine;
 using QBX.Hardware;
 using QBX.LexicalAnalysis;
 using QBX.Parser;
