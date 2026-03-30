@@ -94,9 +94,12 @@ public static class NumberParser
 		}
 
 		bool negate = false;
+		var negativeChars = ReadOnlySpan<char>.Empty;
 
 		while (chars[0] == '-')
 		{
+			negativeChars = chars;
+
 			negate = !negate;
 			chars = chars.Slice(1);
 		}
@@ -125,6 +128,12 @@ public static class NumberParser
 		}
 		else
 		{
+			if (negate)
+			{
+				chars = negativeChars;
+				negate = false;
+			}
+
 			if (!int.TryParse(chars, out value))
 				return false;
 		}
@@ -269,13 +278,8 @@ public static class NumberParser
 			chars = chars.Slice(0, chars.Length - 1);
 		}
 
-		bool negate = false;
-
-		while (chars[0] == '-')
-		{
-			negate = !negate;
-			chars = chars.Slice(1);
-		}
+		while (chars.StartsWith("--"))
+			chars = chars.Slice(2);
 
 		if (decimal.TryParse(chars, out value))
 		{
@@ -285,9 +289,6 @@ public static class NumberParser
 					return false;
 
 				value = value.Fix();
-
-				if (negate)
-					value = decimal.Negate(value);
 
 				return true;
 			}
