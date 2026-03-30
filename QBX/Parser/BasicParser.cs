@@ -117,7 +117,6 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 		var line = new CodeLine();
 		var buffer = new List<Token>();
-		bool haveContent = false;
 		Token? precedingWhitespaceToken = null;
 		bool startsWithDATA = false;
 		bool lineConsumed = false;
@@ -158,7 +157,6 @@ public class BasicParser(IdentifierRepository identifierRepository)
 				buffer.Clear();
 				yield return line;
 				line = new CodeLine();
-				haveContent = false;
 				precedingWhitespaceToken = null;
 				startsWithDATA = false;
 				lineConsumed = false;
@@ -251,7 +249,6 @@ public class BasicParser(IdentifierRepository identifierRepository)
 						buffer.Clear();
 					}
 
-					haveContent = true;
 					precedingWhitespaceToken = null;
 					startsWithDATA = false;
 				}
@@ -272,8 +269,6 @@ public class BasicParser(IdentifierRepository identifierRepository)
 						line.AppendStatement(parsedStatement);
 						buffer.Clear();
 					}
-
-					haveContent = false;
 
 					int commentColumn = token.Column;
 
@@ -322,7 +317,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 			lastToken = token;
 		}
 
-		if (buffer.Any() || haveContent)
+		if (buffer.Any())
 		{
 			if (lastToken == null)
 				throw new Exception("Internal error: Arrived at tail with non-empty buffer and/or haveContent but without seeing any tokens");
