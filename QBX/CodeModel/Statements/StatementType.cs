@@ -19,6 +19,7 @@ public enum StatementType
 	Color,
 	Comment,
 	Common,
+	ComputedBranch,
 	Const,
 	Data,
 	Declare,

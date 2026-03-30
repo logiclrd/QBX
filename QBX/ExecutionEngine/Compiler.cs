@@ -958,6 +958,27 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 				break;
 			}
+			case CodeModel.Statements.ComputedBranchStatement computedBranchStatement:
+			{
+				var translatedComputedBranchStatement =
+					computedBranchStatement.BranchType switch
+					{
+						CodeModel.Statements.ComputedBranchType.GoTo => new ComputedGoToStatement(computedBranchStatement),
+						CodeModel.Statements.ComputedBranchType.GoSub => new ComputedGoSubStatement(computedBranchStatement),
+
+						_ => throw new Exception("Internal error: Unrecognized BranchType value " + computedBranchStatement.BranchType)
+					};
+
+				TranslateNumericArgumentExpression(
+					ref translatedComputedBranchStatement.Expression, computedBranchStatement.Expression);
+
+				foreach (var target in computedBranchStatement.Targets)
+					translatedComputedBranchStatement.Targets.Add(new ComputedBranchTarget(target.LabelName, target.Token));
+
+				container.Append(translatedComputedBranchStatement);
+
+				break;
+			}
 			case CodeModel.Statements.ConstStatement constStatement:
 			{
 				// Gathered centrally before main translation begins.

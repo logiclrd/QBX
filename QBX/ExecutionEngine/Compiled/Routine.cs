@@ -9,6 +9,8 @@ using QBX.Parser;
 
 namespace QBX.ExecutionEngine.Compiled;
 
+using ComputedBranchStatement = QBX.ExecutionEngine.Compiled.Statements.ComputedBranchStatement;
+
 public class Routine : Sequence
 {
 	public Module Module;
@@ -291,6 +293,8 @@ public class Routine : Sequence
 		var rootLabels = Module.MainRoutine!.CollectLabels();
 		var localLabels = CollectLabels();
 
+		// GOTO and GOSUB
+
 		foreach (var jump in AllStatements.OfType<JumpStatement>())
 		{
 			var labels = jump.TargetIsInMainModule ? rootLabels : localLabels;
@@ -299,6 +303,16 @@ public class Routine : Sequence
 				throw CompilerException.LabelNotDefined(jump.Source?.FirstToken);
 
 			jump.TargetPath = targetPath;
+		}
+
+		// ON n GOTO and ON n GOSUB
+
+		foreach (var target in AllStatements.OfType<ComputedBranchStatement>().SelectMany(statement => statement.Targets))
+		{
+			if (!localLabels.TryGetValue(target.LabelName, out var targetPath))
+				throw CompilerException.LabelNotDefined(target.Token);
+
+			target.TargetPath = targetPath;
 		}
 	}
 }

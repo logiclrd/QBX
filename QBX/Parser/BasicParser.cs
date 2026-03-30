@@ -2382,41 +2382,125 @@ public class BasicParser(IdentifierRepository identifierRepository)
 				}
 				else
 				{
-					var onEvent = new OnEventStatement();
-
-					bool needSourceExpression = true;
-
 					switch (tokenHandler.NextToken.Type)
 					{
-						case TokenType.COM: onEvent.EventType = EventType.Com; break;
-						case TokenType.KEY: onEvent.EventType = EventType.Key; break;
-						case TokenType.PEN: onEvent.EventType = EventType.Pen; needSourceExpression = false; break;
-						case TokenType.PLAY: onEvent.EventType = EventType.Play; needSourceExpression = false; break;
-						case TokenType.SIGNAL: onEvent.EventType = EventType.OS2Signal; break;
-						case TokenType.STRIG: onEvent.EventType = EventType.JoystickTrigger; break;
-						case TokenType.TIMER: onEvent.EventType = EventType.Timer; break;
-						case TokenType.UEVENT: onEvent.EventType = EventType.UserEvent; needSourceExpression = false; break;
+						case TokenType.COM:
+						case TokenType.KEY:
+						case TokenType.PEN:
+						case TokenType.PLAY:
+						case TokenType.SIGNAL:
+						case TokenType.STRIG:
+						case TokenType.TIMER:
+						case TokenType.UEVENT:
+						{
+							var onEvent = new OnEventStatement();
 
-						default: throw new SyntaxErrorException(tokenHandler.NextToken, "Syntax error");
+							bool needSourceExpression = true;
+
+							switch (tokenHandler.NextToken.Type)
+							{
+								case TokenType.COM: onEvent.EventType = EventType.Com; break;
+								case TokenType.KEY: onEvent.EventType = EventType.Key; break;
+								case TokenType.PEN: onEvent.EventType = EventType.Pen; needSourceExpression = false; break;
+								case TokenType.PLAY: onEvent.EventType = EventType.Play; needSourceExpression = false; break;
+								case TokenType.SIGNAL: onEvent.EventType = EventType.OS2Signal; break;
+								case TokenType.STRIG: onEvent.EventType = EventType.JoystickTrigger; break;
+								case TokenType.TIMER: onEvent.EventType = EventType.Timer; break;
+								case TokenType.UEVENT: onEvent.EventType = EventType.UserEvent; needSourceExpression = false; break;
+							}
+
+							tokenHandler.Advance();
+
+							if (needSourceExpression)
+							{
+								var sourceExpressionTokens = tokenHandler.ExpectParenthesizedTokens();
+
+								onEvent.SourceExpression = ParseExpressionForStatement(onEvent, sourceExpressionTokens, tokenHandler.PreviousToken);
+							}
+
+							var action = ParseStatement(tokenHandler.RemainingTokens, ignoreErrors);
+
+							if (action is GoSubStatement goSubAction)
+								onEvent.Action = goSubAction;
+							else
+								throw new SyntaxErrorException(tokens[2], "Expected: GOSUB");
+
+							return onEvent;
+						}
+
+						default:
+						{
+							var remainingTokens = tokenHandler.RemainingTokens;
+
+							int branchTypeTokenIndex = -1;
+
+							for (int i = 1; i < remainingTokens.Count; i++)
+							{
+								if ((remainingTokens[i].Type == TokenType.GOTO)
+								 || (remainingTokens[i].Type == TokenType.GOSUB))
+								{
+									branchTypeTokenIndex = i;
+									break;
+								}
+							}
+
+							if (branchTypeTokenIndex < 0)
+								throw new SyntaxErrorException(tokenHandler.EndToken, "Expected: GOTO or GOSUB");
+
+							var branchTypeToken = remainingTokens[branchTypeTokenIndex];
+
+							var computedBranch = new ComputedBranchStatement();
+
+							computedBranch.Expression = ParseExpression(remainingTokens.Slice(0, branchTypeTokenIndex), branchTypeToken);
+
+							computedBranch.BranchType =
+								branchTypeToken.Type switch
+								{
+									TokenType.GOTO =>	ComputedBranchType.GoTo,
+									TokenType.GOSUB => ComputedBranchType.GoSub,
+
+									_ => throw new Exception("Sanity failure")
+								};
+
+							var endTokenRef = new TokenRef();
+
+							var targets = SplitCommaDelimitedList(remainingTokens.Slice(branchTypeTokenIndex + 1), endTokenRef);
+
+							foreach (var target in targets)
+							{
+								if ((target.Count == 0)
+								 || ((target[0].Type != TokenType.Identifier) && (target[0].Type != TokenType.Number)))
+									throw new SyntaxErrorException(endTokenRef.Token ?? tokenHandler.EndToken, "Expected: label or line number");
+
+								if (target[0].Type == TokenType.Number)
+								{
+									if (target[0].Value.StartsWith('-')
+									 || target[0].Value.StartsWith('&')
+									 || target[0].Value.Contains('e')
+									 || target[0].Value.Contains('d'))
+										throw new SyntaxErrorException(target[0], "Expected: label or line number");
+
+									var lineNumber = identifierRepository.UpdateCanonicalIdentifier(target[0].Value);
+
+									computedBranch.Targets.Add(new ComputedBranchTarget(lineNumber, target[0]));
+
+									continue;
+								}
+
+								if (target.Count > 1)
+									throw new SyntaxErrorException(target[1], "Expected: , or end of statement");
+
+								if (target[0].Type != TokenType.Identifier)
+									throw new Exception("Sanity failure");
+
+								var label = identifierRepository.GetOrAddCanonicalIdentifier(target[0].Value);
+
+								computedBranch.Targets.Add(new ComputedBranchTarget(label, target[0]));
+							}
+
+							return computedBranch;
+						}
 					}
-
-					tokenHandler.Advance();
-
-					if (needSourceExpression)
-					{
-						var sourceExpressionTokens = tokenHandler.ExpectParenthesizedTokens();
-
-						onEvent.SourceExpression = ParseExpressionForStatement(onEvent, sourceExpressionTokens, tokenHandler.PreviousToken);
-					}
-
-					var action = ParseStatement(tokenHandler.RemainingTokens, ignoreErrors);
-
-					if (action is GoSubStatement goSubAction)
-						onEvent.Action = goSubAction;
-					else
-						throw new SyntaxErrorException(tokens[2], "Expected: GOSUB");
-
-					return onEvent;
 				}
 			}
 
