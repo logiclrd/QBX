@@ -416,7 +416,7 @@ public class TextLibrary : VisualLibrary
 			}
 
 			if (CursorX < CharacterWidth)
-				MoveCursor(CursorX, CursorY);
+				SetCursorPosition(CursorX, CursorY);
 			else
 				PassiveNewLine();
 		}

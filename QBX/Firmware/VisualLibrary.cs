@@ -161,13 +161,18 @@ public abstract class VisualLibrary : IDisposable
 
 	public void MoveCursor(int x, int y)
 	{
+		_delayedNewLine = false;
+
+		SetCursorPosition(x, y);
+	}
+
+	protected void SetCursorPosition(int x, int y)
+	{
 		x = x.Clamp(0, CharacterWidth - 1);
 		y = y.Clamp(CharacterLineWindowStart, CharacterLineWindowEnd);
 
 		CursorX = x;
 		CursorY = y;
-
-		_delayedNewLine = false;
 
 		MoveCursorHandlePhysicalCursor();
 	}
