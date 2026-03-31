@@ -3,9 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
+using QBX.CodeModel.Statements;
 using QBX.DevelopmentEnvironment;
+using QBX.ExecutionEngine.Compiled;
 using QBX.LexicalAnalysis;
 using QBX.Parser;
+using QBX.Utility;
 
 namespace QBX.CodeModel;
 
@@ -42,7 +45,9 @@ public class CompilationUnit : IRenderableCode, IEditableUnit
 
 	IReadOnlyList<IEditableElement> IEditableUnit.Elements => Elements;
 
-	public IEditableElement MainElement => Elements.First(element => element.Type == CompilationElementType.Main);
+	public CompilationElement MainElement => Elements.First(element => element.Type == CompilationElementType.Main);
+
+	IEditableElement IEditableUnit.MainElement => MainElement;
 
 	public bool IsEmpty
 	{
@@ -96,6 +101,122 @@ public class CompilationUnit : IRenderableCode, IEditableUnit
 
 				return order;
 			});
+	}
+
+	public void GenerateDeclarations()
+	{
+		// On save, QuickBASIC generates DECLARE SUB/DECLARE FUNCTION lines for every local
+		// SUB/FUNCTION (except for SUBs that aren't referenced in any statement). These are
+		// added only if there is no existing declaration for the same name. DECLARE FUNCTION
+		// declarations include the type declaration character, but the type character is
+		// ignored for the purposes of checking if the function is already declared.
+
+		var referencedSUBs = new HashSet<Identifier>();
+
+		foreach (var statement in Elements.SelectMany(element => element.AllStatements).OfType<CallStatement>())
+			referencedSUBs.Add(statement.TargetName);
+
+		var declaredSUBs = new HashSet<Identifier>();
+		var declaredFUNCTIONs = new HashSet<Identifier>();
+
+		foreach (var statement in MainElement.AllStatements.OfType<DeclareStatement>())
+		{
+			switch (statement.DeclarationType.Type)
+			{
+				case TokenType.SUB: declaredSUBs.Add(statement.Name); break;
+				case TokenType.FUNCTION: declaredFUNCTIONs.Add(Mapper.UnqualifyIdentifier(statement.Name)); break;
+			}
+		}
+
+		var newDeclarations = new List<CodeLine>();
+
+		foreach (var element in Elements)
+		{
+			var displayName = element.DisplayName;
+
+			if (displayName == null)
+				continue;
+
+			switch (element.Type)
+			{
+				case CompilationElementType.Sub:
+					if (declaredSUBs.Contains(displayName))
+						continue;
+					if (!referencedSUBs.Contains(displayName))
+						continue;
+					break;
+				case CompilationElementType.Function:
+					if (declaredFUNCTIONs.Contains(displayName))
+						continue;
+					break;
+
+				default: continue;
+			}
+
+			var declarationLineNumber = new MutableBox<int>();
+
+			var declarationTokenType =
+				element.Type switch
+				{
+					CompilationElementType.Sub => TokenType.SUB,
+					CompilationElementType.Function => TokenType.FUNCTION,
+					_ => throw new Exception("Sanity failure")
+				};
+
+			var declarationTypeToken = new Token(
+				declarationLineNumber,
+				column: 8,
+				declarationTokenType,
+				declarationTokenType.ToString());
+
+			var qualifiedName = displayName;
+
+			if (element.Type == CompilationElementType.Function)
+			{
+				var typeMap = CompilationElement.MakeDefaultDefTypeMap();
+
+				element.ApplyDefTypeStatements(typeMap, stopAtSubroutineOpeningStatement: true);
+
+				int identifierTypeIndex = char.ToUpperInvariant(displayName.Value[0]) - 'A';
+
+				var returnType = typeMap[identifierTypeIndex];
+
+				var returnTypeCharacter = new TypeCharacter(returnType);
+
+				qualifiedName = new QualifiedIdentifier(qualifiedName, returnTypeCharacter);
+			}
+
+			var nameToken = new Token(
+				declarationLineNumber,
+				declarationTypeToken.Column + declarationTypeToken.Length + 1,
+				TokenType.Identifier,
+				qualifiedName.ToString());
+
+			var openingStatement = element.AllStatements.OfType<SubroutineOpeningStatement>().FirstOrDefault();
+
+			var declaration = new DeclareStatement(
+				declarationTypeToken,
+				qualifiedName,
+				nameToken: null,
+				openingStatement?.Parameters ?? new ParameterList());
+
+			// Format and re-parse the statement to give it its own tokens.
+			var buffer = new StringWriter();
+
+			declaration.Render(buffer);
+
+			var lexer = new Lexer(buffer.ToString());
+
+			var parser = new BasicParser(IdentifierRepository);
+
+			var parsedDeclaration = parser.ParseCodeLines(lexer, ignoreErrors: true).FirstOrDefault(); ;
+
+			if (parsedDeclaration != null)
+				newDeclarations.Add(parsedDeclaration);
+		}
+
+		if (newDeclarations.Any())
+			MainElement.InsertLines(0, newDeclarations);
 	}
 
 	public static CompilationUnit CreateNew()
@@ -161,6 +282,12 @@ public class CompilationUnit : IRenderableCode, IEditableUnit
 		}
 
 		return unit;
+	}
+
+	public void PrepareForWrite()
+	{
+		SortElements();
+		GenerateDeclarations();
 	}
 
 	public void Write(TextWriter writer)

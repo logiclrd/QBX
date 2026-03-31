@@ -78,6 +78,12 @@ public class CompilationElement : IRenderableCode, IEditableElement
 		Owner.IsPristine = false;
 	}
 
+	void ReindexLines(int startIndex)
+	{
+		for (int lineIndex = startIndex; lineIndex < _lines.Count; lineIndex++)
+			_lines[lineIndex].SourceLineIndex.Value = lineIndex;
+	}
+
 	void IEditableElement.AddLine(IEditableLine line) => AddLine((CodeLine)line);
 
 	public void AddLine(CodeLine line)
@@ -101,8 +107,19 @@ public class CompilationElement : IRenderableCode, IEditableElement
 		_lines.Insert(index, line);
 		line.CompilationElement = this;
 
-		for (int lineIndex = index; lineIndex < _lines.Count; lineIndex++)
-			_lines[lineIndex].SourceLineIndex.Value = lineIndex;
+		ReindexLines(startIndex: index);
+	}
+
+	public void InsertLines(int index, IEnumerable<CodeLine> lines)
+	{
+		var lineList = lines.ToList();
+
+		_lines.InsertRange(0, lineList);
+
+		foreach (var line in lineList)
+			line.CompilationElement = this;
+
+		ReindexLines(startIndex: index);
 	}
 
 	void IEditableElement.ReplaceLine(int index, IEditableLine line) => ReplaceLine(index, (CodeLine)line);
@@ -127,8 +144,7 @@ public class CompilationElement : IRenderableCode, IEditableElement
 			_lines[index].CompilationElement = null;
 			_lines.RemoveAt(index);
 
-			for (int lineIndex = index; lineIndex < _lines.Count; lineIndex++)
-				_lines[lineIndex].SourceLineIndex.Value = lineIndex;
+			ReindexLines(startIndex: index);
 		}
 	}
 

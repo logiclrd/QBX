@@ -17,6 +17,7 @@ public interface IEditableUnit
 
 	IEditableElement MainElement { get; }
 
+	void PrepareForWrite();
 	void Write(TextWriter writer);
 
 	void AddElement(IEditableElement element);

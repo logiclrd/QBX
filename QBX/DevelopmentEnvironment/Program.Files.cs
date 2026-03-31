@@ -288,7 +288,7 @@ namespace QBX.DevelopmentEnvironment
 
 		void Save(IEditableUnit editable, TextWriter writer)
 		{
-			editable.SortElements();
+			editable.PrepareForWrite();
 			editable.Write(writer);
 			editable.IsPristine = true;
 		}
