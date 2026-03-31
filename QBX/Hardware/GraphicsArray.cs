@@ -953,37 +953,27 @@ public class GraphicsArray : IMemory
 			{
 				if (Graphics.ChainOddEven)
 				{
-					bool oddPlanes = (offset & 1) != 0;
-
 					offset = (offset & Sequencer.AddressMask)
 						| ((offset >> Sequencer.AddressShift) & 1);
+				}
 
-					if (oddPlanes)
-					{
-						if (Sequencer.Plane1WriteEnable)
-							VRAM[offset + 0x10000] = value;
-						if (Sequencer.Plane3WriteEnable)
-							VRAM[offset + 0x30000] = value;
-					}
-					else
-					{
-						if (Sequencer.Plane0WriteEnable)
-							VRAM[offset] = value;
-						if (Sequencer.Plane2WriteEnable)
-							VRAM[offset + 0x20000] = value;
-					}
-				}
-				else
+				bool evenPlanesEnabledForThisAddress = true;
+				bool oddPlanesEnabledForThisAddress = true;
+
+				if (Sequencer.HostOddEvenWrite)
 				{
-					if (Sequencer.Plane0WriteEnable)
-						VRAM[offset] = value;
-					if (Sequencer.Plane1WriteEnable)
-						VRAM[offset + 0x10000] = value;
-					if (Sequencer.Plane2WriteEnable)
-						VRAM[offset + 0x20000] = value;
-					if (Sequencer.Plane3WriteEnable)
-						VRAM[offset + 0x30000] = value;
+					evenPlanesEnabledForThisAddress = (offset & 1) == 0;
+					oddPlanesEnabledForThisAddress = !evenPlanesEnabledForThisAddress;
 				}
+
+				if (Sequencer.Plane0WriteEnable && evenPlanesEnabledForThisAddress)
+					VRAM[offset] = value;
+				if (Sequencer.Plane1WriteEnable && oddPlanesEnabledForThisAddress)
+					VRAM[offset + 0x10000] = value;
+				if (Sequencer.Plane2WriteEnable && evenPlanesEnabledForThisAddress)
+					VRAM[offset + 0x20000] = value;
+				if (Sequencer.Plane3WriteEnable && oddPlanesEnabledForThisAddress)
+					VRAM[offset + 0x30000] = value;
 			}
 		}
 	}
