@@ -126,12 +126,16 @@ public class Adapter
 			bool lineGraphics = _array.AttributeController.LineGraphics;
 			bool use256Colours = _array.AttributeController.Use256Colours;
 			bool shift256 = _array.Graphics.Shift256;
+			bool chainOddEven = _array.Graphics.ChainOddEven;
 
 			long tick = ElapsedTicks;
 
 			bool enableCursor = _array.CRTController.CursorVisible;
 			bool cursorState = false;
 			int cursorOffset = _array.CRTController.CursorAddress;
+
+			if (chainOddEven)
+				cursorOffset *= 2;
 
 			if (enableCursor)
 				cursorState = ((tick / TicksPerCursorSwitch) & 1) != 0;
@@ -151,6 +155,9 @@ public class Adapter
 
 			// In theory this value is derived from the CRT Controller's Offset register.
 			int stride = _width / (_array.Graphics.Shift256 ? 1 : characterWidth);
+
+			if (chainOddEven)
+				stride *= 2;
 
 			bool paletteAddressSource = _array.AttributeController.PaletteAddressSource;
 
@@ -328,7 +335,12 @@ public class Adapter
 						}
 
 						if (!shift256)
-							offset++;
+						{
+							if (chainOddEven)
+								offset += 2;
+							else
+								offset++;
+						}
 					}
 				}
 

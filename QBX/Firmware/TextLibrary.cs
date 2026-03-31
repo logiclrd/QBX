@@ -27,6 +27,8 @@ public class TextLibrary : VisualLibrary
 			};
 	}
 
+	int _stride;
+
 	public int CursorAddress => CursorY * Width + CursorX;
 
 	public bool MovePhysicalCursor = true;
@@ -50,6 +52,8 @@ public class TextLibrary : VisualLibrary
 
 		Width = Array.CRTController.Registers.EndHorizontalDisplay + 1;
 		Height = Array.CRTController.NumScanLines / Array.CRTController.CharacterHeight;
+
+		_stride = Width * 2;
 
 		CharacterWidth = Width;
 		CharacterHeight = Height;
@@ -242,8 +246,8 @@ public class TextLibrary : VisualLibrary
 		{
 			if (width == CharacterWidth)
 			{
-				int windowStart = fromCharacterLine * Width;
-				int windowLength = (toCharacterLine - fromCharacterLine + 1) * Width;
+				int windowStart = fromCharacterLine * _stride;
+				int windowLength = (toCharacterLine - fromCharacterLine + 1) * _stride;
 
 				if (windowStart + windowLength > planeBytesUsed)
 					windowLength = planeBytesUsed - windowStart;
@@ -254,13 +258,13 @@ public class TextLibrary : VisualLibrary
 				var plane0 = vramSpan.Slice(0x00000 + windowStart, windowLength);
 				var plane1 = vramSpan.Slice(0x10000 + windowStart, windowLength);
 
-				plane0.Clear();
-				plane1.Fill(Attributes);
+				plane0.FillEven((byte)' ');
+				plane1.FillEven(Attributes);
 			}
 			else
 			{
-				int windowStart = fromCharacterLine * Width + x1;
-				int windowLength = width;
+				int windowStart = fromCharacterLine * _stride + 2 * x1;
+				int windowLength = 2 * width;
 
 				for (int y = _clipRect.Y1; y <= _clipRect.Y2; y++)
 				{
@@ -273,8 +277,8 @@ public class TextLibrary : VisualLibrary
 					var plane0 = vramSpan.Slice(0x00000 + windowStart, windowLength);
 					var plane1 = vramSpan.Slice(0x10000 + windowStart, windowLength);
 
-					plane0.Clear();
-					plane1.Fill(Attributes);
+					plane0.FillEven((byte)' ');
+					plane1.FillEven(Attributes);
 				}
 			}
 		}
@@ -298,10 +302,10 @@ public class TextLibrary : VisualLibrary
 		if (buffer.Length == 0)
 			return;
 
-		int o = CursorAddress;
+		int o = 2 * CursorAddress;
 
 		int startAddress = StartAddress;
-		int windowEndOffset = (CharacterLineWindowEnd + 1) * Width;
+		int windowEndOffset = (CharacterLineWindowEnd + 1) * _stride;
 
 		Span<byte> vramSpan = Array.VRAM;
 
@@ -317,15 +321,15 @@ public class TextLibrary : VisualLibrary
 		{
 			int difference = _clipRect.Y1 - CharacterLineWindowStart;
 
-			scrollOffset += difference * Width;
+			scrollOffset += difference * _stride;
 		}
 
 		if (CharacterLineWindowEnd > _clipRect.Y2)
 		{
 			int difference = CharacterLineWindowEnd - _clipRect.Y2;
 
-			plane0 = plane0.Slice(0, plane0.Length - (difference - 1) * Width);
-			plane1 = plane1.Slice(0, plane1.Length - (difference - 1) * Width);
+			plane0 = plane0.Slice(0, plane0.Length - (difference - 1) * _stride);
+			plane1 = plane1.Slice(0, plane1.Length - (difference - 1) * _stride);
 			clearLastLineOnScroll = false;
 		}
 
@@ -353,14 +357,14 @@ public class TextLibrary : VisualLibrary
 						plane1.Slice(scrollOffset, plane1.Length - scrollOffset),
 						clearLastLineOnScroll);
 
-					o -= Width;
+					o -= _stride;
 				}
 			}
 
 			Action updateOffset =
 				() =>
 				{
-					o = CursorY * CharacterWidth + CursorX;
+					o = CursorY * _stride + 2 * CursorX;
 				};
 
 			Action<Span<byte>, Span<byte>> writeSpace =
@@ -405,7 +409,7 @@ public class TextLibrary : VisualLibrary
 							plane1[o] = attributes;
 					}
 
-					o++;
+					o += 2;
 					CursorX++;
 				}
 
@@ -424,13 +428,13 @@ public class TextLibrary : VisualLibrary
 
 	public void WriteAttributes(int charCount)
 	{
-		int o = CursorAddress;
+		int o = 2 * CursorAddress;
 
 		Span<byte> vramSpan = Array.VRAM;
 
 		vramSpan = vramSpan.Slice(StartAddress);
 
-		var plane1 = vramSpan.Slice(0x10000, (CharacterLineWindowEnd + 1) * Width);
+		var plane1 = vramSpan.Slice(0x10000, (CharacterLineWindowEnd + 1) * _stride);
 
 		int scrollOffset = 0;
 		bool clearLastLineOnScroll = true;
@@ -439,14 +443,14 @@ public class TextLibrary : VisualLibrary
 		{
 			int difference = _clipRect.Y1 - CharacterLineWindowStart;
 
-			scrollOffset += difference * Width;
+			scrollOffset += difference * _stride;
 		}
 
 		if (CharacterLineWindowEnd > _clipRect.Y2)
 		{
 			int difference = CharacterLineWindowEnd - _clipRect.Y2;
 
-			plane1 = plane1.Slice(0, plane1.Length - (difference - 1) * Width);
+			plane1 = plane1.Slice(0, plane1.Length - (difference - 1) * _stride);
 			clearLastLineOnScroll = false;
 		}
 
@@ -465,7 +469,7 @@ public class TextLibrary : VisualLibrary
 					if (_clipRect.Contains(CursorX, CursorY))
 						plane1[o] = attributes;
 
-					o++;
+					o += 2;
 					CursorX++;
 				}
 
@@ -480,7 +484,7 @@ public class TextLibrary : VisualLibrary
 					else
 					{
 						ScrollTextUp(Span<byte>.Empty, plane1.Slice(scrollOffset, plane1.Length - scrollOffset), clearLastLineOnScroll);
-						o -= Width;
+						o -= _stride;
 					}
 				}
 			}
@@ -499,9 +503,9 @@ public class TextLibrary : VisualLibrary
 
 		vramSpan = vramSpan.Slice(StartAddress);
 
-		var plane0 = vramSpan.Slice(0, CharacterWidth * CharacterHeight);
+		var plane0 = vramSpan.Slice(0, _stride * CharacterHeight);
 
-		int offset = y * CharacterWidth + x;
+		int offset = y * _stride + 2 * x;
 
 		return plane0[offset];
 	}
@@ -516,9 +520,9 @@ public class TextLibrary : VisualLibrary
 
 		vramSpan = vramSpan.Slice(StartAddress);
 
-		var plane1 = vramSpan.Slice(0x10000, (CharacterLineWindowEnd + 1) * Width);
+		var plane1 = vramSpan.Slice(0x10000, (CharacterLineWindowEnd + 1) * _stride);
 
-		int offset = y * CharacterWidth + x;
+		int offset = y * _stride + 2 * x;
 
 		return plane1[offset];
 	}
@@ -534,8 +538,8 @@ public class TextLibrary : VisualLibrary
 
 		int characterLineWindowLines = CharacterLineWindowEnd - CharacterLineWindowStart + 1;
 
-		int windowOffset = CharacterLineWindowStart * Width;
-		int windowLength = characterLineWindowLines * Width;
+		int windowOffset = CharacterLineWindowStart * _stride;
+		int windowLength = characterLineWindowLines * _stride;
 
 		bool clearLastLine = true;
 
@@ -543,8 +547,8 @@ public class TextLibrary : VisualLibrary
 		{
 			int difference = _clipRect.Y1 - CharacterLineWindowStart;
 
-			windowOffset += difference * Width;
-			windowLength -= difference * Width;
+			windowOffset += difference * _stride;
+			windowLength -= difference * _stride;
 		}
 
 		if (CharacterLineWindowEnd > _clipRect.Y2)
@@ -553,7 +557,7 @@ public class TextLibrary : VisualLibrary
 
 			if (difference > 0)
 			{
-				windowLength -= difference * Width;
+				windowLength -= difference * _stride;
 				clearLastLine = false;
 			}
 		}
@@ -579,45 +583,48 @@ public class TextLibrary : VisualLibrary
 
 			int width = x2 - x1 + 1;
 
+			int x1_2 = 2 * x1;
+			int width_2 = 2 * width;
+
 			if (width == Width)
 			{
-				if (plane0.Length > Width)
+				if (plane0.Length > _stride)
 				{
-					plane0.Slice(Width).CopyTo(plane0);
+					plane0.Slice(_stride).CopyEvenTo(plane0);
 					if (clearLastLine)
-						plane0.Slice(plane0.Length - Width).Fill((byte)' ');
+						plane0.Slice(plane0.Length - _stride).FillEven((byte)' ');
 				}
 				else if (clearLastLine)
-					plane0.Fill((byte)' ');
+					plane0.FillEven((byte)' ');
 
-				if (plane1.Length > Width)
+				if (plane1.Length > _stride)
 				{
-					plane1.Slice(Width).CopyTo(plane1);
+					plane1.Slice(_stride).CopyEvenTo(plane1);
 					if (clearLastLine)
-						plane1.Slice(plane1.Length - Width).Fill(Attributes);
+						plane1.Slice(plane1.Length - _stride).FillEven(Attributes);
 				}
 				else if (clearLastLine)
-					plane1.Fill(Attributes);
+					plane1.FillEven(Attributes);
 			}
 			else
 			{
-				while (plane0.Length > Width)
+				while (plane0.Length > _stride)
 				{
-					plane0.Slice(x1 + Width, width).CopyTo(plane0.Slice(x1));
-					plane0 = plane0.Slice(Width);
+					plane0.Slice(x1 + _stride, width_2).CopyEvenTo(plane0.Slice(x1_2));
+					plane0 = plane0.Slice(_stride);
 				}
 
 				if (clearLastLine)
-					plane0.Slice(x1, width).Fill((byte)' ');
+					plane0.Slice(x1_2, width_2).FillEven((byte)' ');
 
-				while (plane1.Length > Width)
+				while (plane1.Length > _stride)
 				{
-					plane1.Slice(x1 + Width, width).CopyTo(plane1.Slice(x1));
-					plane1 = plane1.Slice(Width);
+					plane1.Slice(x1_2 + _stride, width_2).CopyEvenTo(plane1.Slice(x1_2));
+					plane1 = plane1.Slice(_stride);
 				}
 
 				if (clearLastLine)
-					plane1.Slice(x1, width).Fill(Attributes);
+					plane1.Slice(x1_2, width_2).FillEven(Attributes);
 			}
 		}
 	}
@@ -633,8 +640,8 @@ public class TextLibrary : VisualLibrary
 
 		int characterLineWindowLines = CharacterLineWindowEnd - CharacterLineWindowStart + 1;
 
-		int windowOffset = CharacterLineWindowStart * Width;
-		int windowLength = characterLineWindowLines * Width;
+		int windowOffset = CharacterLineWindowStart * _stride;
+		int windowLength = characterLineWindowLines * _stride;
 
 		bool clearLastLine = true;
 
@@ -642,8 +649,8 @@ public class TextLibrary : VisualLibrary
 		{
 			int difference = _clipRect.Y1 - CharacterLineWindowStart;
 
-			windowOffset += difference * Width;
-			windowLength -= difference * Width;
+			windowOffset += difference * _stride;
+			windowLength -= difference * _stride;
 		}
 
 		if (CharacterLineWindowEnd > _clipRect.Y2)
@@ -652,7 +659,7 @@ public class TextLibrary : VisualLibrary
 
 			if (difference > 0)
 			{
-				windowLength -= difference * Width;
+				windowLength -= difference * _stride;
 				clearLastLine = false;
 			}
 		}
@@ -678,51 +685,54 @@ public class TextLibrary : VisualLibrary
 
 			int width = x2 - x1 + 1;
 
+			int x1_2 = 2 * x1;
+			int width_2 = 2 * width;
+
 			if (width == Width)
 			{
-				if (plane0.Length > Width)
+				if (plane0.Length > _stride)
 				{
-					plane0.Slice(0, plane0.Length - Width).CopyTo(plane0.Slice(Width));
+					plane0.Slice(0, plane0.Length - _stride).CopyEvenTo(plane0.Slice(_stride));
 					if (clearFirstLine)
-						plane0.Slice(0, Width).Fill((byte)' ');
+						plane0.Slice(0, _stride).FillEven((byte)' ');
 				}
 				else if (clearFirstLine)
-					plane0.Fill((byte)' ');
+					plane0.FillEven((byte)' ');
 
-				if (plane1.Length > Width)
+				if (plane1.Length > _stride)
 				{
-					plane1.Slice(0, plane1.Length - Width).CopyTo(plane1.Slice(Width));
+					plane1.Slice(0, plane1.Length - _stride).CopyEvenTo(plane1.Slice(_stride));
 					if (clearFirstLine)
-						plane1.Slice(0, Width).Fill((byte)' ');
+						plane1.Slice(0, _stride).FillEven((byte)' ');
 				}
 				else if (clearFirstLine)
-					plane1.Fill(Attributes);
+					plane1.FillEven((byte)' ');
 			}
 			else
 			{
-				int lineOffset = plane0.Length - (plane0.Length % Width);
+				int lineOffset = plane0.Length - (plane0.Length % _stride);
 
-				while (plane0.Length > Width)
+				while (plane0.Length > _stride)
 				{
-					lineOffset -= Width;
+					lineOffset -= _stride;
 
-					plane0.Slice(x1 + lineOffset, width).CopyTo(plane0.Slice(x1 + lineOffset + Width));
+					plane0.Slice(x1_2 + lineOffset, width_2).CopyEvenTo(plane0.Slice(x1_2 + lineOffset + _stride));
 				}
 
 				if (clearFirstLine)
-					plane0.Slice(x1, width).Fill((byte)' ');
+					plane0.FillEven((byte)' ');
 
-				lineOffset = plane1.Length - (plane1.Length % Width);
+				lineOffset = plane1.Length - (plane1.Length % _stride);
 
-				while (plane1.Length > Width)
+				while (plane1.Length > _stride)
 				{
-					lineOffset -= Width;
+					lineOffset -= _stride;
 
-					plane1.Slice(x1 + lineOffset, width).CopyTo(plane1.Slice(x1 + lineOffset + Width));
+					plane1.Slice(x1_2 + lineOffset, width_2).CopyEvenTo(plane1.Slice(x1_2 + lineOffset + _stride));
 				}
 
 				if (clearFirstLine)
-					plane1.Slice(x1, width).Fill(Attributes);
+					plane1.Slice(x1_2, width_2).FillEven(Attributes);
 			}
 		}
 	}
@@ -776,8 +786,8 @@ public class TextLibrary : VisualLibrary
 			var plane0 = vramSpan.Slice(0x00000, 0x10000);
 			var plane1 = vramSpan.Slice(0x10000, 0x10000);
 
-			plane0 = plane0.Slice(scrollRect.Y1 * Width);
-			plane1 = plane1.Slice(scrollRect.Y1 * Width);
+			plane0 = plane0.Slice(scrollRect.Y1 * _stride);
+			plane1 = plane1.Slice(scrollRect.Y1 * _stride);
 
 			if (constrainedWidth == Width)
 			{
@@ -786,25 +796,27 @@ public class TextLibrary : VisualLibrary
 
 				int actualBlitLines = actualLastBlitLineY - actualFirstBlitLineY + 1;
 
-				int offset = fillLines * Width;
-				int length = actualBlitLines * Width;
+				int offset = fillLines * _stride;
+				int length = actualBlitLines * _stride;
 
 				int fromOffset = (numLines < 0) ? offset : 0;
 				int toOffset = (numLines > 0) ? offset : 0;
 
 				if (fromOffset > 0)
 				{
-					plane0.Slice(fromOffset, length).CopyTo(plane0);
-					plane1.Slice(fromOffset, length).CopyTo(plane1);
+					plane0.Slice(fromOffset, length).CopyEvenTo(plane0);
+					plane1.Slice(fromOffset, length).CopyEvenTo(plane1);
 				}
 				else
 				{
+					int constrainedWidth_2 = 2 * constrainedWidth;
+
 					for (int y = actualLastBlitLineY; y >= actualFirstBlitLineY; y--)
 					{
-						int o = y * Width;
+						int o = y * _stride;
 
-						plane0.Slice(o, constrainedWidth).CopyTo(plane0.Slice(o + toOffset));
-						plane1.Slice(o, constrainedWidth).CopyTo(plane1.Slice(o + toOffset));
+						plane0.Slice(o, constrainedWidth_2).CopyEvenTo(plane0.Slice(o + toOffset));
+						plane1.Slice(o, constrainedWidth_2).CopyEvenTo(plane1.Slice(o + toOffset));
 					}
 				}
 
@@ -812,20 +824,20 @@ public class TextLibrary : VisualLibrary
 				{
 					int actualFillLines = actualFirstBlitLineY - scrollRect.Y1;
 
-					length = actualFillLines * Width;
+					length = actualFillLines * _stride;
 
-					plane0.Slice(scrollRect.Y1 * Width, length).Fill(32);
-					plane1.Slice(scrollRect.Y1 * Width, length).Fill(fillAttribute);
+					plane0.Slice(scrollRect.Y1 * _stride, length).FillEven((byte)' ');
+					plane1.Slice(scrollRect.Y1 * _stride, length).FillEven(fillAttribute);
 				}
 
 				if (actualLastBlitLineY > scrollRect.Y2)
 				{
 					int actualFillLines = scrollRect.Y2 - actualLastBlitLineY;
 
-					length = actualFillLines * Width;
+					length = actualFillLines * _stride;
 
-					plane0.Slice((actualLastBlitLineY + 1) * Width, length).Fill(32);
-					plane1.Slice((actualLastBlitLineY + 1) * Width, length).Fill(fillAttribute);
+					plane0.Slice((actualLastBlitLineY + 1) * _stride, length).FillEven((byte)' ');
+					plane1.Slice((actualLastBlitLineY + 1) * _stride, length).FillEven(fillAttribute);
 				}
 			}
 			else
@@ -833,24 +845,26 @@ public class TextLibrary : VisualLibrary
 				int loopY1 = numLines > 0 ? scrollRect.Y2 : scrollRect.Y1;
 				int loopY2 = numLines > 0 ? scrollRect.Y1 : scrollRect.Y2;
 				int loopDY = numLines > 0 ? -1 : +1;
-				int loopDO = loopDY * Width;
+				int loopDO = loopDY * _stride;
 
-				int blitOffset = -numLines * Width;
+				int blitOffset = -numLines * _stride;
 
-				int loopOStart = loopY1 * Width + scrollRect.X1;
+				int loopOStart = loopY1 * _stride + 2 * scrollRect.X1;
 				int loopYEnd = loopY2 + loopDY;
+
+				int constrainedWidth_2 = 2 * constrainedWidth;
 
 				for (int y = loopY1, o = loopOStart; y != loopYEnd; y += loopDY, o += loopDO)
 				{
 					if ((y >= firstBlitLineY) && (y <= lastBlitLineY))
 					{
-						plane0.Slice(o + blitOffset, constrainedWidth).CopyTo(plane0.Slice(o));
-						plane1.Slice(o + blitOffset, constrainedWidth).CopyTo(plane1.Slice(o));
+						plane0.Slice(o + blitOffset, constrainedWidth_2).CopyEvenTo(plane0.Slice(o));
+						plane1.Slice(o + blitOffset, constrainedWidth_2).CopyEvenTo(plane1.Slice(o));
 					}
 					else
 					{
-						plane0.Slice(o, constrainedWidth).Fill(32);
-						plane1.Slice(o, constrainedWidth).Fill(fillAttribute);
+						plane0.Slice(o, constrainedWidth_2).FillEven((byte)' ');
+						plane1.Slice(o, constrainedWidth_2).FillEven(fillAttribute);
 					}
 				}
 			}
@@ -873,7 +887,7 @@ public class TextLibrary : VisualLibrary
 			int pointerCharacterX = Machine.MouseDriver.ScaledPointerX;
 			int pointerCharacterY = Machine.MouseDriver.ScaledPointerY;
 
-			int pointerOffset = pointerCharacterY * CharacterWidth + pointerCharacterX;
+			int pointerOffset = pointerCharacterY * _stride + 2 * pointerCharacterX;
 
 			Span<byte> vramSpan = Array.VRAM;
 

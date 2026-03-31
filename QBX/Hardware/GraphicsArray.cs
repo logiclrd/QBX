@@ -63,6 +63,7 @@ public class GraphicsArray : IMemory
 		public bool Shift256;
 		public bool ShiftInterleave;
 		public bool HostOddEvenRead;
+		public bool ChainOddEven;
 
 		public readonly RegisterSet Registers;
 
@@ -138,6 +139,8 @@ public class GraphicsArray : IMemory
 							_ => throw new Exception("Internal error")
 						};
 
+					owner.ChainOddEven = ((MiscGraphics & MiscGraphics_ChainOddEven) != 0);
+
 					owner.DisableText = ((MiscGraphics & MiscGraphics_AlphanumericModeDisable) != 0);
 
 					owner.Shift256 = ((GraphicsMode & GraphicsMode_Shift256) != 0);
@@ -195,6 +198,8 @@ public class GraphicsArray : IMemory
 		public int CharacterSetAOffset;
 		public int CharacterSetBOffset;
 		public bool HostOddEvenWrite;
+		public int AddressMask;
+		public int AddressShift;
 
 		public readonly RegisterSet Registers;
 
@@ -254,6 +259,13 @@ public class GraphicsArray : IMemory
 
 					owner.CharacterSetAOffset = characterSetA * 0x2000;
 					owner.CharacterSetBOffset = characterSetB * 0x2000;
+
+					if ((SequencerMemoryMode & SequencerMemoryMode_ExtendedMemory) == 0)
+						owner.AddressShift = 14;
+					else
+						owner.AddressShift = 16;
+
+					owner.AddressMask = (1 << owner.AddressShift) - 2;
 
 					owner.HostOddEvenWrite = ((SequencerMemoryMode & SequencerMemoryMode_OddEvenDisable) == 0);
 				}
@@ -919,8 +931,12 @@ public class GraphicsArray : IMemory
 			if (offset >= Graphics.MemoryMapSize)
 				return 0;
 
-			if (Graphics.HostOddEvenRead)
-				offset = (offset >> 1) | ((offset & 1) << 16);
+			if (Graphics.ChainOddEven)
+			{
+				offset = (offset & Sequencer.AddressMask)
+					| ((offset >> Sequencer.AddressShift) & 1)
+					| ((offset & 1) << Sequencer.AddressShift);
+			}
 
 			int linearOffset = offset + Graphics.MemoryMapReadOffset;
 
@@ -935,11 +951,27 @@ public class GraphicsArray : IMemory
 
 			if (offset < Graphics.MemoryMapSize)
 			{
-				if (Sequencer.HostOddEvenWrite)
+				if (Graphics.ChainOddEven)
 				{
-					offset = (offset >> 1) | ((offset & 1) << 16);
+					bool oddPlanes = (offset & 1) != 0;
 
-					VRAM[offset] = value;
+					offset = (offset & Sequencer.AddressMask)
+						| ((offset >> Sequencer.AddressShift) & 1);
+
+					if (oddPlanes)
+					{
+						if (Sequencer.Plane1WriteEnable)
+							VRAM[offset + 0x10000] = value;
+						if (Sequencer.Plane3WriteEnable)
+							VRAM[offset + 0x30000] = value;
+					}
+					else
+					{
+						if (Sequencer.Plane0WriteEnable)
+							VRAM[offset] = value;
+						if (Sequencer.Plane2WriteEnable)
+							VRAM[offset + 0x20000] = value;
+					}
 				}
 				else
 				{

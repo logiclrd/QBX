@@ -297,7 +297,7 @@ public partial class Video(Machine machine)
 		if (!mode.IsGraphicsMode)
 		{
 			for (int i = 0, o = mode.Characters.Width * mode.Characters.Height; i < o; i++)
-				array.VRAM[0x10000 + i] = 7;
+				array.VRAM[0x10000 + 2 * i] = 7;
 
 			var font = GetFontForCurrentMode();
 
