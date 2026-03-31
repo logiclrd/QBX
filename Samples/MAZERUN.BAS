@@ -1,3 +1,9 @@
+DECLARE SUB ClearGlyph (pixels%())
+DECLARE SUB DrawGlyphLine (pixels%(), x1%, y1%, x2%, y2%)
+DECLARE SUB InitializeFont ()
+DECLARE SUB Set8x16Characters ()
+DECLARE SUB SetFontCharacter (charcode%, pixels%())
+
 1 REM TRANSLATED FROM THE BOOK: 10 PRINT CHR$(205.5 + RND(1)); : GOTO 10
 2 REM CHAPTER 65: REM MAZE WALKER IN BASIC
 3 REM https://10print.org/10_PRINT_121114.pdf
@@ -193,3 +199,4 @@ OUT SequencerDataPort%, savedmask%
 OUT GraphicsIndexPort%, MiscGraphicsRegister%
 OUT GraphicsDataPort%, savedmode%
 END SUB
+

@@ -2,6 +2,8 @@
 '
 ' https://github.com/sidchoudhuri/C64-BASIC/blob/main/plasma%2Freadme.md
 
+DECLARE SUB SetC64Palette ()
+
 ShowColourCodes% = 0
 
 WIDTH 40, 25
@@ -64,7 +66,6 @@ C64Palette:
   DATA 0,0,0, 255,255,255, 135,0,0, 170,253,238, 204,67,202, 0,203,84, 0,0,169, 236,238,118
   DATA 221,135,84, 100,69,1, 254,118,118, 48,48,48, 118,118,118, 168,253,100, 1,134,254, 186,186,186
 
-
 SUB SetC64Palette
 ' Map attributes to colours directly
 FOR i% = 0 TO 15
@@ -81,3 +82,4 @@ FOR i% = 0 TO 47
   OUT &H3C9, a% * 63 \ 255
 NEXT i%
 END SUB
+

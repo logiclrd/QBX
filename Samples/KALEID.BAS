@@ -1,3 +1,4 @@
+DECLARE SUB SetZXSpectrumPalette ()
 LO$ = CHR$(220)
 HI$ = CHR$(223)
 
@@ -67,3 +68,4 @@ SetColour:
 
   RETURN
 END SUB
+

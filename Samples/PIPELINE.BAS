@@ -1,3 +1,21 @@
+DECLARE SUB Advance (x%, y%, direction%)
+DECLARE SUB Delay ()
+DECLARE SUB DrawRandomPipe (x%, y%, direction%)
+DECLARE SUB FillIn (pixels%())
+DECLARE SUB FillRectangle (pixels%(), x1%, y1%, x2%, y2%)
+DECLARE SUB HueToRGB (hue%, r%, g%, b%)
+DECLARE SUB InitializeDrawingCharacters ()
+DECLARE SUB InitializePalette ()
+DECLARE SUB InitializeScreen ()
+DECLARE FUNCTION IsOnScreen% (x%, y%)
+DECLARE SUB MaybePickNewColour (c%)
+DECLARE FUNCTION MaybePickNewDirection% (direction%)
+DECLARE SUB PickRandomStartingPoint (x%, y%, direction%)
+DECLARE SUB RenderCharacter (fromdir%, todir%, charcode%)
+DECLARE SUB RenderLine (pixels%(), direction%)
+DECLARE SUB SetFontCharacter (charcode%, pixels%())
+DECLARE SUB Wrap (x%, y%)
+
 CONST NumColumns% = 40
 CONST NumRows% = 25
 

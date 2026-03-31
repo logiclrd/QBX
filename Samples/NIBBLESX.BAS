@@ -69,6 +69,7 @@ DECLARE SUB SparklePause ()
 DECLARE SUB Level (WhatToDO, sammy() AS snaketype)
 DECLARE SUB InitColors ()
 DECLARE SUB EraseSnake (snake() AS ANY, snakeBod() AS ANY, snakeNum%)
+DECLARE SUB Rest ()
 DECLARE FUNCTION StillWantsToPlay ()
 DECLARE FUNCTION PointIsThere (row, col, backColor)
 
