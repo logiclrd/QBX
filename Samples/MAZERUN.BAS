@@ -1,4 +1,4 @@
-99 COLOR 8: WIDTH 40, 25: DEF SEG = &HB800: InitializeFont
+99 COLOR 11, 1: WIDTH 40, 25: DEF SEG = &HB800: InitializeFont
 100 CLS : FOR i = 0 TO 999: POKE i * 2, INT(77.5 + RND): NEXT
 120 x = INT(RND * 39): xold = -1: y = INT(RND * 24): yold = -1
 140 dd = INT(RND * 3): wold = -1
@@ -19,7 +19,7 @@
 410 IF dd = 3 THEN dd = 0
 420 GOTO 160: REM =========================
 500 GOSUB 600: xold = x: yold = y: m = 2 * (x + (y * 40)): wold = PEEK(m)
-550 c = 1 + 2 * (x + (y * 40)): POKE c, 15: POKE m, 9
+550 c = 1 + 2 * (x + (y * 40)): POKE c, 31: POKE m, 9
 570 GOSUB 650: RETURN : REM ====================
 600 IF xold = -1 THEN RETURN
 620 POKE 2 * (xold + (yold * 40)), wold: RETURN
