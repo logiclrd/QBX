@@ -297,19 +297,22 @@ CONST MapMaskPlane1% = 2
 CONST MapMaskPlane2% = 4
 CONST MapMaskPlane3% = 8
 
-CONST MemoryModeRegister% = 4
-CONST MemoryModeOddEvenDisable% = 4
+CONST GraphicsIndexPort% = &H3CE
+CONST GraphicsDataPort% = &H3CF
+
+CONST MiscGraphicsRegister% = 6
+CONST MiscGraphicsChainOddEven% = 2
 
 OUT SequencerIndexPort%, MapMaskRegister%
 savedmask% = INP(SequencerDataPort%)
-OUT SequencerIndexPort%, MemoryModeRegister%
-savedmode% = INP(SequencerDataPort%)
+OUT GraphicsIndexPort%, MiscGraphicsRegister%
+savedmode% = INP(GraphicsDataPort%)
 
 OUT SequencerIndexPort%, MapMaskRegister%
 OUT SequencerDataPort%, MapMaskPlane2%
 
-OUT SequencerIndexPort%, MemoryModeRegister%
-OUT SequencerDataPort%, savedmode% OR MemoryModeOddEvenDisable%
+OUT GraphicsIndexPort%, MiscGraphicsRegister%
+OUT GraphicsDataPort%, savedmode% AND NOT MiscGraphicsChainOddEven%
 
 DEF SEG = &HB800
 
@@ -327,8 +330,8 @@ NEXT y%
 OUT SequencerIndexPort%, MapMaskRegister%
 OUT SequencerDataPort%, savedmask%
 
-OUT SequencerIndexPort%, MemoryModeRegister%
-OUT SequencerDataPort%, savedmode%
+OUT GraphicsIndexPort%, MiscGraphicsRegister%
+OUT GraphicsDataPort%, savedmode%
 END SUB
 
 SUB Wrap (x%, y%)
