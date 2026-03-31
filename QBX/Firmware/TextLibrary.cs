@@ -218,7 +218,7 @@ public class TextLibrary : VisualLibrary
 
 	protected override void ClearImplementation(int fromCharacterLine = 0, int toCharacterLine = -1)
 	{
-		int planeBytesUsed = Width * Height;
+		int planeBytesUsed = Width * _stride;
 
 		Span<byte> vramSpan = Array.VRAM;
 
