@@ -14,7 +14,8 @@ namespace QBX.ExecutionEngine;
 
 public class NativeProcedure(object site, MethodInfo implementation)
 {
-	public Identifier Name => Identifier.Standalone(implementation.Name);
+	public Identifier Name => Identifier.Standalone(
+		implementation.GetCustomAttribute<ExportAttribute>()?.Name ?? implementation.Name);
 
 	// Supplied by DECLARE SUB/DECLARE FUNCTION
 	public DataType[]? ParameterTypes;
