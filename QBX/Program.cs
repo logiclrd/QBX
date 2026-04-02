@@ -65,7 +65,7 @@ class Program
 				"QBX",
 				720,
 				400,
-				default,
+				SDL.WindowFlags.Resizable,
 				out var window,
 				out var renderer);
 
@@ -74,6 +74,22 @@ class Program
 				Console.WriteLine("Failed to create window and/or renderer: {0}", SDL.GetError());
 				return 2;
 			}
+
+			bool fullScreen = false;
+
+			void ToggleFullScreen()
+			{
+				fullScreen = !fullScreen;
+				SDL.SetWindowFullscreen(window, fullScreen);
+			}
+
+			static bool IsToggleFullScreenEvent(SDL.Event evt) =>
+				(evt.Type == (uint)SDL.EventType.KeyDown) &&
+				evt.Key.Down &&
+				(evt.Key.Scancode == SDL.Scancode.Return) &&
+				((evt.Key.Mod & SDL.Keymod.Alt) != 0) &&
+				((evt.Key.Mod & (SDL.Keymod.Ctrl | SDL.Keymod.Shift)) == 0) &&
+				!evt.Key.Repeat;
 
 			program.WindowIconChanged +=
 				(newIcon) =>
@@ -206,6 +222,12 @@ class Program
 					{
 						machine.KeepRunning = false;
 						break;
+					}
+
+					if (IsToggleFullScreenEvent(evt))
+					{
+						ToggleFullScreen();
+						continue;
 					}
 
 					switch (eventType)
