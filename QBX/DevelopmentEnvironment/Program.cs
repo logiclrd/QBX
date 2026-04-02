@@ -20,6 +20,8 @@ public partial class Program : HostedProgram, IOvertypeFlag
 	public Machine Machine;
 	public TextLibrary TextLibrary;
 
+	public bool IsRunning { get; private set; }
+
 	public Configuration Configuration = new Configuration();
 
 	public List<IEditableUnit> LoadedFiles = new List<IEditableUnit>();
@@ -356,8 +358,32 @@ public partial class Program : HostedProgram, IOvertypeFlag
 		}
 	}
 
-	private void LoadQLB(string qlbName)
+	List<string> _qlbLoadQueue = new List<string>();
+
+	private void DelayLoadQLB(string qlbName)
 	{
+		_qlbLoadQueue.Add(qlbName);
+	}
+
+	private void LoadDelayedQLBs()
+	{
+		if (!IsRunning)
+			throw new InvalidOperationException();
+
+		foreach (var qlbName in _qlbLoadQueue)
+			LoadQLB(qlbName);
+
+		_qlbLoadQueue.Clear();
+	}
+
+	public void LoadQLB(string qlbName)
+	{
+		if (!IsRunning)
+		{
+			DelayLoadQLB(qlbName);
+			return;
+		}
+
 		while (true)
 		{
 			int dotIndex = qlbName.IndexOf('.');
@@ -380,9 +406,18 @@ public partial class Program : HostedProgram, IOvertypeFlag
 				return;
 			}
 
-			TextLibrary.WriteText("Cannot find file (" + qlbName + ").  Input path: ");
+			TextLibrary.MovePhysicalCursor = true;
 
-			qlbName = TextLibrary.ReadLine(Machine.Keyboard);
+			try
+			{
+				TextLibrary.WriteText("Cannot find file (" + qlbName + ").  Input path: ");
+
+				qlbName = TextLibrary.ReadLine(Machine.Keyboard);
+			}
+			finally
+			{
+				TextLibrary.MovePhysicalCursor = false;
+			}
 		}
 	}
 
@@ -494,43 +529,54 @@ public partial class Program : HostedProgram, IOvertypeFlag
 
 		SetWindowIcon();
 
-		while (Machine.KeepRunning && !Machine.DOS.IsTerminated)
+		IsRunning = true;
+
+		try
 		{
-			if (AutoRun)
+			LoadDelayedQLBs();
+
+			while (Machine.KeepRunning && !Machine.DOS.IsTerminated)
 			{
-				AutoRun = false;
-				Run();
-			}
-
-			if (_closeRequested)
-			{
-				_closeRequested = false;
-				ExitWithSavePrompt();
-			}
-
-			Render();
-
-			if (Machine.Keyboard.WaitForInput(cancellationToken, eatReleaseEvents: false))
-			{
-				var input = Machine.Keyboard.GetNextEvent();
-
-				if (input != null)
+				if (AutoRun)
 				{
-					var currentDialog = Dialogs.LastOrDefault();
+					AutoRun = false;
+					Run();
+				}
 
-					if (currentDialog != null)
-						currentDialog.ProcessKey(input, overtypeFlag: this);
-					else
+				if (_closeRequested)
+				{
+					_closeRequested = false;
+					ExitWithSavePrompt();
+				}
+
+				Render();
+
+				if (Machine.Keyboard.WaitForInput(cancellationToken, eatReleaseEvents: false))
+				{
+					var input = Machine.Keyboard.GetNextEvent();
+
+					if (input != null)
 					{
-						switch (Mode)
+						var currentDialog = Dialogs.LastOrDefault();
+
+						if (currentDialog != null)
+							currentDialog.ProcessKey(input, overtypeFlag: this);
+						else
 						{
-							case UIMode.TextEditor: ProcessTextEditorKey(input); break;
-							case UIMode.Menu: ProcessMenuKey(input); break;
-							case UIMode.MenuBar: ProcessMenuBarKey(input); break;
+							switch (Mode)
+							{
+								case UIMode.TextEditor: ProcessTextEditorKey(input); break;
+								case UIMode.Menu: ProcessMenuKey(input); break;
+								case UIMode.MenuBar: ProcessMenuBarKey(input); break;
+							}
 						}
 					}
 				}
 			}
+		}
+		finally
+		{
+			IsRunning = false;
 		}
 	}
 
