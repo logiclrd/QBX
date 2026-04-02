@@ -236,6 +236,10 @@ class Program
 							program.RequestClose();
 							break;
 
+						case SDL.EventType.KeymapChanged:
+							program.NotifyKeyboardLayoutChanged();
+							break;
+
 						case SDL.EventType.KeyDown:
 						case SDL.EventType.KeyUp:
 							machine.Keyboard.HandleEvent(evt.Key);

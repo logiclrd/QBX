@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using QBX.Hardware;
+using QBX.OperatingSystem;
 
 using SDL3;
 
@@ -59,17 +60,25 @@ public class KeyboardDriver
 
 	public void InferLayoutFromSDLState()
 	{
+		KeyboardLayout? newLayout = null;
+
 		foreach (var layoutType in s_keyboardLayouts.Values)
 		{
 			if (Activator.CreateInstance(layoutType, _machine) is KeyboardLayout layout)
 			{
-				if (layout.IsMatchForCurrentSDLState())
+				if (layout.IsHeuristicMatchForCurrentSDLState())
 				{
-					ActiveKeyboardLayout = layout;
+					newLayout = layout;
 					break;
 				}
 			}
 		}
+
+		if (newLayout == null)
+			newLayout = new KeyboardLayouts.US(_machine);
+
+		if (ActiveKeyboardLayout.GetType() != newLayout.GetType())
+			ActiveKeyboardLayout = newLayout;
 	}
 
 	public IEnumerable<KeyEvent> GenerateKeyEvents(SDL.Scancode sdlScanCode, SDL.Keymod modifiers, bool isRelease)

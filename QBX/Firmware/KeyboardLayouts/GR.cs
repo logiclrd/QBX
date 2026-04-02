@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 using QBX.Hardware;
@@ -9,7 +10,7 @@ namespace QBX.Firmware.KeyboardLayouts;
 
 public class GR(Machine machine) : ShiftLockKeyboardLayout(machine)
 {
-	public override bool IsMatchForCurrentSDLState()
+	public override bool IsHeuristicMatchForCurrentSDLState()
 	{
 		var yKey = SDL.GetKeyFromScancode(SDL.Scancode.Y, default, false);
 		var zKey = SDL.GetKeyFromScancode(SDL.Scancode.Z, default, false);
@@ -17,17 +18,20 @@ public class GR(Machine machine) : ShiftLockKeyboardLayout(machine)
 		var openSquareBracketKey = SDL.GetKeyFromScancode(SDL.Scancode.Leftbracket, default, false);
 
 		return
-			(SDL.GetKeyName(yKey) == "z") &&
-			(SDL.GetKeyName(zKey) == "y") &&
-			(SDL.GetKeyName(minusKey) == "ß") &&
-			(SDL.GetKeyName(openSquareBracketKey) == "ü");
+			SDL.GetKeyName(yKey).Equals("z", StringComparison.OrdinalIgnoreCase) &&
+			SDL.GetKeyName(zKey).Equals("y", StringComparison.OrdinalIgnoreCase) &&
+			SDL.GetKeyName(minusKey).Equals("ß", StringComparison.OrdinalIgnoreCase) &&
+			SDL.GetKeyName(openSquareBracketKey).Equals("ü", StringComparison.OrdinalIgnoreCase);
 	}
 
 	Queue<RawKeyEventData> _events = new Queue<RawKeyEventData>();
 	Queue<KeyEventData> _future = new Queue<KeyEventData>();
 
 	public override void Reset()
-		=> _events.Clear();
+	{
+		_events.Clear();
+		_future.Clear();
+	}
 
 	public override void ProcessKeyPress(RawKeyEventData data)
 		=> _events.Enqueue(data);

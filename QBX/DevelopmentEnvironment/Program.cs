@@ -259,7 +259,10 @@ public partial class Program : HostedProgram, IOvertypeFlag
 			{
 				// Set keyboard layout
 				if (PullArgument() is string layoutName)
+				{
+					_isForcedKeyboardLayout = true;
 					Machine.KeyboardDriver.SetLayoutByName(layoutName);
+				}
 			}
 			else if (argument.Equals("/CMD", StringComparison.OrdinalIgnoreCase))
 			{
@@ -516,6 +519,14 @@ public partial class Program : HostedProgram, IOvertypeFlag
 			}
 			catch { }
 		}
+	}
+
+	bool _isForcedKeyboardLayout;
+
+	public override void NotifyKeyboardLayoutChanged()
+	{
+		if (!_isForcedKeyboardLayout)
+			Machine.KeyboardDriver.InferLayoutFromSDLState();
 	}
 
 	public override bool EnableMainLoop => true;

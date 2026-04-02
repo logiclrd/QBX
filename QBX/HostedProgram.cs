@@ -11,6 +11,8 @@ public abstract class HostedProgram(Machine machine)
 	public abstract void Run(CancellationToken cancellationToken);
 	public virtual void RequestClose() { machine.KeepRunning = false; }
 
+	public virtual void NotifyKeyboardLayoutChanged() { }
+
 	public event Action<Icon>? WindowIconChanged;
 
 	protected void OnWindowIconChanged(Icon icon)

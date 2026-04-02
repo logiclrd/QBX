@@ -8,7 +8,7 @@ namespace QBX.Firmware;
 
 public abstract class KeyboardLayout(Machine machine)
 {
-	public virtual bool IsMatchForCurrentSDLState() => false;
+	public virtual bool IsHeuristicMatchForCurrentSDLState() => false;
 
 	public abstract void ProcessKeyPress(RawKeyEventData rawData);
 	public abstract void Reset();
