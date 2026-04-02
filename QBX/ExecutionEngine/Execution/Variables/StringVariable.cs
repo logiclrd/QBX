@@ -24,6 +24,11 @@ public class StringVariable : Variable
 
 	static Encoding s_cp437 = new CP437Encoding(ControlCharacterInterpretation.Semantic);
 
+	public StringVariable()
+		: this(fixedStringLength: 0)
+	{
+	}
+
 	public StringVariable(int fixedStringLength = 0)
 		: base(DataType.String)
 	{

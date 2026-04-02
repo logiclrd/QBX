@@ -91,7 +91,7 @@ public class NativeProcedure(object site, MethodInfo implementation)
 		if (ReturnType != null)
 			variableCount++;
 
-		var marshalledArguments = new ParameterExpression[variableCount];
+		var localVariables = new ParameterExpression[variableCount];
 
 		for (int i = 0; i < parameters.Length; i++)
 		{
@@ -100,11 +100,16 @@ public class NativeProcedure(object site, MethodInfo implementation)
 			if (parameterType.IsByRef)
 				parameterType = parameterType.GetElementType()!;
 
-			marshalledArguments[i] = Expression.Variable(parameterType);
+			localVariables[i] = Expression.Variable(parameterType);
 		}
 
-		for (int i = parameters.Length; i < marshalledArguments.Length; i++)
-			marshalledArguments[i] = Expression.Variable(typeof(object));
+		for (int i = parameters.Length; i < localVariables.Length; i++)
+			localVariables[i] = Expression.Variable(typeof(object));
+
+		var marshalledArguments = new ParameterExpression[parameters.Length];
+
+		localVariables.AsSpan().Slice(0, marshalledArguments.Length)
+			.CopyTo(marshalledArguments);
 
 		var marshalTemporary = Expression.Variable(typeof(object));
 
@@ -169,11 +174,15 @@ public class NativeProcedure(object site, MethodInfo implementation)
 		{
 			Marshaller returnValueMarshaller;
 
-			var returnValueVariable = marshalledArguments[0];
+			var returnValueVariable = localVariables.Last();
 
 			if (ReturnType.IsPrimitiveType)
 			{
 				Type variableType = GetPrimitiveVariableType(ReturnType);
+
+				blockBody.Add(Expression.Assign(
+					returnValueVariable,
+					Expression.New(variableType)));
 
 				returnValueMarshaller = PrimitiveMarshaller.Construct(implementation.ReturnType, variableType);
 			}
@@ -195,7 +204,7 @@ public class NativeProcedure(object site, MethodInfo implementation)
 		}
 
 		var thunkExpression = Expression.Block(
-			[.. marshalledArguments, marshalTemporary],
+			[.. localVariables, marshalTemporary],
 			blockBody);
 
 		var thunk = Expression.Lambda<Func<Variable[], Variable>>(thunkExpression, inputParameter);
