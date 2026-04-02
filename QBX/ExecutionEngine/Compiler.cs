@@ -3566,6 +3566,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 					case TokenType.SCREEN: function = new ScreenFunction(); break;
 					case TokenType.SEEK: function = new SeekFunction(); break;
 					case TokenType.SGN: function = new SgnFunction(); break;
+					case TokenType.SHELL: function = new ShellFunction(); break;
 					case TokenType.SIN: function = new SinFunction(); break;
 					case TokenType.SPACE: function = new SpaceFunction(); break;
 					case TokenType.SQR: function = new SqrFunction(); break;
