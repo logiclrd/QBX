@@ -18,17 +18,8 @@ public partial class ShellStatement(CodeModel.Statements.Statement source) : Exe
 {
 	public Evaluable? CommandStringExpression;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	public static void BuildShellExecuteCommand(string commandString, out string shell, out string[] arguments)
 	{
-		string commandString = "";
-
-		if (CommandStringExpression != null)
-		{
-			var commandStringResult = (StringVariable)CommandStringExpression.Evaluate(context, stackFrame);
-
-			commandString = commandStringResult.ValueString;
-		}
-
 		string shellEnvironmentVariable;
 		string fallbackShell;
 		string commandSwitch;
@@ -46,12 +37,28 @@ public partial class ShellStatement(CodeModel.Statements.Statement source) : Exe
 			commandSwitch = "-c";
 		}
 
-		var shell = Environment.GetEnvironmentVariable(shellEnvironmentVariable) ?? fallbackShell;
+		shell = Environment.GetEnvironmentVariable(shellEnvironmentVariable) ?? fallbackShell;
+		arguments = commandString == "" ? [] : [commandSwitch, commandString];
+	}
+
+	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	{
+		string commandString = "";
+
+		if (CommandStringExpression != null)
+		{
+			var commandStringResult = (StringVariable)CommandStringExpression.Evaluate(context, stackFrame);
+
+			commandString = commandStringResult.ValueString;
+		}
+
+		BuildShellExecuteCommand(
+			commandString,
+			out var shell,
+			out var arguments);
 
 		try
 		{
-			string[] arguments = commandString == "" ? [] : [commandSwitch, commandString];
-
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 				RunChildProcessWindows(context, shell, arguments);
 			else
