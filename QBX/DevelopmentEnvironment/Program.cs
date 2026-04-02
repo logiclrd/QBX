@@ -261,7 +261,7 @@ public partial class Program : HostedProgram, IOvertypeFlag
 				if (PullArgument() is string layoutName)
 					Machine.KeyboardDriver.SetLayoutByName(layoutName);
 			}
-			else if (argument.Equals("/CMD"))
+			else if (argument.Equals("/CMD", StringComparison.OrdinalIgnoreCase))
 			{
 				// COMMAND$ value
 				if (remainingCommandLine == null)
