@@ -12,6 +12,7 @@ public class Machine
 	public FirmwareROM FirmwareROM { get; }
 	public Adapter Display { get; }
 	public Video VideoFirmware { get; }
+	public KeyboardDriver KeyboardDriver { get; }
 	public MouseDriver MouseDriver { get; }
 	public Keyboard Keyboard { get; }
 	public Mouse Mouse { get; }
@@ -59,6 +60,7 @@ public class Machine
 		MemoryBus.MapRange(0xA000, GraphicsArray.VRAM.Length, GraphicsArray);
 		MemoryBus.MapRange(0xF000, FirmwareROM.Length, FirmwareROM);
 
+		KeyboardDriver = new KeyboardDriver(this);
 		MouseDriver = new MouseDriver(this);
 
 		InterruptHandlers[0x10] = new Interrupt0x10(this);

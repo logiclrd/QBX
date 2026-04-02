@@ -27,63 +27,6 @@ public class Keyboard(Machine machine)
 			return SDL.GetModState();
 	}
 
-	void UpdateModifiers(SDL.KeyboardEvent evt)
-	{
-		var mods = GetModState();
-
-		int keyboardStatus = machine.SystemMemory[SystemMemory.KeyboardStatusAddress];
-
-		if ((mods & SDL.Keymod.Ctrl) != 0)
-			keyboardStatus |= SystemMemory.KeyboardStatus_ControlBit;
-		else
-			keyboardStatus &= ~SystemMemory.KeyboardStatus_ControlBit;
-
-		if ((mods & SDL.Keymod.Alt) != 0)
-			keyboardStatus |= SystemMemory.KeyboardStatus_AltBit;
-		else
-			keyboardStatus &= ~SystemMemory.KeyboardStatus_AltBit;
-
-		if ((mods & SDL.Keymod.Shift) == 0)
-			keyboardStatus &= ~(SystemMemory.KeyboardStatus_LeftShiftBit | SystemMemory.KeyboardStatus_RightShiftBit);
-		else
-		{
-			int shiftBit =
-				evt.Scancode switch
-				{
-					SDL.Scancode.LShift => SystemMemory.KeyboardStatus_LeftShiftBit,
-					SDL.Scancode.RShift => SystemMemory.KeyboardStatus_RightShiftBit,
-
-					_ => 0
-				};
-
-			if (evt.Down)
-				keyboardStatus |= shiftBit;
-			else
-				keyboardStatus &= ~shiftBit;
-		}
-
-		if ((mods & SDL.Keymod.Scroll) != 0)
-			keyboardStatus |= SystemMemory.KeyboardStatus_ScrollLockBit;
-		else
-			keyboardStatus &= ~SystemMemory.KeyboardStatus_ScrollLockBit;
-
-		if ((mods & SDL.Keymod.Num) != 0)
-			keyboardStatus |= SystemMemory.KeyboardStatus_NumLockBit;
-		else
-			keyboardStatus &= ~SystemMemory.KeyboardStatus_NumLockBit;
-
-		if ((mods & SDL.Keymod.Caps) != 0)
-			keyboardStatus |= SystemMemory.KeyboardStatus_CapsLockBit;
-		else
-			keyboardStatus &= ~SystemMemory.KeyboardStatus_CapsLockBit;
-
-		if (evt.Down && (evt.Scancode == SDL.Scancode.Insert))
-			keyboardStatus ^= SystemMemory.KeyboardStatus_InsertBit;
-
-		machine.SystemMemory[SystemMemory.KeyboardStatusAddress] =
-			unchecked((byte)keyboardStatus);
-	}
-
 	bool? _suppressNextIfIsRelease;
 	ScanCode? _suppressNextIfHasScanCode;
 
@@ -95,52 +38,43 @@ public class Keyboard(Machine machine)
 
 	public void HandleEvent(SDL.KeyboardEvent evt)
 	{
-		switch (evt.Scancode)
-		{
-			case SDL.Scancode.LCtrl:
-			case SDL.Scancode.RCtrl:
-			case SDL.Scancode.LShift:
-			case SDL.Scancode.RShift:
-			case SDL.Scancode.LAlt:
-			case SDL.Scancode.RAlt:
-			case SDL.Scancode.Capslock:
-			case SDL.Scancode.NumLockClear:
-				UpdateModifiers(evt);
-				break;
-		}
-
-		var keyEvent = new KeyEvent(evt.Scancode, machine.SystemMemory.GetKeyModifiers(), isRelease: !evt.Down);
-
-		if (keyEvent.IsBreak)
-			Break?.Invoke();
-		else if (InterceptKeyEvent is Func<KeyEvent, bool> interceptKeyEvent)
-		{
-			if (interceptKeyEvent(keyEvent))
-				return;
-		}
-
-		if (_suppressNextIfIsRelease.HasValue || _suppressNextIfHasScanCode.HasValue)
-		{
-			bool suppress = true;
-
-			if (_suppressNextIfIsRelease.HasValue && (keyEvent.IsRelease != _suppressNextIfIsRelease))
-				suppress = false;
-			if (_suppressNextIfHasScanCode.HasValue && (keyEvent.ScanCode != _suppressNextIfHasScanCode))
-				suppress = false;
-
-			_suppressNextIfIsRelease = null;
-			_suppressNextIfHasScanCode = null;
-
-			if (suppress)
-				return;
-		}
-
 		lock (_sync)
 		{
-			if (_divertEvents)
-				_divertedEvents.Enqueue(keyEvent);
-			else
-				_inputQueue.Enqueue(keyEvent);
+			var rawScanCode = evt.Scancode;
+			var rawModState = GetModState();
+			bool isRelease = !evt.Down;
+
+			foreach (var keyEvent in machine.KeyboardDriver.GenerateKeyEvents(rawScanCode, rawModState, isRelease))
+			{
+				if (keyEvent.IsBreak)
+					Break?.Invoke();
+				else if (InterceptKeyEvent is Func<KeyEvent, bool> interceptKeyEvent)
+				{
+					if (interceptKeyEvent(keyEvent))
+						return;
+				}
+
+				if (_suppressNextIfIsRelease.HasValue || _suppressNextIfHasScanCode.HasValue)
+				{
+					bool suppress = true;
+
+					if (_suppressNextIfIsRelease.HasValue && (keyEvent.IsRelease != _suppressNextIfIsRelease))
+						suppress = false;
+					if (_suppressNextIfHasScanCode.HasValue && (keyEvent.ScanCode != _suppressNextIfHasScanCode))
+						suppress = false;
+
+					_suppressNextIfIsRelease = null;
+					_suppressNextIfHasScanCode = null;
+
+					if (suppress)
+						continue;
+				}
+
+				if (_divertEvents)
+					_divertedEvents.Enqueue(keyEvent);
+				else
+					_inputQueue.Enqueue(keyEvent);
+			}
 
 			Monitor.PulseAll(_sync);
 		}

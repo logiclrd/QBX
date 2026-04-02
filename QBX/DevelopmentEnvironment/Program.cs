@@ -255,6 +255,12 @@ public partial class Program : HostedProgram, IOvertypeFlag
 
 				AutoRun = true;
 			}
+			else if (argument.Equals("/KBD", StringComparison.OrdinalIgnoreCase))
+			{
+				// Set keyboard layout
+				if (PullArgument() is string layoutName)
+					Machine.KeyboardDriver.SetLayoutByName(layoutName);
+			}
 			else if (argument.Equals("/CMD"))
 			{
 				// COMMAND$ value
@@ -351,7 +357,7 @@ public partial class Program : HostedProgram, IOvertypeFlag
 			TextLibrary.NewLine();
 			TextLibrary.WriteText("    /AH /B /C:n {/Ea | /Es} /E:n /G /H /K:[file] /L [lib]");
 			TextLibrary.NewLine();
-			TextLibrary.WriteText("    /MBF /NOF[RILLS] /NOHI /W [/RUN] file /CMD string");
+			TextLibrary.WriteText("    /MBF /NOF[RILLS] /NOHI /W [/RUN] file /KBD name /CMD string");
 			TextLibrary.NewLine();
 
 			Aborted = true;
