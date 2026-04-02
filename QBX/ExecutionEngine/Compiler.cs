@@ -3146,6 +3146,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 					}
 
 					call.Target = nativeProcedure;
+					call.TargetToken = identifier.Token;
 
 					return call;
 				}
@@ -3326,6 +3327,8 @@ public class Compiler(IdentifierRepository identifierRepository)
 								translatedCallExpression.EnsureParameterTypes();
 							}
 						}
+
+						translatedCallExpression.TargetToken = callOrIndexExpression.Subject.Token;
 
 						return translatedCallExpression;
 					}

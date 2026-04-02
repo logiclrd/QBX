@@ -63,12 +63,14 @@ public class RuntimeException : Exception
 	}
 
 	public RuntimeException AddContext(CodeModel.Statements.Statement? statement)
-		=> AddContext(statement?.FirstToken, statement?.FirstToken?.Length ?? 0);
+		=> AddContext(statement?.FirstToken);
 	public RuntimeException AddContext(CodeModel.Expressions.Expression? expression)
-		=> AddContext(expression?.Token, expression?.Token?.Length ?? 0);
+		=> AddContext(expression?.Token);
 
-	RuntimeException AddContext(Token? context, int contextLength)
+	public RuntimeException AddContext(Token? context)
 	{
+		int contextLength = context?.Length ?? 0;
+
 		if (this.Context != null)
 			return this;
 		else
