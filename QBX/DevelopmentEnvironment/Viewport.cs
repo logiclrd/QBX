@@ -326,6 +326,24 @@ public class Viewport
 				}
 			}
 
+			// Reparse the line to ensure that the tokens have accurate Column and Length values.
+			if (parsedCodeLine != null)
+			{
+				try
+				{
+					buffer.Length = 0;
+
+					var writer = new StringWriter(buffer);
+
+					parsedCodeLine.Render(writer);
+
+					lexer = new Lexer(new StringBuilderReader(buffer), startingLineNumber: CursorY);
+
+					parsedCodeLine = parser.ParseCodeLines(lexer).SingleOrDefault();
+				}
+				catch { }
+			}
+
 			ReplaceCurrentLine(parsedCodeLine ?? CodeLine.CreateEmpty());
 			return false;
 
