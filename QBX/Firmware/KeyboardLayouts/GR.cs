@@ -145,6 +145,9 @@ public class GR(Machine machine) : ShiftLockKeyboardLayout(machine)
 
 			if (modifiers.AltKey)
 			{
+				if (modifiers.ShiftKey)
+					altGr = false;
+
 				switch (rawData.RawScanCode)
 				{
 					case SDL.Scancode.Escape: scanCode = ScanCode.Escape; break;
@@ -162,30 +165,30 @@ public class GR(Machine machine) : ShiftLockKeyboardLayout(machine)
 					case SDL.Scancode.F12: scanCode = ScanCode.AltF12; break;
 					case SDL.Scancode.Grave: scanCode = ScanCode.Grave; break;
 					case SDL.Scancode.Alpha1: scanCode = ScanCode.Alt1; break;
-					case SDL.Scancode.Alpha2: scanCode = ScanCode.Alt2; break;
-					case SDL.Scancode.Alpha3: scanCode = ScanCode.Alt3; break;
+					case SDL.Scancode.Alpha2: scanCode = ScanCode.Alt2; if (altGr) textCharacter = '²'; break;
+					case SDL.Scancode.Alpha3: scanCode = ScanCode.Alt3; if (altGr) textCharacter = 'ⁿ'; break;
 					case SDL.Scancode.Alpha4: scanCode = ScanCode.Alt4; break;
 					case SDL.Scancode.Alpha5: scanCode = ScanCode.Alt5; break;
 					case SDL.Scancode.Alpha6: scanCode = ScanCode.Alt6; break;
-					case SDL.Scancode.Alpha7: scanCode = ScanCode.Alt7; break;
-					case SDL.Scancode.Alpha8: scanCode = ScanCode.Alt8; break;
-					case SDL.Scancode.Alpha9: scanCode = ScanCode.Alt9; break;
-					case SDL.Scancode.Alpha0: scanCode = ScanCode.Alt0; break;
+					case SDL.Scancode.Alpha7: scanCode = ScanCode.Alt7; if (altGr) textCharacter = '{'; break;
+					case SDL.Scancode.Alpha8: scanCode = ScanCode.Alt8; if (altGr) textCharacter = '[';break;
+					case SDL.Scancode.Alpha9: scanCode = ScanCode.Alt9; if (altGr) textCharacter = ']';break;
+					case SDL.Scancode.Alpha0: scanCode = ScanCode.Alt0; if (altGr) textCharacter = '}';break;
 					case SDL.Scancode.Minus: scanCode = ScanCode.AltMinus; break;
 					case SDL.Scancode.Equals: scanCode = ScanCode.AltEquals; break;
 					case SDL.Scancode.Backspace: scanCode = ScanCode.Backspace; break;
-					case SDL.Scancode.Q: scanCode = ScanCode.Q; break;
+					case SDL.Scancode.Q: scanCode = ScanCode.Q; if (altGr) textCharacter = '@'; break;
 					case SDL.Scancode.W: scanCode = ScanCode.W; break;
 					case SDL.Scancode.E: scanCode = ScanCode.E; break;
 					case SDL.Scancode.R: scanCode = ScanCode.R; break;
 					case SDL.Scancode.T: scanCode = ScanCode.T; break;
-					case SDL.Scancode.Y: scanCode = ScanCode.Z; break;
+					case SDL.Scancode.Y: scanCode = ScanCode.Y; break;
 					case SDL.Scancode.U: scanCode = ScanCode.U; break;
 					case SDL.Scancode.I: scanCode = ScanCode.I; break;
 					case SDL.Scancode.O: scanCode = ScanCode.O; break;
 					case SDL.Scancode.P: scanCode = ScanCode.P; break;
 					case SDL.Scancode.Leftbracket: scanCode = ScanCode.LeftBracket; break;
-					case SDL.Scancode.Rightbracket: scanCode = ScanCode.RightBracket; break;
+					case SDL.Scancode.Rightbracket: scanCode = ScanCode.RightBracket; if (altGr) textCharacter = '~'; break;
 					case SDL.Scancode.Backslash: scanCode = ScanCode.Backslash; break;
 					case SDL.Scancode.A: scanCode = ScanCode.A; break;
 					case SDL.Scancode.S: scanCode = ScanCode.S; break;
@@ -199,13 +202,13 @@ public class GR(Machine machine) : ShiftLockKeyboardLayout(machine)
 					case SDL.Scancode.Semicolon: scanCode = ScanCode.Semicolon; break;
 					case SDL.Scancode.Apostrophe: scanCode = ScanCode.Apostrophe; break;
 					case SDL.Scancode.Return: scanCode = ScanCode.Return; break;
-					case SDL.Scancode.Z: scanCode = ScanCode.Y; break;
+					case SDL.Scancode.Z: scanCode = ScanCode.Z; break;
 					case SDL.Scancode.X: scanCode = ScanCode.X; break;
 					case SDL.Scancode.C: scanCode = ScanCode.C; break;
 					case SDL.Scancode.V: scanCode = ScanCode.V; break;
 					case SDL.Scancode.B: scanCode = ScanCode.B; break;
 					case SDL.Scancode.N: scanCode = ScanCode.N; break;
-					case SDL.Scancode.M: scanCode = ScanCode.M; break;
+					case SDL.Scancode.M: scanCode = ScanCode.M; if (altGr) textCharacter = 'μ'; break;
 					case SDL.Scancode.Comma: scanCode = ScanCode.Comma; break;
 					case SDL.Scancode.Period: scanCode = ScanCode.Period; break;
 					case SDL.Scancode.Slash: scanCode = ScanCode.Slash; break;
@@ -330,15 +333,15 @@ public class GR(Machine machine) : ShiftLockKeyboardLayout(machine)
 					case SDL.Scancode.F12: scanCode = ScanCode.ShiftF12; break;
 					case SDL.Scancode.Grave: scanCode = ScanCode.Grave; textCharacter = '°'; break;
 					case SDL.Scancode.Alpha1: scanCode = ScanCode._1; textCharacter = '!'; break;
-					case SDL.Scancode.Alpha2: scanCode = ScanCode._2; if (!altGr) textCharacter = '"'; break;
+					case SDL.Scancode.Alpha2: scanCode = ScanCode._2; textCharacter = '"'; break;
 					case SDL.Scancode.Alpha3: scanCode = ScanCode._3; break;
 					case SDL.Scancode.Alpha4: scanCode = ScanCode._4; textCharacter = '$'; break;
 					case SDL.Scancode.Alpha5: scanCode = ScanCode._5; textCharacter = '%'; break;
 					case SDL.Scancode.Alpha6: scanCode = ScanCode._6; textCharacter = '&'; break;
-					case SDL.Scancode.Alpha7: scanCode = ScanCode._7; if (!altGr) textCharacter = '/'; break;
-					case SDL.Scancode.Alpha8: scanCode = ScanCode._8; if (!altGr) textCharacter = '('; break;
-					case SDL.Scancode.Alpha9: scanCode = ScanCode._9; if (!altGr) textCharacter = ')'; break;
-					case SDL.Scancode.Alpha0: scanCode = ScanCode._0; if (!altGr) textCharacter = '='; break;
+					case SDL.Scancode.Alpha7: scanCode = ScanCode._7; textCharacter = '/'; break;
+					case SDL.Scancode.Alpha8: scanCode = ScanCode._8; textCharacter = '('; break;
+					case SDL.Scancode.Alpha9: scanCode = ScanCode._9; textCharacter = ')'; break;
+					case SDL.Scancode.Alpha0: scanCode = ScanCode._0; textCharacter = '='; break;
 					case SDL.Scancode.Minus: scanCode = ScanCode.Minus; textCharacter = 'ß'; break;
 					case SDL.Scancode.Equals: scanCode = ScanCode.Equals; break;
 					case SDL.Scancode.Backspace: scanCode = ScanCode.Backspace; textCharacter = (char)8; break;
@@ -354,7 +357,7 @@ public class GR(Machine machine) : ShiftLockKeyboardLayout(machine)
 					case SDL.Scancode.O: scanCode = ScanCode.O; textCharacter = upperCase ? 'O' : 'o'; break;
 					case SDL.Scancode.P: scanCode = ScanCode.P; textCharacter = upperCase ? 'P' : 'p'; break;
 					case SDL.Scancode.Leftbracket: scanCode = ScanCode.LeftBracket; textCharacter = upperCase ? 'Ü' : 'ü'; break;
-					case SDL.Scancode.Rightbracket: scanCode = ScanCode.RightBracket; if (!altGr) textCharacter = '*'; break;
+					case SDL.Scancode.Rightbracket: scanCode = ScanCode.RightBracket; textCharacter = '*'; break;
 					case SDL.Scancode.Backslash: scanCode = ScanCode.Backslash; textCharacter = '\''; break;
 					case SDL.Scancode.A: scanCode = ScanCode.A; textCharacter = upperCase ? 'A' : 'a'; break;
 					case SDL.Scancode.S: scanCode = ScanCode.S; textCharacter = upperCase ? 'S' : 's'; break;
@@ -374,7 +377,7 @@ public class GR(Machine machine) : ShiftLockKeyboardLayout(machine)
 					case SDL.Scancode.V: scanCode = ScanCode.V; textCharacter = upperCase ? 'V' : 'v'; break;
 					case SDL.Scancode.B: scanCode = ScanCode.B; textCharacter = upperCase ? 'B' : 'b'; break;
 					case SDL.Scancode.N: scanCode = ScanCode.N; textCharacter = upperCase ? 'N' : 'n'; break;
-					case SDL.Scancode.M: scanCode = ScanCode.M; if (!altGr) textCharacter = upperCase ? 'M' : 'm'; break;
+					case SDL.Scancode.M: scanCode = ScanCode.M; textCharacter = upperCase ? 'M' : 'm'; break;
 					case SDL.Scancode.Comma: scanCode = ScanCode.Comma; textCharacter = ';'; break;
 					case SDL.Scancode.Period: scanCode = ScanCode.Period; textCharacter = ':'; break;
 					case SDL.Scancode.Slash: scanCode = ScanCode.Slash; textCharacter = '_'; break;
@@ -413,7 +416,7 @@ public class GR(Machine machine) : ShiftLockKeyboardLayout(machine)
 			{
 				switch (rawData.RawScanCode)
 				{
-					case SDL.Scancode.Escape: textCharacter = (char)27; break;
+					case SDL.Scancode.Escape: scanCode = ScanCode.Escape; textCharacter = (char)27; break;
 					case SDL.Scancode.F1: scanCode = ScanCode.F1; break;
 					case SDL.Scancode.F2: scanCode = ScanCode.F2; break;
 					case SDL.Scancode.F3: scanCode = ScanCode.F3; break;
@@ -428,20 +431,20 @@ public class GR(Machine machine) : ShiftLockKeyboardLayout(machine)
 					case SDL.Scancode.F12: scanCode = ScanCode.F12; break;
 					case SDL.Scancode.Grave: scanCode = ScanCode.Grave; break;
 					case SDL.Scancode.Alpha1: scanCode = ScanCode._1; textCharacter = '1'; break;
-					case SDL.Scancode.Alpha2: scanCode = ScanCode._2; textCharacter = altGr ? '²' : '2'; break;
-					case SDL.Scancode.Alpha3: scanCode = ScanCode._3; textCharacter = altGr ? 'ⁿ' : '3'; break;
+					case SDL.Scancode.Alpha2: scanCode = ScanCode._2; textCharacter = '2'; break;
+					case SDL.Scancode.Alpha3: scanCode = ScanCode._3; textCharacter = '3'; break;
 					case SDL.Scancode.Alpha4: scanCode = ScanCode._4; textCharacter = '4'; break;
 					case SDL.Scancode.Alpha5: scanCode = ScanCode._5; textCharacter = '5'; break;
 					case SDL.Scancode.Alpha6: scanCode = ScanCode._6; textCharacter = '6'; break;
-					case SDL.Scancode.Alpha7: scanCode = ScanCode._7; textCharacter = altGr ? '{' : '7'; break;
-					case SDL.Scancode.Alpha8: scanCode = ScanCode._8; textCharacter = altGr ? '[' : '8'; break;
-					case SDL.Scancode.Alpha9: scanCode = ScanCode._9; textCharacter = altGr ? ']' : '9'; break;
-					case SDL.Scancode.Alpha0: scanCode = ScanCode._0; textCharacter = altGr ? '}' : '0'; break;
+					case SDL.Scancode.Alpha7: scanCode = ScanCode._7; textCharacter = '7'; break;
+					case SDL.Scancode.Alpha8: scanCode = ScanCode._8; textCharacter = '8'; break;
+					case SDL.Scancode.Alpha9: scanCode = ScanCode._9; textCharacter = '9'; break;
+					case SDL.Scancode.Alpha0: scanCode = ScanCode._0; textCharacter = '0'; break;
 					case SDL.Scancode.Minus: scanCode = ScanCode.Minus; textCharacter = 'ß'; break;
 					case SDL.Scancode.Equals: scanCode = ScanCode.Equals; break;
 					case SDL.Scancode.Backspace: scanCode = ScanCode.Backspace; textCharacter = (char)8; break;
 					case SDL.Scancode.Tab: scanCode = ScanCode.Tab; textCharacter = '\t'; break;
-					case SDL.Scancode.Q: scanCode = ScanCode.Q; textCharacter = altGr ? '@' : upperCase ? 'Q' : 'q'; break;
+					case SDL.Scancode.Q: scanCode = ScanCode.Q; textCharacter = upperCase ? 'Q' : 'q'; break;
 					case SDL.Scancode.W: scanCode = ScanCode.W; textCharacter = upperCase ? 'W' : 'w'; break;
 					case SDL.Scancode.E: scanCode = ScanCode.E; textCharacter = upperCase ? 'E' : 'e'; break;
 					case SDL.Scancode.R: scanCode = ScanCode.R; textCharacter = upperCase ? 'R' : 'r'; break;
@@ -452,7 +455,7 @@ public class GR(Machine machine) : ShiftLockKeyboardLayout(machine)
 					case SDL.Scancode.O: scanCode = ScanCode.O; textCharacter = upperCase ? 'O' : 'o'; break;
 					case SDL.Scancode.P: scanCode = ScanCode.P; textCharacter = upperCase ? 'P' : 'p'; break;
 					case SDL.Scancode.Leftbracket: scanCode = ScanCode.LeftBracket; textCharacter = upperCase ? 'Ü' : 'ü'; break;
-					case SDL.Scancode.Rightbracket: scanCode = ScanCode.RightBracket; textCharacter = altGr ? '~' : '+'; break;
+					case SDL.Scancode.Rightbracket: scanCode = ScanCode.RightBracket; textCharacter = '+'; break;
 					case SDL.Scancode.Backslash: scanCode = ScanCode.Backslash; textCharacter = '#'; break;
 					case SDL.Scancode.A: scanCode = ScanCode.A; textCharacter = upperCase ? 'A' : 'a'; break;
 					case SDL.Scancode.S: scanCode = ScanCode.S; textCharacter = upperCase ? 'S' : 's'; break;
@@ -471,7 +474,7 @@ public class GR(Machine machine) : ShiftLockKeyboardLayout(machine)
 					case SDL.Scancode.C: scanCode = ScanCode.C; textCharacter = upperCase ? 'C' : 'c'; break;
 					case SDL.Scancode.V: scanCode = ScanCode.V; textCharacter = upperCase ? 'V' : 'v'; break;
 					case SDL.Scancode.B: scanCode = ScanCode.B; textCharacter = upperCase ? 'B' : 'b'; break;
-					case SDL.Scancode.N: scanCode = ScanCode.N; textCharacter = altGr ? 'μ' : upperCase ? 'N' : 'n'; break;
+					case SDL.Scancode.N: scanCode = ScanCode.N; textCharacter = upperCase ? 'N' : 'n'; break;
 					case SDL.Scancode.M: scanCode = ScanCode.M; textCharacter = upperCase ? 'M' : 'm'; break;
 					case SDL.Scancode.Comma: scanCode = ScanCode.Comma; textCharacter = ','; break;
 					case SDL.Scancode.Period: scanCode = ScanCode.Period; textCharacter = '.'; break;

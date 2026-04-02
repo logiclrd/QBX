@@ -429,6 +429,13 @@ public partial class Program
 		}
 		else
 		{
+			if (input.HasTextCharacter && (input.TextCharacter >= 32))
+			{
+				AltReleaseAction = AltRelease.DeactivateMenuBar;
+				ProcessTextEditorKey(input);
+				return;
+			}
+
 			switch (input.ScanCode)
 			{
 				case ScanCode.F1:
@@ -444,7 +451,10 @@ public partial class Program
 					break;
 
 				case ScanCode.Escape:
-					Mode = UIMode.TextEditor;
+					if (input.Modifiers.AltKey)
+						AltReleaseAction = AltRelease.DeactivateMenuBar;
+					else
+						Mode = UIMode.TextEditor;
 					break;
 				case ScanCode.Return:
 				case ScanCode.Up:
@@ -527,7 +537,8 @@ public partial class Program
 					break;
 
 				case ScanCode.Escape:
-					Mode = UIMode.TextEditor;
+					if (!input.Modifiers.AltKey)
+						Mode = UIMode.TextEditor;
 					break;
 				case ScanCode.Return:
 					if ((SelectedMenu >= 0)

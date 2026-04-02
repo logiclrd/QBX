@@ -359,7 +359,7 @@ public class US(Machine machine) : CapsToggleKeyboardLayout(machine)
 			{
 				switch (rawData.RawScanCode)
 				{
-					case SDL.Scancode.Escape: textCharacter = (char)27; break;
+					case SDL.Scancode.Escape: scanCode = ScanCode.Escape; textCharacter = (char)27; break;
 					case SDL.Scancode.F1: scanCode = ScanCode.F1; break;
 					case SDL.Scancode.F2: scanCode = ScanCode.F2; break;
 					case SDL.Scancode.F3: scanCode = ScanCode.F3; break;
