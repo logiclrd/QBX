@@ -9,6 +9,20 @@ namespace QBX.Firmware.KeyboardLayouts;
 
 public class GR(Machine machine) : ShiftLockKeyboardLayout(machine)
 {
+	public override bool IsMatchForCurrentSDLState()
+	{
+		var yKey = SDL.GetKeyFromScancode(SDL.Scancode.Y, default, false);
+		var zKey = SDL.GetKeyFromScancode(SDL.Scancode.Z, default, false);
+		var minusKey = SDL.GetKeyFromScancode(SDL.Scancode.Minus, default, false);
+		var openSquareBracketKey = SDL.GetKeyFromScancode(SDL.Scancode.Leftbracket, default, false);
+
+		return
+			(SDL.GetKeyName(yKey) == "z") &&
+			(SDL.GetKeyName(zKey) == "y") &&
+			(SDL.GetKeyName(minusKey) == "ß") &&
+			(SDL.GetKeyName(openSquareBracketKey) == "ü");
+	}
+
 	Queue<RawKeyEventData> _events = new Queue<RawKeyEventData>();
 	Queue<KeyEventData> _future = new Queue<KeyEventData>();
 

@@ -8,6 +8,8 @@ namespace QBX.Firmware;
 
 public abstract class KeyboardLayout(Machine machine)
 {
+	public virtual bool IsMatchForCurrentSDLState() => false;
+
 	public abstract void ProcessKeyPress(RawKeyEventData rawData);
 	public abstract void Reset();
 	public abstract bool TryGetNextTranslatedKeyPress([NotNullWhen(true)] out KeyEventData? data);

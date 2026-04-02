@@ -57,6 +57,21 @@ public class KeyboardDriver
 		return false;
 	}
 
+	public void InferLayoutFromSDLState()
+	{
+		foreach (var layoutType in s_keyboardLayouts.Values)
+		{
+			if (Activator.CreateInstance(layoutType, _machine) is KeyboardLayout layout)
+			{
+				if (layout.IsMatchForCurrentSDLState())
+				{
+					ActiveKeyboardLayout = layout;
+					break;
+				}
+			}
+		}
+	}
+
 	public IEnumerable<KeyEvent> GenerateKeyEvents(SDL.Scancode sdlScanCode, SDL.Keymod modifiers, bool isRelease)
 	{
 		var rawData = new RawKeyEventData(sdlScanCode, modifiers, isRelease);

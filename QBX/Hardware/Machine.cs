@@ -67,6 +67,8 @@ public class Machine
 		InterruptHandlers[0x21] = new Interrupt0x21(this);
 		InterruptHandlers[0x33] = new Interrupt0x33(this);
 
+		KeyboardDriver.InferLayoutFromSDLState();
+
 		VideoFirmware.SetMode(3);
 
 		DOS = new DOS(this);
