@@ -15,6 +15,8 @@ public static class KeyInputRecordModifiersExtensions
 			ret |= KeyInputRecordModifiers.SHIFT_PRESSED;
 		if (modifiers.AltKey)
 			ret |= KeyInputRecordModifiers.LEFT_ALT_PRESSED;
+		if (modifiers.AltGrKey)
+			ret |= KeyInputRecordModifiers.RIGHT_ALT_PRESSED;
 		if (modifiers.CapsLock)
 			ret |= KeyInputRecordModifiers.CAPSLOCK_ON;
 		if (modifiers.NumLock)

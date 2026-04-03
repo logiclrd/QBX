@@ -174,7 +174,7 @@ public class KeyEvent
 			return this;
 		else
 		{
-			var modifiers = new KeyModifiers(ctrl, alt, shift, Modifiers.CapsLock, Modifiers.NumLock);
+			var modifiers = new KeyModifiers(ctrl, alt, altGrKey: false, shift, Modifiers.CapsLock, Modifiers.NumLock, Modifiers.ScrollLock);
 
 			return
 				new KeyEvent(modifiers)
