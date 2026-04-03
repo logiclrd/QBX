@@ -1,3 +1,4 @@
+using QBX.CodeModel;
 using QBX.Numbers;
 
 namespace QBX.Tests.Numbers;
@@ -500,7 +501,7 @@ public class NumberFormatterTests
 	[TestCase("-922337203685477.5808")]
 	public void FormatDecimal(string expectedResult)
 	{
-		decimal value = decimal.Parse(expectedResult);
+		decimal value = decimal.Parse(expectedResult, BasicCulture.Instance);
 
 		Assume.That(value.IsInCurrencyRange());
 

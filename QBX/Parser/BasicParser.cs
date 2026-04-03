@@ -8,6 +8,7 @@ using QBX.CodeModel.Expressions;
 using QBX.CodeModel.Statements;
 using QBX.LexicalAnalysis;
 using QBX.Numbers;
+using QBX.Utility;
 
 namespace QBX.Parser;
 
@@ -15,99 +16,102 @@ public class BasicParser(IdentifierRepository identifierRepository)
 {
 	public static CompilationUnit Parse(IEnumerable<Token> tokenStream, bool ignoreErrors = false, Action<int>? lineCountCallback = null)
 	{
-		var unit = new CompilationUnit();
-
-		var parser = new BasicParser(unit.IdentifierRepository);
-
-		var mainElement = new CompilationElement(unit);
-
-		mainElement.Type = CompilationElementType.Main;
-
-		unit.Elements.Add(mainElement);
-
-		var element = mainElement;
-		bool betweenElements = false;
-
-		var prelude = new List<CodeLine>();
-
-		int lineIndex = -1; // increment at start of loop because there are paths that skip the end of the loop
-
-		foreach (var line in parser.ParseCodeLines(tokenStream, ignoreErrors))
+		using (new CultureScope(BasicCulture.Instance))
 		{
-			lineIndex++;
+			var unit = new CompilationUnit();
 
-			lineCountCallback?.Invoke(lineIndex);
+			var parser = new BasicParser(unit.IdentifierRepository);
 
-			if (((element == mainElement) || betweenElements)
-			 && (line.IsCommentLine || line.IsDefTypeLine))
-				prelude.Add(line);
-			else
+			var mainElement = new CompilationElement(unit);
+
+			mainElement.Type = CompilationElementType.Main;
+
+			unit.Elements.Add(mainElement);
+
+			var element = mainElement;
+			bool betweenElements = false;
+
+			var prelude = new List<CodeLine>();
+
+			int lineIndex = -1; // increment at start of loop because there are paths that skip the end of the loop
+
+			foreach (var line in parser.ParseCodeLines(tokenStream, ignoreErrors))
 			{
-				if (betweenElements && line.IsEmpty)
+				lineIndex++;
+
+				lineCountCallback?.Invoke(lineIndex);
+
+				if (((element == mainElement) || betweenElements)
+				 && (line.IsCommentLine || line.IsDefTypeLine))
+					prelude.Add(line);
+				else
 				{
-					if (prelude.Any())
+					if (betweenElements && line.IsEmpty)
 					{
-						mainElement.AddLines(prelude);
-						prelude.Clear();
-					}
-
-					continue;
-				}
-
-				if (line.Statements.Any())
-				{
-					var firstStatement = line.Statements.First();
-					var lastStatement = line.Statements.Last();
-
-					if ((firstStatement.Type == StatementType.Sub) || (firstStatement.Type == StatementType.Function))
-					{
-						betweenElements = false;
-
-						element = new CompilationElement(unit);
-						unit.Elements.Add(element);
-
-						element.FirstLineIndex = lineIndex - prelude.Count;
-
-						element.AddLines(prelude);
-						prelude.Clear();
-
-						switch (firstStatement)
+						if (prelude.Any())
 						{
-							case SubStatement sub:
-								element.Type = CompilationElementType.Sub;
-								element.Name = sub.Name;
-								break;
-							case FunctionStatement function:
-								element.Type = CompilationElementType.Function;
-								element.Name = function.Name;
-								break;
+							mainElement.AddLines(prelude);
+							prelude.Clear();
 						}
 
-						element.AddLine(line);
-
 						continue;
 					}
-					else if (lastStatement.Type == StatementType.EndScope)
+
+					if (line.Statements.Any())
 					{
-						element.AddLine(line);
-						element = mainElement;
+						var firstStatement = line.Statements.First();
+						var lastStatement = line.Statements.Last();
 
-						betweenElements = true;
+						if ((firstStatement.Type == StatementType.Sub) || (firstStatement.Type == StatementType.Function))
+						{
+							betweenElements = false;
 
-						continue;
+							element = new CompilationElement(unit);
+							unit.Elements.Add(element);
+
+							element.FirstLineIndex = lineIndex - prelude.Count;
+
+							element.AddLines(prelude);
+							prelude.Clear();
+
+							switch (firstStatement)
+							{
+								case SubStatement sub:
+									element.Type = CompilationElementType.Sub;
+									element.Name = sub.Name;
+									break;
+								case FunctionStatement function:
+									element.Type = CompilationElementType.Function;
+									element.Name = function.Name;
+									break;
+							}
+
+							element.AddLine(line);
+
+							continue;
+						}
+						else if (lastStatement.Type == StatementType.EndScope)
+						{
+							element.AddLine(line);
+							element = mainElement;
+
+							betweenElements = true;
+
+							continue;
+						}
 					}
+
+					element.AddLines(prelude);
+					prelude.Clear();
+
+					element.AddLine(line);
 				}
-
-				element.AddLines(prelude);
-				prelude.Clear();
-
-				element.AddLine(line);
 			}
+
+			mainElement.AddLines(prelude);
+
+			return unit;
 		}
-
-		mainElement.AddLines(prelude);
-
-		return unit;
 	}
 
 	internal IEnumerable<CodeLine> ParseCodeLines(IEnumerable<Token> tokenStream, bool ignoreErrors = false)

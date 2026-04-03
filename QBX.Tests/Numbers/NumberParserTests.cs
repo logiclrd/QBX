@@ -1,7 +1,5 @@
-﻿// TODO: include a test for "" parsing to 0
+﻿using QBX.CodeModel;
 using QBX.Numbers;
-using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 
 namespace QBX.Tests.Numbers;
 
@@ -199,7 +197,7 @@ public class NumberParserTests
 	public void TryAsCurrency(string input, bool expectedResult, string expectedValueString)
 	{
 		// Arrange
-		decimal expectedValue = decimal.Parse(expectedValueString);
+		decimal expectedValue = decimal.Parse(expectedValueString, BasicCulture.Instance);
 
 		// Act
 		var result = NumberParser.TryAsCurrency(input, out var value);

@@ -11,11 +11,13 @@ using QBX.Firmware;
 using QBX.QuickLibraries;
 using QBX.Utility;
 
+using Thread = System.Threading.Thread;
+
 namespace QBX.DevelopmentEnvironment;
 
 public partial class Program
 {
-	System.Threading.Thread? _executionThread;
+	Thread? _executionThread;
 	ExecutionContext? _executionContext;
 	Compilation? _compilation;
 
@@ -117,11 +119,12 @@ public partial class Program
 		foreach (var qlb in QLBs)
 			qlb.ExecutionContext = _executionContext;
 
-		_executionThread = new System.Threading.Thread(
+		_executionThread = new Thread(
 			() =>
 			{
 				try
 				{
+					Thread.CurrentThread.CurrentCulture = BasicCulture.Instance;
 					EventHub.ClearAllEvents();
 					_executionContext.Run(_compilation);
 				}

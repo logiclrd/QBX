@@ -21,6 +21,8 @@ using QBX.Numbers;
 using QBX.Parser;
 using QBX.Utility;
 
+using BasicCulture = QBX.CodeModel.BasicCulture;
+
 namespace QBX.ExecutionEngine;
 
 public class Compiler(IdentifierRepository identifierRepository)
@@ -29,285 +31,291 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 	public Module Compile(CodeModel.CompilationUnit unit, Compilation compilation)
 	{
-		var module = new Module(compilation);
-
-		Mapper? moduleMapper = null;
-
-		var routines = new List<Routine>();
-
-		// First pass: collect all routines
-		foreach (var element in unit.Elements)
+		using (new CultureScope(BasicCulture.Instance))
 		{
-			var routine = new Routine(module, moduleMapper, element);
+			var module = new Module(compilation);
 
-			if (compilation.IsRegistered(routine.Name))
-				throw CompilerException.DuplicateDefinition(element.AllStatements.FirstOrDefault());
+			Mapper? moduleMapper = null;
+
+			var routines = new List<Routine>();
+
+			// First pass: collect all routines
+			foreach (var element in unit.Elements)
+			{
+				var routine = new Routine(module, moduleMapper, element);
+
+				if (compilation.IsRegistered(routine.Name))
+					throw CompilerException.DuplicateDefinition(element.AllStatements.FirstOrDefault());
+
+				if (moduleMapper == null)
+				{
+					if (routine.Name != Routine.MainRoutineName)
+						throw new Exception("First routine is not the main routine");
+
+					moduleMapper = routine.Mapper;
+				}
+
+				if (routine.Name == Routine.MainRoutineName)
+					module.MainRoutine = routine;
+				else
+					routine.Register(compilation);
+
+				if (routine.OpeningStatement is not null)
+				{
+					routine.ApplyOpeningDefTypeStatements(routine.Mapper);
+
+					if (routine.OpeningStatement is CodeModel.Statements.FunctionStatement)
+						routine.SetReturnType(routine.Mapper, compilation.TypeRepository);
+				}
+
+				routines.Add(routine);
+			}
 
 			if (moduleMapper == null)
+				throw new Exception("CompilationUnit does not have any CompilationElements");
+
+			// Second pass: process all TYPE definitions
+			CodeModel.Statements.TypeStatement? typeStatement = null;
+			var typeElementStatements = new List<CodeModel.Statements.TypeElementStatement>();
+
+			foreach (var statement in unit.Elements[0].AllStatements)
 			{
-				if (routine.Name != Routine.MainRoutineName)
-					throw new Exception("First routine is not the main routine");
-
-				moduleMapper = routine.Mapper;
-			}
-
-			if (routine.Name == Routine.MainRoutineName)
-				module.MainRoutine = routine;
-			else
-				routine.Register(compilation);
-
-			if (routine.OpeningStatement is not null)
-			{
-				routine.ApplyOpeningDefTypeStatements(routine.Mapper);
-
-				if (routine.OpeningStatement is CodeModel.Statements.FunctionStatement)
-					routine.SetReturnType(routine.Mapper, compilation.TypeRepository);
-			}
-
-			routines.Add(routine);
-		}
-
-		if (moduleMapper == null)
-			throw new Exception("CompilationUnit does not have any CompilationElements");
-
-		// Second pass: process all TYPE definitions
-		CodeModel.Statements.TypeStatement? typeStatement = null;
-		var typeElementStatements = new List<CodeModel.Statements.TypeElementStatement>();
-
-		foreach (var statement in unit.Elements[0].AllStatements)
-		{
-			if (typeStatement == null)
-				typeStatement = statement as CodeModel.Statements.TypeStatement;
-			else
-			{
-				switch (statement)
+				if (typeStatement == null)
+					typeStatement = statement as CodeModel.Statements.TypeStatement;
+				else
 				{
-					case CodeModel.Statements.TypeStatement:
-						throw CompilerException.TypeWithoutEndType(typeStatement);
+					switch (statement)
+					{
+						case CodeModel.Statements.TypeStatement:
+							throw CompilerException.TypeWithoutEndType(typeStatement);
 
-					case CodeModel.Statements.TypeElementStatement typeElementStatement:
-						typeElementStatements.Add(typeElementStatement);
-						break;
+						case CodeModel.Statements.TypeElementStatement typeElementStatement:
+							typeElementStatements.Add(typeElementStatement);
+							break;
 
-					case CodeModel.Statements.EndTypeStatement:
-						TranslateTypeDefinition(typeStatement, typeElementStatements, moduleMapper, compilation, module);
+						case CodeModel.Statements.EndTypeStatement:
+							TranslateTypeDefinition(typeStatement, typeElementStatements, moduleMapper, compilation, module);
 
-						typeStatement = null;
-						typeElementStatements.Clear();
+							typeStatement = null;
+							typeElementStatements.Clear();
 
-						break;
+							break;
+					}
 				}
 			}
-		}
 
-		if (typeStatement != null)
-			throw CompilerException.TypeWithoutEndType(typeStatement);
+			if (typeStatement != null)
+				throw CompilerException.TypeWithoutEndType(typeStatement);
 
-		// Third pass: process parameters, which requires that we know all the FUNCTIONs and UDTs.
-		// We can also match up forward references.
-		foreach (var routine in routines)
-		{
-			if (routine.ReturnType != null)
-				routine.ReturnValueVariableIndex = routine.Mapper.DeclareVariable(routine.Name, routine.ReturnType);
-
-			if (routine.Source.Type != CodeModel.CompilationElementType.Main)
-				routine.TranslateParameters(routine.Mapper, compilation);
-
-			var unqualifiedName = Mapper.UnqualifyIdentifier(routine.Name);
-
-			if (module.UnresolvedReferences.TryGetDeclaration(unqualifiedName, out var forwardReference))
+			// Third pass: process parameters, which requires that we know all the FUNCTIONs and UDTs.
+			// We can also match up forward references.
+			foreach (var routine in routines)
 			{
-				routine.ValidateDeclaration(
-					forwardReference.ParameterTypes,
-					forwardReference.ReturnType,
-					routine.OpeningStatement,
-					routine.OpeningStatement?.NameToken,
-					getBlameParameterType: i => routine.OpeningStatement?.Parameters?.Parameters[i].TypeToken);
-			}
-		}
+				if (routine.ReturnType != null)
+					routine.ReturnValueVariableIndex = routine.Mapper.DeclareVariable(routine.Name, routine.ReturnType);
 
-		// Fourth pass: collect line numbers for error reporting.
-		foreach (var element in unit.Elements)
-		{
-			// BC doesn't reset this for each new element, but QBX does
-			int lineNumberForReporting = 0;
+				if (routine.Source.Type != CodeModel.CompilationElementType.Main)
+					routine.TranslateParameters(routine.Mapper, compilation);
 
-			foreach (var line in element.Lines)
-			{
-				if ((line.LineNumber != null)
-				 && int.TryParse(line.LineNumber, out var parsedLineNumber)
-				 && (parsedLineNumber <= 65529)) // Observed in QuickBASIC 7.1
-					lineNumberForReporting = parsedLineNumber;
+				var unqualifiedName = Mapper.UnqualifyIdentifier(routine.Name);
 
-				foreach (var statement in line.Statements)
-					statement.LineNumberForErrorReporting = lineNumberForReporting;
-			}
-		}
-
-		// Fifth pass: Collect constants and then translate statements.
-		// => CONST definitions inside DEF FN are local to the DEF FN and are not processed here
-		foreach (var routine in routines)
-		{
-			if (routine.Source.Type != CodeModel.CompilationElementType.Main)
-				routine.Mapper.LinkGlobalVariablesAndArrays();
-
-			var element = routine.Source;
-
-			var mapper = routine.Mapper;
-
-			mapper.ScanForDisallowedSlugs(element.AllStatements);
-
-			bool inDefFn = false;
-
-			mapper.PushIdentifierTypes();
-
-			foreach (var statement in element.AllStatements)
-			{
-				switch (statement)
+				if (module.UnresolvedReferences.TryGetDeclaration(unqualifiedName, out var forwardReference))
 				{
-					case CodeModel.Statements.DefFnStatement defFn:
-						inDefFn = (defFn.ExpressionBody == null);
-						break;
-					case CodeModel.Statements.EndDefStatement:
-						inDefFn = false;
-						break;
+					routine.ValidateDeclaration(
+						forwardReference.ParameterTypes,
+						forwardReference.ReturnType,
+						routine.OpeningStatement,
+						routine.OpeningStatement?.NameToken,
+						getBlameParameterType: i => routine.OpeningStatement?.Parameters?.Parameters[i].TypeToken);
+				}
+			}
 
-					case CodeModel.Statements.DefTypeStatement defTypeStatement:
-						mapper.ApplyDefTypeStatement(defTypeStatement);
-						break;
+			// Fourth pass: collect line numbers for error reporting.
+			foreach (var element in unit.Elements)
+			{
+				// BC doesn't reset this for each new element, but QBX does
+				int lineNumberForReporting = 0;
 
-					case CodeModel.Statements.ConstStatement constStatement:
-						if (!inDefFn)
-						{
-							foreach (var definition in constStatement.Definitions)
+				foreach (var line in element.Lines)
+				{
+					if ((line.LineNumber != null)
+					 && int.TryParse(line.LineNumber, out var parsedLineNumber)
+					 && (parsedLineNumber <= 65529)) // Observed in QuickBASIC 7.1
+						lineNumberForReporting = parsedLineNumber;
+
+					foreach (var statement in line.Statements)
+						statement.LineNumberForErrorReporting = lineNumberForReporting;
+				}
+			}
+
+			// Fifth pass: Collect constants and then translate statements.
+			// => CONST definitions inside DEF FN are local to the DEF FN and are not processed here
+			foreach (var routine in routines)
+			{
+				if (routine.Source.Type != CodeModel.CompilationElementType.Main)
+					routine.Mapper.LinkGlobalVariablesAndArrays();
+
+				var element = routine.Source;
+
+				var mapper = routine.Mapper;
+
+				mapper.ScanForDisallowedSlugs(element.AllStatements);
+
+				bool inDefFn = false;
+
+				mapper.PushIdentifierTypes();
+
+				foreach (var statement in element.AllStatements)
+				{
+					switch (statement)
+					{
+						case CodeModel.Statements.DefFnStatement defFn:
+							inDefFn = (defFn.ExpressionBody == null);
+							break;
+						case CodeModel.Statements.EndDefStatement:
+							inDefFn = false;
+							break;
+
+						case CodeModel.Statements.DefTypeStatement defTypeStatement:
+							mapper.ApplyDefTypeStatement(defTypeStatement);
+							break;
+
+						case CodeModel.Statements.ConstStatement constStatement:
+							if (!inDefFn)
 							{
-								var constValueExpression = TranslateExpression(definition.Value, container: null, mapper, compilation, module);
-
-								var targetType = mapper.GetTypeForIdentifier(definition.Identifier);
-
-								if (constValueExpression.Type.IsPrimitiveType
-								 && (constValueExpression.Type.PrimitiveType != targetType))
+								foreach (var definition in constStatement.Definitions)
 								{
-									constValueExpression =
-										Conversion.Construct(constValueExpression, targetType);
-								}
+									var constValueExpression = TranslateExpression(definition.Value, container: null, mapper, compilation, module);
 
-								mapper.DefineConstant(
-									definition.Identifier,
-									constValueExpression.EvaluateConstant());
+									var targetType = mapper.GetTypeForIdentifier(definition.Identifier);
+
+									if (constValueExpression.Type.IsPrimitiveType
+									 && (constValueExpression.Type.PrimitiveType != targetType))
+									{
+										constValueExpression =
+											Conversion.Construct(constValueExpression, targetType);
+									}
+
+									mapper.DefineConstant(
+										definition.Identifier,
+										constValueExpression.EvaluateConstant());
+								}
 							}
+
+							break;
+					}
+				}
+
+				mapper.PopIdentifierTypes();
+
+				int lineIndex = 0;
+				int statementIndex = 0;
+
+				if (routine.Source.Type != CodeModel.CompilationElementType.Main)
+				{
+					// Skip to the body of function.
+					while (lineIndex < element.Lines.Count)
+					{
+						var line = element.Lines[lineIndex];
+
+						if (line.Statements.FirstOrDefault() is CodeModel.Statements.ProperSubroutineOpeningStatement)
+						{
+							statementIndex++;
+							break;
 						}
 
-						break;
+						foreach (var defTypeStatement in line.Statements.OfType<CodeModel.Statements.DefTypeStatement>())
+							mapper.ApplyDefTypeStatement(defTypeStatement);
+
+						lineIndex++;
+					}
 				}
-			}
 
-			mapper.PopIdentifierTypes();
-
-			int lineIndex = 0;
-			int statementIndex = 0;
-
-			if (routine.Source.Type != CodeModel.CompilationElementType.Main)
-			{
-				// Skip to the body of function.
 				while (lineIndex < element.Lines.Count)
+					TranslateStatement(element, ref lineIndex, ref statementIndex, routine, routine, compilation, module);
+
+				// If the SUB or FUNCTION declaration contains the STATIC keyword, then all
+				// local variables are implicitly STATIC, as though they'd all been listed
+				// in a comprehensive STATIC declaration.
+				if ((routine.OpeningStatement != null)
+				 && routine.OpeningStatement.IsStatic)
 				{
-					var line = element.Lines[lineIndex];
+					int parameterCount = routine.ParameterTypes.Count;
 
-					if (line.Statements.FirstOrDefault() is CodeModel.Statements.ProperSubroutineOpeningStatement)
+					foreach (var variable in mapper.GetVariableNames())
 					{
-						statementIndex++;
-						break;
-					}
+						if (parameterCount > 0)
+						{
+							parameterCount--;
+							continue;
+						}
 
-					foreach (var defTypeStatement in line.Statements.OfType<CodeModel.Statements.DefTypeStatement>())
-						mapper.ApplyDefTypeStatement(defTypeStatement);
+						if (variable.IsLinked)
+							continue;
 
-					lineIndex++;
-				}
-			}
+						var variableType = mapper.GetVariableType(variable.VariableIndex);
 
-			while (lineIndex < element.Lines.Count)
-				TranslateStatement(element, ref lineIndex, ref statementIndex, routine, routine, compilation, module);
+						var hiddenVariableName = Identifier.Standalone(
+							"<" + element.Name + ">" + variable.Name);
 
-			// If the SUB or FUNCTION declaration contains the STATIC keyword, then all
-			// local variables are implicitly STATIC, as though they'd all been listed
-			// in a comprehensive STATIC declaration.
-			if ((routine.OpeningStatement != null)
-			 && routine.OpeningStatement.IsStatic)
-			{
-				int parameterCount = routine.ParameterTypes.Count;
-
-				foreach (var variable in mapper.GetVariableNames())
-				{
-					if (parameterCount > 0)
-					{
-						parameterCount--;
-						continue;
-					}
-
-					if (variable.IsLinked)
-						continue;
-
-					var variableType = mapper.GetVariableType(variable.VariableIndex);
-
-					var hiddenVariableName = Identifier.Standalone(
-						"<" + element.Name + ">" + variable.Name);
-
-					if (!variableType.IsArray)
-					{
-						moduleMapper.DeclareVariable(hiddenVariableName, variableType, variable.NameToken);
-						mapper.LinkModuleVariable(variable.Name, hiddenVariableName);
-					}
-					else
-					{
-						moduleMapper.DeclareArray(hiddenVariableName, variableType, variable.NameToken);
-						mapper.LinkModuleArray(variable.Name, hiddenVariableName);
+						if (!variableType.IsArray)
+						{
+							moduleMapper.DeclareVariable(hiddenVariableName, variableType, variable.NameToken);
+							mapper.LinkModuleVariable(variable.Name, hiddenVariableName);
+						}
+						else
+						{
+							moduleMapper.DeclareArray(hiddenVariableName, variableType, variable.NameToken);
+							mapper.LinkModuleArray(variable.Name, hiddenVariableName);
+						}
 					}
 				}
+
+				// Keep the main module unfrozen for now in case later routines want
+				// to add variables to make them STATIC.
+				if (routine.Source.Type != CodeModel.CompilationElementType.Main)
+				{
+					routine.Mapper.Freeze();
+
+					routine.VariableTypes = mapper.GetVariableTypes();
+					routine.LinkedVariables = mapper.GetLinkedVariables();
+				}
+
+				routine.ResolveJumpStatements();
+
+				foreach (var statement in routine.AllStatements)
+					if (statement is IUnresolvedLineReference unresolvedLineReference)
+						unresolvedLineReference.Resolve(routine);
 			}
 
-			// Keep the main module unfrozen for now in case later routines want
-			// to add variables to make them STATIC.
-			if (routine.Source.Type != CodeModel.CompilationElementType.Main)
+			// Finish up processing of the main routine.
+			if (module.MainRoutine is Routine mainRoutine)
 			{
-				routine.Mapper.Freeze();
+				mainRoutine.Mapper.Freeze();
 
-				routine.VariableTypes = mapper.GetVariableTypes();
-				routine.LinkedVariables = mapper.GetLinkedVariables();
+				mainRoutine.VariableTypes = mainRoutine.Mapper.GetVariableTypes();
 			}
 
-			routine.ResolveJumpStatements();
+			compilation.Modules.Add(module);
 
-			foreach (var statement in routine.AllStatements)
-				if (statement is IUnresolvedLineReference unresolvedLineReference)
-					unresolvedLineReference.Resolve(routine);
+			return module;
 		}
-
-		// Finish up processing of the main routine.
-		if (module.MainRoutine is Routine mainRoutine)
-		{
-			mainRoutine.Mapper.Freeze();
-
-			mainRoutine.VariableTypes = mainRoutine.Mapper.GetVariableTypes();
-		}
-
-		compilation.Modules.Add(module);
-
-		return module;
 	}
 
 	public Evaluable CompileExpression(CodeModel.Expressions.Expression expression, Mapper mapper, Compilation compilation, Module module)
 	{
-		var dummyContainer = new Sequence();
+		using (new CultureScope(BasicCulture.Instance))
+		{
+			var dummyContainer = new Sequence();
 
-		return TranslateExpressionUncollapsed(
-			expression,
-			forAssignment: false,
-			dummyContainer,
-			mapper,
-			compilation,
-			module);
+			return TranslateExpressionUncollapsed(
+				expression,
+				forAssignment: false,
+				dummyContainer,
+				mapper,
+				compilation,
+				module);
+		}
 	}
 
 	public void ProcessCommentForDirectives(string commentText, Compilation compilation)

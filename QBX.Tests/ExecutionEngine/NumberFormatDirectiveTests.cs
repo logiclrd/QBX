@@ -1,5 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
+using QBX.CodeModel;
 using QBX.ExecutionEngine.Compiled.Statements;
 using QBX.Firmware;
 using QBX.Firmware.Fonts;
@@ -200,7 +201,7 @@ public class NumberFormatDirectiveTests
 					config.ExponentCharacters,
 					config.TrailingMinusSign,
 
-					double.Parse(config.InputAsString),
+					double.Parse(config.InputAsString, BasicCulture.Instance),
 					exponentCharacter[0],
 
 					config.ExpectedOutput.Replace("E", exponentCharacter),
@@ -237,7 +238,7 @@ public class NumberFormatDirectiveTests
 					config.ExponentCharacters,
 					config.TrailingMinusSign,
 
-					decimal.Parse(config.InputAsString),
+					decimal.Parse(config.InputAsString, BasicCulture.Instance),
 
 					config.ExpectedOutput,
 				};

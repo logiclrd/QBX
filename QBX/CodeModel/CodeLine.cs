@@ -125,70 +125,73 @@ public class CodeLine : IRenderableCode, IEditableLine
 
 	void Render(TextWriter baseWriter, bool includeCRLF, bool trimEnd)
 	{
-		var filteredWriter = baseWriter;
-
-		if (trimEnd)
-			filteredWriter = new TrimEndTextWriter(filteredWriter);
-
-		var writer = new ColumnTrackingTextWriter(filteredWriter) { NewLine = baseWriter.NewLine };
-
-		if (LineNumber != null)
-			writer.Write(LineNumber);
-
-		if (Label != null)
+		using (new CultureScope(BasicCulture.Instance))
 		{
-			Label.Render(writer);
+			var filteredWriter = baseWriter;
 
-			if (Statements.Any() && (Statements[0].Indentation == ""))
-				writer.Write(' ');
-		}
+			if (trimEnd)
+				filteredWriter = new TrimEndTextWriter(filteredWriter);
 
-		for (int i = 0; i < Statements.Count; i++)
-		{
-			var statement = Statements[i];
-			bool hasNextStatement = (i + 1 < Statements.Count);
+			var writer = new ColumnTrackingTextWriter(filteredWriter) { NewLine = baseWriter.NewLine };
 
-			statement.SourceColumn = writer.Column + statement.Indentation.Length;
-			statement.Render(writer);
-			statement.SourceLength = writer.Column - statement.SourceColumn;
+			if (LineNumber != null)
+				writer.Write(LineNumber);
 
-			if (hasNextStatement)
+			if (Label != null)
 			{
-				var nextStatement = Statements[i + 1];
+				Label.Render(writer);
 
-				if (statement.ExtraSpace)
-					writer.Write(' ');
-
-				writer.Write(":");
-
-				if (nextStatement.Indentation == "")
+				if (Statements.Any() && (Statements[0].Indentation == ""))
 					writer.Write(' ');
 			}
-		}
 
-		if (EndOfLineComment != null)
-		{
-			int commentStart = EndOfLineComment.IndexOf('\'');
-
-			if (commentStart < 0) // ?
-				writer.Write(EndOfLineComment);
-			else
+			for (int i = 0; i < Statements.Count; i++)
 			{
-				var span = EndOfLineComment.AsSpan();
+				var statement = Statements[i];
+				bool hasNextStatement = (i + 1 < Statements.Count);
 
-				var commentTextSpan = span.Slice(commentStart + 1);
+				statement.SourceColumn = writer.Column + statement.Indentation.Length;
+				statement.Render(writer);
+				statement.SourceLength = writer.Column - statement.SourceColumn;
 
-				var reformattedCommentTextSpan = CommentStatement.FormatCommentText(commentTextSpan);
+				if (hasNextStatement)
+				{
+					var nextStatement = Statements[i + 1];
 
-				if (reformattedCommentTextSpan != commentTextSpan)
-					EndOfLineComment = string.Concat(span.Slice(0, commentStart + 1), reformattedCommentTextSpan);
+					if (statement.ExtraSpace)
+						writer.Write(' ');
 
-				writer.Write(EndOfLineComment);
+					writer.Write(":");
+
+					if (nextStatement.Indentation == "")
+						writer.Write(' ');
+				}
 			}
-		}
 
-		if (includeCRLF)
-			baseWriter.WriteLine();
+			if (EndOfLineComment != null)
+			{
+				int commentStart = EndOfLineComment.IndexOf('\'');
+
+				if (commentStart < 0) // ?
+					writer.Write(EndOfLineComment);
+				else
+				{
+					var span = EndOfLineComment.AsSpan();
+
+					var commentTextSpan = span.Slice(commentStart + 1);
+
+					var reformattedCommentTextSpan = CommentStatement.FormatCommentText(commentTextSpan);
+
+					if (reformattedCommentTextSpan != commentTextSpan)
+						EndOfLineComment = string.Concat(span.Slice(0, commentStart + 1), reformattedCommentTextSpan);
+
+					writer.Write(EndOfLineComment);
+				}
+			}
+
+			if (includeCRLF)
+				baseWriter.WriteLine();
+		}
 	}
 
 	[ThreadStatic]
