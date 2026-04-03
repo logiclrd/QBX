@@ -26,7 +26,7 @@ public class US(Machine machine) : CapsToggleKeyboardLayout(machine)
 
 		UpdateModifiers(rawData);
 
-		var modifiers = machine.SystemMemory.GetKeyModifiers();
+		var modifiers = machine.SystemMemory.KeyboardStatus.GetKeyModifiers();
 
 		ScanCode scanCode = default;
 		bool isRight = false;

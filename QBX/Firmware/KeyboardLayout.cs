@@ -16,72 +16,55 @@ public abstract class KeyboardLayout(Machine machine)
 
 	protected void UpdateModifiers(RawKeyEventData data)
 	{
-		switch (data.RawScanCode)
+		UpdateLockStates(data);
+
+		machine.SystemMemory.KeyboardStatus.UpdateKeyModifiers(data);
+	}
+
+	void UpdateLockStates(RawKeyEventData data)
+	{
+		bool currentCapsLockState = machine.SystemMemory.KeyboardStatus.Byte0.CapsLock;
+
+		bool newCapsLockState = GetUpdatedCapsLockState(data, currentCapsLockState);
+
+		if (newCapsLockState != currentCapsLockState)
 		{
-			case SDL.Scancode.LCtrl:
-			case SDL.Scancode.RCtrl:
-			case SDL.Scancode.LShift:
-			case SDL.Scancode.RShift:
-			case SDL.Scancode.LAlt:
-			case SDL.Scancode.RAlt:
-			case SDL.Scancode.Capslock:
-			case SDL.Scancode.NumLockClear:
+			machine.SystemMemory.KeyboardStatus.Byte0.CapsLock = newCapsLockState;
+			machine.SystemMemory.KeyboardStatus.Byte2.CapsLockIndicator = newCapsLockState;
+		}
+
+		if (!data.IsRelease)
+		{
+			switch (data.RawScanCode)
 			{
-				var mods = data.Modifiers;
+				case SDL.Scancode.NumLockClear:
+				case SDL.Scancode.Scrolllock:
+				case SDL.Scancode.Insert:
+					int byte0 = machine.SystemMemory.KeyboardStatus.Byte0;
+					int byte2 = machine.SystemMemory.KeyboardStatus.Byte2;
 
-				int keyboardStatus = machine.SystemMemory[SystemMemory.KeyboardStatusAddress];
+					if (data.RawScanCode == SDL.Scancode.NumLockClear)
+					{
+						byte0 ^= KeyboardStatus.Byte0Data.NumLockBit;
+						byte2 ^= KeyboardStatus.Byte2Data.NumLockIndicatorBit;
+					}
 
-				if ((mods & SDL.Keymod.Ctrl) != 0)
-					keyboardStatus |= SystemMemory.KeyboardStatus_ControlBit;
-				else
-					keyboardStatus &= ~SystemMemory.KeyboardStatus_ControlBit;
+					if (data.RawScanCode == SDL.Scancode.Scrolllock)
+					{
+						byte0 ^= KeyboardStatus.Byte0Data.CapsLockBit;
+						byte2 ^= KeyboardStatus.Byte2Data.CapsLockIndicatorBit;
+					}
 
-				if ((mods & SDL.Keymod.Alt) != 0)
-					keyboardStatus |= SystemMemory.KeyboardStatus_AltBit;
-				else
-					keyboardStatus &= ~SystemMemory.KeyboardStatus_AltBit;
+					if (data.RawScanCode == SDL.Scancode.Insert)
+						byte0 ^= KeyboardStatus.Byte0Data.InsertBit;
 
-				if ((mods & SDL.Keymod.Shift) == 0)
-					keyboardStatus &= ~(SystemMemory.KeyboardStatus_LeftShiftBit | SystemMemory.KeyboardStatus_RightShiftBit);
-				else
-				{
-					int shiftBit =
-						data.RawScanCode switch
-						{
-							SDL.Scancode.LShift => SystemMemory.KeyboardStatus_LeftShiftBit,
-							SDL.Scancode.RShift => SystemMemory.KeyboardStatus_RightShiftBit,
+					machine.SystemMemory.KeyboardStatus.Byte0.Set(byte0);
+					machine.SystemMemory.KeyboardStatus.Byte2.Set(byte2);
 
-							_ => 0
-						};
-
-					if (!data.IsRelease)
-						keyboardStatus |= shiftBit;
-					else
-						keyboardStatus &= ~shiftBit;
-				}
-
-				if ((mods & SDL.Keymod.Scroll) != 0)
-					keyboardStatus |= SystemMemory.KeyboardStatus_ScrollLockBit;
-				else
-					keyboardStatus &= ~SystemMemory.KeyboardStatus_ScrollLockBit;
-
-				if ((mods & SDL.Keymod.Num) != 0)
-					keyboardStatus |= SystemMemory.KeyboardStatus_NumLockBit;
-				else
-					keyboardStatus &= ~SystemMemory.KeyboardStatus_NumLockBit;
-
-				UpdateCapsLockState(data, ref keyboardStatus);
-
-				if (!data.IsRelease && (data.RawScanCode == SDL.Scancode.Insert))
-					keyboardStatus ^= SystemMemory.KeyboardStatus_InsertBit;
-
-				machine.SystemMemory[SystemMemory.KeyboardStatusAddress] =
-					unchecked((byte)keyboardStatus);
-
-				break;
+					break;
 			}
 		}
 	}
 
-	protected abstract void UpdateCapsLockState(RawKeyEventData data, ref int keyboardStatus);
+	protected abstract bool GetUpdatedCapsLockState(RawKeyEventData data, bool currentState);
 }

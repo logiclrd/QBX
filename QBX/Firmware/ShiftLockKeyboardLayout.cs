@@ -6,17 +6,17 @@ namespace QBX.Firmware;
 
 public abstract class ShiftLockKeyboardLayout(Machine machine) : KeyboardLayout(machine)
 {
-	protected override void UpdateCapsLockState(RawKeyEventData data, ref int keyboardStatus)
+	protected override bool GetUpdatedCapsLockState(RawKeyEventData data, bool currentState)
 	{
 		switch (data.RawScanCode)
 		{
 			case SDL.Scancode.Capslock:
-				keyboardStatus |= SystemMemory.KeyboardStatus_CapsLockBit;
-				break;
+				return true;
 			case SDL.Scancode.LShift:
 			case SDL.Scancode.RShift:
-				keyboardStatus &= ~SystemMemory.KeyboardStatus_CapsLockBit;
-				break;
+				return false;
 		}
+
+		return currentState;
 	}
 }

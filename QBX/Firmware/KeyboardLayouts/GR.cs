@@ -51,7 +51,7 @@ public class GR(Machine machine) : ShiftLockKeyboardLayout(machine)
 		if (UpdateState(rawData))
 			return TryGetNextTranslatedKeyPress(out data);
 
-		var modifiers = machine.SystemMemory.GetKeyModifiers();
+		var modifiers = machine.SystemMemory.KeyboardStatus.GetKeyModifiers();
 
 		ScanCode scanCode = default;
 		bool isRight = false;

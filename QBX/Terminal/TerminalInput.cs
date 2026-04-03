@@ -137,13 +137,7 @@ public class TerminalInput(Stream pipe, Machine machine) : InputInjector
 
 	public void SetNumLockState(bool numLockOn)
 	{
-		int keyboardStatus = machine.SystemMemory[SystemMemory.KeyboardStatusAddress];
-
-		if (numLockOn)
-			keyboardStatus &= ~SystemMemory.KeyboardStatus_NumLockBit;
-		else
-			keyboardStatus |= SystemMemory.KeyboardStatus_NumLockBit;
-
-		machine.SystemMemory[SystemMemory.KeyboardStatusAddress] = unchecked((byte)keyboardStatus);
+		machine.SystemMemory.KeyboardStatus.Byte0.NumLock = numLockOn;
+		machine.SystemMemory.KeyboardStatus.Byte2.NumLockIndicator = numLockOn;
 	}
 }

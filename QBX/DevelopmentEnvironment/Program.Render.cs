@@ -786,8 +786,8 @@ public partial class Program
 		_statusCharBuffer.AsSpan().Fill(32);
 
 		_statusCharBuffer[0] = CP437Encoding.GetByteGraphic('│');
-		_statusCharBuffer[5] = Machine.SystemMemory.KeyboardStatus_CapsLock ? (byte)'C' : (byte)' ';
-		_statusCharBuffer[6] = Machine.SystemMemory.KeyboardStatus_NumLock ? (byte)'N' : (byte)' ';
+		_statusCharBuffer[5] = Machine.SystemMemory.KeyboardStatus.CapsLock ? (byte)'C' : (byte)' ';
+		_statusCharBuffer[6] = Machine.SystemMemory.KeyboardStatus.NumLock ? (byte)'N' : (byte)' ';
 
 		Configuration.DisplayAttributes.ReferenceBarStatusIndicators.Set(TextLibrary);
 		TextLibrary.WriteText(_statusCharBuffer, 0, 8);
