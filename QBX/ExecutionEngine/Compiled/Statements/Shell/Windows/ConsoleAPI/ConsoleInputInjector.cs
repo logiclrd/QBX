@@ -30,9 +30,6 @@ class ConsoleInputInjector : InputInjector
 
 	public override void Inject(KeyEvent evt)
 	{
-		if ((evt.Modifiers.CtrlKey) && (evt.ScanCode != ScanCode.Control))
-			System.Diagnostics.Debugger.Break();
-
 		bool isCtrlKey = evt.Modifiers.CtrlKey && !evt.Modifiers.AltKey;
 
 		if (isCtrlKey && (evt.ScanCode == ScanCode.C))
