@@ -110,6 +110,7 @@ public partial class Program
 		AssociateWatches(_compilation);
 
 		RestoreOutput();
+		Machine.VideoFirmware.SetMode(3);
 
 		_executionContext = new ExecutionContext(Machine, PlayProcessor, EventHub);
 		_executionContext.EventCheckGranularity = EventCheckGranularity;
