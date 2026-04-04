@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Text;
 
@@ -204,59 +205,254 @@ public class TerminalEmulator(VisualLibrary visual)
 		}
 	}
 
-	internal void Clear()
+	class SavedCursorScope(VisualLibrary visual) : IDisposable
+	{
+		public int CursorX { get; } = visual.CursorX;
+		public int CursorY { get; } = visual.CursorY;
+
+		bool _isDisposed;
+
+		public void Dispose()
+		{
+			if (!_isDisposed)
+			{
+				if ((visual.CursorX != CursorX)
+				 || (visual.CursorY != CursorY))
+					visual.MoveCursor(CursorX, CursorY);
+
+				_isDisposed = true;
+			}
+		}
+	}
+
+	class SavedCharacterLineWindowScope(VisualLibrary visual) : IDisposable
+	{
+		public int CharacterLineWindowStart { get; } = visual.CharacterLineWindowStart;
+		public int CharacterLineWindowEnd { get; } = visual.CharacterLineWindowEnd;
+
+		bool _isDisposed;
+
+		public void Dispose()
+		{
+			if (!_isDisposed)
+			{
+				visual.UpdateCharacterLineWindow(CharacterLineWindowStart, CharacterLineWindowEnd);
+				_isDisposed = true;
+			}
+		}
+	}
+
+	public void Clear()
 	{
 		visual.Clear();
 	}
 
-	internal void ClearAboveCursor()
+	public void ClearAboveCursor()
 	{
-		throw new NotImplementedException();
+		// We need to clear all characters that precede the cursor treating the buffer
+		// as a linear array. VisualLibrary doesn't support this. What it does support
+		// is:
+		//
+		// - Limiting the active region to a range of lines. This constrains Clear.
+		// - Writing characters at a particular offset.
+		//
+		// TextLibrary supports a clipping rectangle as well, but this isn't a feature
+		// of the common VisualLibrary interface.
+
+		using (var saved = new SavedCursorScope(visual))
+		{
+			// Step 1: Clear all lines above the cursor.
+			if (saved.CursorY > 0)
+			{
+				using (new SavedCharacterLineWindowScope(visual))
+				{
+					visual.UpdateCharacterLineWindow(windowStart: 0, windowEnd: saved.CursorY - 1);
+					visual.Clear();
+				}
+			}
+
+			// Step 2: Clear characters to the left of the cursor.
+			visual.WriteTextAt(0, saved.CursorY, Spaces(saved.CursorX + 1));
+		}
 	}
 
-	internal void ClearBelowCursor()
+	public void ClearBelowCursor()
 	{
-		throw new NotImplementedException();
+		// We need to clear all characters that precede the cursor treating the buffer
+		// as a linear array. VisualLibrary doesn't support this. What it does support
+		// is:
+		//
+		// - Limiting the active region to a range of lines. This constrains Clear.
+		// - Writing characters at a particular offset.
+		//
+		// TextLibrary supports a clipping rectangle as well, but this isn't a feature
+		// of the common VisualLibrary interface.
+
+		using (var saved = new SavedCursorScope(visual))
+		{
+			// Step 1: Clear characters to the right of the cursor.
+			visual.WriteText(Spaces(visual.CharacterWidth - saved.CursorX));
+
+			// Step 2: Clear all lines below the cursor.
+			if (visual.CursorY + 1 < visual.CharacterHeight)
+			{
+				using (new SavedCharacterLineWindowScope(visual))
+				{
+					visual.UpdateCharacterLineWindow(windowStart: saved.CursorY + 1, windowEnd: visual.CharacterHeight - 1);
+					visual.Clear();
+				}
+			}
+		}
 	}
 
 	public void ClearRightOfCursor()
 	{
-		int savedX = visual.CursorX;
-		int savedY = visual.CursorY;
+		using (var saved = new SavedCursorScope(visual))
+		{
+			int remainingChars = visual.CharacterWidth - saved.CursorX;
 
-		int remainingChars = visual.CharacterWidth - visual.CursorX;
-
-		Write(Spaces(remainingChars));
-
-		MoveCursor(savedX, savedY);
+			Write(Spaces(remainingChars));
+		}
 	}
 
-	internal void ClearLeftOfCursor()
+	public void ClearLeftOfCursor()
 	{
-		throw new NotImplementedException();
+		using (var saved = new SavedCursorScope(visual))
+		{
+			int leadingChars = saved.CursorX + 1;
+
+			visual.WriteTextAt(0, saved.CursorY, Spaces(leadingChars));
+		}
 	}
 
-	internal void ClearCurrentLine()
+	public void ClearCurrentLine()
 	{
-		throw new NotImplementedException();
+		using (var saved = new SavedCursorScope(visual))
+		{
+			visual.WriteTextAt(0, saved.CursorY, Spaces(visual.CharacterWidth));
+		}
 	}
 
-	internal void InsertLines(int param)
+	public void InsertLines(int numLines)
 	{
-		throw new NotImplementedException();
+		if (numLines <= 0)
+			return;
+
+		using (var saved = new SavedCursorScope(visual))
+		{
+			byte fillAttribute =
+				(visual is TextLibrary)
+				? visual.CurrentAttributeByte
+				: (byte)0;
+
+			visual.ScrollTextWindow(
+				0, visual.CursorY,
+				visual.CharacterWidth - 1, visual.CharacterHeight - 1,
+				numLines,
+				fillAttribute);
+		}
 	}
 
-	internal void DeleteLines(int param)
+	public void DeleteLines(int numLines)
 	{
-		throw new NotImplementedException();
+		if (numLines <= 0)
+			return;
+
+		using (var saved = new SavedCursorScope(visual))
+		{
+			byte fillAttribute =
+				(visual is TextLibrary)
+				? visual.CurrentAttributeByte
+				: (byte)0;
+
+			visual.ScrollTextWindow(
+				0, visual.CursorY,
+				visual.CharacterWidth - 1, visual.CharacterHeight - 1,
+				-numLines,
+				fillAttribute);
+		}
 	}
 
-	internal void DeleteCharacters(int param)
+	public void DeleteCharacters(int numChars)
 	{
-		throw new NotImplementedException();
+		// VisualLibrary does not expose this operation at all.
+		//
+		// - For TextLibrary, we can read the characters and write them earlier in the line.
+		// - For GraphicsLibrary, we need to capture the characters to be moved as a sprite
+		//   and paint it in the new location.
+
+		if (numChars <= 0)
+			return;
+
+		using (var saved = new SavedCursorScope(visual))
+		{
+			int remainingChars = visual.CharacterWidth - saved.CursorX;
+
+			if (visual is TextLibrary textLibrary)
+			{
+				Span<byte> chars = stackalloc byte[remainingChars];
+
+				for (int x = numChars; x < remainingChars; x++)
+					chars[x - numChars] = textLibrary.GetCharacter(saved.CursorX + x, saved.CursorY);
+
+				if (numChars <= remainingChars)
+					chars.Slice(remainingChars - numChars).Fill((byte)' ');
+
+				textLibrary.WriteTextAt(saved.CursorX, saved.CursorY, chars);
+			}
+			else if (visual is GraphicsLibrary graphicsLibrary)
+			{
+				int shiftWidth = remainingChars * 8;
+				int shiftHeight = graphicsLibrary.CharacterScans;
+
+				int cursorPixelX = saved.CursorX * 8;
+				int cursorPixelY = saved.CursorY * graphicsLibrary.CharacterScans;
+
+				int clearWidth = (remainingChars - numChars) * 8;
+				int clearPixelX = cursorPixelX + shiftWidth;
+
+				int shiftFromX = cursorPixelX + numChars * 8;
+
+				int spriteBytesNeeded = graphicsLibrary.GetSpriteBufferSize(shiftWidth, shiftHeight);
+
+				byte[]? rentedArray = null;
+
+				if (spriteBytesNeeded >= 8192)
+					rentedArray = ArrayPool<byte>.Shared.Rent(spriteBytesNeeded);
+
+				try
+				{
+					Span<byte> spriteBytes =
+						rentedArray == null
+						? stackalloc byte[spriteBytesNeeded]
+						: rentedArray;
+
+					graphicsLibrary.GetSprite(
+						shiftFromX, cursorPixelY,
+						shiftFromX + shiftWidth - 1, cursorPixelY + shiftHeight - 1,
+						spriteBytes);
+
+					graphicsLibrary.PutSprite(
+						spriteBytes,
+						PutSpriteAction.PixelSet,
+						cursorPixelX, cursorPixelY);
+
+					graphicsLibrary.FillBox(
+						clearPixelX, cursorPixelY,
+						clearPixelX + clearWidth - 1, cursorPixelY + shiftHeight - 1,
+						attribute: 0);
+				}
+				catch { }
+				finally
+				{
+					if (rentedArray != null)
+						ArrayPool<byte>.Shared.Return(rentedArray);
+				}
+			}
+		}
 	}
 
-	internal void ClearCharacters(int param)
+	public void ClearCharacters(int param)
 	{
 		int savedX = visual.CursorX;
 		int savedY = visual.CursorY;
@@ -277,8 +473,8 @@ public class TerminalEmulator(VisualLibrary visual)
 		visual.MoveCursor(savedX, savedY);
 	}
 
-	internal void SetCharacterLineWindow(int v1, int v2)
+	public void SetCharacterLineWindow(int windowStart, int windowEnd)
 	{
-		throw new NotImplementedException();
+		visual.UpdateCharacterLineWindow(windowStart, windowEnd);
 	}
 }
