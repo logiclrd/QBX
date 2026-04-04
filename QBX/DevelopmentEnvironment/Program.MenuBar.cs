@@ -429,13 +429,6 @@ public partial class Program
 		}
 		else
 		{
-			if (input.HasTextCharacter && (input.TextCharacter >= 32))
-			{
-				AltReleaseAction = AltRelease.DeactivateMenuBar;
-				ProcessTextEditorKey(input);
-				return;
-			}
-
 			switch (input.ScanCode)
 			{
 				case ScanCode.F1:
@@ -488,6 +481,11 @@ public partial class Program
 							SelectedMenu = MenuBar.Items.IndexOf(menu);
 							SelectedMenuItem = 0;
 							AltReleaseAction = AltRelease.Ignore;
+						}
+						else if ((SelectedMenu < 0) && input.Modifiers.AltGrKey)
+						{
+							AltReleaseAction = AltRelease.DeactivateMenuBar;
+							ProcessTextEditorKey(input);
 						}
 					}
 
