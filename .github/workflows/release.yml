@@ -1,0 +1,85 @@
+# NB: This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+name: QBX Build Release
+
+on:
+  push:
+    tags:
+      - 'release-*'
+
+jobs:
+
+  init:
+
+    runs-on: ubuntu-latest
+    outputs:
+      VersionNumber: ${{ steps.VersionNumber.outputs.VersionNumber }}
+
+    steps:
+    - name: Determine version number
+      id: VersionNumber
+      run: echo VersionNumber=${GITHUB_REF#refs/tags/release-} >> $GITHUB_OUTPUT
+
+  build:
+
+    needs: init
+
+    runs-on: windows-latest
+
+    env:
+      VersionNumber: ${{ needs.init.outputs.VersionNumber }}
+      PackageFileName: QBX-$VersionNumber-${{ github.sha }}.zip
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Install .NET 10
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+
+    - name: Execute test suite
+      run: dotnet test -p:Configuration=Release
+
+    - name: Retrieve QBXCodeSigning.pfx
+      run: |
+        $pfx_cert_byte = [System.Convert]::FromBase64String("${{ secrets.Base64_Encoded_Pfx }}")
+        [IO.File]::WriteAllBytes("QBXCodeSigning.pfx", $pfx_cert_byte)
+
+    - name: Build QBX
+      run: dotnet build -t:QBX -p:Configuration=Release -p:Version=$VersionNumber
+
+    - name: Locate SignTool.exe
+      uses: KamaranL/add-signtool-action@v1
+
+    - name: Sign QBX.exe
+      run: signtool sign /f QBXCodeSigning.pfx /fd SHA256 QBX\bin\Release\net10.0\QBX.exe
+
+    - name: Sign QBX.dll
+      run: signtool sign /f QBXCodeSigning.pfx /fd SHA256 QBX\bin\Release\net10.0\QBX.dll
+
+    - name: Remove QBXCodeSigning.pfx
+      run: Remove-Item -path QBXCodeSigning.pfx
+
+    - name: Stage
+      run: |
+        md Stage
+        Copy-Item QBX\bin\Release\net10.0\* Stage\ -Recurse
+        md Stage\Samples
+        Copy-Item Samples\*.md Stage\Samples -Recurse
+        Copy-Item Samples\*.BAS Stage\Samples -Recurse
+        Compress-Archive -Path Stage\* -DestinationPath $PackageFileName 
+
+    - name: Create release
+      uses: softprops/action-gh-release@v2
+      with:
+        name: QBX-${{ needs.init.outputs.VersionNumber }}
+        working_directory: Stage
+        files: QBX-${{ needs.init.outputs.VersionNumber }}-${{ github.sha }}.zip
+
