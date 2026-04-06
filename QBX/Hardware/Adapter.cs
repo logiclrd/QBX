@@ -107,10 +107,10 @@ public class Adapter
 
 			int startAddress = _array.CRTController.StartAddress;
 
-			var plane0 = vram.AsSpan().Slice(startAddress + 0 * planeSize, planeSize);
-			var plane1 = vram.AsSpan().Slice(startAddress + 1 * planeSize, planeSize);
-			var plane2 = vram.AsSpan().Slice(startAddress + 2 * planeSize, planeSize);
-			var plane3 = vram.AsSpan().Slice(startAddress + 3 * planeSize, planeSize);
+			var plane0 = vram.AsSpan().Slice(startAddress + 0 * planeSize, planeSize - startAddress);
+			var plane1 = vram.AsSpan().Slice(startAddress + 1 * planeSize, planeSize - startAddress);
+			var plane2 = vram.AsSpan().Slice(startAddress + 2 * planeSize, planeSize - startAddress);
+			var plane3 = vram.AsSpan().Slice(startAddress + 3 * planeSize, planeSize - startAddress);
 
 			bool promoteBit0ToBit13 = _array.CRTController.InterleaveOnBit0;
 			bool promoteBit1ToBit14 = _array.CRTController.InterleaveOnBit1;

@@ -66,7 +66,12 @@ public partial class Program
 
 		bool hideCursor = (isMenuActive || isMenuOpen) && (currentDialog == null);
 
-		if ((currentDialog == null) || (currentDialog != _lastRenderDialog) || !currentDialog.IsVisible)
+		int visiblePage = Machine.VideoFirmware.VisiblePageNumber;
+		int renderToPage = 1 - visiblePage;
+
+		TextLibrary.SetActivePage(renderToPage);
+
+		try
 		{
 			_lastRenderDialog = currentDialog;
 
@@ -97,25 +102,29 @@ public partial class Program
 			for (int i = 0, l = Dialogs.Count - 1; i < l; i++)
 				if (Dialogs[i].IsVisible)
 					Dialogs[i].Render(TextLibrary);
+
+			if ((currentDialog != null) && currentDialog.IsVisible)
+				currentDialog.Render(TextLibrary);
+			else if (!hideCursor)
+			{
+				int cursorActualX = 1 + (FocusedViewport.CursorX - FocusedViewport.ScrollX);
+				int cursorActualY = FocusedViewport.CachedContentTopY + (FocusedViewport.CursorY - FocusedViewport.ScrollY);
+
+				TextLibrary.MoveCursor(cursorActualX, cursorActualY);
+			}
+
+			if (hideCursor)
+				TextLibrary.HideCursor();
+			else
+			{
+				TextLibrary.ShowCursor();
+				TextLibrary.SetCursorScans(EnableOvertype ? 0 : 14, 15);
+				TextLibrary.UpdatePhysicalCursor();
+			}
 		}
-
-		if ((currentDialog != null) && currentDialog.IsVisible)
-			currentDialog.Render(TextLibrary);
-		else if (!hideCursor)
+		finally
 		{
-			int cursorActualX = 1 + (FocusedViewport.CursorX - FocusedViewport.ScrollX);
-			int cursorActualY = FocusedViewport.CachedContentTopY + (FocusedViewport.CursorY - FocusedViewport.ScrollY);
-
-			TextLibrary.MoveCursor(cursorActualX, cursorActualY);
-		}
-
-		if (hideCursor)
-			TextLibrary.HideCursor();
-		else
-		{
-			TextLibrary.ShowCursor();
-			TextLibrary.SetCursorScans(EnableOvertype ? 0 : 14, 15);
-			TextLibrary.UpdatePhysicalCursor();
+			Machine.VideoFirmware.SetVisiblePage(renderToPage);
 		}
 	}
 

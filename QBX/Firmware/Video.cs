@@ -580,6 +580,8 @@ public partial class Video(Machine machine)
 	int _visiblePageNumber = 0;
 	int[] _cursorAddressByPageNumber = new int[8];
 
+	public int VisiblePageNumber => _visiblePageNumber;
+
 	public (int X, int Y) GetCursorPosition()
 		=> GetCursorPosition(_visiblePageNumber);
 
@@ -631,7 +633,7 @@ public partial class Video(Machine machine)
 			int width = array.CRTController.Registers.EndHorizontalDisplay + 1;
 			int height = array.CRTController.NumScanLines / array.CRTController.CharacterHeight;
 
-			return width * height;
+			return 2 * width * height;
 		}
 		else
 		{
