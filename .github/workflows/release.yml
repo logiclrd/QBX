@@ -58,7 +58,9 @@ jobs:
         [IO.File]::WriteAllBytes("QBXCodeSigning.pfx", $pfx_cert_byte)
 
     - name: Build QBX
-      run: dotnet build -t:QBX -p:Configuration=Release -p:Version=${{ env.VersionNumber }}
+      run: |
+        Write-Host "Timestamp=$([DateTime]::Now.ToString("yyyy-MM-dd HH:mm:ss zzz"))" >> $GITHUB_ENV
+        dotnet build -t:QBX -p:Configuration=Release -p:Version=${{ env.VersionNumber }}
 
     - name: Locate SignTool.exe
       uses: KamaranL/add-signtool-action@v1
@@ -85,6 +87,10 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         name: QBX-${{ env.VersionNumber }}
+        body: |
+          Version: ${{ env.VersionNumber }} |
+          Created: ${{ env.Timestamp }} |
+          Commit: ${{ github.sha }}
         working_directory: Stage
         files: QBX-${{ env.VersionNumber }}-${{ github.sha }}.zip
 
