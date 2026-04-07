@@ -16,8 +16,6 @@ jobs:
 
   build:
 
-    needs: init
-
     runs-on: windows-latest
 
     permissions:
