@@ -87,5 +87,5 @@ jobs:
           Created: ${{ env.Timestamp }}
           Commit: ${{ github.sha }}
         working_directory: Stage
-        files: QBX-${{ env.VersionNumber }}-${{ github.sha }}.zip
+        files: ${{ env.PackageFileName }}
 
