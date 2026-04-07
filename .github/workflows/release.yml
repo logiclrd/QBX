@@ -31,7 +31,7 @@ jobs:
 
     env:
       VersionNumber: ${{ needs.init.outputs.VersionNumber }}
-      PackageFileName: QBX-$VersionNumber-${{ github.sha }}.zip
+      PackageFileName: QBX-${{ VersionNumber }}-${{ github.sha }}.zip
 
     steps:
     - name: Checkout
@@ -53,7 +53,7 @@ jobs:
         [IO.File]::WriteAllBytes("QBXCodeSigning.pfx", $pfx_cert_byte)
 
     - name: Build QBX
-      run: dotnet build -t:QBX -p:Configuration=Release -p:Version=$VersionNumber
+      run: dotnet build -t:QBX -p:Configuration=Release -p:Version=${{ VersionNumber }}
 
     - name: Locate SignTool.exe
       uses: KamaranL/add-signtool-action@v1
@@ -79,7 +79,7 @@ jobs:
     - name: Create release
       uses: softprops/action-gh-release@v2
       with:
-        name: QBX-${{ needs.init.outputs.VersionNumber }}
+        name: QBX-${{ VersionNumber }}
         working_directory: Stage
-        files: QBX-${{ needs.init.outputs.VersionNumber }}-${{ github.sha }}.zip
+        files: QBX-${{ VersionNumber }}-${{ github.sha }}.zip
 
