@@ -30,7 +30,7 @@ public class StringVariable : Variable
 	}
 
 	public StringVariable(int fixedStringLength = 0)
-		: base(DataType.String)
+		: base(fixedStringLength == 0 ? DataType.String : DataType.MakeFixedStringType(fixedStringLength))
 	{
 		if (fixedStringLength < 0)
 			RawValue = null!; // naughty naughty

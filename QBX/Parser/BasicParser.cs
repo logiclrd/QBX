@@ -4170,6 +4170,51 @@ public class BasicParser(IdentifierRepository identifierRepository)
 				declaration.TypeToken = tokenHandler.NextToken;
 
 				tokenHandler.Advance();
+
+				if ((declaration.Type == DataType.STRING)
+				 && tokenHandler.NextTokenIs(TokenType.Asterisk))
+				{
+					tokenHandler.Advance();
+
+					// The length must either be a numeric literal or a named constant.
+					// If the token is not one of those, then the error is "Syntax error" on the first token.
+					// If the token is one of those but there are extraneous tokens, then the error is "Expected: , or end-of-statement" on the second token.
+					// If the token is a numeric literal that doesn't parse as INTEGER, then the error is "Invalid constant" on the token.
+
+					tokenHandler.ExpectMoreTokens(message: "Syntax error");
+
+					switch (tokenHandler.NextToken.Type)
+					{
+						case TokenType.Number:
+						case TokenType.Identifier:
+						{
+							declaration.FixedStringLengthToken = tokenHandler.NextToken;
+							declaration.FixedStringLength = identifierRepository.UpdateCanonicalIdentifier(declaration.FixedStringLengthToken.Value);
+
+							tokenHandler.Advance();
+
+							switch (declaration.FixedStringLengthToken.Type)
+							{
+								case TokenType.Number:
+									if (!NumberParser.TryAsInteger(declaration.FixedStringLength, out _))
+										throw new SyntaxErrorException(declaration.FixedStringLengthToken, "Invalid constant");
+
+									break;
+								case TokenType.Identifier:
+									// Immediately strip any type-declaration character.
+									if (declaration.FixedStringLength is QualifiedIdentifier qualifiedIdentifier)
+										declaration.FixedStringLength = qualifiedIdentifier.UnqualifiedIdentifier;
+
+									break;
+							}
+
+							break;
+						}
+
+						default:
+							throw new SyntaxErrorException(tokenHandler.NextToken, "Syntax error");
+					}
+				}
 			}
 		}
 

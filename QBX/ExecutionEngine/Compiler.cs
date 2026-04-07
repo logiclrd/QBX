@@ -1208,7 +1208,28 @@ public class Compiler(IdentifierRepository identifierRepository)
 					if (declaration.UserType != null)
 						dataType = mapper.ResolveType(declaration.UserType);
 					else if (declaration.Type != CodeModel.DataType.Unspecified)
-						dataType = DataType.FromCodeModelDataType(declaration.Type);
+					{
+						if ((declaration.Type == CodeModel.DataType.STRING)
+						 && (declaration.FixedStringLength != null))
+						{
+							int fixedLength;
+
+							if (!int.TryParse(declaration.FixedStringLength, out fixedLength))
+							{
+								if (!mapper.TryResolveConstant(declaration.FixedStringLength, out var constValue)
+								 || !constValue.Type.IsInteger
+								 || (constValue is not IntegerLiteralValue integerConstValue)
+								 || (integerConstValue.Value < 1))
+									throw new CompilerException(declaration.FixedStringLengthToken, "Invalid constant");
+
+								fixedLength = integerConstValue.Value;
+							}
+
+							dataType = DataType.MakeFixedStringType(fixedLength);
+						}
+						else
+							dataType = DataType.FromCodeModelDataType(declaration.Type);
+					}
 					else
 						dataType = DataType.ForPrimitiveDataType(mapper.GetTypeForIdentifier(declaration.Name));
 

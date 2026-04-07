@@ -166,7 +166,18 @@ public class DataType
 		string? array = IsArray ? "()" : null;
 
 		if (IsPrimitiveType)
-			return PrimitiveType.ToString().ToUpperInvariant() + array;
+		{
+			bool isFixedString = (PrimitiveType == PrimitiveDataType.String) && (ByteSize != 0);
+
+			if (isFixedString && IsArray)
+				return "(STRING * " + ByteSize + ")()";
+			else
+			{
+				string? fixedStringLength = isFixedString ? " * " + ByteSize : null;
+
+				return PrimitiveType.ToString().ToUpperInvariant() + fixedStringLength + array;
+			}
+		}
 		else if (IsUserType)
 			return UserType + array;
 		else
