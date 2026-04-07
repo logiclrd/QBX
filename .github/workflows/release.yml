@@ -28,7 +28,7 @@ jobs:
     steps:
     - name: Initialize
       run: |
-        $VersionNumber = "${{ env.GITHUB_REF }}".Split("release-")[-1]
+        $VersionNumber = "${{ github.ref }}".Split("release-")[-1]
         $PackageFileName = "QBX-$VersionNumber-${{ github.sha }}.zip"
         "VersionNumber=$VersionNumber" >> $env:GITHUB_ENV
         "PackageFileName=$PackageFileName" >> $env:GITHUB_ENV
