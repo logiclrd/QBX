@@ -76,7 +76,7 @@ jobs:
         md Stage\Samples
         Copy-Item Samples\*.md Stage\Samples -Recurse
         Copy-Item Samples\*.BAS Stage\Samples -Recurse
-        Compress-Archive -Path Stage\* -DestinationPath $PackageFileName 
+        Compress-Archive -Path Stage\* -DestinationPath ${{ env.PackageFileName }}
 
     - name: Create release
       uses: softprops/action-gh-release@v2
