@@ -33,7 +33,7 @@ jobs:
 
     env:
       VersionNumber: ${{ needs.init.outputs.VersionNumber }}
-      PackageFileName: QBX-${{ env.VersionNumber }}-${{ github.sha }}.zip
+      PackageFileName: QBX-${{ needs.init.outputs.VersionNumber }}-${{ github.sha }}.zip
 
     steps:
     - name: Checkout
