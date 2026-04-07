@@ -31,6 +31,9 @@ jobs:
 
     runs-on: windows-latest
 
+    permissions:
+      contents: write       # Needed to be able to create releases via the API
+
     env:
       VersionNumber: ${{ needs.init.outputs.VersionNumber }}
       PackageFileName: QBX-${{ needs.init.outputs.VersionNumber }}-${{ github.sha }}.zip
