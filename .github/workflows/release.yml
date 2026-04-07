@@ -21,7 +21,7 @@ jobs:
     steps:
     - name: Determine version number
       id: VersionNumber
-      run: echo VersionNumber=${GITHUB_REF#refs/tags/release-} >> $GITHUB_OUTPUT
+      run: echo VersionNumber=${GITHUB_REF#*release-} >> $GITHUB_OUTPUT
 
   build:
 
