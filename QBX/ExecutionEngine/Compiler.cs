@@ -187,13 +187,18 @@ public class Compiler(IdentifierRepository identifierRepository)
 								{
 									var constValueExpression = TranslateExpression(definition.Value, container: null, mapper, compilation, module);
 
-									var targetType = mapper.GetTypeForIdentifier(definition.Identifier);
-
-									if (constValueExpression.Type.IsPrimitiveType
-									 && (constValueExpression.Type.PrimitiveType != targetType))
+									if (definition.Identifier is QualifiedIdentifier qualifiedIdentifier)
 									{
-										constValueExpression =
-											Conversion.Construct(constValueExpression, targetType);
+										if (!constValueExpression.Type.IsPrimitiveType)
+											throw CompilerException.TypeMismatch(definition.Value.Token);
+
+										var targetType = Mapper.GetPrimitiveDataType(qualifiedIdentifier.TypeCharacter);
+
+										if (constValueExpression.Type.PrimitiveType != targetType)
+										{
+											constValueExpression =
+												Conversion.Construct(constValueExpression, targetType);
+										}
 									}
 
 									mapper.DefineConstant(
