@@ -14,17 +14,6 @@ on:
 
 jobs:
 
-  init:
-
-    runs-on: ubuntu-latest
-    outputs:
-      VersionNumber: ${{ steps.VersionNumber.outputs.VersionNumber }}
-
-    steps:
-    - name: Determine version number
-      id: VersionNumber
-      run: echo VersionNumber=${GITHUB_REF#*release-} >> $GITHUB_OUTPUT
-
   build:
 
     needs: init
@@ -39,6 +28,13 @@ jobs:
       PackageFileName: QBX-${{ needs.init.outputs.VersionNumber }}-${{ github.sha }}.zip
 
     steps:
+    - name: Initialize
+      run: |
+        $VersionNumber = "${GITHUB_REF#*release-}"
+        $PackageFileName = "QBX-$VersionNumber-${{ github.sha }}.zip"
+        "VersionNumber=$VersionNumber" >> $env:GITHUB_ENV
+        "PackageFileName=$PackageFileName" >> $env:GITHUB_ENV
+
     - name: Checkout
       uses: actions/checkout@v4
       with:
@@ -59,7 +55,7 @@ jobs:
 
     - name: Build QBX
       run: |
-        Write-Host "Timestamp=$([DateTime]::Now.ToString("yyyy-MM-dd HH:mm:ss zzz"))" >> $GITHUB_ENV
+        "Timestamp=$([DateTime]::Now.ToString("yyyy-MM-dd HH:mm:ss zzz"))" >> $env:GITHUB_ENV
         dotnet build -t:QBX -p:Configuration=Release -p:Version=${{ env.VersionNumber }}
 
     - name: Locate SignTool.exe
@@ -88,8 +84,8 @@ jobs:
       with:
         name: QBX-${{ env.VersionNumber }}
         body: |
-          Version: ${{ env.VersionNumber }} |
-          Created: ${{ env.Timestamp }} |
+          Version: ${{ env.VersionNumber }}
+          Created: ${{ env.Timestamp }}
           Commit: ${{ github.sha }}
         working_directory: Stage
         files: QBX-${{ env.VersionNumber }}-${{ github.sha }}.zip
