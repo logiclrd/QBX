@@ -9,6 +9,8 @@ on:
   push:
     tags:
       - 'release-*'
+    branches-ignore:
+      - '**'      # explicitly ignore all branch pushes
 
 jobs:
 
@@ -31,7 +33,7 @@ jobs:
 
     env:
       VersionNumber: ${{ needs.init.outputs.VersionNumber }}
-      PackageFileName: QBX-${{ VersionNumber }}-${{ github.sha }}.zip
+      PackageFileName: QBX-${{ env.VersionNumber }}-${{ github.sha }}.zip
 
     steps:
     - name: Checkout
@@ -53,7 +55,7 @@ jobs:
         [IO.File]::WriteAllBytes("QBXCodeSigning.pfx", $pfx_cert_byte)
 
     - name: Build QBX
-      run: dotnet build -t:QBX -p:Configuration=Release -p:Version=${{ VersionNumber }}
+      run: dotnet build -t:QBX -p:Configuration=Release -p:Version=${{ env.VersionNumber }}
 
     - name: Locate SignTool.exe
       uses: KamaranL/add-signtool-action@v1
@@ -79,7 +81,7 @@ jobs:
     - name: Create release
       uses: softprops/action-gh-release@v2
       with:
-        name: QBX-${{ VersionNumber }}
+        name: QBX-${{ env.VersionNumber }}
         working_directory: Stage
-        files: QBX-${{ VersionNumber }}-${{ github.sha }}.zip
+        files: QBX-${{ env.VersionNumber }}-${{ github.sha }}.zip
 
