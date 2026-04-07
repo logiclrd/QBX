@@ -29,7 +29,7 @@ jobs:
     - name: Initialize
       run: |
         $VersionNumber = "${{ github.ref }}".Split("release-")[-1]
-        $PackageFileName = "QBX-$VersionNumber-${{ github.sha }}.zip"
+        $PackageFileName = [System.IO.Path]::GetFullPath("QBX-$VersionNumber-${{ github.sha }}.zip")
         "VersionNumber=$VersionNumber" >> $env:GITHUB_ENV
         "PackageFileName=$PackageFileName" >> $env:GITHUB_ENV
 
@@ -77,7 +77,7 @@ jobs:
         Copy-Item Samples\*.md Stage\Samples -Recurse
         Copy-Item Samples\*.BAS Stage\Samples -Recurse
         Compress-Archive -Path Stage\* -DestinationPath ${{ env.PackageFileName }}
-        Get-ChildItem ${{ env.PackageFileName }}
+        Get-ChildItem ${{ env.PackageFileName }} | Select-Object Mode,LastWriteTime,Length,FullName
 
     - name: Create release
       uses: softprops/action-gh-release@v2
