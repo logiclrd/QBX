@@ -77,6 +77,7 @@ jobs:
         Copy-Item Samples\*.md Stage\Samples -Recurse
         Copy-Item Samples\*.BAS Stage\Samples -Recurse
         Compress-Archive -Path Stage\* -DestinationPath ${{ env.PackageFileName }}
+        Get-ChildItem ${{ env.PackageFileName }}
 
     - name: Create release
       uses: softprops/action-gh-release@v2
@@ -88,4 +89,4 @@ jobs:
           Commit: ${{ github.sha }}
         working_directory: Stage
         files: ${{ env.PackageFileName }}
-
+        fail_on_unmatched_files: true
