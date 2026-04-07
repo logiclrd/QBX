@@ -55,7 +55,8 @@ jobs:
 
     - name: Build QBX
       run: |
-        "Timestamp=$([DateTime]::Now.ToString("yyyy-MM-dd HH:mm:ss zzz"))" >> $env:GITHUB_ENV
+        $Timestamp = [DateTime]::Now.ToString("yyyy-MM-dd HH:mm:ss zzz")
+        "Timestamp=$Timestamp" >> $env:GITHUB_ENV
         dotnet build -t:QBX -p:Configuration=Release -p:Version=${{ env.VersionNumber }}
 
     - name: Locate SignTool.exe
