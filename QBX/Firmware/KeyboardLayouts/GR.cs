@@ -236,6 +236,7 @@ public class GR(Machine machine) : ShiftLockKeyboardLayout(machine)
 			{
 				switch (rawData.RawScanCode)
 				{
+					case SDL.Scancode.Pause: /* Ctrl+Break does not generate any INKEY$, but should not be ignored */ break;
 					case SDL.Scancode.Escape: scanCode = ScanCode.Escape; textCharacter = (char)27; break;
 					case SDL.Scancode.F1: scanCode = ScanCode.CtrlF1; break;
 					case SDL.Scancode.F2: scanCode = ScanCode.CtrlF2; break;
