@@ -24,14 +24,6 @@ public class LiteralExpression : Expression
 		if (string.IsNullOrEmpty(str))
 			return false;
 
-		if (TypeCharacter.TryParse(str[str.Length - 1], out var typeCharacter))
-		{
-			if (typeCharacter.Character != '%')
-				return false;
-
-			str = str.Remove(str.Length - 1);
-		}
-
 		return NumberParser.TryAsInteger(str, out value);
 	}
 
@@ -43,14 +35,6 @@ public class LiteralExpression : Expression
 
 		if (string.IsNullOrEmpty(str))
 			return false;
-
-		if (TypeCharacter.TryParse(str[str.Length - 1], out var typeCharacter))
-		{
-			if (typeCharacter.Character != '&')
-				return false;
-
-			str = str.Remove(str.Length - 1);
-		}
 
 		return NumberParser.TryAsLong(str, out value);
 	}
@@ -64,14 +48,6 @@ public class LiteralExpression : Expression
 		if (string.IsNullOrEmpty(str))
 			return false;
 
-		if (TypeCharacter.TryParse(str[str.Length - 1], out var typeCharacter))
-		{
-			if (typeCharacter.Character != '!')
-				return false;
-
-			str = str.Remove(str.Length - 1);
-		}
-
 		return NumberParser.TryAsSingle(str, out value);
 	}
 
@@ -84,14 +60,6 @@ public class LiteralExpression : Expression
 		if (string.IsNullOrEmpty(str))
 			return false;
 
-		if (TypeCharacter.TryParse(str[str.Length - 1], out var typeCharacter))
-		{
-			if (typeCharacter.Character != '#')
-				return false;
-
-			str = str.Remove(str.Length - 1);
-		}
-
 		return NumberParser.TryAsDouble(str, out value);
 	}
 
@@ -103,14 +71,6 @@ public class LiteralExpression : Expression
 
 		if (string.IsNullOrEmpty(str))
 			return false;
-
-		if (TypeCharacter.TryParse(str[str.Length - 1], out var typeCharacter))
-		{
-			if (typeCharacter.Character != '$')
-				return false;
-
-			str = str.Remove(str.Length - 1);
-		}
 
 		return NumberParser.TryAsCurrency(str, out value);
 	}
