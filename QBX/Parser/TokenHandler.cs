@@ -146,7 +146,7 @@ public class TokenHandler(ListRange<Token> tokens, IdentifierRepository identifi
 		var token = _tokens[_tokenIndex];
 
 		if (token.Type != expectedTokenType)
-			throw new SyntaxErrorException(token, "Expected: " + expectedTokenType);
+			throw new SyntaxErrorException(token, "Expected: " + expectedTokenType.GetString());
 
 		_tokenIndex++;
 

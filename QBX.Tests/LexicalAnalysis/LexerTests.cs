@@ -57,19 +57,13 @@ public class LexerTests
 
 	static IEnumerable<object[]> AllTokens()
 	{
-		foreach (var field in typeof(TokenType).GetFields(BindingFlags.Static | BindingFlags.Public))
+		foreach (var tokenType in Enum.GetValues<TokenType>().Distinct())
 		{
-			var tokenType = (TokenType)field.GetValue(null)!;
+			string tokenValue = tokenType.GetString();
 
-			if (field.GetCustomAttribute<KeywordTokenAttribute>() is KeywordTokenAttribute keywordToken)
-				yield return [keywordToken.Keyword ?? tokenType.ToString(), tokenType];
-			else if (field.GetCustomAttribute<TokenCharacterAttribute>() is TokenCharacterAttribute characterToken)
-				yield return [characterToken.Character.ToString(), tokenType];
+			if (tokenValue != "")
+				yield return [tokenValue, tokenType];
 		}
-
-		yield return ["<=", TokenType.LessThanOrEquals];
-		yield return [">=", TokenType.GreaterThanOrEquals];
-		yield return ["<>", TokenType.NotEquals];
 	}
 
 	[TestCaseSource(nameof(AllTokens))]
