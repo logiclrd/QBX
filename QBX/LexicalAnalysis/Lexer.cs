@@ -522,6 +522,11 @@ public class Lexer(TextReader input, int startingLineNumber = 0) : IEnumerable<T
 						{
 							var dataType = DataType.Unspecified;
 
+							Token? keyword = null;
+
+							string word = buffer.ToString();
+							string qualifiedWord = word;
+
 							switch (ch)
 							{
 								case '%':
@@ -530,25 +535,33 @@ public class Lexer(TextReader input, int startingLineNumber = 0) : IEnumerable<T
 								case '#':
 								case '@':
 								case '$':
-									buffer.Append(ch);
+									qualifiedWord = word + ch;
 
-									switch (ch)
+									if (!Token.TryForKeyword(line, tokenStartColumn, qualifiedWord, out keyword)
+									 && Token.TryForKeyword(line, tokenStartColumn, word, out var keywordFollowedBySymbol))
 									{
-										case '%': dataType = DataType.INTEGER; break;
-										case '&': dataType = DataType.LONG; break;
-										case '!': dataType = DataType.SINGLE; break;
-										case '#': dataType = DataType.DOUBLE; break;
-										case '@': dataType = DataType.CURRENCY; break;
-										case '$': dataType = DataType.STRING; break;
+										keyword = keywordFollowedBySymbol;
+										reparse = true;
+									}
+									else
+									{
+										switch (ch)
+										{
+											case '%': dataType = DataType.INTEGER; break;
+											case '&': dataType = DataType.LONG; break;
+											case '!': dataType = DataType.SINGLE; break;
+											case '#': dataType = DataType.DOUBLE; break;
+											case '@': dataType = DataType.CURRENCY; break;
+											case '$': dataType = DataType.STRING; break;
+										}
 									}
 
 									break;
 								default:
+									Token.TryForKeyword(line, tokenStartColumn, word, out keyword);
 									reparse = true;
 									break;
 							}
-
-							string word = buffer.ToString();
 
 							if (word.Equals("REM", StringComparison.OrdinalIgnoreCase))
 							{
@@ -556,7 +569,7 @@ public class Lexer(TextReader input, int startingLineNumber = 0) : IEnumerable<T
 								break;
 							}
 
-							if (Token.TryForKeyword(line, tokenStartColumn, word, out var keyword))
+							if (keyword != null)
 								yield return keyword;
 							else
 								yield return Token.ForIdentifier(line, tokenStartColumn, word, dataType);
