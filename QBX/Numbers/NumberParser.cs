@@ -38,8 +38,15 @@ public static class NumberParser
 
 		if (chars.StartsWith("&H", StringComparison.OrdinalIgnoreCase))
 		{
-			if (!int.TryParse(chars.Slice(2), NumberStyles.HexNumber, default, out parsed))
+			uint parsedUnsigned;
+
+			if (!uint.TryParse(chars.Slice(2), NumberStyles.HexNumber, default, out parsedUnsigned))
 				return false;
+
+			if (parsedUnsigned > 65535)
+				return false;
+
+			parsed = unchecked((int)parsedUnsigned);
 
 			if (parsed >= 32768)
 				parsed -= 65536;
@@ -55,9 +62,12 @@ public static class NumberParser
 
 				parsed = (parsed * 8) + (chars[i] - '0');
 
-				if (parsed > short.MaxValue)
+				if (parsed > ushort.MaxValue)
 					return false;
 			}
+
+			if (parsed > short.MaxValue)
+				parsed -= 65536;
 		}
 		else
 		{
@@ -111,20 +121,20 @@ public static class NumberParser
 		}
 		else if (chars.StartsWith("&O", StringComparison.OrdinalIgnoreCase))
 		{
-			value = 0;
+			long longValue = 0;
 
 			for (int i = 2; i < chars.Length; i++)
 			{
 				if (!char.IsAsciiDigit(chars[i]))
 					return false;
 
-				long parsedLong = (long)(value * 8) + (chars[i] - '0');
+				longValue = longValue * 8 + (chars[i] - '0');
 
-				if (parsedLong > int.MaxValue)
+				if (longValue > uint.MaxValue)
 					return false;
-
-				value = (int)parsedLong;
 			}
+
+			value = unchecked((int)longValue);
 		}
 		else
 		{
