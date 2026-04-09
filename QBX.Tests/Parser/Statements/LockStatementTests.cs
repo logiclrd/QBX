@@ -8,7 +8,7 @@ public class LockStatementTests
 {
 	[TestCase("LOCK 1", false, false)]
 	[TestCase("LOCK #2, 32", true, false)]
-	[TestCase("LOCK #fn%, start& TO end&", true, true)]
+	[TestCase("LOCK #fn%, startPos& TO endPos&", true, true)]
 	public void ShouldParse(string statement, bool expectRangeStart, bool expectRangeEnd)
 	{
 		// Arrange

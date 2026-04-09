@@ -129,7 +129,11 @@ public class Lexer(TextReader input, CompilationElement? element = null, int sta
 							break;
 						}
 						else
+						{
 							yield return new Token(line, column, TokenType.StrayCharacter, ch.ToString());
+							tokenStartColumn = column + 1;
+							break;
+						}
 
 						// TODO: some sort of "ignore errors" mode to allow a .BAS file with
 						//       an invalid token stream to be loaded
@@ -406,7 +410,13 @@ public class Lexer(TextReader input, CompilationElement? element = null, int sta
 							case 'H': case 'h': mode = Mode.HexNumber; break;
 							case 'O': case 'o': mode = Mode.OctalNumber; break;
 							default:
-								throw new Exception("Expected: &H or &O");
+								yield return new Token(line, tokenStartColumn, TokenType.StrayCharacter, buffer.ToString());
+								buffer.Clear();
+
+								mode = Mode.Any;
+								tokenStartColumn = column;
+								reparse = true;
+								continue;
 						}
 
 						buffer.Append(ch);
@@ -501,10 +511,10 @@ public class Lexer(TextReader input, CompilationElement? element = null, int sta
 						else
 						{
 							yield return Token.ForCharacter(line, tokenStartColumn, buffer[0]);
-							buffer.Clear();
 							reparse = true;
 						}
 
+						buffer.Clear();
 						mode = Mode.Any;
 						tokenStartColumn = column;
 
@@ -533,7 +543,9 @@ public class Lexer(TextReader input, CompilationElement? element = null, int sta
 							}
 							else
 							{
-								buffer.Append(ch);
+								if (!atEOF)
+									buffer.Append(ch);
+
 								mode = Mode.RawStringToEndOfLine;
 							}
 						}
@@ -591,7 +603,7 @@ public class Lexer(TextReader input, CompilationElement? element = null, int sta
 							if (keyword != null)
 								yield return keyword;
 							else
-								yield return Token.ForIdentifier(line, tokenStartColumn, word, dataType);
+								yield return Token.ForIdentifier(line, tokenStartColumn, qualifiedWord, dataType);
 
 							buffer.Clear();
 							mode = Mode.Any;

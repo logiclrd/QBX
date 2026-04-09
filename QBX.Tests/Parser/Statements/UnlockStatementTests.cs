@@ -8,7 +8,7 @@ public class UnlockStatementTests
 {
 	[TestCase("UNLOCK 1", false, false)]
 	[TestCase("UNLOCK #2, 32", true, false)]
-	[TestCase("UNLOCK #fn%, start& TO end&", true, true)]
+	[TestCase("UNLOCK #fn%, startPos& TO endPos&", true, true)]
 	public void ShouldParse(string statement, bool expectRangeStart, bool expectRangeEnd)
 	{
 		// Arrange
