@@ -3067,6 +3067,23 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 				break;
 			}
+			case CodeModel.Statements.WriteStatement writeStatement:
+			{
+				var translatedWriteStatement = new WriteStatement(writeStatement);
+
+				TranslateNumericArgumentExpression(
+					ref translatedWriteStatement.FileNumberExpression, writeStatement.FileNumberExpression);
+
+				foreach (var argumentExpression in writeStatement.Arguments)
+				{
+					translatedWriteStatement.Arguments.Add(
+						TranslateExpression(argumentExpression, container, mapper, compilation, module));
+				}
+
+				container.Append(translatedWriteStatement);
+
+				break;
+			}
 
 			case CodeModel.Statements.UnresolvedWidthStatement unresolvedWidthStatement:
 			{

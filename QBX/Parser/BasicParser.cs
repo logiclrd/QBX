@@ -3878,6 +3878,33 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 				return unresolvedWidth;
 			}
+
+			case TokenType.WRITE:
+			{
+				var write = new WriteStatement();
+
+				tokenHandler.Expect(TokenType.NumberSign);
+
+				var separatorIndex = tokenHandler.FindNextUnparenthesizedOf(TokenType.Comma);
+
+				if (separatorIndex < 0)
+					throw new SyntaxErrorException(tokenHandler.EndToken, "Expected: ,");
+
+				write.FileNumberExpression = ParseExpressionForStatement(write, tokenHandler.RemainingTokens.Slice(0, separatorIndex), tokenHandler[separatorIndex]);
+
+				tokenHandler.Advance(separatorIndex + 1);
+
+				var midTokenRef = new TokenRef();
+
+				foreach (var argumentTokens in SplitCommaDelimitedList(tokenHandler.RemainingTokens, midTokenRef))
+				{
+					var argument = ParseExpression(argumentTokens, midTokenRef.Token ?? tokenHandler.EndToken);
+
+					write.Arguments.Add(argument);
+				}
+
+				return write;
+			}
 		}
 
 		// If not one of the above, then one of:

@@ -109,4 +109,5 @@ public enum StatementType
 	Wait,
 	WEnd,
 	While,
+	Write,
 }
