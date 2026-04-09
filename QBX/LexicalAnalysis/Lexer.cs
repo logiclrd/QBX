@@ -9,7 +9,7 @@ using QBX.Utility;
 
 namespace QBX.LexicalAnalysis;
 
-public class Lexer(TextReader input, int startingLineNumber = 0) : IEnumerable<Token>
+public class Lexer(TextReader input, CompilationElement? element = null, int startingLineNumber = 0) : IEnumerable<Token>
 {
 	TextReader _input = input;
 	bool _consumed = false;
@@ -17,8 +17,10 @@ public class Lexer(TextReader input, int startingLineNumber = 0) : IEnumerable<T
 
 	public Token EndToken => _endToken;
 
-	public Lexer(string text)
-		: this(new StringReader(text))
+	public CompilationElement? CurrentElement { get; set; } = element;
+
+	public Lexer(string text, CompilationElement? element = null)
+		: this(new StringReader(text), element)
 	{
 	}
 
@@ -43,6 +45,20 @@ public class Lexer(TextReader input, int startingLineNumber = 0) : IEnumerable<T
 	}
 
 	public IEnumerator<Token> GetEnumerator()
+	{
+		var enumerator = Tokenize();
+
+		while (enumerator.MoveNext())
+		{
+			var token = enumerator.Current;
+
+			token.OwnerElement = CurrentElement;
+
+			yield return token;
+		}
+	}
+
+	IEnumerator<Token> Tokenize()
 	{
 		if (_consumed)
 			throw new InvalidOperationException("This lexer has already been consumed");

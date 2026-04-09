@@ -14,7 +14,7 @@ namespace QBX.Parser;
 
 public class BasicParser(IdentifierRepository identifierRepository)
 {
-	public static CompilationUnit Parse(IEnumerable<Token> tokenStream, bool ignoreErrors = false, Action<int>? lineCountCallback = null)
+	public static CompilationUnit Parse(Lexer tokenStream, bool ignoreErrors = false, Action<int>? lineCountCallback = null)
 	{
 		using (new CultureScope(BasicCulture.Instance))
 		{
@@ -27,6 +27,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 			mainElement.Type = CompilationElementType.Main;
 
 			unit.Elements.Add(mainElement);
+			tokenStream.CurrentElement = mainElement;
 
 			var element = mainElement;
 			bool betweenElements = false;
@@ -67,7 +68,9 @@ public class BasicParser(IdentifierRepository identifierRepository)
 							betweenElements = false;
 
 							element = new CompilationElement(unit);
+
 							unit.Elements.Add(element);
+							tokenStream.CurrentElement = element;
 
 							element.FirstLineIndex = lineIndex - prelude.Count;
 

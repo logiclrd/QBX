@@ -763,7 +763,7 @@ public partial class Program
 
 								line.Render(new StringWriter(buffer), includeCRLF: false);
 
-								var lexer = new Lexer(new StringBuilderReader(buffer), startingLineNumber: i);
+								var lexer = new Lexer(new StringBuilderReader(buffer), element, startingLineNumber: i);
 
 								var parsedCodeLine = parser.ParseCodeLines(lexer).SingleOrDefault();
 

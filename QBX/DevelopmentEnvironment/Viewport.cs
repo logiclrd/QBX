@@ -234,7 +234,7 @@ public class Viewport
 
 		try
 		{
-			var lexer = new Lexer(new StringBuilderReader(buffer), startingLineNumber: CursorY);
+			var lexer = new Lexer(new StringBuilderReader(buffer), EditableElement as CompilationElement, startingLineNumber: CursorY);
 
 			var parser = new BasicParser(unit.IdentifierRepository);
 

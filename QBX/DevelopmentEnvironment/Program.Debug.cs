@@ -443,7 +443,7 @@ public partial class Program
 				{
 					try
 					{
-						var lexer = new Lexer(watch.Expression);
+						var lexer = new Lexer(watch.Expression, currentRoutine.Source);
 
 						var tokens = lexer.ToList();
 

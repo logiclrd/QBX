@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 
 using QBX.CodeModel;
+using QBX.CodeModel.Statements;
 using QBX.Utility;
 
 namespace QBX.LexicalAnalysis;
@@ -21,7 +22,8 @@ public class Token(MutableBox<int> line, int column, TokenType type, string valu
 
 	public MutableBox<int> LineNumberBox => line;
 
-	public CodeModel.Statements.Statement? OwnerStatement;
+	public CompilationElement? OwnerElement;
+	public Statement? OwnerStatement;
 
 	public int Length => value.Length;
 

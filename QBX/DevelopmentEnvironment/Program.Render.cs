@@ -678,7 +678,7 @@ public partial class Program
 		// When a dialog is active, error context is rendered as selection.
 		if (Dialogs.Count != 0)
 		{
-			if ((_errorToken == null) || (_errorToken.OwnerStatement?.CodeLine?.CompilationElement != compilationElement))
+			if ((_errorToken == null) || (_errorToken.OwnerElement != compilationElement))
 				return (chars, 0, 0);
 			else
 			{

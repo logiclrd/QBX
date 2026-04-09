@@ -205,7 +205,7 @@ public class CompilationUnit : IRenderableCode, IEditableUnit
 
 			declaration.Render(buffer);
 
-			var lexer = new Lexer(buffer.ToString());
+			var lexer = new Lexer(buffer.ToString(), MainElement);
 
 			var parser = new BasicParser(IdentifierRepository);
 
