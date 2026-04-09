@@ -451,7 +451,10 @@ public class Lexer(TextReader input, CompilationElement? element = null, int sta
 					}
 					case Mode.OctalNumber:
 					{
-						if ((ch >= '0') && (ch < '8'))
+						// '8' and '9' will be detected by NumberParser and handled by
+						// Compiler.TranslateExpression later on, generating an Overflow
+						// error. We collect them here as though they were valid.
+						if ((ch >= '0') && (ch <= '9'))
 							buffer.Append(ch);
 						else
 						{

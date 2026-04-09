@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 
+using QBX.ExecutionEngine;
 using QBX.LexicalAnalysis;
 using QBX.Numbers;
 
@@ -13,6 +14,12 @@ public class LiteralExpression : Expression
 	public LiteralExpression(Token token)
 	{
 		Token = token;
+
+		bool octalOverflow;
+
+		if ((!NumberParser.TryAsInteger(token.Value, out _, out octalOverflow) && octalOverflow)
+		 || (!NumberParser.TryAsLong(token.Value, out _, out octalOverflow) && octalOverflow))
+			throw CompilerException.Overflow(token);
 	}
 
 	public bool TryAsInteger(out short value)

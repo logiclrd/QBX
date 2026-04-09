@@ -10,8 +10,12 @@ namespace QBX.Numbers;
 public static class NumberParser
 {
 	public static bool TryAsInteger(ReadOnlySpan<char> chars, out short value)
+		=> TryAsInteger(chars, out value, out _);
+
+	public static bool TryAsInteger(ReadOnlySpan<char> chars, out short value, out bool octalOverflow)
 	{
 		value = default;
+		octalOverflow = false;
 
 		if (chars.Length == 0)
 			return true;
@@ -60,6 +64,12 @@ public static class NumberParser
 				if (!char.IsAsciiDigit(chars[i]))
 					return false;
 
+				if (chars[i] >= '8')
+				{
+					octalOverflow = true;
+					return false;
+				}
+
 				parsed = (parsed * 8) + (chars[i] - '0');
 
 				if (parsed > ushort.MaxValue)
@@ -87,8 +97,12 @@ public static class NumberParser
 	}
 
 	public static bool TryAsLong(ReadOnlySpan<char> chars, out int value)
+		=> TryAsLong(chars, out value, out _);
+
+	public static bool TryAsLong(ReadOnlySpan<char> chars, out int value, out bool octalOverflow)
 	{
 		value = default;
+		octalOverflow = false;
 
 		if (chars.Length == 0)
 			return true;
@@ -127,6 +141,12 @@ public static class NumberParser
 			{
 				if (!char.IsAsciiDigit(chars[i]))
 					return false;
+
+				if (chars[i] >= '8')
+				{
+					octalOverflow = true;
+					return false;
+				}
 
 				longValue = longValue * 8 + (chars[i] - '0');
 

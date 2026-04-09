@@ -57,6 +57,20 @@ public class NumberParserTests
 			value.Should().Be(expectedValue);
 	}
 
+	[TestCase("1", false)]
+	[TestCase("&HFE", false)]
+	[TestCase("&O123", false)]
+	[TestCase("&O80", true)]
+	[TestCase("&O10008", true)]
+	public void TryAsInteger_OctalOverflow(string input, bool expectedOctalOverflow)
+	{
+		// Act
+		NumberParser.TryAsInteger(input, out _, out var actualOctalOverflow);
+
+		// Assert
+		actualOctalOverflow.Should().Be(expectedOctalOverflow);
+	}
+
 	[TestCase("", true, 0)]
 	[TestCase("0", true, 0)]
 	[TestCase("0000", true, 0)]
@@ -107,6 +121,21 @@ public class NumberParserTests
 
 		if (result)
 			value.Should().Be(expectedValue);
+	}
+
+	[TestCase("1", false)]
+	[TestCase("&HFE", false)]
+	[TestCase("&O123", false)]
+	[TestCase("&O80", true)]
+	[TestCase("&O10008", true)]
+	[TestCase("&O27777777778", true)]
+	public void TryAsLong_OctalOverflow(string input, bool expectedOctalOverflow)
+	{
+		// Act
+		NumberParser.TryAsLong(input, out _, out var actualOctalOverflow);
+
+		// Assert
+		actualOctalOverflow.Should().Be(expectedOctalOverflow);
 	}
 
 	[TestCase("", true, 0f)]
