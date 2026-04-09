@@ -9,7 +9,7 @@ public class FilePrintEmitter(ExecutionContext context, OpenFile openFile) : Pri
 	public override int CursorX { get; set; }
 	public override int Width => openFile.LineWidth;
 
-	public override void Emit(Span<byte> str)
+	public override void Emit(ReadOnlySpan<byte> str)
 	{
 		if (openFile.IOMode == OpenFileIOMode.Random)
 			openFile.WriteToFields(str);

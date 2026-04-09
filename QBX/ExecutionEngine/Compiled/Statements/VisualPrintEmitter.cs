@@ -17,7 +17,7 @@ public class VisualPrintEmitter(VisualLibrary visual) : PrintEmitter
 	public override void EmitNewLine() => visual.NewLine();
 
 	public override void Emit(ReadOnlySpan<Char> chars) => visual.WriteText(chars);
-	public override void Emit(Span<byte> str) => visual.WriteText(str);
+	public override void Emit(ReadOnlySpan<byte> str) => visual.WriteText(str);
 	public override void Emit(char ch) => visual.WriteText(ch);
 	public override void Emit(byte ch) => visual.WriteText(ch);
 }

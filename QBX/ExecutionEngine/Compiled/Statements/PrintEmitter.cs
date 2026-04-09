@@ -49,7 +49,7 @@ public abstract class PrintEmitter
 		Emit(s_buffer.AsSpan().Slice(0, 1));
 	}
 
-	public abstract void Emit(Span<byte> str);
+	public abstract void Emit(ReadOnlySpan<byte> str);
 
 	public virtual void EmitNewLine()
 	{
