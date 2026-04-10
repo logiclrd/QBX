@@ -3585,6 +3585,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 					case TokenType.EXP: function = new ExpFunction(); break;
 					case TokenType.FIX: return FixFunction.Construct(keywordFunction.Token, arguments);
 					case TokenType.FILEATTR: function = new FileAttrFunction(); break;
+					case TokenType.FRE: function = new FreFunction(); break;
 					case TokenType.FREEFILE: function = new FreeFileFunction(); break;
 					case TokenType.HEX: function = new HexFunction(); break;
 					case TokenType.INKEY: function = new InKeyFunction(); break;
