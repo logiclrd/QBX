@@ -47,6 +47,9 @@ public class BLoadStatement(CodeModel.Statements.Statement source) : BlockIOStat
 					? unchecked((ushort)(context.RuntimeState.SegmentBase >> 4))
 					: headerFields[0];
 
+				if (OffsetExpression == null)
+					offset = headerFields[1];
+
 				var address = new SegmentedAddress(segment, (ushort)offset);
 
 				int linearAddress = address.ToLinearAddress();
