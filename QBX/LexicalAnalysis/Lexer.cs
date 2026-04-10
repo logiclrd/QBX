@@ -527,7 +527,7 @@ public class Lexer(TextReader input, CompilationElement? element = null, int sta
 					{
 						if (char.IsAsciiLetterOrDigit(ch))
 							buffer.Append(ch);
-						else if (buffer.Equals("DATA", StringComparison.OrdinalIgnoreCase))
+						else if (buffer.Equals("DATA", StringComparison.OrdinalIgnoreCase) && (ch != '$'))
 						{
 							yield return new Token(line, tokenStartColumn, TokenType.DATA, "DATA");
 
@@ -565,7 +565,6 @@ public class Lexer(TextReader input, CompilationElement? element = null, int sta
 								case '!':
 								case '#':
 								case '@':
-								case '$':
 									qualifiedWord = word + ch;
 
 									if (!Token.TryForKeyword(line, tokenStartColumn, qualifiedWord, out keyword)
@@ -583,10 +582,14 @@ public class Lexer(TextReader input, CompilationElement? element = null, int sta
 											case '!': dataType = DataType.SINGLE; break;
 											case '#': dataType = DataType.DOUBLE; break;
 											case '@': dataType = DataType.CURRENCY; break;
-											case '$': dataType = DataType.STRING; break;
 										}
 									}
 
+									break;
+								case '$':
+									qualifiedWord = word + ch;
+									Token.TryForKeyword(line, tokenStartColumn, qualifiedWord, out keyword);
+									dataType = DataType.STRING;
 									break;
 								default:
 									Token.TryForKeyword(line, tokenStartColumn, word, out keyword);

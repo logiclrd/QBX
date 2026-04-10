@@ -1,6 +1,7 @@
-﻿using System.Reflection;
+﻿using System.Text.RegularExpressions;
 
 using QBX.CodeModel;
+using QBX.ExecutionEngine.Execution;
 using QBX.LexicalAnalysis;
 
 using QBX.Tests.Utility;
@@ -62,6 +63,33 @@ public class LexerTests
 			string tokenValue = tokenType.GetString();
 
 			if (tokenValue != "")
+				yield return [tokenValue, tokenType];
+		}
+	}
+
+	static IEnumerable<object[]> UnqualifiedWordTokens()
+	{
+		var stringFunctionTokens = new HashSet<string>();
+
+		foreach (var tokenType in Enum.GetValues<TokenType>().Distinct())
+		{
+			string tokenValue = tokenType.GetString();
+
+			if (tokenValue.EndsWith('$'))
+				stringFunctionTokens.Add(tokenValue);
+		}
+
+		var pattern = new Regex("^\\w+$");
+
+		foreach (var tokenType in Enum.GetValues<TokenType>().Distinct())
+		{
+			string tokenValue = tokenType.GetString();
+
+			// Check whether adding a $ to this token makes another valid keyword.
+			if (stringFunctionTokens.Contains(tokenValue + '$'))
+				continue;
+
+			if (pattern.IsMatch(tokenValue))
 				yield return [tokenValue, tokenType];
 		}
 	}
@@ -211,6 +239,23 @@ public class LexerTests
 		result[0].Type.Should().Be(TokenType.Identifier);
 		result[0].Value.Should().Be(content);
 		result[0].DataType.Should().Be(dataType);
+	}
+
+	[TestCaseSource(nameof(UnqualifiedWordTokens))]
+	public void KeywordsWithDollarSignAsString(string tokenValue, TokenType token)
+	{
+		// Arrange
+		var identifier = tokenValue + "$";
+
+		var sut = new Lexer(identifier);
+
+		// Act
+		var tokens = sut.ToList();
+
+		// Assert
+		tokens.Should().HaveCount(1);
+		tokens[0].Type.Should().Be(TokenType.Identifier);
+		tokens[0].Value.Should().Be(identifier);
 	}
 
 	[TestCase(" ")]
