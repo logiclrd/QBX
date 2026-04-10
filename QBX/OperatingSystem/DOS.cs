@@ -600,8 +600,10 @@ public partial class DOS
 			{
 				while (numRead < buffer.Length)
 				{
-					buffer[numRead] = fileDescriptor.ReadByte();
-					numRead++;
+					if (!fileDescriptor.TryReadByte(out var b))
+						break;
+
+					buffer[numRead++] = b;
 
 					if (fileDescriptor.AtReadBoundary)
 						break;
