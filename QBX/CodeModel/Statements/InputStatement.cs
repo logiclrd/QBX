@@ -27,6 +27,7 @@ public class InputStatement : Statement
 
 			writer.Write('#');
 			FileNumberExpression.Render(writer);
+			writer.Write(", ");
 		}
 		else
 		{
