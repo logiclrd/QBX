@@ -14,13 +14,22 @@ namespace QBX.Tests.ExecutionEngine;
 
 public class DataParserTests
 {
+	static DataParser.ItemParser DS(IEnumerable<string> items)
+	{
+		string dataLine = string.Join(
+			',',
+			items.Select(item => item.Contains(' ') ? '"' + item + '"' : item));
+
+		return new DataParser.ItemParser(dataLine);
+	}
+
 	[Test]
 	public void Restart_should_restart_enumeration()
 	{
 		// Arrange
 		var parser = new DataParser();
 
-		parser.AddDataSource(["one", "two", "three", "four", "five"]);
+		parser.AddDataSource(DS(["one", "two", "three", "four", "five"]));
 
 		// Act
 		var result1 = parser.GetNextDataItem(null);
@@ -70,17 +79,17 @@ public class DataParserTests
 		var label5 = new LabelStatement(ID("label5"), dummy);
 
 		parser.AddLabel(label1);
-		parser.AddDataSource(["foo"]);
-		parser.AddDataSource(["foo"]);
-		parser.AddDataSource(["foo"]);
+		parser.AddDataSource(DS(["foo"]));
+		parser.AddDataSource(DS(["foo"]));
+		parser.AddDataSource(DS(["foo"]));
 		parser.AddLabel(label2);
 		parser.AddLabel(label3);
-		parser.AddDataSource(["foo"]);
-		parser.AddDataSource(["foo"]);
-		parser.AddDataSource(["foo"]);
+		parser.AddDataSource(DS(["foo"]));
+		parser.AddDataSource(DS(["foo"]));
+		parser.AddDataSource(DS(["foo"]));
 		parser.AddLabel(label4);
-		parser.AddDataSource(["foo"]);
-		parser.AddDataSource(["foo"]);
+		parser.AddDataSource(DS(["foo"]));
+		parser.AddDataSource(DS(["foo"]));
 		parser.AddLabel(label5);
 
 		// Act
@@ -117,9 +126,9 @@ public class DataParserTests
 
 		var label = new LabelStatement(ID("label1"), dummy);
 
-		parser.AddDataSource(["foo"]);
+		parser.AddDataSource(DS(["foo"]));
 		parser.AddLabel(label);
-		parser.AddDataSource(["foo"]);
+		parser.AddDataSource(DS(["foo"]));
 
 		// Act
 		bool result = parser.TryGetLineNumber(ID("no such label"), out var lineNumber);
@@ -143,17 +152,17 @@ public class DataParserTests
 		var label5 = new LabelStatement(ID("label5"), dummy);
 
 		parser.AddLabel(label1);
-		parser.AddDataSource(["one"]);
-		parser.AddDataSource(["two"]);
-		parser.AddDataSource(["three"]);
+		parser.AddDataSource(DS(["one"]));
+		parser.AddDataSource(DS(["two"]));
+		parser.AddDataSource(DS(["three"]));
 		parser.AddLabel(label2);
 		parser.AddLabel(label3);
-		parser.AddDataSource(["four"]);
-		parser.AddDataSource(["five"]);
-		parser.AddDataSource(["six"]);
+		parser.AddDataSource(DS(["four"]));
+		parser.AddDataSource(DS(["five"]));
+		parser.AddDataSource(DS(["six"]));
 		parser.AddLabel(label4);
-		parser.AddDataSource(["seven"]);
-		parser.AddDataSource(["eight"]);
+		parser.AddDataSource(DS(["seven"]));
+		parser.AddDataSource(DS(["eight"]));
 		parser.AddLabel(label5);
 
 		// Act
@@ -198,14 +207,14 @@ public class DataParserTests
 
 		var parser = new DataParser();
 
-		parser.AddDataSource(["one"]);
-		parser.AddDataSource(["two"]);
-		parser.AddDataSource(["three"]);
-		parser.AddDataSource(["four"]);
-		parser.AddDataSource(["five"]);
-		parser.AddDataSource(["six"]);
-		parser.AddDataSource(["seven"]);
-		parser.AddDataSource(["eight"]);
+		parser.AddDataSource(DS(["one"]));
+		parser.AddDataSource(DS(["two"]));
+		parser.AddDataSource(DS(["three"]));
+		parser.AddDataSource(DS(["four"]));
+		parser.AddDataSource(DS(["five"]));
+		parser.AddDataSource(DS(["six"]));
+		parser.AddDataSource(DS(["seven"]));
+		parser.AddDataSource(DS(["eight"]));
 
 		// Act
 		var result1 = parser.GetNextDataItem(dummy);
@@ -249,7 +258,7 @@ public class DataParserTests
 
 		var parser = new DataParser();
 
-		parser.AddDataSource(["one", "two", "three"]);
+		parser.AddDataSource(DS(["one", "two", "three"]));
 
 		// Act
 		var result = parser.GetNextDataItem(dummy);
@@ -266,7 +275,7 @@ public class DataParserTests
 
 		var parser = new DataParser();
 
-		parser.AddDataSource(["one", "two", "three"]);
+		parser.AddDataSource(DS(["one", "two", "three"]));
 
 		// Act
 		parser.GetNextDataItem(dummy);
@@ -284,8 +293,8 @@ public class DataParserTests
 
 		var parser = new DataParser();
 
-		parser.AddDataSource(["one"]);
-		parser.AddDataSource(["two", "three"]);
+		parser.AddDataSource(DS(["one"]));
+		parser.AddDataSource(DS(["two", "three"]));
 
 		// Act
 		parser.GetNextDataItem(dummy);
@@ -303,8 +312,8 @@ public class DataParserTests
 
 		var parser = new DataParser();
 
-		parser.AddDataSource(["one"]);
-		parser.AddDataSource(["two", "three"]);
+		parser.AddDataSource(DS(["one"]));
+		parser.AddDataSource(DS(["two", "three"]));
 
 		// Act
 		parser.GetNextDataItem(dummy);
@@ -321,7 +330,7 @@ public class DataParserTests
 		// Arrange
 		var parser = new DataParser();
 
-		parser.AddDataSource(["one"]);
+		parser.AddDataSource(DS(["one"]));
 
 		// Act
 		var result = parser.IsAtStart;
@@ -338,7 +347,7 @@ public class DataParserTests
 
 		var parser = new DataParser();
 
-		parser.AddDataSource(["one"]);
+		parser.AddDataSource(DS(["one"]));
 
 		// Act & Assert
 		parser.GetNextDataItem(dummy);
@@ -356,7 +365,7 @@ public class DataParserTests
 
 		var parser = new DataParser();
 
-		parser.AddDataSource(["one"]);
+		parser.AddDataSource(DS(["one"]));
 
 		// Act
 		parser.GetNextDataItem(dummy);
@@ -423,7 +432,7 @@ public class DataParserTests
 
 		const int TestValue = 42;
 
-		parser.AddDataSource([TestValue.ToString()]);
+		parser.AddDataSource(DS([TestValue.ToString()]));
 
 		// Act
 		parser.ReadDataItem(
@@ -457,7 +466,7 @@ public class DataParserTests
 
 		const int TestValue = 42;
 
-		parser.AddDataSource([TestValue.ToString()]);
+		parser.AddDataSource(DS([TestValue.ToString()]));
 
 		// Act
 		parser.ReadDataItem(
@@ -491,7 +500,7 @@ public class DataParserTests
 
 		const float TestValue = 234.567f;
 
-		parser.AddDataSource([TestValue.ToString()]);
+		parser.AddDataSource(DS([TestValue.ToString()]));
 
 		// Act
 		parser.ReadDataItem(
@@ -525,7 +534,7 @@ public class DataParserTests
 
 		const double TestValue = 3.14159265358979d;
 
-		parser.AddDataSource([TestValue.ToString()]);
+		parser.AddDataSource(DS([TestValue.ToString()]));
 
 		// Act
 		parser.ReadDataItem(
@@ -559,7 +568,7 @@ public class DataParserTests
 
 		const decimal TestValue = 52833235912134.1234M;
 
-		parser.AddDataSource([TestValue.ToString()]);
+		parser.AddDataSource(DS([TestValue.ToString()]));
 
 		// Act
 		parser.ReadDataItem(
@@ -593,7 +602,7 @@ public class DataParserTests
 
 		StringValue TestValue = new StringValue("This... is a dream.");
 
-		parser.AddDataSource([TestValue.ToString()]);
+		parser.AddDataSource(DS([TestValue.ToString()]));
 
 		// Act
 		parser.ReadDataItem(
@@ -638,9 +647,9 @@ public class DataParserTests
 		const double TestValue3 = Math.E;
 		const decimal TestValue4 = 6.95M;
 
-		parser.AddDataSource([TestValue1.ToString()]);
-		parser.AddDataSource([TestValue2.ToString(), TestValue3.ToString()]);
-		parser.AddDataSource([TestValue4.ToString()]);
+		parser.AddDataSource(DS([TestValue1.ToString()]));
+		parser.AddDataSource(DS([TestValue2.ToString(), TestValue3.ToString()]));
+		parser.AddDataSource(DS([TestValue4.ToString()]));
 
 		// Act
 		parser.ReadDataItems(
