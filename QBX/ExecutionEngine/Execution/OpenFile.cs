@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
+using QBX.ExecutionEngine.Compiled.Statements;
 using QBX.ExecutionEngine.Execution.Variables;
 using QBX.OperatingSystem;
 using QBX.OperatingSystem.FileStructures;
@@ -19,6 +20,8 @@ public class OpenFile
 	public int RecordLength = 128;
 	public int CurrentRecordNumber;
 	public int LineWidth = int.MaxValue;
+
+	public DataParser? DataParser;
 
 	public List<FileRecordField> Fields = new List<FileRecordField>();
 	public bool FieldsPristine = true;
@@ -148,21 +151,30 @@ public class OpenFile
 			throw RuntimeException.FieldOverflow();
 	}
 
-	public StringValue ReadLine(DOS dos)
+	public StringValue? ReadLine(DOS dos)
 	{
 		var buffer = new StringValue();
 
 		Func<byte> readByte;
 		Action<byte> unreadByte;
+		bool atEOF = false;
 
 		if (IOMode != OpenFileIOMode.Random)
 		{
-			readByte = () => dos.ReadByte(FileHandle);
+			var fileDescriptor = dos.Files[FileHandle] ?? throw new Exception("Internal error");
+
+			readByte =
+				() =>
+				{
+					if (!fileDescriptor.TryReadByte(out var b))
+						atEOF = true;
+
+					return b;
+				};
+
 			unreadByte =
 				b =>
 				{
-					var fileDescriptor = dos.Files[FileHandle];
-
 					fileDescriptor?.ReadBuffer.Inject(b);
 				};
 		}
@@ -171,14 +183,11 @@ public class OpenFile
 			readByte =
 				() =>
 				{
-					unsafe
-					{
-						Span<byte> byteBuffer = stackalloc byte[1];
+					Span<byte> byteBuffer = stackalloc byte[1];
 
-						ReadFromFields(byteBuffer);
+					ReadFromFields(byteBuffer);
 
-						return byteBuffer[0];
-					}
+					return byteBuffer[0];
 				};
 
 			unreadByte =
@@ -191,6 +200,14 @@ public class OpenFile
 		while (true)
 		{
 			byte b = readByte();
+
+			if (atEOF)
+			{
+				if (buffer.Length == 0)
+					return null;
+
+				break;
+			}
 
 			if (b == 13)
 			{

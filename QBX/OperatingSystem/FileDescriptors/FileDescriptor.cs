@@ -209,8 +209,16 @@ public abstract class FileDescriptor
 		if (!ReadAndWriteAreIndependent)
 			FlushWriteBuffer();
 
-		while (ReadBuffer.IsEmpty && !WouldHaveBlocked)
-			FillReadBuffer();
+		try
+		{
+			while (ReadBuffer.IsEmpty && !WouldHaveBlocked)
+				 FillReadBuffer();
+		}
+		catch (System.IO.EndOfStreamException)
+		{
+			b = 0;
+			return false;
+		}
 
 		bool ret = ReadBuffer.TryPull(out b);
 

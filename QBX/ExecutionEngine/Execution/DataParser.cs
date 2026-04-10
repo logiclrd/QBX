@@ -7,20 +7,22 @@ using QBX.ExecutionEngine.Compiled;
 using QBX.ExecutionEngine.Compiled.Statements;
 using QBX.ExecutionEngine.Execution.Variables;
 using QBX.Numbers;
+using QBX.OperatingSystem;
 using QBX.Parser;
 
 namespace QBX.ExecutionEngine.Execution;
 
 public class DataParser
 {
-	public List<IEnumerable<string>> DataSources = new List<IEnumerable<string>>();
+	public List<ItemParser> DataSources = new List<ItemParser>();
 	public Dictionary<Identifier, int> Labels = new Dictionary<Identifier, int>();
 
-	IEnumerator<IEnumerable<string>>? _dataSourceEnumerator = null;
+	IEnumerator<ItemParser>? _dataSourceEnumerator = null;
 	IEnumerator<string>? _currentDataSource;
+	ItemParser? _currentDataSourceParser;
 	bool _haveNext;
 
-	public void AddDataSource(IEnumerable<string> dataSource)
+	public void AddDataSource(ItemParser dataSource)
 	{
 		DataSources.Add(dataSource);
 	}
@@ -64,6 +66,27 @@ public class DataParser
 		_dataSourceEnumerator = DataSources.Skip(lineNumber).GetEnumerator();
 	}
 
+	[MemberNotNull(nameof(_dataSourceEnumerator))]
+	public void RestartFromFile(OpenFile openFile, DOS dos)
+	{
+		IEnumerable<ItemParser> ReadAndParseLines()
+		{
+			while (true)
+			{
+				var line = openFile.ReadLine(dos);
+
+				if (line == null)
+					break;
+
+				yield return ParseDataItems(line.ToString());
+			}
+		}
+
+		_dataSourceEnumerator = ReadAndParseLines().GetEnumerator();
+
+		_currentDataSource = null;
+	}
+
 	public string GetNextDataItem(CodeModel.Statements.Statement? statement)
 	{
 		string? ret = _haveNext ? _currentDataSource?.Current : null;
@@ -72,9 +95,7 @@ public class DataParser
 
 		while ((ret == null) || !_haveNext)
 		{
-			bool haveCurrent = false;
-
-			while ((_currentDataSource == null) || !(haveCurrent = _currentDataSource.MoveNext()))
+			while ((_currentDataSource == null) || !_currentDataSource.MoveNext())
 			{
 				if (_dataSourceEnumerator == null)
 					Restart();
@@ -87,7 +108,8 @@ public class DataParser
 					throw RuntimeException.OutOfData(statement);
 				}
 
-				_currentDataSource = _dataSourceEnumerator.Current.GetEnumerator();
+				_currentDataSourceParser = _dataSourceEnumerator.Current;
+				_currentDataSource = _currentDataSourceParser.GetEnumerator();
 			}
 
 			if (ret == null)
@@ -97,6 +119,25 @@ public class DataParser
 		}
 
 		return ret;
+	}
+
+	public string ReadLine(CodeModel.Statements.Statement? statement)
+	{
+		if (_currentDataSource == null)
+		{
+			if (_dataSourceEnumerator == null)
+				Restart();
+
+			if (!_dataSourceEnumerator.MoveNext())
+				throw RuntimeException.OutOfData(statement);
+
+			_currentDataSourceParser = _dataSourceEnumerator.Current;
+		}
+
+		_currentDataSource = null;
+		_haveNext = false;
+
+		return _currentDataSourceParser?.ReadToEndOfString() ?? "";
 	}
 
 	public bool IsAtStart => _currentDataSource == null;
@@ -175,73 +216,92 @@ public class DataParser
 		}
 	}
 
-	public static IEnumerable<string> ParseDataItems(string rawString)
+	public static ItemParser ParseDataItems(string rawString)
+		=> new ItemParser(rawString);
+
+	public class ItemParser(string rawString) : IEnumerable<string>
 	{
-		var dataMemory = rawString.AsMemory();
+		ReadOnlyMemory<char> _dataMemory;
 
-		bool yieldEmptyString = true;
+		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
 
-		while (dataMemory.Length > 0)
+		public string ReadToEndOfString()
 		{
-			var dataSpan = dataMemory.Span;
+			string str = _dataMemory.ToString();
 
-			while ((dataSpan.Length > 0) && char.IsWhiteSpace(dataSpan[0]))
-			{
-				dataMemory = dataMemory.Slice(1);
-				dataSpan = dataMemory.Span;
-			}
+			_dataMemory = ReadOnlyMemory<char>.Empty;
 
-			if (dataSpan.Length == 0)
-				break;
-
-			if (dataSpan[0] == '"')
-			{
-				int closeQuote = dataSpan.Slice(1).IndexOf('"') + 1;
-
-				if (closeQuote < 0)
-				{
-					yieldEmptyString = false;
-					yield return new string(dataSpan.Slice(1));
-					break;
-				}
-
-				int nextField = closeQuote + 1;
-
-				while ((nextField < dataSpan.Length) && char.IsWhiteSpace(dataSpan[nextField]))
-					nextField++;
-
-				if ((nextField < dataSpan.Length) && (dataSpan[nextField] != ','))
-					throw RuntimeException.SyntaxError(default);
-
-				nextField++;
-
-				yieldEmptyString = false;
-				yield return new string(dataSpan.Slice(1, closeQuote - 1));
-
-				if (nextField > dataMemory.Length)
-					break;
-
-				dataMemory = dataMemory.Slice(nextField);
-			}
-			else
-			{
-				int comma = dataSpan.IndexOf(',');
-
-				var token = (comma >= 0)
-					? dataSpan.Slice(0, comma)
-					: dataSpan;
-
-				while ((token.Length > 0) && char.IsWhiteSpace(token[token.Length - 1]))
-					token = token.Slice(0, token.Length - 1);
-
-				yieldEmptyString = (comma >= 0);
-				yield return new string(token);
-
-				dataMemory = dataMemory.Slice((comma >= 0) ? comma + 1 : dataMemory.Length);
-			}
+			return str;
 		}
 
-		if (yieldEmptyString)
-			yield return "";
+		public IEnumerator<string> GetEnumerator()
+		{
+			_dataMemory = rawString.AsMemory();
+
+			bool yieldEmptyString = true;
+
+			while (_dataMemory.Length > 0)
+			{
+				var dataSpan = _dataMemory.Span;
+
+				while ((dataSpan.Length > 0) && char.IsWhiteSpace(dataSpan[0]))
+				{
+					_dataMemory = _dataMemory.Slice(1);
+					dataSpan = _dataMemory.Span;
+				}
+
+				if (dataSpan.Length == 0)
+					break;
+
+				if (dataSpan[0] == '"')
+				{
+					int closeQuote = dataSpan.Slice(1).IndexOf('"') + 1;
+
+					if (closeQuote < 0)
+					{
+						yieldEmptyString = false;
+						yield return new string(dataSpan.Slice(1));
+						break;
+					}
+
+					int nextField = closeQuote + 1;
+
+					while ((nextField < dataSpan.Length) && char.IsWhiteSpace(dataSpan[nextField]))
+						nextField++;
+
+					if ((nextField < dataSpan.Length) && (dataSpan[nextField] != ','))
+						throw RuntimeException.SyntaxError(default);
+
+					nextField++;
+
+					yieldEmptyString = false;
+					yield return new string(dataSpan.Slice(1, closeQuote - 1));
+
+					if (nextField > _dataMemory.Length)
+						break;
+
+					_dataMemory = _dataMemory.Slice(nextField);
+				}
+				else
+				{
+					int comma = dataSpan.IndexOf(',');
+
+					var token = (comma >= 0)
+						? dataSpan.Slice(0, comma)
+						: dataSpan;
+
+					while ((token.Length > 0) && char.IsWhiteSpace(token[token.Length - 1]))
+						token = token.Slice(0, token.Length - 1);
+
+					yieldEmptyString = (comma >= 0);
+					yield return new string(token);
+
+					_dataMemory = _dataMemory.Slice((comma >= 0) ? comma + 1 : _dataMemory.Length);
+				}
+			}
+
+			if (yieldEmptyString)
+				yield return "";
+		}
 	}
 }

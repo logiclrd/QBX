@@ -32,6 +32,7 @@ public class SeekStatement(CodeModel.Statements.Statement source) : Executable(s
 			throw RuntimeException.BadRecordNumber(PositionExpression.Source?.Token);
 
 		openFile.CurrentRecordNumber = newRecordNumber;
+		openFile.DataParser = null;
 
 		int byteOffset = newRecordNumber;
 

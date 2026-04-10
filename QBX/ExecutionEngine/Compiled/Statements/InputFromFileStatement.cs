@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 using QBX.ExecutionEngine.Execution;
 
@@ -20,16 +21,23 @@ public class InputFromFileStatement(CodeModel.Statements.Statement source) : Exe
 		if (!context.Files.TryGetValue(fileNumber, out var openFile))
 			throw RuntimeException.BadFileNameOrNumber(Source);
 
-		var inputLine = openFile.ReadLine(context.Machine.DOS);
+		if (openFile.DataParser == null)
+		{
+			openFile.DataParser = new DataParser();
+			openFile.DataParser.RestartFromFile(openFile, context.Machine.DOS);
+		}
 
-		var parser = new DataParser();
+		try
+		{
+			openFile.DataParser.ReadDataItems(TargetExpressions, context, stackFrame, source);
+		}
+		catch (RuntimeException e)
+		{
+			if (e.ErrorNumber == 4) /* Out of data */
+				throw RuntimeException.InputPastEndOfFile(Source);
 
-		parser.AddDataSource(
-			DataParser.ParseDataItems(inputLine.ToString()));
-
-		parser.ReadDataItems(TargetExpressions, context, stackFrame, source);
-
-		if (!parser.IsAtEnd)
-			throw RuntimeException.InputPastEndOfFile(Source);
+			e.AddContext(Source);
+			throw;
+		}
 	}
 }
