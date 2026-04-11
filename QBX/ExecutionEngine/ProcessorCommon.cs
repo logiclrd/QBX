@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
 using QBX.ExecutionEngine.Execution;
+using QBX.ExecutionEngine.Execution.Variables;
 
 using static QBX.Firmware.Fonts.CP437Encoding;
 
@@ -94,6 +95,28 @@ public abstract class ProcessorCommon
 
 		if (input.Length == 0)
 			Fail();
+
+		if (input[0] == (byte)'=')
+		{
+			input = input.Slice(1);
+
+			if (input.Length < 3)
+				throw RuntimeException.IllegalFunctionCall();
+
+			var descriptorBytes = input.Slice(0, 3);
+			var descriptorSpan = MemoryMarshal.Cast<byte, SurfacedVariableDescriptor>(descriptorBytes);
+
+			var descriptor = descriptorSpan[0];
+
+			input = input.Slice(3);
+
+			var surfaced = executionContext?.GetSurfacedVariable(descriptor.Key);
+
+			if (surfaced == null)
+				throw RuntimeException.IllegalFunctionCall();
+
+			return surfaced.CoerceToInt(null);
+		}
 
 		byte ch = input[0];
 
