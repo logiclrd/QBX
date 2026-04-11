@@ -13,6 +13,7 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 {
 	public IEnumerable<StackFrame> Stack => _stack;
 	public RuntimeException? CurrentError => _currentError;
+	public bool ChainExecution => _chainExecution;
 	public bool IsTerminated => _isTerminated;
 
 	public event Action? EnterExecution;
@@ -22,6 +23,7 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 
 	Stack<StackFrame> _stack = new Stack<StackFrame>();
 	RuntimeException? _currentError = null;
+	bool _chainExecution;
 	bool _isTerminated;
 
 	int _stepOverNesting;
@@ -111,6 +113,7 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 	// Controller:
 	public void StartExecution(StackFrame rootFrame)
 	{
+		_chainExecution = false;
 		_stack.Push(rootFrame);
 
 		DebugOut("PROGRAM: EnterExecution");
@@ -188,6 +191,11 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 				_break = true;
 			}
 		}
+	}
+
+	public void SetChainExecution()
+	{
+		_chainExecution = true;
 	}
 
 	public void EndExecution()

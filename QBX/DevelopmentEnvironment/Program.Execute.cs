@@ -76,6 +76,18 @@ public partial class Program
 
 		_compilation = new Compilation();
 
+		bool chainExecution = false;
+
+		if (_executionContext != null)
+		{
+			chainExecution = _executionContext.ExecutionState.ChainExecution;
+
+			if (chainExecution)
+				_compilation.CommonBlocks = _executionContext.CommonBlocks;
+			else
+				_executionContext = null; // Disconnect from previous context
+		}
+
 		try
 		{
 			foreach (var nativeProcedure in QLBs.SelectMany(qlb => qlb.Exports))
@@ -112,13 +124,26 @@ public partial class Program
 		RestoreOutput();
 		Machine.VideoFirmware.SetMode(3);
 
-		_executionContext = new ExecutionContext(Machine, PlayProcessor, EventHub);
+		var drawProcessor = _executionContext?.DrawProcessor ?? new DrawProcessor();
+
+		_executionContext = new ExecutionContext(Machine, PlayProcessor, drawProcessor, EventHub, _compilation.CommonBlocks, _executionContext?.CommonBlockStorage);
 		_executionContext.EventCheckGranularity = EventCheckGranularity;
 		_executionContext.CommandLine.Set(ProgramCommandLine);
 		_executionContext.Controls.Break();
 
 		foreach (var qlb in QLBs)
 			qlb.ExecutionContext = _executionContext;
+
+		_executionContext.ReplaceProgram +=
+			(_, args) =>
+			{
+				// We're running on a different thread, but the DevelopmentEnvironment thread
+				// is blocked inside a call to _executionContext.Controls.WaitForInterruption.
+				Load(
+					args.Reader,
+					args.FilePath,
+					replaceExistingProgram: true);
+			};
 
 		_executionThread = new Thread(
 			() =>
@@ -127,7 +152,7 @@ public partial class Program
 				{
 					Thread.CurrentThread.CurrentCulture = BasicCulture.Instance;
 					EventHub.ClearAllEvents();
-					_executionContext.Run(_compilation);
+					_executionContext.Run(_compilation, chainExecution);
 				}
 				catch (Exception e)
 				{
@@ -161,13 +186,19 @@ public partial class Program
 
 	void UnpauseExecution(Action action)
 	{
-		lock (_executionContext!.Controls.Sync)
+		do
 		{
-			action();
+			if (_executionContext!.ExecutionState.ChainExecution)
+				Restart();
 
-			using (Machine.DOS.EnableBreak())
-				_executionContext.Controls.WaitForInterruption();
-		}
+			lock (_executionContext!.Controls.Sync)
+			{
+				action();
+
+				using (Machine.DOS.EnableBreak())
+					_executionContext.Controls.WaitForInterruption();
+			}
+		} while (_executionContext.ExecutionState.ChainExecution);
 
 		if (_executionContext.ExecutionState.IsTerminated)
 			ExecutionEpilogue();
@@ -200,7 +231,7 @@ public partial class Program
 		else
 		{
 			UnpauseExecution(
-				action: _executionContext.Controls.ContinueExecution);
+				action: () => _executionContext.Controls.ContinueExecution());
 		}
 	}
 
@@ -228,7 +259,7 @@ public partial class Program
 			RestoreOutput();
 
 			UnpauseExecution(
-				action: _executionContext.Controls.ExecuteOneStatement);
+				action: () => _executionContext.Controls.ExecuteOneStatement());
 		}
 	}
 

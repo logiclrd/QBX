@@ -25,6 +25,8 @@ public class RegularFileDescriptor(string path, string physicalPath, FileStream 
 
 	long _negativeFilePointer = 0;
 
+	public Stream UnderlyingStream => stream;
+
 	public SafeFileHandle Handle => stream.SafeFileHandle;
 
 	public bool IsPristine = true;

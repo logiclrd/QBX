@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Threading;
 
 using QBX.ExecutionEngine.Compiled;
@@ -33,6 +34,8 @@ public class ExecutionContext
 	public Machine Machine;
 	public PlayProcessor PlayProcessor;
 	public DrawProcessor DrawProcessor;
+	public Dictionary<Identifier, CommonBlock> CommonBlocks;
+	public Dictionary<Identifier, CommonBlockStorage> CommonBlockStorage => _commonBlockStorage;
 
 	public VisualLibrary VisualLibrary;
 
@@ -45,7 +48,7 @@ public class ExecutionContext
 
 	ExecutionState _executionState;
 
-	Dictionary<Identifier, CommonBlockStorage> _commonBlocks;
+	Dictionary<Identifier, CommonBlockStorage> _commonBlockStorage;
 
 	StackFrame? _rootFrame;
 	StatementPath? _goTo;
@@ -208,22 +211,34 @@ public class ExecutionContext
 		}
 	}
 
-	public ExecutionContext(Machine machine, PlayProcessor playProcessor, EventHub eventHub)
+	public ExecutionContext(Machine machine, PlayProcessor playProcessor, DrawProcessor drawProcessor, EventHub eventHub)
+		: this(machine, playProcessor, drawProcessor, eventHub, new(), new())
+	{
+	}
+
+	public ExecutionContext(Machine machine, PlayProcessor playProcessor, DrawProcessor drawProcessor, EventHub eventHub, Dictionary<Identifier, CommonBlock> commonBlocks, Dictionary<Identifier, CommonBlockStorage>? commonBlockStorage)
 	{
 		_executionState = new ExecutionState();
 
 		Machine = machine;
 		PlayProcessor = playProcessor;
+		DrawProcessor = drawProcessor;
 		EventHub = eventHub;
+		CommonBlocks = commonBlocks;
 
 		VisualLibrary = Machine.VideoFirmware.VisualLibrary;
-
-		DrawProcessor = new DrawProcessor();
 
 		_executionState.EnterExecution += AttachKeyEventInterceptor;
 		_executionState.ExitExecution += DetachKeyEventInterceptor;
 
-		_commonBlocks = new Dictionary<Identifier, CommonBlockStorage>();
+		_commonBlockStorage = commonBlockStorage ?? new Dictionary<Identifier, CommonBlockStorage>();
+	}
+
+	public event EventHandler<ChainArguments>? ReplaceProgram;
+
+	public void LoadReplacement(TextReader reader, string filePath)
+	{
+		ReplaceProgram?.Invoke(this, new ChainArguments(reader, filePath));
 	}
 
 	void AttachKeyEventInterceptor()
@@ -385,17 +400,25 @@ public class ExecutionContext
 	public bool WaitForRootFrame()
 		=> _rootFrameEstablished.WaitOne(TimeSpan.FromSeconds(5));
 
-	public int Run(Compilation compilation)
+	public int Run(Compilation compilation, bool chainExecution = false)
 	{
 		var entrypoint = compilation.EntrypointRoutine;
 
 		if (entrypoint == null)
 			throw new Exception("The Compilation's EntrypointRoutine is not set");
 
-		_commonBlocks.Clear();
+		if (!chainExecution)
+			_commonBlockStorage.Clear();
 
 		foreach (var block in compilation.CommonBlocks)
-			_commonBlocks[block.Key] = block.Value.CreateStorage();
+		{
+			if (_commonBlockStorage.TryGetValue(block.Key, out var blockStorage))
+				blockStorage.ExtendIfNecessary(block.Value.VariableTypes);
+			else
+				blockStorage = block.Value.CreateStorage();
+
+			_commonBlockStorage[block.Key] = blockStorage;
+		}
 
 		foreach (var module in compilation.Modules)
 		{
@@ -420,6 +443,7 @@ public class ExecutionContext
 			{
 				Call(entrypoint, _rootFrame);
 			}
+			catch (ChainExecution) { throw; }
 			catch (EndProgram) { }
 
 			int exitCode = _rootFrame.Variables[0].CoerceToInt(context: null);
@@ -430,6 +454,11 @@ public class ExecutionContext
 		{
 			Debugger.Break();
 			throw new Exception("Internal error: GoTo was thrown with a TargetFrame that didn't match anything");
+		}
+		catch (ChainExecution)
+		{
+			_executionState.SetChainExecution();
+			return -1;
 		}
 		catch (TerminatedException)
 		{
@@ -741,7 +770,7 @@ public class ExecutionContext
 
 			foreach (var linkGroup in commonVariableLinkGroups)
 			{
-				if (!_commonBlocks.TryGetValue(linkGroup.CommonBlockName, out var commonBlock))
+				if (!_commonBlockStorage.TryGetValue(linkGroup.CommonBlockName, out var commonBlock))
 					throw new Exception("Internal error: Couldn't find common block /" + linkGroup.CommonBlockName + "/");
 
 				foreach (var link in linkGroup.LinkedVariables)

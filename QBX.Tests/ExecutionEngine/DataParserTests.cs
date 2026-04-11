@@ -423,10 +423,11 @@ public class DataParserTests
 		var machine = new Machine();
 
 		var playProcessor = new PlayProcessor(machine);
+		var drawProcessor = new DrawProcessor();
 
 		var eventHub = new DummyEventHub();
 
-		var executionContext = new ExecutionContext(machine, playProcessor, eventHub);
+		var executionContext = new ExecutionContext(machine, playProcessor, drawProcessor, eventHub);
 
 		var parser = new DataParser();
 
@@ -457,10 +458,11 @@ public class DataParserTests
 		var machine = new Machine();
 
 		var playProcessor = new PlayProcessor(machine);
+		var drawProcessor = new DrawProcessor();
 
 		var eventHub = new DummyEventHub();
 
-		var executionContext = new ExecutionContext(machine, playProcessor, eventHub);
+		var executionContext = new ExecutionContext(machine, playProcessor, drawProcessor, eventHub);
 
 		var parser = new DataParser();
 
@@ -491,10 +493,11 @@ public class DataParserTests
 		var machine = new Machine();
 
 		var playProcessor = new PlayProcessor(machine);
+		var drawProcessor = new DrawProcessor();
 
 		var eventHub = new DummyEventHub();
 
-		var executionContext = new ExecutionContext(machine, playProcessor, eventHub);
+		var executionContext = new ExecutionContext(machine, playProcessor, drawProcessor, eventHub);
 
 		var parser = new DataParser();
 
@@ -525,10 +528,11 @@ public class DataParserTests
 		var machine = new Machine();
 
 		var playProcessor = new PlayProcessor(machine);
+		var drawProcessor = new DrawProcessor();
 
 		var eventHub = new DummyEventHub();
 
-		var executionContext = new ExecutionContext(machine, playProcessor, eventHub);
+		var executionContext = new ExecutionContext(machine, playProcessor, drawProcessor, eventHub);
 
 		var parser = new DataParser();
 
@@ -559,10 +563,11 @@ public class DataParserTests
 		var machine = new Machine();
 
 		var playProcessor = new PlayProcessor(machine);
+		var drawProcessor = new DrawProcessor();
 
 		var eventHub = new DummyEventHub();
 
-		var executionContext = new ExecutionContext(machine, playProcessor, eventHub);
+		var executionContext = new ExecutionContext(machine, playProcessor, drawProcessor, eventHub);
 
 		var parser = new DataParser();
 
@@ -593,10 +598,11 @@ public class DataParserTests
 		var machine = new Machine();
 
 		var playProcessor = new PlayProcessor(machine);
+		var drawProcessor = new DrawProcessor();
 
 		var eventHub = new DummyEventHub();
 
-		var executionContext = new ExecutionContext(machine, playProcessor, eventHub);
+		var executionContext = new ExecutionContext(machine, playProcessor, drawProcessor, eventHub);
 
 		var parser = new DataParser();
 
@@ -635,10 +641,11 @@ public class DataParserTests
 		var machine = new Machine();
 
 		var playProcessor = new PlayProcessor(machine);
+		var drawProcessor = new DrawProcessor();
 
 		var eventHub = new DummyEventHub();
 
-		var executionContext = new ExecutionContext(machine, playProcessor, eventHub);
+		var executionContext = new ExecutionContext(machine, playProcessor, drawProcessor, eventHub);
 
 		var parser = new DataParser();
 
