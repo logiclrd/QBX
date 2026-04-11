@@ -247,7 +247,10 @@ public class Compiler(IdentifierRepository identifierRepository)
 				{
 					int parameterCount = routine.ParameterTypes.Count;
 
-					foreach (var variable in mapper.GetVariableNames())
+					if (routine.ReturnType is not null)
+						parameterCount++;
+
+					foreach (var variable in mapper.GetVariableNames().ToList())
 					{
 						if (parameterCount > 0)
 						{
