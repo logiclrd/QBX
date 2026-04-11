@@ -478,10 +478,12 @@ public class ExecutionContext
 			}
 			else
 			{
-				bool retryStatement = false;
+				bool retryStatement;
 
 				do
 				{
+					retryStatement = false;
+
 					bool shouldCheckForEvents =
 						(EventCheckGranularity == EventCheckGranularity.EveryStatement) ||
 						executable.IsLabel;
@@ -500,6 +502,16 @@ public class ExecutionContext
 					try
 					{
 						executable.Execute(this, stackFrame);
+					}
+					catch (BreakExecution)
+					{
+						if (executable.CanBreak)
+						{
+							Controls.Break();
+							retryStatement = true;
+						}
+						else
+							throw;
 					}
 					catch (RuntimeException error)
 					{

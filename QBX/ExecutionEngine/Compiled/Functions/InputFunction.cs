@@ -5,7 +5,6 @@ using System.Linq;
 using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
 using QBX.LexicalAnalysis;
-using QBX.OperatingSystem.Breaks;
 
 namespace QBX.ExecutionEngine.Compiled.Functions;
 
@@ -74,9 +73,11 @@ public class ConsoleInputFunction(Evaluable numBytesArgument) : InputFunction(nu
 
 		if (numBytes > 0)
 		{
+			var cancelOnBreak = new System.Threading.CancellationTokenSource();
+
 			void Break()
 			{
-				throw new Break();
+				cancelOnBreak.Cancel();
 			}
 
 			context.Machine.Keyboard.Break += Break;
@@ -88,7 +89,10 @@ public class ConsoleInputFunction(Evaluable numBytesArgument) : InputFunction(nu
 				while (buffer.Length < numBytes)
 				{
 					if (!context.Machine.Keyboard.HasQueuedTangibleInput)
-						context.Machine.Keyboard.WaitForInput();
+						context.Machine.Keyboard.WaitForInput(cancelOnBreak.Token);
+
+					if (cancelOnBreak.IsCancellationRequested)
+						throw new BreakExecution();
 
 					var evt = context.Machine.Keyboard.GetNextEvent();
 
