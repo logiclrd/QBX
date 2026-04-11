@@ -38,8 +38,21 @@ public class UnformattedPrintStatement(CodeModel.Statements.Statement? source) :
 					break;
 				}
 
-				case PrintArgumentType.Tab:
 				case PrintArgumentType.Space:
+				{
+					int count = argument.Expression.EvaluateAndCoerceToInt(context, stackFrame);
+
+					if ((s_spaces == null) || (s_spaces.Length < count))
+					{
+						s_spaces = new byte[count * 2];
+						s_spaces.AsSpan().Fill((byte)' ');
+					}
+
+					emitter.Emit(s_spaces.AsSpan().Slice(0, count));
+
+					break;
+				}
+				case PrintArgumentType.Tab:
 				{
 					int newCursorX = argument.Expression.EvaluateAndCoerceToInt(context, stackFrame);
 
@@ -48,18 +61,7 @@ public class UnformattedPrintStatement(CodeModel.Statements.Statement? source) :
 					if (newCursorX < emitter.CursorX)
 						emitter.EmitNewLine();
 
-					if (argument.ArgumentType == PrintArgumentType.Tab)
-						emitter.CursorX = newCursorX;
-					else
-					{
-						if ((s_spaces == null) || (s_spaces.Length < newCursorX))
-						{
-							s_spaces = new byte[newCursorX * 2];
-							s_spaces.AsSpan().Fill((byte)' ');
-						}
-
-						emitter.Emit(s_spaces.AsSpan().Slice(0, newCursorX));
-					}
+					emitter.CursorX = newCursorX;
 
 					break;
 				}
