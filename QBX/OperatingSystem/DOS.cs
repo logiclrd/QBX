@@ -320,8 +320,6 @@ public partial class DOS
 		{
 			SetLastError(e);
 
-			_lastError = e.ToDOSError();
-
 			if (!_suppressExceptions)
 				throw;
 		}
