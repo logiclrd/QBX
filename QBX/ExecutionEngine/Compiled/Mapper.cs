@@ -875,6 +875,22 @@ public class Mapper
 		.Select(idx => _variables[idx].Type)
 		.ToList();
 
+	public IEnumerable<CommonVariableLinkGroup> GetCommonVariableLinkGroups() =>
+		_variables
+		.Where(info => info.LinkedToCommonBlock != null)
+		.GroupBy(info => info.LinkedToCommonBlock!)
+		.Select(grouping =>
+			new CommonVariableLinkGroup(
+				grouping.Key.Name ?? CommonBlock.DefaultBlockName,
+				grouping
+					.Select(info =>
+						new VariableLink()
+						{
+							LocalIndex = info.Index,
+							RemoteIndex = info.LinkedToCommonBlockVariableIndex,
+						})
+					.ToArray()));
+
 	public List<VariableLink> GetLinkedVariables() =>
 		_variables
 		.Where(info => info.LinkedToModuleVariableIndex >= 0)

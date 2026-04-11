@@ -294,6 +294,9 @@ public class Compiler(IdentifierRepository identifierRepository)
 				foreach (var statement in routine.AllStatements)
 					if (statement is IUnresolvedLineReference unresolvedLineReference)
 						unresolvedLineReference.Resolve(routine);
+
+				if (routine.IsMainRoutine)
+					routine.CommonVariableLinkGroups.AddRange(mapper.GetCommonVariableLinkGroups());
 			}
 
 			// Finish up processing of the main routine.
