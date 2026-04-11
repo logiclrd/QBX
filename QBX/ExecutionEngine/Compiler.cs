@@ -934,9 +934,15 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 				var block = compilation.GetCommonBlock(commonStatement.BlockName);
 
+				module.CommonBlockMappingIndices.TryGetValue(commonStatement.BlockName, out var startIndex);
+
 				try
 				{
-					block.MapVariables(variableTypes);
+					int index = startIndex;
+
+					block.MapVariables(variableTypes, ref index);
+
+					module.CommonBlockMappingIndices[commonStatement.BlockName] = index;
 				}
 				catch (CompilerException ex)
 				{
@@ -951,6 +957,9 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 					if (declaration.Subscripts == null)
 					{
+						// Variables are always fresh declarations. If they were used previously,
+						// it is a Duplicate Definition error.
+
 						variableIndex = mapper.DeclareVariable(
 							declaration.Name,
 							variableTypes[i],
@@ -958,13 +967,15 @@ public class Compiler(IdentifierRepository identifierRepository)
 					}
 					else
 					{
+						// A previously-dimensioned array can be referenced by a COMMON statement.
+
 						variableIndex = mapper.ResolveArray(
 							declaration.Name,
 							variableTypes[i],
 							declaration.NameToken);
 					}
 
-					mapper.LinkCommonVariable(variableIndex, block, i);
+					mapper.LinkCommonVariable(variableIndex, block, startIndex + i);
 
 					if (commonStatement.Shared)
 					{

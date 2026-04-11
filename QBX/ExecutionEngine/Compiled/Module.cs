@@ -12,6 +12,7 @@ public class Module
 {
 	public Routine? MainRoutine;
 	public Dictionary<Identifier, Routine> Routines = new Dictionary<Identifier, Routine>();
+	public Dictionary<Identifier, int> CommonBlockMappingIndices = new Dictionary<Identifier, int>();
 	public DataParser DataParser = new DataParser();
 	public UnresolvedReferences UnresolvedReferences;
 

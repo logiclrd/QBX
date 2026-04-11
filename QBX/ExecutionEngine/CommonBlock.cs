@@ -14,10 +14,8 @@ public class CommonBlock(Identifier name)
 	public Identifier Name => name;
 	public List<DataType> VariableTypes = new List<DataType>();
 
-	public void MapVariables(IEnumerable<DataType> declaredTypes)
+	public void MapVariables(IEnumerable<DataType> declaredTypes, ref int index)
 	{
-		int index = 0;
-
 		foreach (var declaredType in declaredTypes)
 		{
 			if (index >= VariableTypes.Count)
