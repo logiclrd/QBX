@@ -14,9 +14,6 @@ public class VarPtrStringFunction : Function
 
 	protected override void SetArgument(int index, Evaluable value)
 	{
-		if (!value.Type.IsString)
-			throw CompilerException.TypeMismatch(value.Source);
-
 		if ((value is not IdentifierExpression)
 		 && (value is not ArrayElementExpression))
 			throw CompilerException.ExpectedVariable(value.Source);
