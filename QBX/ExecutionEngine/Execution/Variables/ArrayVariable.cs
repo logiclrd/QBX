@@ -1,4 +1,6 @@
-﻿using QBX.ExecutionEngine.Compiled;
+﻿using System;
+
+using QBX.ExecutionEngine.Compiled;
 
 namespace QBX.ExecutionEngine.Execution.Variables;
 
@@ -49,6 +51,9 @@ public class ArrayVariable(DataType type, int fixedStringLength = -1) : Variable
 				thisElement.SetData(otherElement.GetData());
 		}
 	}
+
+	public override void SwapValueWith(Variable other)
+		=> throw new NotImplementedException();
 
 	public override int Serialize(System.Span<byte> buffer)
 		=> Array.Serialize(buffer);

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Runtime.CompilerServices;
 using System.Text;
 
@@ -64,6 +65,36 @@ public class StringVariable : Variable
 
 	public override object GetData() => Value;
 	public override void SetData(object value) => SetValue(value as StringValue ?? throw RuntimeException.TypeMismatch());
+
+	public override void SwapValueWith(Variable other)
+	{
+		if (other is not StringVariable otherString)
+			throw RuntimeException.TypeMismatch();
+
+		if (Value.Length > otherString.Value.Length)
+			otherString.SwapValueWith(this);
+		else
+		{
+			byte[]? storage = null;
+
+			if (Value.Length > 8192)
+				storage = ArrayPool<byte>.Shared.Rent(Value.Length);
+
+			try
+			{
+				Span<byte> tmp = (storage != null) ? storage : stackalloc byte[Value.Length];
+
+				ValueSpan.CopyTo(tmp);
+				Value.Set(otherString.Value);
+				otherString.Value.Set(tmp);
+			}
+			finally
+			{
+				if (storage != null)
+					ArrayPool<byte>.Shared.Return(storage);
+			}
+		}
+	}
 
 	public override int CoerceToInt(Evaluable? context) => throw RuntimeException.TypeMismatch(context?.Source);
 	public override string ToString() => ValueString;

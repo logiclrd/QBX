@@ -20,9 +20,6 @@ public class SwapStatement(CodeModel.Statements.Statement source)
 		var variable1 = Variable1Expression.Evaluate(context, stackFrame);
 		var variable2 = Variable2Expression.Evaluate(context, stackFrame);
 
-		// The classic switcheroo
-		var tmp = variable1.GetData();
-		variable1.SetData(variable2.GetData());
-		variable2.SetData(tmp);
+		variable1.SwapValueWith(variable2);
 	}
 }

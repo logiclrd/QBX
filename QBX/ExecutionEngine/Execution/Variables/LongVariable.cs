@@ -32,6 +32,16 @@ public class LongVariable : Variable
 	public override object GetData() => Value;
 	public override void SetData(object value) => Value = NumberConverter.ToLong(value);
 
+	public override void SwapValueWith(Variable other)
+	{
+		if (other is not LongVariable otherLong)
+			throw RuntimeException.TypeMismatch();
+
+		var tmp = Value;
+		Value = otherLong.Value;
+		otherLong.Value = tmp;
+	}
+
 	public override int CoerceToInt(Evaluable? context) => NumberConverter.ToLong(Value, context?.Source?.Token);
 	public override string ToString() => NumberFormatter.Format(Value);
 

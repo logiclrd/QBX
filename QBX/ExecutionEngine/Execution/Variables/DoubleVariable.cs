@@ -26,6 +26,16 @@ public class DoubleVariable : Variable
 	public override object GetData() => Value;
 	public override void SetData(object value) => Value = NumberConverter.ToDouble(value);
 
+	public override void SwapValueWith(Variable other)
+	{
+		if (other is not DoubleVariable otherDouble)
+			throw RuntimeException.TypeMismatch();
+
+		var tmp = Value;
+		Value = otherDouble.Value;
+		otherDouble.Value = tmp;
+	}
+
 	public override int CoerceToInt(Evaluable? context) => NumberConverter.ToLong(Value, context?.Source?.Token);
 	public override string ToString() => NumberFormatter.Format(Value);
 

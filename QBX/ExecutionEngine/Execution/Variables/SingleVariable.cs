@@ -26,6 +26,16 @@ public class SingleVariable : Variable
 	public override object GetData() => Value;
 	public override void SetData(object value) => Value = NumberConverter.ToSingle(value);
 
+	public override void SwapValueWith(Variable other)
+	{
+		if (other is not SingleVariable otherSingle)
+			throw RuntimeException.TypeMismatch();
+
+		var tmp = Value;
+		Value = otherSingle.Value;
+		otherSingle.Value = tmp;
+	}
+
 	public override int CoerceToInt(Evaluable? context) => NumberConverter.ToLong(Value, context?.Source?.Token);
 	public override string ToString() => NumberFormatter.Format(Value);
 

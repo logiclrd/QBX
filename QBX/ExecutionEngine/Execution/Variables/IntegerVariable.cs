@@ -38,6 +38,16 @@ public class IntegerVariable : Variable
 	public override object GetData() => Value;
 	public override void SetData(object value) => Value = NumberConverter.ToInteger(value);
 
+	public override void SwapValueWith(Variable other)
+	{
+		if (other is not IntegerVariable otherInteger)
+			throw RuntimeException.TypeMismatch();
+
+		var tmp = Value;
+		Value = otherInteger.Value;
+		otherInteger.Value = tmp;
+	}
+
 	public override int CoerceToInt(Evaluable? context) => NumberConverter.ToLong(Value, context?.Source?.Token);
 	public override string ToString() => NumberFormatter.Format(Value);
 

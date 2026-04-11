@@ -26,6 +26,16 @@ public class CurrencyVariable : Variable
 	public override object GetData() => Value;
 	public override void SetData(object value) => Value = NumberConverter.ToCurrency(value);
 
+	public override void SwapValueWith(Variable other)
+	{
+		if (other is not CurrencyVariable otherCurrency)
+			throw RuntimeException.TypeMismatch();
+
+		var tmp = Value;
+		Value = otherCurrency.Value;
+		otherCurrency.Value = tmp;
+	}
+
 	public override int CoerceToInt(Evaluable? context) => NumberConverter.ToLong(Value, context?.Source?.Token);
 	public override string ToString() => NumberFormatter.Format(Value);
 

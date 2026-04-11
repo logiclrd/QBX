@@ -2,7 +2,6 @@
 using System.Diagnostics.CodeAnalysis;
 
 using QBX.ExecutionEngine.Compiled;
-using QBX.Hardware;
 
 namespace QBX.ExecutionEngine.Execution.Variables;
 
@@ -151,6 +150,19 @@ public class UserDataTypeVariable : Variable
 
 		for (int i = 0; i < Fields.Length; i++)
 			Fields[i].SetData(otherUDT.Fields[i].GetData());
+	}
+
+	public override void SwapValueWith(Variable other)
+	{
+		if ((other is not UserDataTypeVariable otherUDT)
+		 || !otherUDT.DataType.Equals(DataType))
+			throw RuntimeException.TypeMismatch();
+
+		if (Fields.Length != otherUDT.Fields.Length)
+			throw new Exception("Internal error: UDT field mismatch");
+
+		for (int i = 0; i < Fields.Length; i++)
+			Fields[i].SwapValueWith(otherUDT.Fields[i]);
 	}
 
 	public override int Serialize(Span<byte> buffer)
