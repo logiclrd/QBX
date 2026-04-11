@@ -937,7 +937,14 @@ public class Mapper
 		else if ((param.Type != CodeModel.DataType.Unspecified) || (param.UserType != null))
 			return ResolveType(param.Type, param.UserType, 0, param.IsArray, param.TypeToken);
 		else
-			return DataType.ForPrimitiveDataType(GetTypeForIdentifier(param.Name));
+		{
+			var dataType = DataType.ForPrimitiveDataType(GetTypeForIdentifier(param.Name));
+
+			if (param.IsArray)
+				dataType = dataType.MakeArrayType();
+
+			return dataType;
+		}
 	}
 
 	public DataType ResolveType(CodeModel.VariableDeclaration declaration)
