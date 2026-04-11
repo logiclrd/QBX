@@ -18,6 +18,8 @@ public class ArrayVariable(DataType type, int fixedStringLength = -1) : Variable
 
 	public bool IsDynamic;
 
+	public bool IsCommonArray;
+
 	public override void Reset()
 	{
 		if (IsDynamic)

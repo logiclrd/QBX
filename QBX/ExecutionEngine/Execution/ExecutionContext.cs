@@ -36,6 +36,7 @@ public class ExecutionContext
 	public DrawProcessor DrawProcessor;
 	public Dictionary<Identifier, CommonBlock> CommonBlocks;
 	public Dictionary<Identifier, CommonBlockStorage> CommonBlockStorage => _commonBlockStorage;
+	public HashSet<ArrayVariable> InitializedCommonArrayVariables => _initializedCommonArrayVariables;
 
 	public VisualLibrary VisualLibrary;
 
@@ -49,6 +50,7 @@ public class ExecutionContext
 	ExecutionState _executionState;
 
 	Dictionary<Identifier, CommonBlockStorage> _commonBlockStorage;
+	HashSet<ArrayVariable> _initializedCommonArrayVariables = new HashSet<ArrayVariable>();
 
 	StackFrame? _rootFrame;
 	StatementPath? _goTo;

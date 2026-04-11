@@ -45,6 +45,8 @@ public class CommonBlockStorage
 		{
 			var arrayVariable = Variable.ConstructArray(dataType);
 
+			arrayVariable.IsCommonArray = true;
+
 			return arrayVariable;
 		}
 	}

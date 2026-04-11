@@ -18,7 +18,18 @@ public class DimensionArrayStatement(CodeModel.Statements.Statement? source) : E
 		var variable = (ArrayVariable)stackFrame.Variables[VariableIndex];
 
 		if (!IsRedimension && !variable.Array.IsUninitialized)
+		{
+			if (variable.IsCommonArray
+			 && context.InitializedCommonArrayVariables.Add(variable))
+			{
+				if (!variable.Array.Subscripts.Equals(subscripts))
+					throw RuntimeException.TypeMismatch(Source);
+
+				return;
+			}
+
 			throw RuntimeException.DuplicateDefinition(Source);
+		}
 
 		try
 		{
