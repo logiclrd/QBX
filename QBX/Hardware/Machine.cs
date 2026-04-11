@@ -42,7 +42,7 @@ public class Machine
 
 		SystemClock = new SystemClock();
 
-		SystemMemory = new SystemMemory();
+		SystemMemory = new SystemMemory(this);
 
 		MemoryBus = new MemoryBus();
 
@@ -63,9 +63,21 @@ public class Machine
 		KeyboardDriver = new KeyboardDriver(this);
 		MouseDriver = new MouseDriver(this);
 
+		InterruptHandlers[0x08] = new Interrupt0x08(this);
 		InterruptHandlers[0x10] = new Interrupt0x10(this);
 		InterruptHandlers[0x21] = new Interrupt0x21(this);
 		InterruptHandlers[0x33] = new Interrupt0x33(this);
+
+		Timer.Timer0.Control(0x36);
+		Timer.Timer0.WriteData(0);
+		Timer.Timer0.WriteData(0);
+
+		Timer.Timer1.Control(0x54);
+		Timer.Timer1.WriteData(0);
+
+		Timer.Timer2.Control(0xB6);
+		Timer.Timer2.WriteData(0);
+		Timer.Timer2.WriteData(0);
 
 		KeyboardDriver.InferLayoutFromSDLState();
 

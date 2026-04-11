@@ -541,12 +541,22 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					var address = new SegmentedAddress(inputEx.DS, input.DX);
 
-					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, address.ToLinearAddress());
+					int linearAddress = address.ToLinearAddress();
+
+					machine.SystemMemory.UpdateDynamicData(linearAddress, linearAddress + FileControlBlock.Size);
+
+					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, linearAddress);
 
 					result.AX &= 0xFF00;
 
 					try
 					{
+						int dtaAddress = machine.DOS.DiskTransferAddress;
+
+						machine.SystemMemory.UpdateDynamicData(
+							dtaAddress,
+							dtaAddress + fcb.RecordSize);
+
 						machine.DOS.WriteRecord(fcb, advance: true);
 
 						if (machine.DOS.LastError != DOSError.None)
@@ -720,7 +730,11 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					var address = new SegmentedAddress(inputEx.DS, input.DX);
 
-					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, address.ToLinearAddress());
+					int linearAddress = address.ToLinearAddress();
+
+					machine.SystemMemory.UpdateDynamicData(linearAddress, linearAddress + FileControlBlock.Size);
+
+					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, linearAddress);
 
 					if (fcb.RandomRecordNumber > 8388607) // maximum addressible record number
 						result.AX |= 0xFF;
@@ -735,6 +749,12 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 								fcb.CurrentBlockNumber = (ushort)(fcb.RandomRecordNumber / 128);
 								fcb.CurrentRecordNumber = (byte)(fcb.RandomRecordNumber & 127);
 							}
+
+							int dtaAddress = machine.DOS.DiskTransferAddress;
+
+							machine.SystemMemory.UpdateDynamicData(
+								dtaAddress,
+								dtaAddress + fcb.RecordSize);
 
 							machine.DOS.WriteRecord(fcb, advance: false);
 
@@ -829,7 +849,11 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 				{
 					var address = new SegmentedAddress(inputEx.DS, input.DX);
 
-					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, address.ToLinearAddress());
+					int linearAddress = address.ToLinearAddress();
+
+					machine.SystemMemory.UpdateDynamicData(linearAddress, linearAddress + FileControlBlock.Size);
+
+					var fcb = FileControlBlock.Deserialize(machine.MemoryBus, linearAddress);
 
 					if (fcb.RandomRecordNumber > 8388607) // maximum addressible record number
 						result.AX |= 0xFF;
@@ -846,6 +870,12 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 							}
 
 							int recordCount = input.CX;
+
+							int dtaAddress = machine.DOS.DiskTransferAddress;
+
+							machine.SystemMemory.UpdateDynamicData(
+								dtaAddress,
+								dtaAddress + fcb.RecordSize * recordCount);
 
 							machine.DOS.WriteRecords(fcb, recordCount);
 
@@ -1229,7 +1259,13 @@ public class Interrupt0x21(Machine machine) : InterruptHandler
 					int numBytes = input.CX;
 					var bufferAddress = new SegmentedAddress(inputEx.DS, input.DX);
 
-					result.AX = (ushort)machine.DOS.Write(fileHandle, machine.MemoryBus, bufferAddress.ToLinearAddress(), numBytes);
+					int linearAddress = bufferAddress.ToLinearAddress();
+
+					machine.SystemMemory.UpdateDynamicData(
+						linearAddress,
+						linearAddress + numBytes);
+
+					result.AX = (ushort)machine.DOS.Write(fileHandle, machine.MemoryBus, linearAddress, numBytes);
 
 					if (machine.DOS.LastError != DOSError.None)
 					{

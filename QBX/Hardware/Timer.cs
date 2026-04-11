@@ -18,6 +18,7 @@ public class Timer(TimerChip owner, bool isTickCountBasis)
 	public int Mode;
 
 	DateTime _epoch;
+	int _epochIntervals;
 	DateTime _deadline;
 	int _latchedLSB = -1;
 	int _latchedCounter = -1;
@@ -33,6 +34,7 @@ public class Timer(TimerChip owner, bool isTickCountBasis)
 
 	public void ResetCounter(int value)
 	{
+		_epochIntervals = Intervals;
 		_epoch = DateTime.UtcNow.AddSeconds(-value / Frequency);
 	}
 
@@ -57,6 +59,11 @@ public class Timer(TimerChip owner, bool isTickCountBasis)
 				immediate: true,
 				hold: TimeSpan.Zero);
 		}
+	}
+
+	public void BumpIntervals()
+	{
+		_epochIntervals = unchecked(_epochIntervals + 1);
 	}
 
 	public void LatchCounter()
@@ -105,6 +112,25 @@ public class Timer(TimerChip owner, bool isTickCountBasis)
 
 				return bcd;
 			}
+		}
+	}
+
+	public int Intervals
+	{
+		get
+		{
+			var now = DateTime.UtcNow;
+
+			if (!IsRepeating)
+				return _epochIntervals + ((now > _deadline) ? 1 : 0);
+
+			var elapsed = (DateTime.UtcNow - _epoch).TotalSeconds;
+
+			double intervals = double.Truncate(elapsed * Frequency);
+
+			intervals = Math.IEEERemainder(intervals, 0x100000000);
+
+			return unchecked(_epochIntervals + (int)intervals);
 		}
 	}
 

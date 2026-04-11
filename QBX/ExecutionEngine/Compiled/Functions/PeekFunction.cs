@@ -30,7 +30,10 @@ public class PeekFunction : Function
 
 		int address = 0xFFFF & addressValue.CoerceToInt(context: AddressExpression);
 
-		return new IntegerVariable(context.Machine.MemoryBus[
-			context.RuntimeState.SegmentBase + address]);
+		address += context.RuntimeState.SegmentBase;
+
+		context.Machine.SystemMemory.UpdateDynamicData(address, address + 1);
+
+		return new IntegerVariable(context.Machine.MemoryBus[address]);
 	}
 }

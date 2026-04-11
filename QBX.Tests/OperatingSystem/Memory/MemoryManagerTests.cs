@@ -13,7 +13,9 @@ public class MemoryManagerTests
 	public void Constructor_should_set_up_arena_properly()
 	{
 		// Arrange
-		var systemMemory = new SystemMemory();
+		var machine = new Machine();
+
+		var systemMemory = machine.SystemMemory;
 
 		ref var startOfSystemMemory = ref MemoryControlBlock.CreateReference(systemMemory, 0);
 		var startOfSystemMemorySpan = new Span<MemoryControlBlock>(ref startOfSystemMemory);
@@ -51,7 +53,9 @@ public class MemoryManagerTests
 		MemoryAllocationStrategy allocationStrategy)
 	{
 		// Arrange
-		var systemMemory = new SystemMemory();
+		var machine = new Machine();
+
+		var systemMemory = machine.SystemMemory;
 
 		const int ArenaStart = 65536;
 		const int ArenaSize = 131072;
@@ -123,7 +127,9 @@ public class MemoryManagerTests
 	public void ConsolidateFreeBlocks_should_consolidate_the_appropriate_adjacent_blocks_only()
 	{
 		// Arrange
-		var systemMemory = new SystemMemory();
+		var machine = new Machine();
+
+		var systemMemory = machine.SystemMemory;
 
 		const int ArenaStart = 65536;
 		const int ArenaSize = 131072;
@@ -195,7 +201,9 @@ public class MemoryManagerTests
 	public void ResizeAllocation_should_make_non_last_block_smaller()
 	{
 		// Arrange
-		var systemMemory = new SystemMemory();
+		var machine = new Machine();
+
+		var systemMemory = machine.SystemMemory;
 
 		const int ArenaStart = 65536;
 		const int ArenaSize = 131072;
@@ -232,7 +240,9 @@ public class MemoryManagerTests
 	public void ResizeAllocation_should_make_last_block_smaller()
 	{
 		// Arrange
-		var systemMemory = new SystemMemory();
+		var machine = new Machine();
+
+		var systemMemory = machine.SystemMemory;
 
 		const int ArenaStart = 65536;
 		const int ArenaSize = 131072;
@@ -266,7 +276,9 @@ public class MemoryManagerTests
 	public void ResizeAllocation_should_do_nothing_if_block_size_is_unchanged()
 	{
 		// Arrange
-		var systemMemory = new SystemMemory();
+		var machine = new Machine();
+
+		var systemMemory = machine.SystemMemory;
 
 		const int ArenaStart = 65536;
 		const int ArenaSize = 131072;
@@ -308,7 +320,9 @@ public class MemoryManagerTests
 	public void ResizeAllocation_should_make_block_larger()
 	{
 		// Arrange
-		var systemMemory = new SystemMemory();
+		var machine = new Machine();
+
+		var systemMemory = machine.SystemMemory;
 
 		const int ArenaStart = 65536;
 		const int ArenaSize = 131072;
@@ -342,7 +356,9 @@ public class MemoryManagerTests
 	public void ResizeAllocation_should_throw_correct_error_if_new_size_is_invalid()
 	{
 		// Arrange
-		var systemMemory = new SystemMemory();
+		var machine = new Machine();
+
+		var systemMemory = machine.SystemMemory;
 
 		const int ArenaStart = 65536;
 		const int ArenaSize = 131072;
@@ -365,7 +381,9 @@ public class MemoryManagerTests
 	public void ResizeAllocation_should_throw_correct_error_if_insufficient_space_for_expansion([Values] bool nextBlockIsFree)
 	{
 		// Arrange
-		var systemMemory = new SystemMemory();
+		var machine = new Machine();
+
+		var systemMemory = machine.SystemMemory;
 
 		const int ArenaStart = 65536;
 		const int ArenaSize = 131072;
@@ -401,7 +419,9 @@ public class MemoryManagerTests
 	public void ResizeAllocation_should_throw_correct_error_if_supplied_address_is_not_valid()
 	{
 		// Arrange
-		var systemMemory = new SystemMemory();
+		var machine = new Machine();
+
+		var systemMemory = machine.SystemMemory;
 
 		const int ArenaStart = 65536;
 		const int ArenaSize = 131072;
@@ -426,7 +446,9 @@ public class MemoryManagerTests
 	public void FreeMemory_should_free_first_block()
 	{
 		// Arrange
-		var systemMemory = new SystemMemory();
+		var machine = new Machine();
+
+		var systemMemory = machine.SystemMemory;
 
 		const int ArenaStart = 65536;
 		const int ArenaSize = 131072;
@@ -467,7 +489,9 @@ public class MemoryManagerTests
 	public void FreeMemory_should_free_last_block()
 	{
 		// Arrange
-		var systemMemory = new SystemMemory();
+		var machine = new Machine();
+
+		var systemMemory = machine.SystemMemory;
 
 		const int ArenaStart = 65536;
 		const int ArenaSize = 131072;
@@ -514,7 +538,9 @@ public class MemoryManagerTests
 	public void FreeMemory_should_free_middle_block()
 	{
 		// Arrange
-		var systemMemory = new SystemMemory();
+		var machine = new Machine();
+
+		var systemMemory = machine.SystemMemory;
 
 		const int ArenaStart = 65536;
 		const int ArenaSize = 131072;
@@ -577,7 +603,9 @@ public class MemoryManagerTests
 	public void FreeMemory_should_throw_correct_error_if_supplied_address_is_not_valid()
 	{
 		// Arrange
-		var systemMemory = new SystemMemory();
+		var machine = new Machine();
+
+		var systemMemory = machine.SystemMemory;
 
 		const int ArenaStart = 65536;
 		const int ArenaSize = 131072;
@@ -602,7 +630,9 @@ public class MemoryManagerTests
 	public void FreeMemory_should_throw_correct_error_if_supplied_address_is_previously_freed()
 	{
 		// Arrange
-		var systemMemory = new SystemMemory();
+		var machine = new Machine();
+
+		var systemMemory = machine.SystemMemory;
 
 		const int ArenaStart = 65536;
 		const int ArenaSize = 131072;
@@ -627,7 +657,9 @@ public class MemoryManagerTests
 	public void CreatePSP_should_initialize_program_segment_prefix()
 	{
 		// Arrange
-		var systemMemory = new SystemMemory();
+		var machine = new Machine();
+
+		var systemMemory = machine.SystemMemory;
 
 		const int ArenaStart = 65536;
 		const int ArenaSize = 131072;

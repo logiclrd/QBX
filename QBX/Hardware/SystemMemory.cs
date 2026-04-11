@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 
 namespace QBX.Hardware;
 
@@ -10,10 +11,36 @@ public class SystemMemory : IMemory
 
 	public KeyboardStatus KeyboardStatus { get; }
 
-	public SystemMemory()
+	Machine _machine;
+
+	public SystemMemory(Machine machine)
 	{
 		KeyboardStatus = new KeyboardStatus(this);
 		KeyboardStatus.Byte3.EnhancedKeyboard = true;
+
+		_machine = machine;
+	}
+
+	public void UpdateDynamicData(int rangeStart, int rangeEnd)
+	{
+		// A compromise: Some dynamic data properly requires constant
+		// updating. Instead of burning the CPU cycles, we just pretend
+		// that it has been updated by allowing callers to notify us
+		// when they're about to do an operation that could depend on
+		// up-to-date information.
+
+		// System timer
+		const int SystemTimerAddress = 0x46C;
+
+		if ((rangeStart < SystemTimerAddress + 4)
+		 && (rangeEnd >= SystemTimerAddress))
+		{
+			var systemTimerBytes = AsSpan().Slice(SystemTimerAddress, 4);
+
+			var systemTimerWord = MemoryMarshal.Cast<byte, int>(systemTimerBytes);
+
+			systemTimerWord[0] = _machine.Timer.Timer0.Intervals;
+		}
 	}
 
 	public Span<byte> AsSpan() => _ram;

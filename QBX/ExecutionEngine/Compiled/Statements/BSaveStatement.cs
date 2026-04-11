@@ -69,7 +69,13 @@ public class BSaveStatement(CodeModel.Statements.Statement source) : BlockIOStat
 
 				int linearAddress = address.ToLinearAddress();
 
-				remaining = headerFields[2];
+				int blockSize = headerFields[2];
+
+				context.Machine.SystemMemory.UpdateDynamicData(
+					linearAddress,
+					linearAddress + blockSize);
+
+				remaining = blockSize;
 
 				while (remaining > 0)
 				{
