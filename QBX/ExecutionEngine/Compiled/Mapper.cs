@@ -827,13 +827,13 @@ public class Mapper
 		return index;
 	}
 
-	public int ResolveArray(string name, DataType? arrayType = null)
-		=> ResolveArray(name, createImplicitly: false, out _, arrayType);
+	public int ResolveArray(string name, DataType? arrayType = null, Token? nameToken = null)
+		=> ResolveArray(name, createImplicitly: false, out _, arrayType, nameToken);
 
-	public int ResolveArray(string name, out bool implicitlyCreated, DataType? arrayType = null)
-		=> ResolveArray(name, createImplicitly: true, out implicitlyCreated, arrayType);
+	public int ResolveArray(string name, out bool implicitlyCreated, DataType? arrayType = null, Token? nameToken = null)
+		=> ResolveArray(name, createImplicitly: true, out implicitlyCreated, arrayType, nameToken);
 
-	int ResolveArray(string name, bool createImplicitly, out bool implicitlyCreated, DataType? arrayType = null)
+	int ResolveArray(string name, bool createImplicitly, out bool implicitlyCreated, DataType? arrayType = null, Token? nameToken = null)
 	{
 		implicitlyCreated = false;
 
@@ -864,7 +864,7 @@ public class Mapper
 			arrayType = elementType.MakeArrayType();
 		}
 
-		return DeclareArray(name, arrayType);
+		return DeclareArray(name, arrayType, nameToken);
 	}
 
 	public IEnumerable<VariableName> GetVariableNames() =>

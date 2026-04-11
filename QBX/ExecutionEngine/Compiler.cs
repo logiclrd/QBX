@@ -955,7 +955,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 					}
 					else
 					{
-						variableIndex = mapper.DeclareArray(
+						variableIndex = mapper.ResolveArray(
 							declaration.Name,
 							variableTypes[i],
 							declaration.NameToken);
