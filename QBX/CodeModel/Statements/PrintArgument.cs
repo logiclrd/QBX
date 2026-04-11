@@ -24,7 +24,7 @@ public class PrintArgument : IRenderableCode
 				writer.Write(')');
 				break;
 			case PrintArgumentType.Space:
-				writer.Write("TAB(");
+				writer.Write("SPC(");
 				Expression?.Render(writer);
 				writer.Write(')');
 				break;
