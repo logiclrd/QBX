@@ -226,7 +226,6 @@ public class DrawProcessor : ProcessorCommon
 					if ((input.Length == 0) || ToUpper(input[0]) != 'A')
 						Fail();
 
-					Advance(ref input);
 					AdvanceAndSkipWhitespace(ref input);
 
 					_angle = ExpectIntegerInRange(ref input, -360, +360, executionContext);
