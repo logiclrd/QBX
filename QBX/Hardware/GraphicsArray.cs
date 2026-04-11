@@ -451,6 +451,7 @@ public class GraphicsArray : IMemory
 
 		public int NumScanLines;
 		public int SkipScans;
+		public int SkipBytes;
 		public int ScanRepeatCount;
 		public int CharacterHeight;
 		public bool ScanDoubling;
@@ -463,6 +464,7 @@ public class GraphicsArray : IMemory
 		public int UnderlineCharacterRow;
 		public bool InterleaveOnBit0;
 		public bool InterleaveOnBit1;
+		public int ResetAddressAtScan;
 
 		// In text modes, ScanRepeatCount is the height of the character box. The same scan is repeated for each
 		// separate scan of the characters in the row. In graphics mode, there is no font being translated, so
@@ -573,6 +575,7 @@ public class GraphicsArray : IMemory
 					owner.NumColumns = HorizontalTotal + 5;
 					owner.NumScanLines = verticalDisplayEndValue + 1;
 					owner.SkipScans = PresetRowScan & PresetRowScan_ScanMask;
+					owner.SkipBytes = (PresetRowScan & PresetRowScan_BytePanningMask) >> PresetRowScan_BytePanningShift;
 					owner.ScanRepeatCount = MaximumScanLine & MaximumScanLine_ScanMask;
 					owner.CharacterHeight = owner.ScanRepeatCount + 1;
 					owner.ScanDoubling = (MaximumScanLine & MaximumScanLine_ScanDoubling) != 0;
@@ -585,6 +588,7 @@ public class GraphicsArray : IMemory
 					owner.UnderlineCharacterRow = UnderlineLocation & UnderlineLocation;
 					owner.InterleaveOnBit0 = ((ModeControl & ModeControl_MapDisplayAddress13Mask) == ModeControl_MapDisplayAddress13_RowScan0);
 					owner.InterleaveOnBit1 = ((ModeControl & ModeControl_MapDisplayAddress14Mask) == ModeControl_MapDisplayAddress14_RowScan1);
+					owner.ResetAddressAtScan = LineCompare | ((Overflow & Overflow_LineCompare8) << 4) | ((MaximumScanLine & MaximumScanLine_LineCompareBit9) << 3);
 				}
 			}
 		}

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 
@@ -31,6 +32,9 @@ public class Adapter
 	{
 		_width = _array.MiscellaneousOutput.BasePixelWidth >> (_array.Sequencer.DotDoubling ? 1 : 0);
 		_height = _array.CRTController.NumScanLines;
+
+		if (_array.Graphics.DisableText)
+			_height *= (_array.CRTController.ScanRepeatCount + 1);
 
 		int widthScale = _array.Sequencer.DotDoubling ? 2 : 1;
 		int heightScale = _array.CRTController.ScanDoubling ? 2 : 1;
@@ -107,11 +111,6 @@ public class Adapter
 
 			int startAddress = _array.CRTController.StartAddress;
 
-			var plane0 = vram.AsSpan().Slice(startAddress + 0 * planeSize, planeSize - startAddress);
-			var plane1 = vram.AsSpan().Slice(startAddress + 1 * planeSize, planeSize - startAddress);
-			var plane2 = vram.AsSpan().Slice(startAddress + 2 * planeSize, planeSize - startAddress);
-			var plane3 = vram.AsSpan().Slice(startAddress + 3 * planeSize, planeSize - startAddress);
-
 			bool promoteBit0ToBit13 = _array.CRTController.InterleaveOnBit0;
 			bool promoteBit1ToBit14 = _array.CRTController.InterleaveOnBit1;
 
@@ -127,6 +126,16 @@ public class Adapter
 			bool use256Colours = _array.AttributeController.Use256Colours;
 			bool shift256 = _array.Graphics.Shift256;
 			bool chainOddEven = _array.Graphics.ChainOddEven;
+
+			int plane0VisibleSize = use256Colours ? vram.Length : planeSize;
+			int plane1VisibleSize = use256Colours ? plane0VisibleSize - planeSize : planeSize;
+			int plane2VisibleSize = use256Colours ? plane1VisibleSize - planeSize : planeSize;
+			int plane3VisibleSize = use256Colours ? plane2VisibleSize - planeSize : planeSize;
+
+			var plane0 = vram.AsSpan().Slice(startAddress + 0 * planeSize, plane0VisibleSize - startAddress);
+			var plane1 = vram.AsSpan().Slice(startAddress + 1 * planeSize, plane1VisibleSize - startAddress);
+			var plane2 = vram.AsSpan().Slice(startAddress + 2 * planeSize, plane2VisibleSize - startAddress);
+			var plane3 = vram.AsSpan().Slice(startAddress + 3 * planeSize, plane3VisibleSize - startAddress);
 
 			long tick = ElapsedTicks;
 
@@ -176,19 +185,48 @@ public class Adapter
 
 			int overscanColour = _array.AttributeController.Registers.OverscanPaletteIndex;
 
-			int planeOffset = 0;
+			int planeOffset = _array.CRTController.SkipScans * stride + _array.CRTController.SkipBytes;
+
+			int resetAddressAtScan = _array.CRTController.ResetAddressAtScan;
 
 			int endHorizontalDisplay = _array.CRTController.Registers.EndHorizontalDisplay;
 
 			int overscanBGRA = palette[
 				_array.AttributeController.Registers.OverscanPaletteIndex];
 
+			Span<byte> wrapSpan0 = stackalloc byte[stride];
+			Span<byte> wrapSpan1 = stackalloc byte[stride];
+			Span<byte> wrapSpan2 = stackalloc byte[stride];
+			Span<byte> wrapSpan3 = stackalloc byte[stride];
+
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			static Span<byte> BuildWrapSpan(Span<byte> plane, int planeOffset, int stride, Span<byte> wrapSpan)
+			{
+				while (planeOffset >= plane.Length)
+					planeOffset -= plane.Length;
+
+				int bytesBeforeWrap = plane.Length - planeOffset;
+
+				if (bytesBeforeWrap >= stride)
+					return plane.Slice(planeOffset, stride);
+
+				int bytesAfterWrap = stride - bytesBeforeWrap;
+
+				plane.Slice(planeOffset, bytesBeforeWrap).CopyTo(wrapSpan);
+				plane.Slice(0, bytesAfterWrap).CopyTo(wrapSpan.Slice(bytesBeforeWrap));
+
+				return wrapSpan;
+			}
+
 			for (int y = 0; y < _height; y++)
 			{
-				var scanIn0 = plane0.Slice(planeOffset, stride);
-				var scanIn1 = plane1.Slice(planeOffset, stride);
-				var scanIn2 = plane2.Slice(planeOffset, stride);
-				var scanIn3 = plane3.Slice(planeOffset, stride);
+				if (y == resetAddressAtScan)
+					planeOffset = 0;
+
+				var scanIn0 = BuildWrapSpan(plane0, planeOffset, stride, wrapSpan0);
+				var scanIn1 = BuildWrapSpan(plane1, planeOffset, stride, wrapSpan1);
+				var scanIn2 = BuildWrapSpan(plane2, planeOffset, stride, wrapSpan2);
+				var scanIn3 = BuildWrapSpan(plane3, planeOffset, stride, wrapSpan3);
 				var scanOut = MemoryMarshal.Cast<byte, int>(target.Slice(y * targetPitch, rowWidthOut));
 
 				int offset = 0;

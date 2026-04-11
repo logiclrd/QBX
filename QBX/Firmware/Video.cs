@@ -206,6 +206,7 @@ public partial class Video(Machine machine)
 			CRTControllerRegisters.IndexPort,
 			CRTControllerRegisters.Overflow,
 			unchecked((byte)(
+			CRTControllerRegisters.Overflow_LineCompare8 |
 			((verticalTotal & 256) >> 8) |
 			((displayEnd & 256) >> 7) |
 			((verticalTotal & 512) >> 4) |
@@ -220,6 +221,7 @@ public partial class Video(Machine machine)
 			CRTControllerRegisters.IndexPort,
 			CRTControllerRegisters.MaximumScanLine,
 			unchecked((byte)(
+			CRTControllerRegisters.MaximumScanLine_LineCompareBit9 |
 			(mode.IsGraphicsMode ? 0 : (characterHeight - 1)) |
 			(mode.ScanDoubling ? CRTControllerRegisters.MaximumScanLine_ScanDoubling : 0))));
 
@@ -276,6 +278,11 @@ public partial class Video(Machine machine)
 			CRTControllerRegisters.IndexPort,
 			CRTControllerRegisters.ModeControl,
 			crtcMode);
+
+		array.OutPort2(
+			CRTControllerRegisters.IndexPort,
+			CRTControllerRegisters.LineCompare,
+			0xFF);
 
 		byte attributeMode = unchecked((byte)(
 			(mode.Use256Colours ? AttributeControllerRegisters.ModeControl_8bitColour : 0) |
