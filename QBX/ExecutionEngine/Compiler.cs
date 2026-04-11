@@ -802,6 +802,17 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 				break;
 			}
+			case CodeModel.Statements.ChainStatement chainStatement:
+			{
+				var translatedChainStatement = new ChainStatement(chainStatement);
+
+				TranslateStringArgumentExpression(
+					ref translatedChainStatement.FileNameExpression, chainStatement.FileNameExpression);
+
+				container.Append(translatedChainStatement);
+
+				break;
+			}
 			case CodeModel.Statements.ChDirStatement chDirStatement:
 			{
 				var translatedChDirStatement = new ChDirStatement(chDirStatement);

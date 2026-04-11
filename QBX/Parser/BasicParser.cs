@@ -557,6 +557,15 @@ public class BasicParser(IdentifierRepository identifierRepository)
 				}
 			}
 
+			case TokenType.CHAIN:
+			{
+				var chainStatement = new ChainStatement();
+
+				chainStatement.FileNameExpression = ParseExpressionForStatement(chainStatement, tokenHandler.RemainingTokens, tokenHandler.EndToken);
+
+				return chainStatement;
+			}
+
 			case TokenType.CHDIR:
 			{
 				var chDirStatement = new ChDirStatement();
