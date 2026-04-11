@@ -268,12 +268,15 @@ public class IntegerForStatement(CodeModel.Statements.ForStatement? sourceForSta
 
 		try
 		{
-			while (!nextStatement.FinishLoop)
+			while (true)
 			{
 				System.Threading.Thread.Yield();
 
 				iteratorVariable.Value = nextStatement.NextValue;
 				iteratorVariable.WritePinnedData();
+
+				if (nextStatement.FinishLoop)
+					break;
 
 				for (int i = statementIndex; i < Body!.Count; i++)
 					context.Dispatch(Body[i], stackFrame);
@@ -368,12 +371,15 @@ public class LongForStatement(CodeModel.Statements.ForStatement? sourceForStatem
 
 		try
 		{
-			while (!nextStatement.FinishLoop)
+			while (true)
 			{
 				System.Threading.Thread.Yield();
 
 				iteratorVariable.Value = nextStatement.NextValue;
 				iteratorVariable.WritePinnedData();
+
+				if (nextStatement.FinishLoop)
+					break;
 
 				for (int i = statementIndex; i < Body!.Count; i++)
 					context.Dispatch(Body[i], stackFrame);
@@ -468,12 +474,15 @@ public class SingleForStatement(CodeModel.Statements.ForStatement? sourceForStat
 
 		try
 		{
-			while (!nextStatement.FinishLoop)
+			while (true)
 			{
 				System.Threading.Thread.Yield();
 
 				iteratorVariable.Value = nextStatement.NextValue;
 				iteratorVariable.WritePinnedData();
+
+				if (nextStatement.FinishLoop)
+					break;
 
 				for (int i = statementIndex; i < Body!.Count; i++)
 					context.Dispatch(Body[i], stackFrame);
@@ -568,12 +577,15 @@ public class DoubleForStatement(CodeModel.Statements.ForStatement? sourceForStat
 
 		try
 		{
-			while (!nextStatement.FinishLoop)
+			while (true)
 			{
 				System.Threading.Thread.Yield();
 
 				iteratorVariable.Value = nextStatement.NextValue;
 				iteratorVariable.WritePinnedData();
+
+				if (nextStatement.FinishLoop)
+					break;
 
 				for (int i = statementIndex; i < Body!.Count; i++)
 					context.Dispatch(Body[i], stackFrame);
@@ -668,12 +680,15 @@ public class CurrencyForStatement(CodeModel.Statements.ForStatement? sourceForSt
 
 		try
 		{
-			while (!nextStatement.FinishLoop)
+			while (true)
 			{
 				System.Threading.Thread.Yield();
 
 				iteratorVariable.Value = nextStatement.NextValue;
 				iteratorVariable.WritePinnedData();
+
+				if (nextStatement.FinishLoop)
+					break;
 
 				for (int i = statementIndex; i < Body!.Count; i++)
 					context.Dispatch(Body[i], stackFrame);
