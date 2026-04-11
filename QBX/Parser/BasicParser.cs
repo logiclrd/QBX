@@ -3063,73 +3063,63 @@ public class BasicParser(IdentifierRepository identifierRepository)
 				{
 					var nextSeparatorIndex = tokenHandler.FindNextUnparenthesizedOf(TokenType.Semicolon, TokenType.Comma);
 
-					if (nextSeparatorIndex >= 0)
+					int endOfArgument = (nextSeparatorIndex >= 0) ? nextSeparatorIndex : tokenHandler.RemainingTokens.Count;
+
+					var arg = new PrintArgument();
+
+					ListRange<Token> expressionTokens = tokenHandler.RemainingTokens.Slice(0, endOfArgument);
+
+					if (endOfArgument > 0)
 					{
-						var arg = new PrintArgument();
+						bool isTab = tokenHandler.NextTokenIs(TokenType.TAB);
+						bool isSpace = tokenHandler.NextTokenIs(TokenType.SPC);
 
-						ListRange<Token> expressionTokens = tokenHandler.RemainingTokens.Slice(0, nextSeparatorIndex);
+						var endToken = (nextSeparatorIndex >= 0) ? tokenHandler[nextSeparatorIndex] : tokenHandler.EndToken;
 
-						if (nextSeparatorIndex > 0)
+						if (isTab || isSpace)
 						{
-							bool isTab = tokenHandler.NextTokenIs(TokenType.TAB);
-							bool isSpace = tokenHandler.NextTokenIs(TokenType.SPC);
+							if (isTab)
+								arg.ArgumentType = PrintArgumentType.Tab;
+							if (isSpace)
+								arg.ArgumentType = PrintArgumentType.Space;
 
-							if (isTab || isSpace)
-							{
-								if (isTab)
-									arg.ArgumentType = PrintArgumentType.Tab;
-								if (isSpace)
-									arg.ArgumentType = PrintArgumentType.Space;
+							tokenHandler.Advance();
 
-								var separatorToken = tokenHandler[nextSeparatorIndex];
+							expressionTokens = tokenHandler.ExpectParenthesizedTokens(out endToken);
 
+							endOfArgument = 0;
+						}
+
+						arg.Expression = ParseExpressionForStatement(print, expressionTokens, endToken);
+
+						tokenHandler.Advance(endOfArgument);
+					}
+
+					if (arg.ArgumentType != PrintArgumentType.Value)
+					{
+						arg.CursorAction = PrintCursorAction.None;
+
+						if (tokenHandler.NextTokenIs(TokenType.Semicolon))
+							tokenHandler.Advance();
+					}
+					else if (tokenHandler.HasMoreTokens)
+					{
+						switch (tokenHandler.NextToken.Type)
+						{
+							case TokenType.Semicolon:
+								arg.CursorAction = PrintCursorAction.None;
 								tokenHandler.Advance();
-
-								expressionTokens = tokenHandler.ExpectParenthesizedTokens();
-
-								nextSeparatorIndex = 0;
-							}
-
-							arg.Expression = ParseExpressionForStatement(print, expressionTokens, tokenHandler[nextSeparatorIndex]);
-
-							tokenHandler.Advance(nextSeparatorIndex);
-						}
-
-						if (arg.ArgumentType != PrintArgumentType.Value)
-						{
-							arg.CursorAction = PrintCursorAction.None;
-
-							if (tokenHandler.NextTokenIs(TokenType.Semicolon))
+								break;
+							case TokenType.Comma:
+								arg.CursorAction = PrintCursorAction.NextZone;
 								tokenHandler.Advance();
+								break;
 						}
-						else
-						{
-							switch (tokenHandler.NextToken.Type)
-							{
-								case TokenType.Semicolon:
-									arg.CursorAction = PrintCursorAction.None;
-									tokenHandler.Advance();
-									break;
-								case TokenType.Comma:
-									arg.CursorAction = PrintCursorAction.NextZone;
-									tokenHandler.Advance();
-									break;
-							}
-						}
-
-						print.Arguments.Add(arg);
 					}
 					else
-					{
-						var arg = new PrintArgument();
-
-						arg.Expression = ParseExpressionForStatement(print, tokenHandler.RemainingTokens, tokenHandler.EndToken);
 						arg.CursorAction = PrintCursorAction.NextLine;
 
-						print.Arguments.Add(arg);
-
-						tokenHandler.AdvanceToEnd();
-					}
+					print.Arguments.Add(arg);
 				}
 
 				return print;

@@ -169,6 +169,9 @@ public class TokenHandler(ListRange<Token> tokens, IdentifierRepository identifi
 	}
 
 	public ListRange<Token> ExpectParenthesizedTokens()
+		=> ExpectParenthesizedTokens(out _);
+
+	public ListRange<Token> ExpectParenthesizedTokens(out Token endToken)
 	{
 		if (!NextTokenIs(TokenType.OpenParenthesis))
 			throw new SyntaxErrorException(FindTokenToBlame(), "Expected: (");
@@ -194,6 +197,8 @@ public class TokenHandler(ListRange<Token> tokens, IdentifierRepository identifi
 			throw new SyntaxErrorException(FindTokenToBlame(), "Expected: )");
 
 		int rangeEnd = _tokenIndex - 1;
+
+		endToken = _tokens[rangeEnd];
 
 		return _tokens.Slice(rangeStart, rangeEnd - rangeStart);
 	}
