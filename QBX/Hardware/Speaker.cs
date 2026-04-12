@@ -29,6 +29,8 @@ public class Speaker(Machine machine)
 	PriorityQueue<SoundParameters, DateTime> _soundChanges = new();
 	DateTime _queueMaxChangeAtTime;
 
+	double _frequency;
+
 	volatile SoundParameters? _nextSoundChange = null;
 	volatile int _tickValue;
 	volatile int _tickLength;
@@ -65,16 +67,10 @@ public class Speaker(Machine machine)
 		{
 			bool newEnabled = ((data & 1) != 0);
 
-			if (newEnabled != _isEnabled)
+			if (newEnabled != _eventualEnabled)
 			{
-				_isEnabled = ((data & 1) != 0);
+				ChangeSound(newEnabled, invertValue: false, _frequency, immediate: true);
 				_value = unchecked((byte)(((data & 2) >> 1) * 0xFF));
-			}
-
-			lock (_sync)
-			{
-				_soundChanges.Clear();
-				_nextSoundChange = null;
 			}
 		}
 	}
@@ -116,6 +112,8 @@ public class Speaker(Machine machine)
 
 		if (enabled != false)
 		{
+			_frequency = frequency;
+
 			nextChange.Frequency = frequency;
 			nextChange.TickLength = (int)Math.Round(HalfWavelength * frequency * 2 / SampleRate);
 		}

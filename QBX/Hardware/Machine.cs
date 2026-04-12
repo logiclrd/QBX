@@ -91,6 +91,7 @@ public class Machine
 		GraphicsArray.OutPort(portNumber, data);
 		Keyboard.OutPort(portNumber, data);
 		Timer.OutPort(portNumber, data);
+		Speaker.OutPort(portNumber, data);
 	}
 
 	public byte InPort(int portNumber)
