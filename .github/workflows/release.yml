@@ -72,18 +72,26 @@ jobs:
     - name: Stage
       run: |
         md Stage
+        Copy-Item RELEASES.md Stage\
         Copy-Item QBX\bin\Release\net10.0\* Stage\ -Recurse
         md Stage\Samples
-        Copy-Item Samples\*.md Stage\Samples -Recurse
-        Copy-Item Samples\*.BAS Stage\Samples -Recurse
+        robocopy Samples Stage\Samples /XF *.vbproj /XF .gitignore /XD bin /XD obj /S
         Compress-Archive -Path Stage\* -DestinationPath ${{ env.PackageFileName }}
         Get-ChildItem ${{ env.PackageFileName }} | Select-Object Mode,LastWriteTime,Length,FullName
+
+    - name: Extract release notes
+      id: release_notes
+      run: |
+        $FirstLine, $LastLine = Select-String -Path RELEASES.md -Pattern "^## " | Select-Object -First 2 -ExpandProperty LineNumber
+        (Get-Content RELEASES.md | Select-Object -Skip ($FirstLine - 1) -First ($LastLine - $FirstLine) | Out-String).TrimEnd() >> "$GITHUB_OUTPUT"
 
     - name: Create release
       uses: softprops/action-gh-release@v2
       with:
         name: QBX ${{ env.VersionNumber }}
         body: |
+          ${{ steps.release_notes.outputs.content }}
+
           Version: ${{ env.VersionNumber }}
           Created: ${{ env.Timestamp }}
           Commit: ${{ github.sha }}
