@@ -88,7 +88,10 @@ jobs:
       id: release_notes
       run: |
         $FirstLine, $LastLine = Select-String -Path RELEASES.md -Pattern "^## " | Select-Object -First 2 -ExpandProperty LineNumber
-        (Get-Content RELEASES.md | Select-Object -Skip ($FirstLine - 1) -First ($LastLine - $FirstLine) | Out-String).TrimEnd() >> "$GITHUB_OUTPUT"
+        $Delimiter = (New-Guid).ToString()
+        "content<<$Delimiter" >> $env:GITHUB_OUTPUT
+        (Get-Content RELEASES.md | Select-Object -Skip ($FirstLine - 1) -First ($LastLine - $FirstLine) | Out-String).TrimEnd() >> $env:GITHUB_OUTPUT
+        "`r`n$Delimiter" >> $env:GITHUB_OUTPUT
 
     - name: Create release
       uses: softprops/action-gh-release@v2
