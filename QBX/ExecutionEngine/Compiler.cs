@@ -2267,13 +2267,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 						CodeModel.Statements.AccessMode.Write => AccessMode.Write,
 						CodeModel.Statements.AccessMode.ReadWrite => AccessMode.ReadWrite,
 
-						CodeModel.Statements.AccessMode.Unspecified =>
-							translatedOpenStatement.OpenMode switch
-							{
-								OpenMode.Input => AccessMode.Read,
-								OpenMode.Output => AccessMode.Write,
-								_ => AccessMode.ReadWrite, // Random, Binary, Append
-							},
+						CodeModel.Statements.AccessMode.Unspecified => AccessMode.Unspecified,
 
 						_ => throw new CompilerException("Unrecognized AccessMode value " + openStatement.AccessMode)
 					};

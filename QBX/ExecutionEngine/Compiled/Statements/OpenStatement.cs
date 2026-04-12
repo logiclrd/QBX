@@ -93,6 +93,7 @@ public class OpenStatement(CodeModel.Statements.Statement source) : Executable(s
 				switch (AccessMode)
 				{
 					case AccessMode.Unspecified: attemptAccessModes = Attempt_ReadWrite_Write; break;
+					case AccessMode.ReadWrite: attemptAccessModes = Attempt_ReadWrite; break;
 					case AccessMode.Write: attemptAccessModes = Attempt_Write; break;
 
 					default: throw RuntimeException.IllegalFunctionCall(Source);
