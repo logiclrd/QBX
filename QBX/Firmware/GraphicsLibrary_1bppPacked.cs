@@ -912,7 +912,7 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 			base.DrawCharacterScan(x, y, characterWidth, glyphScan);
 		else if ((DrawingAttribute & 0x80) == 0)
 		{
-			int o = y * _stride + x >> 3;
+			int o = y * _stride + (x >> 3);
 
 			if ((o >= 0) && (o < _planeBytesUsed))
 			{
@@ -932,7 +932,7 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 		}
 		else
 		{
-			int o = y * _stride + x >> 3;
+			int o = y * _stride + (x >> 3);
 
 			if ((o >= 0) && (o < _planeBytesUsed))
 			{
