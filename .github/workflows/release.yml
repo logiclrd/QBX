@@ -79,6 +79,11 @@ jobs:
         Compress-Archive -Path Stage\* -DestinationPath ${{ env.PackageFileName }}
         Get-ChildItem ${{ env.PackageFileName }} | Select-Object Mode,LastWriteTime,Length,FullName
 
+        # $LASTEXITCODE still contains the ROBOCOPY command's exit code.
+        # ROBOCOPY uses exit codes in a weird way. 0-7 are all success, 8+ are error.
+        # GitHub Actions treats exit codes in the standard way: any non-zero is an error.
+        if ($LASTEXITCODE -lt 8) { exit 0 }
+
     - name: Extract release notes
       id: release_notes
       run: |
