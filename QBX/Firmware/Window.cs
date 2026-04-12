@@ -8,6 +8,7 @@ public class Window
 	public readonly Point BottomRight;
 
 	public readonly float ScaleX, ScaleY;
+	public readonly float ScaleXAbsolute, ScaleYAbsolute;
 	public readonly float ScaleBackX, ScaleBackY;
 
 	public readonly static Window Dummy = new Window(0, 0, 1, 1, 1, 1);
@@ -17,8 +18,11 @@ public class Window
 		TopLeft = (topLeftX, topLeftY);
 		BottomRight = (bottomRightX, bottomRightY);
 
-		ScaleX = pixelWidth / (bottomRightX - topLeftX);
-		ScaleY = pixelHeight / (bottomRightY - topLeftY);
+		ScaleX = (pixelWidth - 1) / (bottomRightX - topLeftX);
+		ScaleY = (pixelHeight - 1) / (bottomRightY - topLeftY);
+
+		ScaleXAbsolute = Math.Abs(ScaleX);
+		ScaleYAbsolute = Math.Abs(ScaleY);
 
 		ScaleBackX = 1.0f / ScaleX;
 		ScaleBackY = 1.0f / ScaleY;
@@ -43,7 +47,7 @@ public class Window
 	}
 
 	public int TranslateWidth(float width)
-		=> (int)Math.Round(width * ScaleX);
+		=> (int)Math.Round(width * ScaleXAbsolute);
 	public int TranslateHeight(float height)
-		=> (int)Math.Round(height * ScaleY);
+		=> (int)Math.Round(height * ScaleYAbsolute);
 }
