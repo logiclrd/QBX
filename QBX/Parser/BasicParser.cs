@@ -3099,9 +3099,56 @@ public class BasicParser(IdentifierRepository identifierRepository)
 							endOfArgument = 0;
 						}
 
-						arg.Expression = ParseExpressionForStatement(print, expressionTokens, endToken);
+						try
+						{
+							arg.Expression = ParseExpressionForStatement(print, expressionTokens, endToken);
 
-						tokenHandler.Advance(endOfArgument);
+							tokenHandler.Advance(endOfArgument);
+						}
+						catch
+						{
+							bool successOnPartialParse = false;
+
+							int parenthesisBalance = 0;
+
+							foreach (var t in expressionTokens)
+							{
+								switch (t.Type)
+								{
+									case TokenType.OpenParenthesis: parenthesisBalance++; break;
+									case TokenType.CloseParenthesis: parenthesisBalance--; break;
+								}
+							}
+
+							for (int tryTokenCount = expressionTokens.Count - 1; tryTokenCount >= 1; tryTokenCount--)
+							{
+								var partialExpressionTokens = expressionTokens.Slice(0, tryTokenCount);
+								var partialExpressionEndToken = expressionTokens[tryTokenCount];
+
+								switch (partialExpressionEndToken.Type)
+								{
+									case TokenType.OpenParenthesis: parenthesisBalance--; break;
+									case TokenType.CloseParenthesis: parenthesisBalance++; break;
+								}
+
+								if (parenthesisBalance == 0)
+								{
+									try
+									{
+										arg.Expression = ParseExpressionForStatement(print, partialExpressionTokens, partialExpressionEndToken);
+
+										tokenHandler.Advance(tryTokenCount);
+
+										successOnPartialParse = true;
+										break;
+									}
+									catch { }
+								}
+							}
+
+							if (!successOnPartialParse)
+								throw;
+						}
 					}
 
 					if (arg.ArgumentType != PrintArgumentType.Value)
