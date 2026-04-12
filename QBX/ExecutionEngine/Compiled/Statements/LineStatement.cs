@@ -26,18 +26,18 @@ public class LineStatement(CodeModel.Statements.Statement source) : Executable(s
 			throw RuntimeException.IllegalFunctionCall(Source);
 
 		if (ToXExpression == null)
-			throw new Exception("LineExpression with no ToXExpression");
+			throw new Exception("LineStatement with no ToXExpression");
 		if (ToYExpression == null)
-			throw new Exception("LineExpression with no ToYExpression");
+			throw new Exception("LineStatement with no ToYExpression");
 
 		float fromX, fromY;
 
 		if ((FromXExpression != null) || (FromYExpression != null))
 		{
 			if (FromXExpression == null)
-				throw new Exception("LineExpression with no FromXExpression");
+				throw new Exception("LineStatement with no FromXExpression");
 			if (FromYExpression == null)
-				throw new Exception("LineExpression with no FromYExpression");
+				throw new Exception("LineStatement with no FromYExpression");
 
 			var fromXValue = FromXExpression.Evaluate(context, stackFrame);
 			var fromYValue = FromYExpression.Evaluate(context, stackFrame);
@@ -48,7 +48,7 @@ public class LineStatement(CodeModel.Statements.Statement source) : Executable(s
 		else
 		{
 			if (FromStep)
-				throw new Exception("LineExpression specifies from STEP but with no from coordinate information");
+				throw new Exception("LineStatement specifies from STEP but with no from coordinate information");
 
 			fromX = visual.LastPoint.X;
 			fromY = visual.LastPoint.Y;
