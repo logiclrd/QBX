@@ -1,5 +1,6 @@
 using System;
 
+using QBX.ExecutionEngine.Compiled.Operations;
 using QBX.ExecutionEngine.Execution;
 using QBX.Firmware;
 using QBX.Numbers;
@@ -45,7 +46,13 @@ public class CircleStatement(CodeModel.Statements.Statement source) : Executable
 		float radiusX = NumberConverter.ToSingle(radiusValue);
 		float radiusY = radiusX;
 
-		if (AspectExpression != null)
+		if (AspectExpression == null)
+		{
+			int divisor = visual.Width * 480;
+
+			radiusY = (radiusY * visual.Height * 640 + (divisor >> 1)) / divisor;
+		}
+		else
 		{
 			var aspectValue = AspectExpression.Evaluate(context, stackFrame);
 
@@ -56,6 +63,11 @@ public class CircleStatement(CodeModel.Statements.Statement source) : Executable
 			else if (aspect > -1)
 				radiusY *= Math.Abs(aspect);
 		}
+
+		// QuickBASIC BUG: The vertical radius is computed without any regard for the current graphics
+		// window. QBX's GraphicsLibrary does not replicate this bug; replicating it here makes it
+		// local to the QuickBASIC CIRCLE statement specifically.
+		radiusY = radiusY * visual.Window.ScaleXAbsolute / visual.Window.ScaleYAbsolute;
 
 		float startAngle = 0f;
 		float endAngle = 0f;

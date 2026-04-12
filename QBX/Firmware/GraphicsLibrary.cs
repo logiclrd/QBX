@@ -908,8 +908,6 @@ public abstract class GraphicsLibrary : VisualLibrary
 			return ((int)Math.Round(x), (int)Math.Round(y));
 		}
 
-		radiusY = (radiusY * Height + 240) / 480;
-
 		if ((radiusX < 0) || (radiusY < 0))
 			return;
 
