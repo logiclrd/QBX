@@ -3095,6 +3095,34 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 				break;
 			}
+			case CodeModel.Statements.WindowStatement windowStatement:
+			{
+				GraphicsWindowStatement translatedWindowStatement;
+
+				if (windowStatement.IsEmpty)
+					translatedWindowStatement = new ResetGraphicsWindowStatement(windowStatement);
+				else
+				{
+					var setWindowStatement = new SetGraphicsWindowStatement(windowStatement);
+
+					setWindowStatement.UseScreenCoordinates = windowStatement.UseScreenCoordinates;
+
+					TranslateNumericArgumentExpression(
+						ref setWindowStatement.X1Expression, windowStatement.X1Expression);
+					TranslateNumericArgumentExpression(
+						ref setWindowStatement.Y1Expression, windowStatement.Y1Expression);
+					TranslateNumericArgumentExpression(
+						ref setWindowStatement.X2Expression, windowStatement.X2Expression);
+					TranslateNumericArgumentExpression(
+						ref setWindowStatement.Y2Expression, windowStatement.Y2Expression);
+
+					translatedWindowStatement = setWindowStatement;
+				}
+
+				container.Append(translatedWindowStatement);
+
+				break;
+			}
 			case CodeModel.Statements.WriteStatement writeStatement:
 			{
 				var translatedWriteStatement = new WriteStatement(writeStatement);

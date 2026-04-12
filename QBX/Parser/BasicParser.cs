@@ -3928,6 +3928,57 @@ public class BasicParser(IdentifierRepository identifierRepository)
 				return unresolvedWidth;
 			}
 
+			case TokenType.WINDOW:
+			{
+				// One of:
+				//  WINDOW
+				//  WINDOW (x1, y1)-(x2, y2)
+				//  WINDOW SCREEN (x1, y1)-(x2, y2)
+
+				var window = new WindowStatement();
+
+				if (tokenHandler.HasMoreTokens)
+				{
+					if (tokenHandler.NextTokenIs(TokenType.SCREEN))
+					{
+						window.UseScreenCoordinates = true;
+						tokenHandler.Advance();
+					}
+					else if (!tokenHandler.NextTokenIs(TokenType.OpenParenthesis))
+						throw new SyntaxErrorException(tokenHandler.NextToken, "Expected: SCREEN or ( or end of statement");
+
+					var fromTokens = tokenHandler.ExpectParenthesizedTokens(out var fromEndToken);
+
+					var fromHandler = new TokenHandler(fromTokens, identifierRepository);
+
+					int fromComma = fromHandler.FindNextUnparenthesizedOf(TokenType.Comma);
+
+					if (fromComma < 0)
+						throw new SyntaxErrorException(fromEndToken, "Expected: ,");
+
+					window.X1Expression = ParseExpression(fromTokens.Slice(0, fromComma), fromTokens[fromComma]);
+					window.Y1Expression = ParseExpression(fromTokens.Slice(fromComma + 1), fromEndToken);
+
+					tokenHandler.Expect(TokenType.Hyphen);
+
+					var toTokens = tokenHandler.ExpectParenthesizedTokens(out var toEndToken);
+
+					var toHandler = new TokenHandler(toTokens, identifierRepository);
+
+					int toComma = toHandler.FindNextUnparenthesizedOf(TokenType.Comma);
+
+					if (toComma < 0)
+						throw new SyntaxErrorException(toEndToken, "Expected: ,");
+
+					window.X2Expression = ParseExpression(toTokens.Slice(0, toComma), toTokens[toComma]);
+					window.Y2Expression = ParseExpression(toTokens.Slice(toComma + 1), toEndToken);
+
+					tokenHandler.ExpectEndOfTokens();
+				}
+
+				return window;
+			}
+
 			case TokenType.WRITE:
 			{
 				var write = new WriteStatement();

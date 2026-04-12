@@ -109,6 +109,7 @@ public enum StatementType
 	Viewport,
 	Wait,
 	WEnd,
+	Window,
 	While,
 	Write,
 }

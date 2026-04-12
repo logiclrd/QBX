@@ -326,6 +326,7 @@ public enum TokenType
 	[KeywordToken] WEND,
 	[KeywordToken] WHILE,
 	[KeywordToken] WIDTH,
+	[KeywordToken] WINDOW,
 	[KeywordToken] WRITE,
 	[KeywordToken] XOR,
 
