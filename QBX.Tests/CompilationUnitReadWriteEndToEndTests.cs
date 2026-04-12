@@ -35,7 +35,7 @@ public class CompilationUnitReadWriteEndToEndTests
 			var formattedBuffer = new StringWriter() { NewLine = "\r\n" };
 
 			// Act
-			var parsed = CompilationUnit.Read(reader, path, ignoreErrors: true);
+			var parsed = CompilationUnit.Read(reader, path, tabSize: 8, ignoreErrors: true);
 
 			parsed.PrepareForWrite();
 			parsed.Write(formattedBuffer);

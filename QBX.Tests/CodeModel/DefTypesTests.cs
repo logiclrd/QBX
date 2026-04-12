@@ -41,7 +41,7 @@ internal class DefTypesTests
 			string unitName = "Untitled";
 
 			// Act
-			var result = CompilationUnit.Read(reader, unitName);
+			var result = CompilationUnit.Read(reader, unitName, tabSize: 8);
 
 			// Assert
 			var expectedWriter = new StringWriter();
@@ -105,7 +105,7 @@ internal class DefTypesTests
 			var writer = new StringWriter() { NewLine = "\r\n" };
 
 			// Act
-			var unit = CompilationUnit.Read(reader, unitName);
+			var unit = CompilationUnit.Read(reader, unitName, tabSize: 8);
 			unit.Write(writer);
 
 			// Assert

@@ -257,9 +257,11 @@ public class CompilationUnit : IRenderableCode, IEditableUnit
 	//
 	// These methods, Read and Write, perform these translations.
 
-	public static CompilationUnit Read(TextReader reader, string filePath, bool ignoreErrors = false, Action<int>? lineCountCallback = null)
+	public static CompilationUnit Read(TextReader reader, string filePath, int tabSize, bool ignoreErrors = false, Action<int>? lineCountCallback = null)
 	{
 		var lexer = new Lexer(reader);
+
+		lexer.TabSize = tabSize;
 
 		var unit = BasicParser.Parse(lexer, ignoreErrors, lineCountCallback);
 

@@ -92,7 +92,7 @@ namespace QBX.DevelopmentEnvironment
 				return;
 			}
 
-			var unit = CompilationUnit.Read(reader, filePath, ignoreErrors: true, lineCountCallback);
+			var unit = CompilationUnit.Read(reader, filePath, Configuration.TabSize, ignoreErrors: true, lineCountCallback);
 
 			int insertIndex = 0;
 

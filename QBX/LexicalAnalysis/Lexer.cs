@@ -19,6 +19,8 @@ public class Lexer(TextReader input, CompilationElement? element = null, int sta
 
 	public CompilationElement? CurrentElement { get; set; } = element;
 
+	public int TabSize { get; set; } = 8;
+
 	public Lexer(string text, CompilationElement? element = null)
 		: this(new StringReader(text), element)
 	{
@@ -70,16 +72,34 @@ public class Lexer(TextReader input, CompilationElement? element = null, int sta
 
 		MutableBox<int> line = new MutableBox<int>(startingLineNumber);
 		int column = 0;
+		int tabExpansionSpaces = 0;
 
 		int tokenStartColumn = column;
 
 		while (true)
 		{
-			int readResult = _input.Read();
+			bool atEOF = false;
+			char ch;
 
-			bool atEOF = (readResult < 0);
+			if (tabExpansionSpaces > 0)
+			{
+				ch = ' ';
+				tabExpansionSpaces--;
+			}
+			else
+			{
+				int readResult = _input.Read();
 
-			char ch = unchecked((char)readResult);
+				atEOF = (readResult < 0);
+
+				ch = unchecked((char)readResult);
+
+				if (ch == '\t')
+				{
+					tabExpansionSpaces = TabSize - (column % TabSize) - 1;
+					ch = ' ';
+				}
+			}
 
 			bool reparse;
 
