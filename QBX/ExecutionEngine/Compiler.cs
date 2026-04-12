@@ -150,6 +150,8 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 			// Fifth pass: Collect constants and then translate statements.
 			// => CONST definitions inside DEF FN are local to the DEF FN and are not processed here
+			unit.ResetArrayBase();
+
 			foreach (var routine in routines)
 			{
 				if (routine.Source.Type != CodeModel.CompilationElementType.Main)
@@ -1232,6 +1234,10 @@ public class Compiler(IdentifierRepository identifierRepository)
 				if (dimStatement.Shared && (element.Type != CodeModel.CompilationElementType.Main))
 					throw CompilerException.IllegalInSubFunctionOrDefFn(statement);
 
+				element.Owner.LockArrayBase();
+
+				short arrayBase = element.Owner.ArrayBase;
+
 				foreach (var declaration in dimStatement.Declarations)
 				{
 					DataType dataType;
@@ -1323,7 +1329,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 									constantBounds = bound1.IsConstant;
 
 								if (bound2 == null)
-									translatedDimStatement.Subscripts.Add(new IntegerLiteralValue(0), bound1);
+									translatedDimStatement.Subscripts.Add(new IntegerLiteralValue(arrayBase), bound1);
 								else
 								{
 									translatedDimStatement.Subscripts.Add(bound1, bound2);
@@ -2293,6 +2299,22 @@ public class Compiler(IdentifierRepository identifierRepository)
 					ref translatedOpenStatement.RecordLengthExpression, openStatement.RecordLengthExpression);
 
 				container.Append(translatedOpenStatement);
+
+				break;
+			}
+			case CodeModel.Statements.OptionBaseStatement optionBaseStatement:
+			{
+				if (element.Type != CodeModel.CompilationElementType.Main)
+					throw CompilerException.IllegalInSubFunctionOrDefFn(optionBaseStatement);
+
+				try
+				{
+					element.Owner.ArrayBase = optionBaseStatement.ArrayBase;
+				}
+				catch
+				{
+					throw CompilerException.ArrayAlreadyDimensioned(optionBaseStatement);
+				}
 
 				break;
 			}

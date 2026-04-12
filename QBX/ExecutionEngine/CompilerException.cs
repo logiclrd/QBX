@@ -140,6 +140,8 @@ public class CompilerException : Exception
 		=> new CompilerException(expression, "Array not defined");
 	public static CompilerException ArrayNotDefined(Token? context)
 		=> new CompilerException(context, "Array not defined");
+	public static CompilerException ArrayAlreadyDimensioned(CodeModel.Statements.Statement? statement)
+		=> new CompilerException(statement, "Array already dimensioned");
 	public static CompilerException ArrayAlreadyDimensioned(Token? context)
 		=> new CompilerException(context, "Array already dimensioned");
 	public static CompilerException AnyIsNotSupported(CodeModel.Statements.Statement? statement)

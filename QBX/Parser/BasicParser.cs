@@ -2792,6 +2792,20 @@ public class BasicParser(IdentifierRepository identifierRepository)
 				}
 			}
 
+			case TokenType.OPTION:
+			{
+				tokenHandler.Expect(TokenType.BASE);
+
+				var arrayBaseToken = tokenHandler.Expect(TokenType.Number);
+
+				if (!NumberParser.TryAsInteger(arrayBaseToken.Value, out var arrayBase)
+				 || (arrayBase < 0)
+				 || (arrayBase > 1))
+					throw new SyntaxErrorException(arrayBaseToken, "Expected: 0 or 1");
+
+				return new OptionBaseStatement(arrayBase);
+			}
+
 			case TokenType.OUT:
 			{
 				var @out = new OutStatement();
@@ -3587,7 +3601,6 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 				return statement;
 			}
-
 
 			case TokenType.SWAP:
 			{

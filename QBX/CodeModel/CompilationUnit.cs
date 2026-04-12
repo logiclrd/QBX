@@ -62,6 +62,41 @@ public class CompilationUnit : IRenderableCode, IEditableUnit
 		}
 	}
 
+	enum ArrayBases : short
+	{
+		Base0 = 0,
+		Base1 = 1,
+		Unspecified,
+	}
+
+	ArrayBases _arrayBase = ArrayBases.Unspecified;
+
+	// Used during compilation
+	public short ArrayBase
+	{
+		get => (_arrayBase == ArrayBases.Unspecified) ? (short)0 : (short)_arrayBase;
+		set
+		{
+			if (_arrayBase != ArrayBases.Unspecified)
+				throw new Exception("Cannot define array base more than once.");
+			if ((value < 0) || (value > 1))
+				throw new Exception("Invalid array base " + value);
+
+			_arrayBase = (ArrayBases)value;
+		}
+	}
+
+	public void LockArrayBase()
+	{
+		if (_arrayBase == ArrayBases.Unspecified)
+			ArrayBase = ArrayBase;
+	}
+
+	public void ResetArrayBase()
+	{
+		_arrayBase = ArrayBases.Unspecified;
+	}
+
 	public CompilationUnit()
 	{
 		IsPristine = true;
