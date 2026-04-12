@@ -42,7 +42,9 @@ public class EOFFunction : Function
 
 		bool atEOF;
 
-		if (fileDescriptor.AtSoftEOF)
+		if ((openFile.DataParser is DataParser currentDataParser) && !currentDataParser.IsAtEnd)
+			atEOF = false;
+		else if (fileDescriptor.AtSoftEOF)
 			atEOF = true;
 		else if ((fileDescriptor is RegularFileDescriptor regularFileDescriptor)
 					&& (regularFileDescriptor.FilePointer >= regularFileDescriptor.Length))
