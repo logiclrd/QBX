@@ -275,7 +275,7 @@ public class LexerTests
 		// Assert
 		result.Should().HaveCount(1);
 		result[0].Type.Should().Be(TokenType.Whitespace);
-		result[0].Value.Should().Be(content);
+		result[0].Value.Should().Be(content.ExpandTabs());
 	}
 
 	static IEnumerable<TestCaseData<string, (int Line, int Column)[]>> LineAndColumnTestSource()

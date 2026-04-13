@@ -22,4 +22,26 @@ public static class StringExtensions
 
 		return buffer.ToString();
 	}
+
+	public static string ExpandTabs(this string str)
+	{
+		if (!str.Contains('\t'))
+			return str;
+
+		var builder = new StringBuilder();
+
+		foreach (char ch in str)
+		{
+			if (ch != '\t')
+				builder.Append(ch);
+			else
+			{
+				do
+					builder.Append(' ');
+				while (builder.Length % 8 != 0);
+			}
+		}
+
+		return builder.ToString();
+	}
 }

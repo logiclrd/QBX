@@ -78,7 +78,7 @@ GOTO top
 
 	[TestCase("     GOTO 10", "     ")]
 	[TestCase("10   GOTO 10", "   ")]
-	[TestCase("\t\tNEXT", "\t\t")]
+	[TestCase("\t\tNEXT", "                ")]
 	[TestCase("      PRINT     \"this\"   ;  \"is\";   a%     ; trick(question)", "      ")]
 	[TestCase("befuddle:      PRINT     \"this\"   ;  \"is\";   a%     ; trick(question)", "      ")]
 	public void Indentation(string input, string expectedIndentation)

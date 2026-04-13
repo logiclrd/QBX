@@ -1,6 +1,7 @@
 using QBX.CodeModel.Statements;
 using QBX.LexicalAnalysis;
 using QBX.Parser;
+using QBX.Tests.Utility;
 
 namespace QBX.Tests.Parser.Statements;
 
@@ -14,6 +15,8 @@ public class DataStatementTests
 	public void ShouldParse(string definition, string expectedRawString)
 	{
 		// Arrange
+		expectedRawString = ("DATA" + expectedRawString).ExpandTabs().Substring(4);
+
 		var tokens = new Lexer(definition).ToList();
 
 		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
