@@ -1,5 +1,32 @@
 # QBX Releases
 
+## 1.3.0 - 2026-04-13
+
+This release contains a number of fixes and refinements that resulted from running the example programs supplied on the supplemental disks for "Learn BASIC Now". This Microsoft Press publication can be found on Internet Archive.
+
+### Added
+
+- `WINDOW` statement for setting up graphics windows. Aspect ratio calculation for `CIRCLE` updated to correctly account for the graphics window.
+- `OPTION BASE` statement.
+- `FILES` statement.
+
+### Fixed
+
+- Missing parentheses added correcting the calculation of byte offsets when drawing text characters in 1bpp graphics modes (e.g. `SCREEN 2`).
+- PC Speaker is now correctly tied to the port I/O bus.
+- PC Speaker port I/O now interacts with the Speaker device change queue properly.
+- `LBOUND` and `UBOUND` were incorrectly treating their optional dimension argument as 0-based.
+- Tabs are now expanded to spaces during file load.
+- Underlying graphics window function now works with right-to-left / top-to-bottom coordinates.
+- `EOF` now takes into account partially-parsed lines that have been buffered.
+- `OPEN` now correctly permits `ACCESS READ WRITE` to be used with `FOR APPEND`.
+- `OPEN` now correctly handles omitted `ACCESS` clauses.
+- `SOUND` now operates with 2.5ms ticks, despite the documentation stating that `duration%` must be an integer count of 55ms ticks.
+- `SOUND` with a duration of 0 now properly immediately cuts off playback, including queued `PLAY` commands.
+- `PRINT` now handles arguments with no expression, such as `PRINT ,`.
+- Arrays of fixed-length strings no longer lose the fixed length aspect of the `STRING` type.
+- `INSTR` now correctly handles not finding a match with a non-zero start index.
+
 ## 1.2.1 - 2026-04-12
 
 ### Fixed
