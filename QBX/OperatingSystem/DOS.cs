@@ -178,7 +178,7 @@ public partial class DOS
 			dpb.MediaDescriptor = drive.DriveType == DriveType.Removable ? MediaDescriptor.FloppyDisk : MediaDescriptor.FixedDisk;
 			dpb.FirstAccess = 0;
 			dpb.NextFreeCluster = 0xFFFF;
-			dpb.FreeClusterCount = 0xFFFF;
+			dpb.FreeClusterCount = (ushort)Math.Min(0xFFFF, drive.TotalFreeSpace / 65536);
 
 			nextDPBAddress.Offset += DriveParameterBlock.Size;
 

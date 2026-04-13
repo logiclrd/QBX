@@ -1260,6 +1260,16 @@ public class BasicParser(IdentifierRepository identifierRepository)
 				return field;
 			}
 
+			case TokenType.FILES:
+			{
+				var files = new FilesStatement();
+
+				if (tokenHandler.HasMoreTokens)
+					files.PatternExpression = ParseExpressionForStatement(files, tokenHandler.RemainingTokens, tokenHandler.EndToken);
+
+				return files;
+			}
+
 			case TokenType.FOR:
 			{
 				var forStatement = new ForStatement();

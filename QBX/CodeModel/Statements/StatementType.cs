@@ -45,6 +45,7 @@ public enum StatementType
 	EventControl,
 	ExitScope,
 	Field,
+	Files,
 	FileWidth,
 	For,
 	Function,

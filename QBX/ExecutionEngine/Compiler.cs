@@ -1631,6 +1631,17 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 				break;
 			}
+			case CodeModel.Statements.FilesStatement filesStatement:
+			{
+				var translatedFilesStatement = new FilesStatement(filesStatement);
+
+				TranslateStringArgumentExpression(
+					ref translatedFilesStatement.PatternExpression, filesStatement.PatternExpression);
+
+				container.Append(translatedFilesStatement);
+
+				break;
+			}
 			case CodeModel.Statements.FileWidthStatement fileWidthStatement:
 			{
 				var translatedFileWidthStatement = new FileWidthStatement(fileWidthStatement);

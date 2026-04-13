@@ -118,6 +118,7 @@ public enum TokenType
 	[KeywordToken] FIELD,
 	[KeywordFunction(maximumParameterCount: 2)]
 	[KeywordToken] FILEATTR,
+	[KeywordToken] FILES,
 	[KeywordFunction]
 	[KeywordToken] FIX,
 	[KeywordFunction]
