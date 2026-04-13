@@ -27,19 +27,20 @@ public class UnformattedPrintStatement(CodeModel.Statements.Statement? source) :
 
 		foreach (var argument in Arguments)
 		{
-			if (argument.Expression == null)
-				throw new Exception("Internal error: PrintArgument has no Expression");
-
 			switch (argument.ArgumentType)
 			{
 				case PrintArgumentType.Value:
 				{
-					emitter.Emit(argument.Expression.Evaluate(context, stackFrame));
+					if (argument.Expression != null)
+						emitter.Emit(argument.Expression.Evaluate(context, stackFrame));
 					break;
 				}
 
 				case PrintArgumentType.Space:
 				{
+					if (argument.Expression == null)
+						throw new Exception("Internal error: PrintArgument has no Expression");
+
 					int count = argument.Expression.EvaluateAndCoerceToInt(context, stackFrame);
 
 					if ((s_spaces == null) || (s_spaces.Length < count))
@@ -54,6 +55,9 @@ public class UnformattedPrintStatement(CodeModel.Statements.Statement? source) :
 				}
 				case PrintArgumentType.Tab:
 				{
+					if (argument.Expression == null)
+						throw new Exception("Internal error: PrintArgument has no Expression");
+
 					int newCursorX = argument.Expression.EvaluateAndCoerceToInt(context, stackFrame);
 
 					newCursorX = (newCursorX - 1) % emitter.Width;
