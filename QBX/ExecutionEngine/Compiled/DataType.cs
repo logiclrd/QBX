@@ -75,9 +75,11 @@ public class DataType
 		ByteSize = UserType.CalculateByteSize();
 	}
 
-	private DataType(int fixedLength)
+	private DataType(int fixedLength, bool isArray = false)
 	{
 		PrimitiveType = PrimitiveDataType.String;
+		IsArray = isArray;
+
 		ByteSize = fixedLength;
 	}
 
@@ -90,6 +92,8 @@ public class DataType
 	{
 		if (UserTypeFacade != null)
 			return new DataType(UserTypeFacade, isArray: true);
+		else if (IsString && (ByteSize > 0))
+			return new DataType(fixedLength: ByteSize, isArray: true);
 		else
 			return new DataType(PrimitiveType, isArray: true);
 	}

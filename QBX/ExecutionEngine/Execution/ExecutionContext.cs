@@ -787,7 +787,12 @@ public class ExecutionContext
 				var type = variableTypes[i];
 
 				if (type.IsArray)
-					variables[i] = Variable.ConstructArray(type);
+				{
+					if (type.IsString && (type.ByteSize > 0))
+						variables[i] = Variable.ConstructArrayOfFixedLengthString(type.ByteSize);
+					else
+						variables[i] = Variable.ConstructArray(type);
+				}
 				else
 					variables[i] = Variable.Construct(type);
 			}
