@@ -362,12 +362,22 @@ public class StringValue : IComparable<StringValue>, IEquatable<StringValue>
 
 	public int IndexOf(byte searchFor, int start = 0)
 	{
-		return AsSpan().Slice(start).IndexOf(searchFor) + start;
+		int index = AsSpan().Slice(start).IndexOf(searchFor);
+
+		if (index >= 0)
+			index += start;
+
+		return index;
 	}
 
 	public int IndexOf(StringValue searchFor, int start = 0)
 	{
-		return AsSpan().Slice(start).IndexOf(searchFor.AsSpan()) + start;
+		int index = AsSpan().Slice(start).IndexOf(searchFor.AsSpan());
+
+		if (index >= 0)
+			index += start;
+
+		return index;
 	}
 
 	public bool Contains(byte searchFor)
