@@ -27,6 +27,12 @@ public class PlayProcessor : ProcessorCommon
 	Queue<Note> _noteQueue = new Queue<Note>();
 	int _maxNoteQueue = 1;
 
+	volatile Note? _currentNote;
+
+	public const int TickMicroseconds = 2500;
+
+	public static readonly TimeSpan TickLength = TimeSpan.FromMicroseconds(TickMicroseconds);
+
 	public int QueueLength => _noteQueue.Count;
 
 	public event Action? QueueLengthChanged;
@@ -37,6 +43,7 @@ public class PlayProcessor : ProcessorCommon
 		public bool IsRest;
 		public TimeSpan On;
 		public TimeSpan Off;
+		public bool IsCancelled;
 	}
 
 	public PlayProcessor(Machine machine)
@@ -322,9 +329,28 @@ public class PlayProcessor : ProcessorCommon
 		}
 	}
 
+	public void StopSound()
+	{
+		lock (_noteQueueSync)
+		{
+			_currentNote?.IsCancelled = true;
+
+			foreach (var note in _noteQueue)
+				note.IsCancelled = true;
+
+			_noteQueue.Clear();
+		}
+
+		_machine.Speaker.ChangeSound(
+			enabled: false,
+			invertValue: false,
+			1000,
+			immediate: true);
+	}
+
 	public void PlaySound(double frequency, int tickCount)
 	{
-		var duration = TimeSpan.FromSeconds(tickCount / _machine.Timer.Timer0.Frequency);
+		var duration = tickCount * TickLength;
 
 		PlaySound(frequency, duration);
 	}
@@ -394,6 +420,8 @@ public class PlayProcessor : ProcessorCommon
 
 			while (true)
 			{
+				_currentNote = null;
+
 				lock (_noteQueueSync)
 				{
 					if ((_noteQueue.Count == 0)
@@ -412,12 +440,17 @@ public class PlayProcessor : ProcessorCommon
 
 					note = _noteQueue.Dequeue();
 
+					_currentNote = note;
+
 					Monitor.PulseAll(_noteQueueSync);
 
 					QueueLengthChanged?.Invoke();
 				}
 
 				_machine.Speaker.WaitWhileQueued(threshold: TimeSpan.FromSeconds(0.05));
+
+				if (note.IsCancelled)
+					continue;
 
 				_machine.Speaker.ChangeSound(
 					enabled: !note.IsRest,

@@ -98,9 +98,12 @@ public class Speaker(Machine machine)
 
 	public void ChangeSound(bool? enabled, bool invertValue, double frequency, bool immediate, TimeSpan? hold = null)
 	{
+		var nextBufferStartTime = _firstSampleEmittedTime
+			.AddTicks(_lastSampleEmitted * 10_000_000L / SampleRate);
+
 		var nextChange = new SoundParameters();
 
-		nextChange.ChangeAtTime = DateTime.UtcNow;
+		nextChange.ChangeAtTime = nextBufferStartTime;
 		nextChange.Enabled = enabled;
 		nextChange.InvertValue = invertValue;
 
@@ -123,13 +126,9 @@ public class Speaker(Machine machine)
 			if (nextChange.ChangeAtTime > _queueMaxChangeAtTime)
 				_queueMaxChangeAtTime = nextChange.ChangeAtTime;
 
-			if (_nextSoundChange == null)
+			if ((_nextSoundChange == null)
+			 || (nextChange.ChangeAtTime < _nextSoundChange.ChangeAtTime))
 				_nextSoundChange = nextChange;
-			else if (nextChange.ChangeAtTime < _nextSoundChange.ChangeAtTime)
-			{
-				_soundChanges.Enqueue(_nextSoundChange, _nextSoundChange.ChangeAtTime);
-				_nextSoundChange = nextChange;
-			}
 			else
 				_soundChanges.Enqueue(nextChange, nextChange.ChangeAtTime);
 
