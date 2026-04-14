@@ -16,6 +16,8 @@ public class CompilationElementStatementIterator(CompilationElement element, Cod
 
 	public override bool Advance()
 	{
+		var emptyStatement = new Lazy<EmptyStatement>();
+
 		statementIndex++;
 
 		while (statementIndex >= line.Statements.Count)
@@ -44,12 +46,19 @@ public class CompilationElementStatementIterator(CompilationElement element, Cod
 			line = element.Lines[lineIndex];
 
 			if (line.LineNumber != null)
-				SetLineNumberStatement(new LabelStatement(line.LineNumber, line.Statements.FirstOrDefault() ?? new EmptyStatement()));
+				SetLineNumberStatement(new LabelStatement(line.LineNumber, line.Statements.FirstOrDefault() ?? emptyStatement.Value));
 			if (line.Label != null)
-				SetLabelStatement(new LabelStatement(line.Label.Name, line.Statements.FirstOrDefault() ?? new EmptyStatement()));
+				SetLabelStatement(new LabelStatement(line.Label.Name, line.Statements.FirstOrDefault() ?? emptyStatement.Value));
+
+			if ((line.LineNumber != null)
+			 || (line.Label != null))
+				break;
 		}
 
-		OnAdvanced(line.Statements[statementIndex]);
+		if (statementIndex < line.Statements.Count)
+			OnAdvanced(line.Statements[statementIndex]);
+		else
+			OnAdvanced(emptyStatement.Value);
 
 		return true;
 	}

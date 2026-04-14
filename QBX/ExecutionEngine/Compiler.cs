@@ -451,8 +451,35 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 		var line = element.Lines[lineIndex];
 
+		void ProcessLineNumberAndLabel(CodeModel.Statements.Statement statement)
+		{
+			if (line.LineNumber != null)
+			{
+				var lineNumber = identifierRepository.GetOrAddCanonicalIdentifier(line.LineNumber);
+
+				var labelStatement = new LabelStatement(lineNumber, statement);
+
+				module.DataParser.AddLabel(labelStatement);
+				container.Append(labelStatement);
+			}
+
+			if (line.Label != null)
+			{
+				var labelStatement = new LabelStatement(line.Label.Name, statement);
+
+				module.DataParser.AddLabel(labelStatement);
+				container.Append(labelStatement);
+			}
+		}
+
 		if (statementIndex >= line.Statements.Count)
 		{
+			var emptyStatement = new CodeModel.Statements.EmptyStatement();
+
+			emptyStatement.FirstToken = new Token(line.SourceLineIndex, 0, TokenType.Empty, "");
+
+			ProcessLineNumberAndLabel(emptyStatement);
+
 			if (line.EndOfLineComment != null)
 			{
 				string commentText = line.EndOfLineComment;
@@ -473,25 +500,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 			var statement = line.Statements[statementIndex];
 
 			if (statementIndex == 0)
-			{
-				if (line.LineNumber != null)
-				{
-					var lineNumber = identifierRepository.GetOrAddCanonicalIdentifier(line.LineNumber);
-
-					var labelStatement = new LabelStatement(lineNumber, statement);
-
-					module.DataParser.AddLabel(labelStatement);
-					container.Append(labelStatement);
-				}
-
-				if (line.Label != null)
-				{
-					var labelStatement = new LabelStatement(line.Label.Name, statement);
-
-					module.DataParser.AddLabel(labelStatement);
-					container.Append(labelStatement);
-				}
-			}
+				ProcessLineNumberAndLabel(statement);
 
 			var iterator = new CompilationElementStatementIterator(
 				element,

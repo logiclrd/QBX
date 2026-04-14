@@ -291,7 +291,7 @@ public class Routine : Sequence
 		// instigating more work, even if we don't use rootLabels.
 
 		var rootLabels = Module.MainRoutine!.CollectLabels();
-		var localLabels = CollectLabels();
+		var localLabels = (this == Module.MainRoutine) ? rootLabels : CollectLabels();
 
 		// GOTO and GOSUB
 
