@@ -1,5 +1,20 @@
 # QBX Releases
 
+## 1.3.1 - 2026-04-13
+
+This release contains a few more fixes based on the "Learn BASIC Now" example programs.
+
+### Fixed
+
+- `INPUT` no longer interferes with the graphics mode last point, for the purpose of `STEP` in drawing statements.
+- Some situations where line numbers and labels would be missed because the compiler thought the line could be skipped have been fixed.
+- The range check on the `mode` parameter to `SetMode` in the `Video` firmware has been corrected.
+
+### Improvements
+
+- When `ResolveJumpStatements` is running on the main routine, a redundant second call to `CollectLabels` is avoided.
+- Execution engine classes now use specific types for the reference back to their corresponding code model objects.
+
 ## 1.3.0 - 2026-04-13
 
 This release contains a number of fixes and refinements that resulted from running the example programs supplied on the supplemental disks for "Learn BASIC Now". This Microsoft Press publication can be found on Internet Archive.
