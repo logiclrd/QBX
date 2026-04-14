@@ -542,6 +542,8 @@ public abstract class VisualLibrary : IDisposable
 			}
 		}
 
+		var savedLastPoint = graphics?.LastPoint;
+
 		text?.ShowCursor();
 
 		try
@@ -605,6 +607,9 @@ public abstract class VisualLibrary : IDisposable
 		finally
 		{
 			text?.HideCursor();
+
+			if (savedLastPoint.HasValue)
+				graphics?.LastPoint = savedLastPoint.Value;
 		}
 	}
 
