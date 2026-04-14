@@ -31,7 +31,7 @@ public partial class Video(Machine machine)
 
 	public bool SetMode(int modeNumber, bool clearVRAM)
 	{
-		if ((modeNumber < 0) && (modeNumber >= Modes.Length))
+		if ((modeNumber < 0) || (modeNumber >= Modes.Length))
 			return false;
 
 		var mode = Modes[modeNumber];
