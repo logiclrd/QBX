@@ -4,7 +4,7 @@ using QBX.ExecutionEngine.Execution;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class ReadStatement(Module module, CodeModel.Statements.Statement? source) : Executable(source)
+public class ReadStatement(Module module, CodeModel.Statements.ReadStatement source) : Executable(source)
 {
 	public List<Evaluable> TargetExpressions = new List<Evaluable>();
 

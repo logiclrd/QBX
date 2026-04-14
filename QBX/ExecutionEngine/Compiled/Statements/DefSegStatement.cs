@@ -2,7 +2,7 @@ using QBX.ExecutionEngine.Execution;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class DefSegStatement(CodeModel.Statements.Statement source) : Executable(source)
+public class DefSegStatement(CodeModel.Statements.DefSegStatement source) : Executable(source)
 {
 	public Evaluable? SegmentExpression;
 

@@ -5,7 +5,7 @@ using QBX.ExecutionEngine.Execution.Variables;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public abstract class LineInputStatement(CodeModel.Statements.Statement source) : Executable(source)
+public abstract class LineInputStatement(CodeModel.Statements.LineInputStatement source) : Executable(source)
 {
 	public Evaluable? TargetExpression;
 

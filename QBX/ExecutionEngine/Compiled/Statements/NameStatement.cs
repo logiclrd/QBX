@@ -7,7 +7,7 @@ using QBX.OperatingSystem;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class NameStatement(CodeModel.Statements.Statement source) : Executable(source)
+public class NameStatement(CodeModel.Statements.NameStatement source) : Executable(source)
 {
 	public Evaluable? OldFileSpecExpression;
 	public Evaluable? NewFileSpecExpression;

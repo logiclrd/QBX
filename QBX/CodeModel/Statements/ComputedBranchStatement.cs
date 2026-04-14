@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 
 using QBX.CodeModel.Expressions;
-using QBX.Parser;
 
 namespace QBX.CodeModel.Statements;
 

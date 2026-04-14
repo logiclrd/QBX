@@ -4,7 +4,7 @@ using QBX.ExecutionEngine.Execution;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class ErrorStatement(CodeModel.Statements.Statement source) : Executable(source)
+public class ErrorStatement(CodeModel.Statements.ErrorStatement source) : Executable(source)
 {
 	public Evaluable? ErrorNumberExpression;
 

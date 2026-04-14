@@ -7,7 +7,7 @@ using QBX.OperatingSystem;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class KillStatement(CodeModel.Statements.Statement source) : Executable(source)
+public class KillStatement(CodeModel.Statements.KillStatement source) : Executable(source)
 {
 	public Evaluable? FilePatternExpression;
 

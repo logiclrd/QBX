@@ -7,7 +7,7 @@ using QBX.OperatingSystem;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class ChDirStatement(CodeModel.Statements.Statement source) : Executable(source)
+public class ChDirStatement(CodeModel.Statements.ChDirStatement source) : Executable(source)
 {
 	public Evaluable? PathExpression;
 

@@ -5,7 +5,7 @@ using QBX.Numbers;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class SoundStatement(CodeModel.Statements.Statement source)
+public class SoundStatement(CodeModel.Statements.SoundStatement source)
 	: Executable(source)
 {
 	public Evaluable? FrequencyExpression;

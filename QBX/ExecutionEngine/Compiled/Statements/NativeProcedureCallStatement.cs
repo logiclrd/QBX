@@ -6,7 +6,7 @@ using QBX.ExecutionEngine.Execution.Variables;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class NativeProcedureCallStatement(CodeModel.Statements.Statement? source) : Executable(source)
+public class NativeProcedureCallStatement(CodeModel.Statements.CallStatement? source) : Executable(source)
 {
 	public NativeProcedure? Target;
 	public Func<Variable[], Variable>? LocalThunk;

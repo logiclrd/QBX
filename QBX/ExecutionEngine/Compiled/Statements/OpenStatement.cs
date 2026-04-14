@@ -11,7 +11,7 @@ using OSOpenMode = QBX.OperatingSystem.FileStructures.OpenMode;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class OpenStatement(CodeModel.Statements.Statement source) : Executable(source)
+public class OpenStatement(CodeModel.Statements.OpenStatement source) : Executable(source)
 {
 	public OpenMode OpenMode;
 	public AccessMode AccessMode;

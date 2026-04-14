@@ -4,7 +4,7 @@ using QBX.ExecutionEngine.Execution;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class SwapStatement(CodeModel.Statements.Statement source)
+public class SwapStatement(CodeModel.Statements.SwapStatement source)
 	: Executable(source)
 {
 	public Evaluable? Variable1Expression;

@@ -7,7 +7,7 @@ using QBX.Hardware;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class KeyConfigStatement(CodeModel.Statements.Statement source) : Executable(source)
+public class KeyConfigStatement(CodeModel.Statements.SoftKeyConfigStatement source) : Executable(source)
 {
 	public Evaluable? KeyExpression;
 	public Evaluable? ArgumentExpression;

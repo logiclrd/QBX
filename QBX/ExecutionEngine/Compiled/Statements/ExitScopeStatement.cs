@@ -4,7 +4,7 @@ using QBX.ExecutionEngine.Execution;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class ExitScopeStatement(CodeModel.Statements.Statement? source) : Executable(source)
+public class ExitScopeStatement(CodeModel.Statements.ExitScopeStatement source) : Executable(source)
 {
 	public ExitScope? ScopeExitThrowable;
 

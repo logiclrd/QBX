@@ -6,7 +6,7 @@ using QBX.OperatingSystem.FileStructures;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class GetToTargetStatement(CodeModel.Statements.Statement? source) : GetStatement(source)
+public class GetToTargetStatement(CodeModel.Statements.GetStatement source) : GetStatement(source)
 {
 	public Evaluable? TargetExpression;
 

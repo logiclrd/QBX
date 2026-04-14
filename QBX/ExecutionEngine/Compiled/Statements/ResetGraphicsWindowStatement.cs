@@ -3,7 +3,7 @@ using QBX.Firmware;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class ResetGraphicsWindowStatement(CodeModel.Statements.Statement source) : GraphicsWindowStatement(source)
+public class ResetGraphicsWindowStatement(CodeModel.Statements.WindowStatement source) : GraphicsWindowStatement(source)
 {
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{

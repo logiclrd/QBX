@@ -6,7 +6,7 @@ using QBX.Numbers;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class SetGraphicsWindowStatement(CodeModel.Statements.Statement source) : GraphicsWindowStatement(source)
+public class SetGraphicsWindowStatement(CodeModel.Statements.WindowStatement source) : GraphicsWindowStatement(source)
 {
 	public bool UseScreenCoordinates;
 

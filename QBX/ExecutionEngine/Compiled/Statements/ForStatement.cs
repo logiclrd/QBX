@@ -22,8 +22,8 @@ public abstract class ForStatement : Executable
 		Evaluable toExpression,
 		Evaluable? stepExpression,
 		Sequence body,
-		CodeModel.Statements.ForStatement? sourceForStatement,
-		CodeModel.Statements.NextStatement? sourceNextStatement,
+		CodeModel.Statements.ForStatement sourceForStatement,
+		CodeModel.Statements.NextStatement sourceNextStatement,
 		bool detectDelayLoops)
 	{
 		if (detectDelayLoops && (body.Count == 0))
@@ -59,7 +59,6 @@ public abstract class ForStatement : Executable
 						ToExpression = toExpression,
 						StepExpression = stepExpression,
 						Body = body,
-						SourceNextStatement = sourceNextStatement,
 					};
 			}
 			case PrimitiveDataType.Long:
@@ -76,7 +75,6 @@ public abstract class ForStatement : Executable
 						ToExpression = toExpression,
 						StepExpression = stepExpression,
 						Body = body,
-						SourceNextStatement = sourceNextStatement,
 					};
 			}
 			case PrimitiveDataType.Single:
@@ -93,7 +91,6 @@ public abstract class ForStatement : Executable
 						ToExpression = toExpression,
 						StepExpression = stepExpression,
 						Body = body,
-						SourceNextStatement = sourceNextStatement,
 					};
 			}
 			case PrimitiveDataType.Double:
@@ -110,7 +107,6 @@ public abstract class ForStatement : Executable
 						ToExpression = toExpression,
 						StepExpression = stepExpression,
 						Body = body,
-						SourceNextStatement = sourceNextStatement,
 					};
 			}
 			case PrimitiveDataType.Currency:
@@ -127,7 +123,6 @@ public abstract class ForStatement : Executable
 						ToExpression = toExpression,
 						StepExpression = stepExpression,
 						Body = body,
-						SourceNextStatement = sourceNextStatement,
 					};
 			}
 
@@ -150,7 +145,7 @@ public abstract class ForStatement : Executable
 
 	protected long _nextDispatcherIndex;
 
-	public ForStatement(CodeModel.Statements.Statement? sourceForStatement, CodeModel.Statements.Statement? sourceNextStatement)
+	public ForStatement(CodeModel.Statements.ForStatement sourceForStatement, CodeModel.Statements.NextStatement sourceNextStatement)
 		: base(sourceForStatement)
 	{
 		var nextDispatcher = new NextDispatcherStatement(sourceNextStatement);
@@ -196,7 +191,7 @@ public abstract class ForStatement : Executable
 
 	protected abstract void DispatchImplementation(int statementIndex, ExecutionContext context, StackFrame stackFrame);
 
-	class NextDispatcherStatement(CodeModel.Statements.Statement? source) : Executable(source)
+	class NextDispatcherStatement(CodeModel.Statements.NextStatement source) : Executable(source)
 	{
 		static long s_nextNextIndex;
 
@@ -211,13 +206,13 @@ public abstract class ForStatement : Executable
 	}
 }
 
-public class IntegerForStatement(CodeModel.Statements.ForStatement? sourceForStatement, CodeModel.Statements.NextStatement? sourceNextStatement) : ForStatement(sourceForStatement, sourceNextStatement)
+public class IntegerForStatement(CodeModel.Statements.ForStatement sourceForStatement, CodeModel.Statements.NextStatement sourceNextStatement) : ForStatement(sourceForStatement, sourceNextStatement)
 {
 	public int IteratorVariableIndex;
 	public Evaluable? FromExpression;
 	public Evaluable? ToExpression;
 	public Evaluable? StepExpression;
-	public CodeModel.Statements.NextStatement? SourceNextStatement;
+	public CodeModel.Statements.NextStatement SourceNextStatement = sourceNextStatement;
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
@@ -289,7 +284,7 @@ public class IntegerForStatement(CodeModel.Statements.ForStatement? sourceForSta
 		catch (ExitFor) { }
 	}
 
-	class NextStatement(short from, short to, short step, CodeModel.Statements.NextStatement? sourceNextStatement)
+	class NextStatement(short from, short to, short step, CodeModel.Statements.NextStatement sourceNextStatement)
 		: Executable(sourceNextStatement)
 	{
 		public bool FinishLoop = false;
@@ -314,13 +309,13 @@ public class IntegerForStatement(CodeModel.Statements.ForStatement? sourceForSta
 	}
 }
 
-public class LongForStatement(CodeModel.Statements.ForStatement? sourceForStatement, CodeModel.Statements.NextStatement? sourceNextStatement) : ForStatement(sourceForStatement, sourceNextStatement)
+public class LongForStatement(CodeModel.Statements.ForStatement sourceForStatement, CodeModel.Statements.NextStatement sourceNextStatement) : ForStatement(sourceForStatement, sourceNextStatement)
 {
 	public int IteratorVariableIndex;
 	public Evaluable? FromExpression;
 	public Evaluable? ToExpression;
 	public Evaluable? StepExpression;
-	public CodeModel.Statements.NextStatement? SourceNextStatement;
+	public CodeModel.Statements.NextStatement SourceNextStatement = sourceNextStatement;
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
@@ -392,7 +387,7 @@ public class LongForStatement(CodeModel.Statements.ForStatement? sourceForStatem
 		catch (ExitFor) { }
 	}
 
-	class NextStatement(int from, int to, int step, CodeModel.Statements.NextStatement? sourceNextStatement)
+	class NextStatement(int from, int to, int step, CodeModel.Statements.NextStatement sourceNextStatement)
 		: Executable(sourceNextStatement)
 	{
 		public bool FinishLoop = false;
@@ -417,13 +412,13 @@ public class LongForStatement(CodeModel.Statements.ForStatement? sourceForStatem
 	}
 }
 
-public class SingleForStatement(CodeModel.Statements.ForStatement? sourceForStatement, CodeModel.Statements.NextStatement? sourceNextStatement) : ForStatement(sourceForStatement, sourceNextStatement)
+public class SingleForStatement(CodeModel.Statements.ForStatement sourceForStatement, CodeModel.Statements.NextStatement sourceNextStatement) : ForStatement(sourceForStatement, sourceNextStatement)
 {
 	public int IteratorVariableIndex;
 	public Evaluable? FromExpression;
 	public Evaluable? ToExpression;
 	public Evaluable? StepExpression;
-	public CodeModel.Statements.NextStatement? SourceNextStatement;
+	public CodeModel.Statements.NextStatement SourceNextStatement = sourceNextStatement;
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
@@ -495,7 +490,7 @@ public class SingleForStatement(CodeModel.Statements.ForStatement? sourceForStat
 		catch (ExitFor) { }
 	}
 
-	class NextStatement(float from, float to, float step, CodeModel.Statements.NextStatement? sourceNextStatement)
+	class NextStatement(float from, float to, float step, CodeModel.Statements.NextStatement sourceNextStatement)
 		: Executable(sourceNextStatement)
 	{
 		public bool FinishLoop = false;
@@ -520,13 +515,13 @@ public class SingleForStatement(CodeModel.Statements.ForStatement? sourceForStat
 	}
 }
 
-public class DoubleForStatement(CodeModel.Statements.ForStatement? sourceForStatement, CodeModel.Statements.NextStatement? sourceNextStatement) : ForStatement(sourceForStatement, sourceNextStatement)
+public class DoubleForStatement(CodeModel.Statements.ForStatement sourceForStatement, CodeModel.Statements.NextStatement sourceNextStatement) : ForStatement(sourceForStatement, sourceNextStatement)
 {
 	public int IteratorVariableIndex;
 	public Evaluable? FromExpression;
 	public Evaluable? ToExpression;
 	public Evaluable? StepExpression;
-	public CodeModel.Statements.NextStatement? SourceNextStatement;
+	public CodeModel.Statements.NextStatement SourceNextStatement = sourceNextStatement;
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
@@ -598,7 +593,7 @@ public class DoubleForStatement(CodeModel.Statements.ForStatement? sourceForStat
 		catch (ExitFor) { }
 	}
 
-	class NextStatement(double from, double to, double step, CodeModel.Statements.NextStatement? sourceNextStatement)
+	class NextStatement(double from, double to, double step, CodeModel.Statements.NextStatement sourceNextStatement)
 		: Executable(sourceNextStatement)
 	{
 		public bool FinishLoop = false;
@@ -623,13 +618,13 @@ public class DoubleForStatement(CodeModel.Statements.ForStatement? sourceForStat
 	}
 }
 
-public class CurrencyForStatement(CodeModel.Statements.ForStatement? sourceForStatement, CodeModel.Statements.NextStatement? sourceNextStatement) : ForStatement(sourceForStatement, sourceNextStatement)
+public class CurrencyForStatement(CodeModel.Statements.ForStatement sourceForStatement, CodeModel.Statements.NextStatement sourceNextStatement) : ForStatement(sourceForStatement, sourceNextStatement)
 {
 	public int IteratorVariableIndex;
 	public Evaluable? FromExpression;
 	public Evaluable? ToExpression;
 	public Evaluable? StepExpression;
-	public CodeModel.Statements.NextStatement? SourceNextStatement;
+	public CodeModel.Statements.NextStatement SourceNextStatement = sourceNextStatement;
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
@@ -701,7 +696,7 @@ public class CurrencyForStatement(CodeModel.Statements.ForStatement? sourceForSt
 		catch (ExitFor) { }
 	}
 
-	class NextStatement(decimal from, decimal to, decimal step, CodeModel.Statements.NextStatement? sourceNextStatement)
+	class NextStatement(decimal from, decimal to, decimal step, CodeModel.Statements.NextStatement sourceNextStatement)
 		: Executable(sourceNextStatement)
 	{
 		public bool FinishLoop = false;
@@ -729,7 +724,7 @@ public class CurrencyForStatement(CodeModel.Statements.ForStatement? sourceForSt
 	}
 }
 
-public class DelayLoopForStatement(CodeModel.Statements.ForStatement? sourceForStatement, CodeModel.Statements.NextStatement? sourceNextStatement) : ForStatement(sourceForStatement, sourceNextStatement)
+public class DelayLoopForStatement(CodeModel.Statements.ForStatement sourceForStatement, CodeModel.Statements.NextStatement sourceNextStatement) : ForStatement(sourceForStatement, sourceNextStatement)
 {
 	public int IteratorVariableIndex;
 	public Evaluable? FromExpression;

@@ -8,7 +8,7 @@ using QBX.Numbers;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class PutSpriteStatement(CodeModel.Statements.Statement source) : Executable(source)
+public class PutSpriteStatement(CodeModel.Statements.PutSpriteStatement source) : Executable(source)
 {
 	public bool Step;
 

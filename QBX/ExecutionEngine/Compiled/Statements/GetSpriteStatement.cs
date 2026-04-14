@@ -8,7 +8,7 @@ using QBX.Numbers;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class GetSpriteStatement(CodeModel.Statements.Statement source) : Executable(source)
+public class GetSpriteStatement(CodeModel.Statements.GetSpriteStatement source) : Executable(source)
 {
 	public bool FromStep;
 	public Evaluable? FromXExpression;

@@ -9,7 +9,7 @@ using OSOpenMode = QBX.OperatingSystem.FileStructures.OpenMode;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class BSaveStatement(CodeModel.Statements.Statement source) : BlockIOStatement(source)
+public class BSaveStatement(CodeModel.Statements.BSaveStatement source) : BlockIOStatement(source)
 {
 	public const byte Signature = 0xFD;
 

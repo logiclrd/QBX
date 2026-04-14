@@ -5,7 +5,7 @@ using QBX.ExecutionEngine.Execution;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class SelectCaseStatement(CodeModel.Statements.Statement? source) : Executable(source)
+public class SelectCaseStatement(CodeModel.Statements.SelectCaseStatement source) : Executable(source)
 {
 	public Evaluable? TestExpression;
 	public List<CaseBlock> Cases = new List<CaseBlock>();

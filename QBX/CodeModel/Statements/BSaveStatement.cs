@@ -5,7 +5,7 @@ using QBX.CodeModel.Expressions;
 
 namespace QBX.CodeModel.Statements;
 
-public class BSaveStatement : Statement
+public class BSaveStatement : BlockIOStatement
 {
 	public override StatementType Type => StatementType.BSave;
 

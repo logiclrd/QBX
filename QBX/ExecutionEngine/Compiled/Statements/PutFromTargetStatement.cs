@@ -6,7 +6,7 @@ using QBX.OperatingSystem.FileStructures;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class PutFromTargetStatement(CodeModel.Statements.Statement? source) : PutStatement(source)
+public class PutFromTargetStatement(CodeModel.Statements.PutStatement source) : PutStatement(source)
 {
 	public Evaluable? TargetExpression;
 

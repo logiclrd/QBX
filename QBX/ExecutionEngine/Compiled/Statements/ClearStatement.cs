@@ -2,7 +2,7 @@ using QBX.ExecutionEngine.Execution;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class ClearStatement(CodeModel.Statements.Statement? source) : Executable(source)
+public class ClearStatement(CodeModel.Statements.ClearStatement source) : Executable(source)
 {
 	public Evaluable? StringSpaceExpression;
 	public Evaluable? MaximumMemoryAddressExpression;

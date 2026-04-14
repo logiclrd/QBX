@@ -6,7 +6,7 @@ using QBX.Parser;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class OnEventGoSubLineStatement(Identifier target, CodeModel.Statements.Statement source)
+public class OnEventGoSubLineStatement(Identifier target, CodeModel.Statements.OnEventStatement source)
 	: JumpStatement(target, source), IOnEventStatementConfigurator
 {
 	public override bool TargetIsInMainModule => true;

@@ -1,11 +1,8 @@
-﻿using System;
-
-using QBX.ExecutionEngine.Execution;
-using QBX.ExecutionEngine.Execution.Variables;
+﻿using QBX.ExecutionEngine.Execution;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class SoftKeyControlStatement(CodeModel.Statements.Statement source) : Executable(source)
+public class SoftKeyControlStatement(CodeModel.Statements.SoftKeyControlStatement source) : Executable(source)
 {
 	public bool Enable;
 

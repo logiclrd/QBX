@@ -5,7 +5,7 @@ using QBX.ExecutionEngine.Execution.Variables;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class DrawStatement(CodeModel.Statements.Statement source)
+public class DrawStatement(CodeModel.Statements.DrawStatement source)
 	: Executable(source)
 {
 	public Evaluable? CommandStringExpression;

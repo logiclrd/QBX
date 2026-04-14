@@ -2,7 +2,7 @@
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class SoftKeyListStatement(CodeModel.Statements.Statement source) : Executable(source)
+public class SoftKeyListStatement(CodeModel.Statements.SoftKeyListStatement source) : Executable(source)
 {
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{

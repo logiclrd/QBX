@@ -2,7 +2,7 @@
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class OnErrorResumeNextStatement(bool local, CodeModel.Statements.Statement source) : Executable(source)
+public class OnErrorResumeNextStatement(bool local, CodeModel.Statements.OnErrorStatement source) : Executable(source)
 {
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{

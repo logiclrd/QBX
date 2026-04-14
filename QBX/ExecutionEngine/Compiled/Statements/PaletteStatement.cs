@@ -7,7 +7,7 @@ using static QBX.Hardware.GraphicsArray;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class PaletteStatement(CodeModel.Statements.Statement source) : Executable(source)
+public class PaletteStatement(CodeModel.Statements.PaletteStatement source) : Executable(source)
 {
 	public Evaluable? AttributeExpression;
 	public Evaluable? ColourExpression;

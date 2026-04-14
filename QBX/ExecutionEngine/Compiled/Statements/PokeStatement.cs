@@ -4,7 +4,7 @@ using QBX.ExecutionEngine.Execution;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class PokeStatement(CodeModel.Statements.Statement source) : Executable(source)
+public class PokeStatement(CodeModel.Statements.PokeStatement source) : Executable(source)
 {
 	public Evaluable? AddressExpression;
 	public Evaluable? ValueExpression;

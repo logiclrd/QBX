@@ -5,7 +5,7 @@ using QBX.Parser;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class OnErrorGoToLineStatement(Identifier target, bool local, CodeModel.Statements.Statement source)
+public class OnErrorGoToLineStatement(Identifier target, bool local, CodeModel.Statements.OnErrorStatement source)
 	: JumpStatement(target, source)
 {
 	public override bool TargetIsInMainModule => !local;

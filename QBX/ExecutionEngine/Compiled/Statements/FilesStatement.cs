@@ -10,7 +10,7 @@ using StackFrame = QBX.ExecutionEngine.Execution.StackFrame;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public partial class FilesStatement(CodeModel.Statements.Statement source) : Executable(source)
+public partial class FilesStatement(CodeModel.Statements.FilesStatement source) : Executable(source)
 {
 	public Evaluable? PatternExpression;
 

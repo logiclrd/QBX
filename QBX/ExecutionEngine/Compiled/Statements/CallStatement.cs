@@ -8,7 +8,7 @@ using QBX.Parser;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class CallStatement(CodeModel.Statements.Statement? source) : Executable(source), IUnresolvedCall
+public class CallStatement(CodeModel.Statements.CallStatement source) : Executable(source), IUnresolvedCall
 {
 	public Routine? Target;
 	public readonly List<Evaluable> Arguments = new List<Evaluable>();

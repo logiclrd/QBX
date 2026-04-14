@@ -7,7 +7,7 @@ using QBX.Numbers;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public abstract class PaintStatement(CodeModel.Statements.Statement source) : Executable(source)
+public abstract class PaintStatement(CodeModel.Statements.PaintStatement source) : Executable(source)
 {
 	public bool Step;
 	public Evaluable? XExpression;
@@ -15,7 +15,7 @@ public abstract class PaintStatement(CodeModel.Statements.Statement source) : Ex
 	public Evaluable? PaintExpression;
 	public Evaluable? BorderExpression;
 
-	public static PaintStatement Construct(CodeModel.Statements.Statement source, bool step, Evaluable xExpression, Evaluable yExpression, Evaluable? paintExpression, Evaluable? borderExpression, Evaluable? backgroundExpression = null)
+	public static PaintStatement Construct(CodeModel.Statements.PaintStatement source, bool step, Evaluable xExpression, Evaluable yExpression, Evaluable? paintExpression, Evaluable? borderExpression, Evaluable? backgroundExpression = null)
 	{
 		if (!xExpression.Type.IsNumeric)
 			throw CompilerException.TypeMismatch(xExpression?.Source);
@@ -75,7 +75,7 @@ public abstract class PaintStatement(CodeModel.Statements.Statement source) : Ex
 	}
 }
 
-public class PaintSolidFill(CodeModel.Statements.Statement source) : PaintStatement(source)
+public class PaintSolidFill(CodeModel.Statements.PaintStatement source) : PaintStatement(source)
 {
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
@@ -113,7 +113,7 @@ public class PaintSolidFill(CodeModel.Statements.Statement source) : PaintStatem
 	}
 }
 
-public class PaintPatternFillStatement(CodeModel.Statements.Statement source) : PaintStatement(source)
+public class PaintPatternFillStatement(CodeModel.Statements.PaintStatement source) : PaintStatement(source)
 {
 	public sealed override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
@@ -157,7 +157,7 @@ public class PaintPatternFillStatement(CodeModel.Statements.Statement source) : 
 	}
 }
 
-public class PaintPatternFillBackgroundStatement(CodeModel.Statements.Statement source) : PaintPatternFillStatement(source)
+public class PaintPatternFillBackgroundStatement(CodeModel.Statements.PaintStatement source) : PaintPatternFillStatement(source)
 {
 	public Evaluable? BackgroundExpression;
 

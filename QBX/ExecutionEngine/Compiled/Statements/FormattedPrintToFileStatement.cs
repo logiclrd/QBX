@@ -4,7 +4,7 @@ using QBX.ExecutionEngine.Execution;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class FormattedPrintToFileStatement(CodeModel.Statements.Statement? source) : FormattedPrintStatement(source)
+public class FormattedPrintToFileStatement(CodeModel.Statements.PrintStatement source) : FormattedPrintStatement(source)
 {
 	public Evaluable? FileNumberExpression;
 

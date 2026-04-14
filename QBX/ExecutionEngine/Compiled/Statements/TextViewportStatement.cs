@@ -4,7 +4,7 @@ using QBX.ExecutionEngine.Execution;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class TextViewportStatement(CodeModel.Statements.Statement source) : Executable(source)
+public class TextViewportStatement(CodeModel.Statements.TextViewportStatement source) : Executable(source)
 {
 	public Evaluable? WindowStartExpression;
 	public Evaluable? WindowEndExpression;

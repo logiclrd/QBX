@@ -5,7 +5,7 @@ using QBX.OperatingSystem;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class CloseStatement(CodeModel.Statements.Statement source) : Executable(source)
+public class CloseStatement(CodeModel.Statements.CloseStatement source) : Executable(source)
 {
 	public List<Evaluable> FileNumberExpressions = new List<Evaluable>();
 

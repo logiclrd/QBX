@@ -1,11 +1,10 @@
 using System;
 
 using QBX.ExecutionEngine.Execution;
-using QBX.Firmware;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class FileWidthStatement(CodeModel.Statements.Statement source) : Executable(source)
+public class FileWidthStatement(CodeModel.Statements.FileWidthStatement source) : Executable(source)
 {
 	public Evaluable? FileNumberExpression;
 	public Evaluable? WidthExpression;

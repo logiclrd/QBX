@@ -9,7 +9,7 @@ using OSOpenMode = QBX.OperatingSystem.FileStructures.OpenMode;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public abstract class BlockIOStatement(CodeModel.Statements.Statement source) : Executable(source)
+public abstract class BlockIOStatement(CodeModel.Statements.BlockIOStatement source) : Executable(source)
 {
 	public Evaluable? FileNameExpression;
 	public Evaluable? OffsetExpression;

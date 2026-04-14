@@ -2,7 +2,7 @@
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class ResumeStatement(bool retryStatement, CodeModel.Statements.Statement source) : Executable(source)
+public class ResumeStatement(bool retryStatement, CodeModel.Statements.ResumeStatement source) : Executable(source)
 {
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{

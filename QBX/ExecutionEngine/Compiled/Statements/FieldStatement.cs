@@ -7,7 +7,7 @@ using QBX.ExecutionEngine.Execution.Variables;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class FieldStatement(CodeModel.Statements.Statement source) : Executable(source)
+public class FieldStatement(CodeModel.Statements.FieldStatement source) : Executable(source)
 {
 	public Evaluable? FileNumberExpression;
 	public List<FieldMapping> FieldMappings = new List<FieldMapping>();

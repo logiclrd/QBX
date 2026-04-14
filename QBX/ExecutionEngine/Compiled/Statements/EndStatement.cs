@@ -2,7 +2,7 @@ using QBX.ExecutionEngine.Execution;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class EndStatement(CodeModel.Statements.Statement source) : Executable(source)
+public class EndStatement(CodeModel.Statements.EndStatement source) : Executable(source)
 {
 	public Evaluable? ExitCodeExpression;
 

@@ -5,7 +5,7 @@ using QBX.OperatingSystem.FileStructures;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class PutFromFieldsStatement(CodeModel.Statements.Statement? source) : PutStatement(source)
+public class PutFromFieldsStatement(CodeModel.Statements.PutStatement source) : PutStatement(source)
 {
 	[ThreadStatic]
 	static byte[]? s_buffer;

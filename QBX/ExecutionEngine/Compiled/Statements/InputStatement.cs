@@ -5,7 +5,7 @@ using QBX.ExecutionEngine.Execution;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class InputStatement(string promptString, CodeModel.Statements.Statement source) : Executable(source)
+public class InputStatement(string promptString, CodeModel.Statements.InputStatement source) : Executable(source)
 {
 	public List<Evaluable> TargetExpressions = new List<Evaluable>();
 

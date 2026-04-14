@@ -4,7 +4,7 @@ using QBX.Numbers;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class PixelSetStatement(CodeModel.Statements.Statement? source) : Executable(source)
+public class PixelSetStatement(CodeModel.Statements.PixelSetStatement source) : Executable(source)
 {
 	public bool StepCoordinates;
 	public Evaluable? XExpression;

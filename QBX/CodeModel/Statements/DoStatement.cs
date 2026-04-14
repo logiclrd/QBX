@@ -5,7 +5,7 @@ using QBX.CodeModel.Expressions;
 
 namespace QBX.CodeModel.Statements;
 
-public class DoStatement : Statement
+public class DoStatement : LoopStructureStatement
 {
 	public override StatementType Type => StatementType.Do;
 

@@ -6,7 +6,7 @@ using QBX.OperatingSystem.FileStructures;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class SeekStatement(CodeModel.Statements.Statement source) : Executable(source)
+public class SeekStatement(CodeModel.Statements.SeekStatement source) : Executable(source)
 {
 	public Evaluable? FileNumberExpression;
 	public Evaluable? PositionExpression;

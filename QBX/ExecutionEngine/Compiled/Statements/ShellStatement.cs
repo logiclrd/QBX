@@ -14,7 +14,7 @@ using StackFrame = QBX.ExecutionEngine.Execution.StackFrame;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public partial class ShellStatement(CodeModel.Statements.Statement source) : Executable(source)
+public partial class ShellStatement(CodeModel.Statements.ShellStatement source) : Executable(source)
 {
 	public Evaluable? CommandStringExpression;
 

@@ -7,7 +7,7 @@ using QBX.ExecutionEngine.Execution.Variables;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class ChDriveStatement(CodeModel.Statements.Statement source) : Executable(source)
+public class ChDriveStatement(CodeModel.Statements.ChDriveStatement source) : Executable(source)
 {
 	public Evaluable? DriveLetterExpression;
 

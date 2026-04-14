@@ -1,12 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 
 using QBX.ExecutionEngine.Execution;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class InputFromFileStatement(CodeModel.Statements.Statement source) : Executable(source)
+public class InputFromFileStatement(CodeModel.Statements.InputStatement source) : Executable(source)
 {
 	public Evaluable? FileNumberExpression;
 	public List<Evaluable> TargetExpressions = new List<Evaluable>();

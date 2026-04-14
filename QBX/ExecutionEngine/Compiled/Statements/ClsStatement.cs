@@ -3,7 +3,7 @@ using QBX.Firmware;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class ClsStatement(CodeModel.Statements.Statement source) : Executable(source)
+public class ClsStatement(CodeModel.Statements.ClsStatement source) : Executable(source)
 {
 	public Evaluable? ArgumentExpression;
 

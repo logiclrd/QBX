@@ -5,7 +5,7 @@ using QBX.ExecutionEngine.Execution;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public abstract class ComputedBranchStatement(CodeModel.Statements.Statement source) : Executable(source)
+public abstract class ComputedBranchStatement(CodeModel.Statements.ComputedBranchStatement source) : Executable(source)
 {
 	public Evaluable? Expression;
 	public List<ComputedBranchTarget> Targets = new List<ComputedBranchTarget>();

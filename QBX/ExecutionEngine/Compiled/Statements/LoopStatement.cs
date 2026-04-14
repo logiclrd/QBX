@@ -7,7 +7,7 @@ using QBX.ExecutionEngine.Execution;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public abstract class LoopStatement(CodeModel.Statements.Statement source) : Executable(source)
+public abstract class LoopStatement(CodeModel.Statements.LoopStructureStatement source) : Executable(source)
 {
 	public LoopType Type;
 
@@ -28,22 +28,22 @@ public abstract class LoopStatement(CodeModel.Statements.Statement source) : Exe
 
 	public override bool SelfSequenceDispatch => true;
 
-	public static LoopStatement ConstructUnconditionalLoop(Sequence body, CodeModel.Statements.Statement source, bool detectDelayLoops)
+	public static LoopStatement ConstructUnconditionalLoop(Sequence body, CodeModel.Statements.LoopStructureStatement source, bool detectDelayLoops)
 	{
 		return new UnconditionalLoopStatement(body, source, detectDelayLoops);
 	}
 
-	public static LoopStatement ConstructPreConditionLoop(Evaluable condition, Sequence body, CodeModel.Statements.Statement conditionSource, bool detectDelayLoops)
+	public static LoopStatement ConstructPreConditionLoop(Evaluable condition, Sequence body, CodeModel.Statements.LoopStructureStatement conditionSource, bool detectDelayLoops)
 	{
 		return ConditionalLoopStatement.ConstructPreConditionLoop(condition, body, conditionSource, detectDelayLoops);
 	}
 
-	public static LoopStatement ConstructPostConditionLoop(Sequence body, Evaluable condition, CodeModel.Statements.Statement conditionSource, CodeModel.Statements.Statement loopSource, bool detectDelayLoops)
+	public static LoopStatement ConstructPostConditionLoop(Sequence body, Evaluable condition, CodeModel.Statements.Statement conditionSource, CodeModel.Statements.LoopStructureStatement loopSource, bool detectDelayLoops)
 	{
 		return ConditionalLoopStatement.ConstructPostConditionLoop(body, condition, conditionSource, loopSource, detectDelayLoops);
 	}
 
-	class UnconditionalLoopStatement(Sequence body, CodeModel.Statements.Statement source, bool detectDelayLoops)
+	class UnconditionalLoopStatement(Sequence body, CodeModel.Statements.LoopStructureStatement source, bool detectDelayLoops)
 		: LoopStatement(source)
 	{
 		public override int GetSequenceCount() => 1;
@@ -115,7 +115,7 @@ public abstract class ConditionalLoopStatement : LoopStatement
 
 	protected Sequence _conditionWrapper;
 
-	public new static LoopStatement ConstructPreConditionLoop(Evaluable condition, Sequence body, CodeModel.Statements.Statement conditionSource, bool detectDelayLoops)
+	public new static LoopStatement ConstructPreConditionLoop(Evaluable condition, Sequence body, CodeModel.Statements.LoopStructureStatement conditionSource, bool detectDelayLoops)
 	{
 		if (detectDelayLoops)
 		{
@@ -128,7 +128,7 @@ public abstract class ConditionalLoopStatement : LoopStatement
 		return new PreConditionLoopStatement(conditionStatement, body, conditionSource);
 	}
 
-	public new static LoopStatement ConstructPostConditionLoop(Sequence body, Evaluable condition, CodeModel.Statements.Statement conditionSource, CodeModel.Statements.Statement loopSource, bool detectDelayLoops)
+	public new static LoopStatement ConstructPostConditionLoop(Sequence body, Evaluable condition, CodeModel.Statements.Statement conditionSource, CodeModel.Statements.LoopStructureStatement loopSource, bool detectDelayLoops)
 	{
 		if (detectDelayLoops)
 		{
@@ -141,7 +141,7 @@ public abstract class ConditionalLoopStatement : LoopStatement
 		return new PostConditionLoopStatement(conditionStatement, body, loopSource);
 	}
 
-	protected ConditionalLoopStatement(Executable conditionStatement, Sequence body, CodeModel.Statements.Statement source)
+	protected ConditionalLoopStatement(Executable conditionStatement, Sequence body, CodeModel.Statements.LoopStructureStatement source)
 		: base(source)
 	{
 		Body = body;
@@ -289,7 +289,7 @@ public abstract class ConditionalLoopStatement : LoopStatement
 		}
 	}
 
-	class PreConditionLoopStatement(LoopConditionStatement conditionStatement, Sequence body, CodeModel.Statements.Statement source)
+	class PreConditionLoopStatement(LoopConditionStatement conditionStatement, Sequence body, CodeModel.Statements.LoopStructureStatement source)
 		: ConditionalLoopStatement(conditionStatement, body, source)
 	{
 		public override bool CanBreak { get => false; set { } }
@@ -344,7 +344,7 @@ public abstract class ConditionalLoopStatement : LoopStatement
 		}
 	}
 
-	class PostConditionLoopStatement(LoopConditionStatement conditionStatement, Sequence body, CodeModel.Statements.Statement source)
+	class PostConditionLoopStatement(LoopConditionStatement conditionStatement, Sequence body, CodeModel.Statements.LoopStructureStatement source)
 		: ConditionalLoopStatement(conditionStatement, body, source)
 	{
 		public override Sequence? GetSequenceByIndex(int sequenceIndex)

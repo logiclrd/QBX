@@ -1,13 +1,12 @@
 using System;
 
-using QBX.ExecutionEngine.Compiled.Operations;
 using QBX.ExecutionEngine.Execution;
 using QBX.Firmware;
 using QBX.Numbers;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class CircleStatement(CodeModel.Statements.Statement source) : Executable(source)
+public class CircleStatement(CodeModel.Statements.CircleStatement source) : Executable(source)
 {
 	public bool Step;
 	public Evaluable? XExpression;

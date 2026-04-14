@@ -5,7 +5,7 @@ using QBX.ExecutionEngine.Execution.Variables;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class PlayStatement(CodeModel.Statements.Statement source)
+public class PlayStatement(CodeModel.Statements.PlayStatement source)
 	: Executable(source)
 {
 	public Evaluable? CommandStringExpression;

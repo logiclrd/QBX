@@ -4,7 +4,7 @@ using QBX.Numbers;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class RandomizeStatement(CodeModel.Statements.Statement source) : Executable(source)
+public class RandomizeStatement(CodeModel.Statements.RandomizeStatement source) : Executable(source)
 {
 	public Evaluable? ArgumentExpression;
 

@@ -5,7 +5,7 @@ using QBX.OperatingSystem;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public abstract class LockUnlockStatement(CodeModel.Statements.Statement source) : Executable(source)
+public abstract class LockUnlockStatement(CodeModel.Statements.FileByteRangeStatement source) : Executable(source)
 {
 	public Evaluable? FileNumberExpression;
 	public Evaluable? StartExpression;

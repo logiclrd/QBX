@@ -5,7 +5,7 @@ using QBX.ExecutionEngine.Execution.Events;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class OnEventGoSub0Statement(CodeModel.Statements.Statement source) : Executable(source), IOnEventStatementConfigurator
+public class OnEventGoSub0Statement(CodeModel.Statements.OnEventStatement source) : Executable(source), IOnEventStatementConfigurator
 {
 	public EventType EventType;
 	public Evaluable? SourceExpression;

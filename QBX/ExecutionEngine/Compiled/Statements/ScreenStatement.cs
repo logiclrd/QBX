@@ -3,7 +3,7 @@ using QBX.Firmware;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class ScreenStatement(CodeModel.Statements.Statement? source) : Executable(source)
+public class ScreenStatement(CodeModel.Statements.ScreenStatement source) : Executable(source)
 {
 	public Evaluable? ModeExpression;
 	public Evaluable? ColourSwitchExpression;

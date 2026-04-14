@@ -4,7 +4,7 @@ using QBX.ExecutionEngine.Execution;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class OutStatement(CodeModel.Statements.Statement source)
+public class OutStatement(CodeModel.Statements.OutStatement source)
 	: Executable(source)
 {
 	public Evaluable? PortExpression;

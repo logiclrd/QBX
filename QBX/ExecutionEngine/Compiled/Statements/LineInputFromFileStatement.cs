@@ -4,7 +4,7 @@ using QBX.ExecutionEngine.Execution;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class LineInputFromFileStatement(CodeModel.Statements.Statement source) : LineInputStatement(source)
+public class LineInputFromFileStatement(CodeModel.Statements.LineInputStatement source) : LineInputStatement(source)
 {
 	public Evaluable? FileNumberExpression;
 

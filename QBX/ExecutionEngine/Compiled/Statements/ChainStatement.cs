@@ -11,7 +11,7 @@ using OSOpenMode = QBX.OperatingSystem.FileStructures.OpenMode;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class ChainStatement(CodeModel.Statements.Statement source) : Executable(source)
+public class ChainStatement(CodeModel.Statements.ChainStatement source) : Executable(source)
 {
 	public Evaluable? FileNameExpression;
 

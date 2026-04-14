@@ -7,7 +7,7 @@ using QBX.Numbers;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class WriteStatement(CodeModel.Statements.Statement? source) : Executable(source)
+public class WriteStatement(CodeModel.Statements.WriteStatement source) : Executable(source)
 {
 	public Evaluable? FileNumberExpression;
 	public List<Evaluable> Arguments = new List<Evaluable>();

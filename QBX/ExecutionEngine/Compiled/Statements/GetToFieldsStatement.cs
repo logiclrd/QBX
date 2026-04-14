@@ -5,7 +5,7 @@ using QBX.OperatingSystem.FileStructures;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class GetToFieldsStatement(CodeModel.Statements.Statement? source) : GetStatement(source)
+public class GetToFieldsStatement(CodeModel.Statements.GetStatement source) : GetStatement(source)
 {
 	[ThreadStatic]
 	static byte[]? s_buffer;

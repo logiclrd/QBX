@@ -3,7 +3,7 @@ using QBX.Firmware;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class LocateStatement(CodeModel.Statements.Statement? source) : Executable(source)
+public class LocateStatement(CodeModel.Statements.LocateStatement source) : Executable(source)
 {
 	public Evaluable? RowExpression;
 	public Evaluable? ColumnExpression;

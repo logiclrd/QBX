@@ -5,7 +5,7 @@ using static QBX.Hardware.GraphicsArray;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class ColorStatement(CodeModel.Statements.Statement? source) : Executable(source)
+public class ColorStatement(CodeModel.Statements.ColorStatement source) : Executable(source)
 {
 	public Evaluable? Argument1Expression;
 	public Evaluable? Argument2Expression;

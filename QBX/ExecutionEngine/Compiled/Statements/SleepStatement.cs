@@ -4,7 +4,7 @@ using QBX.ExecutionEngine.Execution;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class SleepStatement(CodeModel.Statements.Statement source) : Executable(source)
+public class SleepStatement(CodeModel.Statements.SleepStatement source) : Executable(source)
 {
 	public Evaluable? SecondsExpression;
 

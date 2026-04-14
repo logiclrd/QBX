@@ -4,7 +4,7 @@ using QBX.ExecutionEngine.Execution;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class WaitStatement(CodeModel.Statements.Statement source) : Executable(source)
+public class WaitStatement(CodeModel.Statements.WaitStatement source) : Executable(source)
 {
 	public Evaluable? PortExpression;
 	public Evaluable? AndExpression;

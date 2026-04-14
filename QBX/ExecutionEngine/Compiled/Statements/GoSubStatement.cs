@@ -3,7 +3,7 @@ using QBX.Parser;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class GoSubStatement(Identifier labelName, CodeModel.Statements.Statement source)
+public class GoSubStatement(Identifier labelName, CodeModel.Statements.GoSubStatement source)
 	: JumpStatement(labelName, source)
 {
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)

@@ -6,7 +6,7 @@ using QBX.Numbers;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class LineStatement(CodeModel.Statements.Statement source) : Executable(source)
+public class LineStatement(CodeModel.Statements.LineStatement source) : Executable(source)
 {
 	public bool FromStep;
 	public Evaluable? FromXExpression;

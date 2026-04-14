@@ -5,7 +5,7 @@ using QBX.CodeModel.Expressions;
 
 namespace QBX.CodeModel.Statements;
 
-public class WhileStatement : Statement
+public class WhileStatement : LoopStructureStatement
 {
 	public override StatementType Type => StatementType.While;
 

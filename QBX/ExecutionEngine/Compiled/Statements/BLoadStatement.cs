@@ -11,7 +11,7 @@ using OSOpenMode = QBX.OperatingSystem.FileStructures.OpenMode;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class BLoadStatement(CodeModel.Statements.Statement source) : BlockIOStatement(source)
+public class BLoadStatement(CodeModel.Statements.BLoadStatement source) : BlockIOStatement(source)
 {
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
