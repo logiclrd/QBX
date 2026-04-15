@@ -78,6 +78,13 @@ public class PutSpriteStatement(CodeModel.Statements.PutSpriteStatement source) 
 
 		var sourceBytes = array.PackedData.Slice(arrayOffset);
 
-		visual.PutSprite(sourceBytes, actionVerb, x, y);
+		try
+		{
+			visual.PutSprite(sourceBytes, actionVerb, x, y);
+		}
+		catch (InvalidOperationException)
+		{
+			throw RuntimeException.IllegalFunctionCall(Source);
+		}
 	}
 }
