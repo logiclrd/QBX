@@ -39,12 +39,17 @@ public class SetGraphicsWindowStatement(CodeModel.Statements.WindowStatement sou
 		float x2 = NumberConverter.ToSingle(x2Value);
 		float y2 = NumberConverter.ToSingle(y2Value);
 
+		if ((x1 == x2) || (y1 == y2))
+			throw RuntimeException.IllegalFunctionCall(Source);
+
+		if (x1 > x2)
+			(x1, x2) = (x2, x1);
+		if (y1 > y2)
+			(y1, y2) = (y2, y1);
+
 		if (!UseScreenCoordinates)
 			(y1, y2) = (y2, y1);
 
-		int w = visual.Width;
-		int h = visual.Height;
-
-		visual.Window = new Window(x1, y1, x2, y2, w, h);
+		visual.CoordinateSystem.SetWindow((x1, y1), (x2, y2));
 	}
 }

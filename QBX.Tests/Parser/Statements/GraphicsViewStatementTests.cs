@@ -53,7 +53,7 @@ public class GraphicsViewportStatementTests
 
 		var viewportResult = (GraphicsViewportStatement)result;
 
-		viewportResult.AbsoluteCoordinates.Should().Be(expectAbsoluteCoordinates);
+		viewportResult.ScreenCoordinates.Should().Be(expectAbsoluteCoordinates);
 
 		[CustomAssertion]
 		static void ExpectExpression(Expression? value, Type? expectType, string? expectValue)

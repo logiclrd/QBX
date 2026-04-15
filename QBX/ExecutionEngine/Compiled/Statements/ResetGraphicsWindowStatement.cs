@@ -10,9 +10,6 @@ public class ResetGraphicsWindowStatement(CodeModel.Statements.WindowStatement s
 		if (context.VisualLibrary is not GraphicsLibrary visual)
 			throw RuntimeException.IllegalFunctionCall(Source);
 
-		int w = visual.Width;
-		int h = visual.Height;
-
-		visual.Window = new Window(0, 0, w, h, w, h);
+		visual.CoordinateSystem.ResetWindow();
 	}
 }

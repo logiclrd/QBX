@@ -66,7 +66,7 @@ public class CircleStatement(CodeModel.Statements.CircleStatement source) : Exec
 		// QuickBASIC BUG: The vertical radius is computed without any regard for the current graphics
 		// window. QBX's GraphicsLibrary does not replicate this bug; replicating it here makes it
 		// local to the QuickBASIC CIRCLE statement specifically.
-		radiusY = radiusY * visual.Window.ScaleXAbsolute / visual.Window.ScaleYAbsolute;
+		radiusY = radiusY * visual.CoordinateSystem.ScaleXAbsolute / visual.CoordinateSystem.ScaleYAbsolute;
 
 		float startAngle = 0f;
 		float endAngle = 0f;

@@ -50,15 +50,47 @@ public class GraphicsLibrary_2bppInterleaved : GraphicsLibrary
 	{
 		using (HidePointerForOperationIfPointerAware())
 		{
-			var vramSpan = Array.VRAM.AsSpan();
+			if (windowStart < Clip.Y1)
+				windowStart = Clip.Y1;
+			if (windowEnd > Clip.Y2)
+				windowEnd = Clip.Y2;
 
-			int windowOffset = windowStart * _stride;
-			int windowLength = (windowEnd - windowStart + 1) * _stride;
+			if (windowEnd < windowStart)
+				return;
 
-			vramSpan.Slice(_plane0Offset + windowOffset, windowLength).Clear();
-			vramSpan.Slice(_plane1Offset + windowOffset, windowLength).Clear();
-			vramSpan.Slice(_plane2Offset + windowOffset, windowLength).Clear();
-			vramSpan.Slice(_plane3Offset + windowOffset, windowLength).Clear();
+			if ((Clip.X1 == 0) && (Clip.X2 == Width - 1))
+			{
+				var vramSpan = Array.VRAM.AsSpan();
+
+				// 0-0 == 0
+				// 0-1 == 1
+				// 0-2 == 1
+				// 0-3 == 2
+				// 0-4 == 2
+				// 0-5 == 3
+
+				// 1-1 == 1
+				// 1-2 == 1
+				// 1-3 == 1
+
+				int evenScansStart = ((windowStart + (windowStart & 1)) / 2) * _stride;
+				int evenScansCount = ((windowEnd - windowStart) - (windowStart & 1)) / 2 + 1;
+				int evenScansLength = evenScansCount * _stride;
+
+				int oddScansStart = ((windowStart * _stride) / 2) * _stride;
+				int oddScansCount = (windowEnd - windowStart + 1 + (windowEnd & 1)) / 2;
+				int oddScansLength = oddScansCount * _stride;
+
+				vramSpan.Slice(_plane0Offset + evenScansStart, evenScansLength).Clear();
+				vramSpan.Slice(_plane1Offset + oddScansStart, oddScansLength).Clear();
+				vramSpan.Slice(_plane2Offset + evenScansStart, evenScansLength).Clear();
+				vramSpan.Slice(_plane3Offset + oddScansStart, oddScansLength).Clear();
+			}
+			else
+			{
+				for (int y = windowStart; y <= windowEnd; y++)
+					HorizontalLinePreClipped(Clip.X1, Clip.X2, y, 0);
+			}
 		}
 	}
 
@@ -92,6 +124,9 @@ public class GraphicsLibrary_2bppInterleaved : GraphicsLibrary
 
 	public override void PixelSet(int x, int y, int attribute)
 	{
+		if (!Clip.Contains(x, y))
+			return;
+
 		using (HidePointerForOperationIfPointerAware(x, y))
 		{
 			if ((x >= 0) && (x < Width)
@@ -134,6 +169,11 @@ public class GraphicsLibrary_2bppInterleaved : GraphicsLibrary
 		if (x2 >= Width)
 			x2 = Width - 1;
 
+		HorizontalLinePreClipped(x1, x2, y, attribute);
+	}
+
+	void HorizontalLinePreClipped(int x1, int x2, int y, int attribute)
+	{
 		using (HidePointerForOperationIfPointerAware(x1, y, x2, y))
 		{
 			attribute &= 3;
@@ -336,9 +376,9 @@ public class GraphicsLibrary_2bppInterleaved : GraphicsLibrary
 		int w = header[0] / 2;
 		int h = header[1];
 
-		if ((x < 0) || (y < 0) || (w < 0) || (h < 0))
+		if ((x < Clip.X1) || (y < Clip.Y1) || (w < 0) || (h < 0))
 			throw new InvalidOperationException();
-		if ((x + w > Width) || (y + h > Height))
+		if ((x + w - 1 > Clip.X2) || (y + h - 1 > Clip.Y2))
 			throw new InvalidOperationException();
 
 		using (HidePointerForOperationIfPointerAware(x, y, x + w - 1, y + h - 1))
@@ -390,9 +430,9 @@ public class GraphicsLibrary_2bppInterleaved : GraphicsLibrary
 		int w = header[0] / 2;
 		int h = header[1];
 
-		if ((x < 0) || (y < 0) || (w < 0) || (h < 0))
+		if ((x < Clip.X1) || (y < Clip.Y1) || (w < 0) || (h < 0))
 			throw new InvalidOperationException();
-		if ((x + w > Width) || (y + h > Height))
+		if ((x + w - 1 > Clip.X2) || (y + h - 1 > Clip.Y2))
 			throw new InvalidOperationException();
 
 		using (HidePointerForOperationIfPointerAware(x, y, x + w - 1, y + h - 1))
@@ -469,9 +509,9 @@ public class GraphicsLibrary_2bppInterleaved : GraphicsLibrary
 			throw new InvalidOperationException();
 		if ((xorW < 0) || (xorH < 0))
 			throw new InvalidOperationException();
-		if ((x + maxW <= 0) || (y + maxH <= 0))
+		if ((x + maxW <= Clip.X1) || (y + maxH <= Clip.Y1))
 			return;
-		if ((x >= Width) || (y >= Height))
+		if ((x > Clip.X2) || (y > Clip.Y2))
 			return;
 
 		using (HidePointerForOperationIfPointerAware(x, y, x + maxW - 1, y + maxH - 1))
@@ -497,20 +537,22 @@ public class GraphicsLibrary_2bppInterleaved : GraphicsLibrary
 			var andData = and.Slice(headerBytes);
 			var xorData = xor.Slice(headerBytes);
 
-			if (y < 0)
-			{
-				xorData = xorData.Slice(-y * xorBytesPerScan);
-				andData = andData.Slice(-y * andBytesPerScan);
+			int my = y - Clip.Y1;
 
-				andH += y;
-				xorH += y;
-				y = 0;
+			if (my < 0)
+			{
+				andData = andData.Slice(-my * andBytesPerScan);
+				xorData = xorData.Slice(-my * xorBytesPerScan);
+
+				andH += my;
+				xorH += my;
+				y = Clip.Y1;
 			}
 
-			if (y + andH >= Height)
-				andH = Height - y;
-			if (y + xorH >= Height)
-				xorH = Height - y;
+			if (y + andH - 1> Clip.Y2)
+				andH = Clip.Y2 - y + 1;
+			if (y + xorH - 1 > Clip.Y2)
+				xorH = Clip.Y2 - y + 1;
 
 			maxH = Math.Max(andH, xorH);
 
@@ -559,7 +601,7 @@ public class GraphicsLibrary_2bppInterleaved : GraphicsLibrary
 
 					int rx = xx + x;
 
-					if ((rx >= 0) && (rx < Width))
+					if ((rx >= Clip.X1) && (rx <= Clip.X2))
 					{
 						int andBits = (andPacked >> 6) & 3;
 						int xorBits = (xorPacked >> 6) & 3;

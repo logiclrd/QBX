@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
+
+using QBX.Firmware;
 
 namespace QBX.Utility;
 
@@ -6,6 +9,8 @@ public struct IntegerRect
 {
 	public int X1, Y1;
 	public int X2, Y2;
+
+	public Point Centre => ((X1 + X2) * 0.5, (Y1 + Y2) * 0.5);
 
 	public IntegerRect()
 	{
@@ -18,6 +23,9 @@ public struct IntegerRect
 		X2 = x2;
 		Y2 = y2;
 	}
+
+	public IntegerRect Offset(int dx, int dy)
+		=> new IntegerRect(X1 + dx, Y1 + dy, X2 + dx, Y2 + dy);
 
 	public static IntegerRect Unrestricted
 	{
