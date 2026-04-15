@@ -555,6 +555,9 @@ public partial class Program
 				case ScanCode.Up:
 				case ScanCode.Down:
 				{
+					if (SelectedMenu < 0)
+						break;
+
 					var menu = MenuBar[SelectedMenu];
 
 					int delta = input.ScanCode == ScanCode.Down ? 1 : menu.Items.Count - 1;
