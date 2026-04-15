@@ -1843,6 +1843,38 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 				break;
 			}
+			case CodeModel.Statements.GraphicsViewportStatement graphicsViewportStatement:
+			{
+				GraphicsViewportStatement translatedGraphicsViewportStatement;
+
+				if (graphicsViewportStatement.IsEmpty)
+					translatedGraphicsViewportStatement = new ResetGraphicsViewportStatement(graphicsViewportStatement);
+				else
+				{
+					var setGraphicsViewport = new SetGraphicsViewportStatement(graphicsViewportStatement);
+
+					setGraphicsViewport.UseScreenCoordinates = graphicsViewportStatement.ScreenCoordinates;
+
+					TranslateNumericArgumentExpression(
+						ref setGraphicsViewport.X1Expression, graphicsViewportStatement.FromXExpression);
+					TranslateNumericArgumentExpression(
+						ref setGraphicsViewport.Y1Expression, graphicsViewportStatement.FromYExpression);
+					TranslateNumericArgumentExpression(
+						ref setGraphicsViewport.X2Expression, graphicsViewportStatement.ToXExpression);
+					TranslateNumericArgumentExpression(
+						ref setGraphicsViewport.Y2Expression, graphicsViewportStatement.ToYExpression);
+					TranslateNumericArgumentExpression(
+						ref setGraphicsViewport.FillColourExpression, graphicsViewportStatement.FillColourExpression);
+					TranslateNumericArgumentExpression(
+						ref setGraphicsViewport.BorderColourExpression, graphicsViewportStatement.BorderColourExpression);
+
+					translatedGraphicsViewportStatement = setGraphicsViewport;
+				}
+
+				container.Append(translatedGraphicsViewportStatement);
+
+				break;
+			}
 			case CodeModel.Statements.IfStatement ifStatement:
 			{
 				var translatedIfStatement = new IfStatement(ifStatement);

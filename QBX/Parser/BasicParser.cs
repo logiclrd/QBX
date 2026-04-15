@@ -3747,7 +3747,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 					{
 						if (tokenHandler.NextTokenIs(TokenType.SCREEN))
 						{
-							view.AbsoluteCoordinates = true;
+							view.ScreenCoordinates = true;
 							tokenHandler.Advance();
 						}
 

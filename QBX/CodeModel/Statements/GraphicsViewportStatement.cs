@@ -9,7 +9,7 @@ public class GraphicsViewportStatement : Statement
 {
 	public override StatementType Type => StatementType.View;
 
-	public bool AbsoluteCoordinates { get; set; }
+	public bool ScreenCoordinates { get; set; }
 	public Expression? FromXExpression { get; set; }
 	public Expression? FromYExpression { get; set; }
 	public Expression? ToXExpression { get; set; }
@@ -17,13 +17,16 @@ public class GraphicsViewportStatement : Statement
 	public Expression? FillColourExpression { get; set; }
 	public Expression? BorderColourExpression { get; set; }
 
+	public bool IsEmpty =>
+		(FromXExpression == null) && (FromYExpression == null) &&
+		(ToXExpression == null) && (ToYExpression == null) &&
+		(FillColourExpression == null) && (BorderColourExpression == null);
+
 	protected override void RenderImplementation(TextWriter writer)
 	{
-		if ((FromXExpression == null) && (FromYExpression == null)
-		 && (ToXExpression == null) && (ToYExpression == null)
-		 && (FillColourExpression == null) && (BorderColourExpression == null))
+		if (IsEmpty)
 		{
-			if (AbsoluteCoordinates)
+			if (ScreenCoordinates)
 				throw new Exception("Internal error: Screen-relative GraphicsViewportStatement with no parameters");
 
 			writer.Write("VIEW");
@@ -32,7 +35,7 @@ public class GraphicsViewportStatement : Statement
 		{
 			writer.Write("VIEW ");
 
-			if (AbsoluteCoordinates)
+			if (ScreenCoordinates)
 				writer.Write("SCREEN ");
 
 			if ((FromXExpression == null) || (FromYExpression == null))
