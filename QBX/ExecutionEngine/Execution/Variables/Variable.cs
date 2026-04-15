@@ -136,6 +136,7 @@ public abstract class Variable
 	public abstract void SetData(object value);
 	public abstract int CoerceToInt(Evaluable? context);
 	public abstract void SwapValueWith(Variable other);
+	public abstract Variable Clone();
 
 	public abstract int Serialize(Span<byte> buffer);
 	public abstract int Deserialize(ReadOnlySpan<byte> buffer);

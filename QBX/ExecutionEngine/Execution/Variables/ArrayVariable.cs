@@ -28,6 +28,8 @@ public class ArrayVariable(DataType type, int fixedStringLength = -1) : Variable
 			Array.Reset();
 	}
 
+	public override Variable Clone() => throw RuntimeException.IllegalFunctionCall();
+
 	public override object GetData() => Array;
 
 	public override void SetData(object value)

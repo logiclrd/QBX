@@ -48,6 +48,9 @@ public class IntegerVariable : Variable
 		otherInteger.Value = tmp;
 	}
 
+	public override Variable Clone()
+		=> new IntegerVariable(Value);
+
 	public override int CoerceToInt(Evaluable? context) => NumberConverter.ToLong(Value, context?.Source?.Token);
 	public override string ToString() => NumberFormatter.Format(Value);
 

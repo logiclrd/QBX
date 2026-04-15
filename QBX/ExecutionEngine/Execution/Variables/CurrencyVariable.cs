@@ -36,6 +36,9 @@ public class CurrencyVariable : Variable
 		otherCurrency.Value = tmp;
 	}
 
+	public override Variable Clone()
+		=> new CurrencyVariable(Value);
+
 	public override int CoerceToInt(Evaluable? context) => NumberConverter.ToLong(Value, context?.Source?.Token);
 	public override string ToString() => NumberFormatter.Format(Value);
 

@@ -16,6 +16,7 @@ public class DummyVariable : Variable
 	public override object GetData() => throw CreateError();
 	public override void SetData(object value) => throw CreateError();
 	public override void SwapValueWith(Variable other) => throw CreateError();
+	public override Variable Clone() => throw CreateError();
 
 	public override int CoerceToInt(Evaluable? context) => throw CreateError();
 	public override string ToString() => throw CreateError();

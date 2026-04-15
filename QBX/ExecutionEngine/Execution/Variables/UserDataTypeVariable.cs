@@ -15,6 +15,12 @@ public class UserDataTypeVariable : Variable
 		ConstructConcreteInstance(dataType);
 	}
 
+	UserDataTypeVariable(UserDataTypeVariable toClone)
+		: base(toClone.DataType)
+	{
+		ConstructCloneInstance(toClone);
+	}
+
 	UserDataTypeVariable(UserDataType dataType, ExecutionContext context, int memoryAddress)
 		: base(new DataType(dataType))
 	{
@@ -27,6 +33,45 @@ public class UserDataTypeVariable : Variable
 	[MemberNotNull(nameof(Fields))]
 	void ConstructConcreteInstance(UserDataType dataType)
 	{
+		Fields = new Variable[dataType.Fields.Count];
+
+		for (int i = 0; i < dataType.Fields.Count; i++)
+		{
+			var field = dataType.Fields[i];
+
+			var arraySubscripts = field.ArraySubscripts;
+
+			if (arraySubscripts == null)
+			{
+				if (field.Type.IsString) // strings in UDTs are fixed length
+					Fields[i] = new StringVariable(fixedStringLength: field.Type.ByteSize);
+				else
+					Fields[i] = Variable.Construct(field.Type);
+			}
+			else
+			{
+				var array =
+					field.Type.IsString
+					? Variable.ConstructArrayOfFixedLengthString(fixedLength: field.Type.ByteSize)
+					: Variable.ConstructArray(field.Type);
+
+				array.InitializeArray(arraySubscripts);
+
+				Fields[i] = array;
+			}
+
+			Fields[i].PinnedMemoryOwner = this;
+		}
+	}
+
+	[MemberNotNull(nameof(Fields))]
+	void ConstructCloneInstance(UserDataTypeVariable other)
+	{
+		var dataType = DataType.UserType;
+
+		if (dataType == null)
+			throw new Exception("Internal error: UserDataTypeVariable's DataType does not have UserType");
+
 		Fields = new Variable[dataType.Fields.Count];
 
 		for (int i = 0; i < dataType.Fields.Count; i++)
@@ -164,6 +209,9 @@ public class UserDataTypeVariable : Variable
 		for (int i = 0; i < Fields.Length; i++)
 			Fields[i].SwapValueWith(otherUDT.Fields[i]);
 	}
+
+	public override Variable Clone()
+		=> new UserDataTypeVariable(this);
 
 	public override int Serialize(Span<byte> buffer)
 	{

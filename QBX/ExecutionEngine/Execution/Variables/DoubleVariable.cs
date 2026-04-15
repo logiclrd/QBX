@@ -36,6 +36,9 @@ public class DoubleVariable : Variable
 		otherDouble.Value = tmp;
 	}
 
+	public override Variable Clone()
+		=> new DoubleVariable(Value);
+
 	public override int CoerceToInt(Evaluable? context) => NumberConverter.ToLong(Value, context?.Source?.Token);
 	public override string ToString() => NumberFormatter.Format(Value);
 

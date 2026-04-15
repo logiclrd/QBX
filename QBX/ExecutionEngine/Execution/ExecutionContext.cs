@@ -727,7 +727,14 @@ public class ExecutionContext
 			}
 
 			if (routine.ReturnType != null)
-				return frame.Variables[routine.ReturnValueVariableIndex];
+			{
+				var returnValue = frame.Variables[routine.ReturnValueVariableIndex];
+
+				if (routine.UseModuleFrame)
+					returnValue = returnValue.Clone();
+
+				return returnValue;
+			}
 			else
 				return s_dummyVariable;
 		}

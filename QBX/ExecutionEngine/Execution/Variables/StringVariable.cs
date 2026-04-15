@@ -96,6 +96,9 @@ public class StringVariable : Variable
 		}
 	}
 
+	public override Variable Clone()
+		=> new StringVariable(new StringValue(Value));
+
 	public override int CoerceToInt(Evaluable? context) => throw RuntimeException.TypeMismatch(context?.Source);
 	public override string ToString() => ValueString;
 
