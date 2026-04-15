@@ -162,7 +162,14 @@ public class TextInput : Widget
 			int selectionStartIndex = Math.Min(CursorX, SelectionStart);
 			int selectionLength = Math.Max(CursorX, SelectionStart) - selectionStartIndex;
 
-			Text.Remove(selectionStartIndex, selectionLength);
+			if ((selectionStartIndex >= 0) && (selectionStartIndex < Text.Length))
+			{
+				if (selectionStartIndex + selectionLength > Text.Length)
+					selectionLength = Text.Length - selectionStartIndex;
+
+				Text.Remove(selectionStartIndex, selectionLength);
+			}
+
 			CursorX = selectionStartIndex;
 
 			SelectionStart = -1;
