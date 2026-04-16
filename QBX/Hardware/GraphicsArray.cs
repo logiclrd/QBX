@@ -955,12 +955,6 @@ public class GraphicsArray : IMemory
 
 			if (offset < Graphics.MemoryMapSize)
 			{
-				if (Graphics.ChainOddEven)
-				{
-					offset = (offset & Sequencer.AddressMask)
-						| ((offset >> Sequencer.AddressShift) & 1);
-				}
-
 				bool evenPlanesEnabledForThisAddress = true;
 				bool oddPlanesEnabledForThisAddress = true;
 
@@ -968,6 +962,12 @@ public class GraphicsArray : IMemory
 				{
 					evenPlanesEnabledForThisAddress = (offset & 1) == 0;
 					oddPlanesEnabledForThisAddress = !evenPlanesEnabledForThisAddress;
+				}
+
+				if (Graphics.ChainOddEven)
+				{
+					offset = (offset & Sequencer.AddressMask)
+						| ((offset >> Sequencer.AddressShift) & 1);
 				}
 
 				if (Sequencer.Plane0WriteEnable && evenPlanesEnabledForThisAddress)
