@@ -281,6 +281,8 @@ public partial class Program
 
 		var outputLibrary = _executionContext.VisualLibrary;
 
+		outputLibrary.SetActivePage(Machine.VideoFirmware.VisiblePageNumber);
+
 		var (savedCursorX, savedCursorY) = (outputLibrary.CursorX, outputLibrary.CursorY);
 
 		if (outputLibrary is TextLibrary outputTextLibrary)

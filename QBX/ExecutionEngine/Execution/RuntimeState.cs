@@ -7,6 +7,7 @@ namespace QBX.ExecutionEngine.Execution;
 public class RuntimeState
 {
 	public int SegmentBase;
+	public int LastScreenMode;
 	public bool EnablePaletteRemapping = true;
 	public PaletteMode PaletteMode = PaletteMode.Attribute;
 	public int MaximumAttribute = 15;

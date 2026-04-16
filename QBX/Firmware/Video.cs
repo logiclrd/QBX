@@ -635,12 +635,14 @@ public partial class Video(Machine machine)
 
 	public static int ComputePageSize(GraphicsArray array)
 	{
+		int dataLength;
+
 		if (array.Graphics.DisableText == false)
 		{
 			int width = array.CRTController.Registers.EndHorizontalDisplay + 1;
 			int height = array.CRTController.NumScanLines / array.CRTController.CharacterHeight;
 
-			return 2 * width * height;
+			dataLength = 2 * width * height;
 		}
 		else
 		{
@@ -651,28 +653,53 @@ public partial class Video(Machine machine)
 
 			int stride = array.CRTController.Stride;
 
-			return stride * scans;
+			dataLength = stride * scans;
 		}
+
+		return 256 * ((dataLength + 255) / 256);
+	}
+
+	public static int ComputePageCount(GraphicsArray array, int pageSize)
+	{
+		int effectiveVRAMSize;
+
+		if (!array.Graphics.DisableText)
+			effectiveVRAMSize = 16384;
+		else if (!array.Graphics.ShiftInterleave && !array.Graphics.Shift256)
+			effectiveVRAMSize = 65536;
+		else
+			effectiveVRAMSize = pageSize;
+
+		int pageCount = effectiveVRAMSize / pageSize;
+
+		if (pageCount > 8)
+			pageCount = 8;
+
+		return pageCount;
 	}
 
 	public bool SetVisiblePage(int pageNumber)
 	{
-		int pageSize = ComputePageSize();
-		int pageCount = 16384 / pageSize;
-
 		var array = machine.GraphicsArray;
+
+		int pageSize = ComputePageSize();
+		int pageCount = ComputePageCount(array, pageSize);
 
 		if ((_visiblePageNumber >= 0) && (_visiblePageNumber < pageCount))
 			_cursorAddressByPageNumber[_visiblePageNumber] = array.CRTController.CursorAddress;
 
 		if ((pageNumber >= 0) && (pageNumber < pageCount))
 		{
-			int startAddress = pageNumber * pageSize / 4;
+			int startAddress = pageNumber * pageSize;
 
-			array.CRTController.Registers[CRTControllerRegisters.StartAddressHigh] =
-				unchecked((byte)(startAddress >> 8));
-			array.CRTController.Registers[CRTControllerRegisters.StartAddressLow] =
-				unchecked((byte)(startAddress & 255));
+			array.OutPort2(
+				CRTControllerRegisters.IndexPort,
+				CRTControllerRegisters.StartAddressHigh,
+				unchecked((byte)(startAddress >> 8)));
+			array.OutPort2(
+				CRTControllerRegisters.IndexPort,
+				CRTControllerRegisters.StartAddressLow,
+				unchecked((byte)(startAddress & 255)));
 
 			int cursorAddress = _cursorAddressByPageNumber[pageNumber];
 

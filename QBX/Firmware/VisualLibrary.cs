@@ -118,7 +118,7 @@ public abstract class VisualLibrary : IDisposable
 	public bool SetActivePage(int pageNumber)
 	{
 		int pageSize = Video.ComputePageSize(Array);
-		int pageCount = 16384 / pageSize;
+		int pageCount = Video.ComputePageCount(Array, pageSize);
 
 		if ((pageNumber >= 0) && (pageNumber < pageCount))
 		{

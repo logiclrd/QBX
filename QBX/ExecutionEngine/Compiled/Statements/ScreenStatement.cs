@@ -16,12 +16,16 @@ public class ScreenStatement(CodeModel.Statements.ScreenStatement source) : Exec
 		{
 			int qbMode = ModeExpression.EvaluateAndCoerceToInt(context, stackFrame);
 
+			bool clearVRAM = (qbMode != context.RuntimeState.LastScreenMode);
+
 			int hardwareMode = System.Array.FindLastIndex(
 				Video.Modes,
 				mode => mode?.ScreenNumber == qbMode);
 
-			if (!context.Machine.VideoFirmware.SetMode(hardwareMode))
+			if (!context.Machine.VideoFirmware.SetMode(hardwareMode, clearVRAM))
 				throw RuntimeException.IllegalFunctionCall(ModeExpression.Source);
+
+			context.RuntimeState.LastScreenMode = qbMode;
 
 			context.VisualLibrary = context.Machine.VideoFirmware.VisualLibrary;
 

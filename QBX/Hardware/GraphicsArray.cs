@@ -579,7 +579,7 @@ public class GraphicsArray : IMemory
 					owner.ScanRepeatCount = MaximumScanLine & MaximumScanLine_ScanMask;
 					owner.CharacterHeight = owner.ScanRepeatCount + 1;
 					owner.ScanDoubling = (MaximumScanLine & MaximumScanLine_ScanDoubling) != 0;
-					owner.StartAddress = (StartAddressLow << 2) | (StartAddressHigh << 10);
+					owner.StartAddress = StartAddressLow | (StartAddressHigh << 8);
 					owner.CursorVisible = (CursorStart & CursorStart_Disable) == 0;
 					owner.CursorScanStart = CursorStart & CursorStart_Mask;
 					owner.CursorScanEnd = CursorEnd & CursorEnd_Mask;
