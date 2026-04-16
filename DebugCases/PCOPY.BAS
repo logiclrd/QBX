@@ -1,0 +1,13 @@
+SCREEN 0, , 1, 0
+
+DO
+  SLEEP
+
+  FOR i% = 0 TO 500
+    PRINT CHR$(RND * 20 + 64);
+  NEXT i%
+
+  SLEEP
+
+  PCOPY 1, 0
+LOOP WHILE INKEY$ = ""

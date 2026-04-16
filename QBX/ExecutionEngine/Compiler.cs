@@ -2377,6 +2377,19 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 				break;
 			}
+			case CodeModel.Statements.PageCopyStatement pageCopyStatement:
+			{
+				var translatedPageCopyStatement = new PageCopyStatement(pageCopyStatement);
+
+				TranslateNumericArgumentExpression(
+					ref translatedPageCopyStatement.SourcePageExpression, pageCopyStatement.SourcePageExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedPageCopyStatement.DestinationPageExpression, pageCopyStatement.DestinationPageExpression);
+
+				container.Append(translatedPageCopyStatement);
+
+				break;
+			}
 			case CodeModel.Statements.PaintStatement paintStatement:
 			{
 				var xExpression = TranslateExpression(paintStatement.XExpression, container, mapper, compilation, module);

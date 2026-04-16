@@ -137,6 +137,40 @@ public abstract class VisualLibrary : IDisposable
 		return false;
 	}
 
+	public void CopyPage(int sourcePage, int destinationPage)
+	{
+		int pageSize = Video.ComputePageSize(Array);
+		int pageCount = Video.ComputePageCount(Array, pageSize);
+
+		if ((sourcePage >= 0) && (sourcePage < pageCount)
+		 && (destinationPage >= 0) && (destinationPage < pageCount)
+		 && (sourcePage != destinationPage))
+		{
+			UndrawPointer();
+
+			Span<byte> vram = Array.VRAM;
+
+			var plane0 = vram.Slice(0x00000, 0x10000);
+			var plane1 = vram.Slice(0x10000, 0x10000);
+			var plane2 = vram.Slice(0x20000, 0x10000);
+			var plane3 = vram.Slice(0x30000, 0x10000);
+
+			var fromAddress = sourcePage * pageSize;
+			var toAddress = destinationPage * pageSize;
+
+			if (Array.Sequencer.Plane0WriteEnable)
+				plane0.Slice(fromAddress, pageSize).CopyTo(plane0.Slice(toAddress));
+			if (Array.Sequencer.Plane1WriteEnable)
+				plane1.Slice(fromAddress, pageSize).CopyTo(plane1.Slice(toAddress));
+			if (Array.Sequencer.Plane2WriteEnable)
+				plane2.Slice(fromAddress, pageSize).CopyTo(plane2.Slice(toAddress));
+			if (Array.Sequencer.Plane3WriteEnable)
+				plane3.Slice(fromAddress, pageSize).CopyTo(plane3.Slice(toAddress));
+
+			DrawPointer();
+		}
+	}
+
 	public void ResetCharacterLineWindow()
 	{
 		UpdateCharacterLineWindow(0, CharacterHeight - 1);
