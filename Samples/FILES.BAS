@@ -2,7 +2,7 @@
 
 DIM samples$(50)
 
-samples$(1) = DIR$("Samples\*.bas")
+samples$(1) = DIR$("*.bas")
 
 FOR i% = 2 TO UBOUND(samples$)
   samples$(i%) = DIR$
@@ -16,19 +16,19 @@ FOR i% = 1 TO UBOUND(samples$)
   PRINT RIGHT$("  " + i%, 3); ". "; samples$(i%)
 NEXT i%
 
-PRINT 
+PRINT
 PRINT "Enter number of file: ";
 
 LINE INPUT selection$
 
 selectedFile% = VAL(selection$)
 
-PRINT 
+PRINT
 
 IF (selectedFile% < 1) OR (selectedFile% > UBOUND(samples$)) THEN
   PRINT "Out of range"
 ELSE
-  selectedFilePath$ = "Samples\" + samples$(selectedFile%)
+  selectedFilePath$ = samples$(selectedFile%)
 
   PRINT "You selected: "; selectedFilePath$
   PRINT "First 10 lines:"
