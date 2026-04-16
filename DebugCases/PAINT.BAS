@@ -1,0 +1,8 @@
+SCREEN 12
+FOR i& = 0 TO 1000
+  PSET (RND * 640, RND * 480), 14
+NEXT i&
+
+PSET (320, 240), 0
+
+PAINT (320, 240), 4, 14
