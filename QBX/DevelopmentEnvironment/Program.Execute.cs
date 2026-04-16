@@ -203,6 +203,10 @@ public partial class Program
 			}
 		} while (_executionContext.ExecutionState.ChainExecution);
 
+		// Purge input buffer
+		while (Machine.Keyboard.GetNextEvent() is not null)
+			;
+
 		if (_executionContext.ExecutionState.IsTerminated)
 			ExecutionEpilogue();
 		else
