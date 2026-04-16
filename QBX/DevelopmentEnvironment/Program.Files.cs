@@ -18,6 +18,7 @@ namespace QBX.DevelopmentEnvironment
 		void ClearProgram()
 		{
 			LoadedFiles.Clear();
+			Terminate();
 		}
 
 		public void StartNewProgram()
@@ -69,7 +70,9 @@ namespace QBX.DevelopmentEnvironment
 
 		public void Load(TextReader reader, string filePath, bool replaceExistingProgram, Action<int>? lineCountCallback = null)
 		{
-			if (replaceExistingProgram)
+			if (!replaceExistingProgram)
+				Terminate();
+			else
 			{
 				ClearProgram();
 
