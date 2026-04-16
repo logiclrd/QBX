@@ -1,5 +1,12 @@
 # QBX Releases
 
+## 1.4.1 - 2026-04-16
+
+### Fixed
+
+- An edge case in `PAINT` that caused an artefact when the border was encountered at X = 0 has been fixed.
+- `INKEY$` now skips ephemeral key events that caused it to spuriously return `""`.
+
 ## 1.4.0 - 2026-04-16
 
 ### Added
