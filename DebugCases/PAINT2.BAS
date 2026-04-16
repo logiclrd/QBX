@@ -19,6 +19,8 @@ DO
     LINE (x% - w%, y% - h%)-(x% + w%, y% + h%), 0, BF
   NEXT i%
 
+  IF RND < .5 THEN LINE (0, 0)-(0, 199), 7
+
   LINE (150, 90)-(170, 110), 0, BF
 
   SLEEP

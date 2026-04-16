@@ -1338,7 +1338,12 @@ public abstract class GraphicsLibrary : VisualLibrary
 				return x;
 		}
 
-		return x2 + dx;
+		values[x2 - spanStart] = PixelGet(x2, y);
+
+		if (values[x2 - spanStart] == findAttribute)
+			return x2;
+		else
+			return x2 + dx;
 	}
 
 	struct Span(int x1, int x2, int y = 0)
@@ -2085,7 +2090,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 			{
 				if (ProcessControlCharacters)
 				{
-					if (ProcessControlCharacter(ref buffer, ref CursorX, ref CursorY, updateOffset, writeSpace, beginNewLine, default, default)) 
+					if (ProcessControlCharacter(ref buffer, ref CursorX, ref CursorY, updateOffset, writeSpace, beginNewLine, default, default))
 						continue;
 				}
 
