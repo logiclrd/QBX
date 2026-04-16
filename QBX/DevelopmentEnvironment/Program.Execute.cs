@@ -62,6 +62,9 @@ public partial class Program
 				_executionContext.Controls.Terminate();
 				_executionContext.CloseAllFiles();
 			}
+
+			_executionContext = null;
+			_executionThread = null;
 		}
 		catch { }
 	}
