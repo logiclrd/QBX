@@ -1,5 +1,6 @@
 ﻿using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
+using QBX.Hardware;
 
 namespace QBX.ExecutionEngine.Compiled.Functions;
 
@@ -12,7 +13,11 @@ public class InKeyFunction : Function
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
-		var evt = context.Machine.Keyboard.GetNextEvent();
+		KeyEvent? evt;
+
+		do
+			evt = context.Machine.Keyboard.GetNextEvent();
+		while ((evt != null) && evt.IsEphemeral);
 
 		var value = new StringValue(evt?.ToInKeyString() ?? "");
 
