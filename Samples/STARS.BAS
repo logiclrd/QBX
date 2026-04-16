@@ -45,7 +45,7 @@ NEXT i%
 ClosestPt% = 1
 
 WIDTH 80, 50
-CLS 
+CLS
 
 ' Set gradient palette
 OUT &H3C8, 1
@@ -119,7 +119,7 @@ DO
 
         IF Size% < 1 THEN Size% = 1
         IF Size% > MaxSize% THEN Size% = MaxSize%
-        
+
         LOCATE Pts(i%).ProjectedY, Pts(i%).ProjectedX
         PRINT MID$(Characters$, Size%, 1);
       END IF
@@ -128,5 +128,5 @@ DO
 
   st! = TIMER
   WHILE st! = TIMER: WEND
-LOOP
+LOOP WHILE INKEY$ = ""
 
