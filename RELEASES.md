@@ -1,5 +1,35 @@
 # QBX Releases
 
+## 1.4.0 - 2026-04-16
+
+### Added
+
+- `VIEW` (graphics) statements, and the associated interaction with `WINDOW`.
+- `PCOPY` statement.
+
+### Fixed
+
+- Fixed a crash in the TextInput widget if the selection range becomes invalid.
+- Fixed a crash in the Menu Bar if Up or Down is pressed with no menu selected.
+- `PUT` (graphics) now raises a proper Illegal Function Call error when coordinates are not in-range.
+- Fixed calling a DEF FN function multiple times in the same statement.
+- When an action causes the running program to be terminated, resuming execution no longer tries to resume the terminated program.
+- When execution breaks, queued keyboard input events are no longer received by the IDE instead.
+- When starting a new program or loading a new file, if there is a currently executing program, it is terminated.
+- `SCREEN` no longer clears the screen if the mode number hasn't changed (e.g. using `SCREEN` for page flipping).
+- `WINDOW` now raises Illegal Function Call if X1 = X2 or Y1 = Y2.
+- The VGA Start Address is now calculated properly, as a starting plane offset rather than a starting linear address.
+- When writing to VGA memory with Chain Odd/Even enabled, the offset's parity is now checked before the offset is forced to an even value.
+- When starting a program, the video mode is once again reset to SCREEN 0.
+- The execution epilogue now ensures it is writing "Press any key to continue" to the visible page, in case the program left the visual library configured to an offscreen page.
+- The FILES.BAS sample now assumes it will be running in the `Samples` directory.
+- The MAZERUN.BAS sample has been updated in the same way that PIPELINE.BAS was previously to account for corrections in the VGA Odd/Even handling.
+- The STARS.BAS sample now exits on a keypress.
+
+### Changed
+
+- Video page sizes are now rounded up to a multiple of 256 bytes.
+
 ## 1.3.1 - 2026-04-13
 
 This release contains a few more fixes based on the "Learn BASIC Now" example programs.
