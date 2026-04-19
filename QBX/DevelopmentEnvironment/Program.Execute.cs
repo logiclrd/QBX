@@ -176,15 +176,7 @@ public partial class Program
 		if (_compilation.IsEmpty)
 			_executionContext.Controls.Terminate();
 		else
-		{
-			if (_executionContext.WaitForRootFrame())
-			{
-				var rootFrame = _executionContext.RootFrame;
-
-				if (rootFrame != null)
-					EvaluateWatches(rootFrame);
-			}
-		}
+			_executionContext.WaitForRootFrame();
 
 		return true;
 	}
@@ -216,13 +208,21 @@ public partial class Program
 			SaveOutput();
 			SetIDEVideoMode();
 
-			EvaluateWatches(out _);
-
-			ShowNextStatement(_executionContext.ExecutionState.Stack);
+			UpdateAfterBreak();
 
 			if (_executionContext.ExecutionState.CurrentError != null)
 				PresentError(_executionContext.ExecutionState.CurrentError);
 		}
+	}
+
+	void UpdateAfterBreak()
+	{
+		if (_executionContext == null)
+			throw new Exception("Internal error: UpdateAfterBreak called with no execution context");
+
+		EvaluateWatches(out _);
+
+		ShowNextStatement(_executionContext.ExecutionState.Stack);
 	}
 
 	public void Continue()
@@ -260,7 +260,7 @@ public partial class Program
 				SaveOutput();
 				SetIDEVideoMode();
 
-				ShowNextStatement(_executionContext.ExecutionState.Stack);
+				UpdateAfterBreak();
 			}
 		}
 		else
