@@ -33,6 +33,7 @@ public partial class Program
 	MenuItem mnuRunStart;
 	MenuItem mnuRunRestart;
 	MenuItem mnuRunContinue;
+	MenuItem mnuRunModifyCommandLine;
 	MenuItem mnuRunSetMainModule;
 
 	Menu mnuDebug;
@@ -89,6 +90,7 @@ public partial class Program
 		nameof(mnuRunStart),
 		nameof(mnuRunRestart),
 		nameof(mnuRunContinue),
+		nameof(mnuRunModifyCommandLine),
 		nameof(mnuRunSetMainModule),
 		nameof(mnuDebug),
 		nameof(mnuDebugAddWatch),
@@ -174,7 +176,7 @@ public partial class Program
 				(mnuRunStart = new MenuItem("&Start      Shift+F5", "-356")),
 				(mnuRunRestart = new MenuItem("&Restart", "-357")),
 				(mnuRunContinue = new MenuItem("Co&ntinue         F5", "-358")),
-				new MenuItem("Modify &COMMAND$...", "-359"),
+				(mnuRunModifyCommandLine = new MenuItem("Modify &COMMAND$...", "-359")),
 				MenuItem.Separator,
 				new MenuItem("Make E&XE File...", "-360") { IsEnabled = false },
 				new MenuItem("Make &Library...", "-361") { IsEnabled = false },
@@ -264,6 +266,7 @@ public partial class Program
 		mnuRunStart.Clicked += mnuRunStart_Clicked;
 		mnuRunRestart.Clicked += mnuRunRestart_Clicked;
 		mnuRunContinue.Clicked += mnuRunContinue_Clicked;
+		mnuRunModifyCommandLine.Clicked += mnuRunModifyCommandLine_Clicked;
 		mnuRunSetMainModule.Clicked += mnuRunSetMainModule_Clicked;
 
 		mnuDebugAddWatch.Clicked += mnuDebugAddWatch_Clicked;
@@ -349,6 +352,21 @@ public partial class Program
 	private void mnuRunContinue_Clicked()
 	{
 		Continue();
+	}
+
+	private void mnuRunModifyCommandLine_Clicked()
+	{
+		var dialog = new ModifyCommandLineDialog(Machine, Configuration);
+
+		dialog.CommandLine = ProgramCommandLine;
+
+		dialog.UpdateCommandLine +=
+			() =>
+			{
+				ProgramCommandLine = dialog.CommandLine;
+			};
+
+		ShowDialog(dialog);
 	}
 
 	private void mnuRunSetMainModule_Clicked()

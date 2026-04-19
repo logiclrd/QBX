@@ -13,7 +13,6 @@ Path Options Dialog: "-914"
 Right Mouse Button Dialog: "-900"
 Unload File Dialog: "-264"
 Move SUB Dialog: "-263"
-Modify COMMAND$ Dialog: "-246"
 Cannot Continue Dialog: "-198"
 No Main Module Dialog: "-199"
 Help Not Available Dialog: "-203" => F1 but token doesn't match anything AND at least one error exists in program
