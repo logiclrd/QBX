@@ -40,9 +40,12 @@ SetPalette
 
 DEF SEG = &HA000
 
+maxsize! = 5
+
 DO
-  DrawSphere RND * 320, RND * 200, RND * 40, RND * 10
-LOOP WHILE INKEY$ = ""
+  DrawSphere RND * 320, RND * 200, (RND * .9 + .1) * maxsize!, RND * 10
+  maxsize! = maxsize! * 1.005
+LOOP WHILE INKEY$ = "" AND maxsize! < 75
 
 SUB DrawSphere (centreX%, centreY%, r%, c%)
 DIM centrepoint AS Vector
