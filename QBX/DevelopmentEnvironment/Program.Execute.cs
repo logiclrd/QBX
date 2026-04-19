@@ -125,7 +125,9 @@ public partial class Program
 		AssociateWatches(_compilation);
 
 		RestoreOutput();
-		Machine.VideoFirmware.SetMode(3);
+
+		if (Machine.VideoFirmware.LastModeNumber != 3)
+			Machine.VideoFirmware.SetMode(3);
 
 		var drawProcessor = _executionContext?.DrawProcessor ?? new DrawProcessor();
 
