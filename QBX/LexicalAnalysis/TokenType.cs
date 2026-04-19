@@ -48,7 +48,7 @@ public enum TokenType
 	[KeywordToken] CLS,
 	[KeywordToken] COLOR,
 	[KeywordToken] COM,
-	[KeywordFunction]
+	[KeywordFunction(parameterCount: 0)]
 	[KeywordToken("COMMAND$")] COMMAND,
 	[KeywordToken] COMMITTRANS,
 	[KeywordToken] COMMON,
