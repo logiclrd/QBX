@@ -47,6 +47,8 @@ DO
   maxsize! = maxsize! * 1.005
 LOOP WHILE INKEY$ = "" AND maxsize! < 75
 
+SLEEP
+
 SUB DrawSphere (centreX%, centreY%, r%, c%)
 DIM centrepoint AS Vector
 DIM surfacepoint AS Vector
