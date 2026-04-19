@@ -68,6 +68,9 @@ public partial class Video
 
 		machine.GraphicsArray.InPort(InputStatusRegisters.InputStatus1Port);
 		machine.GraphicsArray.OutPort(AttributeControllerRegisters.IndexAndDataWritePort, AttributeControllerRegisters.Index_PaletteAddressSourceBit);
+
+		for (int i = 0; i < 8; i++)
+			writer.Write(_cursorAddressByPageNumber[i]);
 	}
 
 	public void RestoreState(byte[] buffer)
@@ -117,6 +120,9 @@ public partial class Video
 		}
 
 		machine.GraphicsArray.OutPort(AttributeControllerRegisters.IndexAndDataWritePort, AttributeControllerRegisters.Index_PaletteAddressSourceBit);
+
+		for (int i = 0; i < 8; i++)
+			_cursorAddressByPageNumber[i] = reader.ReadInt32();
 	}
 
 	void SaveRegisters(BinaryWriter storage, int registerCount, int indexPort, int dataPort)

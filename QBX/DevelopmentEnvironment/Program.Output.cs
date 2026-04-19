@@ -3,8 +3,6 @@ using System.Collections.Generic;
 
 using QBX.Hardware;
 
-using static QBX.Hardware.GraphicsArray;
-
 namespace QBX.DevelopmentEnvironment;
 
 public partial class Program
