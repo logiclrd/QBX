@@ -1,5 +1,17 @@
 # QBX Releases
 
+## 1.5.0 - 2026-04-18
+
+### Added
+
+- The Start, Restart, Continue and Modify COMMAND$ menu items are now implemented.
+- `COMMAND$`
+
+### Fixed
+
+- The video mode is only reset to 80x25 text on program start if it isn't already in that mode.
+- Cursor addresses for pages other than the visible page are now included in saved video state information.
+
 ## 1.4.1 - 2026-04-16
 
 ### Fixed
