@@ -30,6 +30,9 @@ public partial class Program
 	Menu mnuSearch;
 
 	Menu mnuRun;
+	MenuItem mnuRunStart;
+	MenuItem mnuRunRestart;
+	MenuItem mnuRunContinue;
 	MenuItem mnuRunSetMainModule;
 
 	Menu mnuDebug;
@@ -83,6 +86,9 @@ public partial class Program
 		nameof(mnuViewSplit),
 		nameof(mnuSearch),
 		nameof(mnuRun),
+		nameof(mnuRunStart),
+		nameof(mnuRunRestart),
+		nameof(mnuRunContinue),
 		nameof(mnuRunSetMainModule),
 		nameof(mnuDebug),
 		nameof(mnuDebugAddWatch),
@@ -165,13 +171,13 @@ public partial class Program
 		mnuRun =
 			new Menu("&Run", 19, "m.r")
 			{
-				new MenuItem("&Start      Shift+F5", "-356"),
-				new MenuItem("&Restart", "-357"),
-				new MenuItem("Co&ntinue         F5", "-358"),
+				(mnuRunStart = new MenuItem("&Start      Shift+F5", "-356")),
+				(mnuRunRestart = new MenuItem("&Restart", "-357")),
+				(mnuRunContinue = new MenuItem("Co&ntinue         F5", "-358")),
 				new MenuItem("Modify &COMMAND$...", "-359"),
 				MenuItem.Separator,
-				new MenuItem("Make E&XE File...", "-360"),
-				new MenuItem("Make &Library...", "-361"),
+				new MenuItem("Make E&XE File...", "-360") { IsEnabled = false },
+				new MenuItem("Make &Library...", "-361") { IsEnabled = false },
 				MenuItem.Separator,
 				(mnuRunSetMainModule = new MenuItem("Set &Main Module...", "-362")),
 			};
@@ -255,6 +261,9 @@ public partial class Program
 
 		mnuViewSplit.Clicked += mnuViewSplit_Clicked;
 
+		mnuRunStart.Clicked += mnuRunStart_Clicked;
+		mnuRunRestart.Clicked += mnuRunRestart_Clicked;
+		mnuRunContinue.Clicked += mnuRunContinue_Clicked;
 		mnuRunSetMainModule.Clicked += mnuRunSetMainModule_Clicked;
 
 		mnuDebugAddWatch.Clicked += mnuDebugAddWatch_Clicked;
@@ -324,6 +333,22 @@ public partial class Program
 	private void mnuViewSplit_Clicked()
 	{
 		ShowSplitViewport();
+	}
+
+	private void mnuRunStart_Clicked()
+	{
+		Run();
+	}
+
+	private void mnuRunRestart_Clicked()
+	{
+		Restart();
+		UpdateAfterBreak();
+	}
+
+	private void mnuRunContinue_Clicked()
+	{
+		Continue();
 	}
 
 	private void mnuRunSetMainModule_Clicked()
