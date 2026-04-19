@@ -126,31 +126,54 @@ public partial class Program : HostedProgram, IOvertypeFlag
 		AttachBreakHandler();
 	}
 
+	static readonly char[] ArgumentTerminatorCharacters = [' ', '\t', '/'];
+
 	private void ProcessCommandLine(string commandLine)
 	{
 		string? remainingCommandLine = commandLine;
 
-		string? PullArgument()
+		string? PullArgument(string? adjacentValueCharacters = null)
 		{
 			if (remainingCommandLine == null)
 				return null;
 
+			remainingCommandLine = (adjacentValueCharacters + remainingCommandLine).TrimStart();
+
 			string argument;
 
-			int separator = remainingCommandLine.IndexOf(' ');
-
-			if (separator < 0)
+			if ((remainingCommandLine.Length > 0)
+			 && (remainingCommandLine[0] == '"'))
 			{
-				argument = remainingCommandLine;
-				remainingCommandLine = null;
+				int endQuote = remainingCommandLine.IndexOf('"', startIndex: 1);
+
+				if (endQuote < 0)
+				{
+					argument = remainingCommandLine.Substring(1);
+					remainingCommandLine = null;
+				}
+				else
+				{
+					argument = remainingCommandLine.Substring(1, endQuote - 1);
+					remainingCommandLine = remainingCommandLine.Substring(endQuote + 1);
+				}
 			}
 			else
 			{
-				argument = remainingCommandLine.Substring(0, separator);
-				remainingCommandLine = remainingCommandLine.Substring(separator + 1).TrimStart();
+				int separator = remainingCommandLine.IndexOfAny(ArgumentTerminatorCharacters, startIndex: 1);
 
-				if (remainingCommandLine.Length == 0)
+				if (separator < 0)
+				{
+					argument = remainingCommandLine;
 					remainingCommandLine = null;
+				}
+				else
+				{
+					argument = remainingCommandLine.Substring(0, separator);
+					remainingCommandLine = remainingCommandLine.Substring(separator);
+
+					if (remainingCommandLine.Length == 0)
+						remainingCommandLine = null;
+				}
 			}
 
 			return argument;
@@ -200,6 +223,8 @@ public partial class Program : HostedProgram, IOvertypeFlag
 			else if (argument.StartsWith("/K:", StringComparison.OrdinalIgnoreCase))
 			{
 				// Key mapping file (*.KEY)
+
+				string? keyMapFilePath = PullArgument(argument.Substring(3));
 				// TODO
 			}
 			else if (argument.Equals("/L", StringComparison.OrdinalIgnoreCase))
@@ -208,8 +233,8 @@ public partial class Program : HostedProgram, IOvertypeFlag
 				string qlbName;
 
 				if (argument.Length > 2)
-					qlbName = argument.Substring(2);
-				else if ((remainingCommandLine != null) && !remainingCommandLine.StartsWith('/'))
+					qlbName = PullArgument(argument.Substring(2)) ?? "QBX";
+				else if ((remainingCommandLine != null) && !remainingCommandLine.TrimStart().StartsWith('/'))
 					qlbName = PullArgument() ?? "QBX";
 				else
 					qlbName = "QBX";
@@ -242,10 +267,10 @@ public partial class Program : HostedProgram, IOvertypeFlag
 				// From BC.EXE, only check for events every line number/label.
 				EventCheckGranularity = EventCheckGranularity.EveryLabel;
 			}
-			else if (argument.Equals("/RUN", StringComparison.OrdinalIgnoreCase))
+			else if (argument.StartsWith("/RUN", StringComparison.OrdinalIgnoreCase))
 			{
 				// Automatically start loaded program
-				loadFilePath = PullArgument();
+				loadFilePath = PullArgument(argument.Substring(4));
 
 				if (loadFilePath == null)
 				{
@@ -255,25 +280,20 @@ public partial class Program : HostedProgram, IOvertypeFlag
 
 				AutoRun = true;
 			}
-			else if (argument.Equals("/KBD", StringComparison.OrdinalIgnoreCase))
+			else if (argument.StartsWith("/KBD", StringComparison.OrdinalIgnoreCase))
 			{
 				// Set keyboard layout
-				if (PullArgument() is string layoutName)
+				if (PullArgument(argument.Substring(4)) is string layoutName)
 				{
 					_isForcedKeyboardLayout = true;
 					Machine.KeyboardDriver.SetLayoutByName(layoutName);
 				}
 			}
-			else if (argument.Equals("/CMD", StringComparison.OrdinalIgnoreCase))
+			else if (argument.StartsWith("/CMD", StringComparison.OrdinalIgnoreCase))
 			{
 				// COMMAND$ value
-				if (remainingCommandLine == null)
-				{
-					badArguments = true;
-					break;
-				}
-
-				ProgramCommandLine = remainingCommandLine ?? "";
+				ProgramCommandLine = argument.Substring(4) + remainingCommandLine;
+				remainingCommandLine = null;
 			}
 			else if (argument.StartsWith('/'))
 			{
@@ -289,51 +309,7 @@ public partial class Program : HostedProgram, IOvertypeFlag
 					break;
 				}
 
-				if (!argument.StartsWith('"'))
-					loadFilePath = argument;
-				else
-				{
-					// Extension: support quoted filenames with spaces
-					int endQuote = argument.IndexOf('"', 1);
-
-					if (endQuote >= 0)
-					{
-						if (endQuote + 1 < argument.Length)
-						{
-							badArguments = true;
-							break;
-						}
-
-						loadFilePath = argument.Substring(1, argument.Length - 2);
-					}
-					else
-					{
-						if (remainingCommandLine == null)
-						{
-							badArguments = true;
-							break;
-						}
-
-						endQuote = remainingCommandLine.IndexOf('"');
-
-						if (endQuote < 0)
-							loadFilePath = argument.Substring(1) + ' ' + remainingCommandLine;
-						else
-						{
-							loadFilePath = argument.Substring(1) + ' ' + remainingCommandLine.Substring(0, endQuote);
-
-							remainingCommandLine = remainingCommandLine.Substring(endQuote);
-
-							if (remainingCommandLine[0] != ' ')
-							{
-								badArguments = true;
-								break;
-							}
-
-							remainingCommandLine = remainingCommandLine.TrimStart();
-						}
-					}
-				}
+				loadFilePath = argument;
 			}
 		}
 
