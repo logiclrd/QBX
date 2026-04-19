@@ -273,7 +273,7 @@ public partial class Program : HostedProgram, IOvertypeFlag
 					break;
 				}
 
-				ProgramCommandLine = remainingCommandLine.ToUpperInvariant();
+				ProgramCommandLine = remainingCommandLine ?? "";
 			}
 			else if (argument.StartsWith('/'))
 			{

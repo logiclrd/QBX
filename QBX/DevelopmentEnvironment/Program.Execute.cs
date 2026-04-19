@@ -133,7 +133,7 @@ public partial class Program
 
 		_executionContext = new ExecutionContext(Machine, PlayProcessor, drawProcessor, EventHub, _compilation.CommonBlocks, _executionContext?.CommonBlockStorage);
 		_executionContext.EventCheckGranularity = EventCheckGranularity;
-		_executionContext.CommandLine.Set(ProgramCommandLine);
+		_executionContext.CommandLine.Set(ProgramCommandLine.ToUpperInvariant());
 		_executionContext.Controls.Break();
 
 		foreach (var qlb in QLBs)
