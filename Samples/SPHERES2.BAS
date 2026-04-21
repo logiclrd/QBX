@@ -97,8 +97,6 @@ FOR py% = y1% TO y2%
       surfacepoint.X = px%
       surfacepoint.Z = SQR(rsq% - dx% * dx% - ysq%)
 
-      tz% = surfacepoint.Z * 20
-
       normal = surfacepoint
       VecSub normal, centrepoint
       VecMul normal, ir!
