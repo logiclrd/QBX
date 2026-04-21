@@ -131,18 +131,25 @@ public class CoordinateSystem
 		UpdateScale();
 	}
 
-	public (int X, int Y) TranslatePoint(float x, float y)
+	public (int X, int Y) TranslateWindowToScreen(float x, float y)
 	{
 		var target = _target;
 
+		var view = TranslateWindowToView(x, y);
+
+		return (view.X + target.X1, view.Y + target.Y1);
+	}
+
+	public (int X, int Y) TranslateWindowToView(float x, float y)
+	{
 		return
 			(
-				(int)Math.Round((x - _window.TopLeft.X) * _scaleX) + target.X1,
-				(int)Math.Round((y - _window.TopLeft.Y) * _scaleY) + target.Y1
+				(int)Math.Round((x - _window.TopLeft.X) * _scaleX),
+				(int)Math.Round((y - _window.TopLeft.Y) * _scaleY)
 			);
 	}
 
-	public (float X, float Y) TranslateBack(int x, int y)
+	public (float X, float Y) TranslateScreenToWindow(int x, int y)
 	{
 		var target = _target;
 
@@ -150,6 +157,15 @@ public class CoordinateSystem
 			(
 				(x - target.X1 + 0.5f) * _scaleBackX + _window.TopLeft.X,
 				(y - target.Y1 + 0.5f) * _scaleBackY + _window.TopLeft.Y
+			);
+	}
+
+	public (float X, float Y) TranslateViewToWindow(float x, float y)
+	{
+		return
+			(
+				x * _scaleBackX + _window.TopLeft.X,
+				y * _scaleBackY + _window.TopLeft.Y
 			);
 	}
 

@@ -368,7 +368,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 	#region PixelGet
 	public virtual int PixelGet(float x, float y)
 	{
-		var translated = CoordinateSystem.TranslatePoint(x, y);
+		var translated = CoordinateSystem.TranslateWindowToScreen(x, y);
 
 		return PixelGet(translated.X, translated.Y);
 	}
@@ -382,7 +382,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	public void PixelSet(float x, float y, int attribute)
 	{
-		var translated = CoordinateSystem.TranslatePoint(x, y);
+		var translated = CoordinateSystem.TranslateWindowToScreen(x, y);
 
 		PixelSet(translated.X, translated.Y, attribute);
 
@@ -456,8 +456,8 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	public void Line(float x1, float y1, float x2, float y2, int attribute)
 	{
-		var translated1 = CoordinateSystem.TranslatePoint(x1, y1);
-		var translated2 = CoordinateSystem.TranslatePoint(x2, y2);
+		var translated1 = CoordinateSystem.TranslateWindowToScreen(x1, y1);
+		var translated2 = CoordinateSystem.TranslateWindowToScreen(x2, y2);
 
 		Line(translated1.X, translated1.Y, translated2.X, translated2.Y, attribute);
 
@@ -471,7 +471,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 			int dx = Math.Abs(x1 - x2);
 			int dy = Math.Abs(y1 - y2);
 
-			LastPoint = CoordinateSystem.TranslateBack(x2, y2);
+			LastPoint = CoordinateSystem.TranslateScreenToWindow(x2, y2);
 
 			if (dx > dy)
 			{
@@ -549,8 +549,8 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	public void LineStyle(float x1, float y1, float x2, float y2, int attribute, int styleBits)
 	{
-		var translated1 = CoordinateSystem.TranslatePoint(x1, y1);
-		var translated2 = CoordinateSystem.TranslatePoint(x2, y2);
+		var translated1 = CoordinateSystem.TranslateWindowToScreen(x1, y1);
+		var translated2 = CoordinateSystem.TranslateWindowToScreen(x2, y2);
 
 		LineStyle(translated1.X, translated1.Y, translated2.X, translated2.Y, attribute, styleBits);
 
@@ -564,7 +564,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 			int dx = Math.Abs(x1 - x2);
 			int dy = Math.Abs(y1 - y2);
 
-			LastPoint = CoordinateSystem.TranslateBack(x2, y2);
+			LastPoint = CoordinateSystem.TranslateScreenToWindow(x2, y2);
 
 			if (dx > dy)
 			{
@@ -651,8 +651,8 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	public void Box(float x1, float y1, float x2, float y2, int attribute)
 	{
-		var translated1 = CoordinateSystem.TranslatePoint(x1, y1);
-		var translated2 = CoordinateSystem.TranslatePoint(x2, y2);
+		var translated1 = CoordinateSystem.TranslateWindowToScreen(x1, y1);
+		var translated2 = CoordinateSystem.TranslateWindowToScreen(x2, y2);
 
 		Box(translated1.X, translated1.Y, translated2.X, translated2.Y, attribute);
 
@@ -661,7 +661,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	public void Box(int x1, int y1, int x2, int y2, int attribute)
 	{
-		LastPoint = CoordinateSystem.TranslateBack(x2, y2);
+		LastPoint = CoordinateSystem.TranslateScreenToWindow(x2, y2);
 
 		if (y1 > y2)
 			(y1, y2) = (y2, y1);
@@ -743,8 +743,8 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	public void BoxStyle(float x1, float y1, float x2, float y2, int attribute, int styleBits)
 	{
-		var translated1 = CoordinateSystem.TranslatePoint(x1, y1);
-		var translated2 = CoordinateSystem.TranslatePoint(x2, y2);
+		var translated1 = CoordinateSystem.TranslateWindowToScreen(x1, y1);
+		var translated2 = CoordinateSystem.TranslateWindowToScreen(x2, y2);
 
 		BoxStyle(translated1.X, translated1.Y, translated2.X, translated2.Y, attribute, styleBits);
 
@@ -753,7 +753,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	public void BoxStyle(int x1, int y1, int x2, int y2, int attribute, int styleBits)
 	{
-		LastPoint = CoordinateSystem.TranslateBack(x2, y2);
+		LastPoint = CoordinateSystem.TranslateScreenToWindow(x2, y2);
 
 		if (y1 > y2)
 			(y1, y2) = (y2, y1);
@@ -872,8 +872,8 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	public void FillBox(float x1, float y1, float x2, float y2, int attribute)
 	{
-		var translated1 = CoordinateSystem.TranslatePoint(x1, y1);
-		var translated2 = CoordinateSystem.TranslatePoint(x2, y2);
+		var translated1 = CoordinateSystem.TranslateWindowToScreen(x1, y1);
+		var translated2 = CoordinateSystem.TranslateWindowToScreen(x2, y2);
 
 		FillBox(translated1.X, translated1.Y, translated2.X, translated2.Y, attribute);
 
@@ -882,7 +882,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	public void FillBox(int x1, int y1, int x2, int y2, int attribute)
 	{
-		LastPoint = CoordinateSystem.TranslateBack(x2, y2);
+		LastPoint = CoordinateSystem.TranslateScreenToWindow(x2, y2);
 
 		if (y1 > y2)
 			(y1, y2) = (y2, y1);
@@ -962,7 +962,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	public void Ellipse(float x, float y, float radiusX, float radiusY, double startAngle, double endAngle, bool drawStartRadius, bool drawEndRadius, int attribute)
 	{
-		var translated = CoordinateSystem.TranslatePoint(x, y);
+		var translated = CoordinateSystem.TranslateWindowToScreen(x, y);
 
 		int translatedRadiusX = CoordinateSystem.TranslateWidth(radiusX);
 		int translatedRadiusY = CoordinateSystem.TranslateHeight(radiusY);
@@ -1310,7 +1310,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 			if (!spans[6].IsEmpty)
 				HorizontalLine(x + spans[6].X1, x + spans[6].X2, y - spans[6].Y, attribute);
 
-			LastPoint = CoordinateSystem.TranslateBack(x, y);
+			LastPoint = CoordinateSystem.TranslateScreenToWindow(x, y);
 		}
 	}
 	#endregion Ellipse
@@ -1511,7 +1511,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	public void BorderFill(float x, float y, int borderAttribute, int fillAttribute)
 	{
-		var translated = CoordinateSystem.TranslatePoint(x, y);
+		var translated = CoordinateSystem.TranslateWindowToScreen(x, y);
 
 		BorderFill(translated.X, translated.Y, borderAttribute, fillAttribute);
 
@@ -1520,7 +1520,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	public void BorderFill(float x, float y, int borderAttribute, byte[] fillPatternBytes, byte[]? backgroundPatternBytes)
 	{
-		var translated = CoordinateSystem.TranslatePoint(x, y);
+		var translated = CoordinateSystem.TranslateWindowToScreen(x, y);
 
 		BorderFill(translated.X, translated.Y, borderAttribute, fillPatternBytes, backgroundPatternBytes);
 
@@ -2034,8 +2034,8 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	public void GetSprite(float x1, float y1, float x2, float y2, Span<byte> buffer)
 	{
-		var pt1 = CoordinateSystem.TranslatePoint(x1, y1);
-		var pt2 = CoordinateSystem.TranslatePoint(x2, y2);
+		var pt1 = CoordinateSystem.TranslateWindowToScreen(x1, y1);
+		var pt2 = CoordinateSystem.TranslateWindowToScreen(x2, y2);
 
 		GetSprite(pt1.X, pt1.Y, pt2.X, pt2.Y, buffer);
 	}
@@ -2044,7 +2044,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 	public void PutSprite(Span<byte> buffer, PutSpriteAction action, float x, float y)
 	{
-		var (translatedX, translatedY) = CoordinateSystem.TranslatePoint(x, y);
+		var (translatedX, translatedY) = CoordinateSystem.TranslateWindowToScreen(x, y);
 
 		PutSprite(buffer, action, translatedX, translatedY);
 	}
