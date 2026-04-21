@@ -1,5 +1,24 @@
 # QBX Releases
 
+## 1.6.0 - 2026-04-21
+
+### Changed
+
+- The distribution layout is now closer to a QB71 installation, with `BIN`, `SRC` and `HELP` directories. The `HELP` directory contains a hint about how to enable help functionality.
+
+### Added
+
+- `STOP` statement.
+- `PMAP` function.
+
+### Fixed
+
+- `DIM` statements now preserve extra whitespace before the `AS` keyword if present.
+- The visible display page field within the video firmware is now included in the save state blob. This fixes `Press any key to continue` sometimes not appearing on program termination.
+- Help files are now located based on the location of QBX.exe, regardless of what the current directory is.
+- When switching between `SUB`s/`FUNCTION`s/modules, the selection state is reset so that pressing Shift right after no longer selects a chunk of text back to the previous view's cursor position.
+- Text inputs in dialogs now handle backspace more consistently with QuickBASIC: Modifier keypresses no longer cancel selection, Ctrl-Backspace is now equivalent to Delete, and Backspace now clears any selection.
+
 ## 1.5.0 - 2026-04-18
 
 ### Added
