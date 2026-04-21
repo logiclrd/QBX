@@ -3575,6 +3575,16 @@ public class BasicParser(IdentifierRepository identifierRepository)
 				return sound;
 			}
 
+			case TokenType.STOP:
+			{
+				var stop = new StopStatement();
+
+				if (tokenHandler.HasMoreTokens)
+					stop.ExitCodeExpression = ParseExpressionForStatement(stop, tokenHandler.RemainingTokens, tokenHandler.EndToken);
+
+				return stop;
+			}
+
 			case TokenType.SUB:
 			case TokenType.FUNCTION:
 			{

@@ -12,6 +12,7 @@ namespace QBX.ExecutionEngine.Execution;
 public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 {
 	public IEnumerable<StackFrame> Stack => _stack;
+	public bool IgnoreBreakFromNextStatement { get; set; }
 	public RuntimeException? CurrentError => _currentError;
 	public bool ChainExecution => _chainExecution;
 	public bool IsTerminated => _isTerminated;
@@ -39,6 +40,11 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 	volatile int _currentWait = 1;
 
 	// Controls:
+	void IExecutionControls.IgnoreBreakFromNextStatement()
+	{
+		IgnoreBreakFromNextStatement = true;
+	}
+
 	public void ContinueExecution()
 	{
 		if (_isTerminated)

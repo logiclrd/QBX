@@ -10,6 +10,8 @@ public interface IExecutionControls
 	void Break();
 	void Terminate();
 
+	void IgnoreBreakFromNextStatement();
+
 	void WaitForInterruption();
 	void WaitForStartUp();
 }

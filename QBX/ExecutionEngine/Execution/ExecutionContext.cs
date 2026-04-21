@@ -536,13 +536,16 @@ public class ExecutionContext
 					}
 					catch (BreakExecution)
 					{
-						if (executable.CanBreak)
+						if (!_executionState.IgnoreBreakFromNextStatement)
 						{
-							Controls.Break();
-							retryStatement = true;
+							if (executable.CanBreak)
+							{
+								Controls.Break();
+								retryStatement = true;
+							}
+							else
+								throw;
 						}
-						else
-							throw;
 					}
 					catch (RuntimeException error)
 					{
@@ -568,6 +571,10 @@ public class ExecutionContext
 							_executionState.Error(error);
 							retryStatement = true;
 						}
+					}
+					finally
+					{
+						_executionState.IgnoreBreakFromNextStatement = false;
 					}
 				} while (retryStatement);
 			}

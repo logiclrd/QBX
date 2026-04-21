@@ -1499,11 +1499,21 @@ public class Compiler(IdentifierRepository identifierRepository)
 			}
 			case CodeModel.Statements.EndStatement endStatement:
 			{
-				var translatedEndStatement = new EndStatement(endStatement);
+				if (endStatement is CodeModel.Statements.StopStatement stopStatement)
+				{
+					var translatedStopStatement = new StopStatement(stopStatement);
 
-				translatedEndStatement.ExitCodeExpression = TranslateExpression(endStatement.ExitCodeExpression, container, mapper, compilation, module);
+					container.Append(translatedStopStatement);
+				}
+				else
+				{
+					var translatedEndStatement = new EndStatement(endStatement);
 
-				container.Append(translatedEndStatement);
+					TranslateNumericArgumentExpression(
+						ref translatedEndStatement.ExitCodeExpression, endStatement.ExitCodeExpression);
+
+					container.Append(translatedEndStatement);
+				}
 
 				break;
 			}

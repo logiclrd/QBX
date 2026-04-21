@@ -65,6 +65,8 @@ public partial class Program
 
 			_executionContext = null;
 			_executionThread = null;
+
+			ClearNextStatement();
 		}
 		catch { }
 	}
@@ -190,6 +192,9 @@ public partial class Program
 
 			lock (_executionContext!.Controls.Sync)
 			{
+				if (ClearNextStatement())
+					_executionContext.Controls.IgnoreBreakFromNextStatement();
+
 				action();
 
 				using (Machine.DOS.EnableBreak())

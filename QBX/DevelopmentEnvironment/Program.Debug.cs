@@ -48,6 +48,16 @@ public partial class Program
 		}
 	}
 
+	private bool ClearNextStatement()
+	{
+		bool hadNextStatement = (_nextStatement != null);
+
+		_nextStatement = null;
+		_nextStatementRoutine = null;
+
+		return hadNextStatement;
+	}
+
 	private void ShowNextStatement(IEnumerable<StackFrame> stack)
 	{
 		var currentFrame = stack.FirstOrDefault();

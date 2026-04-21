@@ -88,6 +88,7 @@ public enum StatementType
 	SoftKeyControl,
 	SoftKeyList,
 	Sound,
+	Stop,
 	Sub,
 	Swap,
 	Read,
