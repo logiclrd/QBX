@@ -185,8 +185,8 @@ public class DrawProcessor : ProcessorCommon
 						double udx = dx;
 						double udy = dy;
 
-						dx = udx * ca + udy * sa;
-						dy = udx * sa - udy * ca;
+						dx = udx * ca - udy * sa;
+						dy = udx * sa + udy * ca;
 
 						// Then undo the scaling
 						dy *= aspect;
