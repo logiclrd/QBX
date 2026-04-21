@@ -27,7 +27,7 @@ public class TextInput : Widget
 		if (input.IsRelease)
 			return false;
 
-		if (input.IsNormalText)
+		if (input.IsNormalText && (input.ScanCode != ScanCode.Backspace)) // Ctrl-Backspace generates character 127
 		{
 			if (SelectionStart >= 0)
 				DeleteSelection();
@@ -44,10 +44,13 @@ public class TextInput : Widget
 		{
 			int newSelectionStart = SelectionStart;
 
-			if (!input.Modifiers.ShiftKey)
-				newSelectionStart = -1;
-			else if (SelectionStart < 0)
-				newSelectionStart = CursorX;
+			if (!input.IsModifierKey)
+			{
+				if (!input.Modifiers.ShiftKey)
+					newSelectionStart = -1;
+				else if (SelectionStart < 0)
+					newSelectionStart = CursorX;
+			}
 
 			input = input.NormalizeModifierCombinationKey();
 
@@ -86,14 +89,17 @@ public class TextInput : Widget
 						}
 						break;
 					case ScanCode.Backspace:
-						if (!input.Modifiers.CtrlKey)
+						if (input.Modifiers.CtrlKey)
+							goto case ScanCode.Delete;
+
+						newSelectionStart = -1;
+
+						if (CursorX > 0)
 						{
-							if (CursorX > 0)
-							{
-								CursorX--;
-								Text.Remove(CursorX, 1);
-							}
+							CursorX--;
+							Text.Remove(CursorX, 1);
 						}
+
 						break;
 					case ScanCode.Insert:
 						overtypeFlag.Toggle();
