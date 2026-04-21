@@ -4307,6 +4307,9 @@ public class BasicParser(IdentifierRepository identifierRepository)
 					tokenHandler.NextToken,
 					"Expected: , or )");
 			}
+
+			declaration.AsColumn = tokenHandler.NextToken.Column - tokens[0].Column;
+
 			tokenHandler.Advance();
 
 			if (tokenHandler.NextTokenIs(TokenType.Identifier))

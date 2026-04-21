@@ -11,6 +11,7 @@ public class VariableDeclaration : IRenderableCode
 	public Identifier Name { get; set; } = Identifier.Empty;
 	public VariableDeclarationSubscriptList? Subscripts { get; set; }
 	public DataType Type { get; set; } = DataType.Unspecified;
+	public int AsColumn { get; set; }
 	public Identifier? FixedStringLength { get; set; }
 	public Identifier? UserType { get; set; }
 
@@ -20,27 +21,37 @@ public class VariableDeclaration : IRenderableCode
 
 	public void Render(TextWriter writer)
 	{
-		writer.Write(Name);
-		Subscripts?.Render(writer);
+		var wrapper = new ColumnTrackingTextWriter(writer);
+
+		wrapper.Write(Name);
+		Subscripts?.Render(wrapper);
 
 		if ((Type != DataType.Unspecified) && (UserType != null))
 			throw new Exception("Internal error: VariableDeclaration specifies both Type and UserType");
 
 		if (Type != DataType.Unspecified)
 		{
-			writer.Write(" AS ");
-			writer.Write(Type);
+			wrapper.Write(' ');
+			while (wrapper.Column < AsColumn)
+				wrapper.Write(' ');
+
+			wrapper.Write("AS ");
+			wrapper.Write(Type);
 
 			if ((Type == DataType.STRING) && (FixedStringLength != null))
 			{
-				writer.Write(" * ");
-				writer.Write(FixedStringLength.Value);
+				wrapper.Write(" * ");
+				wrapper.Write(FixedStringLength.Value);
 			}
 		}
 		else if (UserType != null)
 		{
-			writer.Write(" AS ");
-			writer.Write(UserType);
+			wrapper.Write(' ');
+			while (wrapper.Column < AsColumn)
+				wrapper.Write(' ');
+
+			wrapper.Write("AS ");
+			wrapper.Write(UserType);
 		}
 	}
 }
