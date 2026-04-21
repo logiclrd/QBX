@@ -1,5 +1,11 @@
 # QBX Releases
 
+## 1.6.1 - 2026-04-21
+
+### Fixed
+
+- `DRAW` now applies rotation correctly. The previous calculation had signs in the wrong order, causing the angle to be effectively 180 degrees off.
+
 ## 1.6.0 - 2026-04-21
 
 ### Changed
