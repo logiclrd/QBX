@@ -73,9 +73,12 @@ jobs:
       run: |
         md Stage
         Copy-Item RELEASES.md Stage\
-        Copy-Item QBX\bin\Release\net10.0\* Stage\ -Recurse
-        md Stage\Samples
-        robocopy Samples Stage\Samples /XF *.vbproj /XF .gitignore /XD bin /XD obj /S
+        md Stage\BIN
+        Copy-Item QBX\bin\Release\net10.0\* Stage\BIN\ -Recurse
+        md Stage\HELP
+        Copy-Item HELP.md Stage\HELP\README.md
+        md Stage\SRC
+        robocopy Samples Stage\SRC /XF *.vbproj /XF .gitignore /XD bin /XD obj /S
         Compress-Archive -Path Stage\* -DestinationPath ${{ env.PackageFileName }}
         Get-ChildItem ${{ env.PackageFileName }} | Select-Object Mode,LastWriteTime,Length,FullName
 

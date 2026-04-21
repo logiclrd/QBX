@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Text.RegularExpressions;
 
 namespace QBX.DevelopmentEnvironment.Help;
 
@@ -20,6 +21,9 @@ public class HelpSystem
 		_configuration = configuration;
 	}
 
+	static readonly Regex ProjectBuildOutputFolderExpression =
+		new Regex(@"bin[/\\](Debug|Release)[/\\]net[0-9]+(\.[0-9]+)?[/\\]?$");
+
 	public bool ProbeForFile(string fileName)
 	{
 		if (!string.IsNullOrWhiteSpace(_configuration.HelpFileSearchPath))
@@ -28,9 +32,22 @@ public class HelpSystem
 		}
 		else
 		{
+			string baseDirectory = AppContext.BaseDirectory;
+
+			// If we're being run from the project build output folder, then walk
+			// up the tree to the QBX.csproj directory, from which "../HELP" finds
+			// HELP off the solution root.
+			if (ProjectBuildOutputFolderExpression.IsMatch(baseDirectory))
+			{
+				baseDirectory = baseDirectory.TrimEnd('/', '\\');
+
+				for (int i = 0; i < 3; i++)
+					baseDirectory = Path.GetDirectoryName(baseDirectory) ?? ".";
+			}
+
 			return
 				ProbeForFileAtPath(fileName) ||
-				ProbeForFileAtPath(Path.Join("../HELP", fileName));
+				ProbeForFileAtPath(Path.Join(baseDirectory, "../HELP", fileName));
 		}
 	}
 
