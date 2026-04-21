@@ -1,5 +1,4 @@
-﻿using QBX.ExecutionEngine.Execution.Variables;
-using System.IO;
+﻿using System.IO;
 
 using static QBX.Hardware.GraphicsArray;
 
@@ -69,6 +68,8 @@ public partial class Video
 		machine.GraphicsArray.InPort(InputStatusRegisters.InputStatus1Port);
 		machine.GraphicsArray.OutPort(AttributeControllerRegisters.IndexAndDataWritePort, AttributeControllerRegisters.Index_PaletteAddressSourceBit);
 
+		writer.Write(_visiblePageNumber);
+
 		for (int i = 0; i < 8; i++)
 			writer.Write(_cursorAddressByPageNumber[i]);
 	}
@@ -120,6 +121,8 @@ public partial class Video
 		}
 
 		machine.GraphicsArray.OutPort(AttributeControllerRegisters.IndexAndDataWritePort, AttributeControllerRegisters.Index_PaletteAddressSourceBit);
+
+		_visiblePageNumber = reader.ReadInt32();
 
 		for (int i = 0; i < 8; i++)
 			_cursorAddressByPageNumber[i] = reader.ReadInt32();
