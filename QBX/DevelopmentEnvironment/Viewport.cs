@@ -76,6 +76,8 @@ public class Viewport
 
 		if (ScrollY < 0)
 			ScrollY = 0;
+
+		Clipboard.StartSelection(CursorX, CursorY);
 	}
 
 	public int GetContentLineCount()
