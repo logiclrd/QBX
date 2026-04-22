@@ -127,10 +127,19 @@ public class DrawProcessor : ProcessorCommon
 
 						dx = _scale * sign * ExpectInteger(ref input, executionContext);
 
-						AdvanceAndSkipWhitespace(ref input);
+						SkipWhitespace(ref input);
 
 						if ((input.Length == 0) || (input[0] != Comma))
 							Fail();
+
+						AdvanceAndSkipWhitespace(ref input);
+
+						switch (input[0])
+						{
+							case Plus: sign = +1; AdvanceAndSkipWhitespace(ref input); break;
+							case Minus:  sign = -1; AdvanceAndSkipWhitespace(ref input); break;
+							default: sign = +1; break;
+						}
 
 						dy = _scale * sign * ExpectInteger(ref input, executionContext);
 					}
@@ -206,6 +215,9 @@ public class DrawProcessor : ProcessorCommon
 					}
 					else if (!suppressNextMove)
 						_graphics.LastPoint = newPoint;
+
+					suppressNextDraw = false;
+					suppressNextMove = false;
 
 					break;
 				}
