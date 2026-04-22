@@ -1,5 +1,12 @@
 # QBX Releases
 
+## 1.6.2 - 2026-04-21
+
+### Fixed
+
+- `DRAW` handling of `M` commands now correctly parses the arguments.
+- `DRAW` handling of `B` and `N` modifiers now correctly only applies them to the draw command that immediately follows.
+
 ## 1.6.1 - 2026-04-21
 
 ### Fixed
