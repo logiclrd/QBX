@@ -30,20 +30,24 @@ public class Adapter
 
 	public bool UpdateResolution(ref int width, ref int height, ref int physicalWidth, ref int physicalHeight)
 	{
-		_width = _array.MiscellaneousOutput.BasePixelWidth >> (_array.Sequencer.DotDoubling ? 1 : 0);
-		_height = _array.CRTController.NumScanLines;
-
-		if (_array.Graphics.DisableText)
-			_height *= (_array.CRTController.ScanRepeatCount + 1);
-
 		int widthScale = _array.Sequencer.DotDoubling ? 2 : 1;
 		int heightScale = _array.CRTController.ScanDoubling ? 2 : 1;
 
+		_width = _array.MiscellaneousOutput.BasePixelWidth >> (_array.Sequencer.DotDoubling ? 1 : 0);
+		_height = _array.CRTController.NumScanLines * heightScale;
+
 		_physicalWidth = _width * widthScale;
-		_physicalHeight = _height * heightScale;
+		_physicalHeight = _height;
 
 		if (_height == 350)
 			_physicalHeight = _physicalHeight * 480 / 350;
+
+		if (_array.Graphics.DisableText)
+		{
+			int repeatCount = _array.CRTController.ScanRepeatCount + 1;
+
+			_height /= repeatCount;
+		}
 
 		if ((width != _width) || (height != _height) || (physicalWidth != _physicalWidth) || (physicalHeight != _physicalHeight))
 		{
@@ -163,10 +167,25 @@ public class Adapter
 				characterHeight *= 2;
 
 			// In theory this value is derived from the CRT Controller's Offset register.
-			int stride = _width / (_array.Graphics.Shift256 ? 1 : characterWidth);
+			int stride = _array.CRTController.Stride;
 
-			if (chainOddEven)
-				stride *= 2;
+			bool scanDoubling = _array.CRTController.ScanDoubling;
+			bool dotDoubling = _array.Sequencer.DotDoubling;
+
+			int activeScans = _array.CRTController.NumScanLines * (scanDoubling ? 2 : 1);
+
+			if (_array.Graphics.DisableText)
+			{
+				int repeatCount = _array.CRTController.ScanRepeatCount + 1;
+
+				activeScans /= repeatCount;
+				characterHeight /= repeatCount;
+
+				if (_array.Graphics.Shift256)
+					stride *= 2;
+			}
+
+			int dotsPerLoopIteration = dotDoubling ? 2 : 1;
 
 			bool paletteAddressSource = _array.AttributeController.PaletteAddressSource;
 
@@ -189,7 +208,12 @@ public class Adapter
 
 			int resetAddressAtScan = _array.CRTController.ResetAddressAtScan;
 
-			int endHorizontalDisplay = _array.CRTController.Registers.EndHorizontalDisplay;
+			int endHorizontalDisplay = _array.CRTController.Registers.EndHorizontalDisplay + 1;
+
+			if (chainOddEven)
+				endHorizontalDisplay *= 2;
+			else if (shift256)
+				endHorizontalDisplay *= 8;
 
 			int overscanBGRA = palette[
 				_array.AttributeController.Registers.OverscanPaletteIndex];
@@ -218,7 +242,10 @@ public class Adapter
 				return wrapSpan;
 			}
 
-			for (int y = 0; y < _height; y++)
+			int y = 0;
+			bool scanDoubled = false;
+
+			for (int scan = 0; scan < activeScans; scan++)
 			{
 				if (y == resetAddressAtScan)
 					planeOffset = 0;
@@ -227,7 +254,7 @@ public class Adapter
 				var scanIn1 = BuildWrapSpan(plane1, planeOffset, stride, wrapSpan1);
 				var scanIn2 = BuildWrapSpan(plane2, planeOffset, stride, wrapSpan2);
 				var scanIn3 = BuildWrapSpan(plane3, planeOffset, stride, wrapSpan3);
-				var scanOut = MemoryMarshal.Cast<byte, int>(target.Slice(y * targetPitch, rowWidthOut));
+				var scanOut = MemoryMarshal.Cast<byte, int>(target.Slice(scan * targetPitch, rowWidthOut));
 
 				int offset = 0;
 				int characterX = 0;
@@ -348,7 +375,10 @@ public class Adapter
 
 					scanOut[x] = palette[paletteIndex & dacMask];
 
-					characterX++;
+					if (shift256)
+						characterX += 2;
+					else
+						characterX++;
 
 					columnBit >>= 1;
 
@@ -360,7 +390,7 @@ public class Adapter
 						characterX = 0;
 						columnBit = 128;
 
-						if (offset == endHorizontalDisplay)
+						if ((offset == endHorizontalDisplay) || (offset >= scanIn0.Length))
 						{
 							x++;
 
@@ -382,17 +412,30 @@ public class Adapter
 					}
 				}
 
-				characterY++;
-
-				inCursorScan = ((characterY >= cursorScanStart) && (characterY <= cursorScanEnd));
-
-				if (characterY >= characterHeight)
+				if (scanDoubled != scanDoubling)
+					scanDoubled = true;
+				else
 				{
-					characterY = 0;
-					planeOffset += stride;
-					cursorOffset -= stride;
+					scanDoubled = false;
+
+					y++;
+					characterY++;
+
+					inCursorScan = ((characterY >= cursorScanStart) && (characterY <= cursorScanEnd));
+
+					if (characterY >= characterHeight)
+					{
+						characterY = 0;
+						planeOffset += stride;
+						cursorOffset -= stride;
+					}
 				}
 			}
+
+			int remainingScans = _height - activeScans;
+
+			if (remainingScans > 0)
+				target.Slice(activeScans * targetPitch, remainingScans * targetPitch).Clear();
 		}
 		catch { }
 		finally
