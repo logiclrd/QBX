@@ -163,11 +163,13 @@ public class Adapter
 			int characterWidth = _array.Sequencer.CharacterWidth;
 			int characterHeight = _array.CRTController.ScanRepeatCount + 1;
 
-			if (shiftInterleave)
-				characterHeight *= 2;
-
-			// In theory this value is derived from the CRT Controller's Offset register.
 			int stride = _array.CRTController.Stride;
+
+			if (shiftInterleave)
+			{
+				characterHeight *= 2;
+				stride /= 2;
+			}
 
 			bool scanDoubling = _array.CRTController.ScanDoubling;
 			bool dotDoubling = _array.Sequencer.DotDoubling;
