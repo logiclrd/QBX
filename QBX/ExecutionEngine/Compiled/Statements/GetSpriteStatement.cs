@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 
 using QBX.ExecutionEngine.Compiled.Expressions;
 using QBX.ExecutionEngine.Execution;
@@ -83,6 +84,13 @@ public class GetSpriteStatement(CodeModel.Statements.GetSpriteStatement source) 
 
 		var targetBytes = array.PackedData.Slice(arrayOffset);
 
-		visual.GetSprite(fromX, fromY, toX, toY, targetBytes);
+		try
+		{
+			visual.GetSprite(fromX, fromY, toX, toY, targetBytes);
+		}
+		catch (InvalidOperationException)
+		{
+			throw RuntimeException.IllegalFunctionCall(Source);
+		}
 	}
 }
