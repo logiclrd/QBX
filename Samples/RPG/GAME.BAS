@@ -213,7 +213,7 @@ DO
  ELSE
   a$ = oa$: b$ = ob$
  END IF
- FOR i% = 1 TO 16
+ FOR i% = 1 TO LEN(b$)
   st# = TIMER
   LOCATE 21, i% + 1
   PRINT MID$(b$, i%, 1)
