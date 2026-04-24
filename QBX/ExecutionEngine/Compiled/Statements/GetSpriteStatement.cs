@@ -69,6 +69,7 @@ public class GetSpriteStatement(CodeModel.Statements.GetSpriteStatement source) 
 			arrayElement.EvaluateInParts(context, stackFrame, out array, out var subscripts);
 
 			arrayOffset = array.Subscripts.GetElementIndex(subscripts, arrayElement.SubscriptExpressions);
+			arrayOffset *= array.ElementSize;
 		}
 		else
 		{

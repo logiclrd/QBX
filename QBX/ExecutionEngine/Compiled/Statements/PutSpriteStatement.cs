@@ -63,6 +63,7 @@ public class PutSpriteStatement(CodeModel.Statements.PutSpriteStatement source) 
 			arrayElement.EvaluateInParts(context, stackFrame, out array, out var subscripts);
 
 			arrayOffset = array.Subscripts.GetElementIndex(subscripts, arrayElement.SubscriptExpressions);
+			arrayOffset *= array.ElementSize;
 		}
 		else
 		{
