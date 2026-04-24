@@ -314,14 +314,7 @@ public partial class Video(Machine machine)
 		array.OutPort(DACRegisters.MaskPort, 0xFF);
 
 		if (LoadPaletteOnModeChange)
-		{
-			switch (mode.PaletteType)
-			{
-				case PaletteType.CGA: LoadCGAPalette(intensity: true, reloadDAC: true); break;
-				case PaletteType.EGA: LoadEGAPalette(); break;
-				case PaletteType.VGA: LoadVGAPalette(); break;
-			}
-		}
+			ResetPalette();
 
 		array.OutPort2(
 			SequencerRegisters.IndexPort,
@@ -339,6 +332,24 @@ public partial class Video(Machine machine)
 		ModeChanged?.Invoke(mode);
 
 		return true;
+	}
+
+	public void ResetPalette()
+	{
+		if ((LastModeNumber < 0) || (LastModeNumber >= Modes.Length))
+			return;
+
+		var mode = Modes[LastModeNumber];
+
+		if (mode == null)
+			return;
+
+		switch (mode.PaletteType)
+		{
+			case PaletteType.CGA: LoadCGAPalette(intensity: true, reloadDAC: true); break;
+			case PaletteType.EGA: LoadEGAPalette(); break;
+			case PaletteType.VGA: LoadVGAPalette(); break;
+		}
 	}
 
 	void InitializeVisualLibrary(ModeParameters modeParams)

@@ -2430,14 +2430,20 @@ public class Compiler(IdentifierRepository identifierRepository)
 			{
 				if (paletteStatement.ArrayExpression == null)
 				{
-					var translatedPaletteStatement = new PaletteStatement(paletteStatement);
+					if ((paletteStatement.AttributeExpression == null)
+					 && (paletteStatement.ColourExpression == null))
+						container.Append(new ResetPaletteStatement(paletteStatement));
+					else
+					{
+						var translatedPaletteStatement = new PaletteStatement(paletteStatement);
 
-					TranslateNumericArgumentExpression(
-						ref translatedPaletteStatement.AttributeExpression, paletteStatement.AttributeExpression);
-					TranslateNumericArgumentExpression(
-						ref translatedPaletteStatement.ColourExpression, paletteStatement.ColourExpression);
+						TranslateNumericArgumentExpression(
+							ref translatedPaletteStatement.AttributeExpression, paletteStatement.AttributeExpression);
+						TranslateNumericArgumentExpression(
+							ref translatedPaletteStatement.ColourExpression, paletteStatement.ColourExpression);
 
-					container.Append(translatedPaletteStatement);
+						container.Append(translatedPaletteStatement);
+					}
 				}
 				else
 				{
