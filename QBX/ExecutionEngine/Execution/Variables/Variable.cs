@@ -138,6 +138,8 @@ public abstract class Variable
 	public abstract void SwapValueWith(Variable other);
 	public abstract Variable Clone();
 
+	public virtual Variable Detach() => this;
+
 	public abstract int Serialize(Span<byte> buffer);
 	public abstract int Deserialize(ReadOnlySpan<byte> buffer);
 

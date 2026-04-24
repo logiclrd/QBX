@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Buffers;
-using System.Runtime.CompilerServices;
 using System.Text;
 
 using QBX.ExecutionEngine.Compiled;
@@ -18,6 +17,8 @@ public class StringVariable : Variable
 	public string ValueString => s_cp437.GetString(ValueSpan);
 
 	public virtual StringValue CloneValue() => new StringValue(ValueSpan);
+
+	public override Variable Detach() => Clone();
 
 	public int IsMappedFieldCount = 0;
 

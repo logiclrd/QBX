@@ -665,7 +665,7 @@ public class ExecutionContext
 			frame = routine.Module.ModuleFrame ?? throw new Exception("No module frame");
 
 			for (int i=0; i < arguments.Length; i++)
-				frame.Variables[routine.ParameterVariableIndices[i]] = arguments[i];
+				frame.Variables[routine.ParameterVariableIndices[i]] = arguments[i].Detach();
 		}
 		else
 			frame = CreateFrame(routine.Module, routine, arguments);
@@ -767,7 +767,8 @@ public class ExecutionContext
 
 		int argumentOffset = routine.ReturnType != null ? 1 : 0;
 
-		arguments.CopyTo(variables, argumentOffset);
+		for (int i=0; i < arguments.Length; i++)
+			variables[i + argumentOffset] = arguments[i].Detach();
 
 		if (!isModuleFrame)
 		{
