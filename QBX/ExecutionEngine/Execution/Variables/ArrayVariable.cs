@@ -16,7 +16,7 @@ public class ArrayVariable(DataType type, int fixedStringLength = -1) : Variable
 
 	public Array Array = Array.Uninitialized;
 
-	public bool IsDynamic;
+	public bool IsDynamic => Array.IsDynamic;
 
 	public bool IsCommonArray;
 
@@ -69,8 +69,6 @@ public class ArrayVariable(DataType type, int fixedStringLength = -1) : Variable
 		Array = new Array(ElementType, subscripts, fixedStringLength);
 		Array.IsDynamic = isDynamic;
 		Array.PinnedMemoryOwner = this;
-
-		IsDynamic = isDynamic;
 	}
 
 	internal void InitializePinnedArray(ArraySubscripts subscripts, ExecutionContext context, int memoryAddress)

@@ -36,10 +36,7 @@ public class DimensionArrayStatement(CodeModel.Statements.DimStatement? source) 
 			if (PreserveData && !variable.Array.IsUninitialized)
 				variable.Array.RedimensionPreservingData(subscripts);
 			else
-			{
-				variable.InitializeArray(subscripts);
-				variable.Array.IsDynamic = IsDynamic;
-			}
+				variable.InitializeArray(subscripts, IsDynamic);
 		}
 		catch (RuntimeException ex)
 		{
