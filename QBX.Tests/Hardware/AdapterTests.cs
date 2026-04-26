@@ -116,17 +116,23 @@ public class AdapterTests
 
 		int targetPitch = library.Width * 4;
 
+		int rowMultiplier =
+			(array.CRTController.ScanDoubling ? 2 : 1) *
+			(array.CRTController.ScanRepeatCount + 1);
+
 		// Act
 		sut.Render(targetBuffer, targetPitch);
 
 		// Assert
 		targetWidth.Should().Be(library.Width);
-		targetHeight.Should().Be(library.Height);
+		targetHeight.Should().Be(library.Height * rowMultiplier);
 
 		for (int y = 0, o = 0; y < targetHeight; y++)
 			for (int x = 0; x < targetWidth; x++, o++)
 			{
-				int expectedPaletteIndex = (x + y) & maxColour;
+				int realY = y / rowMultiplier;
+
+				int expectedPaletteIndex = (x + realY) & maxColour;
 
 				target[o].Should().Be(paletteBGRA[expectedPaletteIndex]);
 			}
@@ -169,12 +175,16 @@ public class AdapterTests
 
 		int targetPitch = library.Width * 4;
 
+		int rowMultiplier =
+			(array.CRTController.ScanDoubling ? 2 : 1) *
+			(array.CRTController.ScanRepeatCount + 1);
+
 		// Act
 		sut.Render(targetBuffer, targetPitch);
 
 		// Assert
 		targetWidth.Should().Be(library.Width);
-		targetHeight.Should().Be(library.Height);
+		targetHeight.Should().Be(library.Height * rowMultiplier);
 
 		for (int x = 0; x < 4; x++)
 			target[x].Should().Be(expectedPaletteBGRA[x]);
