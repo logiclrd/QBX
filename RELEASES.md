@@ -1,5 +1,20 @@
 # QBX Releases
 
+## 1.7.0 - 2026-04-26
+
+### Fixed
+
+- VGA registers associated with horizontal and vertical limits are now processed better, permitting nonstandard modes like 256x256x256.
+- CGA shift interleave modes no display the full frame again.
+- `GET` (graphics) now raises a proper `ERROR 5` (Illegal Function Call) when the coordinates are out-of-range, like `PUT` (graphics).
+- `GET` and `PUT` (graphics) now factor in array element size when supplied with an array index to start at.fs
+- Arrays with `$STATIC` allocation are no longer deallocated by `ERASE`.
+- String values in `SUB` and `FUNCTION` parameters are now dealiased.
+
+### Added
+
+- `PALETTE` with no arguments is now supported.
+
 ## 1.6.2 - 2026-04-21
 
 ### Fixed
