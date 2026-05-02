@@ -7,7 +7,7 @@ DEFINT N, O, X, Y
              DO:buf$=SPACE$(1920):ERASE z:cA=COS(A)
            sA=SIN(A):cB=COS(B):FOR j=0TO 6.28STEP .07
          sB=SIN(B):cj=COS(j)          :sj=SIN(j):h=cj+2
-        cAsj=cA*sj: FOR i=0            TO 6.28 STEP .04
+        cAsj=cA*sj:FOR i=0             TO 6.28 STEP .04
        ci=COS(i):si=                      SIN(i):sih=si*h
        cih=ci*h:D=1                       /(cAsj+sA*sih+5)
        t=cA*sih-sA*sj                       :C=cB*cih-sB*t
