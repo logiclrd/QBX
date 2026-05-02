@@ -185,7 +185,7 @@ public class Substring : StringVariable
 	public override void SetValue(StringValue newValue)
 	{
 		var newValueSpan = newValue.AsSpan();
-		var targetSpan = ValueSpan.Slice(_start, _length);
+		var targetSpan = ValueSpan;
 
 		if (newValueSpan.Length > targetSpan.Length)
 			newValueSpan = newValueSpan.Slice(0, targetSpan.Length);

@@ -26,6 +26,10 @@ public class LocateStatement(CodeModel.Statements.LocateStatement source) : Exec
 			if (ColumnExpression != null)
 				column = ColumnExpression.EvaluateAndCoerceToInt(context, stackFrame);
 
+			if ((row < 1) || (row > context.VisualLibrary.CharacterHeight)
+			 || (column < 1) || (column > context.VisualLibrary.CharacterWidth))
+				throw RuntimeException.IllegalFunctionCall(Source);
+
 			context.VisualLibrary.MoveCursor(column - 1, row - 1);
 		}
 

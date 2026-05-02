@@ -35,7 +35,7 @@ public class SpaceFunction : Function
 
 		try
 		{
-			numSpaces = (byte)argumentValue.CoerceToInt(context: Argument);
+			numSpaces = checked((short)argumentValue.CoerceToInt(context: Argument));
 		}
 		catch (OverflowException)
 		{
