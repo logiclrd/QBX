@@ -1,5 +1,13 @@
 # QBX Releases
 
+## 1.7.1 - 2026-05-02
+
+### Fixed
+
+- `SPACE$` treats its argument as a 16-bit integer instead of an 8-bit byte, and performs range checking.
+- `LOCATE` raises an error for out-of-range coordinates.
+- Assigning to `MID$(..)` targets no longer erroneously applies the offset twice.
+
 ## 1.7.0 - 2026-04-26
 
 ### Fixed
