@@ -10,9 +10,10 @@ CONST SCRW = 80
 CONST SCRH = 50
 CONST NBOTS = 5 ' Total de 6 bots (0 a 5)
 CONST NFOOD = 60
-DIM SHARED pX(500), pY(500), pLen, pDX, pDY
-DIM SHARED bX(5, 500), bY(5, 500), bLen(5), bDX(5), bDY(5)
-DIM SHARED fX(100), fY(100), fT(100)
+CONST MAXSNAKE = 500
+DIM SHARED pX(MAXSNAKE), pY(MAXSNAKE), pLen, pDX, pDY
+DIM SHARED bX(5, MAXSNAKE), bY(5, MAXSNAKE), bLen(NBOTS), bDX(NBOTS), bDY(NBOTS)
+DIM SHARED fX(NFOOD), fY(NFOOD), fT(NFOOD)
 DIM SHARED score, gameover, camX, camY
 DIM SHARED turboCount, movs
 kUP$ = CHR$(0) + "H"
@@ -159,6 +160,8 @@ DO WHILE gameover = 0
                     foodEaten = 3
                 END IF
 
+                IF bLen(b) + foodEaten > MAXSNAKE THEN foodEaten = MAXSNAKE - bLen(b)
+
                 FOR i = bLen(b) + 1 TO bLen(b) + foodEaten
                     bX(b, i) = bX(b, i - 1)
                     bY(b, i) = bY(b, i - 1)
@@ -197,6 +200,8 @@ DO WHILE gameover = 0
             ELSE
                 foodEaten = 3
             END IF
+
+            IF pLen + foodEaten > MAXSNAKE THEN foodEaten = MAXSNAKE - pLen
 
             FOR j = pLen + 1 TO pLen + foodEaten
                 pX(j) = pX(j - 1)
