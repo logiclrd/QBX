@@ -154,10 +154,18 @@ DO WHILE gameover = 0
         FOR f = 0 TO NFOOD
             IF bX(b, 0) = fX(f) AND bY(b, 0) = fY(f) THEN
                 IF fT(f) = 1 THEN
-                    bLen(b) = bLen(b) + 1
+                    foodEaten = 1
                 ELSE
-                    bLen(b) = bLen(b) + 3
+                    foodEaten = 3
                 END IF
+
+                FOR i = bLen(b) + 1 TO bLen(b) + foodEaten
+                    bX(b, i) = bX(b, i - 1)
+                    bY(b, i) = bY(b, i - 1)
+                NEXT i
+
+                bLen(b) = bLen(b) + foodEaten
+
                 fX(f) = INT(RND * WORLDW)
                 fY(f) = INT(RND * WORLDH)
                 fT(f) = 1
@@ -185,12 +193,19 @@ DO WHILE gameover = 0
         NEXT ox
         IF pX(0) = fX(i) AND pY(0) = fY(i) THEN
             IF fT(i) = 1 THEN
-                pLen = pLen + 1
-                score = score + 10
+                foodEaten = 1
             ELSE
-                pLen = pLen + 3
-                score = score + 30
+                foodEaten = 3
             END IF
+
+            FOR i = pLen + 1 TO pLen + foodEaten
+                pX(i) = pX(i - 1)
+                pY(i) = pY(i - 1)
+            NEXT i
+
+            pLen = pLen + foodEaten
+            score = score + foodEaten * 10
+
             fX(i) = INT(RND * WORLDW)
             fY(i) = INT(RND * WORLDH)
             fT(i) = 1
@@ -225,6 +240,10 @@ DO WHILE gameover = 0
             bLen(b) = 15
             bX(b, 0) = INT(RND * WORLDW)
             bY(b, 0) = INT(RND * WORLDH)
+            FOR i = 1 TO bLen(b)
+                bX(b, i) = bX(b, i - 1)
+                bY(b, i) = bY(b, i - 1)
+            NEXT i
         END IF
         ' Player morre se bater no bot
         FOR i = 0 TO bLen(b)
