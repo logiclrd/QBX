@@ -277,5 +277,6 @@ DO WHILE gameover = 0
     PRINT "PTS:"; score;
     PCOPY 1, 0
 LOOP
+SCREEN 0, , 0, 0
 CLS : COLOR 12: LOCATE 12, 33: PRINT "GAME OVER!": END
 
