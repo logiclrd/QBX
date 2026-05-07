@@ -1,5 +1,9 @@
 # QBX Releases
 
+## 1.7.6 - 2026-05-07
+
+- `SLITHER.BAS` now limits the maximum snake length to avoid crashing if the player or a bot manages to reach & exceed the predefined maximum length.
+
 ## 1.7.5 - 2026-05-07
 
 - Loop index variable reuse corrected in `SLITHER.BAS`.
