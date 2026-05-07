@@ -1,28 +1,11 @@
-﻿using System.Runtime.CompilerServices;
-
-using QBX.CodeModel;
-using QBX.LexicalAnalysis;
-using QBX.Parser;
+﻿using QBX.CodeModel;
 using QBX.Tests.Utility;
 
 namespace QBX.Tests;
 
 public class CompilationUnitReadWriteEndToEndTests
 {
-	static string GetSamplesPath([CallerFilePath] string testFilePath = "")
-	{
-		string testProjectPath = Path.GetDirectoryName(testFilePath)!;
-		string solutionPath = Path.GetDirectoryName(testProjectPath)!;
-
-		return Path.Combine(solutionPath, "Samples");
-	}
-
-	public static IEnumerable<string> EnumerateSamples()
-	{
-		string samplesPath = GetSamplesPath();
-
-		return Directory.EnumerateFiles(samplesPath, "*.BAS");
-	}
+	public static IEnumerable<string> EnumerateSamples() => SamplesHelper.EnumerateSamples();
 
 	[TestCaseSource(nameof(EnumerateSamples))]
 	public void TestParseAndFormat(string path)
