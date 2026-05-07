@@ -1,5 +1,12 @@
 # QBX Releases
 
+## 1.7.4 - 2026-05-07
+
+### Fixed
+
+- `SLITHER.BAS` now renders snakes so that their heads are always visible.
+- `SLITHER.BAS` now initializes coordinate data immediately, so that parts of snakes do not get processed and rendered at stale coordinates.
+
 ## 1.7.3 - 2026-05-06
 
 ### Fixed
