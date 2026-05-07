@@ -1,5 +1,9 @@
 # QBX Releases
 
+## 1.7.5 - 2026-05-07
+
+- Loop index variable reuse corrected in `SLITHER.BAS`.
+
 ## 1.7.4 - 2026-05-07
 
 ### Fixed
