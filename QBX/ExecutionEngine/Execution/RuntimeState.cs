@@ -1,5 +1,5 @@
 using System;
-using System.Reflection.Metadata;
+
 using QBX.Firmware;
 
 namespace QBX.ExecutionEngine.Execution;
@@ -7,7 +7,7 @@ namespace QBX.ExecutionEngine.Execution;
 public class RuntimeState
 {
 	public int SegmentBase;
-	public int LastScreenMode = -1;
+	public int LastScreenMode = 0;
 	public bool EnablePaletteRemapping = true;
 	public PaletteMode PaletteMode = PaletteMode.Attribute;
 	public int MaximumAttribute = 15;
