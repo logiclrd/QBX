@@ -1,5 +1,11 @@
 # QBX Releases
 
+## 1.7.3 - 2026-05-06
+
+### Fixed
+
+- Fixed the Game Over screen display in the `SLITHER.BAS` sample.
+
 ## 1.7.2 - 2026-05-06
 
 ### Fixed
