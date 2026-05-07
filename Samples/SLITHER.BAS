@@ -198,10 +198,10 @@ DO WHILE gameover = 0
                 foodEaten = 3
             END IF
 
-            FOR i = pLen + 1 TO pLen + foodEaten
-                pX(i) = pX(i - 1)
-                pY(i) = pY(i - 1)
-            NEXT i
+            FOR j = pLen + 1 TO pLen + foodEaten
+                pX(j) = pX(j - 1)
+                pY(j) = pY(j - 1)
+            NEXT j
 
             pLen = pLen + foodEaten
             score = score + foodEaten * 10
