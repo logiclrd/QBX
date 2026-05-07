@@ -234,7 +234,7 @@ DO WHILE gameover = 0
         NEXT i
         ' Desenhar Bots
         COLOR 12
-        FOR i = 0 TO bLen(b)
+        FOR i = bLen(b) TO 0 STEP -1
             FOR ox = -1 TO 1
                 FOR oy = -1 TO 1
                     dX = (bX(b, i) + ox * WORLDW) - camX
@@ -256,7 +256,7 @@ DO WHILE gameover = 0
     IF pLen > 30 THEN pC = 11
     IF pLen > 60 THEN pC = 15
     COLOR pC
-    FOR i = 0 TO pLen
+    FOR i = pLen TO 0 STEP -1
         FOR ox = -1 TO 1
             FOR oy = -1 TO 1
                 dX = (pX(i) + ox * WORLDW) - camX
