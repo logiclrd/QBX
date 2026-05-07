@@ -1,5 +1,11 @@
 # QBX Releases
 
+## 1.7.2 - 2026-05-06
+
+### Fixed
+
+- `SCREEN` no longer resets the video mode if the mode number is the same as the last call to `SCREEN`.
+
 ## 1.7.1 - 2026-05-02
 
 ### Fixed
