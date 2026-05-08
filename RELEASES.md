@@ -1,5 +1,9 @@
 # QBX Releases
 
+## 1.7.7 - 2026-05-08
+
+- Blinking (instead of high-intensity background colours) is now correctly enabled in text modes.
+
 ## 1.7.6 - 2026-05-07
 
 - `SLITHER.BAS` now limits the maximum snake length to avoid crashing if the player or a bot manages to reach & exceed the predefined maximum length.
