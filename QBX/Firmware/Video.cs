@@ -289,7 +289,7 @@ public partial class Video(Machine machine)
 			(mode.IsGraphicsMode ? 0 : AttributeControllerRegisters.ModeControl_BlinkEnable) |
 			AttributeControllerRegisters.ModeControl_LineGraphicsEnable |
 			(mode.IsMonochrome ? AttributeControllerRegisters.ModeControl_MonochromeEmulation : 0) |
-			(mode.IsGraphicsMode ? AttributeControllerRegisters.ModeControl_GraphicsMode : 0)));
+			(mode.IsGraphicsMode ? AttributeControllerRegisters.ModeControl_GraphicsMode : AttributeControllerRegisters.ModeControl_BlinkEnable)));
 
 		// reset the AttributeController port mode
 		array.InPort(InputStatusRegisters.InputStatus1Port);

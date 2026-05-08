@@ -90,6 +90,8 @@ public partial class Program : HostedProgram, IOvertypeFlag
 
 		InitializeMenuBar();
 
+		SaveOutput();
+
 		SetIDEVideoMode();
 
 		TextLibrary = new TextLibrary(machine);
@@ -100,8 +102,6 @@ public partial class Program : HostedProgram, IOvertypeFlag
 		TextLibrary.HideCursor();
 
 		HelpSystem = new HelpSystem(Configuration);
-
-		SaveOutput();
 
 		PrimaryViewport = AttachViewport(new Viewport());
 
