@@ -156,6 +156,11 @@ public partial class Video(Machine machine)
 			CRTControllerRegisters.StartHorizontalBlanking,
 			unchecked((byte)(mode.Characters.Width)));
 
+		array.OutPort2(
+			CRTControllerRegisters.IndexPort,
+			CRTControllerRegisters.StartHorizontalRetrace,
+			unchecked((byte)(mode.Characters.Width + 1)));
+
 		int numScanLines;
 		int characterHeight;
 

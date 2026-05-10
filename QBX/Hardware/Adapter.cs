@@ -36,6 +36,12 @@ public class Adapter
 		_width = _array.MiscellaneousOutput.BasePixelWidth >> (_array.Sequencer.DotDoubling ? 1 : 0);
 		_height = _array.CRTController.NumScanLines * heightScale;
 
+		int retraceChar = _array.CRTController.Registers.StartHorizontalRetrace;
+		int retraceX = retraceChar * _array.Sequencer.CharacterWidth;
+
+		if (retraceX < _width)
+			_width = retraceX;
+
 		_physicalWidth = _width * widthScale;
 		_physicalHeight = _height;
 
