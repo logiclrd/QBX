@@ -1,14 +1,26 @@
 # QBX Releases
 
+## 1.7.8 - 2026-05-09
+
+### Fixed
+
+- VGA emulation now pays attention to the "Start Horizontal Retrace" register value.
+
 ## 1.7.7 - 2026-05-08
+
+### Fixed
 
 - Blinking (instead of high-intensity background colours) is now correctly enabled in text modes.
 
 ## 1.7.6 - 2026-05-07
 
+### Fixed
+
 - `SLITHER.BAS` now limits the maximum snake length to avoid crashing if the player or a bot manages to reach & exceed the predefined maximum length.
 
 ## 1.7.5 - 2026-05-07
+
+### Fixed
 
 - Loop index variable reuse corrected in `SLITHER.BAS`.
 
