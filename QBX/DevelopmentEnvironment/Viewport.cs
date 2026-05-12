@@ -111,18 +111,6 @@ public class Viewport
 		}
 	}
 
-	public void RenderLineAt(int y, TextWriter writer)
-	{
-		if (TryGetLineAt(y, out var line))
-			line.Render(writer, includeCRLF: false);
-
-		if (HelpTopic != null)
-		{
-			if ((y >= 0) && (y < HelpTopic.Lines.Count))
-				HelpTopic.Lines[y].RenderPlainText(writer);
-		}
-	}
-
 	public bool TryGetLineAt(int y, [NotNullWhen(true)] out IEditableLine? line)
 	{
 		if (EditableElement != null)
