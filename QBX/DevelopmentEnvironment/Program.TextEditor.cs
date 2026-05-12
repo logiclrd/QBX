@@ -417,8 +417,18 @@ public partial class Program
 							case ScanCode.PageUp: newScrollY -= viewportHeight - 1; newCursorY -= viewportHeight - 1; break;
 							case ScanCode.PageDown: newScrollY += viewportHeight - 1; newCursorY += viewportHeight - 1; break;
 							// Home, End: start/end of line
-							case ScanCode.Home: newCursorX = 0; break;
 							case ScanCode.End: newCursorX = currentLine.Value.Length; break;
+							case ScanCode.Home: // Home: start of line, factoring in indentation
+							{
+								var buffer = currentLine.Value;
+
+								newCursorX = 0;
+
+								while ((newCursorX < buffer.Length) && (buffer[newCursorX] == ' '))
+									newCursorX++;
+
+								break;
+							}
 						}
 					}
 
@@ -438,10 +448,16 @@ public partial class Program
 						while ((indentation < buffer.Length) && (buffer[indentation] == ' '))
 							indentation++;
 
+						if ((indentation == buffer.Length) && (newCursorX > indentation))
+							indentation = newCursorX;
+
 						if (input.Modifiers.CtrlKey)
 						{
 							// Ctrl-Enter: Do not insert newline.
+							FocusedViewport.CancelEdit();
 							FocusedViewport.CursorY++;
+
+							indentation = FocusedViewport.GetLineIndentation(FocusedViewport.CursorY);
 						}
 						else
 						{
@@ -673,8 +689,43 @@ public partial class Program
 
 							if (FocusedViewport.CursorX > 0)
 							{
-								if (buffer.Length == 0)
-									newCursorX = 0;
+								int thisLineIndentation = 0;
+
+								while ((thisLineIndentation < buffer.Length) && (buffer[thisLineIndentation] == ' '))
+									thisLineIndentation++;
+
+								if ((newCursorX == thisLineIndentation) || (thisLineIndentation == buffer.Length))
+								{
+									// Backspace at start of line/on empty line: Find preceding indentation level.
+									if (thisLineIndentation == buffer.Length)
+										thisLineIndentation = newCursorX;
+
+									int previousIndentation = 0;
+
+									for (int i = newCursorY - 1; i >= 0; i--)
+									{
+										int lineIndent = FocusedViewport.GetLineIndentation(i, out var isEmpty);
+
+										if (isEmpty)
+											continue;
+
+										if (lineIndent < thisLineIndentation)
+										{
+											previousIndentation = lineIndent;
+											break;
+										}
+									}
+
+									int difference = thisLineIndentation - previousIndentation;
+
+									newCursorX -= difference;
+
+									if (newCursorX + difference > buffer.Length)
+									  difference = buffer.Length - newCursorX;
+
+									if (difference > 0)
+										buffer.Remove(newCursorX, difference);
+								}
 								else
 								{
 									newCursorX--;

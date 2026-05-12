@@ -352,6 +352,40 @@ public class Viewport
 		}
 	}
 
+	[ThreadStatic]
+	static StringWriter? s_tempLineBufferWriter;
+
+	public int GetLineIndentation(int y)
+		=> GetLineIndentation(y, out _);
+
+	public int GetLineIndentation(int y, out bool isEmpty)
+	{
+		StringBuilder tempLineBuffer;
+
+		if ((y == CursorY) && (CurrentLineBuffer != null))
+			tempLineBuffer = CurrentLineBuffer;
+		else
+		{
+			s_tempLineBufferWriter ??= new StringWriter();
+
+			tempLineBuffer = s_tempLineBufferWriter.GetStringBuilder();
+			tempLineBuffer.Clear();
+
+			RenderLine(y, s_tempLineBufferWriter);
+		}
+
+		isEmpty = true;
+
+		for (int i=0; i < tempLineBuffer.Length; i++)
+			if (tempLineBuffer[i] != ' ')
+			{
+				isEmpty = false;
+				return i;
+			}
+
+		return 0;
+	}
+
 	public void ScrollCursorIntoView(int newCursorX, int newCursorY, int newScrollX, int newScrollY, ViewportPositioningPriority priority, int viewportWidth, bool ignoreErrors = false)
 	{
 		int contentLineCount = GetContentLineCount();
