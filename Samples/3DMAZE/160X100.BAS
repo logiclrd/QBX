@@ -9,7 +9,7 @@ DECLARE SUB DrawMiniMap (pXI%, pYI%)
 DECLARE SUB DrawStatus (exitopen%)
 DECLARE SUB GenerateTextures ()
 DECLARE SUB InitializeLabyrinth ()
-DECLARE SUB PaintSolidSlice (col%, dst!, colour%, fillcharacter$)
+DECLARE SUB PaintSolidSlice (col%, dst!, colour%)
 DECLARE SUB PaintTextureSlice (col%, dst!, texnum%, texX!, col0%, col1%)
 DECLARE SUB PaintTransparentTextureSlice (col%, dst!, texColour%, texnum%, texX!)
 DECLARE SUB SetUpPalette ()
@@ -243,7 +243,7 @@ FOR col% = 0 TO 159
   exitDst = exitDst * perspective
 
   IF dst > 8 THEN
-    PaintSolidSlice col%, dst, TextureCloseColour0%, Shade75$
+    PaintSolidSlice col%, dst, TextureCloseColour0%
   ELSEIF dst > 4 THEN
     PaintTextureSlice col%, dst, texnum%, texX, TextureFarColour0%, TextureFarColour1%
   ELSE
@@ -549,7 +549,7 @@ IF n% < minvalue% THEN n% = minvalue%
 InputNumber% = n%
 END FUNCTION
 
-SUB PaintSolidSlice (col%, dst, colour%, fillcharacter$)
+SUB PaintSolidSlice (col%, dst, colour%)
 h = INT(50 / dst)
 
 startrow% = 50 - h
