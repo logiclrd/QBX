@@ -1,5 +1,11 @@
 # QBX Releases
 
+## 1.7.9 - 2026-05-13
+
+### Fixed
+
+- Corrected cursor movement with respect to indentation in the IDE editor in response to Enter, Ctrl-Enter and Backspace.
+
 ## 1.7.8 - 2026-05-09
 
 ### Fixed
