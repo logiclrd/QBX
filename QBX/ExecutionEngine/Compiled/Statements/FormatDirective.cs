@@ -243,6 +243,10 @@ public abstract class FormatDirective
 		// Pattern
 		var pattern = new StringBuilder(patternSoFar);
 
+		for (int i = 0; i < pattern.Length; i++)
+			if (pattern[i] == '#')
+				pattern[i] = '0';
+
 		while (formatChars.Length > 0)
 		{
 			if (formatChars[0] == '.')
@@ -421,32 +425,45 @@ public class NumericFormatDirective(string pattern, char leftPadChar, bool leadi
 
 		string formatted = value.ToString(pattern);
 
-		char[] formattedChars = formatted.ToCharArray();
+		Span<char> formattedChars = formatted.ToCharArray();
 
-		int numberStart = formatted.Length - 1;
+		int decimalPosition = formattedChars.IndexOf('.');
 
-		for (int i = 0; i + 1 < formatted.Length; i++)
+		int numberStart = formattedChars.Length - 1;
+
+		for (int i = 0; i + 1 < formattedChars.Length; i++)
 		{
-			if ((formatted[i] >= '1') && (formatted[i] <= '9'))
+			if ((formattedChars[i] >= '1') && (formattedChars[i] <= '9'))
 			{
 				numberStart = i;
 				break;
 			}
 
-			if (formatted[i] == '.')
+			if (formattedChars[i] == '.')
 			{
 				numberStart = i;
 
 				if (numberStart > 0)
 				{
 					numberStart--;
-					formattedChars[numberStart] = '0';
+					if (formattedChars[numberStart] != '-')
+						formattedChars[numberStart] = '0';
 				}
 
 				break;
 			}
 
-			formattedChars[i] = leftPadChar;
+			if ((formattedChars[i] == '-')
+			 && (formattedChars[i + 1] == '0')
+			 && (decimalPosition > 2))
+			{
+				formattedChars = formattedChars.Slice(1);
+				formattedChars[i] = '-';
+				i--;
+				decimalPosition--;
+			}
+			else if (formattedChars[i] == ' ')
+				formattedChars[i] = leftPadChar;
 		}
 
 		if (leadingDollarSign)
@@ -456,8 +473,26 @@ public class NumericFormatDirective(string pattern, char leftPadChar, bool leadi
 			else
 				formattedChars[numberStart - 1] = '$';
 		}
-		else if (formatted.Length > pattern.Length)
-			emitter.Emit('%');
+		else if (formattedChars.Length > pattern.Length)
+		{
+			if ((formattedChars[0] == '-')
+			 && (formattedChars[1] == '0'))
+			{
+				formattedChars = formattedChars.Slice(1);
+				formattedChars[0] = '-';
+			}
+			else
+				emitter.Emit('%');
+		}
+
+		if (decimalPosition < 0)
+			decimalPosition = formattedChars.Length;
+
+		while ((formattedChars.Length > 1) && (formattedChars[0] == '0') && (decimalPosition > 1))
+		{
+			formattedChars = formattedChars.Slice(1);
+			decimalPosition--;
+		}
 
 		for (int i = formattedChars.Length; i < pattern.Length; i++)
 			emitter.Emit(leftPadChar);
@@ -604,12 +639,25 @@ public class NumericFormatDirective(string pattern, char leftPadChar, bool leadi
 		if (decimalPosition > patternDecimalPosition)
 			emitter.Emit('%');
 
-		if (decimalPosition == 0)
-		{
-			for (int i = 1; i < patternDecimalPosition; i++)
-				emitter.Emit(leftPadChar);
+		bool isInitialDecimal =
+			decimalPosition == (isNegative ? 1 : 0);
 
-			emitter.Emit('0');
+		if (isInitialDecimal)
+		{
+			if (!isNegative)
+			{
+				for (int i = 1; i < patternDecimalPosition; i++)
+					emitter.Emit(leftPadChar);
+			}
+			else
+			{
+				for (int i = 2; i < patternDecimalPosition; i++)
+					emitter.Emit(leftPadChar);
+				emitter.Emit('-');
+			}
+
+			if (decimalPosition < patternDecimalPosition)
+				emitter.Emit('0');
 		}
 		else
 		{

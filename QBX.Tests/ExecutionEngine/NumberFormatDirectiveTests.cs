@@ -183,6 +183,18 @@ public class NumberFormatDirectiveTests
 			"000.00", ' ', false, false, 0, false,
 			"9.9999",
 			" 10.00");
+		yield return new TestConfiguration(
+			"0.000", ' ', false, false, 0, false,
+			"-.375",
+			"-.375");
+		yield return new TestConfiguration(
+			"00.000", ' ', false, false, 0, false,
+			"-.375",
+			"-0.375");
+		yield return new TestConfiguration(
+			"000.000", ' ', false, false, 0, false,
+			"-.375",
+			" -0.375");
 	}
 
 	static IEnumerable<object[]> DoubleTestCaseGenerator()
