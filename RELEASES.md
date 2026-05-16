@@ -1,5 +1,17 @@
 # QBX Releases
 
+## 1.8.0 - 2026-05-16
+
+### Fixed
+
+- Errors in the way `PRINT USING` handled negative values between -1 and 0 have been fixed.
+- Passing L-values of the incorrect type into `SUB` and `FUNCTION`s now correctly generates a Type Mismatch error.
+- `GET` (graphics) now correctly marks the array content (in "packed" form) as having been updated, so future accesses use the packed data.
+- When arrays are "pinned" (by using `VARSEG` / `VARPTR`), if they are already "packed" then the packed data is copied into the pinned memory area.
+- In the IDE, selecting a block of lines and deleting it no longer clears existing clipboard content.
+- In the IDE, Ctrl-Backspace no longer attempts to insert character 127.
+- In the IDE, pressing Enter in the middle of a line to split it now correctly indents the new line.
+
 ## 1.7.9 - 2026-05-13
 
 ### Fixed
