@@ -466,7 +466,11 @@ public partial class Program
 							if (FocusedViewport.CursorX < buffer.Length)
 							{
 								// Enter mid-line: Split lines
-								newLine = new StringBuilder();
+								newLine = new StringBuilder(capacity: indentation + buffer.Length - FocusedViewport.CursorX);
+
+								for (int i = 0; i < indentation; i++)
+									newLine.Append(' ');
+
 								newLine.Append(buffer, FocusedViewport.CursorX, buffer.Length - FocusedViewport.CursorX);
 
 								while ((newLine.Length > 0) && char.IsWhiteSpace(newLine[newLine.Length - 1]))
