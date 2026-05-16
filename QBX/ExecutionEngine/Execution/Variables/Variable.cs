@@ -65,11 +65,11 @@ public abstract class Variable
 
 			switch (type.PrimitiveType)
 			{
-				case PrimitiveDataType.Integer: ValidateByteSize(2);  return new PinnedIntegerVariable(machine, memoryAddress);
-				case PrimitiveDataType.Long: ValidateByteSize(4);return new PinnedLongVariable(machine, memoryAddress);
-				case PrimitiveDataType.Single: ValidateByteSize(4);return new PinnedSingleVariable(machine, memoryAddress);
-				case PrimitiveDataType.Double: ValidateByteSize(8);return new PinnedDoubleVariable(machine, memoryAddress);
-				case PrimitiveDataType.Currency: ValidateByteSize(8);return new PinnedCurrencyVariable(machine, memoryAddress);
+				case PrimitiveDataType.Integer: ValidateByteSize(2); return new PinnedIntegerVariable(machine, memoryAddress);
+				case PrimitiveDataType.Long: ValidateByteSize(4); return new PinnedLongVariable(machine, memoryAddress);
+				case PrimitiveDataType.Single: ValidateByteSize(4); return new PinnedSingleVariable(machine, memoryAddress);
+				case PrimitiveDataType.Double: ValidateByteSize(8); return new PinnedDoubleVariable(machine, memoryAddress);
+				case PrimitiveDataType.Currency: ValidateByteSize(8); return new PinnedCurrencyVariable(machine, memoryAddress);
 				case PrimitiveDataType.String: return new PinnedStringVariable(machine, memoryAddress, byteSize);
 
 				default: throw new Exception("Internal error: Unrecognized data type in Variable.Construct " + type);
