@@ -66,6 +66,11 @@ public class Array
 			Unpack();
 	}
 
+	public void MarkPackedDataDirty()
+	{
+		_packedDataDirty = true;
+	}
+
 	public Array(DataType elementType, ArraySubscripts subscripts, int fixedStringLength = -1)
 	{
 		ElementType = elementType;

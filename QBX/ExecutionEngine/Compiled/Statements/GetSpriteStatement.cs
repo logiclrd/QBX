@@ -88,6 +88,8 @@ public class GetSpriteStatement(CodeModel.Statements.GetSpriteStatement source) 
 		try
 		{
 			visual.GetSprite(fromX, fromY, toX, toY, targetBytes);
+
+			array.MarkPackedDataDirty();
 		}
 		catch (InvalidOperationException)
 		{
