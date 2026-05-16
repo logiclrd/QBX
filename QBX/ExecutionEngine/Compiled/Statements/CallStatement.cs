@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 
+using QBX.ExecutionEngine.Compiled.Expressions;
 using QBX.ExecutionEngine.Compiled.Operations;
 using QBX.ExecutionEngine.Execution.Variables;
 using QBX.LexicalAnalysis;
@@ -43,6 +44,14 @@ public class CallStatement(CodeModel.Statements.CallStatement source) : Executab
 		{
 			var argument = Arguments[i];
 			var parameterType = Target.ParameterTypes[i];
+
+			if ((argument is IdentifierExpression)
+			 || (argument is FieldAccessExpression)
+			 || (argument is ArrayElementExpression))
+			{
+				if (!argument.Type.Equals(parameterType))
+					throw CompilerException.TypeMismatch(argument?.Source);
+			}
 
 			if (argument.Type.IsString != parameterType.IsString)
 				throw CompilerException.TypeMismatch(argument?.Source);
