@@ -113,7 +113,10 @@ public class Array
 		PinnedToMachine = context.Machine;
 		PinnedToMemoryAddress = PinnedMemoryOwner.PinnedMemoryAddress;
 
-		Pack(PackedData);
+		if (_packedData != null)
+			_packedData.CopyTo(PackedData);
+		else
+			Pack(PackedData);
 	}
 
 	public void Unpin()
