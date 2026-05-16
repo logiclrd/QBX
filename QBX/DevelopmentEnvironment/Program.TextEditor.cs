@@ -207,7 +207,7 @@ public partial class Program
 
 		input = input.NormalizeModifierCombinationKey();
 
-		if (input.IsNormalText)
+		if (input.IsNormalText && (input.ScanCode != ScanCode.Backspace))
 		{
 			select = false;
 
@@ -676,10 +676,7 @@ public partial class Program
 				{
 					select = false;
 
-					if (input.Modifiers.CtrlKey)
-						goto case ScanCode.Delete;
-
-					if (FocusedViewport.IsEditable)
+					if (FocusedViewport.IsEditable && !input.Modifiers.CtrlKey)
 					{
 						FocusedViewport.Clipboard.CancelSelection();
 
