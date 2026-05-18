@@ -1,5 +1,13 @@
 # QBX Releases
 
+## 1.8.1 - 2026-05-18
+
+### Fixed
+
+- Ctrl-Return now correctly updates the cursor column to match the indentation of the line being entered.
+- Ctrl-Return now correctly appends blank lines to the end of the text as needed.
+- When joining lines, Delete now correctly reindents the line being joined to the cursor column, collapsing any existing indentation it has.
+
 ## 1.8.0 - 2026-05-16
 
 ### Fixed
