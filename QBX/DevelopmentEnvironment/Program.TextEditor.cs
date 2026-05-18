@@ -455,9 +455,21 @@ public partial class Program
 						{
 							// Ctrl-Enter: Do not insert newline.
 							FocusedViewport.CancelEdit();
-							FocusedViewport.CursorY++;
+							FocusedViewport.CursorY = ++newCursorY;
 
-							indentation = FocusedViewport.GetLineIndentation(FocusedViewport.CursorY);
+							if (newCursorY >= FocusedViewport.GetContentLineCount())
+								FocusedViewport.InsertLine(newCursorY, new CodeLine());
+
+							currentLine = ResetCurrentLine();
+
+							buffer = currentLine.Value;
+
+							for (int i = 0; i < buffer.Length; i++)
+								if (buffer[i] != ' ')
+								{
+									indentation = i;
+									break;
+								}
 						}
 						else
 						{
@@ -663,7 +675,21 @@ public partial class Program
 
 							FocusedViewport.RenderLine(FocusedViewport.CursorY + 1, nextLine);
 
-							buffer.Append(nextLine.ToString());
+							while (buffer.Length < FocusedViewport.CursorX)
+								buffer.Append(' ');
+
+							var nextLineBuffer = nextLine.GetStringBuilder();
+
+							int firstNonSpace = 0;
+
+							for (int i = 0; i < nextLineBuffer.Length; i++)
+								if (nextLineBuffer[i] != ' ')
+								{
+									firstNonSpace = i;
+									break;
+								}
+
+							buffer.Append(nextLineBuffer, firstNonSpace, nextLineBuffer.Length - firstNonSpace);
 
 							FocusedViewport.DeleteLine(FocusedViewport.CursorY + 1);
 
