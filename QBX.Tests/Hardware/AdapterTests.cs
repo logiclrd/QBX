@@ -33,7 +33,7 @@ public class AdapterTests
 		3, // max colour/attribute value
 		2, false)] // CGA palette
 	[TestCase(
-		typeof(GraphicsLibrary_1bppPacked),
+		typeof(GraphicsLibrary_1bppInterleaved),
 		6, // mode
 		1, // max colour/attribute value
 		null, false)] // CGA palette
