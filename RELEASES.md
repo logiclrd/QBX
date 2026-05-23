@@ -1,5 +1,13 @@
 # QBX Releases
 
+## 1.9.0 - 2026-05-23
+
+### Fixed
+
+- `SCREEN 2` now uses the correct memory layout. The VGA adapter now processes the Host Odd/Even Read register value. A new `GraphicsLibrary` implementation has been added to work with 1bpp interleaved data.
+- The palette used to emulate CGA modes has been updated using DOSBox-X instead DOSBx.
+- `SCREEN 2` now configures attribute palette mappings appropriately for a 1bpp mode, using palette entry 63 for set pixels.
+
 ## 1.8.1 - 2026-05-18
 
 ### Fixed
