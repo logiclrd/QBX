@@ -40,6 +40,11 @@ public class PixelSetStatement(CodeModel.Statements.PixelSetStatement source) : 
 		{
 			int colour = ColourExpression.EvaluateAndCoerceToInt(context, stackFrame);
 
+			colour = colour & 255;
+
+			if (colour > graphicsLibrary.MaximumAttribute)
+				colour = graphicsLibrary.MaximumAttribute;
+
 			graphicsLibrary.PixelSet(x, y, colour);
 		}
 	}

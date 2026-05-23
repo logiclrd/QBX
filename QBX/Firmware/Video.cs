@@ -805,15 +805,15 @@ public partial class Video(Machine machine)
 			{
 				case 0:
 					machine.GraphicsArray.AttributeController.Registers[0] = 0;
-					machine.GraphicsArray.AttributeController.Registers[1] = unchecked((byte)(intensity ? 10 : 2));
-					machine.GraphicsArray.AttributeController.Registers[2] = unchecked((byte)(intensity ? 12 : 4));
-					machine.GraphicsArray.AttributeController.Registers[3] = unchecked((byte)(intensity ? 14 : 6));
+					machine.GraphicsArray.AttributeController.Registers[1] = unchecked((byte)(intensity ? 58 : 2));
+					machine.GraphicsArray.AttributeController.Registers[2] = unchecked((byte)(intensity ? 60 : 4));
+					machine.GraphicsArray.AttributeController.Registers[3] = unchecked((byte)(intensity ? 62 : 6));
 					break;
 				case 1:
 					machine.GraphicsArray.AttributeController.Registers[0] = 0;
-					machine.GraphicsArray.AttributeController.Registers[1] = unchecked((byte)(intensity ? 11 : 3));
-					machine.GraphicsArray.AttributeController.Registers[2] = unchecked((byte)(intensity ? 13 : 5));
-					machine.GraphicsArray.AttributeController.Registers[3] = unchecked((byte)(intensity ? 15 : 7));
+					machine.GraphicsArray.AttributeController.Registers[1] = unchecked((byte)(intensity ? 59 : 3));
+					machine.GraphicsArray.AttributeController.Registers[2] = unchecked((byte)(intensity ? 61 : 5));
+					machine.GraphicsArray.AttributeController.Registers[3] = unchecked((byte)(intensity ? 63 : 7));
 					break;
 				// Secret CGA palette 2 -- as I understand it, this is what happens if you
 				// plug an actual CGA into a colour composite monitor but disable the Color
