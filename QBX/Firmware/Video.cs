@@ -820,9 +820,9 @@ public partial class Video(Machine machine)
 				// Burst signal. Trivial to emulate on VGA with attribute mapping.
 				case 2:
 					machine.GraphicsArray.AttributeController.Registers[0] = 0;
-					machine.GraphicsArray.AttributeController.Registers[1] = unchecked((byte)(intensity ? 11 : 3));
-					machine.GraphicsArray.AttributeController.Registers[2] = unchecked((byte)(intensity ? 12 : 4));
-					machine.GraphicsArray.AttributeController.Registers[3] = unchecked((byte)(intensity ? 15 : 7));
+					machine.GraphicsArray.AttributeController.Registers[1] = unchecked((byte)(intensity ? 59 : 3));
+					machine.GraphicsArray.AttributeController.Registers[2] = unchecked((byte)(intensity ? 60 : 4));
+					machine.GraphicsArray.AttributeController.Registers[3] = unchecked((byte)(intensity ? 63 : 7));
 					break;
 
 				default: goto case 1;

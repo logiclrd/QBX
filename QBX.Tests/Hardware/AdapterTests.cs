@@ -160,7 +160,7 @@ public class AdapterTests
 		for (int x = 0; x < 4; x++)
 			library.PixelSet(x, 0, x);
 
-		machine.VideoFirmware.LoadCGAPalette(cgaPalette, cgaPaletteIntensity);
+		machine.VideoFirmware.LoadCGAPalette(cgaPalette, intensity: cgaPaletteIntensity);
 
 		var sut = new Adapter(array);
 
