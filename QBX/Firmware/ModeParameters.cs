@@ -14,7 +14,8 @@ public class ModeParameters
 	public int PixelsPerAddress = 1;
 	public int MemoryAddressSize;
 	public bool ScanDoubling;
-	public bool OddEvenAddressing;
+	public bool OddEvenColumns;
+	public bool OddEvenScans;
 	public bool ShiftRegisterInterleave;
 	public bool Use256Colours;
 	public byte PlaneMask;

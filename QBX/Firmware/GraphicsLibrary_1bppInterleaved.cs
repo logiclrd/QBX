@@ -5,9 +5,9 @@ using QBX.Hardware;
 
 namespace QBX.Firmware;
 
-public class GraphicsLibrary_1bppPacked : GraphicsLibrary
+public class GraphicsLibrary_1bppInterleaved : GraphicsLibrary
 {
-	public GraphicsLibrary_1bppPacked(Machine machine)
+	public GraphicsLibrary_1bppInterleaved(Machine machine)
 		: base(machine)
 	{
 		DrawingAttribute = 1;
@@ -20,8 +20,6 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 	int _stride;
 	int _plane0Offset;
 	int _plane1Offset;
-	int _plane2Offset;
-	int _plane3Offset;
 
 	public override int PixelsPerByte => 8;
 	public override int MaximumAttribute => 1;
@@ -32,11 +30,9 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 
 		_plane0Offset = StartAddress;
 		_plane1Offset = _plane0Offset + PlaneSize;
-		_plane2Offset = _plane1Offset + PlaneSize;
-		_plane3Offset = _plane2Offset + PlaneSize;
 
 		_stride = Width / 8;
-		_planeBytesUsed = Height * _stride;
+		_planeBytesUsed = Height * _stride / 2;
 	}
 
 	protected override void ClearGraphicsImplementation(int windowStart, int windowEnd)
@@ -49,6 +45,17 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 		if (windowEnd > Clip.Y2)
 			windowEnd = Clip.Y2;
 
+		int evenWindowStart = windowStart >> 1;
+		int evenWindowEnd = windowEnd >> 1;
+		int oddWindowStart = evenWindowStart;
+		int oddWindowEnd = evenWindowEnd;
+
+		if ((windowStart & 1) != 0)
+			evenWindowStart++;
+
+		if ((windowEnd & 1) == 0)
+			oddWindowEnd--;
+
 		using (HidePointerForOperationIfPointerAware())
 		{
 			if ((Clip.X1 <= 0) && (Clip.X2 >= Width - 1))
@@ -57,17 +64,26 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 
 				int planeMask = Array.Sequencer.Registers.MapMask;
 
-				int windowOffset = windowStart * _stride;
-				int windowLength = (windowEnd - windowStart + 1) * _stride;
+				void ClearPlane(int windowStart, int windowEnd, Span<byte> vramSpan, int planeOffset)
+				{
+					int windowOffset = windowStart * _stride;
+					int windowLength = (windowEnd - windowStart + 1) * _stride;
 
-				if ((planeMask & 1) != 0)
-					vramSpan.Slice(_plane0Offset + windowOffset, windowLength).Clear();
-				if ((planeMask & 2) != 0)
-					vramSpan.Slice(_plane1Offset + windowOffset, windowLength).Clear();
-				if ((planeMask & 4) != 0)
-					vramSpan.Slice(_plane2Offset + windowOffset, windowLength).Clear();
-				if ((planeMask & 8) != 0)
-					vramSpan.Slice(_plane3Offset + windowOffset, windowLength).Clear();
+					if (windowLength > 0)
+						vramSpan.Slice(planeOffset + windowOffset, windowLength).Clear();
+				}
+
+				ClearPlane(
+					evenWindowStart,
+					evenWindowEnd,
+					vramSpan,
+					_plane0Offset);
+
+				ClearPlane(
+					evenWindowStart,
+					evenWindowEnd,
+					vramSpan,
+					_plane1Offset);
 			}
 			else
 			{
@@ -84,10 +100,16 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 			if ((x >= 0) && (x < Width)
 			 && (y >= 0) && (y < Height))
 			{
+				int planeOffset = ((y & 1) == 0)
+					? _plane0Offset
+					: _plane1Offset;
+
+				y >>= 1;
+
 				int offset = y * _stride + (x >> 3);
 				int shift = 7 - (x & 7);
 
-				var bits = Array.VRAM[_plane0Offset + offset];
+				var bits = Array.VRAM[planeOffset + offset];
 
 				return (bits >> shift) & 1;
 			}
@@ -106,39 +128,19 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 			if ((x >= 0) && (x < Width)
 			 && (y >= 0) && (y < Height))
 			{
+				int planeOffset = ((y & 1) == 0)
+					? _plane0Offset
+					: _plane1Offset;
+
+				y >>= 1;
+
 				int offset = y * _stride + (x >> 3);
 				int shift = 7 - (x & 7);
 				int bitMask = 1 << shift;
 
-				int planeMask = Array.Graphics.Registers.BitMask;
-
-				if ((planeMask & 1) != 0)
-				{
-					Array.VRAM[_plane0Offset + offset] = unchecked((byte)(
-						(Array.VRAM[_plane0Offset + offset] & ~bitMask) |
-						((attribute & 1) << shift)));
-				}
-
-				if ((planeMask & 2) != 0)
-				{
-					Array.VRAM[_plane1Offset + offset] = unchecked((byte)(
-						(Array.VRAM[_plane1Offset + offset] & ~bitMask) |
-						((attribute & 1) << shift)));
-				}
-
-				if ((planeMask & 4) != 0)
-				{
-					Array.VRAM[_plane2Offset + offset] = unchecked((byte)(
-						(Array.VRAM[_plane2Offset + offset] & ~bitMask) |
-						((attribute & 1) << shift)));
-				}
-
-				if ((planeMask & 8) != 0)
-				{
-					Array.VRAM[_plane3Offset + offset] = unchecked((byte)(
-						(Array.VRAM[_plane3Offset + offset] & ~bitMask) |
-						((attribute & 1) << shift)));
-				}
+				Array.VRAM[planeOffset + offset] = unchecked((byte)(
+					(Array.VRAM[planeOffset + offset] & ~bitMask) |
+					((attribute & 1) << shift)));
 			}
 		}
 	}
@@ -165,7 +167,11 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 	{
 		using (HidePointerForOperationIfPointerAware(x1, y, x2, y))
 		{
-			int planeMask = Array.Graphics.Registers.BitMask;
+			int planeOffset = ((y & 1) == 0)
+				? _plane0Offset
+				: _plane1Offset;
+
+			y >>= 1;
 
 			int scanOffset = y * _stride;
 
@@ -190,45 +196,12 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 
 				if (mask != 0)
 				{
-					int address = _plane0Offset + scanOffset + x1Byte;
+					int address = planeOffset + scanOffset + x1Byte;
 
-					if ((planeMask & 1) != 0)
-					{
-						if (attributeValue)
-							Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] | mask));
-						else
-							Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] & ~mask));
-					}
-
-					address += PlaneSize;
-
-					if ((planeMask & 2) != 0)
-					{
-						if (attributeValue)
-							Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] | mask));
-						else
-							Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] & ~mask));
-					}
-
-					address += PlaneSize;
-
-					if ((planeMask & 4) != 0)
-					{
-						if (attributeValue)
-							Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] | mask));
-						else
-							Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] & ~mask));
-					}
-
-					address += PlaneSize;
-
-					if ((planeMask & 8) != 0)
-					{
-						if (attributeValue)
-							Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] | mask));
-						else
-							Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] & ~mask));
-					}
+					if (attributeValue)
+						Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] | mask));
+					else
+						Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] & ~mask));
 				}
 			}
 			else
@@ -248,105 +221,30 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 				int completeBytes = lastCompleteByte - firstCompleteByte + 1;
 
 				if (completeBytes > 0)
-				{
-					if ((planeMask & 1) != 0)
-						vramSpan.Slice(_plane0Offset + scanOffset + firstCompleteByte, completeBytes).Fill(completeByteValue);
-					if ((planeMask & 2) != 0)
-						vramSpan.Slice(_plane1Offset + scanOffset + firstCompleteByte, completeBytes).Fill(completeByteValue);
-					if ((planeMask & 4) != 0)
-						vramSpan.Slice(_plane2Offset + scanOffset + firstCompleteByte, completeBytes).Fill(completeByteValue);
-					if ((planeMask & 8) != 0)
-						vramSpan.Slice(_plane3Offset + scanOffset + firstCompleteByte, completeBytes).Fill(completeByteValue);
-				}
+					vramSpan.Slice(planeOffset + scanOffset + firstCompleteByte, completeBytes).Fill(completeByteValue);
 
 				if (leftPixels != 0)
 				{
 					byte mask = unchecked((byte)(0b11111111 >> (8 - leftPixels)));
 
-					int address = _plane0Offset + scanOffset + firstCompleteByte - 1;
+					int address = planeOffset + scanOffset + firstCompleteByte - 1;
 
-					if ((planeMask & 1) != 0)
-					{
-						if (attributeValue)
-							Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] | mask));
-						else
-							Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] & ~mask));
-					}
-
-					address += PlaneSize;
-
-					if ((planeMask & 2) != 0)
-					{
-						if (attributeValue)
-							Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] | mask));
-						else
-							Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] & ~mask));
-					}
-
-					address += PlaneSize;
-
-					if ((planeMask & 4) != 0)
-					{
-						if (attributeValue)
-							Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] | mask));
-						else
-							Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] & ~mask));
-					}
-
-					address += PlaneSize;
-
-					if ((planeMask & 8) != 0)
-					{
-						if (attributeValue)
-							Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] | mask));
-						else
-							Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] & ~mask));
-					}
+					if (attributeValue)
+						Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] | mask));
+					else
+						Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] & ~mask));
 				}
 
 				if (rightPixels != 0)
 				{
 					byte mask = unchecked((byte)(0b11111111 << (8 - rightPixels)));
 
-					int address = _plane0Offset + scanOffset + lastCompleteByte + 1;
+					int address = planeOffset + scanOffset + lastCompleteByte + 1;
 
-					if ((planeMask & 1) != 0)
-					{
-						if (attributeValue)
-							Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] | mask));
-						else
-							Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] & ~mask));
-					}
-
-					address += PlaneSize;
-
-					if ((planeMask & 2) != 0)
-					{
-						if (attributeValue)
-							Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] | mask));
-						else
-							Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] & ~mask));
-					}
-
-					address += PlaneSize;
-
-					if ((planeMask & 4) != 0)
-					{
-						if (attributeValue)
-							Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] | mask));
-						else
-							Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] & ~mask));
-					}
-
-					address += PlaneSize;
-
-					if ((planeMask & 8) != 0)
-					{
-						if (attributeValue)
-							Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] | mask));
-						else
-							Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] & ~mask));
-					}
+					if (attributeValue)
+						Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] | mask));
+					else
+						Array.VRAM[address] = unchecked((byte)(Array.VRAM[address] & ~mask));
 				}
 			}
 		}
@@ -366,7 +264,21 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 
 			var vramSpan = Array.VRAM.AsSpan();
 
-			var plane = vramSpan.Slice(StartAddress);
+			var plane0 = vramSpan.Slice(_plane0Offset, PlaneSize);
+			var plane1 = vramSpan.Slice(_plane1Offset, PlaneSize);
+
+			if ((y & 1) != 0)
+			{
+				var tmp = plane0;
+
+				plane0 = plane1;
+				plane1 = tmp.Slice(_stride);
+			}
+
+			y >>= 1;
+
+			plane0 = plane0.Slice(y * _stride);
+			plane1 = plane1.Slice(y * _stride);
 
 			int bytesPerScan = (w + 7) / 8;
 
@@ -403,8 +315,10 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 
 			for (int yy = 0; yy < h; yy++)
 			{
-				int o = (y + yy) * _stride + (x >> 3);
+				int o = (yy >> 1) * _stride + (x >> 3);
 				int p = yy * bytesPerScan;
+
+				var plane = ((yy & 1) == 0) ? plane0 : plane1;
 
 				if (rightPixelMask != 0)
 				{
@@ -469,12 +383,21 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 		{
 			var vramSpan = Array.VRAM.AsSpan();
 
-			var plane = vramSpan.Slice(StartAddress);
-
 			var plane0 = vramSpan.Slice(_plane0Offset, _planeBytesUsed);
 			var plane1 = vramSpan.Slice(_plane1Offset, _planeBytesUsed);
-			var plane2 = vramSpan.Slice(_plane2Offset, _planeBytesUsed);
-			var plane3 = vramSpan.Slice(_plane3Offset, _planeBytesUsed);
+
+			if ((y & 1) != 0)
+			{
+				var tmp = plane0;
+
+				plane0 = plane1;
+				plane1 = tmp.Slice(_stride);
+			}
+
+			y >>= 1;
+
+			plane0 = plane0.Slice(y * _stride);
+			plane1 = plane1.Slice(y * _stride);
 
 			int bytesPerScan = (w + 7) / 8;
 
@@ -527,8 +450,10 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 
 			for (int yy = 0; yy < h; yy++)
 			{
-				int o = (y + yy) * _stride + (x >> 3);
+				int o = (yy >> 1) * _stride + (x >> 3);
 				int p = yy * bytesPerScan;
+
+				var plane = ((yy & 1) == 0) ? plane0 : plane1;
 
 				int spriteMask = leftPixelMask >> leftPixelShift;
 				int unrelatedMask = unchecked((byte)~spriteMask);
@@ -545,16 +470,7 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 
 					int spriteByte = bitsForNextPixel | ((sample & leftPixelMask) >> leftPixelShift);
 
-					planeByte = action.ApplySpriteBits(planeByte, spriteByte, unrelatedMask, spriteMask);
-
-					if ((planeMask & 1) != 0)
-						plane0[o] = planeByte;
-					if ((planeMask & 2) != 0)
-						plane1[o] = planeByte;
-					if ((planeMask & 4) != 0)
-						plane2[o] = planeByte;
-					if ((planeMask & 8) != 0)
-						plane3[o] = planeByte;
+					plane[o] = action.ApplySpriteBits(planeByte, spriteByte, unrelatedMask, spriteMask);
 
 					bitsForNextPixel = (sample & rightPixelMask) << rightPixelShift;
 
@@ -573,16 +489,7 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 					else if (lastDataBytePixels <= lastOutputBytePixels)
 						bitsForNextPixel |= data[p] >> leftPixelShift;
 
-					byte planeByte = action.ApplySpriteBits(plane[o], bitsForNextPixel, unrelatedMask, spriteMask);
-
-					if ((planeMask & 1) != 0)
-						plane0[o] = planeByte;
-					if ((planeMask & 2) != 0)
-						plane1[o] = planeByte;
-					if ((planeMask & 4) != 0)
-						plane2[o] = planeByte;
-					if ((planeMask & 8) != 0)
-						plane3[o] = planeByte;
+					plane[o] = action.ApplySpriteBits(plane[o], bitsForNextPixel, unrelatedMask, spriteMask);
 				}
 			}
 		}
@@ -629,12 +536,21 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 		{
 			var vramSpan = Array.VRAM.AsSpan();
 
-			var plane = vramSpan.Slice(StartAddress);
-
 			var plane0 = vramSpan.Slice(_plane0Offset, _planeBytesUsed);
 			var plane1 = vramSpan.Slice(_plane1Offset, _planeBytesUsed);
-			var plane2 = vramSpan.Slice(_plane2Offset, _planeBytesUsed);
-			var plane3 = vramSpan.Slice(_plane3Offset, _planeBytesUsed);
+
+			if ((y & 1) != 0)
+			{
+				var tmp = plane0;
+
+				plane0 = plane1;
+				plane1 = tmp.Slice(_stride);
+			}
+
+			y >>= 1;
+
+			plane0 = plane0.Slice(y * _stride);
+			plane1 = plane1.Slice(y * _stride);
 
 			int andBytesPerScan = (andW + 7) / 8;
 			int xorBytesPerScan = (xorW + 7) / 8;
@@ -731,9 +647,11 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 
 			for (int yy = 0; yy < xorH; yy++)
 			{
-				int o = (y + yy) * _stride + (x >> 3);
+				int o = (yy >> 1) * _stride + (x >> 3);
 				int p = yy * andBytesPerScan;
 				int q = yy * xorBytesPerScan;
+
+				var plane = ((yy & 1) == 0) ? plane0 : plane1;
 
 				int spriteMask = leftPixelMask >> leftPixelShift;
 				int unrelatedMask = unchecked((byte)~spriteMask);
@@ -766,14 +684,7 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 						planeByte = andAction.ApplySpriteBits(planeByte, andByte, unrelatedMask, spriteMask);
 						planeByte = xorAction.ApplySpriteBits(planeByte, xorByte, unrelatedMask, spriteMask);
 
-						if ((planeMask & 1) != 0)
-							plane0[o] = planeByte;
-						if ((planeMask & 2) != 0)
-							plane1[o] = planeByte;
-						if ((planeMask & 4) != 0)
-							plane2[o] = planeByte;
-						if ((planeMask & 8) != 0)
-							plane3[o] = planeByte;
+						plane[o] = planeByte;
 					}
 
 					andBitsForNextPixel = (andSample & rightPixelMask) << rightPixelShift;
@@ -811,14 +722,7 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 					planeByte = andAction.ApplySpriteBits(planeByte, andBitsForNextPixel, unrelatedMask, spriteMask);
 					planeByte = xorAction.ApplySpriteBits(planeByte, xorBitsForNextPixel, unrelatedMask, spriteMask);
 
-					if ((planeMask & 1) != 0)
-						plane0[o] = planeByte;
-					if ((planeMask & 2) != 0)
-						plane1[o] = planeByte;
-					if ((planeMask & 4) != 0)
-						plane2[o] = planeByte;
-					if ((planeMask & 8) != 0)
-						plane3[o] = planeByte;
+					plane[o] = planeByte;
 				}
 			}
 		}
@@ -830,51 +734,27 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 		{
 			var vramSpan = Array.VRAM.AsSpan();
 
-			int planeMask = Array.Graphics.Registers.BitMask;
+			var plane0 = vramSpan.Slice(_plane0Offset, _planeBytesUsed);
+			var plane1 = vramSpan.Slice(_plane1Offset, _planeBytesUsed);
 
-			int copyOffset = scanCount * _stride;
-
-			int windowOffset = windowStart * _stride;
-			int windowLength = (windowEnd - windowStart + 1) * _stride;
-
-			if ((planeMask & 1) != 0)
+			for (int yFrom = windowStart + scanCount, yTo = windowStart; yFrom <= windowEnd; yFrom++, yTo++)
 			{
-				var plane = vramSpan.Slice(_plane0Offset, _planeBytesUsed);
+				var planeFrom = ((yFrom & 1) == 0) ? plane0 : plane1;
+				var planeTo = ((yTo & 1) == 0) ? plane0 : plane1;
 
-				plane = plane.Slice(windowOffset, windowLength);
+				var bitsFrom = planeFrom.Slice((yFrom >> 1) * _stride, _stride);
+				var bitsTo = planeTo.Slice((yTo >> 1) * _stride, _stride);
 
-				plane.Slice(copyOffset).CopyTo(plane);
-				plane.Slice(plane.Length - copyOffset).Fill(0);
+				bitsFrom.CopyTo(bitsTo);
 			}
 
-			if ((planeMask & 2) != 0)
+			for (int yTo = windowEnd - scanCount + 1; yTo <= windowEnd; yTo++)
 			{
-				var plane = vramSpan.Slice(_plane1Offset, _planeBytesUsed);
+				var planeTo = ((yTo & 1) == 0) ? plane0 : plane1;
 
-				plane = plane.Slice(windowOffset, windowLength);
+				var bitsTo = planeTo.Slice((yTo >> 1) * _stride, _stride);
 
-				plane.Slice(copyOffset).CopyTo(plane);
-				plane.Slice(plane.Length - copyOffset).Fill(0);
-			}
-
-			if ((planeMask & 4) != 0)
-			{
-				var plane = vramSpan.Slice(_plane2Offset, _planeBytesUsed);
-
-				plane = plane.Slice(windowOffset, windowLength);
-
-				plane.Slice(copyOffset).CopyTo(plane);
-				plane.Slice(plane.Length - copyOffset).Fill(0);
-			}
-
-			if ((planeMask & 8) != 0)
-			{
-				var plane = vramSpan.Slice(_plane3Offset, _planeBytesUsed);
-
-				plane = plane.Slice(windowOffset, windowLength);
-
-				plane.Slice(copyOffset).CopyTo(plane);
-				plane.Slice(plane.Length - copyOffset).Fill(0);
+				bitsTo.Fill(0);
 			}
 		}
 	}
@@ -885,52 +765,27 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 		{
 			var vramSpan = Array.VRAM.AsSpan();
 
-			int planeMask = Array.Graphics.Registers.BitMask;
+			var plane0 = vramSpan.Slice(_plane0Offset, _planeBytesUsed);
+			var plane1 = vramSpan.Slice(_plane1Offset, _planeBytesUsed);
 
-			int windowOffset = windowStart * _stride;
-			int windowLength = (windowEnd - windowStart + 1) * _stride;
-
-			int copyOffset = scanCount * _stride;
-			int copySize = windowLength - copyOffset;
-
-			if ((planeMask & 1) != 0)
+			for (int yFrom = windowEnd - scanCount, yTo = windowEnd; yFrom >= windowStart; yFrom--, yTo--)
 			{
-				var plane = vramSpan.Slice(_plane0Offset, _planeBytesUsed);
+				var planeFrom = ((yFrom & 1) == 0) ? plane0 : plane1;
+				var planeTo = ((yTo & 1) == 0) ? plane0 : plane1;
 
-				plane = plane.Slice(windowOffset, windowLength);
+				var bitsFrom = planeFrom.Slice((yFrom >> 1) * _stride, _stride);
+				var bitsTo = planeTo.Slice((yTo >> 1) * _stride, _stride);
 
-				plane.Slice(0, copySize).CopyTo(plane.Slice(copyOffset));
-				plane.Slice(0, copyOffset).Fill(0);
+				bitsFrom.CopyTo(bitsTo);
 			}
 
-			if ((planeMask & 2) != 0)
+			for (int yTo = windowStart + scanCount - 1; yTo >= windowStart; yTo--)
 			{
-				var plane = vramSpan.Slice(_plane1Offset, _planeBytesUsed);
+				var planeTo = ((yTo & 1) == 0) ? plane0 : plane1;
 
-				plane = plane.Slice(windowOffset, windowLength);
+				var bitsTo = planeTo.Slice((yTo >> 1) * _stride, _stride);
 
-				plane.Slice(0, copySize).CopyTo(plane.Slice(copyOffset));
-				plane.Slice(0, copyOffset).Fill(0);
-			}
-
-			if ((planeMask & 4) != 0)
-			{
-				var plane = vramSpan.Slice(_plane2Offset, _planeBytesUsed);
-
-				plane = plane.Slice(windowOffset, windowLength);
-
-				plane.Slice(0, copySize).CopyTo(plane.Slice(copyOffset));
-				plane.Slice(0, copyOffset).Fill(0);
-			}
-
-			if ((planeMask & 8) != 0)
-			{
-				var plane = vramSpan.Slice(_plane3Offset, _planeBytesUsed);
-
-				plane = plane.Slice(windowOffset, windowLength);
-
-				plane.Slice(0, copySize).CopyTo(plane.Slice(copyOffset));
-				plane.Slice(0, copyOffset).Fill(0);
+				bitsTo.Fill(0);
 			}
 		}
 	}
@@ -941,43 +796,33 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 			base.DrawCharacterScan(x, y, characterWidth, glyphScan);
 		else if ((DrawingAttribute & 0x80) == 0)
 		{
+			var vramSpan = Array.VRAM.AsSpan();
+
+			var plane = ((y & 1) == 0)
+				? vramSpan.Slice(_plane0Offset, _planeBytesUsed)
+				: vramSpan.Slice(_plane1Offset, _planeBytesUsed);
+
+			y >>= 1;
+
 			int o = y * _stride + (x >> 3);
 
 			if ((o >= 0) && (o < _planeBytesUsed))
-			{
-				var vramSpan = Array.VRAM.AsSpan();
-
-				int planeMask = Array.Graphics.Registers.BitMask;
-
-				if ((planeMask & 1) != 0)
-					vramSpan.Slice(_plane0Offset, _planeBytesUsed)[o] = glyphScan;
-				if ((planeMask & 2) != 0)
-					vramSpan.Slice(_plane1Offset, _planeBytesUsed)[o] = glyphScan;
-				if ((planeMask & 4) != 0)
-					vramSpan.Slice(_plane2Offset, _planeBytesUsed)[o] = glyphScan;
-				if ((planeMask & 8) != 0)
-					vramSpan.Slice(_plane3Offset, _planeBytesUsed)[o] = glyphScan;
-			}
+				plane[o] = glyphScan;
 		}
 		else
 		{
+			var vramSpan = Array.VRAM.AsSpan();
+
+			var plane = ((y & 1) == 0)
+				? vramSpan.Slice(_plane0Offset, _planeBytesUsed)
+				: vramSpan.Slice(_plane1Offset, _planeBytesUsed);
+
+			y >>= 1;
+
 			int o = y * _stride + (x >> 3);
 
 			if ((o >= 0) && (o < _planeBytesUsed))
-			{
-				var vramSpan = Array.VRAM.AsSpan();
-
-				int planeMask = Array.Graphics.Registers.BitMask;
-
-				if ((planeMask & 1) != 0)
-					vramSpan.Slice(_plane0Offset, _planeBytesUsed)[o] ^= glyphScan;
-				if ((planeMask & 2) != 0)
-					vramSpan.Slice(_plane1Offset, _planeBytesUsed)[o] ^= glyphScan;
-				if ((planeMask & 4) != 0)
-					vramSpan.Slice(_plane2Offset, _planeBytesUsed)[o] ^= glyphScan;
-				if ((planeMask & 8) != 0)
-					vramSpan.Slice(_plane3Offset, _planeBytesUsed)[o] ^= glyphScan;
-			}
+				plane[o] ^= glyphScan;
 		}
 	}
 }

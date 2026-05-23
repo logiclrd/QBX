@@ -136,6 +136,7 @@ public class Adapter
 			bool use256Colours = _array.AttributeController.Use256Colours;
 			bool shift256 = _array.Graphics.Shift256;
 			bool chainOddEven = _array.Graphics.ChainOddEven;
+			bool hostOddEven = _array.Graphics.HostOddEvenRead;
 
 			int plane0VisibleSize = use256Colours ? vram.Length : planeSize;
 			int plane1VisibleSize = use256Colours ? plane0VisibleSize - planeSize : planeSize;
@@ -172,10 +173,9 @@ public class Adapter
 			int stride = _array.CRTController.Stride;
 
 			if (shiftInterleave)
-			{
-				characterHeight *= 2;
 				stride /= 2;
-			}
+			if (hostOddEven)
+				characterHeight *= 2;
 
 			bool scanDoubling = _array.CRTController.ScanDoubling;
 			bool dotDoubling = _array.Sequencer.DotDoubling;
@@ -311,6 +311,13 @@ public class Adapter
 						}
 						else if (use256Colours)
 							attribute = scanIn0[offset];
+						else if (hostOddEven)
+						{
+							if ((characterY & 1) == 0)
+								attribute = ((scanIn0[offset] & columnBit) != 0) ? 1 : 0;
+							else
+								attribute = ((scanIn1[offset] & columnBit) != 0) ? 1 : 0;
+						}
 						else
 						{
 							attribute =
