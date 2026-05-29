@@ -18,7 +18,7 @@ DIM rin AS RegTypeX, rout AS RegTypeX
 DIM buffer%(100) AS INTEGER
 
 rin.DS = VARSEG(buffer%(0))
-rin.ES = VARPTR(buffer%(0))
+rin.SI = VARPTR(buffer%(0))
 
 rin.AX = &H4700
 

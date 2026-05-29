@@ -18,7 +18,7 @@ DIM rin AS RegTypeX, rout AS RegTypeX
 buffer$ = SPACE$(200)
 
 rin.DS = SSEG(buffer$)
-rin.ES = SADD(buffer$)
+rin.SI = SADD(buffer$)
 
 rin.AX = &H4700 ' Get current directory (unrooted)
 
