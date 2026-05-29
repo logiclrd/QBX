@@ -1068,7 +1068,9 @@ public class Compiler(IdentifierRepository identifierRepository)
 							returnType,
 							blameStatement: declareStatement,
 							blameName: declareStatement.NameToken,
-							getBlameParameterType: i => declareStatement.Parameters?.Parameters[i].TypeToken);
+							getBlameParameterType:
+								i => declareStatement.Parameters?.Parameters[i].TypeToken
+								  ?? declareStatement.Parameters?.Parameters[i].NameToken);
 
 						var facade = new RoutineFacade(declaredRoutine);
 
