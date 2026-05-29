@@ -49,7 +49,15 @@ public class CircleStatement(CodeModel.Statements.CircleStatement source) : Exec
 		{
 			int divisor = visual.Width * 480;
 
-			radiusY = (radiusY * visual.Height * 640 + (divisor >> 1)) / divisor;
+			int visualHeightForAspect = visual.Height;
+
+			// In 640x350 modes, QuickBASIC seems to scale circles as though
+			// the screen height were actually 352. This might be because 352
+			// is the next multiple of 4 up from 350. This calculation, then,
+			// will treat 350 as 352, but 200 and 480 as themselves.
+			visualHeightForAspect = (visualHeightForAspect + 3) & ~3;
+
+			radiusY = (radiusY * visualHeightForAspect * 640) / divisor;
 		}
 		else
 		{
