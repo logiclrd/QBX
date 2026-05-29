@@ -767,8 +767,8 @@ public class ExecutionContext
 
 		int argumentOffset = routine.ReturnType != null ? 1 : 0;
 
-		for (int i=0; i < arguments.Length; i++)
-			variables[i + argumentOffset] = arguments[i].Detach();
+		for (int i = 0; i < arguments.Length; i++)
+			variables[i + argumentOffset] = arguments[i];
 
 		if (!isModuleFrame)
 		{

@@ -9,7 +9,7 @@ using QBX.Parser;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class CallExpression : Evaluable, IUnresolvedCall
+public class CallExpression : Evaluable, IHasTypedParameters, IUnresolvedCall
 {
 	public Routine? Target;
 	public readonly List<Evaluable> Arguments = new List<Evaluable>();
@@ -44,6 +44,8 @@ public class CallExpression : Evaluable, IUnresolvedCall
 		for (int i = 0; i < Arguments.Count; i++)
 			CollapseConstantExpression(Arguments, i);
 	}
+
+	IList<Evaluable> IHasTypedParameters.Arguments => Arguments;
 
 	public void EnsureParameterTypes(bool matchFacades)
 	{

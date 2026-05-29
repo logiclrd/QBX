@@ -9,7 +9,7 @@ using QBX.Parser;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class CallStatement(CodeModel.Statements.CallStatement source) : Executable(source), IUnresolvedCall
+public class CallStatement(CodeModel.Statements.CallStatement source) : Executable(source), IHasTypedParameters, IUnresolvedCall
 {
 	public Routine? Target;
 	public readonly List<Evaluable> Arguments = new List<Evaluable>();
@@ -32,10 +32,12 @@ public class CallStatement(CodeModel.Statements.CallStatement source) : Executab
 		EnsureParameterTypes(matchFacades: false);
 	}
 
+	IList<Evaluable> IHasTypedParameters.Arguments => Arguments;
+
 	public void EnsureParameterTypes(bool matchFacades)
 	{
 		if (Target == null)
-			throw new Exception("Internal error: EnsureParameterTypes called with no Target");
+			return;
 
 		if (Arguments.Count != Target.ParameterTypes.Count)
 			throw new Exception("Internal error: CallStatement configured with wrong number of arguments for the target routine");

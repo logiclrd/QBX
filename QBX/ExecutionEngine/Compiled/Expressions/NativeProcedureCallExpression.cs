@@ -7,7 +7,7 @@ using QBX.LexicalAnalysis;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class NativeProcedureCallExpression : Evaluable
+public class NativeProcedureCallExpression : Evaluable, IHasTypedParameters
 {
 	public NativeProcedure? Target;
 	public Func<Variable[], Variable>? LocalThunk;
@@ -23,16 +23,18 @@ public class NativeProcedureCallExpression : Evaluable
 			CollapseConstantExpression(Arguments, i);
 	}
 
-	public void EnsureParameterTypes()
+	IList<Evaluable> IHasTypedParameters.Arguments => Arguments;
+
+	public void EnsureParameterTypes(bool matchFacades)
 	{
 		if (Target == null)
 			throw new Exception("Internal error: EnsureParameterTypes called with no Target");
 
-		if (Arguments.Count != (Target.ParameterTypes?.Length ?? 0))
-			throw new Exception("Internal error: CallExpression configured with wrong number of arguments for the target routine");
-
 		if (Target.ParameterTypes == null)
 			return;
+
+		if (Arguments.Count != Target.ParameterTypes.Length)
+			throw new Exception("Internal error: CallExpression configured with wrong number of arguments for the target routine");
 
 		for (int i = 0; i < Arguments.Count; i++)
 		{

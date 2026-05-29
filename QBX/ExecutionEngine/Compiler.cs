@@ -687,18 +687,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 					if (nativeProcedure.ParameterTypes == null)
 					{
-						if (callStatement.Arguments != null)
-						{
-							foreach (var argument in callStatement.Arguments.Expressions)
-							{
-								var translatedExpression = TranslateExpression(argument, container, mapper, compilation, module);
-
-								if (translatedExpression == null)
-									throw new Exception("Call argument translated to null");
-
-								translatedCallStatement.Arguments.Add(translatedExpression);
-							}
-						}
+						TranslateCallArguments(callStatement.Arguments, translatedCallStatement, matchFacades: false, container, mapper, compilation, module);
 
 						translatedCallStatement.LocalThunk = nativeProcedure.BuildThunk(
 							translatedCallStatement.Arguments.Select(arg => arg.Type).ToList(),
@@ -712,20 +701,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 						if (callArgumentCount != targetArgumentCount)
 							throw CompilerException.ArgumentCountMismatch(callStatement.FirstToken);
 
-						if (callStatement.Arguments != null)
-						{
-							foreach (var argument in callStatement.Arguments.Expressions)
-							{
-								var translatedExpression = TranslateExpression(argument, container, mapper, compilation, module);
-
-								if (translatedExpression == null)
-									throw new Exception("Call argument translated to null");
-
-								translatedCallStatement.Arguments.Add(translatedExpression);
-							}
-
-							translatedCallStatement.EnsureParameterTypes();
-						}
+						TranslateCallArguments(callStatement.Arguments, translatedCallStatement, matchFacades: false, container, mapper, compilation, module);
 					}
 
 					container.Append(translatedCallStatement);
@@ -770,21 +746,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 					else
 						implicitForwardReference = true;
 
-					if (callStatement.Arguments != null)
-					{
-						foreach (var argument in callStatement.Arguments.Expressions)
-						{
-							var translatedExpression = TranslateExpression(argument, container, mapper, compilation, module);
-
-							if (translatedExpression == null)
-								throw new Exception("Call argument translated to null");
-
-							translatedCallStatement.Arguments.Add(translatedExpression);
-						}
-
-						if (translatedCallStatement.Target != null)
-							translatedCallStatement.EnsureParameterTypes(matchFacades);
-					}
+					TranslateCallArguments(callStatement.Arguments, translatedCallStatement, matchFacades, container, mapper, compilation, module);
 
 					if (implicitForwardReference)
 					{
@@ -3280,6 +3242,45 @@ public class Compiler(IdentifierRepository identifierRepository)
 			iterator.Advance();
 	}
 
+	static bool IsVariableExpression(CodeModel.Expressions.Expression sourceExpression, Evaluable translatedExpression)
+	{
+		if (sourceExpression is CodeModel.Expressions.IdentifierExpression)
+			return true;
+
+		if (sourceExpression is CodeModel.Expressions.CallOrIndexExpression)
+			return translatedExpression is ArrayElementExpression;
+
+		if ((sourceExpression is CodeModel.Expressions.BinaryExpression binaryExpression)
+		 && (binaryExpression.Operator == CodeModel.Expressions.Operator.Field))
+			return true;
+
+		return false;
+	}
+
+	void TranslateCallArguments(CodeModel.Expressions.ExpressionList? arguments, IHasTypedParameters translated, bool matchFacades, Sequence? container, Mapper mapper, Compilation compilation, Module module)
+	{
+		if (arguments != null)
+		{
+			var translatedArguments = translated.Arguments;
+
+			foreach (var argument in arguments.Expressions)
+			{
+				var translatedExpression = TranslateExpression(argument, container, mapper, compilation, module);
+
+				if (translatedExpression == null)
+					throw new Exception("Call argument translated to null");
+
+				if (translatedExpression.IsAssignable
+					&& !IsVariableExpression(argument, translatedExpression))
+					translatedExpression = new DetachExpression(translatedExpression);
+
+				translatedArguments.Add(translatedExpression);
+			}
+
+			translated.EnsureParameterTypes(matchFacades);
+		}
+	}
+
 	[return: NotNullIfNotNull(nameof(expression))]
 	private Evaluable? TranslateExpression(CodeModel.Expressions.Expression? expression, Sequence? container, Mapper mapper, Compilation compilation, Module module, bool createImplicitArray = false, bool parseIdentifiersAsArrays = false)
 	{
@@ -3489,18 +3490,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 						if (nativeProcedure.ParameterTypes == null)
 						{
-							if (callOrIndexExpression.Arguments != null)
-							{
-								foreach (var argument in callOrIndexExpression.Arguments.Expressions)
-								{
-									var translatedExpression = TranslateExpression(argument, container, mapper, compilation, module);
-
-									if (translatedExpression == null)
-										throw new Exception("Call argument translated to null");
-
-									translatedCallExpression.Arguments.Add(translatedExpression);
-								}
-							}
+							TranslateCallArguments(callOrIndexExpression.Arguments, translatedCallExpression, matchFacades: false, container, mapper, compilation, module);
 
 							translatedCallExpression.LocalThunk = nativeProcedure.BuildThunk(
 								translatedCallExpression.Arguments.Select(arg => arg.Type).ToList(),
@@ -3516,20 +3506,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 							translatedCallExpression.Target = nativeProcedure;
 
-							if (callOrIndexExpression.Arguments != null)
-							{
-								foreach (var argument in callOrIndexExpression.Arguments.Expressions)
-								{
-									var translatedExpression = TranslateExpression(argument, container, mapper, compilation, module);
-
-									if (translatedExpression == null)
-										throw new Exception("Call argument translated to null");
-
-									translatedCallExpression.Arguments.Add(translatedExpression);
-								}
-
-								translatedCallExpression.EnsureParameterTypes();
-							}
+							TranslateCallArguments(callOrIndexExpression.Arguments, translatedCallExpression, matchFacades: false, container, mapper, compilation, module);
 						}
 
 						translatedCallExpression.TargetToken = callOrIndexExpression.Subject.Token;
@@ -3601,18 +3578,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 							forwardReference!.UnresolvedCalls.Add(translatedCallExpression);
 						}
 
-						foreach (var argument in callOrIndexExpression.Arguments.Expressions)
-						{
-							var translatedArgument = TranslateExpression(argument, container, mapper, compilation, module);
-
-							if (translatedArgument == null)
-								throw new Exception("Internal error: call argument translated to null");
-
-							translatedCallExpression.Arguments.Add(translatedArgument);
-						}
-
-						if (translatedCallExpression.Target != null)
-							translatedCallExpression.EnsureParameterTypes(matchFacades);
+						TranslateCallArguments(callOrIndexExpression.Arguments, translatedCallExpression, matchFacades, container, mapper, compilation, module);
 
 						return translatedCallExpression;
 					}
