@@ -59,8 +59,11 @@ public class CircleStatement(CodeModel.Statements.CircleStatement source) : Exec
 
 			if (aspect > 1)
 				radiusX /= aspect;
-			else if (aspect > -1)
+			else
+			{
+				aspect -= MathF.Floor(aspect);
 				radiusY *= Math.Abs(aspect);
+			}
 		}
 
 		// QuickBASIC BUG: The vertical radius is computed without any regard for the current graphics
