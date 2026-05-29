@@ -1770,6 +1770,14 @@ public abstract class GraphicsLibrary : VisualLibrary
 				{
 					int borderX = PixelGetSpanFind(span.X1 - 1, 0, span.Y, scan, borderAttribute);
 
+					// Edge case: If we're scanning a 1-pixel span, then x1 == x2 and PixelGetSpanFind
+					// can't tell if we're scanning left or right. It'll default to right, which means
+					// if nothing is found, it'll end its scan at x2 + 1 instead of x1 - 1. It's only
+					// possible for the scan from span.X1 - 1 .. 0 to be a single-pixel scan if span.X1
+					// is 1.
+					if ((span.X1 == 1) && (borderX == 1))
+						borderX = -1;
+
 					span.X1 = borderX + 1;
 				}
 
