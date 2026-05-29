@@ -164,7 +164,9 @@ public partial class Program : HostedProgram, IOvertypeFlag
 			}
 			else
 			{
-				int separator = remainingCommandLine.IndexOfAny(ArgumentTerminatorCharacters, startIndex: 1);
+				int startIndex = (remainingCommandLine.Length > 0) ? 1 : 0;
+
+				int separator = remainingCommandLine.IndexOfAny(ArgumentTerminatorCharacters, startIndex);
 
 				if (separator < 0)
 				{
