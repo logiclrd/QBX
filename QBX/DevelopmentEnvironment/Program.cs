@@ -68,11 +68,16 @@ public partial class Program : HostedProgram, IOvertypeFlag
 	void IOvertypeFlag.Toggle() => EnableOvertype = !EnableOvertype;
 
 	public Program(Machine machine, IDispatcher dispatcher)
+		: this(Environment.CommandLine, machine, dispatcher)
+	{
+	}
+
+	public Program(string commandLine, Machine machine, IDispatcher dispatcher)
 		: base(machine)
 	{
 		Machine = machine;
 
-		string commandTail = Environment.CommandLine;
+		string commandTail = commandLine;
 
 		int space = commandTail.IndexOf(' ');
 

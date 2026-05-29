@@ -29,4 +29,14 @@ public class Devices
 		_devices["NUL"] = Null;
 		_devices["DEBUG$"] = Debug;
 	}
+
+	public void RegisterDevice(string name, FileDescriptor device)
+	{
+		_devices.Add(name, device);
+	}
+
+	public void UnregisterDevice(string name)
+	{
+		_devices.Remove(name);
+	}
 }

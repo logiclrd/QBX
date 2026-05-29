@@ -31,6 +31,8 @@ public partial class Program
 
 	public string ProgramCommandLine = "";
 
+	public bool AbortOnBreak = false;
+
 	[MemberNotNullWhen(true, nameof(_executionContext))]
 	public bool IsExecuting => (_executionContext != null);
 
@@ -206,17 +208,22 @@ public partial class Program
 		while (Machine.Keyboard.GetNextEvent() is not null)
 			;
 
-		if (_executionContext.ExecutionState.IsTerminated)
-			ExecutionEpilogue();
+		if (AbortOnBreak)
+			Machine.KeepRunning = false;
 		else
 		{
-			SaveOutput();
-			SetIDEVideoMode();
+			if (_executionContext.ExecutionState.IsTerminated)
+				ExecutionEpilogue();
+			else
+			{
+				SaveOutput();
+				SetIDEVideoMode();
 
-			UpdateAfterBreak();
+				UpdateAfterBreak();
 
-			if (_executionContext.ExecutionState.CurrentError != null)
-				PresentError(_executionContext.ExecutionState.CurrentError);
+				if (_executionContext.ExecutionState.CurrentError != null)
+					PresentError(_executionContext.ExecutionState.CurrentError);
+			}
 		}
 	}
 
@@ -241,7 +248,12 @@ public partial class Program
 			RestoreOutput();
 
 		if (_executionContext.ExecutionState.IsTerminated)
-			ExecutionEpilogue();
+		{
+			if (AbortOnBreak)
+				Machine.KeepRunning = false;
+			else
+				ExecutionEpilogue();
+		}
 		else
 		{
 			UnpauseExecution(

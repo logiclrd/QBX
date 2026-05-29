@@ -1,0 +1,11 @@
+DECLARE SUB setvalue ()
+
+COMMON a%
+
+setvalue
+
+IF a% = 42 THEN
+  OPEN "TESTOUT$" FOR OUTPUT AS #1
+  PRINT #1, "PASS"
+  CLOSE #1
+END IF

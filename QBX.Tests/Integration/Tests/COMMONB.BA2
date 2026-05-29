@@ -1,0 +1,8 @@
+' This .BAS file is named .BA2 so that it does not get
+' discovered as an integration test of its own.
+
+COMMON SHARED a%
+
+SUB setvalue
+a% = 42
+END SUB

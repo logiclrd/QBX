@@ -1,0 +1,19 @@
+DECLARE SUB SetUEvent
+
+ON UEVENT GOSUB foop
+
+UEVENT ON
+
+SetUEvent
+
+IF gotit% THEN
+  OPEN "TESTOUT$" FOR OUTPUT AS #1
+  PRINT #1, "PASS"
+  CLOSE #1
+END IF
+
+END
+
+foop:
+  gotit% = -1
+  RETURN

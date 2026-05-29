@@ -1,0 +1,11 @@
+' This .BAS file is named .BA2 so that it does not get
+' discovered as an integration test of its own.
+
+TYPE qwerty
+  dog AS INTEGER
+  cat AS INTEGER
+END TYPE
+
+SUB sploof (arg AS qwerty)
+arg.cat = arg.dog
+END SUB
