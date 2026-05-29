@@ -1473,6 +1473,9 @@ public class Compiler(IdentifierRepository identifierRepository)
 				{
 					var translatedEndStatement = new EndStatement(endStatement);
 
+					translatedEndStatement.ExitAutoRunToSystem =
+						(endStatement is CodeModel.Statements.SystemStatement);
+
 					TranslateNumericArgumentExpression(
 						ref translatedEndStatement.ExitCodeExpression, endStatement.ExitCodeExpression);
 

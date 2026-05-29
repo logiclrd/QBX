@@ -537,8 +537,9 @@ public partial class Program : HostedProgram, IOvertypeFlag
 			{
 				if (AutoRun)
 				{
-					AutoRun = false;
 					Run();
+					AutoRun = false;
+					continue;
 				}
 
 				if (_closeRequested)

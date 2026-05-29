@@ -208,7 +208,7 @@ public partial class Program
 		while (Machine.Keyboard.GetNextEvent() is not null)
 			;
 
-		if (AbortOnBreak)
+		if (AbortOnBreak || (_executionContext.ExitAutoRunToSystem && AutoRun))
 			Machine.KeepRunning = false;
 		else
 		{
@@ -249,7 +249,7 @@ public partial class Program
 
 		if (_executionContext.ExecutionState.IsTerminated)
 		{
-			if (AbortOnBreak)
+			if (AbortOnBreak || (_executionContext.ExitAutoRunToSystem && AutoRun))
 				Machine.KeepRunning = false;
 			else
 				ExecutionEpilogue();

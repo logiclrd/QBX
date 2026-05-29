@@ -47,6 +47,8 @@ public class ExecutionContext
 
 	public RuntimeState RuntimeState => _runtimeState;
 
+	public bool ExitAutoRunToSystem => _exitAutoRunToSystem;
+
 	ExecutionState _executionState;
 
 	Dictionary<Identifier, CommonBlockStorage> _commonBlockStorage;
@@ -60,6 +62,8 @@ public class ExecutionContext
 	Stack<ErrorHandler> _localErrorHandlers = new Stack<ErrorHandler>();
 
 	RuntimeState _runtimeState = new RuntimeState();
+
+	bool _exitAutoRunToSystem;
 
 	public readonly ErrorNumberVariable ErrVariable = new ErrorNumberVariable();
 	public readonly LongVariable ErlVariable = new LongVariable();
@@ -477,9 +481,10 @@ public class ExecutionContext
 		}
 	}
 
-	public void SetExitCode(int exitCode)
+	public void SetExitCode(int exitCode, bool exitAutoRunToSystem = false)
 	{
 		_rootFrame?.Variables[0].SetData(exitCode);
+		_exitAutoRunToSystem = exitAutoRunToSystem;
 	}
 
 	public void Dispatch(Executable? executable, StackFrame stackFrame)

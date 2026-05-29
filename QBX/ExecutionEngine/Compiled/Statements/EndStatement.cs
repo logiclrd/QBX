@@ -6,11 +6,13 @@ public class EndStatement(CodeModel.Statements.EndStatement source) : Executable
 {
 	public Evaluable? ExitCodeExpression;
 
+	public bool ExitAutoRunToSystem;
+
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
 		int exitCode = ExitCodeExpression?.EvaluateAndCoerceToInt(context, stackFrame) ?? 0;
 
-		context.SetExitCode(exitCode);
+		context.SetExitCode(exitCode, ExitAutoRunToSystem);
 
 		throw new EndProgram();
 	}
