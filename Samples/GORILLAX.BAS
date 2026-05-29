@@ -37,6 +37,7 @@ DECLARE SUB UpdateScores (Record(), PlayerNum, Results)
 DECLARE SUB DrawGorilla (x, y, arms)
 DECLARE SUB GorillaIntro (Player1$, Player2$)
 DECLARE SUB Rest (t#)
+DECLARE SUB WaitUntil (st#)
 DECLARE SUB VictoryDance (Player)
 DECLARE SUB ClearGorillas ()
 DECLARE SUB DrawBan (xc#, yc#, r, bc)
@@ -451,20 +452,30 @@ FUNCTION ExplodeGorilla (x#, y#)
   IF x# < ScrWidth / 2 THEN PlayerHit = 1 ELSE PlayerHit = 2
   PLAY "MBO0L16EFGEFDC"
 
+  st# = TIMER
+
   FOR i = 1 TO 8 * SclX#
     CIRCLE (GorillaX(PlayerHit) + 3.5 * SclX# + XAdj, GorillaY(PlayerHit) + 7 * SclY# + YAdj), i, ExplosionColor, , , -1.57
     LINE (GorillaX(PlayerHit) + 7 * SclX#, GorillaY(PlayerHit) + 9 * SclY# - i)-(GorillaX(PlayerHit), GorillaY(PlayerHit) + 9 * SclY# - i), ExplosionColor
+
+    st# = st# + .005
+    WaitUntil st#
   NEXT i
+
 
   FOR i = 1 TO 16 * SclX#
     IF i < (8 * SclX#) THEN CIRCLE (GorillaX(PlayerHit) + 3.5 * SclX# + XAdj, GorillaY(PlayerHit) + 7 * SclY# + YAdj), (8 * SclX# + 1) - i, BACKATTR, , , -1.57
     CIRCLE (GorillaX(PlayerHit) + 3.5 * SclX# + XAdj, GorillaY(PlayerHit) + YAdj), i, i MOD 2 + 1, , , -1.57
+
+    st# = st# + .005
+    WaitUntil st#
   NEXT i
 
   FOR i = 24 * SclX# TO 1 STEP -1
     CIRCLE (GorillaX(PlayerHit) + 3.5 * SclX# + XAdj, GorillaY(PlayerHit) + YAdj), i, BACKATTR, , , -1.57
-    FOR Count = 1 TO 200
-    NEXT
+
+    st# = st# + .01
+    WaitUntil st#
   NEXT i
 
   ExplodeGorilla = PlayerHit
@@ -1127,3 +1138,11 @@ SUB VictoryDance (Player)
   NEXT
 END SUB
 
+SUB WaitUntil (st#)
+ot# = TIMER
+
+DO
+  ct# = TIMER
+  IF ct# < ot# THEN st# = st# - 86400: ot# = ot# - 86400
+LOOP UNTIL ct# >= st#
+END SUB
