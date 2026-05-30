@@ -65,7 +65,7 @@ public class CircleStatement(CodeModel.Statements.CircleStatement source) : Exec
 
 			float aspect = NumberConverter.ToSingle(aspectValue);
 
-			if (aspect > 1)
+			if (aspect >= 1)
 				radiusX /= aspect;
 			else
 			{
