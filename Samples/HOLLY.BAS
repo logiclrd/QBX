@@ -73,7 +73,7 @@ IF ABS(angle!) < .001 THEN
   LINE (curx!, cury!)-(nextx!, nexty!)
 ELSE
   chordlength! = SQR(dx! ^ 2 + dy! ^ 2)
-  radius! = chordlength! / (2 * ABS(SIN(angle!) / 2))
+  radius! = chordlength! / (2 * SIN(ABS(angle!) / 2))
 
   chordmidx! = curx! + dx! * .5
   chordmidy! = cury! - dy! * .5
