@@ -1,5 +1,5 @@
 DECLARE SUB Holly (x!, y!, c!)
-DECLARE SUB ZXDraw (curx!, cury!, dx!, dy!, angle!)
+DECLARE SUB ZXDraw (dx!, dy!, angle!)
 DECLARE FUNCTION ATAN2! (y!, x!)
 
 ' *** XMAS HOLLY ***
@@ -9,6 +9,8 @@ DECLARE FUNCTION ATAN2! (y!, x!)
 DIM SHARED HollyDebug%
 
 SCREEN 12
+
+COLOR 10
 
 ' Show how the sausage is made
 HollyDebug% = 1
@@ -52,19 +54,24 @@ END IF
 END FUNCTION
 
 SUB Holly (x!, y!, c!)
-ZXDraw x!, y!, c!, c!, 1
-ZXDraw x!, y!, -c / 3, -c / 5, -2
-ZXDraw x!, y!, -c / 2.5, -c / 5, -2
-ZXDraw x!, y!, -c / 5, -c / 3.4, -2
-ZXDraw x!, y!, -c / 10, -c / 3, -2
-ZXDraw x!, y!, c / 2.5, -c / 10, -2
-ZXDraw x!, y!, c / 3.4, c / 5, -2
-ZXDraw x!, y!, c / 3.4, c / 3.4, -2
-ZXDraw x!, y!, 0, c / 2, -1
+PSET (x!, y!)
+
+ZXDraw c!, c!, 1
+ZXDraw -c! / 3, -c! / 5, -2
+ZXDraw -c! / 2.5, -c! / 5, -2
+ZXDraw -c! / 5, -c! / 3.4, -2
+ZXDraw -c! / 10, -c! / 3, -2
+ZXDraw c! / 2.5, -c! / 10, -2
+ZXDraw c! / 3.4, c! / 5, -2
+ZXDraw c! / 3.4, c! / 3.4, -2
+ZXDraw 0, c! / 2, -1
 END SUB
 
-SUB ZXDraw (curx!, cury!, dx!, dy!, angle!)
+SUB ZXDraw (dx!, dy!, angle!)
 ' ZX Spectrum's Y axis points up, QuickBASIC's points down
+
+curx! = POINT(2)
+cury! = POINT(3)
 
 nextx! = curx! + dx!
 nexty! = cury! - dy!
@@ -97,7 +104,7 @@ ELSE
     CIRCLE (circlecenterx!, circlecentery!), radius!, 1, , , 1
   END IF
 
-  CIRCLE (circlecenterx!, circlecentery!), radius!, 10, startangle!, endangle!, 1
+  CIRCLE (circlecenterx!, circlecentery!), radius!, , startangle!, endangle!, 1
 
   IF HollyDebug% THEN
     CIRCLE (nextx!, nexty!), 2, 12
@@ -105,6 +112,6 @@ ELSE
   END IF
 END IF
 
-curx! = nextx!
-cury! = nexty!
+' Update last point
+PSET (nextx!, nexty!)
 END SUB
