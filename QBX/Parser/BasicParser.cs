@@ -4729,8 +4729,9 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 		if (lastOperatorIndex > 0)
 		{
-			// Exponentiation is the only thing that beats unary negation
-			if (lastOperatorPrecedence == 1)
+			// Exponentiation and field access need to be evaluated
+			// before unary negation, everything else after.
+			if (lastOperatorPrecedence <= 1)
 			{
 				if (tokens[0].Type == TokenType.Minus)
 					return new UnaryExpression(tokens[0], ParseExpression(tokens.Slice(1), endToken));

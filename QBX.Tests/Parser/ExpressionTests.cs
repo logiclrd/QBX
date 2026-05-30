@@ -704,4 +704,31 @@ public class ExpressionTests
 		binaryResult.Right.Should().BeOfType<LiteralExpression>()
 			.Which.Token!.Value.Should().Be("3");
 	}
+
+	[Test]
+	public void NegatedFieldAccess()
+	{
+		// Arrange
+		var identifierRepository = new IdentifierRepository();
+
+		var lexer = new Lexer("-a.b");
+
+		var tokens = lexer.ToList();
+
+		var lastToken = tokens.Last();
+
+		var endToken = new Token(lastToken.LineNumberBox, lastToken.Column + lastToken.Length, TokenType.Empty, "");
+
+		var sut = new BasicParser(identifierRepository);
+
+		// Act
+		var result = sut.ParseExpression(tokens, endToken);
+
+		// Assert
+		var unaryExpression = result.Should().BeOfType<UnaryExpression>().Subject;
+
+		unaryExpression.Operator.Should().Be(Operator.Negate);
+		unaryExpression.Child.Should().BeOfType<BinaryExpression>()
+			.Which.Operator.Should().Be(Operator.Field);
+	}
 }
