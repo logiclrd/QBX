@@ -69,6 +69,13 @@ public class IntegrationTestHarness
 
 		var qbx = new DevelopmentEnvironment.Program(commandLine: "QBX.exe", machine, dispatcher);
 
+		qbx.Error +=
+			errorInfo =>
+			{
+				machine.KeepRunning = false;
+				Assert.Fail("Error: " + errorInfo.Message);
+			};
+
 		qbx.LoadQLB("QBX");
 
 		qbx.LoadFile(filePath, replaceExistingProgram: true);

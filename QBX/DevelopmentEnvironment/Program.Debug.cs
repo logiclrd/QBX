@@ -25,6 +25,8 @@ public partial class Program
 
 	public const int MaxWatches = 16;
 
+	public event Action<ErrorInfo>? Error;
+
 	Statement? _nextStatement = null;
 	Routine? _nextStatementRoutine = null;
 	Token? _errorToken = null;
@@ -119,6 +121,15 @@ public partial class Program
 
 	public void PresentError(string errorMessage, int? errorNumber, Token? context, ErrorSource source, bool avoidContext)
 	{
+		var errorInfo = new ErrorInfo();
+
+		errorInfo.Message = errorMessage;
+		errorInfo.Number = errorNumber;
+		errorInfo.Context = context;
+		errorInfo.Source = source;
+
+		Error?.Invoke(errorInfo);
+
 		if ((context?.OwnerStatement is Statement statement)
 		 && (statement.CodeLine is CodeLine line)
 		 && (line.CompilationElement is CompilationElement element))
