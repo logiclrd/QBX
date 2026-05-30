@@ -94,10 +94,10 @@ ELSE
   IF angle! < 0 THEN SWAP startangle!, endangle!
 
   IF HollyDebug% THEN
-    CIRCLE (circlecenterx!, circlecentery!), radius!, 1
+    CIRCLE (circlecenterx!, circlecentery!), radius!, 1, , , 1
   END IF
 
-  CIRCLE (circlecenterx!, circlecentery!), radius!, 10, startangle!, endangle!
+  CIRCLE (circlecenterx!, circlecentery!), radius!, 10, startangle!, endangle!, 1
 
   IF HollyDebug% THEN
     CIRCLE (nextx!, nexty!), 2, 12
