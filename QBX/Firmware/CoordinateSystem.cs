@@ -155,8 +155,8 @@ public class CoordinateSystem
 
 		return
 			(
-				(x - target.X1 + 0.5f) * _scaleBackX + _window.TopLeft.X,
-				(y - target.Y1 + 0.5f) * _scaleBackY + _window.TopLeft.Y
+				(x - target.X1) * _scaleBackX + _window.TopLeft.X,
+				(y - target.Y1) * _scaleBackY + _window.TopLeft.Y
 			);
 	}
 

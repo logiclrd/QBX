@@ -221,7 +221,7 @@ public enum TokenType
 	[KeywordToken] PLAY,
 	[KeywordFunction(parameterCount: 2)]
 	[KeywordToken] PMAP,
-	[KeywordFunction(parameterCount: 2)]
+	[KeywordFunction(minimumParameterCount: 1, maximumParameterCount: 2)]
 	[KeywordToken] POINT,
 	[KeywordToken] POKE,
 	[KeywordFunction(parameterCount: 0)]

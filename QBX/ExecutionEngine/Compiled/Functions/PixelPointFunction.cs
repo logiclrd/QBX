@@ -7,7 +7,7 @@ using QBX.Numbers;
 
 namespace QBX.ExecutionEngine.Compiled.Functions;
 
-public class PointFunction : Function
+public class PixelPointFunction : Function
 {
 	public Evaluable? XExpression;
 	public Evaluable? YExpression;
@@ -45,9 +45,9 @@ public class PointFunction : Function
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (XExpression == null)
-			throw new Exception("PointFunction with no XExpression");
+			throw new Exception("PixelPointFunction with no XExpression");
 		if (YExpression == null)
-			throw new Exception("PointFunction with no YExpression");
+			throw new Exception("PixelPointFunction with no YExpression");
 
 		if (context.VisualLibrary is not GraphicsLibrary visual)
 			throw RuntimeException.IllegalFunctionCall(Source);

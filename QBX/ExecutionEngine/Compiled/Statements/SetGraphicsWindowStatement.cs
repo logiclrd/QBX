@@ -50,6 +50,14 @@ public class SetGraphicsWindowStatement(CodeModel.Statements.WindowStatement sou
 		if (!UseScreenCoordinates)
 			(y1, y2) = (y2, y1);
 
+		var lastPointScreen = visual.CoordinateSystem.TranslateWindowToScreen(
+			visual.LastPoint.X,
+			visual.LastPoint.Y);
+
 		visual.CoordinateSystem.SetWindow((x1, y1), (x2, y2));
+
+		visual.LastPoint = visual.CoordinateSystem.TranslateScreenToWindow(
+			lastPointScreen.X,
+			lastPointScreen.Y);
 	}
 }
