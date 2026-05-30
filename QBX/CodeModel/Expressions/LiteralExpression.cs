@@ -156,7 +156,7 @@ public class LiteralExpression : Expression
 							writer.Write(NumberFormatter.Format(longValue).AsSpan().Slice(offset));
 						break;
 					case '!':
-						if (NumberParser.TryAsSingle(unqualified, out var singleValue))
+						if (NumberParser.TryAsSingle(unqualified, limitPrecision: false, out var singleValue))
 							writer.Write(NumberFormatter.Format(singleValue).AsSpan().Slice(offset));
 						break;
 					case '#':

@@ -663,7 +663,6 @@ public class ExpressionTests
 			.Which.Token!.Value.Should().Be("3");
 	}
 
-
 	[Test]
 	public void NegativeNumberIsActuallyOperatorAndOperandNested()
 	{

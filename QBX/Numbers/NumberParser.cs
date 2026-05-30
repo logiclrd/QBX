@@ -175,6 +175,9 @@ public static class NumberParser
 	}
 
 	public static bool TryAsSingle(ReadOnlySpan<char> chars, out float value)
+		=> TryAsSingle(chars, limitPrecision: true, out value);
+
+	public static bool TryAsSingle(ReadOnlySpan<char> chars, bool limitPrecision, out float value)
 	{
 		value = default;
 
@@ -222,10 +225,13 @@ public static class NumberParser
 			while (trimmed[0] == '0')
 				trimmed.Remove(0, 1);
 
-			int significantFigures = trimmed.Length - 1; // always contains a dot, even if it's the last character
+			if (limitPrecision)
+			{
+				int significantFigures = trimmed.Length - 1; // always contains a dot, even if it's the last character
 
-			if (significantFigures > 7)
-				return false;
+				if (significantFigures > 7)
+					return false;
+			}
 		}
 
 		if (!float.TryParse(chars, out value))
