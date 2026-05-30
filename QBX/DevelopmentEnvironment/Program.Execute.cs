@@ -212,6 +212,9 @@ public partial class Program
 			Machine.KeepRunning = false;
 		else
 		{
+			// Having entered break mode, SYSTEM should no longer exit to system.
+			AutoRun = false;
+
 			if (_executionContext.ExecutionState.IsTerminated)
 				ExecutionEpilogue();
 			else
