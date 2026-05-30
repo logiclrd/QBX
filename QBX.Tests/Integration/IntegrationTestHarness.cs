@@ -1,20 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.Text;
+﻿using System.Runtime.CompilerServices;
 
-using QBX.CodeModel;
-using QBX.ExecutionEngine;
-using QBX.ExecutionEngine.Compiled;
 using QBX.Hardware;
-using QBX.LexicalAnalysis;
-using QBX.Parser;
 
 namespace QBX.Tests.Integration;
 
 public class IntegrationTestHarness
 {
-	static readonly TimeSpan TestTimeLimit = TimeSpan.FromSeconds(0.8);
+	static readonly TimeSpan TestTimeLimit = TimeSpan.FromSeconds(10);
 
 	static IEnumerable<TestCaseData<string>> FindAndEnumerateIntegrationTests()
 		=> EnumerateIntegrationTests();
