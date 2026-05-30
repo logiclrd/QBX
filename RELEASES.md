@@ -1,5 +1,32 @@
 # QBX Releases
 
+## 1.10.0 - 2026-05-30
+
+### Added
+
+- The `POINT` function now supports the single-argument mode, which returns information about the graphics library's last point.
+
+### Fixed
+
+- `CIRCLE` now correctly handles negative aspect values.
+- `CIRCLE`'s aspect-corrected height is slightly more correct in 350-scan video modes.
+- An edge case in the `PAINT` border fill algorithm where a scanning primitive couldn't infer the scan direction if the span was only 1 pixel wide has been corrected. This bug would leave individual pixels at the left edge of the region unpainted in some circumstances.
+- A small incorrect rounding bias in the translation of coordinates from viewport space to window space has been removed.
+- The graphics library's last point is now correctly preserved across `WINDOW` changes.
+- By reference arguments are now consistently handled while still correctly avoiding passing the assignable result of MID$() by reference.
+- Numeric literals specifying the `!` type character but with more than 7 digits of precision no longer disappear.
+- A parsing bug that prevented unary negation of field accesses (expressions like `-a.x`) has been corrected.
+- Errors that result from parameter list mismatches in DECLARE statements now correctly indicate their context, allowing the IDE to jump to the location of the error.
+- `SYSTEM` now terminates the entire environment, instead of being a literal synonym for `END`. This only happens during autorun (QBX.EXE /RUN FILE.BAS), and is cancelled if the QBX instance enters break mode at any point.
+- A crash that occurred during the parsing of some command-lines has been fixed.
+- `GORILLAX.BAS` now paces the explosion of a hit gorilla according to wall clock time. Unpaced, the entire animation completes in 1 or 2 frames, and with a full tick delay between each frame, the animation progresses far too slowly.
+- `DebugCases` files `SSEGADD2.BAS` and `VARPTR2.BAS` now use the correct register to pass in the buffer memory offset.
+
+### Infrastructure
+
+- QBX now has an integration test mechanism with various tests written in QuickBASIC code to verify behaviour in ways that are difficult to isolate to a unit test.
+- QLB management no longer reuses instances attached to other `Machine`s.
+
 ## 1.9.0 - 2026-05-23
 
 ### Fixed
