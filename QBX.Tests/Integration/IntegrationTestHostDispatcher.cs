@@ -1,4 +1,5 @@
-﻿using System.Threading.Channels;
+﻿using System.Runtime.CompilerServices;
+using System.Threading.Channels;
 
 namespace QBX.Tests.Integration;
 
@@ -31,7 +32,10 @@ class IntegrationTestHostDispatcher : IDispatcher
 
 	void StartDispatcherThread(CancellationToken cancellationToken)
 	{
-		Task.Run(() => DispatcherThread(cancellationToken));
+		var dispatcherThread = new Thread(() => DispatcherThread(cancellationToken));
+
+		dispatcherThread.Name = "Test Dispatcher Thread " + RuntimeHelpers.GetHashCode(this);
+		dispatcherThread.Start();
 	}
 
 	void DispatcherThread(CancellationToken cancellationToken)

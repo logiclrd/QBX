@@ -64,7 +64,7 @@ public class EventHub
 		PostEvent(evt);
 	}
 
-	Semaphore _configurationInFlight = new(initialCount: 0, maximumCount: int.MaxValue);
+	SemaphoreSlim _configurationInFlight = new(initialCount: 0);
 
 	public void DispatchConfigurationChange(EventConfigurationChange change)
 	{
@@ -75,7 +75,7 @@ public class EventHub
 				_configurationInFlight.Release();
 			});
 
-		_configurationInFlight.WaitOne();
+		_configurationInFlight.Wait();
 	}
 
 	public void ApplyConfigurationChange(EventConfigurationChange change)
