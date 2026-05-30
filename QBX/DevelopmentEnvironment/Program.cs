@@ -93,6 +93,8 @@ public partial class Program : HostedProgram, IOvertypeFlag
 
 		EventHub = new EventHub(dispatcher);
 
+		_qlbManager = new QuickLibraryManager(Machine, EventHub);
+
 		InitializeMenuBar();
 
 		SaveOutput();
@@ -368,6 +370,8 @@ public partial class Program : HostedProgram, IOvertypeFlag
 		_qlbLoadQueue.Clear();
 	}
 
+	QuickLibraryManager _qlbManager;
+
 	public void LoadQLB(string qlbName)
 	{
 		if (!IsRunning)
@@ -392,7 +396,7 @@ public partial class Program : HostedProgram, IOvertypeFlag
 					qlbName = qlbName.Substring(0, dotIndex);
 			}
 
-			if (QuickLibrary.TryGetQuickLibrary(qlbName, Machine, EventHub, out var qlb))
+			if (_qlbManager.TryGetQuickLibrary(qlbName, out var qlb))
 			{
 				QLBs.Add(qlb);
 				return;
