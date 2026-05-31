@@ -246,7 +246,7 @@ public partial class Video
 			OddEvenColumns = false,
 			ShiftRegisterInterleave = false,
 			Use256Colours = false,
-			PlaneMask = 0,
+			PlaneMask = 0b1111,
 			HalfDotClockRate = false,
 			Chain4Mode = false,
 		};
@@ -269,7 +269,7 @@ public partial class Video
 			OddEvenColumns = false,
 			ShiftRegisterInterleave = false,
 			Use256Colours = true,
-			PlaneMask = 0,
+			PlaneMask = 0b0001,
 			HalfDotClockRate = true,
 			Chain4Mode = true,
 		};
