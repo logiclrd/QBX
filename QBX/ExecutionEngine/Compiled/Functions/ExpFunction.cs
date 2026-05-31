@@ -36,7 +36,17 @@ public class ExpFunction : Function
 
 		var exponent = NumberConverter.ToDouble(argumentValue, Source?.Token);
 
-		var result = Math.Exp(exponent);
+		double result;
+
+		if (NumberConverter.IsIndeterminate(exponent))
+			result = 0;
+		else
+		{
+			if (double.IsPositiveInfinity(exponent) || double.IsNaN(exponent))
+				throw RuntimeException.Overflow(Source);
+
+			result = NumberConverter.TranslateNaN(Math.Exp(exponent));
+		}
 
 		return new DoubleVariable(result);
 	}
