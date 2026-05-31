@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
+using QBX.Firmware;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
@@ -25,74 +26,77 @@ public class FormattedPrintStatement(CodeModel.Statements.PrintStatement source)
 		if (Format == null)
 			throw new Exception("FormattedPrintStatement does not have a Format expression");
 
-		var emitter = CreateEmitter(context, stackFrame);
-
-		var formatVariable = (StringVariable)Format.Evaluate(context, stackFrame);
-		string format = formatVariable.ValueString;
-
-		int nextArgumentIndex = 0;
-
-		var dummyVariable = formatVariable;
-
-		while (nextArgumentIndex < Arguments.Count)
+		using (context.VisualLibrary.SetBackspaceCharacterModeForOperation(BackspaceCharacterMode.Glyph))
 		{
-			FormatDirective.SplitString(
-				format, Statement,
-				directive =>
-				{
-					Variable argumentValue = dummyVariable;
+			var emitter = CreateEmitter(context, stackFrame);
 
-					if (directive.UsesArgument)
+			var formatVariable = (StringVariable)Format.Evaluate(context, stackFrame);
+			string format = formatVariable.ValueString;
+
+			int nextArgumentIndex = 0;
+
+			var dummyVariable = formatVariable;
+
+			while (nextArgumentIndex < Arguments.Count)
+			{
+				FormatDirective.SplitString(
+					format, Statement,
+					directive =>
 					{
-						while (true)
+						Variable argumentValue = dummyVariable;
+
+						if (directive.UsesArgument)
 						{
-							if (nextArgumentIndex >= Arguments.Count)
-								return false; // break out of loop
-
-							var argument = Arguments[nextArgumentIndex++];
-
-							if (argument.Expression == null)
-								throw new Exception("PrintArgument with no Expression");
-
-							if (argument.ArgumentType == PrintArgumentType.Value)
+							while (true)
 							{
-								argumentValue = argument.Expression.Evaluate(context, stackFrame);
+								if (nextArgumentIndex >= Arguments.Count)
+									return false; // break out of loop
 
-								break;
-							}
+								var argument = Arguments[nextArgumentIndex++];
 
-							int newCursorX = argument.Expression.EvaluateAndCoerceToInt(context, stackFrame);
+								if (argument.Expression == null)
+									throw new Exception("PrintArgument with no Expression");
 
-							newCursorX = (newCursorX - 1) % emitter.Width;
-
-							if (newCursorX < emitter.CursorX)
-								emitter.EmitNewLine();
-
-							if (argument.ArgumentType == PrintArgumentType.Tab)
-								emitter.CursorX = newCursorX;
-							else
-							{
-								if ((s_spaces == null) || (s_spaces.Length < newCursorX))
+								if (argument.ArgumentType == PrintArgumentType.Value)
 								{
-									s_spaces = new byte[newCursorX * 2];
-									s_spaces.AsSpan().Fill((byte)' ');
+									argumentValue = argument.Expression.Evaluate(context, stackFrame);
+
+									break;
 								}
 
-								emitter.Emit(s_spaces.AsSpan().Slice(0, newCursorX));
+								int newCursorX = argument.Expression.EvaluateAndCoerceToInt(context, stackFrame);
+
+								newCursorX = (newCursorX - 1) % emitter.Width;
+
+								if (newCursorX < emitter.CursorX)
+									emitter.EmitNewLine();
+
+								if (argument.ArgumentType == PrintArgumentType.Tab)
+									emitter.CursorX = newCursorX;
+								else
+								{
+									if ((s_spaces == null) || (s_spaces.Length < newCursorX))
+									{
+										s_spaces = new byte[newCursorX * 2];
+										s_spaces.AsSpan().Fill((byte)' ');
+									}
+
+									emitter.Emit(s_spaces.AsSpan().Slice(0, newCursorX));
+								}
 							}
 						}
-					}
 
-					directive.Emit(argumentValue, Statement, emitter);
+						directive.Emit(argumentValue, Statement, emitter);
 
-					return true; // continue loop
-				});
+						return true; // continue loop
+					});
 
-			if (nextArgumentIndex == 0)
-				throw RuntimeException.IllegalFunctionCall(Statement);
+				if (nextArgumentIndex == 0)
+					throw RuntimeException.IllegalFunctionCall(Statement);
+			}
+
+			if (EmitNewLine)
+				emitter.EmitNewLine();
 		}
-
-		if (EmitNewLine)
-			emitter.EmitNewLine();
 	}
 }

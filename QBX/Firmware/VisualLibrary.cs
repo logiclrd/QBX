@@ -213,6 +213,36 @@ public abstract class VisualLibrary : IDisposable
 
 	public bool ProcessControlCharacters = true;
 
+	public BackspaceCharacterMode BackspaceCharacterMode = BackspaceCharacterMode.Control;
+
+	class BackspaceCharacterModeScope : IDisposable
+	{
+		VisualLibrary _owner;
+		BackspaceCharacterMode _savedMode;
+		bool _isDisposed;
+
+		public BackspaceCharacterModeScope(VisualLibrary owner, BackspaceCharacterMode scopeMode)
+		{
+			_owner = owner;
+
+			_savedMode = _owner.BackspaceCharacterMode;
+
+			_owner.BackspaceCharacterMode = scopeMode;
+		}
+
+		public void Dispose()
+		{
+			if (!_isDisposed)
+			{
+				_isDisposed = true;
+				_owner.BackspaceCharacterMode = _savedMode;
+			}
+		}
+	}
+
+	public IDisposable SetBackspaceCharacterModeForOperation(BackspaceCharacterMode mode)
+		=> new BackspaceCharacterModeScope(this, mode);
+
 	public CRLFSemantics CRLFSemantics = CRLFSemantics.File;
 
 	protected bool ProcessControlCharacter(
@@ -230,6 +260,9 @@ public abstract class VisualLibrary : IDisposable
 				buffer = buffer.Slice(1);
 				return true;
 			case 8: // BS
+				if (BackspaceCharacterMode == BackspaceCharacterMode.Glyph)
+					return false;
+
 				cursorX--;
 				updateOffset();
 
