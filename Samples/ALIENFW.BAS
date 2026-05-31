@@ -18,7 +18,7 @@ SCREEN ScreenMode%
 
 SELECT CASE ScreenMode%
   CASE 12: basecolour% = 9: palettebrightnessleveloffset% = 8
-  CASE 13: basecolour% = 247: palettebrightnessleveloffset% = 6: SetPalette
+  CASE 13: basecolour% = 246: palettebrightnessleveloffset% = 6: SetPalette
 END SELECT
 
 DIM coloursequence%(0 TO 6)
@@ -31,6 +31,7 @@ CONST PI2! = 6.283185
 CONST stepab! = PI2! / Nparam%
 
 colourindex! = 6 ' trigger colour sequence immediately
+coloursequence%(6) = basecolour%
 
 x! = 0!: y! = 0!
 DO
@@ -45,8 +46,8 @@ DO
       IF colourindex! > 6 THEN
         colourindex! = colourindex! - 6
         coloursequence%(0) = coloursequence%(6)
-        FOR i% = 0 TO 6
-          coloursequence%(i%) = INT(RND * 6) + basecolour%
+        FOR i% = 1 TO 6
+          coloursequence%(i%) = FIX(RND * 6) + basecolour%
         NEXT i%
       END IF
       FOR t% = 1 TO Niter%
@@ -110,12 +111,12 @@ SUB SetPalette
 
 DIM r%(8), g%(8), b%(8)
 
-r%(0) = 21: g%(0) = 21: b%(0) = 63
-r%(1) = 21: g%(1) = 63: b%(1) = 63
-r%(2) = 21: g%(2) = 63: b%(2) = 21
-r%(3) = 63: g%(3) = 63: b%(3) = 21
-r%(4) = 63: g%(4) = 21: b%(4) = 21
-r%(5) = 63: g%(5) = 21: b%(5) = 63
+r%(0) = 31: g%(0) = 31: b%(0) = 53
+r%(1) = 31: g%(1) = 53: b%(1) = 53
+r%(2) = 31: g%(2) = 53: b%(2) = 31
+r%(3) = 53: g%(3) = 53: b%(3) = 31
+r%(4) = 53: g%(4) = 31: b%(4) = 31
+r%(5) = 53: g%(5) = 31: b%(5) = 53
 
 OUT &H3C8, 0
 
