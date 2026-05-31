@@ -38,6 +38,9 @@ public class SinFunction : Function
 
 		var result = Math.Sin(angle);
 
+		if (double.IsNaN(result))
+			throw RuntimeException.IllegalFunctionCall(Source);
+
 		return new DoubleVariable(result);
 	}
 }

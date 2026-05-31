@@ -98,8 +98,11 @@ public class NumberFormatter
 		if (value == 0)
 			return qualify ? "0!" : "0";
 
-		if (float.IsNaN(value))
-			return "1.#IND";
+		if (NumberConverter.IsIndeterminate(value))
+			return "-1.#IND";
+		else if (float.IsNaN(value))
+			return "1.#QNAN";
+
 		if (float.IsPositiveInfinity(value))
 			return "1.#INF";
 		if (float.IsNegativeInfinity(value))
@@ -189,8 +192,11 @@ public class NumberFormatter
 		if (value == 0)
 			return qualify ? "0#" : "0";
 
-		if (double.IsNaN(value))
-			return "1.#IND";
+		if (NumberConverter.IsIndeterminate(value))
+			return "-1.#IND";
+		else if (double.IsNaN(value))
+			return "1.#QNAN";
+
 		if (double.IsPositiveInfinity(value))
 			return "1.#INF";
 		if (double.IsNegativeInfinity(value))

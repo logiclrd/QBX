@@ -57,7 +57,7 @@ public class SingleVariable : Variable
 
 	public override bool IsZero => (Value == 0);
 	public override bool IsPositive => (Value > 0);
-	public override bool IsNegative => (Value < 0);
+	public override bool IsNegative => (Value < 0) || float.IsNaN(Value);
 }
 
 public class PinnedSingleVariable : SingleVariable

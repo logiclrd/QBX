@@ -57,7 +57,7 @@ public class DoubleVariable : Variable
 
 	public override bool IsZero => (Value == 0);
 	public override bool IsPositive => (Value > 0);
-	public override bool IsNegative => (Value < 0);
+	public override bool IsNegative => (Value < 0) || double.IsNaN(Value);
 }
 
 public class PinnedDoubleVariable : DoubleVariable

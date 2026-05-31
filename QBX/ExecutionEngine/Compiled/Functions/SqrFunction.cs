@@ -36,7 +36,12 @@ public class SqrFunction : Function
 
 		var value = NumberConverter.ToDouble(argumentValue, Source?.Token);
 
-		var result = Math.Sqrt(value); // negative values become NaN
+		double result;
+
+		if (value < 0)
+			result = NumberConverter.DoubleIndeterminate;
+		else
+			result = NumberConverter.TranslateNaN(Math.Sqrt(value)); // negative values become NaN
 
 		return new DoubleVariable(result);
 	}

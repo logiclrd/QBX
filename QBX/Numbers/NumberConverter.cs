@@ -104,6 +104,22 @@ public static class NumberConverter
 		return (int)value;
 	}
 
+	const int SingleIndeterminateBits = unchecked((int)0xFFC00000);
+	const int SingleQuietNaNBits = 0x7FC00000;
+
+	public static readonly float SingleIndeterminate = BitConverter.Int32BitsToSingle(SingleIndeterminateBits);
+	public static readonly float SingleQuietNaN = BitConverter.Int32BitsToSingle(SingleQuietNaNBits);
+
+	public static bool IsIndeterminate(float value) => BitConverter.SingleToInt32Bits(value) == SingleIndeterminateBits;
+
+	public static float TranslateNaN(float value)
+	{
+		if (float.IsNaN(value))
+			return SingleQuietNaN;
+		else
+			return value;
+	}
+
 	public static float ToSingle(IntegerVariable value, Token? context = null) { value.ReadPinnedData(); return ToSingle(value.Value, context); }
 	public static float ToSingle(IntegerLiteralValue value, Token? context = null) => ToSingle(value.Value, context);
 	public static float ToSingle(short value, Token? context = null) => value;
@@ -122,7 +138,10 @@ public static class NumberConverter
 	{
 		try
 		{
-			return (float)value;
+			if (IsIndeterminate(value))
+				return SingleIndeterminate;
+			else
+				return TranslateNaN((float)value);
 		}
 		catch (OverflowException)
 		{
@@ -144,6 +163,22 @@ public static class NumberConverter
 		}
 	}
 
+	const long DoubleIndeterminateBits = unchecked((long)0xFFF8000000000000);
+	const long DoubleQuietNaNBits = 0x7FF8000000000000;
+
+	public static readonly double DoubleIndeterminate = BitConverter.Int64BitsToDouble(DoubleIndeterminateBits);
+	public static readonly double DoubleQuietNaN = BitConverter.Int64BitsToDouble(DoubleQuietNaNBits);
+
+	public static bool IsIndeterminate(double value) => BitConverter.DoubleToInt64Bits(value) == DoubleIndeterminateBits;
+
+	public static double TranslateNaN(double value)
+	{
+		if (double.IsNaN(value))
+			return DoubleQuietNaN;
+		else
+			return value;
+	}
+
 	public static double ToDouble(IntegerVariable value, Token? context = null) { value.ReadPinnedData(); return ToDouble(value.Value, context); }
 	public static double ToDouble(IntegerLiteralValue value, Token? context = null) => ToDouble(value.Value, context);
 	public static double ToDouble(short value, Token? context = null) => value;
@@ -154,7 +189,13 @@ public static class NumberConverter
 
 	public static double ToDouble(SingleVariable value, Token? context = null) { value.ReadPinnedData(); return ToDouble(value.Value, context); }
 	public static double ToDouble(SingleLiteralValue value, Token? context = null) => ToDouble(value.Value, context);
-	public static double ToDouble(float value, Token? context = null) => value;
+	public static double ToDouble(float value, Token? context = null)
+	{
+		if (IsIndeterminate(value))
+			return DoubleIndeterminate;
+		else
+			return TranslateNaN((double)value);
+	}
 
 	public static double ToDouble(DoubleVariable value, Token? context = null) => value.Value;
 	public static double ToDouble(DoubleLiteralValue value, Token? context = null) => value.Value;

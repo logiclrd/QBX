@@ -121,7 +121,7 @@ public abstract class PrintEmitter
 
 	public void Emit(float singleValue)
 	{
-		if (!(singleValue < 0))
+		if (!(singleValue < 0) && !NumberConverter.IsIndeterminate(singleValue))
 			Emit((byte)' ');
 
 		Emit(NumberFormatter.Format(singleValue, qualify: false));
@@ -130,7 +130,7 @@ public abstract class PrintEmitter
 
 	public void Emit(double doubleValue)
 	{
-		if (!(doubleValue < 0))
+		if (!(doubleValue < 0) && !NumberConverter.IsIndeterminate(doubleValue))
 			Emit((byte)' ');
 
 		Emit(NumberFormatter.Format(doubleValue, qualify: false));

@@ -119,7 +119,39 @@ public class DoubleExponentiation(Evaluable left, Evaluable right) : BinaryExpre
 
 		try
 		{
-			return new DoubleVariable(Math.Pow(leftValue.Value, rightValue.Value));
+			// Indeterminate value rules, in order:
+			//
+			// - If both the base and the exponent are indeterminate, the result is Illegal Function Call.
+			// - If the exponent is indeterminate, the result is always 0.
+			// - If the exponent is 0, the result is always 1.
+			// - If the base is indeterminate, the result is an error.
+			//   * If the exponent is an integer, the result is Overflow.
+			//   * If the exponent is not an integer, the result is Illegal Function Call.
+
+			double @base = leftValue.Value;
+			double exponent = rightValue.Value;
+
+			bool baseIndeterminate = NumberConverter.IsIndeterminate(@base);
+			bool exponentIndeterminate = NumberConverter.IsIndeterminate(exponent);
+
+			if (baseIndeterminate && exponentIndeterminate)
+				throw RuntimeException.IllegalFunctionCall(Source);
+
+			if (exponentIndeterminate)
+				return new DoubleVariable(0);
+
+			if (exponent == 0)
+				return new DoubleVariable(1);
+
+			if (baseIndeterminate)
+			{
+				if (double.IsInteger(exponent))
+					throw RuntimeException.Overflow(Source);
+				else
+					throw RuntimeException.IllegalFunctionCall(Source);
+			}
+
+			return new DoubleVariable(Math.Pow(@base, exponent));
 		}
 		catch (OverflowException)
 		{
@@ -134,7 +166,39 @@ public class DoubleExponentiation(Evaluable left, Evaluable right) : BinaryExpre
 
 		try
 		{
-			return new DoubleLiteralValue(Math.Pow(leftValue.Value, rightValue.Value));
+			// Indeterminate value rules, in order:
+			//
+			// - If both the base and the exponent are indeterminate, the result is Illegal Function Call.
+			// - If the exponent is indeterminate, the result is always 0.
+			// - If the exponent is 0, the result is always 1.
+			// - If the base is indeterminate, the result is an error.
+			//   * If the exponent is an integer, the result is Overflow.
+			//   * If the exponent is not an integer, the result is Illegal Function Call.
+
+			double @base = leftValue.Value;
+			double exponent = rightValue.Value;
+
+			bool baseIndeterminate = NumberConverter.IsIndeterminate(@base);
+			bool exponentIndeterminate = NumberConverter.IsIndeterminate(exponent);
+
+			if (baseIndeterminate && exponentIndeterminate)
+				throw CompilerException.IllegalFunctionCall(Source);
+
+			if (exponentIndeterminate)
+				return new DoubleLiteralValue(0);
+
+			if (exponent == 0)
+				return new DoubleLiteralValue(1);
+
+			if (baseIndeterminate)
+			{
+				if (double.IsInteger(exponent))
+					throw CompilerException.Overflow(Source);
+				else
+					throw CompilerException.IllegalFunctionCall(Source);
+			}
+
+			return new DoubleLiteralValue(NumberConverter.TranslateNaN(Math.Pow(@base, exponent)));
 		}
 		catch (OverflowException)
 		{

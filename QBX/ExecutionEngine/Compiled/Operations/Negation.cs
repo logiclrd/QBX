@@ -1,8 +1,10 @@
 ﻿using System;
 
 using QBX.ExecutionEngine.Compiled.Expressions;
+using QBX.ExecutionEngine.Compiled.Statements;
 using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
+using QBX.Numbers;
 
 namespace QBX.ExecutionEngine.Compiled.Operations;
 
@@ -92,14 +94,24 @@ public class SingleNegation(Evaluable right) : UnaryExpression(right)
 
 		rightValue.ReadPinnedData();
 
-		return new SingleVariable(-rightValue.Value);
+		if (NumberConverter.IsIndeterminate(rightValue.Value))
+			return new SingleVariable(NumberConverter.SingleIndeterminate);
+		else if (float.IsNaN(rightValue.Value))
+			return new SingleVariable(NumberConverter.SingleQuietNaN);
+		else
+			return new SingleVariable(-rightValue.Value);
 	}
 
 	public override LiteralValue EvaluateConstant()
 	{
 		var rightValue = (SingleLiteralValue)right.EvaluateConstant();
 
-		return new SingleLiteralValue(-rightValue.Value);
+		if (NumberConverter.IsIndeterminate(rightValue.Value))
+			return new SingleLiteralValue(NumberConverter.SingleIndeterminate);
+		else if (float.IsNaN(rightValue.Value))
+			return new SingleLiteralValue(NumberConverter.SingleQuietNaN);
+		else
+			return new SingleLiteralValue(-rightValue.Value);
 	}
 }
 
@@ -113,14 +125,24 @@ public class DoubleNegation(Evaluable right) : UnaryExpression(right)
 
 		rightValue.ReadPinnedData();
 
-		return new DoubleVariable(-rightValue.Value);
+		if (NumberConverter.IsIndeterminate(rightValue.Value))
+			return new DoubleVariable(NumberConverter.DoubleIndeterminate);
+		else if (double.IsNaN(rightValue.Value))
+			return new DoubleVariable(NumberConverter.DoubleQuietNaN);
+		else
+			return new DoubleVariable(-rightValue.Value);
 	}
 
 	public override LiteralValue EvaluateConstant()
 	{
 		var rightValue = (DoubleLiteralValue)right.EvaluateConstant();
 
-		return new DoubleLiteralValue(-rightValue.Value);
+		if (NumberConverter.IsIndeterminate(rightValue.Value))
+			return new DoubleLiteralValue(NumberConverter.DoubleIndeterminate);
+		else if (double.IsNaN(rightValue.Value))
+			return new DoubleLiteralValue(NumberConverter.DoubleQuietNaN);
+		else
+			return new DoubleLiteralValue(-rightValue.Value);
 	}
 }
 

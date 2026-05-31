@@ -38,6 +38,9 @@ public class CosFunction : Function
 
 		var result = Math.Cos(angle);
 
+		if (double.IsNaN(result))
+			throw RuntimeException.IllegalFunctionCall(Source);
+
 		return new DoubleVariable(result);
 	}
 }

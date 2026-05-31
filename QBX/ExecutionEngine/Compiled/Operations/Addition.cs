@@ -2,6 +2,7 @@
 using QBX.ExecutionEngine.Compiled.Expressions;
 using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
+using QBX.Numbers;
 
 namespace QBX.ExecutionEngine.Compiled.Operations;
 
@@ -163,7 +164,11 @@ public class SingleAddition(Evaluable left, Evaluable right) : BinaryExpression(
 
 		try
 		{
-			return new SingleVariable(leftValue.Value + rightValue.Value);
+			if (NumberConverter.IsIndeterminate(leftValue.Value)
+			 || NumberConverter.IsIndeterminate(rightValue.Value))
+				return new SingleVariable(NumberConverter.SingleIndeterminate);
+			else
+				return new SingleVariable(NumberConverter.TranslateNaN(leftValue.Value + rightValue.Value));
 		}
 		catch (OverflowException)
 		{
@@ -178,7 +183,11 @@ public class SingleAddition(Evaluable left, Evaluable right) : BinaryExpression(
 
 		try
 		{
-			return new SingleLiteralValue(leftValue.Value + rightValue.Value);
+			if (NumberConverter.IsIndeterminate(leftValue.Value)
+			 || NumberConverter.IsIndeterminate(rightValue.Value))
+				return new SingleLiteralValue(NumberConverter.SingleIndeterminate);
+			else
+				return new SingleLiteralValue(NumberConverter.TranslateNaN(leftValue.Value + rightValue.Value));
 		}
 		catch (OverflowException)
 		{
@@ -201,7 +210,11 @@ public class DoubleAddition(Evaluable left, Evaluable right) : BinaryExpression(
 
 		try
 		{
-			return new DoubleVariable(leftValue.Value + rightValue.Value);
+			if (NumberConverter.IsIndeterminate(leftValue.Value)
+			 || NumberConverter.IsIndeterminate(rightValue.Value))
+				return new DoubleVariable(NumberConverter.DoubleIndeterminate);
+			else
+				return new DoubleVariable(NumberConverter.TranslateNaN(leftValue.Value + rightValue.Value));
 		}
 		catch (OverflowException)
 		{
@@ -216,7 +229,11 @@ public class DoubleAddition(Evaluable left, Evaluable right) : BinaryExpression(
 
 		try
 		{
-			return new DoubleLiteralValue(leftValue.Value + rightValue.Value);
+			if (NumberConverter.IsIndeterminate(leftValue.Value)
+			 || NumberConverter.IsIndeterminate(rightValue.Value))
+				return new DoubleLiteralValue(NumberConverter.DoubleIndeterminate);
+			else
+				return new DoubleLiteralValue(NumberConverter.TranslateNaN(leftValue.Value + rightValue.Value));
 		}
 		catch (OverflowException)
 		{

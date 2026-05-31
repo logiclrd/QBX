@@ -62,14 +62,20 @@ public class SingleFixFunction(Evaluable argument) : FixFunction(argument)
 
 		value.ReadPinnedData();
 
-		return new SingleVariable(float.Truncate(value.Value));
+		if (!float.IsFinite(value.Value))
+			return new SingleVariable(float.MinValue);
+		else
+			return new SingleVariable(float.Truncate(value.Value));
 	}
 
 	public override LiteralValue EvaluateConstant()
 	{
 		var value = (SingleLiteralValue)argument.EvaluateConstant();
 
-		return new SingleLiteralValue(float.Truncate(value.Value));
+		if (!float.IsFinite(value.Value))
+			return new SingleLiteralValue(float.MinValue);
+		else
+			return new SingleLiteralValue(float.Truncate(value.Value));
 	}
 }
 
@@ -83,14 +89,20 @@ public class DoubleFixFunction(Evaluable argument) : FixFunction(argument)
 
 		value.ReadPinnedData();
 
-		return new DoubleVariable(double.Truncate(value.Value));
+		if (!double.IsFinite(value.Value))
+			return new DoubleVariable(double.MinValue);
+		else
+			return new DoubleVariable(double.Truncate(value.Value));
 	}
 
 	public override LiteralValue EvaluateConstant()
 	{
 		var value = (DoubleLiteralValue)argument.EvaluateConstant();
 
-		return new DoubleLiteralValue(double.Truncate(value.Value));
+		if (!double.IsFinite(value.Value))
+			return new DoubleLiteralValue(double.MinValue);
+		else
+			return new DoubleLiteralValue(double.Truncate(value.Value));
 	}
 }
 

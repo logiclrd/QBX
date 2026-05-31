@@ -38,6 +38,9 @@ public class TanFunction : Function
 
 		var result = Math.Tan(angle);
 
+		if (double.IsNaN(result))
+			throw RuntimeException.IllegalFunctionCall(Source);
+
 		return new DoubleVariable(result);
 	}
 }

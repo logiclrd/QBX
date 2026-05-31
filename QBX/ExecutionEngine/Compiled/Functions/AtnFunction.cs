@@ -36,7 +36,14 @@ public class AtnFunction : Function
 
 		var angle = NumberConverter.ToDouble(argumentValue, Source?.Token);
 
-		var result = Math.Atan(angle);
+		// Math.Atan passes through Indeterminate values, but QuickBASIC ATN
+		// turns them into QNaN values.
+		double result;
+
+		if (NumberConverter.IsIndeterminate(angle))
+			result = NumberConverter.DoubleQuietNaN;
+		else
+			result = NumberConverter.TranslateNaN(Math.Atan(angle));
 
 		return new DoubleVariable(result);
 	}

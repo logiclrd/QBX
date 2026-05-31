@@ -36,7 +36,10 @@ public class LogFunction : Function
 
 		var value = NumberConverter.ToDouble(argumentValue, Source?.Token);
 
-		var result = Math.Log(value);
+		if (NumberConverter.IsIndeterminate(value) || (value < 0))
+			throw RuntimeException.IllegalFunctionCall(Source);
+
+		var result = NumberConverter.TranslateNaN(Math.Log(value));
 
 		return new DoubleVariable(result);
 	}
