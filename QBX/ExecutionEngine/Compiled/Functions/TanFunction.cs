@@ -6,33 +6,40 @@ using QBX.Numbers;
 
 namespace QBX.ExecutionEngine.Compiled.Functions;
 
-public class TanFunction : Function
+public abstract class TanFunction : ConstructibleOneArgumentMathFunction<SingleTanFunction, DoubleTanFunction>
 {
-	public Evaluable? Argument;
+}
 
-	protected override void SetArgument(int index, Evaluable value)
+public class SingleTanFunction : TanFunction
+{
+	public override DataType Type => DataType.Single;
+
+	protected override Variable EvaluateImplementation(Evaluable argument, ExecutionContext context, StackFrame stackFrame)
 	{
-		if (!value.Type.IsNumeric)
-			throw CompilerException.TypeMismatch(value.Source);
+		var type = argument.Type;
 
-		Argument = value;
+		var argumentValue = argument.Evaluate(context, stackFrame);
+
+		var angle = NumberConverter.ToSingle(argumentValue, Source?.Token);
+
+		var result = MathF.Tan(angle);
+
+		if (double.IsNaN(result))
+			throw RuntimeException.IllegalFunctionCall(Source);
+
+		return new SingleVariable(result);
 	}
+}
 
-	public override void CollapseConstantSubexpressions()
-	{
-		CollapseConstantExpression(ref Argument);
-	}
-
+public class DoubleTanFunction : TanFunction
+{
 	public override DataType Type => DataType.Double;
 
-	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
+	protected override Variable EvaluateImplementation(Evaluable argument, ExecutionContext context, StackFrame stackFrame)
 	{
-		if (Argument == null)
-			throw new Exception("TanFunction with no Argument");
+		var type = argument.Type;
 
-		var type = Argument.Type;
-
-		var argumentValue = Argument.Evaluate(context, stackFrame);
+		var argumentValue = argument.Evaluate(context, stackFrame);
 
 		var angle = NumberConverter.ToDouble(argumentValue, Source?.Token);
 

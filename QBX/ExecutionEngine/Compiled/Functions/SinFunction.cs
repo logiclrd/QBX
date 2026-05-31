@@ -6,33 +6,40 @@ using QBX.Numbers;
 
 namespace QBX.ExecutionEngine.Compiled.Functions;
 
-public class SinFunction : Function
+public abstract class SinFunction : ConstructibleOneArgumentMathFunction<SingleSinFunction, DoubleSinFunction>
 {
-	public Evaluable? Argument;
+}
 
-	protected override void SetArgument(int index, Evaluable value)
+public class SingleSinFunction : SinFunction
+{
+	public override DataType Type => DataType.Single;
+
+	protected override Variable EvaluateImplementation(Evaluable argument, ExecutionContext context, StackFrame stackFrame)
 	{
-		if (!value.Type.IsNumeric)
-			throw CompilerException.TypeMismatch(value.Source);
+		var type = argument.Type;
 
-		Argument = value;
+		var argumentValue = argument.Evaluate(context, stackFrame);
+
+		var angle = NumberConverter.ToSingle(argumentValue, Source?.Token);
+
+		var result = MathF.Sin(angle);
+
+		if (float.IsNaN(result))
+			throw RuntimeException.IllegalFunctionCall(Source);
+
+		return new SingleVariable(result);
 	}
+}
 
-	public override void CollapseConstantSubexpressions()
-	{
-		CollapseConstantExpression(ref Argument);
-	}
-
+public class DoubleSinFunction : SinFunction
+{
 	public override DataType Type => DataType.Double;
 
-	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
+	protected override Variable EvaluateImplementation(Evaluable argument, ExecutionContext context, StackFrame stackFrame)
 	{
-		if (Argument == null)
-			throw new Exception("SinFunction with no Argument");
+		var type = argument.Type;
 
-		var type = Argument.Type;
-
-		var argumentValue = Argument.Evaluate(context, stackFrame);
+		var argumentValue = argument.Evaluate(context, stackFrame);
 
 		var angle = NumberConverter.ToDouble(argumentValue, Source?.Token);
 

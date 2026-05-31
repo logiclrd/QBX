@@ -6,33 +6,47 @@ using QBX.Numbers;
 
 namespace QBX.ExecutionEngine.Compiled.Functions;
 
-public class ExpFunction : Function
+public abstract class ExpFunction : ConstructibleOneArgumentMathFunction<SingleExpFunction, DoubleExpFunction>
 {
-	public Evaluable? Argument;
+}
 
-	protected override void SetArgument(int index, Evaluable value)
+public class SingleExpFunction : ExpFunction
+{
+	public override DataType Type => DataType.Single;
+
+	protected override Variable EvaluateImplementation(Evaluable argument, ExecutionContext context, StackFrame stackFrame)
 	{
-		if (!value.Type.IsNumeric)
-			throw CompilerException.TypeMismatch(value.Source);
+		var type = argument.Type;
 
-		Argument = value;
+		var argumentValue = argument.Evaluate(context, stackFrame);
+
+		var exponent = NumberConverter.ToSingle(argumentValue, Source?.Token);
+
+		float result;
+
+		if (NumberConverter.IsIndeterminate(exponent))
+			result = 0;
+		else
+		{
+			if (float.IsPositiveInfinity(exponent) || float.IsNaN(exponent))
+				throw RuntimeException.Overflow(Source);
+
+			result = NumberConverter.TranslateNaN(MathF.Exp(exponent));
+		}
+
+		return new SingleVariable(result);
 	}
+}
 
-	public override void CollapseConstantSubexpressions()
-	{
-		CollapseConstantExpression(ref Argument);
-	}
-
+public class DoubleExpFunction : ExpFunction
+{
 	public override DataType Type => DataType.Double;
 
-	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
+	protected override Variable EvaluateImplementation(Evaluable argument, ExecutionContext context, StackFrame stackFrame)
 	{
-		if (Argument == null)
-			throw new Exception("ExpFunction with no Argument");
+		var type = argument.Type;
 
-		var type = Argument.Type;
-
-		var argumentValue = Argument.Evaluate(context, stackFrame);
+		var argumentValue = argument.Evaluate(context, stackFrame);
 
 		var exponent = NumberConverter.ToDouble(argumentValue, Source?.Token);
 

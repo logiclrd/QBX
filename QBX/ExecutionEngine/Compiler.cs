@@ -3682,7 +3682,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 				{
 					case TokenType.ABS: return AbsFunction.Construct(keywordFunction.Token, arguments);
 					case TokenType.ASC: function = new AscFunction(); break;
-					case TokenType.ATN: function = new AtnFunction(); break;
+					case TokenType.ATN: return AtnFunction.Construct(keywordFunction.Token, arguments);
 					case TokenType.BOF: function = new BOFFunction(); break;
 					case TokenType.CCUR: function = new CCurFunction(); break;
 					case TokenType.CDBL: function = new CDblFunction(); break;
@@ -3690,7 +3690,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 					case TokenType.CINT: function = new CIntFunction(); break;
 					case TokenType.CLNG: function = new CLngFunction(); break;
 					case TokenType.COMMAND: function = new CommandFunction(); break;
-					case TokenType.COS: function = new CosFunction(); break;
+					case TokenType.COS: return CosFunction.Construct(keywordFunction.Token, arguments);
 					case TokenType.CSNG: function = new CSngFunction(); break;
 					case TokenType.CSRLIN: function = new CsrLinFunction(); break;
 					case TokenType.CURDIR: function = new CurDirFunction(); break;
@@ -3706,7 +3706,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 					case TokenType.EOF: function = new EOFFunction(); break;
 					case TokenType.ERR: function = new ErrFunction(); break;
 					case TokenType.ERL: function = new ErlFunction(); break;
-					case TokenType.EXP: function = new ExpFunction(); break;
+					case TokenType.EXP: return ExpFunction.Construct(keywordFunction.Token, arguments);
 					case TokenType.FIX: return FixFunction.Construct(keywordFunction.Token, arguments);
 					case TokenType.FILEATTR: function = new FileAttrFunction(); break;
 					case TokenType.FRE: function = new FreFunction(); break;
@@ -3722,7 +3722,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 					case TokenType.LEFT: function = new LeftFunction(); break;
 					case TokenType.LEN: function = new LenFunction(); break;
 					case TokenType.LOC: function = new LocFunction(); break;
-					case TokenType.LOG: function = new LogFunction(); break;
+					case TokenType.LOG: return LogFunction.Construct(keywordFunction.Token, arguments);
 					case TokenType.LOF: function = new LOFFunction(); break;
 					case TokenType.LTRIM: function = new LTrimFunction(); break;
 					case TokenType.MKC: function = new MkCFunction(); break;
@@ -3747,14 +3747,14 @@ public class Compiler(IdentifierRepository identifierRepository)
 					case TokenType.SEEK: function = new SeekFunction(); break;
 					case TokenType.SGN: function = new SgnFunction(); break;
 					case TokenType.SHELL: function = new ShellFunction(); break;
-					case TokenType.SIN: function = new SinFunction(); break;
+					case TokenType.SIN: return SinFunction.Construct(keywordFunction.Token, arguments);
 					case TokenType.SPACE: function = new SpaceFunction(); break;
-					case TokenType.SQR: function = new SqrFunction(); break;
+					case TokenType.SQR: return SqrFunction.Construct(keywordFunction.Token, arguments);
 					case TokenType.SSEG: function = new SSegFunction(); break;
 					case TokenType.SSEGADD: function = new SSegAddFunction(); break;
 					case TokenType.STR: function = new StrFunction(); break;
 					case TokenType.STRING_s: function = new StringFunction(); break;
-					case TokenType.TAN: function = new TanFunction(); break;
+					case TokenType.TAN: return TanFunction.Construct(keywordFunction.Token, arguments);
 					case TokenType.TIME: function = new TimeFunction(); break;
 					case TokenType.TIMER: function = new TimerFunction(); break;
 					case TokenType.UBOUND: function = new UBoundFunction(); break;

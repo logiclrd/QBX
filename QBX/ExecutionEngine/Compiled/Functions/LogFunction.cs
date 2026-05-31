@@ -6,33 +6,40 @@ using QBX.Numbers;
 
 namespace QBX.ExecutionEngine.Compiled.Functions;
 
-public class LogFunction : Function
+public abstract class LogFunction : ConstructibleOneArgumentMathFunction<SingleLogFunction, DoubleLogFunction>
 {
-	public Evaluable? Argument;
+}
 
-	protected override void SetArgument(int index, Evaluable value)
+public class SingleLogFunction : LogFunction
+{
+	public override DataType Type => DataType.Single;
+
+	protected override Variable EvaluateImplementation(Evaluable argument, ExecutionContext context, StackFrame stackFrame)
 	{
-		if (!value.Type.IsNumeric)
-			throw CompilerException.TypeMismatch(value.Source);
+		var type = argument.Type;
 
-		Argument = value;
+		var argumentValue = argument.Evaluate(context, stackFrame);
+
+		var value = NumberConverter.ToSingle(argumentValue, Source?.Token);
+
+		if (NumberConverter.IsIndeterminate(value) || (value < 0))
+			throw RuntimeException.IllegalFunctionCall(Source);
+
+		var result = NumberConverter.TranslateNaN(MathF.Log(value));
+
+		return new SingleVariable(result);
 	}
+}
 
-	public override void CollapseConstantSubexpressions()
-	{
-		CollapseConstantExpression(ref Argument);
-	}
-
+public class DoubleLogFunction : LogFunction
+{
 	public override DataType Type => DataType.Double;
 
-	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
+	protected override Variable EvaluateImplementation(Evaluable argument, ExecutionContext context, StackFrame stackFrame)
 	{
-		if (Argument == null)
-			throw new Exception("LogFunction with no Argument");
+		var type = argument.Type;
 
-		var type = Argument.Type;
-
-		var argumentValue = Argument.Evaluate(context, stackFrame);
+		var argumentValue = argument.Evaluate(context, stackFrame);
 
 		var value = NumberConverter.ToDouble(argumentValue, Source?.Token);
 
