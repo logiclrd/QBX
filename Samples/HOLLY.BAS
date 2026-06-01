@@ -18,11 +18,13 @@ ZXDrawDebug% = 1
 Holly 200, 350, 200
 ZXDrawDebug% = 0
 
+PRINT "Press a modifier key to continue, any other key to exit"
+
 SLEEP
 
 CLS
 
-DO
+DO WHILE INKEY$ = ""
   c! = RND * 40 + 10
 
   x! = RND * (640 - c!)
@@ -31,7 +33,7 @@ DO
   Holly x!, y!, c!
 
   st! = TIMER: WHILE st! = TIMER: WEND
-LOOP WHILE INKEY$ = ""
+LOOP
 
 ' QBASIC supports neither ON ERROR RESUME NEXT nor ON LOCAL ERROR ...
 ' This catches math errors in FUNCTION ATAN2!
