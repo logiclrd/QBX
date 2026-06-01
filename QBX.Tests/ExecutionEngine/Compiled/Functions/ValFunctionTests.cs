@@ -1,4 +1,5 @@
-﻿using QBX.ExecutionEngine.Compiled.Functions;
+﻿using QBX.ExecutionEngine;
+using QBX.ExecutionEngine.Compiled.Functions;
 
 namespace QBX.Tests.ExecutionEngine.Compiled.Functions;
 
@@ -14,6 +15,8 @@ public class ValFunctionTests
 	[TestCase("\r12345", 12345)]
 	[TestCase("\n12345", 12345)]
 	[TestCase(" \r\t\n\r  \r\n\t12345", 12345)]
+	[TestCase("123&", 123)]
+	[TestCase("-123&", -123)]
 	[TestCase("0M1", 0)]
 	[TestCase("0.1", 0.1)]
 	[TestCase("0.1M2", 0.1)]
@@ -26,6 +29,42 @@ public class ValFunctionTests
 	[TestCase("123456781234567812345678123456781234567812345678123456781234567812345678123456781234567812345678123456781234567812345678123456E-10", 1.234567812345678e125)]
 	[TestCase("12345678123456781234567812345678123456781234567812345678123456781234567812345678123456781234567812345678123456781234567812345E-10", 1.2345678123456781e123)] // the window now sees "E-1"
 	[TestCase("1234567812345678123456781234567812345678123456781234567812345678123456781234567812345678123456781234567812345678123456781234E-10", 1.234567812345678e113)] // the window now sees "E-1"
+	[TestCase("&H0", 0x0)]
+	[TestCase("&H1", 0x1)]
+	[TestCase("&H12", 0x12)]
+	[TestCase("&H7FFF", 32767)]
+	[TestCase("&H8000", -32768)]
+	[TestCase("&HFFFF", -1)]
+	[TestCase("&H10000", 65536)]
+	[TestCase("&H7FFFFFFF", 2147483647)]
+	[TestCase("&H80000000", -2147483648)]
+	[TestCase("&HFFFFFFFF", -1)]
+	[TestCase("&H123456781", 0x12345678)]
+	[TestCase("&H1234567812", 0x12345678)]
+	[TestCase("&H12345678123", 0x12345678)]
+	[TestCase("&O0", 0)]
+	[TestCase("&O1", 1)]
+	[TestCase("&O10", 8)]
+	[TestCase("&O100", 64)]
+	[TestCase("&O1000", 512)]
+	[TestCase("&O10000", 4096)]
+	[TestCase("&O77777", 32767)]
+	[TestCase("&O100000", -32768)]
+	[TestCase("&O123456", -22738)]
+	[TestCase("&O177777", -1)]
+	[TestCase("&O200000", 65536)]
+	[TestCase("&O2000000", 524288)]
+	[TestCase("&O20000000", 4194304)]
+	[TestCase("&O200000000", 33554432)]
+	[TestCase("&O2000000000", 268435456)]
+	[TestCase("&O17777777777", 2147483647)]
+	[TestCase("&O20000000000", -2147483648)]
+	[TestCase("&O34567012345", -438561563)]
+	[TestCase("&O37777777777", -1)]
+	[TestCase("&O12345670123", 1402433619)]
+	// REPLICATING QUICKBASIC BUG: Lower 16 bits are shifted left 3
+	[TestCase("&O123456701234", 1402438296 /* 0o12345701230 */)]
+	[TestCase("&O1234567012345", 1402438296 /* 0o12345701230 */)]
 	public void PermissiveParse(string input, double expectedResult)
 	{
 		// Act
@@ -33,5 +72,29 @@ public class ValFunctionTests
 
 		// Assert
 		result.Should().Be(expectedResult);
+
+		string lowercase = input.ToLower();
+
+		if (lowercase != input)
+		{
+			// Act
+			result = ValFunction.PermissiveParse(lowercase);
+
+			// Assert
+			result.Should().Be(expectedResult);
+		}
+	}
+
+	public void ErrorWhenCharacterAfterMinusIsAmpersand()
+	{
+		// Arrange
+		Action action =
+			() =>
+			{
+				ValFunction.PermissiveParse("-&");
+			};
+
+		// Act & Assert
+		action.Should().Throw<RuntimeException>().Which.ErrorNumber.Should().Be(13 /* Type Mismatch */);
 	}
 }
