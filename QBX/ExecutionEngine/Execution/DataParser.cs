@@ -43,7 +43,10 @@ public class DataParser
 	[MemberNotNull(nameof(_dataSourceEnumerator))]
 	public void Restart()
 	{
+		_currentDataSourceParser?.Restart();
+
 		_currentDataSource = null;
+		_currentDataSourceParser = null;
 		_dataSourceEnumerator = DataSources.GetEnumerator();
 	}
 
@@ -112,6 +115,8 @@ public class DataParser
 					throw RuntimeException.OutOfData(statement);
 				}
 
+				_currentDataSourceParser?.Restart();
+
 				_currentDataSourceParser = _dataSourceEnumerator.Current;
 				_currentDataSource = _currentDataSourceParser.GetEnumerator();
 			}
@@ -150,6 +155,8 @@ public class DataParser
 				if (!_dataSourceEnumerator.MoveNext())
 					throw RuntimeException.OutOfData(expression);
 
+				_currentDataSourceParser?.Restart();
+
 				_currentDataSourceParser = _dataSourceEnumerator.Current;
 				_currentDataSource = _currentDataSourceParser.GetEnumerator();
 
@@ -183,10 +190,15 @@ public class DataParser
 			_currentDataSourceParser = _dataSourceEnumerator.Current;
 		}
 
+		string line = _currentDataSourceParser?.ReadToEndOfString() ?? "";
+
+		_currentDataSourceParser?.Restart();
+
 		_currentDataSource = null;
+		_currentDataSourceParser = null;
 		_haveNext = false;
 
-		return _currentDataSourceParser?.ReadToEndOfString() ?? "";
+		return line;
 	}
 
 	public bool IsAtStart => _currentDataSource == null;
@@ -270,6 +282,7 @@ public class DataParser
 
 	public class ItemParser : IEnumerable<string>
 	{
+		ReadOnlyMemory<char> _initialDataMemory;
 		ReadOnlyMemory<char> _dataMemory;
 		ReadOnlyMemory<char> _nextDataMemory;
 
@@ -277,7 +290,14 @@ public class DataParser
 
 		public ItemParser(string rawString)
 		{
-			_dataMemory = rawString.AsMemory();
+			_initialDataMemory = rawString.AsMemory();
+
+			Restart();
+		}
+
+		public void Restart()
+		{
+			_dataMemory = _initialDataMemory;
 			_nextDataMemory = _dataMemory;
 		}
 
