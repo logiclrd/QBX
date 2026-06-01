@@ -7,6 +7,7 @@ DECLARE FUNCTION ATAN2! (y!, x!)
 ' Translated from Sinclair Spectrum by Jonathan Gilbert
 
 DIM SHARED ZXDrawDebug%
+DIM SHARED ATAN2CaughtError%
 
 SCREEN 12
 
@@ -32,24 +33,50 @@ DO
   st! = TIMER: WHILE st! = TIMER: WEND
 LOOP WHILE INKEY$ = ""
 
+' QBASIC supports neither ON ERROR RESUME NEXT nor ON LOCAL ERROR ...
+' This catches math errors in FUNCTION ATAN2!
+ATAN2HandleMathError:
+  isusable% = 0
+  RESUME NEXT
+
 FUNCTION ATAN2! (y!, x!)
 CONST PI! = 3.141593
 
-slope! = y! / x!
-
-IF slope! = slope! THEN
-  angle! = ATN(slope!)
-
-  IF x! < 0 THEN angle! = angle! + PI!
-  IF angle! < 0 THEN angle! = angle! + 2 * PI!
-
-  ATAN2! = angle!
-ELSEIF y! > 0 THEN
-  ATAN2! = PI! * .5
-ELSEIF y! < 0 THEN
-  ATAN2! = -PI! * .5
+IF x! = y! THEN
+  IF y! > 0 THEN
+    ATAN2! = PI! * .25
+  ELSE
+    ATAN2! = PI! * 1.25
+  END IF
+ELSEIF x! = -y! THEN
+  IF y! > 0 THEN
+    ATAN2! = PI! * .75
+  ELSE
+    ATAN2! = PI! * 1.75
+  END IF
 ELSE
-  ATAN2! = slope!
+  ON ERROR GOTO ATAN2HandleMathError
+
+  isusable% = -1
+
+  ATAN2CaughtError% = 0
+  slope! = y! / x!
+  IF ATAN2CaughtError% THEN isusable% = 0
+
+  IF isusable% THEN
+    angle! = ATN(slope!)
+
+    IF x! < 0 THEN angle! = angle! + PI!
+    IF angle! < 0 THEN angle! = angle! + 2 * PI!
+
+    ATAN2! = angle!
+  ELSEIF y! <> 0 THEN
+    IF (y! > 0) EQV (x! > 0) THEN
+      ATAN2! = PI! * .5
+    ELSE
+      ATAN2! = -PI! * .5
+    END IF
+  END IF
 END IF
 END FUNCTION
 
