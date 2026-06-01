@@ -6,6 +6,7 @@ using System.Linq;
 using QBX.ExecutionEngine.Compiled;
 using QBX.ExecutionEngine.Compiled.Statements;
 using QBX.ExecutionEngine.Execution.Variables;
+using QBX.Firmware.Fonts;
 using QBX.Numbers;
 using QBX.OperatingSystem;
 using QBX.Parser;
@@ -18,6 +19,7 @@ public class DataParser
 	public Dictionary<Identifier, int> Labels = new Dictionary<Identifier, int>();
 
 	IEnumerator<ItemParser>? _dataSourceEnumerator = null;
+	List<byte> _newLineBytes = new List<byte>();
 	IEnumerator<string>? _currentDataSource;
 	ItemParser? _currentDataSourceParser;
 	bool _haveNext;
@@ -73,7 +75,9 @@ public class DataParser
 		{
 			while (true)
 			{
-				var line = openFile.ReadLine(dos);
+				_newLineBytes.Clear();
+
+				var line = openFile.ReadLine(dos, _newLineBytes);
 
 				if (line == null)
 					break;
@@ -119,6 +123,51 @@ public class DataParser
 		}
 
 		return ret;
+	}
+
+	public void ReadBytes(Span<byte> span, CodeModel.Expressions.Expression? expression)
+	{
+		while (span.Length > 0)
+		{
+			if ((_currentDataSourceParser == null) || !_currentDataSourceParser.HasMoreBytes)
+			{
+				if (_newLineBytes.Count > 0)
+				{
+					int numNewLineBytes = Math.Min(_newLineBytes.Count, span.Length);
+
+					_newLineBytes.CopyTo(span.Slice(0, numNewLineBytes));
+					_newLineBytes.RemoveRange(0, numNewLineBytes);
+
+					span = span.Slice(numNewLineBytes);
+
+					if (span.Length == 0)
+						break;
+				}
+
+				if (_dataSourceEnumerator == null)
+					Restart();
+
+				if (!_dataSourceEnumerator.MoveNext())
+					throw RuntimeException.OutOfData(expression);
+
+				_currentDataSourceParser = _dataSourceEnumerator.Current;
+				_currentDataSource = _currentDataSourceParser.GetEnumerator();
+
+				continue;
+			}
+
+			int numRead = _currentDataSourceParser.ReadBytes(span);
+
+			span = span.Slice(numRead);
+
+			_haveNext = false;
+
+			if (!_currentDataSourceParser.HasMoreBytes)
+			{
+				_currentDataSource = null;
+				_currentDataSourceParser = null;
+			}
+		}
 	}
 
 	public string ReadLine(CodeModel.Statements.Statement? statement)
@@ -219,9 +268,18 @@ public class DataParser
 	public static ItemParser ParseDataItems(string rawString)
 		=> new ItemParser(rawString);
 
-	public class ItemParser(string rawString) : IEnumerable<string>
+	public class ItemParser : IEnumerable<string>
 	{
 		ReadOnlyMemory<char> _dataMemory;
+		ReadOnlyMemory<char> _nextDataMemory;
+
+		public bool HasMoreBytes => _dataMemory.Length > 0;
+
+		public ItemParser(string rawString)
+		{
+			_dataMemory = rawString.AsMemory();
+			_nextDataMemory = _dataMemory;
+		}
 
 		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
 
@@ -230,24 +288,25 @@ public class DataParser
 			string str = _dataMemory.ToString();
 
 			_dataMemory = ReadOnlyMemory<char>.Empty;
+			_nextDataMemory = _dataMemory;
 
 			return str;
 		}
 
 		public IEnumerator<string> GetEnumerator()
 		{
-			_dataMemory = rawString.AsMemory();
-
 			bool yieldEmptyString = true;
 
 			while (_dataMemory.Length > 0)
 			{
-				var dataSpan = _dataMemory.Span;
+				_nextDataMemory = _dataMemory;
+
+				var dataSpan = _nextDataMemory.Span;
 
 				while ((dataSpan.Length > 0) && char.IsWhiteSpace(dataSpan[0]))
 				{
-					_dataMemory = _dataMemory.Slice(1);
-					dataSpan = _dataMemory.Span;
+					_nextDataMemory = _nextDataMemory.Slice(1);
+					dataSpan = _nextDataMemory.Span;
 				}
 
 				if (dataSpan.Length == 0)
@@ -275,12 +334,13 @@ public class DataParser
 					nextField++;
 
 					yieldEmptyString = false;
+
+					if (nextField > _nextDataMemory.Length)
+						nextField = _nextDataMemory.Length;
+
+					_nextDataMemory = _nextDataMemory.Slice(nextField);
+
 					yield return new string(dataSpan.Slice(1, closeQuote - 1));
-
-					if (nextField > _dataMemory.Length)
-						break;
-
-					_dataMemory = _dataMemory.Slice(nextField);
 				}
 				else
 				{
@@ -293,15 +353,39 @@ public class DataParser
 					while ((token.Length > 0) && char.IsWhiteSpace(token[token.Length - 1]))
 						token = token.Slice(0, token.Length - 1);
 
+					_nextDataMemory = _nextDataMemory.Slice((comma >= 0) ? comma + 1 : _nextDataMemory.Length);
+
 					yieldEmptyString = (comma >= 0);
 					yield return new string(token);
-
-					_dataMemory = _dataMemory.Slice((comma >= 0) ? comma + 1 : _dataMemory.Length);
 				}
+
+				_dataMemory = _nextDataMemory;
 			}
 
 			if (yieldEmptyString)
 				yield return "";
+		}
+
+		public int ReadBytes(Span<byte> buffer)
+		{
+			// Doing this invalidates the enumerator's Current value and rereads bytes that
+			// were read. It is up to the caller to account for this.
+
+			int numRead;
+
+			for (numRead = 0; numRead < buffer.Length; numRead++)
+			{
+				if (_dataMemory.Length == 0)
+					break;
+
+				buffer[numRead] = CP437Encoding.GetByteSemantic(_dataMemory.Span[0]);
+
+				_dataMemory = _dataMemory.Slice(1);
+			}
+
+			_nextDataMemory = _dataMemory;
+
+			return numRead;
 		}
 	}
 }

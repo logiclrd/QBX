@@ -151,12 +151,29 @@ public class FileInputFunction(Evaluable numBytesArgument, Evaluable fileNumberA
 		}
 		else
 		{
-			int numRead = context.Machine.DOS.Read(
-				openFile.FileHandle,
-				buffer.AsSpan());
+			if (openFile.DataParser != null)
+			{
+				try
+				{
+					openFile.DataParser.ReadBytes(buffer.AsSpan(), Source);
+				}
+				catch (RuntimeException error)
+				{
+					if (error.ErrorNumber == 4) // "Out of Data"
+						throw RuntimeException.InputPastEndOfFile(Source);
 
-			if (numRead < buffer.Length)
-				throw RuntimeException.InputPastEndOfFile(Source);
+					throw;
+				}
+			}
+			else
+			{
+				int numRead = context.Machine.DOS.Read(
+					openFile.FileHandle,
+					buffer.AsSpan());
+
+				if (numRead < buffer.Length)
+					throw RuntimeException.InputPastEndOfFile(Source);
+			}
 		}
 
 		return new StringVariable(buffer);

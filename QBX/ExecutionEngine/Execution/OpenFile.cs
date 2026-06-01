@@ -152,6 +152,9 @@ public class OpenFile
 	}
 
 	public StringValue? ReadLine(DOS dos)
+		=> ReadLine(dos, newLineBytes: null);
+
+	internal StringValue? ReadLine(DOS dos, IList<byte>? newLineBytes = null)
 	{
 		var buffer = new StringValue();
 
@@ -211,9 +214,13 @@ public class OpenFile
 
 			if (b == 13)
 			{
+				newLineBytes?.Add(b);
+
 				b = readByte();
 
-				if (b != 10)
+				if (b == 10)
+					newLineBytes?.Add(b);
+				else
 					unreadByte(b);
 
 				break;

@@ -208,6 +208,8 @@ public class RuntimeException : Exception
 		=> ForErrorNumber(3, statement);
 	public static RuntimeException OutOfData(CodeModel.Statements.Statement? statement)
 		=> ForErrorNumber(4, statement);
+	public static RuntimeException OutOfData(CodeModel.Expressions.Expression? expression)
+		=> ForErrorNumber(4, expression);
 	public static RuntimeException IllegalFunctionCall(CodeModel.Expressions.Expression? expression)
 		=> ForErrorNumber(5, expression);
 	public static RuntimeException IllegalFunctionCall()
