@@ -334,6 +334,9 @@ public class NumberFormatterTests
 		result.Should().Be(expectedResult);
 	}
 
+	const float SingleIndeterminateSurrogate = 2.795611E+16f;
+	const float SingleQuietNaNSurrogate = 1.113984E-25f;
+
 	[TestCase(0.0000000000012345f, false, "1.2345E-12")]
 	[TestCase(0.00000001f, false, "1E-08")]
 	[TestCase(0.0000001f, false, ".0000001")]
@@ -382,18 +385,29 @@ public class NumberFormatterTests
 	[TestCase(1234567812345f, true, "1.234568E+12")]
 	[TestCase(float.PositiveInfinity, false, "1.#INF")]
 	[TestCase(float.NegativeInfinity, false, "-1.#INF")]
-	[TestCase(float.NaN, false, "1.#IND")]
+	[TestCase(SingleIndeterminateSurrogate, false, "-1.#IND")]
+	[TestCase(SingleQuietNaNSurrogate, false, "1.#QNAN")]
 	[TestCase(float.PositiveInfinity, true, "1.#INF")]
 	[TestCase(float.NegativeInfinity, true, "-1.#INF")]
-	[TestCase(float.NaN, true, "1.#IND")]
+	[TestCase(SingleQuietNaNSurrogate, true, "1.#QNAN")]
 	public void FormatFloat(float value, bool qualify, string expectedResult)
 	{
+		// Arrange
+		switch (value)
+		{
+			case SingleIndeterminateSurrogate: value = NumberConverter.SingleIndeterminate; break;
+			case SingleQuietNaNSurrogate: value = NumberConverter.SingleQuietNaN; break;
+		}
+
 		// Act
 		var result = NumberFormatter.Format(value, qualify);
 
 		// Assert
 		result.Should().Be(expectedResult);
 	}
+
+	const double DoubleIndeterminateSurrogate = -2.92065443388428E-82;
+	const double DoubleQuietNaNSurrogate = 2.43596890282961E+282;
 
 	[TestCase(0.000000000000000000012345d, false, "1.2345D-20")]
 	[TestCase(0.0000000000012345d, false, "1.2345D-12")]
@@ -469,12 +483,21 @@ public class NumberFormatterTests
 	[TestCase(1234567812345123d, true, "1.23456781234512D+15")]
 	[TestCase(double.PositiveInfinity, false, "1.#INF")]
 	[TestCase(double.NegativeInfinity, false, "-1.#INF")]
-	[TestCase(double.NaN, false, "1.#IND")]
+	[TestCase(DoubleIndeterminateSurrogate, false, "-1.#IND")]
+	[TestCase(DoubleQuietNaNSurrogate, false, "1.#QNAN")]
 	[TestCase(double.PositiveInfinity, true, "1.#INF")]
 	[TestCase(double.NegativeInfinity, true, "-1.#INF")]
-	[TestCase(double.NaN, true, "1.#IND")]
+	[TestCase(DoubleIndeterminateSurrogate, true, "-1.#IND")]
+	[TestCase(DoubleQuietNaNSurrogate, true, "1.#QNAN")]
 	public void FormatDouble(double value, bool qualify, string expectedResult)
 	{
+		// Arrange
+		switch (value)
+		{
+			case DoubleIndeterminateSurrogate: value = NumberConverter.DoubleIndeterminate; break;
+			case DoubleQuietNaNSurrogate: value = NumberConverter.DoubleQuietNaN; break;
+		}
+
 		// Act
 		var result = NumberFormatter.Format(value, qualify);
 
