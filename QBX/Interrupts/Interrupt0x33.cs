@@ -59,6 +59,7 @@ public class Interrupt0x33(Machine machine) : InterruptHandler
 			case Function.MouseResetAndStatus:
 			case Function.SoftwareReset:
 			{
+				machine.MouseDriver.Reset();
 				machine.MouseDriver.MovePointer(machine.MouseDriver.PointerMaximumX / 2, machine.MouseDriver.PointerMaximumY / 2);
 
 				result.AX = 0xFFFF; // installed

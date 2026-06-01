@@ -19,6 +19,9 @@ public partial class Program
 
 		if (Machine.GraphicsArray.Sequencer.CharacterWidth == 9)
 			Machine.VideoFirmware.SetCharacterWidth(8);
+
+		// We use our own dedicated TextLibrary.
+		Machine.VideoFirmware.VisualLibrary.DetachMouseEvents();
 	}
 
 	void SaveOutput()
@@ -42,6 +45,8 @@ public partial class Program
 
 			Machine.VideoFirmware.VisualLibrary.ActivePageNumber = _savedActivePageNumber;
 			Machine.VideoFirmware.VisualLibrary.RefreshParameters();
+
+			Machine.VideoFirmware.VisualLibrary.AttachMouseEvents();
 		}
 	}
 }

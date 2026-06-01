@@ -18,10 +18,6 @@ public abstract class VisualLibrary : IDisposable
 	{
 		Machine = machine;
 
-		Machine.MouseDriver.DisplayPageNumberChanged += MouseDriver_DisplayPageNumberChanged;
-		Machine.MouseDriver.PositionChanged += MouseDriver_PositionChanged;
-		Machine.MouseDriver.PointerVisibleChanged += MouseDriver_PointerVisibleChanged;
-
 		Array = machine.GraphicsArray;
 
 		RefreshParameters();
@@ -29,9 +25,39 @@ public abstract class VisualLibrary : IDisposable
 
 	public void Dispose()
 	{
-		Machine.MouseDriver.DisplayPageNumberChanged -= MouseDriver_DisplayPageNumberChanged;
-		Machine.MouseDriver.PositionChanged -= MouseDriver_PositionChanged;
-		Machine.MouseDriver.PointerVisibleChanged -= MouseDriver_PointerVisibleChanged;
+		DetachMouseEvents();
+	}
+
+	bool _mouseEventsAttached;
+
+	public void AttachMouseEvents()
+	{
+		if (!_mouseEventsAttached)
+		{
+			_mouseEventsAttached = true;
+
+			Machine.MouseDriver.DisplayPageNumberChanged += MouseDriver_DisplayPageNumberChanged;
+			Machine.MouseDriver.PositionChanged += MouseDriver_PositionChanged;
+			Machine.MouseDriver.PointerVisibleChanged += MouseDriver_PointerVisibleChanged;
+
+			// Make sure we're up to date.
+			UndrawPointer();
+
+			if (Machine.MouseDriver.PointerVisible)
+				DrawPointer();
+		}
+	}
+
+	public void DetachMouseEvents()
+	{
+		if (_mouseEventsAttached)
+		{
+			_mouseEventsAttached = false;
+
+			Machine.MouseDriver.DisplayPageNumberChanged -= MouseDriver_DisplayPageNumberChanged;
+			Machine.MouseDriver.PositionChanged -= MouseDriver_PositionChanged;
+			Machine.MouseDriver.PointerVisibleChanged -= MouseDriver_PointerVisibleChanged;
+		}
 	}
 
 	Lock _pointerLock = new Lock();

@@ -17,10 +17,12 @@ public partial class Video(Machine machine)
 	// Can't initialize a VisualLibrary at construction time, but will be populated soon.
 	VisualLibrary _visualLibrary = null!;
 
-	internal void SetVisualLibrary(VisualLibrary testVisualLibrary)
+	internal void SetVisualLibrary(VisualLibrary newVisualLibrary)
 	{
 		_visualLibrary?.Dispose();
-		_visualLibrary = testVisualLibrary;
+
+		_visualLibrary = newVisualLibrary;
+		_visualLibrary.AttachMouseEvents();
 	}
 
 	public int DesiredTextModeScanLines = 400;
