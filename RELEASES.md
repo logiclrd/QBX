@@ -1,5 +1,14 @@
 # QBX Releases
 
+## 1.11.2 - 2026-06-01
+
+### Fixed
+
+- `VAL` now correctly handles hexadecimal and octal representations, including replicating a QuickBASIC bug that occurs when there are more octal digits in the string that fit into the bits of a `LONG`.
+- `INPUT` parsing of data items and `INPUT$()` reading bytes can now be used within the same line.
+- Mouse events no longer trigger processing on visual library objects when they aren't active.
+- Function 0h of INT 33h "Reset" now actually resets the mouse driver.
+
 ## 1.11.1 - 2026-05-31
 
 ### Fixed
