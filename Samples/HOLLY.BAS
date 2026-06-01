@@ -6,16 +6,16 @@ DECLARE FUNCTION ATAN2! (y!, x!)
 ' by E.R. Duncan-Dunlop
 ' Translated from Sinclair Spectrum by Jonathan Gilbert
 
-DIM SHARED HollyDebug%
+DIM SHARED ZXDrawDebug%
 
 SCREEN 12
 
 COLOR 10
 
 ' Show how the sausage is made
-HollyDebug% = 1
+ZXDrawDebug% = 1
 Holly 200, 350, 200
-HollyDebug% = 0
+ZXDrawDebug% = 0
 
 SLEEP
 
@@ -100,13 +100,13 @@ ELSE
 
   IF angle! < 0 THEN SWAP startangle!, endangle!
 
-  IF HollyDebug% THEN
+  IF ZXDrawDebug% THEN
     CIRCLE (circlecenterx!, circlecentery!), radius!, 1, , , 1
   END IF
 
   CIRCLE (circlecenterx!, circlecentery!), radius!, , startangle!, endangle!, 1
 
-  IF HollyDebug% THEN
+  IF ZXDrawDebug% THEN
     CIRCLE (nextx!, nexty!), 2, 12
     CIRCLE (nextx!, nexty!), 1, 12
   END IF
