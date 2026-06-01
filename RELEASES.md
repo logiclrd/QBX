@@ -1,5 +1,11 @@
 # QBX Releases
 
+## 1.11.1 - 2026-05-31
+
+### Fixed
+
+- Corrected the encoding of `SKOLADV.BAS` to Code Page 437.
+
 ## 1.11.0 - 2026-05-31
 
 ### Fixed
