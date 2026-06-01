@@ -74,57 +74,57 @@
 6060 PRINT
 6070 RETURN
 
-7000 DATA V√§lkommen till skoladventure !
-7010 DATA Du har 40 minuter p√• dig att ta dig
+7000 DATA VÑlkommen till skoladventure !
+7010 DATA Du har 40 minuter pÜ dig att ta dig
 7020 DATA ut ur skolan innan den galne kemi-
-7030 DATA l√§raren spr√§nger dig !
-7040 DATA V√§nta ett tag ...
+7030 DATA lÑraren sprÑnger dig !
+7040 DATA VÑnta ett tag ...
 
-7170 DATA i norra delen av tekniksalen. Det √§r skrapigt h√§r. Du kan se ett v√§ggurtag och en l√•st d√∂rr √∂sterut., 0, 5, 0, 0
-7180 DATA i korridoren vid tekniksalen. Det ligger borrskr√§p h√§r., 0, 0, 3, 1
+7170 DATA i norra delen av tekniksalen. Det Ñr skrapigt hÑr. Du kan se ett vÑggurtag och en lÜst dîrr îsterut., 0, 5, 0, 0
+7180 DATA i korridoren vid tekniksalen. Det ligger borrskrÑp hÑr., 0, 0, 3, 1
 7190 DATA i en krok i korridoren., 0, 7, 0, 2
-7200 DATA i ett tomt och √∂de klassrum. Det √§r helt tomt pa b√§nkar., 0, 8, 0, 0
-7210 DATA i s√∂dra delen av tekniksalen. Du ser ett sk√•p h√§r. En stor l√•st d√∂rr leder ut., 1, 0, 0, 0
-7220 DATA i l√§rarnas r√∂krum. H√§r √§r kvavt., 0, 0, 7, 0
-7230 DATA i en korridor med en d√∂rr v√§sterut. H√§r finns en massa f√∂rvaringssk√•p varav ett utan las., 3, 9, 8, 0
-7240 DATA i korridorens √∂stra √§nde., 4, 0, 0, 7
-7250 DATA i ett dammigt klassrum. Katedern √§r till h√§lften uppbrunnen., 7, 0, 0, 0
+7200 DATA i ett tomt och îde klassrum. Det Ñr helt tomt pa bÑnkar., 0, 8, 0, 0
+7210 DATA i sîdra delen av tekniksalen. Du ser ett skÜp hÑr. En stor lÜst dîrr leder ut., 1, 0, 0, 0
+7220 DATA i lÑrarnas rîkrum. HÑr Ñr kvavt., 0, 0, 7, 0
+7230 DATA i en korridor med en dîrr vÑsterut. HÑr finns en massa fîrvaringsskÜp varav ett utan las., 3, 9, 8, 0
+7240 DATA i korridorens îstra Ñnde., 4, 0, 0, 7
+7250 DATA i ett dammigt klassrum. Katedern Ñr till hÑlften uppbrunnen., 7, 0, 0, 0
 
 7260 DATA en elektrisk borr, 133, BORREN
 7270 DATA en liten nyckel, 135, NYCKELN
 7280 DATA en stor nykel, 6, NYCKELN
 7290 DATA en rostig kniv, 2, KNIVEN
 7300 DATA en krokig dyrk, 1, DYRKEN
-7310 DATA en halvfull flaska r√∂dvin, 135, VINET
+7310 DATA en halvfull flaska rîdvin, 135, VINET
 7320 DATA en skrynklig lapp, 0, LAPPEN
 
-7330 DATA G√Ö,TA,SL√ÑPP,TITTA,SAKER,HJ√ÑLP,BORRA,ANSLUT,UNDERS√ñK,L√ÖS,LOCK,√ñPPNA,ST√ÑNG,DRICK,DYRKA,ANV√ÑND,SK√ÑR,LETA,SLUT
+7330 DATA Gè,TA,SLéPP,TITTA,SAKER,HJéLP,BORRA,ANSLUT,UNDERSôK,LèS,LOCK,ôPPNA,STéNG,DRICK,DYRKA,ANVéND,SKéR,LETA,SLUT
 
-7400 DATA Du √§r,Du ser,ingenting speciellt,Du kan g√•,Vad vill du g√∂ra,Jag kan inte,Dit√•t kan du inte g√•,Du kan inte se,Du har tagit,Du har sl√§ppt,Du b√§r p√•,Ingenting,Jag ser ingen,Det √§r,Det g√•r inte,Du hittar
-7410 DATA Norrut,S√∂derut,V√§sterut,√ñsterut,Ingenstans
+7400 DATA Du Ñr,Du ser,ingenting speciellt,Du kan gÜ,Vad vill du gîra,Jag kan inte,DitÜt kan du inte gÜ,Du kan inte se,Du har tagit,Du har slÑppt,Du bÑr pÜ,Ingenting,Jag ser ingen,Det Ñr,Det gÜr inte,Du hittar
+7410 DATA Norrut,Sîderut,VÑsterut,ôsterut,Ingenstans
 
-7500 DATA "Oops. Jag snubblade och f√∂ll p√• kniven. Nar jag f√∂rs√∂ker"
-7510 DATA "ta emot mig k√∂rde DATA jag den genom magen. Jag skriker"
-7520 DATA "p√• hj√§lp, wen den en da som kommer √§r kemil√§raren,"
-7530 DATA "med ett h√•nflin sparker mig i ansiktet."
+7500 DATA "Oops. Jag snubblade och fîll pÜ kniven. Nar jag fîrsîker"
+7510 DATA "ta emot mig kîrde DATA jag den genom magen. Jag skriker"
+7520 DATA "pÜ hjÑlp, wen den en da som kommer Ñr kemilÑraren,"
+7530 DATA "med ett hÜnflin sparker mig i ansiktet."
 
-7600 DATA Ouch ! Du ryckte ur sladden !,Tyv√§rr kan jag inte s√§ga mer √§n detta:,Har du letat √∂verallt?,Med vad d√• ?
-7601 DATA "Du trycker p√• knappen, men ingenting h√§nder.",L√ÖSET,D√ñRREN,Du borrar vilt omkring dig.
-7602 DATA Du kan g√• √∂sterut.,Vad skall jag ansluta ?,Var d√• ?,BORR,Eh... Vad da sade du ?,En styck borr ansluten.
-7603 DATA Attans !! Nyckeln gick av och fastnade i l√•set.,Hurra !!!,Det funkar inte riktigt..
-7604 DATA SK√ÖPET,Vad skall det vara f√∂r nytta med det ??,Du har inget att dricka !!
-7605 DATA Yeach ! ! ! Det h√§r lantvinet smakar  arsenik ! !  Det b√∂r jar pl√∂tsligt g√•
-7606 DATA runt for dig. Du tumlar och faller dod ner p√• golvet ...
+7600 DATA Ouch ! Du ryckte ur sladden !,TyvÑrr kan jag inte sÑga mer Ñn detta:,Har du letat îverallt?,Med vad dÜ ?
+7601 DATA "Du trycker pÜ knappen, men ingenting hÑnder.",LèSET,DôRREN,Du borrar vilt omkring dig.
+7602 DATA Du kan gÜ îsterut.,Vad skall jag ansluta ?,Var dÜ ?,BORR,Eh... Vad da sade du ?,En styck borr ansluten.
+7603 DATA Attans !! Nyckeln gick av och fastnade i lÜset.,Hurra !!!,Det funkar inte riktigt..
+7604 DATA SKèPET,Vad skall det vara fîr nytta med det ??,Du har inget att dricka !!
+7605 DATA Yeach ! ! ! Det hÑr lantvinet smakar  arsenik ! !  Det bîr jar plîtsligt gÜ
+7606 DATA runt for dig. Du tumlar och faller dod ner pÜ golvet ...
 7607 DATA Jag har ristat in mina initialer har.
-7608 DATA Uuungh??? Hur g√∂r man det ??
-7609 DATA Piotsligt st√∂rtar skolan in bver dig. Du traffas av en balk i huvudet och
-7610 DATA kastas handl√∂st till golvet. Det sista du ser innan du blir med vetsl√∂s √§ren
-7611 DATA r√∂d v√§xande p√∂l framf√∂r dig.
-7612 DATA "Det √§r bara att inse, du √§r d√∂d. Det var trevligt att l√§r."
-7613 DATA Grattis !! Du springer f√∂r ditt liv ochhar tagit dig ut ur
+7608 DATA Uuungh??? Hur gîr man det ??
+7609 DATA Piotsligt stîrtar skolan in bver dig. Du traffas av en balk i huvudet och
+7610 DATA kastas handlîst till golvet. Det sista du ser innan du blir med vetslîs Ñren
+7611 DATA rîd vÑxande pîl framfîr dig.
+7612 DATA "Det Ñr bara att inse, du Ñr dîd. Det var trevligt att lÑr."
+7613 DATA Grattis !! Du springer fîr ditt liv ochhar tagit dig ut ur
 7614 DATA skolan levande aftar,minuter.
 
-7700 DATA DU HAR BLIVIT INL√ÖST I EN SKOLA OCH HAR BARA EN VISS TID P√Ö DIG ATT TA DIG UT   INNAN SKOLAN SPR√ÑNGS. LYCKA TILL !!
+7700 DATA DU HAR BLIVIT INLèST I EN SKOLA OCH HAR BARA EN VISS TID Pè DIG ATT TA DIG UT   INNAN SKOLAN SPRéNGS. LYCKA TILL !!
 
 8000 DATA Welcome to SchoolAdventure !
 8010 DATA You have 40 minutes to get out of
@@ -192,7 +192,7 @@
 10110 IF K2$ = "N" AND N%(R) THEN R = N%(R): GOTO 10190
 10120 IF K2$ = "S" AND S%(R) THEN R = S%(R): GOTO 10190
 10130 IF (K2$ = "V" OR K2$ = "W") AND V%(R) THEN R = V%(R): GOTO 10190
-10140 IF (K2$ = "√ñ" OR K2$ = "E") AND O%(R) THEN R = O%(R): GOTO 10190
+10140 IF (K2$ = "ô" OR K2$ = "E") AND O%(R) THEN R = O%(R): GOTO 10190
 10150 PRINT : PRINT W$(6); "!!": BEEP
 10160 GOTO 10195
 10190 PRINT : PRINT "Ok."
@@ -259,7 +259,7 @@
 
 11100 IF INSTR(K2$, Z$(18)) AND (R = 1 OR R = 5) THEN 11700 ' Search
 11110 IF P%(2) <> 0 AND P%(3) <> 0 AND P%(5) <> 0 THEN PRINT : PRINT Z$(4): BEEP: GOTO 11095
-11115 GOTO 11010 ' L√ÖS UPP
+11115 GOTO 11010 ' LèS UPP
 
 11200 PRINT : PRINT Z$(19)
 11210 RETURN
