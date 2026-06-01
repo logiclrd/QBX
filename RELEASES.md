@@ -1,5 +1,23 @@
 # QBX Releases
 
+## 1.11.0 - 2026-05-31
+
+### Fixed
+
+- The initial plane mask is no longer 0b0000 for `SCREEN 12` and `SCREEN 13`.
+- `PRINT` now starts a new line if it is outputting a `STRING` value and it doesn't fit into the remaining characters on the line (and the cursor isn't already in the first column).
+- `CHR$(8)` (backspace) handling is now correct. A string emitted via `PRINT` will display the character 8 glyph, while a string emitted via INT 21h function 9h will process the character 8 as a control character (backspace).
+- Math functions `COS`, `SIN`, `TAN`, `LOG`, `EXP` and the exponentiation operator `^` now raise appropriate errors when used with edge case/not-a-number values.
+- Math functions `FIX` and `INT` now return the expected values when used on non-finite values.
+- Math functions `SQR` and `ATN` now return the correct non-finite values for error cases.
+- Syntax errors that failed to highlight because the tokens didn't have code line objects to link back to are now linked to the code element explicitly and highlight properly.
+- Statements that fail to parse inside nested clauses (`THEN` and `ELSE`) are now properly retried and required to parse in order to start execution of the program.
+
+### Added
+
+- Floating point handling is now considerably closer to QuickBASIC, with explicit handling of Indeterminate (-1.#IND) vs. Quiet NaN (1.#QNAN) values in all math operations.
+- Math functions `SQR`, `EXP`, `LOG`, `COS`, `SIN`, `TAN` and `ATN` now have separate `SINGLE` and `DOUBLE` implementations selected contextually based on the type of the input expression.
+
 ## 1.10.0 - 2026-05-30
 
 ### Added
