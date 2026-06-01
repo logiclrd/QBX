@@ -130,9 +130,7 @@ public partial class Program
 
 		Error?.Invoke(errorInfo);
 
-		if ((context?.OwnerStatement is Statement statement)
-		 && (statement.CodeLine is CodeLine line)
-		 && (line.CompilationElement is CompilationElement element))
+		if (context?.OwnerElement is CompilationElement element)
 		{
 			ActivateViewportForElement(element);
 

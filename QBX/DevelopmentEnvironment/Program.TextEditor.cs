@@ -835,7 +835,7 @@ public partial class Program
 					{
 						if (element.Lines[i] is CodeLine line)
 						{
-							if (line.Statements.OfType<UnparsedStatement>().Any())
+							if (line.AllStatements.OfType<UnparsedStatement>().Any())
 							{
 								buffer.Clear();
 
@@ -843,9 +843,20 @@ public partial class Program
 
 								var lexer = new Lexer(new StringBuilderReader(buffer), element, startingLineNumber: i);
 
-								var parsedCodeLine = parser.ParseCodeLines(lexer).SingleOrDefault();
+								try
+								{
+									var parsedCodeLine = parser.ParseCodeLines(lexer).SingleOrDefault();
 
-								element.ReplaceLine(i, parsedCodeLine ?? CodeLine.CreateEmpty());
+									element.ReplaceLine(i, parsedCodeLine ?? CodeLine.CreateEmpty());
+								}
+								catch (SyntaxErrorException error)
+								{
+									// The error's context needs to link back to the CompilationElement for the IDE to highlight it.
+									if (error.Token.OwnerElement == null)
+										error.Token.OwnerElement = element;
+
+									throw;
+								}
 							}
 						}
 					}
