@@ -1,5 +1,14 @@
 # QBX Releases
 
+## 1.11.3 - 2026-06-02
+
+### Fixed
+
+- `DATA` statements can now be terminated by `:`, allowing statements and comments after them on the same line.
+- Parsing of data items (`READ` from `DATA` and `INPUT`) now permits non-quoted items (that is, items surrounded at the ends by '"') to contain quoted substrings that can contain commas (data item parsing) and colons (lexical analysis).
+- `WIDTH` now correctly avoids readjusting the height when the same value as the last mode change is supplied.
+- Text-mode `CLS` once again correctly clears the screen. A regression test would have caught this bug. :-)
+
 ## 1.11.2 - 2026-06-01
 
 ### Fixed
