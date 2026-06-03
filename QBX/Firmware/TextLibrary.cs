@@ -229,7 +229,7 @@ public class TextLibrary : VisualLibrary
 		if (fromCharacterLine < _clipRect.Y1)
 			fromCharacterLine = _clipRect.Y1;
 
-		if (toCharacterLine >= CharacterHeight)
+		if ((toCharacterLine < 0) || (toCharacterLine >= CharacterHeight))
 			toCharacterLine = CharacterHeight - 1;
 		if (toCharacterLine >= _clipRect.Y2)
 			toCharacterLine = _clipRect.Y2;
