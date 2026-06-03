@@ -1,0 +1,12 @@
+READ a$
+READ b$
+READ c$
+
+OPEN "TESTOUT$" FOR OUTPUT AS #1
+IF a$ <> "a" THEN PRINT #1, "FAIL"
+IF b$ <> "test1," THEN PRINT #1, "FAIL"
+IF c$ <> "b" THEN PRINT #1, "FAIL"
+PRINT #1, "PASS OTHERWISE"
+CLOSE #1
+
+DATA a,"test1,",b

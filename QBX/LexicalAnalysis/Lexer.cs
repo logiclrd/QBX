@@ -32,7 +32,8 @@ public class Lexer(TextReader input, CompilationElement? element = null, int sta
 		Whitespace,
 		Comment,
 		String,
-		RawStringToEndOfLine,
+		DataStringToStatementBoundary,
+		DataStringContentString,
 		Number,
 		NumberAfterDecimal,
 		NumberAfterExponent,
@@ -208,7 +209,27 @@ public class Lexer(TextReader input, CompilationElement? element = null, int sta
 
 						break;
 					}
-					case Mode.RawStringToEndOfLine:
+					case Mode.DataStringToStatementBoundary:
+					{
+						if ((ch == ':') || (ch == '\r') || (ch == '\n') || atEOF)
+						{
+							yield return new Token(line, tokenStartColumn, TokenType.RawString, buffer.ToString());
+							buffer.Clear();
+							mode = Mode.Any;
+							reparse = true;
+							tokenStartColumn = column;
+						}
+						else if (ch == '"')
+						{
+							buffer.Append(ch);
+							mode = Mode.DataStringContentString;
+						}
+						else
+							buffer.Append(ch);
+
+						break;
+					}
+					case Mode.DataStringContentString:
 					{
 						if ((ch == '\r') || (ch == '\n') || atEOF)
 						{
@@ -217,6 +238,11 @@ public class Lexer(TextReader input, CompilationElement? element = null, int sta
 							mode = Mode.Any;
 							reparse = true;
 							tokenStartColumn = column;
+						}
+						else if (ch == '"')
+						{
+							buffer.Append(ch);
+							mode = Mode.DataStringToStatementBoundary;
 						}
 						else
 							buffer.Append(ch);
@@ -566,7 +592,7 @@ public class Lexer(TextReader input, CompilationElement? element = null, int sta
 								if (!atEOF)
 									buffer.Append(ch);
 
-								mode = Mode.RawStringToEndOfLine;
+								mode = Mode.DataStringToStatementBoundary;
 							}
 						}
 						else

@@ -1,0 +1,11 @@
+READ a$
+
+OPEN "TESTOUT$" FOR OUTPUT AS #1
+
+IF a$ <> "a" + CHR$(34) + "t: PRINT #1, " + CHR$(34) + "FAIL" + CHR$(34) THEN PRINT #1, "FAIL"
+
+DATA a"t: PRINT #1, "FAIL"
+
+PRINT #1, "PASS OTHERWISE"
+
+CLOSE #1

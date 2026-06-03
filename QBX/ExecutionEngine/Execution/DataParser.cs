@@ -364,18 +364,53 @@ public class DataParser
 				}
 				else
 				{
-					int comma = dataSpan.IndexOf(',');
+					int scanIndex = 0;
 
-					var token = (comma >= 0)
-						? dataSpan.Slice(0, comma)
-						: dataSpan;
+					var token = ReadOnlySpan<char>.Empty;
+
+					while (true)
+					{
+						int nextCharacterOfInterestIndex = dataSpan.Slice(scanIndex).IndexOfAny(',', '"');
+
+						if (nextCharacterOfInterestIndex < 0)
+						{
+							token = dataSpan;
+							yieldEmptyString = false;
+							break;
+						}
+
+						char ch = dataSpan[scanIndex + nextCharacterOfInterestIndex];
+
+						if (ch == '"')
+						{
+							int endQuoteIndex = dataSpan.Slice(scanIndex + nextCharacterOfInterestIndex + 1).IndexOf('"');
+
+							if (endQuoteIndex < 0)
+							{
+								// Dangling string; consume to end
+								token = dataSpan;
+								yieldEmptyString = false;
+								break;
+							}
+							else
+								scanIndex = scanIndex + nextCharacterOfInterestIndex + 1 + endQuoteIndex + 1;
+						}
+						else if (ch == ',')
+						{
+							token = dataSpan.Slice(0, scanIndex + nextCharacterOfInterestIndex);
+							yieldEmptyString = true;
+							break;
+						}
+					}
+
+					if (token.Length < _nextDataMemory.Length)
+						_nextDataMemory = _nextDataMemory.Slice(token.Length + 1);
+					else
+						_nextDataMemory = Memory<char>.Empty;
 
 					while ((token.Length > 0) && char.IsWhiteSpace(token[token.Length - 1]))
 						token = token.Slice(0, token.Length - 1);
 
-					_nextDataMemory = _nextDataMemory.Slice((comma >= 0) ? comma + 1 : _nextDataMemory.Length);
-
-					yieldEmptyString = (comma >= 0);
 					yield return new string(token);
 				}
 

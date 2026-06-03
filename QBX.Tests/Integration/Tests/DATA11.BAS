@@ -1,0 +1,10 @@
+READ a$
+
+OPEN "TESTOUT$" FOR OUTPUT AS #1
+
+IF a$ <> "abc" THEN PRINT #1, "FAIL"
+PRINT #1, "PASS OTHERWISE"
+
+DATA abc: 'test
+
+CLOSE #1
