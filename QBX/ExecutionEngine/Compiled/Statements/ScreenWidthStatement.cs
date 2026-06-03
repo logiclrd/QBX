@@ -42,7 +42,7 @@ public class ScreenWidthStatement(CodeModel.Statements.ScreenWidthStatement sour
 			textLibrary.RefreshParameters();
 		}
 
-		if (height != context.VisualLibrary.CharacterWidth)
+		if (height != context.VisualLibrary.CharacterHeight)
 		{
 			try
 			{
