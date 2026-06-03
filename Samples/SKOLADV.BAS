@@ -108,7 +108,7 @@
 7520 DATA "p† hj„lp, wen den en da som kommer „r kemil„raren,"
 7530 DATA "med ett h†nflin sparker mig i ansiktet."
 
-7600 DATA Ouch ! Du ryckte ur sladden !,Tyv„rr kan jag inte s„ga mer „n detta:,Har du letat ”verallt?,Med vad d† ?
+7600 DATA Ouch ! Du ryckte ur sladden !,"Tyv„rr kan jag inte s„ga mer „n detta:",Har du letat ”verallt?,Med vad d† ?
 7601 DATA "Du trycker p† knappen, men ingenting h„nder.",LSET,D™RREN,Du borrar vilt omkring dig.
 7602 DATA Du kan g† ”sterut.,Vad skall jag ansluta ?,Var d† ?,BORR,Eh... Vad da sade du ?,En styck borr ansluten.
 7603 DATA Attans !! Nyckeln gick av och fastnade i l†set.,Hurra !!!,Det funkar inte riktigt..
@@ -160,7 +160,7 @@
 8520 DATA "only person who hears your cries is the crazy chemistry teacher. With a"
 8530 DATA "sneer, he kicks you in the face."
 
-8600 DATA Ouch ! You pulled the plug !,All I can say is:,Have you looked everywhere?,With what ?
+8600 DATA Ouch ! You pulled the plug !,"All I can say is:",Have you looked everywhere?,With what ?
 8601 DATA You press the button but nothing happens.,KEY,DOOR,You drill wildly all over the place.
 8602 DATA You can go east.,What should I plug in ?,Where ?,DRILL,Er... what ?,One drill plugged in.
 8603 DATA Oh no !! The key broke off and got stuck in the lock.,Hooray !!!,It doesn't really work...
