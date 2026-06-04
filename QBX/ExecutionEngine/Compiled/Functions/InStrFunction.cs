@@ -94,7 +94,10 @@ public class InStrFunction : Function
 
 		try
 		{
-			return new IntegerVariable((short)(stringValue.IndexOf(searchForValue, start - 1) + 1));
+			if (start + 1 > stringValue.Length)
+				return new IntegerVariable(0);
+			else
+				return new IntegerVariable((short)(stringValue.IndexOf(searchForValue, start - 1) + 1));
 		}
 		catch (OverflowException)
 		{
