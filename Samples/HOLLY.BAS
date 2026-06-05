@@ -38,7 +38,7 @@ LOOP
 ' QBASIC supports neither ON ERROR RESUME NEXT nor ON LOCAL ERROR ...
 ' This catches math errors in FUNCTION ATAN2!
 ATAN2HandleMathError:
-  isusable% = 0
+  ATAN2CaughtError% = 0
   RESUME NEXT
 
 FUNCTION ATAN2! (y!, x!)
