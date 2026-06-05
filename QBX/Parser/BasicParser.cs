@@ -1699,9 +1699,41 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 					while (true)
 					{
-						int separator = tokenHandler.FindNextUnparenthesizedOf(TokenType.Colon, TokenType.ELSE);
+						int separator = -1;
 
-						if ((separator < 0) || tokenHandler.NextTokenIs(TokenType.IF))
+						int nestingLevel = 0;
+						bool recognizeIf = true;
+						bool inNestedIf = false;
+
+						for (int i = 0, l = tokenHandler.RemainingTokens.Count; i < l; i++)
+						{
+							var subtoken = tokenHandler[i];
+
+							if (recognizeIf && (subtoken.Type == TokenType.IF))
+							{
+								nestingLevel++;
+								inNestedIf = true;
+							}
+							else if (subtoken.Type == TokenType.ELSE)
+							{
+								if (nestingLevel > 0)
+									nestingLevel--;
+								else
+								{
+									separator = i;
+									break;
+								}
+							}
+							else if ((subtoken.Type == TokenType.Colon) && !inNestedIf)
+							{
+								separator = i;
+								break;
+							}
+
+							recognizeIf = (subtoken.Type == TokenType.Colon);
+						}
+
+						if (separator < 0)
 						{
 							var endToken = tokenHandler.HasMoreTokens ? tokenHandler.NextToken : tokenHandler.EndToken;
 
