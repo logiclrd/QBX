@@ -1,4 +1,5 @@
-﻿using QBX.CodeModel.Expressions;
+﻿using QBX.CodeModel;
+using QBX.CodeModel.Expressions;
 using QBX.ExecutionEngine;
 using QBX.ExecutionEngine.Compiled;
 using QBX.LexicalAnalysis;
@@ -284,5 +285,69 @@ public class CompilerTests
 		expression.Token!.Column.Should().NotBe(expectedColumn);
 		actual.Should().Be(ID(expectedIdentifier));
 		column.Should().Be(expectedColumn);
+	}
+
+	const string LineNumberWithComment = "10 'hello";
+
+	[TestCase(
+@"FOR i = 1 TO 5
+@@
+NEXT i", typeof(QBX.ExecutionEngine.Compiled.Statements.ForStatement))]
+	[TestCase(
+@"IF condition THEN
+@@
+END IF", typeof(QBX.ExecutionEngine.Compiled.Statements.IfStatement))]
+	[TestCase(
+@"IF condition THEN
+PRINT 5 * 5
+ELSE
+@@
+END IF", typeof(QBX.ExecutionEngine.Compiled.Statements.IfStatement))]
+	[TestCase(
+@"WHILE condition
+@@
+WEND", typeof(QBX.ExecutionEngine.Compiled.Statements.LoopStatement))]
+	[TestCase(
+@"DO
+@@
+LOOP UNTIL 3 > 5", typeof(QBX.ExecutionEngine.Compiled.Statements.LoopStatement))]
+	[TestCase(
+@"SELECT CASE value
+CASE ELSE:
+@@
+END SELECT", typeof(QBX.ExecutionEngine.Compiled.Statements.SelectCaseStatement))]
+	public void ShouldParseLineNumberWithCommentWithinBlock(string template, Type expectedStatementType)
+	{
+		// Arrange
+		var code = template.Replace("@@", LineNumberWithComment);
+
+		var tokens = new Lexer(code);
+
+		var identifierRepository = new IdentifierRepository();
+
+		var parser = new BasicParser(identifierRepository);
+
+		var parsedCode = parser.ParseCodeLines(tokens, ignoreErrors: false);
+
+		var unit = new CompilationUnit();
+
+		var element = new CompilationElement(unit);
+
+		element.Type = CompilationElementType.Main;
+
+		unit.AddElement(element);
+
+		element.AddLines(parsedCode);
+
+		var compiler = new Compiler(identifierRepository);
+
+		var compilation = new Compilation();
+
+		// Act
+		var module = compiler.Compile(unit, compilation);
+
+		module.MainRoutine.Should().NotBeNull();
+		module.MainRoutine.Statements.Should().HaveCount(1);
+		module.MainRoutine.Statements[0].Should().BeAssignableTo(expectedStatementType);
 	}
 }

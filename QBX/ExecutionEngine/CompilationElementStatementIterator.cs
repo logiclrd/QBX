@@ -67,9 +67,12 @@ public class CompilationElementStatementIterator(CompilationElement element, Cod
 	{
 		get
 		{
+			bool hasJumpTarget = (line.LineNumber != null) || (line.Label != null);
+			bool hasStatements = (statementIndex < line.Statements.Count);
+
 			return
 				(lineIndex < element.Lines.Count) &&
-				(statementIndex < line.Statements.Count);
+				(hasJumpTarget || hasStatements);
 		}
 	}
 
