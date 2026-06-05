@@ -335,10 +335,14 @@ public class BasicParser(IdentifierRepository identifierRepository)
 			lastToken = token;
 		}
 
-		if (buffer.Any())
+		// If we've found no tokens, then if there's nothing on the line at all, return an
+		// empty line, but if we found statements on the line, that means we've encountered
+		// a ':', so even if we haven't found anything here, we need an empty statement as
+		// a placeholder so that the ':' continues to exist.
+		if ((line.Statements.Count > 0) || buffer.Any())
 		{
 			if (lastToken == null)
-				throw new Exception("Internal error: Arrived at tail with non-empty buffer and/or haveContent but without seeing any tokens");
+				throw new Exception("Internal error: Arrived at tail with non-empty CodeLine or buffer but without seeing any tokens");
 
 			var endToken = new Token(
 				lastToken.LineNumberBox,

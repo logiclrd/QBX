@@ -189,4 +189,36 @@ GOTO top
 
 		renderBuffer.ToString().Should().Be(expectedOutput);
 	}
+
+	[TestCase("", false, 0)]
+	[TestCase(":", true, 2)]
+	[TestCase("::", true, 3)]
+	[TestCase(": :", true, 3)]
+	[TestCase("CASE ELSE:", true, 2)]
+	public void EmptyStatement(string input, bool expectCodeLine, int expectedStatements)
+	{
+		// Arrange
+		var lexer = new Lexer(input);
+
+		var tokens = lexer.ToList();
+
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
+
+		// Act
+		var lines = sut.ParseCodeLines(tokens).ToList();
+
+		// Assert
+		if (!expectCodeLine)
+			lines.Should().BeEmpty();
+		else
+		{
+			lines.Should().HaveCount(1);
+
+			var line = lines[0];
+
+			line.Statements.Should().HaveCount(expectedStatements);
+		}
+	}
 }

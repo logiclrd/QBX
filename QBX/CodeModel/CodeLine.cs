@@ -33,6 +33,7 @@ public class CodeLine : IRenderableCode, IEditableLine
 		(LineNumber == null) &&
 		(Label == null) &&
 		(EndOfLineComment == null) &&
+		(Statements.Count <= 1) && // If we have more than one statement, even EmptyStatement, then we have a ':' character.
 		Statements.All(statement => statement is EmptyStatement);
 
 	public bool IsCommentLine =>
