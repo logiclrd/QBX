@@ -1,5 +1,13 @@
 # QBX Releases
 
+## 1.12.0 - 2026-06-05
+
+### Fixed
+
+- Corrected `ELSE` clause matching in `IF` statement parsing in complex nesting scenarios.
+- `IF` statements parsed with no statements in the `THEN` or `ELSE` clauses no longer crash when rendering.
+- Lines with a jump target (label or line number) and a trailing comment but no statements no longer break block statement processing.
+
 ## 1.11.4 - 2026-06-05
 
 ### Fixed
