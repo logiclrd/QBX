@@ -1,5 +1,12 @@
 # QBX Releases
 
+## 1.11.4 - 2026-06-05
+
+### Fixed
+
+- `INSTR` no longer crashes if the `start` offset is specified more than one byte past the end of the string.
+- Trailing `:` characters no longer disappear (as employed commonly with e.g. `CASE 3:`).
+
 ## 1.11.3 - 2026-06-02
 
 ### Fixed
