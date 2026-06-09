@@ -40,6 +40,8 @@ public class RightFunction : Function
 
 	public override DataType Type => DataType.String;
 
+	public override bool AliasesInput => true;
+
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (StringExpression == null)

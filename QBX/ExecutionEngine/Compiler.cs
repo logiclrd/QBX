@@ -3247,19 +3247,26 @@ public class Compiler(IdentifierRepository identifierRepository)
 			iterator.Advance();
 	}
 
-	static bool IsVariableExpression(CodeModel.Expressions.Expression sourceExpression, Evaluable translatedExpression)
+	static bool IsUnintentionalAlias(CodeModel.Expressions.Expression sourceExpression, Evaluable translatedExpression)
 	{
-		if (sourceExpression is CodeModel.Expressions.IdentifierExpression)
+		if ((translatedExpression is Function function)
+		 && function.AliasesInput)
 			return true;
 
+		if (!translatedExpression.IsAssignable)
+			return false;
+
+		if (sourceExpression is CodeModel.Expressions.IdentifierExpression)
+			return false;
+
 		if (sourceExpression is CodeModel.Expressions.CallOrIndexExpression)
-			return translatedExpression is ArrayElementExpression;
+			return !(translatedExpression is ArrayElementExpression);
 
 		if ((sourceExpression is CodeModel.Expressions.BinaryExpression binaryExpression)
 		 && (binaryExpression.Operator == CodeModel.Expressions.Operator.Field))
-			return true;
+			return false;
 
-		return false;
+		return true;
 	}
 
 	void TranslateCallArguments(CodeModel.Expressions.ExpressionList? arguments, IHasTypedParameters translated, bool matchFacades, Sequence? container, Mapper mapper, Compilation compilation, Module module)
@@ -3275,8 +3282,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 				if (translatedExpression == null)
 					throw new Exception("Call argument translated to null");
 
-				if (translatedExpression.IsAssignable
-					&& !IsVariableExpression(argument, translatedExpression))
+				if (IsUnintentionalAlias(argument, translatedExpression))
 					translatedExpression = new DetachExpression(translatedExpression);
 
 				translatedArguments.Add(translatedExpression);

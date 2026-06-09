@@ -8,6 +8,8 @@ public abstract class Function : Evaluable
 	protected virtual int MinArgumentCount => 1;
 	protected virtual int MaxArgumentCount => 1;
 
+	public virtual bool AliasesInput => false;
+
 	protected virtual void SetArgument(int index, Evaluable value)
 		=> throw new Exception("Function.SetArgument called on a function type that doesn't define it");
 
