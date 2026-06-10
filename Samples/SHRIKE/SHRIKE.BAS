@@ -126,7 +126,7 @@ DIM Dusts(1 TO MaxDusts%) AS DustType
 
 InitializeDust Dusts()
 
-guncooldown% = 3:  ' frames
+guncooldown% = 3 ' frames
 gunheat% = 0
 
 DIM transform#(0 TO 3, 0 TO 3)
@@ -162,7 +162,7 @@ DO
   CALL InterruptX(&H33, rin, rout)
 
   mousebutton% = rout.BX
-  mousex% = rout.CX \ 2: ' Mouse driver always reports 0..639
+  mousex% = rout.CX \ 2 ' Mouse driver always reports 0..639
   mousey% = rout.dx
 
   ' Fighter movement

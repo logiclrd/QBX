@@ -120,53 +120,53 @@ SCREEN 13: SCREEN 0
 '
 ' Path options
 ' Part 0
-DATA 3,8,8: ' Base shape
-DATA -1,0,0: ' Does not merge with another part
-DATA 0,0, 1,1: ' Connection to part 2
-DATA 3,0, 0,1: ' Connection to part 1
-DATA 7,3, -1,0: ' Self connect out
-DATA 3,7, 0,-1: ' Connection to part 5
-DATA 0,7, 1,-1: ' Connection to part 4
+DATA 3,8,8 ' Base shape
+DATA -1,0,0 ' Does not merge with another part
+DATA 0,0, 1,1 ' Connection to part 2
+DATA 3,0, 0,1 ' Connection to part 1
+DATA 7,3, -1,0 ' Self connect out
+DATA 3,7, 0,-1 ' Connection to part 5
+DATA 0,7, 1,-1 ' Connection to part 4
 ' Part 1
-DATA 1,8,0: ' Base shape
-DATA 4,0,-1: ' Merges with part 4, found at relative tile (0,-1)
-DATA 0,7, 1,-1: ' Connection to part 3
-DATA 0,3, 1,0: ' Connection to part 2
-DATA 0,0, 0,0: ' Connect out is through merge
-DATA 3,7, 0,-1: ' Connection to part 0
-DATA 3,7, 0,-1: ' Connection to part 5
+DATA 1,8,0 ' Base shape
+DATA 4,0,-1 ' Merges with part 4, found at relative tile (0,-1)
+DATA 0,7, 1,-1 ' Connection to part 3
+DATA 0,3, 1,0 ' Connection to part 2
+DATA 0,0, 0,0 ' Connect out is through merge
+DATA 3,7, 0,-1 ' Connection to part 0
+DATA 3,7, 0,-1 ' Connection to part 5
 ' Part 2
-DATA 0,0,0: ' Base shape
-DATA 5,-1,-1: ' Merges with part 5, found at relative tile (-1,-1)
-DATA 5,7, 0,-1: ' Connection to part 4
-DATA 4,7, 0,-1: ' Connection to part 3
-DATA 0,0, 0,0: ' Connect out is through merge
-DATA 7,3, -1,0: ' Connection to part 1
-DATA 7,7, -1,-1: ' Connection to part 0
+DATA 0,0,0 ' Base shape
+DATA 5,-1,-1 ' Merges with part 5, found at relative tile (-1,-1)
+DATA 5,7, 0,-1 ' Connection to part 4
+DATA 4,7, 0,-1 ' Connection to part 3
+DATA 0,0, 0,0 ' Connect out is through merge
+DATA 7,3, -1,0 ' Connection to part 1
+DATA 7,7, -1,-1 ' Connection to part 0
 ' Part 3
-DATA 2,0,8: ' Base shape
-DATA -1,0,0: ' Does not merge with another part
-DATA 7,7, 1,1: ' Connection to part 5
-DATA 5,7, 0,-1: ' Connection to part 4
-DATA 0,3, 1,0: ' Self connect out
-DATA 5,0, 0,1: ' Connection to part 2
-DATA 7,0, -1,1: ' Connection to part 1
+DATA 2,0,8 ' Base shape
+DATA -1,0,0 ' Does not merge with another part
+DATA 7,7, 1,1 ' Connection to part 5
+DATA 5,7, 0,-1 ' Connection to part 4
+DATA 0,3, 1,0 ' Self connect out
+DATA 5,0, 0,1 ' Connection to part 2
+DATA 7,0, -1,1 ' Connection to part 1
 ' Part 4
-DATA 1,0,16: ' Base shape
-DATA 1,-1,1: ' Merges with part 1, found at relative tile (-1,1)
-DATA 7,0, -1,1: ' Connection to part 0
-DATA 7,3, -1,0: ' Connection to part 5
-DATA 0,0, 0,0: ' Connect out is through merge
-DATA 4,0, 0,1: ' Connection to part 3
-DATA 5,0, 0,1: ' Connection to part 2
+DATA 1,0,16 ' Base shape
+DATA 1,-1,1 ' Merges with part 1, found at relative tile (-1,1)
+DATA 7,0, -1,1 ' Connection to part 0
+DATA 7,3, -1,0 ' Connection to part 5
+DATA 0,0, 0,0 ' Connect out is through merge
+DATA 4,0, 0,1 ' Connection to part 3
+DATA 5,0, 0,1 ' Connection to part 2
 ' Part 5
-DATA 0,8,16: ' Base shape
-DATA 2,0,1: ' Merges with part 2, found at relative tile (0,1)
-DATA 3,0, 0,1: ' Connection to part 1
-DATA 3,0, 0,1: ' Connection to part 0
-DATA 0,0, 0,0: ' Connect out is through merge
-DATA 0,3, 1,0: ' Connection to part 4
-DATA 0,0, 1,1: ' Connection to part 3
+DATA 0,8,16 ' Base shape
+DATA 2,0,1 ' Merges with part 2, found at relative tile (0,1)
+DATA 3,0, 0,1 ' Connection to part 1
+DATA 3,0, 0,1 ' Connection to part 0
+DATA 0,0, 0,0 ' Connect out is through merge
+DATA 0,3, 1,0 ' Connection to part 4
+DATA 0,0, 1,1 ' Connection to part 3
 
 SUB DrawPath (thispath AS PathInfo, otherpaths AS PathSet)
 drawpart% = thispath.FromEdge
