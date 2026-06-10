@@ -25,7 +25,7 @@ DECLARE FUNCTION ATAN2# (Y#, X#)
 DECLARE FUNCTION Distance# (p0 AS PointType, p1 AS PointType)
 DECLARE FUNCTION VectorLength# (v AS PointType)
 
-CONST pi# = 3.14159265358979#
+CONST pi# = 3.14159265358979
 
 CONST HandleSize# = 3
 CONST DoubleClickInterval! = .4
