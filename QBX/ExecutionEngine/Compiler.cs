@@ -3076,6 +3076,8 @@ public class Compiler(IdentifierRepository identifierRepository)
 						if (mapper.IsLinkedArray(declaration.Name))
 							continue;
 
+						variableType = variableType.MakeArrayType();
+
 						mapper.DeclareArray(declaration.Name, variableType, declaration.NameToken);
 
 						var rootVariableName = declaration.Name;
