@@ -31,20 +31,47 @@ TYPE DustType
   Colour AS INTEGER
 END TYPE
 
+TYPE RockType
+  Active AS INTEGER
+  X AS INTEGER
+  Y AS INTEGER
+  DX AS INTEGER
+  SpriteIndex AS INTEGER
+  SpriteIndexDelta AS INTEGER
+END TYPE
+
+TYPE BoomType
+  Active AS INTEGER
+  X AS INTEGER
+  Y AS INTEGER
+  DX AS INTEGER
+  DY AS INTEGER
+  SpriteIndex AS INTEGER
+END TYPE
+
 DECLARE SUB AddPoint (t AS PointType, s AS PointType)
 DECLARE SUB ApplyTransform (i AS PointType, matrix#(), o AS PointType)
-DECLARE SUB DrawReticle (CX%, cy%)
+DECLARE SUB CascadeFighterBoom (fx%, fy%, fdx%, Booms() AS BoomType)
+DECLARE SUB CentreText (row%, text$)
+DECLARE SUB CheckForHits (Shots() AS ShotType, Rocks() AS RockType, Booms() AS BoomType)
+DECLARE SUB DrawBoom (boom AS BoomType)
+DECLARE SUB DrawReticle (ox%, oy%)
+DECLARE SUB DrawRock (rock AS RockType)
 DECLARE SUB FillTriangle (x1%, y1%, x2%, y2%, x3%, y3%, Colour%)
+DECLARE SUB GetArtDimensions (filename$, w%, h%)
 DECLARE SUB GetObjectCounts (objfilename$, numvertices%, numnormals%, numfaces%)
 DECLARE SUB HorizontalLine (scanofs&, x1%, x2%, Colour%)
 DECLARE SUB InitializeDust (Dusts() AS DustType)
+DECLARE SUB LoadArt (filename$, pixels%(), mask%())
 DECLARE SUB LoadObject (objfilename$, vertices() AS PointType, normals() AS PointType, faces() AS FaceType)
+DECLARE SUB MakeBoom (Booms() AS BoomType, ox%, oy%, odx%, ody%)
 DECLARE SUB MultiplyMatrix (subject#(), transform#())
 DECLARE SUB MultiplyPoint (t AS PointType, Scale#)
 DECLARE SUB NormalizePoint (t AS PointType)
 DECLARE SUB ParseTriple (a$, P AS PointType)
 DECLARE SUB ParseVertex (a$, v AS VertexType)
 DECLARE SUB ParseVertices (a$, f AS FaceType)
+DECLARE SUB PutArt (ox#, oy#, angle#, pixels%(), mask%())
 DECLARE SUB RenderObject (sourcevertices() AS PointType, sourcenormals() AS PointType, faces() AS FaceType, transform#(), rotation#(), lightposition AS PointType, LightIntensity#, AmbientLightIntensity#, ox%, oy%)
 DECLARE SUB RenderShot (shot AS ShotType)
 DECLARE SUB RotateTransformX (matrix#(), angle#)
@@ -54,17 +81,22 @@ DECLARE SUB ScaleTransform (matrix#(), factor#)
 DECLARE SUB SetIdentityTransform (transform#())
 DECLARE SUB SortFaces (faces() AS FaceType, facez#(), first%, last%)
 DECLARE SUB SubtractPoint (t AS PointType, s AS PointType)
+DECLARE SUB TitleScreen (FighterVertices() AS PointType, FighterNormals() AS PointType, FighterFaces() AS FaceType, FighterLightPosition AS PointType)
+DECLARE SUB Translate (matrix#(), deltax#, deltay#, deltaz#)
+DECLARE SUB UpdateAndRenderBooms (Booms() AS BoomType)
 DECLARE SUB UpdateAndRenderDust (Dusts() AS DustType)
+DECLARE SUB UpdateAndRenderRocks (Rocks() AS RockType, fx%, fy%, fdx%, Booms() AS BoomType)
 DECLARE SUB UpdateAndRenderShot (shot AS ShotType)
 DECLARE FUNCTION Distance# (t AS PointType)
 DECLARE FUNCTION DotProduct# (a AS PointType, b AS PointType)
+DECLARE FUNCTION IsNaNOrInf% (d#)
 DECLARE FUNCTION RandomDustColour% ()
 
 TYPE RegTypeX
   AX AS INTEGER
   BX AS INTEGER
   CX AS INTEGER
-  dx AS INTEGER
+  DX AS INTEGER
   BP AS INTEGER
   SI AS INTEGER
   DI AS INTEGER
@@ -108,8 +140,185 @@ CONST DustYMin# = -100 * (DustZMax# - CameraZ#) / 10
 CONST DustYMax# = 100 * (DustZMax# - CameraZ#) / 10 + DustSpeed#
 CONST DustYSpawnMin# = 100 * (DustZMax# - CameraZ#) / 10
 
+CONST MaxRocks% = 5
+CONST RockSpeed% = 8
+CONST RockSpawnRate# = 1 / 100 ' Try once every 100 frames
+
+CONST MaxBooms% = 10
+CONST BoomFrames% = 10
+
 CONST MarginX% = 18
 CONST FighterY% = 180
+
+CONST HitGridWidth% = 80
+CONST HitGridHeight% = 50
+CONST HitGridRock% = 1000
+
+' Load art. Unfortunately, we have to repeat the pattern like
+' this because we can't set the array sizes within a SUB on
+' a parameter.
+
+GetArtDimensions "ALIEN0.ART", w%, h%
+DIM Alien0%(1 TO w%, 1 TO h%), Alien0Mask%(1 TO w%, 1 TO h%)
+LoadArt "ALIEN0.ART", Alien0%(), Alien0Mask%()
+
+GetArtDimensions "ALIEN1_A.ART", w%, h%
+DIM Alien1A%(1 TO w%, 1 TO h%), Alien1AMask%(1 TO w%, 1 TO h%)
+LoadArt "ALIEN1_A.ART", Alien1A%(), Alien1AMask%()
+
+GetArtDimensions "ALIEN1_B.ART", w%, h%
+DIM Alien1B%(1 TO w%, 1 TO h%), Alien1BMask%(1 TO w%, 1 TO h%)
+LoadArt "ALIEN1_B.ART", Alien1B%(), Alien1BMask%()
+
+GetArtDimensions "ALIEN1_D.ART", w%, h%
+DIM Alien1D%(1 TO w%, 1 TO h%), Alien1DMask%(1 TO w%, 1 TO h%)
+LoadArt "ALIEN1_D.ART", Alien1D%(), Alien1DMask%()
+
+GetArtDimensions "ALIEN2_A.ART", w%, h%
+DIM Alien2A%(1 TO w%, 1 TO h%), Alien2AMask%(1 TO w%, 1 TO h%)
+LoadArt "ALIEN2_A.ART", Alien2A%(), Alien2AMask%()
+
+GetArtDimensions "ALIEN2_B.ART", w%, h%
+DIM Alien2B%(1 TO w%, 1 TO h%), Alien2BMask%(1 TO w%, 1 TO h%)
+LoadArt "ALIEN2_B.ART", Alien2B%(), Alien2BMask%()
+
+GetArtDimensions "ALIEN2_D.ART", w%, h%
+DIM Alien2D%(1 TO w%, 1 TO h%), Alien2DMask%(1 TO w%, 1 TO h%)
+LoadArt "ALIEN2_D.ART", Alien2D%(), Alien2DMask%()
+
+GetArtDimensions "ALIEN3.ART", w%, h%
+DIM Alien3%(1 TO w%, 1 TO h%), Alien3Mask%(1 TO w%, 1 TO h%)
+LoadArt "ALIEN3.ART", Alien3%(), Alien3Mask%()
+
+GetArtDimensions "ALIEN4_A.ART", w%, h%
+DIM Alien4A%(1 TO w%, 1 TO h%), Alien4AMask%(1 TO w%, 1 TO h%)
+LoadArt "ALIEN4_A.ART", Alien4A%(), Alien4AMask%()
+
+GetArtDimensions "ALIEN4_B.ART", w%, h%
+DIM Alien4B%(1 TO w%, 1 TO h%), Alien4BMask%(1 TO w%, 1 TO h%)
+LoadArt "ALIEN4_B.ART", Alien4B%(), Alien4BMask%()
+
+GetArtDimensions "MINE_A.ART", w%, h%
+DIM MineA%(1 TO w%, 1 TO h%), MineAMask%(1 TO w%, 1 TO h%)
+LoadArt "MINE_A.ART", MineA%(), MineAMask%()
+
+GetArtDimensions "MINE_B.ART", w%, h%
+DIM MineB%(1 TO w%, 1 TO h%), MineBMask%(1 TO w%, 1 TO h%)
+LoadArt "MINE_B.ART", MineB%(), MineBMask%()
+
+GetArtDimensions "ROCK01.ART", w%, h%
+DIM Rock01%(1 TO w%, 1 TO h%), Rock01Mask%(1 TO w%, 1 TO h%)
+LoadArt "ROCK01.ART", Rock01%(), Rock01Mask%()
+
+GetArtDimensions "ROCK02.ART", w%, h%
+DIM Rock02%(1 TO w%, 1 TO h%), Rock02Mask%(1 TO w%, 1 TO h%)
+LoadArt "ROCK02.ART", Rock02%(), Rock02Mask%()
+
+GetArtDimensions "ROCK03.ART", w%, h%
+DIM Rock03%(1 TO w%, 1 TO h%), Rock03Mask%(1 TO w%, 1 TO h%)
+LoadArt "ROCK03.ART", Rock03%(), Rock03Mask%()
+
+GetArtDimensions "ROCK04.ART", w%, h%
+DIM Rock04%(1 TO w%, 1 TO h%), Rock04Mask%(1 TO w%, 1 TO h%)
+LoadArt "ROCK04.ART", Rock04%(), Rock04Mask%()
+
+GetArtDimensions "ROCK05.ART", w%, h%
+DIM Rock05%(1 TO w%, 1 TO h%), Rock05Mask%(1 TO w%, 1 TO h%)
+LoadArt "ROCK05.ART", Rock05%(), Rock05Mask%()
+
+GetArtDimensions "ROCK06.ART", w%, h%
+DIM Rock06%(1 TO w%, 1 TO h%), Rock06Mask%(1 TO w%, 1 TO h%)
+LoadArt "ROCK06.ART", Rock06%(), Rock06Mask%()
+
+GetArtDimensions "ROCK07.ART", w%, h%
+DIM Rock07%(1 TO w%, 1 TO h%), Rock07Mask%(1 TO w%, 1 TO h%)
+LoadArt "ROCK07.ART", Rock07%(), Rock07Mask%()
+
+GetArtDimensions "ROCK08.ART", w%, h%
+DIM Rock08%(1 TO w%, 1 TO h%), Rock08Mask%(1 TO w%, 1 TO h%)
+LoadArt "ROCK08.ART", Rock08%(), Rock08Mask%()
+
+GetArtDimensions "ROCK09.ART", w%, h%
+DIM Rock09%(1 TO w%, 1 TO h%), Rock09Mask%(1 TO w%, 1 TO h%)
+LoadArt "ROCK09.ART", Rock09%(), Rock09Mask%()
+
+GetArtDimensions "ROCK10.ART", w%, h%
+DIM Rock10%(1 TO w%, 1 TO h%), Rock10Mask%(1 TO w%, 1 TO h%)
+LoadArt "ROCK10.ART", Rock10%(), Rock10Mask%()
+
+GetArtDimensions "ROCK11.ART", w%, h%
+DIM Rock11%(1 TO w%, 1 TO h%), Rock11Mask%(1 TO w%, 1 TO h%)
+LoadArt "ROCK11.ART", Rock11%(), Rock11Mask%()
+
+GetArtDimensions "ROCK12.ART", w%, h%
+DIM Rock12%(1 TO w%, 1 TO h%), Rock12Mask%(1 TO w%, 1 TO h%)
+LoadArt "ROCK12.ART", Rock12%(), Rock12Mask%()
+
+GetArtDimensions "ROCK13.ART", w%, h%
+DIM Rock13%(1 TO w%, 1 TO h%), Rock13Mask%(1 TO w%, 1 TO h%)
+LoadArt "ROCK13.ART", Rock13%(), Rock13Mask%()
+
+GetArtDimensions "ROCK14.ART", w%, h%
+DIM Rock14%(1 TO w%, 1 TO h%), Rock14Mask%(1 TO w%, 1 TO h%)
+LoadArt "ROCK14.ART", Rock14%(), Rock14Mask%()
+
+GetArtDimensions "ROCK15.ART", w%, h%
+DIM Rock15%(1 TO w%, 1 TO h%), Rock15Mask%(1 TO w%, 1 TO h%)
+LoadArt "ROCK15.ART", Rock15%(), Rock15Mask%()
+
+GetArtDimensions "ROCK16.ART", w%, h%
+DIM Rock16%(1 TO w%, 1 TO h%), Rock16Mask%(1 TO w%, 1 TO h%)
+LoadArt "ROCK16.ART", Rock16%(), Rock16Mask%()
+
+GetArtDimensions "BOOM01.ART", w%, h%
+DIM Boom01%(1 TO w%, 1 TO h%), Boom01Mask%(1 TO w%, 1 TO h%)
+LoadArt "BOOM01.ART", Boom01%(), Boom01Mask%()
+
+GetArtDimensions "BOOM02.ART", w%, h%
+DIM Boom02%(1 TO w%, 1 TO h%), Boom02Mask%(1 TO w%, 1 TO h%)
+LoadArt "BOOM02.ART", Boom02%(), Boom02Mask%()
+
+GetArtDimensions "BOOM03.ART", w%, h%
+DIM Boom03%(1 TO w%, 1 TO h%), Boom03Mask%(1 TO w%, 1 TO h%)
+LoadArt "BOOM03.ART", Boom03%(), Boom03Mask%()
+
+GetArtDimensions "BOOM04.ART", w%, h%
+DIM Boom04%(1 TO w%, 1 TO h%), Boom04Mask%(1 TO w%, 1 TO h%)
+LoadArt "BOOM04.ART", Boom04%(), Boom04Mask%()
+
+GetArtDimensions "BOOM05.ART", w%, h%
+DIM Boom05%(1 TO w%, 1 TO h%), Boom05Mask%(1 TO w%, 1 TO h%)
+LoadArt "BOOM05.ART", Boom05%(), Boom05Mask%()
+
+GetArtDimensions "BOOM06.ART", w%, h%
+DIM Boom06%(1 TO w%, 1 TO h%), Boom06Mask%(1 TO w%, 1 TO h%)
+LoadArt "BOOM06.ART", Boom06%(), Boom06Mask%()
+
+GetArtDimensions "BOOM07.ART", w%, h%
+DIM Boom07%(1 TO w%, 1 TO h%), Boom07Mask%(1 TO w%, 1 TO h%)
+LoadArt "BOOM07.ART", Boom07%(), Boom07Mask%()
+
+GetArtDimensions "BOOM08.ART", w%, h%
+DIM Boom08%(1 TO w%, 1 TO h%), Boom08Mask%(1 TO w%, 1 TO h%)
+LoadArt "BOOM08.ART", Boom08%(), Boom08Mask%()
+
+GetArtDimensions "BOOM09.ART", w%, h%
+DIM Boom09%(1 TO w%, 1 TO h%), Boom09Mask%(1 TO w%, 1 TO h%)
+LoadArt "BOOM09.ART", Boom09%(), Boom09Mask%()
+
+GetArtDimensions "BOOM10.ART", w%, h%
+DIM Boom10%(1 TO w%, 1 TO h%), Boom10Mask%(1 TO w%, 1 TO h%)
+LoadArt "BOOM10.ART", Boom10%(), Boom10Mask%()
+
+GetArtDimensions "SPACEMAN.ART", w%, h%
+DIM SHARED SpaceMan%(1 TO w%, 1 TO h%), SpaceManMask%(1 TO w%, 1 TO h%)
+LoadArt "SPACEMAN.ART", SpaceMan%(), SpaceManMask%()
+
+GetArtDimensions "DOG.ART", w%, h%
+DIM SHARED Dog%(1 TO w%, 1 TO h%), DogMask%(1 TO w%, 1 TO h%)
+LoadArt "DOG.ART", Dog%(), DogMask%()
+
+' Phew!
 
 GetObjectCounts "FIGHTER.OBJ", numvertices%, numnormals%, numfaces%
 
@@ -123,6 +332,8 @@ LoadObject "FIGHTER.OBJ", FighterVertices(), FighterNormals(), FighterFaces()
 
 DIM Shots(1 TO MaxShots%) AS ShotType
 DIM Dusts(1 TO MaxDusts%) AS DustType
+DIM Rocks(1 TO MaxRocks%) AS RockType
+DIM Booms(1 TO MaxBooms%) AS BoomType
 
 InitializeDust Dusts()
 
@@ -132,9 +343,14 @@ gunheat% = 0
 DIM transform#(0 TO 3, 0 TO 3)
 DIM rotation#(0 TO 3, 0 TO 3) ' same as transform, but without translation
 
+DIM SHARED HitGrid%(0 TO HitGridWidth% - 1, 0 TO HitGridHeight% - 1)
+DIM SHARED FighterHit%, DeathFrames%, FramesSinceDeath%
+
+DIM SHARED LastBoomIndex%
+
 SCREEN 13
 
-DIM buf&(16001)
+DIM SHARED buf&(16001)
 
 GET (0, 0)-(319, 199), buf&
 
@@ -143,6 +359,8 @@ DEF SEG = VARSEG(buf&(1))
 DIM SHARED bufofs%
 
 bufofs% = VARPTR(buf&(1))
+
+TitleScreen FighterVertices(), FighterNormals(), FighterFaces(), FighterLightPosition
 
 FighterLightPosition.X = -30
 FighterLightPosition.Y = -90
@@ -163,7 +381,7 @@ DO
 
   mousebutton% = rout.BX
   mousex% = rout.CX \ 2 ' Mouse driver always reports 0..639
-  mousey% = rout.dx
+  mousey% = rout.DX
 
   ' Fighter movement
   targetx% = mousex%
@@ -172,7 +390,10 @@ DO
 
   delta# = targetx% - fighterx#
 
-  fighterdx# = fighterdx# * FighterMomentum# + ATN(delta#) * FighterReticleAttraction#
+  IF NOT FighterHit% THEN
+    fighterdx# = fighterdx# * FighterMomentum# + ATN(delta#) * FighterReticleAttraction#
+  END IF
+
   fighterx# = fighterx# + fighterdx#
   fightertiltangle# = ATN(delta# * FighterTiltSpeed#) * FighterTiltMax#
 
@@ -217,18 +438,33 @@ DO
 
   UpdateAndRenderDust Dusts()
 
+  CheckForHits Shots(), Rocks(), Booms()
 
-  RenderObject FighterVertices(), FighterNormals(), FighterFaces(), transform#(), rotation#(), FighterLightPosition, LightIntensity#, AmbientLightIntensity#, INT(fighterx#), FighterY%
+  UpdateAndRenderRocks Rocks(), (fighterx#), FighterY%, (fighterdx#), Booms()
+
+  UpdateAndRenderBooms Booms()
+
+  IF FighterHit% = 0 THEN
+    RenderObject FighterVertices(), FighterNormals(), FighterFaces(), transform#(), rotation#(), FighterLightPosition, LightIntensity#, AmbientLightIntensity#, INT(fighterx#), FighterY%
+  END IF
 
   FOR i% = 1 TO MaxShots%
     UpdateAndRenderShot Shots(i%)
   NEXT i%
 
-  DrawReticle mousex%, mousey%
+  IF FighterHit% = 0 THEN
+    DrawReticle mousex%, mousey%
+  END IF
 
   ' Blit
   PUT (0, 0), buf&, PSET
-LOOP WHILE INKEY$ = ""
+
+  IF DeathFrames% > 0 THEN
+    DeathFrames% = DeathFrames% - 1
+    FramesSinceDeath% = FramesSinceDeath% + 1
+    CascadeFighterBoom (fighterx#), FighterY%, (fighterdx#), Booms()
+  END IF
+LOOP WHILE (FighterHit% = 0) OR (DeathFrames% > 0)
 
 SUB AddPoint (t AS PointType, s AS PointType)
 t.X = t.X + s.X
@@ -242,6 +478,83 @@ o.Y = i.X * matrix#(0, 1) + i.Y * matrix#(1, 1) + i.Z * matrix#(2, 1) + matrix#(
 o.Z = i.X * matrix#(0, 2) + i.Y * matrix#(1, 2) + i.Z * matrix#(2, 2) + matrix#(3, 2)
 END SUB
 
+SUB CascadeFighterBoom (fx%, fy%, fdx%, Booms() AS BoomType)
+IF FramesSinceDeath% = 13 OR FramesSinceDeath% = 18 OR FramesSinceDeath% = 27 THEN
+  MakeBoom Booms(), fx%, fy%, fdx%, 0
+END IF
+END SUB
+
+SUB CentreText (row%, text$)
+LOCATE row%, 21 - LEN(text$) \ 2
+PRINT text$;
+END SUB
+
+SUB CheckForHits (Shots() AS ShotType, Rocks() AS RockType, Booms() AS BoomType)
+SHARED Rock01%()
+
+' Render a hit grid for quick collision tests
+FOR xx% = 0 TO HitGridWidth% - 1
+  FOR yy% = 0 TO HitGridHeight% - 1
+    HitGrid%(xx%, yy%) = 0
+  NEXT yy%
+NEXT xx%
+
+rocksize% = UBOUND(Rock01%, 1) - LBOUND(Rock01%, 1)
+
+rocksizex% = rocksize% * HitGridWidth% \ 640 + 1
+rocksizey% = rocksize% * HitGridHeight% \ 400 + 1
+
+FOR i% = 1 TO MaxRocks%
+  IF Rocks(i%).Active THEN
+    xx% = Rocks(i%).X * HitGridWidth% \ 320
+    yy% = Rocks(i%).Y * HitGridHeight% \ 200
+
+    x1% = xx% - rocksizex%
+    x2% = xx% + rocksizex%
+    y1% = yy% - rocksizey%
+    y2% = yy% + rocksizey%
+
+    IF x1% < 0 THEN x1% = 0
+    IF y1% < 0 THEN y1% = 0
+    IF x2% >= HitGridWidth% THEN x2% = HitGridWidth% - 1
+    IF y2% >= HitGridHeight% THEN y2% = HitGridHeight% - 1
+
+    FOR xx% = x1% TO x2%
+      FOR yy% = y1% TO y2%
+        HitGrid%(xx%, yy%) = HitGridRock% + i%
+      NEXT yy%
+    NEXT xx%
+  END IF
+NEXT i%
+
+' Check for collisions
+FOR i% = 1 TO MaxShots%
+  IF Shots(i%).Active THEN
+    xx% = Shots(i%).ShotX * HitGridWidth% \ 320
+    yy% = Shots(i%).ShotY * HitGridHeight% \ 200
+
+    IF xx% >= 0 AND xx% < HitGridWidth% THEN
+      IF yy% >= 0 AND yy% < HitGridHeight% THEN
+        hit% = HitGrid%(xx%, yy%)
+
+        IF hit% THEN
+          Shots(i%).Active = 0
+
+          SELECT CASE hit%
+            CASE IS > HitGridRock%:
+              hit% = hit% - HitGridRock%
+
+              Rocks(hit%).Active = 0
+
+              MakeBoom Booms(), Rocks(hit%).X, Rocks(hit%).Y, Rocks(hit%).DX, RockSpeed%
+          END SELECT
+        END IF
+      END IF
+    END IF
+  END IF
+NEXT i%
+END SUB
+
 FUNCTION Distance# (t AS PointType)
 Distance# = SQR(t.X * t.X + t.Y * t.Y + t.Z * t.Z)
 END FUNCTION
@@ -249,6 +562,32 @@ END FUNCTION
 FUNCTION DotProduct# (a AS PointType, b AS PointType)
 DotProduct# = a.X * b.X + a.Y * b.Y + a.Z * b.Z
 END FUNCTION
+
+SUB DrawBoom (boom AS BoomType)
+SHARED Boom01%(), Boom01Mask%()
+SHARED Boom02%(), Boom02Mask%()
+SHARED Boom03%(), Boom03Mask%()
+SHARED Boom04%(), Boom04Mask%()
+SHARED Boom05%(), Boom05Mask%()
+SHARED Boom06%(), Boom06Mask%()
+SHARED Boom07%(), Boom07Mask%()
+SHARED Boom08%(), Boom08Mask%()
+SHARED Boom09%(), Boom09Mask%()
+SHARED Boom10%(), Boom10Mask%()
+
+SELECT CASE boom.SpriteIndex
+  CASE 1: PutArt (boom.X), (boom.Y), 0, Boom01%(), Boom01Mask%()
+  CASE 2: PutArt (boom.X), (boom.Y), 0, Boom02%(), Boom02Mask%()
+  CASE 3: PutArt (boom.X), (boom.Y), 0, Boom03%(), Boom03Mask%()
+  CASE 4: PutArt (boom.X), (boom.Y), 0, Boom04%(), Boom04Mask%()
+  CASE 5: PutArt (boom.X), (boom.Y), 0, Boom05%(), Boom05Mask%()
+  CASE 6: PutArt (boom.X), (boom.Y), 0, Boom06%(), Boom06Mask%()
+  CASE 7: PutArt (boom.X), (boom.Y), 0, Boom07%(), Boom07Mask%()
+  CASE 8: PutArt (boom.X), (boom.Y), 0, Boom08%(), Boom08Mask%()
+  CASE 9: PutArt (boom.X), (boom.Y), 0, Boom09%(), Boom09Mask%()
+  CASE 10: PutArt (boom.X), (boom.Y), 0, Boom10%(), Boom10Mask%()
+END SELECT
+END SUB
 
 SUB DrawReticle (ox%, oy%)
 ' ** **
@@ -295,6 +634,52 @@ IF oy% >= -3 AND oy% < 197 THEN
   HorizontalLine scanofs& + 3 * 320, ox% - 2, ox% - 1, ReticleColour%
   HorizontalLine scanofs& + 3 * 320, ox% + 1, ox% + 2, ReticleColour%
 END IF
+END SUB
+
+SUB DrawRock (rock AS RockType)
+SHARED Rock01%(), Rock01Mask%()
+SHARED Rock02%(), Rock02Mask%()
+SHARED Rock03%(), Rock03Mask%()
+SHARED Rock04%(), Rock04Mask%()
+SHARED Rock05%(), Rock05Mask%()
+SHARED Rock06%(), Rock06Mask%()
+SHARED Rock07%(), Rock07Mask%()
+SHARED Rock08%(), Rock08Mask%()
+SHARED Rock09%(), Rock09Mask%()
+SHARED Rock10%(), Rock10Mask%()
+SHARED Rock11%(), Rock11Mask%()
+SHARED Rock12%(), Rock12Mask%()
+SHARED Rock13%(), Rock13Mask%()
+SHARED Rock14%(), Rock14Mask%()
+SHARED Rock15%(), Rock15Mask%()
+SHARED Rock16%(), Rock16Mask%()
+
+WHILE rock.SpriteIndex < 1
+  rock.SpriteIndex = rock.SpriteIndex + 16
+WEND
+
+WHILE rock.SpriteIndex > 16
+  rock.SpriteIndex = rock.SpriteIndex - 16
+WEND
+
+SELECT CASE rock.SpriteIndex
+  CASE 1: PutArt (rock.X), (rock.Y), 0, Rock01%(), Rock01Mask%()
+  CASE 2: PutArt (rock.X), (rock.Y), 0, Rock02%(), Rock02Mask%()
+  CASE 3: PutArt (rock.X), (rock.Y), 0, Rock03%(), Rock03Mask%()
+  CASE 4: PutArt (rock.X), (rock.Y), 0, Rock04%(), Rock04Mask%()
+  CASE 5: PutArt (rock.X), (rock.Y), 0, Rock05%(), Rock05Mask%()
+  CASE 6: PutArt (rock.X), (rock.Y), 0, Rock06%(), Rock06Mask%()
+  CASE 7: PutArt (rock.X), (rock.Y), 0, Rock07%(), Rock07Mask%()
+  CASE 8: PutArt (rock.X), (rock.Y), 0, Rock08%(), Rock08Mask%()
+  CASE 9: PutArt (rock.X), (rock.Y), 0, Rock09%(), Rock09Mask%()
+  CASE 10: PutArt (rock.X), (rock.Y), 0, Rock10%(), Rock10Mask%()
+  CASE 11: PutArt (rock.X), (rock.Y), 0, Rock11%(), Rock11Mask%()
+  CASE 12: PutArt (rock.X), (rock.Y), 0, Rock12%(), Rock12Mask%()
+  CASE 13: PutArt (rock.X), (rock.Y), 0, Rock13%(), Rock13Mask%()
+  CASE 14: PutArt (rock.X), (rock.Y), 0, Rock14%(), Rock14Mask%()
+  CASE 15: PutArt (rock.X), (rock.Y), 0, Rock15%(), Rock15Mask%()
+  CASE 16: PutArt (rock.X), (rock.Y), 0, Rock16%(), Rock16Mask%()
+END SELECT
 END SUB
 
 SUB FillTriangle (x1%, y1%, x2%, y2%, x3%, y3%, Colour%)
@@ -392,6 +777,15 @@ ELSE
 END IF
 END SUB
 
+SUB GetArtDimensions (filename$, w%, h%)
+ff% = FREEFILE
+
+OPEN filename$ FOR BINARY AS #ff%
+w% = ASC(INPUT$(1, ff%))
+h% = ASC(INPUT$(1, ff%))
+CLOSE #ff%
+END SUB
+
 SUB GetObjectCounts (objfilename$, numvertices%, numnormals%, numfaces%)
 ff% = FREEFILE
 
@@ -443,6 +837,34 @@ FOR i% = 1 TO MaxDusts%
 NEXT i%
 END SUB
 
+FUNCTION IsNaNOrInf% (d#)
+e# = d# / d#
+IsNaNOrInf% = e# <> e#
+END FUNCTION
+
+SUB LoadArt (filename$, pixels%(), mask%())
+ff% = FREEFILE
+
+OPEN filename$ FOR BINARY AS #ff%
+
+w% = ASC(INPUT$(1, ff%))
+h% = ASC(INPUT$(1, ff%))
+
+FOR Y% = 1 TO h%
+  FOR X% = 1 TO w%
+    pixels%(X%, Y%) = ASC(INPUT$(1, ff%))
+  NEXT X%
+NEXT Y%
+
+FOR Y% = 1 TO h%
+  FOR X% = 1 TO w%
+    mask%(X%, Y%) = ASC(INPUT$(1, ff%))
+  NEXT X%
+NEXT Y%
+
+CLOSE #ff%
+END SUB
+
 REM $STATIC
 SUB LoadObject (objfilename$, vertices() AS PointType, normals() AS PointType, faces() AS FaceType)
 ff% = FREEFILE
@@ -474,6 +896,25 @@ DO
 LOOP UNTIL EOF(ff%)
 
 CLOSE #ff%
+END SUB
+
+SUB MakeBoom (Booms() AS BoomType, ox%, oy%, odx%, ody%)
+LastBoomIndex% = -1
+
+FOR i% = 1 TO MaxBooms%
+  IF Booms(i%).Active = 0 THEN
+    Booms(i%).Active = 1
+    Booms(i%).X = ox%
+    Booms(i%).Y = oy%
+    Booms(i%).DX = odx%
+    Booms(i%).DY = ody%
+    Booms(i%).SpriteIndex = 0
+
+    LastBoomIndex% = i%
+
+    EXIT FOR
+  END IF
+NEXT i%
 END SUB
 
 REM $DYNAMIC
@@ -584,6 +1025,152 @@ ELSE
     END IF
   END IF
 END IF
+END SUB
+
+SUB PutArt (ox#, oy#, angle#, pixels%(), mask%())
+w% = UBOUND(pixels%, 1) - LBOUND(pixels%, 1) + 1
+h% = UBOUND(pixels%, 2) - LBOUND(pixels%, 2) + 1
+
+l# = (w% - 1) * -.5: r# = (w% - 1) * .5
+t# = (h% - 1) * -.5: b# = (h% - 1) * .5
+
+ca# = COS(angle#): sa# = -SIN(angle#)
+
+x1# = ox# + l# * ca# - t# * sa#
+y1# = oy# + l# * sa# + t# * ca#
+
+x2# = ox# + r# * ca# - t# * sa#
+y2# = oy# + r# * sa# + t# * ca#
+
+x3# = ox# + l# * ca# - b# * sa#
+y3# = oy# + l# * sa# + b# * ca#
+
+x4# = ox# + r# * ca# - b# * sa#
+y4# = oy# + r# * sa# + b# * ca#
+
+sx1% = 1: sy1% = 1
+sx2% = w%: sy2% = 1
+sx3% = 1: sy3% = h%
+sx4% = w%: sy4% = h%
+
+IF y1# > y2# THEN SWAP x1#, x2#: SWAP y1#, y2#: SWAP sx1%, sx2%: SWAP sy1%, sy2%: :
+IF y1# > y3# THEN SWAP x1#, x3#: SWAP y1#, y3#: SWAP sx1%, sx3%: SWAP sy1%, sy3%:
+IF y1# > y4# THEN SWAP x1#, x4#: SWAP y1#, y4#: SWAP sx1%, sx4%: SWAP sy1%, sy4%: :
+IF y2# > y4# THEN SWAP x2#, x4#: SWAP y2#, y4#: SWAP sx2%, sx4%: SWAP sy2%, sy4%:
+IF y3# > y4# THEN SWAP x3#, x4#: SWAP y3#, y4#: SWAP sx3%, sx4%: SWAP sy3%, sy4%:
+
+IF x2# > x3# THEN SWAP x2#, x3#: SWAP y2#, y3#: SWAP sx2%, sx3%: SWAP sy2%, sy3%:
+
+x2mx1# = x2# - x1#: sx2msx1% = sx2% - sx1%
+x3mx1# = x3# - x1#: sx3msx1% = sx3% - sx1%
+x4mx2# = x4# - x2#: sx4msx2% = sx4% - sx2%
+x4mx3# = x4# - x3#: sx4msx3% = sx4% - sx3%
+
+y2my1# = y2# - y1#: sy2msy1% = sy2% - sy1%
+y3my1# = y3# - y1#: sy3msy1% = sy3% - sy1%
+y4my2# = y4# - y2#: sy4msy2% = sy4% - sy2%
+y4my3# = y4# - y3#: sy4msy3% = sy4% - sy3%
+
+r21# = x2mx1# / y2my1#
+r31# = x3mx1# / y3my1#
+r42# = x4mx2# / y4my2#
+r43# = x4mx3# / y4my3#
+
+srx21# = sx2msx1% / y2my1#: sry21# = sy2msy1% / y2my1#
+srx31# = sx3msx1% / y3my1#: sry31# = sy3msy1% / y3my1#
+srx42# = sx4msx2% / y4my2#: sry42# = sy4msy2% / y4my2#
+srx43# = sx4msx3% / y4my3#: sry43# = sy4msy3% / y4my3#
+
+' Collapse NaN
+IF IsNaNOrInf%(r21#) THEN r21# = 0
+IF IsNaNOrInf%(r31#) THEN r31# = 0: br31% = 1:
+IF IsNaNOrInf%(r42#) THEN r42# = 0
+IF IsNaNOrInf%(r43#) THEN r43# = 0: br43% = 1:
+
+IF IsNaNOrInf%(srx21#) THEN srx21# = 0
+IF IsNaNOrInf%(srx31#) THEN srx31# = 0: bsrx31% = 1: : : :
+IF IsNaNOrInf%(srx42#) THEN srx42# = 0
+IF IsNaNOrInf%(srx43#) THEN srx43# = 0: bsrx43% = 1: : : :
+
+IF IsNaNOrInf%(sry21#) THEN sry21# = 0
+IF IsNaNOrInf%(sry31#) THEN sry31# = 0: bsry31% = 1: : :
+IF IsNaNOrInf%(sry42#) THEN sry42# = 0
+IF IsNaNOrInf%(sry43#) THEN sry43# = 0: bsry43% = 1: : :
+
+x1# = x1# - .5
+x2# = x2# - .5
+x3# = x3# - .5
+x4# = x4# - .5
+
+y1# = y1# - .5
+y2# = y2# - .5
+y3# = y3# - .5
+y4# = y4# - .5
+
+yy1% = FIX(y1#): IF yy1% <> y1# THEN yy1% = yy1% + 1
+yy2% = FIX(y4#)
+
+IF yy1% < 0 THEN yy1% = 0
+IF yy2% > 199 THEN yy2% = 199
+
+so& = yy1% * 320& + bufofs%
+
+FOR yy% = yy1% TO yy2%
+  IF yy% < y2# THEN
+    yyp# = yy% - y1#
+    xx1# = yyp# * r21# + x1#
+    sxx1# = yyp# * srx21# + sx1%
+    syy1# = yyp# * sry21# + sy1%
+  ELSE
+    yyp# = yy% - y2#
+    xx1# = yyp# * r42# + x2#
+    sxx1# = yyp# * srx42# + sx2%
+    syy1# = yyp# * sry42# + sy2%
+  END IF
+
+  IF yy% < y3# THEN
+    yyp# = yy% - y1#
+    xx2# = yyp# * r31# + x1# + br31% * x3mx1#
+    sxx2# = yyp# * srx31# + sx1% + bsrx31% * sx3msx1%
+    syy2# = yyp# * sry31# + sy1% + bsry31% * sy3msy1%
+  ELSE
+    yyp# = yy% - y3#
+    xx2# = yyp# * r43# + x3# + br43% * x4mx3#
+    sxx2# = yyp# * srx43# + sx3% + bsrx43% * sx4msx3%
+    syy2# = yyp# * sry43# + sy3% + bsry43% * sy4msy3%
+  END IF
+
+  ww# = xx2# - xx1#
+  srxx# = (sxx2# - sxx1#) / ww#
+  sryy# = (syy2# - syy1#) / ww#
+
+  IF IsNaNOrInf%(srxx#) THEN srxx# = 0
+  IF IsNaNOrInf%(sryy#) THEN sryy# = 0
+
+  xx1% = FIX(xx1#): IF xx1% <> xx1# THEN xx1% = xx1% + 1
+  xx2% = FIX(xx2#)
+
+  IF xx1% < 0 THEN xx1% = 0
+  IF xx2% > 319 THEN xx2% = 319
+
+  o& = so& + xx1%
+
+  FOR xx% = xx1% TO xx2%
+    xxp# = xx% - xx1#
+
+    sx% = FIX(xxp# * srxx# + sxx1#)
+    sy% = FIX(xxp# * sryy# + syy1#)
+
+    IF sx% >= 1 AND sx% <= w% AND sy% >= 1 AND sy% <= h% THEN
+      IF mask%(sx%, sy%) THEN POKE o&, pixels%(sx%, sy%)
+      'IF mask%(sx%, sy%) THEN PSET (xx%, yy%), pixels%(sx%, sy%)
+    END IF
+
+    o& = o& + 1
+  NEXT xx%
+
+  so& = so& + 320
+NEXT yy%
 END SUB
 
 FUNCTION RandomDustColour%
@@ -781,8 +1368,8 @@ NEXT i%
 END SUB
 
 SUB SetIdentityTransform (transform#())
-FOR i% = 0 TO 2
-  FOR j% = 0 TO 2
+FOR i% = 0 TO 3
+  FOR j% = 0 TO 3
     transform#(i%, j%) = ABS(i% = j%)
   NEXT j%
 NEXT i%
@@ -844,10 +1431,73 @@ t.Y = t.Y - s.Y
 t.Z = t.Z - s.Z
 END SUB
 
-SUB Translate (matrix#(), dx#, dy#, dz#)
-matrix#(3, 0) = matrix#(3, 0) + dx#
-matrix#(3, 1) = matrix#(3, 1) + dy#
-matrix#(3, 2) = matrix#(3, 2) + dz#
+SUB TitleScreen (FighterVertices() AS PointType, FighterNormals() AS PointType, FighterFaces() AS FaceType, FighterLightPosition AS PointType)
+IF 0 THEN
+  ' TODO: Figure this nonsense out
+  DIM transform#(0 TO 3, 0 TO 3)
+  DIM rotation#(0 TO 3, 0 TO 3) ' same as transform, but without translation
+
+  SetIdentityTransform transform#()
+  SetIdentityTransform rotation#()
+
+  ScaleTransform transform#(), 70
+
+  RotateTransformY transform#(), 3
+  RotateTransformY rotation#(), 3
+  'RotateTransformX transform#(), -.4
+  'RotateTransformX rotation#(), -.4
+
+  Translate transform#(), 0, 0, 500
+
+  RenderObject FighterVertices(), FighterNormals(), FighterFaces(), transform#(), rotation#(), FighterLightPosition, LightIntensity#, AmbientLightIntensity#, 50, 100
+
+  PUT (0, 0), buf&, PSET
+END IF
+
+COLOR 13
+
+CentreText 12, "S H R I K E"
+
+COLOR 15
+
+CentreText 15, "They came to earth."
+CentreText 16, "They killed your dog."
+CentreText 17, "They're going to pay."
+
+COLOR 24
+
+CentreText 20, "Your Shrike is faster than anything"
+CentreText 21, "they've got. Pursue them back to"
+CentreText 22, "their homeworld."
+
+COLOR 8
+
+CentreText 24, "Press any key"
+
+SLEEP
+END SUB
+
+SUB Translate (matrix#(), deltax#, deltay#, deltaz#)
+matrix#(3, 0) = matrix#(3, 0) + deltax#
+matrix#(3, 1) = matrix#(3, 1) + deltay#
+matrix#(3, 2) = matrix#(3, 2) + deltaz#
+END SUB
+
+SUB UpdateAndRenderBooms (Booms() AS BoomType)
+FOR i% = LBOUND(Booms) TO UBOUND(Booms)
+  IF Booms(i%).Active THEN
+    Booms(i%).SpriteIndex = Booms(i%).SpriteIndex + 1
+
+    IF Booms(i%).SpriteIndex > BoomFrames% THEN
+      Booms(i%).Active = 0
+    ELSE
+      Booms(i%).X = Booms(i%).X + Booms(i%).DX
+      Booms(i%).Y = Booms(i%).Y + Booms(i%).DY
+
+      DrawBoom Booms(i%)
+    END IF
+  END IF
+NEXT i%
 END SUB
 
 SUB UpdateAndRenderDust (Dusts() AS DustType)
@@ -876,22 +1526,74 @@ FOR i% = 1 TO MaxDusts%
 NEXT i%
 END SUB
 
+SUB UpdateAndRenderRocks (Rocks() AS RockType, fx%, fy%, fdx%, Booms() AS BoomType)
+SHARED Rock01%()
+IF RND < RockSpawnRate# THEN
+  FOR i% = LBOUND(Rocks) TO UBOUND(Rocks)
+    IF Rocks(i%).Active = 0 THEN
+      Rocks(i%).Active = 1
+      Rocks(i%).X = RND * 320
+      Rocks(i%).DX = INT(RND * 5) - 2
+      Rocks(i%).Y = -30
+
+      Rocks(i%).SpriteIndex = INT(RND * 16)
+
+      SELECT CASE RND
+        CASE IS < .2: Rocks(i%).SpriteIndexDelta = -1
+        CASE IS > .8: Rocks(i%).SpriteIndexDelta = 1
+        CASE ELSE: Rocks(i%).SpriteIndexDelta = 0
+      END SELECT
+
+      EXIT FOR
+    END IF
+  NEXT i%
+END IF
+
+rocksize% = UBOUND(Rock01%, 1) - LBOUND(Rock01%, 1)
+rockr2& = rocksize% * rocksize%
+FOR i% = LBOUND(Rocks) TO UBOUND(Rocks)
+  IF Rocks(i%).Active THEN
+    Rocks(i%).Y = Rocks(i%).Y + RockSpeed%
+
+    IF Rocks(i%).Y > 230 THEN
+      Rocks(i%).Active = 0
+    ELSE
+      Rocks(i%).X = Rocks(i%).X + Rocks(i%).DX
+      Rocks(i%).SpriteIndex = Rocks(i%).SpriteIndex + Rocks(i%).SpriteIndexDelta
+
+      DrawRock Rocks(i%)
+
+      IF FighterHit% = 0 THEN
+        dfx& = Rocks(i%).X - fx%
+        dfy& = Rocks(i%).Y - fy%
+        fr2& = dfx& * dfx& + dfy& * dfy&
+        IF fr2& < rockr2& THEN
+          FighterHit% = -1
+          MakeBoom Booms(), fx%, fy%, fdx%, 0
+          DeathFrames% = 15 * BoomFrames%
+        END IF
+      END IF
+    END IF
+  END IF
+NEXT i%
+END SUB
+
 SUB UpdateAndRenderShot (shot AS ShotType)
 IF shot.Active THEN
-  dx# = COS(shot.ShotAngle)
-  dy# = SIN(shot.ShotAngle)
+  deltax# = COS(shot.ShotAngle)
+  deltay# = SIN(shot.ShotAngle)
 
-  shot.ShotX = shot.ShotX + dx# * ShotSpeed#
-  shot.ShotY = shot.ShotY - dy# * ShotSpeed#
+  shot.ShotX = shot.ShotX + deltax# * ShotSpeed#
+  shot.ShotY = shot.ShotY - deltay# * ShotSpeed#
 
-  x1# = shot.ShotX - dy# * (ShotWidth# * .5)
-  y1# = shot.ShotY - dx# * (ShotWidth# * .5)
+  x1# = shot.ShotX - deltay# * (ShotWidth# * .5)
+  y1# = shot.ShotY - deltax# * (ShotWidth# * .5)
 
-  x2# = shot.ShotX + dy# * (ShotWidth# * .5)
-  y2# = shot.ShotY + dx# * (ShotWidth# * .5)
+  x2# = shot.ShotX + deltay# * (ShotWidth# * .5)
+  y2# = shot.ShotY + deltax# * (ShotWidth# * .5)
 
-  x3# = shot.ShotX - dx# * ShotTailLength#
-  y3# = shot.ShotY + dy# * ShotTailLength#
+  x3# = shot.ShotX - deltax# * ShotTailLength#
+  y3# = shot.ShotY + deltay# * ShotTailLength#
 
   x1% = INT(x1#)
   y1% = INT(y1#)
