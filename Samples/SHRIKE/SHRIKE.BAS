@@ -400,7 +400,7 @@ DO
   ' Shooting
   IF gunheat% > 0 THEN gunheat% = gunheat% - 1
 
-  IF mousebutton% THEN
+  IF mousebutton% AND (FighterHit% = 0) THEN
     FOR shotindex% = 1 TO MaxShots%
       IF Shots(shotindex%).Active = 0 THEN EXIT FOR
     NEXT shotindex%
@@ -501,8 +501,8 @@ NEXT xx%
 
 rocksize% = UBOUND(Rock01%, 1) - LBOUND(Rock01%, 1)
 
-rocksizex% = rocksize% * HitGridWidth% \ 640 + 1
-rocksizey% = rocksize% * HitGridHeight% \ 400 + 1
+rocksizex% = rocksize% * HitGridWidth% \ 800
+rocksizey% = rocksize% * HitGridHeight% \ 600
 
 FOR i% = 1 TO MaxRocks%
   IF Rocks(i%).Active THEN
@@ -528,6 +528,8 @@ FOR i% = 1 TO MaxRocks%
 NEXT i%
 
 ' Check for collisions
+shotlength% = ShotSpeed# * HitGridHeight% \ 200
+
 FOR i% = 1 TO MaxShots%
   IF Shots(i%).Active THEN
     xx% = Shots(i%).ShotX * HitGridWidth% \ 320
@@ -535,7 +537,14 @@ FOR i% = 1 TO MaxShots%
 
     IF xx% >= 0 AND xx% < HitGridWidth% THEN
       IF yy% >= 0 AND yy% < HitGridHeight% THEN
-        hit% = HitGrid%(xx%, yy%)
+        ' Quick hack: test the boxes below the shot because that's
+        ' roughly where it was previously.
+        FOR yyy% = yy% + shotlength% - 1 TO yy% STEP -1
+          IF yyy% < HitGridHeight% THEN
+            hit% = HitGrid%(xx%, yyy%)
+            IF hit% THEN EXIT FOR
+          END IF
+        NEXT yyy%
 
         IF hit% THEN
           Shots(i%).Active = 0
