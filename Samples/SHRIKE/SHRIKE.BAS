@@ -40,6 +40,30 @@ TYPE RockType
   SpriteIndexDelta AS INTEGER
 END TYPE
 
+TYPE AlienSpeciesType
+  Radius AS INTEGER
+  FighterHitDistance AS INTEGER
+  FighterHitDistance2 AS LONG
+END TYPE
+
+TYPE AlienType
+  Active AS INTEGER
+  Variety AS INTEGER
+  Species AS INTEGER
+  Argument1 AS DOUBLE
+  Argument2 AS DOUBLE
+  Argument3 AS DOUBLE
+  FrameNumber AS INTEGER
+  Damaged AS INTEGER
+  SpriteIndex AS INTEGER
+  X AS DOUBLE
+  Y AS DOUBLE
+  DX AS DOUBLE
+  DY AS DOUBLE
+  ActualX AS INTEGER
+  ActualY AS INTEGER
+END TYPE
+
 TYPE BoomType
   Active AS INTEGER
   X AS INTEGER
@@ -53,7 +77,9 @@ DECLARE SUB AddPoint (t AS PointType, s AS PointType)
 DECLARE SUB ApplyTransform (i AS PointType, matrix#(), o AS PointType)
 DECLARE SUB CascadeFighterBoom (fx%, fy%, fdx%, Booms() AS BoomType)
 DECLARE SUB CentreText (row%, text$)
-DECLARE SUB CheckForHits (Shots() AS ShotType, Rocks() AS RockType, Booms() AS BoomType)
+DECLARE SUB CheckForHits (Shots() AS ShotType, Rocks() AS RockType, Aliens() AS AlienType, Booms() AS BoomType)
+DECLARE SUB CreateOrbitCluster (Aliens() AS AlienType, AlienSpecies%, clustersize%, ox#, oy#, odx#, ody#)
+DECLARE SUB DrawAlien (alien AS AlienType, X%, Y%)
 DECLARE SUB DrawBoom (boom AS BoomType)
 DECLARE SUB DrawReticle (ox%, oy%)
 DECLARE SUB DrawRock (rock AS RockType)
@@ -80,9 +106,11 @@ DECLARE SUB RotateTransformZ (matrix#(), angle#)
 DECLARE SUB ScaleTransform (matrix#(), factor#)
 DECLARE SUB SetIdentityTransform (transform#())
 DECLARE SUB SortFaces (faces() AS FaceType, facez#(), first%, last%)
+DECLARE SUB StartRound (Aliens() AS AlienType, roundnumber%)
 DECLARE SUB SubtractPoint (t AS PointType, s AS PointType)
 DECLARE SUB TitleScreen (FighterVertices() AS PointType, FighterNormals() AS PointType, FighterFaces() AS FaceType, FighterLightPosition AS PointType)
 DECLARE SUB Translate (matrix#(), deltax#, deltay#, deltaz#)
+DECLARE SUB UpdateAndRenderAliens (Aliens() AS AlienType, fx%, fy%, fdx%, Booms() AS BoomType)
 DECLARE SUB UpdateAndRenderBooms (Booms() AS BoomType)
 DECLARE SUB UpdateAndRenderDust (Dusts() AS DustType)
 DECLARE SUB UpdateAndRenderRocks (Rocks() AS RockType, fx%, fy%, fdx%, Booms() AS BoomType)
@@ -115,6 +143,7 @@ CONST FighterMomentum# = .8
 CONST FighterReticleAttraction# = .6
 CONST FighterTiltSpeed# = .06
 CONST FighterTiltMax# = .8
+CONST FighterRadius% = 20
 
 CONST ReticleColour% = 14
 
@@ -129,6 +158,11 @@ CONST CameraZ# = -1000
 CONST Shininess# = 4
 CONST LightIntensity# = .6
 CONST AmbientLightIntensity# = .3
+
+CONST MaxAliens% = 25
+CONST AlienActiveMargin% = 40
+
+CONST RoundInterval% = 200
 
 CONST MaxDusts% = 100
 CONST DustSpeed# = 435
@@ -153,6 +187,7 @@ CONST FighterY% = 180
 CONST HitGridWidth% = 80
 CONST HitGridHeight% = 50
 CONST HitGridRock% = 1000
+CONST HitGridAlien% = 2000
 
 ' Load art. Unfortunately, we have to repeat the pattern like
 ' this because we can't set the array sizes within a SUB on
@@ -330,8 +365,20 @@ DIM FighterLightPosition AS PointType
 
 LoadObject "FIGHTER.OBJ", FighterVertices(), FighterNormals(), FighterFaces()
 
+DIM AlienSpecies(0 TO 2) AS AlienSpeciesType
+
+AlienSpecies(0).Radius = 6
+AlienSpecies(1).Radius = 35
+AlienSpecies(2).Radius = 17
+
+FOR i% = LBOUND(AlienSpecies) TO UBOUND(AlienSpecies)
+  AlienSpecies(i%).FighterHitDistance = FighterRadius% + AlienSpecies(i%).Radius
+  AlienSpecies(i%).FighterHitDistance2 = AlienSpecies(i%).FighterHitDistance ^ 2
+NEXT i%
+
 DIM Shots(1 TO MaxShots%) AS ShotType
 DIM Dusts(1 TO MaxDusts%) AS DustType
+DIM Aliens(1 TO MaxAliens%) AS AlienType
 DIM Rocks(1 TO MaxRocks%) AS RockType
 DIM Booms(1 TO MaxBooms%) AS BoomType
 
@@ -339,6 +386,9 @@ InitializeDust Dusts()
 
 guncooldown% = 3 ' frames
 gunheat% = 0
+
+nextround% = RoundInterval%
+roundnumber% = 0
 
 DIM transform#(0 TO 3, 0 TO 3)
 DIM rotation#(0 TO 3, 0 TO 3) ' same as transform, but without translation
@@ -421,6 +471,16 @@ DO
     END IF
   END IF
 
+  ' Alien round
+  nextround% = nextround% - 1
+
+  IF nextround% <= 0 THEN
+    nextround% = RoundInterval%
+    roundnumber% = 0
+
+    StartRound Aliens(), roundnumber%
+  END IF
+
   ' Fighter transform
   SetIdentityTransform transform#()
   SetIdentityTransform rotation#()
@@ -438,7 +498,9 @@ DO
 
   UpdateAndRenderDust Dusts()
 
-  CheckForHits Shots(), Rocks(), Booms()
+  CheckForHits Shots(), Rocks(), Aliens(), Booms()
+
+  UpdateAndRenderAliens Aliens(), (fighterx#), FighterY%, (fighterdx#), Booms()
 
   UpdateAndRenderRocks Rocks(), (fighterx#), FighterY%, (fighterdx#), Booms()
 
@@ -489,8 +551,9 @@ LOCATE row%, 21 - LEN(text$) \ 2
 PRINT text$;
 END SUB
 
-SUB CheckForHits (Shots() AS ShotType, Rocks() AS RockType, Booms() AS BoomType)
+SUB CheckForHits (Shots() AS ShotType, Rocks() AS RockType, Aliens() AS AlienType, Booms() AS BoomType)
 SHARED Rock01%()
+SHARED AlienSpecies() AS AlienSpeciesType
 
 ' Render a hit grid for quick collision tests
 FOR xx% = 0 TO HitGridWidth% - 1
@@ -527,6 +590,41 @@ FOR i% = 1 TO MaxRocks%
   END IF
 NEXT i%
 
+FOR i% = 1 TO MaxAliens%
+  IF Aliens(i%).Active THEN
+    xx% = Aliens(i%).ActualX * HitGridWidth% \ 320
+    yy% = Aliens(i%).ActualY * HitGridHeight% \ 200
+
+    aliensize% = AlienSpecies(Aliens(i%).Species).Radius
+
+    aliensizex% = aliensize% * HitGridWidth% \ 320
+    aliensizey% = aliensize% * HitGridHeight% \ 200
+
+    x1% = xx% - aliensizex%
+    x2% = xx% + aliensizey%
+    y1% = yy% - aliensizex%
+    y2% = yy% + aliensizey%
+
+    IF x1% < 0 THEN x1% = 0
+    IF y1% < 0 THEN y1% = 0
+    IF x2% >= HitGridWidth% THEN x2% = HitGridWidth% - 1
+    IF y2% >= HitGridHeight% THEN y2% = HitGridHeight% - 1
+
+    aliensize2% = aliensize% * aliensize%
+
+    FOR px% = x1% TO x2%
+      FOR py% = y1% TO y2%
+        pdx% = (xx% - px%) * 320 \ HitGridWidth%
+        pdy% = (yy% - py%) * 200 \ HitGridHeight%
+
+        IF pdx% * pdx% + pdy% * pdy% <= aliensize2% THEN
+          HitGrid%(px%, py%) = HitGridAlien% + i%
+        END IF
+      NEXT py%
+    NEXT px%
+  END IF
+NEXT i%
+
 ' Check for collisions
 shotlength% = ShotSpeed# * HitGridHeight% \ 200
 
@@ -550,16 +648,56 @@ FOR i% = 1 TO MaxShots%
           Shots(i%).Active = 0
 
           SELECT CASE hit%
-            CASE IS > HitGridRock%:
+            CASE HitGridRock% TO HitGridAlien%:
               hit% = hit% - HitGridRock%
 
               Rocks(hit%).Active = 0
 
               MakeBoom Booms(), Rocks(hit%).X, Rocks(hit%).Y, Rocks(hit%).DX, RockSpeed%
+            CASE IS > HitGridAlien%:
+              hit% = hit% - HitGridAlien%
+
+              Aliens(hit%).Active = 0
+
+              ' TODO: ejected aliens
+
+              MakeBoom Booms(), Aliens(hit%).ActualX, Aliens(hit%).ActualY, 0, 0
           END SELECT
         END IF
       END IF
     END IF
+  END IF
+NEXT i%
+END SUB
+
+SUB CreateOrbitCluster (Aliens() AS AlienType, AlienSpecies%, clustersize%, ox#, oy#, odx#, ody#)
+n% = 1
+a# = 2 * PI# * n% / clustersize%
+
+FOR i% = 1 TO MaxAliens%
+  IF Aliens(i%).Active = 0 THEN
+    Aliens(i%).Active = -1
+    Aliens(i%).Variety = 0 ' Orbit Cluster
+    Aliens(i%).Species = AlienSpecies%
+
+    ' Argument1: Time
+    ' Argument2: Phase
+    ' Argument3: Radius
+
+    Aliens(i%).Argument1 = 0
+    Aliens(i%).Argument2 = a#
+    Aliens(i%).Argument3 = clustersize% * 2 + 6
+
+    Aliens(i%).X = ox#
+    Aliens(i%).Y = oy#
+    Aliens(i%).DX = odx#
+    Aliens(i%).DY = ody#
+
+    n% = n% + 1
+
+    IF n% > clustersize% THEN EXIT FOR
+
+    a# = 2 * PI# * n% / clustersize%
   END IF
 NEXT i%
 END SUB
@@ -571,6 +709,49 @@ END FUNCTION
 FUNCTION DotProduct# (a AS PointType, b AS PointType)
 DotProduct# = a.X * b.X + a.Y * b.Y + a.Z * b.Z
 END FUNCTION
+
+SUB DrawAlien (alien AS AlienType, ox%, oy%)
+SHARED Alien0%(), Alien0Mask%()
+SHARED Alien1A%(), Alien1AMask%()
+SHARED Alien1B%(), Alien1BMask%()
+SHARED Alien1D%(), Alien1DMask%()
+SHARED Alien2A%(), Alien2AMask%()
+SHARED Alien2B%(), Alien2BMask%()
+SHARED Alien2D%(), Alien2DMask%()
+
+xx# = alien.X + ox%
+yy# = alien.Y + oy%
+
+alien.ActualX = xx#
+alien.ActualY = yy#
+
+IF (alien.FrameNumber AND 3) = 0 THEN
+  alien.SpriteIndex = 1 - alien.SpriteIndex
+END IF
+
+SELECT CASE alien.Species
+  CASE 0:
+    PutArt xx#, yy#, 0, Alien0%(), Alien0Mask%()
+  CASE 1:
+    IF alien.Damaged THEN
+      PutArt xx#, yy#, 0, Alien1D%(), Alien1DMask%()
+    ELSE
+      SELECT CASE alien.SpriteIndex
+        CASE 0: PutArt xx#, yy#, 0, Alien1A%(), Alien1AMask%()
+        CASE 1: PutArt xx#, yy#, 0, Alien1B%(), Alien1BMask%()
+      END SELECT
+    END IF
+  CASE 2:
+    IF alien.Damaged THEN
+      PutArt xx#, yy#, 0, Alien2D%(), Alien2DMask%()
+    ELSE
+      SELECT CASE alien.SpriteIndex
+        CASE 0: PutArt xx#, yy#, 0, Alien2A%(), Alien2AMask%()
+        CASE 1: PutArt xx#, yy#, 0, Alien2B%(), Alien2BMask%()
+      END SELECT
+    END IF
+END SELECT
+END SUB
 
 SUB DrawBoom (boom AS BoomType)
 SHARED Boom01%(), Boom01Mask%()
@@ -1434,6 +1615,25 @@ IF pivot% - first% >= 2 THEN SortFaces faces(), facez#(), first%, pivot% - 1
 IF last% - pivot% >= 2 THEN SortFaces faces(), facez#(), pivot% + 1, last%
 END SUB
 
+SUB StartRound (Aliens() AS AlienType, roundnumber%)
+roundtype% = INT(RND * (roundnumber% \ 4)) + roundnumber% - 3
+
+IF roundtype% < 0 THEN roundtype% = 0
+IF roundtype% > 2 THEN roundtype% = 2
+
+SELECT CASE roundtype%
+  CASE 0: ' Orbit Clusters
+    clustersize% = roundnumber% \ 2 + 3
+    IF clustersize% > 6 THEN clustersize% = 6
+
+    FOR i% = 0 TO 3
+      CreateOrbitCluster Aliens(), 0, clustersize%, (i% AND 1) * 100 + 110, -20 - 40 * i%, 0, 2
+    NEXT i%
+  CASE 1: ' Kamikaze Fighters
+  CASE 2: ' Mine Layers
+END SELECT
+END SUB
+
 SUB SubtractPoint (t AS PointType, s AS PointType)
 t.X = t.X - s.X
 t.Y = t.Y - s.Y
@@ -1490,6 +1690,60 @@ SUB Translate (matrix#(), deltax#, deltay#, deltaz#)
 matrix#(3, 0) = matrix#(3, 0) + deltax#
 matrix#(3, 1) = matrix#(3, 1) + deltay#
 matrix#(3, 2) = matrix#(3, 2) + deltaz#
+END SUB
+
+SUB UpdateAndRenderAliens (Aliens() AS AlienType, fx%, fy%, fdx%, Booms() AS BoomType)
+SHARED AlienSpecies() AS AlienSpeciesType
+
+FOR i% = 1 TO MaxAliens%
+  IF Aliens(i%).Active THEN
+    ox% = 0
+    oy% = 0
+
+    SELECT CASE Aliens(i%).Variety
+      CASE 0: ' Orbit Cluster
+        ' Argument1: Time
+        ' Argument2: Phase
+        ' Argument3: Radius
+        r# = (COS(Aliens(i%).Argument1) + 3) / 2
+        Aliens(i%).Argument1 = Aliens(i%).Argument1 + .1 / (r# - .9)
+
+        t# = Aliens(i%).Argument1 * 1.3 + Aliens(i%).Argument2
+        r# = r# * Aliens(i%).Argument3
+
+        ox% = r# * COS(t#)
+        oy% = r# * SIN(t#)
+
+        IF Aliens(i%).Y > 90 THEN
+          Aliens(i%).DY = Aliens(i%).DY * .96
+
+          IF Aliens(i%).X < 160 THEN
+            Aliens(i%).DX = -6 + (Aliens(i%).DX + 6) * .92
+          ELSE
+            Aliens(i%).DX = 6 + (Aliens(i%).DX - 6) * .92
+          END IF
+        END IF
+    END SELECT
+
+    Aliens(i%).X = Aliens(i%).X + Aliens(i%).DX
+    Aliens(i%).Y = Aliens(i%).Y + Aliens(i%).DY
+
+    margin% = AlienSpecies(Aliens(i%).Species).Radius + AlienActiveMargin%
+
+    IF (Aliens(i%).X < -margin%) OR (Aliens(i%).X > 319 + margin%) OR (Aliens(i%).Y > 199 + margin%) THEN
+      Aliens(i%).Active = 0
+    ELSE
+      Aliens(i%).FrameNumber = Aliens(i%).FrameNumber + 1
+
+      IF Aliens(i%).FrameNumber = 32767 THEN Aliens(i%).FrameNumber = 0
+
+      dd% = Aliens(i%).Damaged - 1
+      IF dd% >= 0 THEN Aliens(i%).Damaged = dd%
+
+      DrawAlien Aliens(i%), ox%, oy%
+    END IF
+  END IF
+NEXT i%
 END SUB
 
 SUB UpdateAndRenderBooms (Booms() AS BoomType)
