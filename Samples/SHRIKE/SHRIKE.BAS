@@ -476,7 +476,7 @@ DO
 
   IF nextround% <= 0 THEN
     nextround% = RoundInterval%
-    roundnumber% = 0
+    roundnumber% = roundnumber% + 1
 
     StartRound Aliens(), roundnumber%
   END IF
@@ -684,7 +684,7 @@ FOR i% = 1 TO MaxAliens%
     ' Argument2: Phase
     ' Argument3: Radius
 
-    Aliens(i%).Argument1 = 0
+    Aliens(i%).Argument1 = a#
     Aliens(i%).Argument2 = a#
     Aliens(i%).Argument3 = clustersize% * 2 + 6
 
