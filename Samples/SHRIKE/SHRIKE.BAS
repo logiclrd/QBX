@@ -1790,41 +1790,51 @@ t.Z = t.Z - s.Z
 END SUB
 
 SUB TitleScreen (FighterVertices() AS PointType, FighterNormals() AS PointType, FighterFaces() AS FaceType, FighterLightPosition AS PointType)
-IF 0 THEN
-  ' TODO: Figure this nonsense out
-  DIM transform#(0 TO 3, 0 TO 3)
-  DIM rotation#(0 TO 3, 0 TO 3) ' same as transform, but without translation
+GetArtDimensions "TITLE.ART", w%, h%
+DIM Title%(1 TO w%, 1 TO h%), TitleMask%(1 TO w%, 1 TO h%)
+LoadArt "TITLE.ART", Title%(), TitleMask%()
+
+DIM transform#(0 TO 3, 0 TO 3)
+DIM rotation#(0 TO 3, 0 TO 3) ' same as transform, but without translation
+
+float# = 0
+
+DO
+  FOR i% = 1 TO 16000
+    buf&(i%) = 0
+  NEXT i%
 
   SetIdentityTransform transform#()
   SetIdentityTransform rotation#()
 
-  ScaleTransform transform#(), 70
+  ScaleTransform transform#(), 20
+
+  RotateTransformX transform#(), .3
+  RotateTransformX rotation#(), .3
 
   RotateTransformY transform#(), 3
   RotateTransformY rotation#(), 3
-  'RotateTransformX transform#(), -.4
-  'RotateTransformX rotation#(), -.4
 
-  Translate transform#(), 0, 0, 500
+  Translate transform#(), 0, 20 * SIN(float#), 80
 
-  RenderObject FighterVertices(), FighterNormals(), FighterFaces(), transform#(), rotation#(), FighterLightPosition, LightIntensity#, AmbientLightIntensity#, 50, 100
+  float# = float# + .15
+
+  RenderObject FighterVertices(), FighterNormals(), FighterFaces(), transform#(), rotation#(), FighterLightPosition, LightIntensity#, AmbientLightIntensity#, 50, 60
+
+  PutArt 200, 60, 0, Title%(), TitleMask%()
+
+  CentreText 200, 100, "They came to earth."
+  CentreText 200, 109, "They killed your dog."
+  CentreText 200, 118, "They're going to pay."
+
+  CentreText 160, 150, "Your Shrike is faster than anything"
+  CentreText 160, 159, "they've got. Pursue them back to"
+  CentreText 160, 168, "their homeworld."
+
+  CentreText 160, 181, "Press any key"
 
   PUT (0, 0), buf&, PSET
-END IF
-
-COLOR 13
-
-
-COLOR 15
-
-
-COLOR 24
-
-
-COLOR 8
-
-
-SLEEP
+LOOP WHILE INKEY$ = ""
 END SUB
 
 SUB Translate (matrix#(), deltax#, deltay#, deltaz#)
