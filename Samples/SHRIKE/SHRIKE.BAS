@@ -424,11 +424,11 @@ DIM SHARED bufofs%
 
 bufofs% = VARPTR(buf&(1))
 
-TitleScreen FighterVertices(), FighterNormals(), FighterFaces(), FighterLightPosition
-
 FighterLightPosition.X = -30
 FighterLightPosition.Y = -90
 FighterLightPosition.Z = CameraZ#
+
+TitleScreen FighterVertices(), FighterNormals(), FighterFaces(), FighterLightPosition
 
 ' Reset mouse driver
 rin.AX = 0
