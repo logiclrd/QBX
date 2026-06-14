@@ -1239,11 +1239,11 @@ t.Z = t.Z * scale#
 END SUB
 
 SUB NormalizePoint (t AS PointType)
-d# = Distance#(t)
+id# = 1# / Distance#(t)
 
-t.X = t.X / d#
-t.Y = t.Y / d#
-t.Z = t.Z / d#
+t.X = t.X * id#
+t.Y = t.Y * id#
+t.Z = t.Z * id#
 END SUB
 
 SUB ParseTriple (a$, p AS PointType)
