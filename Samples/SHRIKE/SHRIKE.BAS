@@ -142,7 +142,7 @@ CONST FighterMomentum# = .8
 CONST FighterReticleAttraction# = .6
 CONST FighterTiltSpeed# = .06
 CONST FighterTiltMax# = .8
-CONST FighterRadius% = 20
+CONST FighterRadius% = 10
 
 CONST ReticleColour% = 14
 
@@ -480,7 +480,7 @@ DO
   SetIdentityTransform transform#()
   SetIdentityTransform rotation#()
 
-  ScaleTransform transform#(), 44
+  ScaleTransform transform#(), 3
 
   RotateTransformZ transform#(), -10 * SIN(fightertiltangle#) / 57.295779
   RotateTransformY transform#(), 10 * SIN(fightertiltangle#) / 57.295779
@@ -1454,6 +1454,7 @@ FOR i% = LBOUND(faces) TO UBOUND(faces)
   faceCentre = vertices(faceP1.VertexIndex)
   AddPoint faceCentre, vertices(faceP2.VertexIndex)
   AddPoint faceCentre, vertices(faceP3.VertexIndex)
+  MultiplyPoint faceCentre, 1# / 3#
 
   faceNormal = normals(faceP1.NormalIndex)
   AddPoint faceNormal, normals(faceP2.NormalIndex)
@@ -1469,7 +1470,7 @@ SortFaces faces(), LBOUND(faces), UBOUND(faces)
 ' Project vertices - from this point on, vertex (X, Y) is screen
 FOR i% = LBOUND(vertices) TO UBOUND(vertices)
   dz# = vertices(i%).Z - CameraZ#
-  dzf# = 10 / dz#
+  dzf# = 160 / dz#
 
   vertices(i%).X = ox% + vertices(i%).X * dzf#
   vertices(i%).Y = oy% - vertices(i%).Y * dzf#
@@ -1480,7 +1481,7 @@ DIM cameraposition AS PointType
 
 cameraposition.X = 0
 cameraposition.Y = 0
-cameraposition.Z = -CameraZ#
+cameraposition.Z = CameraZ#
 
 DIM tolight AS PointType
 DIM tocamera AS PointType
