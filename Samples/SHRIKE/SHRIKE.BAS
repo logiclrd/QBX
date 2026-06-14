@@ -97,6 +97,7 @@ DECLARE SUB NormalizePoint (t AS PointType)
 DECLARE SUB ParseTriple (a$, p AS PointType)
 DECLARE SUB ParseVertex (a$, v AS VertexType)
 DECLARE SUB ParseVertices (a$, f AS FaceType)
+DECLARE SUB ProgramTimerRate (tickspersecond#)
 DECLARE SUB PutArt (ox#, oy#, angle#, pixels%(), mask%())
 DECLARE SUB PutGlyph (gx%, gy%, c%, w%)
 DECLARE SUB RenderObject (sourcevertices() AS PointType, sourcenormals() AS PointType, faces() AS FaceType, transform#(), rotation#(), lightposition AS PointType, LightIntensity#, AmbientLightIntensity#, ox%, oy%)
@@ -138,6 +139,8 @@ END TYPE
 DECLARE SUB InterruptX (intnum%, rin AS RegTypeX, rout AS RegTypeX)
 
 DIM rin AS RegTypeX, rout AS RegTypeX
+
+CONST FPSLimit% = 32
 
 CONST PI# = 3.14159265358979
 
@@ -438,7 +441,11 @@ fighterx# = 160
 fighterdx# = 0
 fightertiltangle# = 0
 
+ProgramTimerRate FPSLimit%
+
 DO
+  framestarttime! = TIMER
+
   ' Get mouse
   rin.AX = 3
   CALL InterruptX(&H33, rin, rout)
@@ -541,6 +548,9 @@ DO
     FramesSinceDeath% = FramesSinceDeath% + 1
     CascadeFighterBoom (fighterx#), FighterY%, (fighterdx#), Booms()
   END IF
+
+  ' Framerate limit
+  WHILE TIMER = framestarttime!: WEND
 LOOP WHILE (FighterHit% = 0) OR (DeathFrames% > 0)
 
 SUB AddPoint (t AS PointType, s AS PointType)
@@ -1321,6 +1331,16 @@ ELSE
     END IF
   END IF
 END IF
+END SUB
+
+SUB ProgramTimerRate (tickspersecond#)
+CONST BaseFrequency& = 1193181
+
+interval& = BaseFrequency& / tickspersecond#
+
+OUT &H43, &H36
+OUT &H40, interval&
+OUT &H40, interval& \ 256
 END SUB
 
 SUB PutArt (ox#, oy#, angle#, pixels%(), mask%())
