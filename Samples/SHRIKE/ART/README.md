@@ -25,6 +25,14 @@ A pixel is transparent if the corresponding mask byte is 0, otherwise it is full
 
 ## Sources
 
+### TITLE
+
+Clanker-generated. This one took a _lot_ of work to convert to a usable format, because the clanker's output had inconsistent dot sizes.
+
+### FONT
+
+Some characters transcribed by hand from clanker output, then the rest drawn by hand.
+
 ### ALIEN0
 
 Clanker-generated.
@@ -64,4 +72,3 @@ Source: https://www.vecteezy.com/vector-art/23530772-pixel-art-explosion-boom-or
 ### ROCK
 
 Source: https://www.reddit.com/r/PixelArt/comments/cxn5aq/attempt_at_rotating_pixel_art_asteroid_while/
-
