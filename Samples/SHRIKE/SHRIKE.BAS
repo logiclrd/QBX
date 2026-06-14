@@ -412,8 +412,6 @@ DIM rotation#(0 TO 3, 0 TO 3) ' same as transform, but without translation
 DIM SHARED HitGrid%(0 TO HitGridWidth% - 1, 0 TO HitGridHeight% - 1)
 DIM SHARED FighterHit%, DeathFrames%, FramesSinceDeath%
 
-DIM SHARED LastBoomIndex%
-
 SCREEN 13
 
 DIM SHARED buf&(16001)
@@ -1189,8 +1187,6 @@ CLOSE #ff%
 END SUB
 
 SUB MakeBoom (Booms() AS BoomType, ox%, oy%, odx%, ody%)
-LastBoomIndex% = -1
-
 FOR i% = 1 TO MaxBooms%
   IF Booms(i%).Active = 0 THEN
     Booms(i%).Active = 1
@@ -1199,8 +1195,6 @@ FOR i% = 1 TO MaxBooms%
     Booms(i%).DX = odx%
     Booms(i%).DY = ody%
     Booms(i%).SpriteIndex = 0
-
-    LastBoomIndex% = i%
 
     EXIT FOR
   END IF
