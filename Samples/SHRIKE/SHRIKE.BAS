@@ -1002,7 +1002,7 @@ ELSE
 
     o& = o& + 320&
   ELSE
-    o& = y2% * 320& + bufofs%
+    o& = (y2% + 1) * 320& + bufofs%
   END IF
 
   IF y3% > y2% THEN
