@@ -585,7 +585,7 @@ FOR i% = 1 TO LEN(text$)
 
   PutGlyph tx%, ty%, ch%, glyphwidth%
 
-  tx% = tx% + glyphwidth%
+  tx% = tx% + glyphwidth% + 1
 NEXT i%
 END SUB
 
@@ -1120,7 +1120,7 @@ FOR ch% = 0 TO 127
   FOR xx% = gw% - 1 TO 0 STEP -1
     FOR yy% = 0 TO gh% - 1
       IF Font%(chx% + xx%, chy% + yy%) THEN
-        FontWidths%(ch%) = xx% + 2
+        FontWidths%(ch%) = xx% + 1
         IF Font%(chx% + xx%, chy% + yy%) = 13 THEN
           FontMask%(chx% + xx%, chy% + yy%) = 0
         END IF
@@ -1131,7 +1131,7 @@ FOR ch% = 0 TO 127
     IF FontWidths%(ch%) > 0 THEN EXIT FOR
   NEXT xx%
 
-  IF FontWidths%(ch%) = 0 THEN FontWidths%(ch%) = gw% + 1
+  IF FontWidths%(ch%) = 0 THEN FontWidths%(ch%) = gw%
 NEXT ch%
 END SUB
 
