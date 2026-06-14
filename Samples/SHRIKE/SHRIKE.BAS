@@ -1885,8 +1885,8 @@ SELECT CASE roundtype%
     activatey% = KamikazeAlienActivateY%
     dropy% = KamikazeAlienDropY%
     IF roundnumber% > 6 THEN
-      activatey% = activatey% - roundnumber% * 5
-      dropy% = dropy% - roundnumber% * 10
+      activatey% = activatey% - roundnumber% * 3
+      dropy% = dropy% - roundnumber% * 5
 
       IF dropy% < 60 THEN dropy% = 60
     END IF
