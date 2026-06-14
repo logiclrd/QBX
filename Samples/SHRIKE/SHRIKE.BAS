@@ -77,8 +77,9 @@ DECLARE SUB AddPoint (t AS PointType, s AS PointType)
 DECLARE SUB ApplyTransform (i AS PointType, matrix#(), o AS PointType)
 DECLARE SUB CascadeFighterBoom (fx%, fy%, fdx%, Booms() AS BoomType)
 DECLARE SUB CentreText (tx%, ty%, text$)
-DECLARE SUB CheckForHits (Shots() AS ShotType, Rocks() AS RockType, Aliens() AS AlienType, Booms() AS BoomType, fx%, fy%)
-DECLARE SUB CreateOrbitCluster (Aliens() AS AlienType, AlienSpecies%, clustersize%, ox#, oy#, odx#, ody#)
+DECLARE SUB CheckForHits (Shots() AS ShotType, Rocks() AS RockType, Aliens() AS AlienType, Booms() AS BoomType, fx%, fy%, nextround%)
+DECLARE SUB CreateKamikaze (Aliens() AS AlienType, ox#, oy#, odx#, ody#, acceleration#)
+DECLARE SUB CreateOrbitCluster (Aliens() AS AlienType, clustersize%, ox#, oy#, odx#, ody#)
 DECLARE SUB DrawAlien (alien AS AlienType, ox%, oy%)
 DECLARE SUB DrawBoom (boom AS BoomType)
 DECLARE SUB DrawReticle (ox%, oy%)
@@ -109,7 +110,7 @@ DECLARE SUB RotateTransformZ (matrix#(), angle#)
 DECLARE SUB ScaleTransform (matrix#(), factor#)
 DECLARE SUB SetIdentityTransform (transform#())
 DECLARE SUB SortFaces (faces() AS FaceType, first%, last%)
-DECLARE SUB StartRound (Aliens() AS AlienType, roundnumber%)
+DECLARE SUB StartRound (Aliens() AS AlienType, roundnumber%, nextround%)
 DECLARE SUB SubtractPoint (t AS PointType, s AS PointType)
 DECLARE SUB TitleScreen (FighterVertices() AS PointType, FighterNormals() AS PointType, FighterFaces() AS FaceType, FighterLightPosition AS PointType)
 DECLARE SUB Translate (matrix#(), deltax#, deltay#, deltaz#)
@@ -167,6 +168,17 @@ CONST AmbientLightIntensity# = .3
 
 CONST MaxAliens% = 25
 CONST AlienActiveMargin% = 40
+
+CONST OrbitClusterAlienHealthPoints% = 1
+CONST OrbitClusterAlienVeerOffY% = 90
+CONST OrbitClusterAlienVeerOffDX# = 6
+
+CONST KamikazeAlienHealthPoints% = 22
+CONST KamikazeAlienDragFactor# = .95
+CONST KamikazeAlienActivateY% = 75
+CONST KamikazeAlienAttractionFactor# = .05
+CONST KamikazeAlienMaxSpeed# = 1.5
+CONST KamikazeAlienDropY% = 120
 
 CONST RoundInterval% = 200
 
@@ -500,7 +512,7 @@ DO
     nextround% = RoundInterval%
     roundnumber% = roundnumber% + 1
 
-    StartRound Aliens(), roundnumber%
+    StartRound Aliens(), roundnumber%, nextround%
   END IF
 
   ' Fighter transform
@@ -521,7 +533,7 @@ DO
   ' Hamburgers
   UpdateAndRenderDust Dusts()
 
-  CheckForHits Shots(), Rocks(), Aliens(), Booms(), (fighterx#), FighterY%
+  CheckForHits Shots(), Rocks(), Aliens(), Booms(), (fighterx#), FighterY%, nextround%
 
   UpdateAndRenderAliens Aliens(), (fighterx#), FighterY%, (fighterdx#), Booms()
 
@@ -590,7 +602,7 @@ FOR i% = 1 TO LEN(text$)
 NEXT i%
 END SUB
 
-SUB CheckForHits (Shots() AS ShotType, Rocks() AS RockType, Aliens() AS AlienType, Booms() AS BoomType, fx%, fy%)
+SUB CheckForHits (Shots() AS ShotType, Rocks() AS RockType, Aliens() AS AlienType, Booms() AS BoomType, fx%, fy%, nextround%)
 SHARED Rock01%()
 SHARED AlienSpecies() AS AlienSpeciesType
 
@@ -629,8 +641,12 @@ FOR i% = 1 TO MaxRocks%
   END IF
 NEXT i%
 
+activealiens% = 0
+
 FOR i% = 1 TO MaxAliens%
   IF Aliens(i%).Active THEN
+    activealiens% = activealiens% + 1
+
     xx% = Aliens(i%).ActualX * HitGridWidth% \ 320
     yy% = Aliens(i%).ActualY * HitGridHeight% \ 200
 
@@ -756,9 +772,35 @@ FOR i% = 1 TO MaxShots%
     END IF
   END IF
 NEXT i%
+
+IF (activealiens% = 0) AND (nextround% > RoundInterval% \ 2) THEN
+  nextround% = RoundInterval% \ 2
+END IF
 END SUB
 
-SUB CreateOrbitCluster (Aliens() AS AlienType, AlienSpecies%, clustersize%, ox#, oy#, odx#, ody#)
+SUB CreateKamikaze (Aliens() AS AlienType, ox#, oy#, odx#, ody#, acceleration#)
+FOR i% = 1 TO MaxAliens%
+  IF Aliens(i%).Active = 0 THEN
+    Aliens(i%).Active = -1
+    Aliens(i%).Variety = 1 ' Kamikaze
+    Aliens(i%).Species = 2 ' Medium Alien (ALIEN2)
+    Aliens(i%).HealthPoints = KamikazeAlienHealthPoints%
+
+    ' Argument1: Acceleration
+
+    Aliens(i%).Argument1 = acceleration#
+
+    Aliens(i%).X = ox#
+    Aliens(i%).Y = oy#
+    Aliens(i%).DX = odx#
+    Aliens(i%).DY = ody#
+
+    EXIT FOR
+  END IF
+NEXT i%
+END SUB
+
+SUB CreateOrbitCluster (Aliens() AS AlienType, clustersize%, ox#, oy#, odx#, ody#)
 n% = 1
 a# = 2 * PI# * n% / clustersize%
 
@@ -766,8 +808,8 @@ FOR i% = 1 TO MaxAliens%
   IF Aliens(i%).Active = 0 THEN
     Aliens(i%).Active = -1
     Aliens(i%).Variety = 0 ' Orbit Cluster
-    Aliens(i%).Species = AlienSpecies%
-    Aliens(i%).HealthPoints = 1
+    Aliens(i%).Species = 0 ' Tiny Alien (ALIEN0)
+    Aliens(i%).HealthPoints = OrbitClusterAlienHealthPoints%
 
     ' Argument1: Time
     ' Argument2: Phase
@@ -1790,21 +1832,45 @@ IF pivot% - first% >= 2 THEN SortFaces faces(), first%, pivot% - 1
 IF last% - pivot% >= 2 THEN SortFaces faces(), pivot% + 1, last%
 END SUB
 
-SUB StartRound (Aliens() AS AlienType, roundnumber%)
-roundtype% = INT(RND * (roundnumber% \ 4)) + roundnumber% - 3
+SUB StartRound (Aliens() AS AlienType, roundnumber%, nextround%)
+SHARED AlienSpecies() AS AlienSpeciesType
 
-IF roundtype% < 0 THEN roundtype% = 0
-IF roundtype% > 2 THEN roundtype% = 2
+STATIC lastroundtype%, secondlastroundtype%
+
+' Try to reduce repetitiveness
+minroundtype% = roundnumber% \ 4 - 2
+maxroundtype% = minroundtype% + 2
+
+IF minroundtype% < 0 THEN minroundtype% = 0
+IF maxroundtype% > 2 THEN maxroundtype% = 2
+
+DO
+  roundtype% = INT(RND * (maxroundtype% - minroundtype% + 1)) + minroundtype%
+
+  IF roundtype% < 0 THEN roundtype% = 0
+  IF roundtype% > 2 THEN roundtype% = 2
+LOOP WHILE (minroundtype% <> maxroundtype%) AND (roundtype% = lastroundtype%) AND (roundtype% = secondlastroundtype%)
+
+secondlastroundtype% = lastroundtype%
+lastroundtype% = roundtype%
 
 SELECT CASE roundtype%
   CASE 0: ' Orbit Clusters
-    clustersize% = roundnumber% \ 2 + 3
+    clustersize% = (roundnumber% + 2) \ 4 + 3
     IF clustersize% > 6 THEN clustersize% = 6
 
     FOR i% = 0 TO 3
-      CreateOrbitCluster Aliens(), 0, clustersize%, (i% AND 1) * 100 + 110, -20 - 40 * i%, 0, 2
+      CreateOrbitCluster Aliens(), clustersize%, (i% AND 1) * 100 + 110, -20 - 40 * i%, 0, 2
     NEXT i%
   CASE 1: ' Kamikaze Fighters
+    numaliens% = INT(RND * 3) + roundnumber% \ 4 + 1
+    acceleration# = roundnumber% / 8
+
+    FOR i% = 1 TO numaliens%
+      CreateKamikaze Aliens(), INT(RND * 320), -AlienSpecies(0).Radius - 20 * i%, 0, .3, acceleration#
+    NEXT i%
+
+    nextround% = nextround% + 5 * RoundInterval%
   CASE 2: ' Mine Layers
 END SELECT
 END SUB
@@ -1891,14 +1957,33 @@ FOR i% = 1 TO MaxAliens%
         ox% = r# * COS(t#)
         oy% = r# * SIN(t#)
 
-        IF Aliens(i%).Y > 90 THEN
+        IF Aliens(i%).Y > OrbitClusterAlienVeerOffY% THEN
           Aliens(i%).DY = Aliens(i%).DY * .96
 
           IF Aliens(i%).X < 160 THEN
-            Aliens(i%).DX = -6 + (Aliens(i%).DX + 6) * .92
+            Aliens(i%).DX = -OrbitClusterAlienVeerOffDX# + (Aliens(i%).DX + OrbitClusterAlienVeerOffDX#) * .92
           ELSE
-            Aliens(i%).DX = 6 + (Aliens(i%).DX - 6) * .92
+            Aliens(i%).DX = OrbitClusterAlienVeerOffDX# + (Aliens(i%).DX - OrbitClusterAlienVeerOffDX#) * .92
           END IF
+        END IF
+      CASE 1: ' Kamikaze
+        Aliens(i%).DX = Aliens(i%).DX * KamikazeAlienDragFactor#
+
+        IF Aliens(i%).Y > KamikazeAlienActivateY% THEN
+          dfx# = fx% - Aliens(i%).X
+          IF ABS(dfx#) > 1 THEN
+            dfx# = dfx# - SGN(dfx#)
+            Aliens(i%).DX = Aliens(i%).DX + dfx# * KamikazeAlienAttractionFactor#
+          END IF
+        END IF
+
+        IF Aliens(i%).DX < -KamikazeAlienMaxSpeed# THEN Aliens(i%).DX = -KamikazeAlienMaxSpeed#
+        IF Aliens(i%).DX > KamikazeAlienMaxSpeed# THEN Aliens(i%).DX = KamikazeAlienMaxSpeed#
+
+        IF Aliens(i%).Y > KamikazeAlienDropY% THEN Aliens(i%).DY = Aliens(i%).DY + Aliens(i%).Argument1
+
+        IF (Aliens(i%).FrameNumber AND 7) = 0 THEN
+          Aliens(i%).SpriteIndex = 1 - Aliens(i%).SpriteIndex
         END IF
     END SELECT
 
