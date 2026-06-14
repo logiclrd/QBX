@@ -75,7 +75,7 @@ END TYPE
 DECLARE SUB AddPoint (t AS PointType, s AS PointType)
 DECLARE SUB ApplyTransform (i AS PointType, matrix#(), o AS PointType)
 DECLARE SUB CascadeFighterBoom (fx%, fy%, fdx%, Booms() AS BoomType)
-DECLARE SUB CentreText (row%, text$)
+DECLARE SUB CentreText (tx%, ty%, text$)
 DECLARE SUB CheckForHits (Shots() AS ShotType, Rocks() AS RockType, Aliens() AS AlienType, Booms() AS BoomType, fx%, fy%)
 DECLARE SUB CreateOrbitCluster (Aliens() AS AlienType, AlienSpecies%, clustersize%, ox#, oy#, odx#, ody#)
 DECLARE SUB DrawAlien (alien AS AlienType, X%, Y%)
@@ -87,6 +87,7 @@ DECLARE SUB GetArtDimensions (filename$, w%, h%)
 DECLARE SUB GetObjectCounts (objfilename$, numvertices%, numnormals%, numfaces%)
 DECLARE SUB HorizontalLine (scanofs&, x1%, x2%, Colour%)
 DECLARE SUB InitializeDust (Dusts() AS DustType)
+DECLARE SUB InitializeFont ()
 DECLARE SUB LoadArt (filename$, pixels%(), mask%())
 DECLARE SUB LoadObject (objfilename$, vertices() AS PointType, normals() AS PointType, faces() AS FaceType)
 DECLARE SUB MakeBoom (Booms() AS BoomType, ox%, oy%, odx%, ody%)
@@ -97,6 +98,7 @@ DECLARE SUB ParseTriple (a$, P AS PointType)
 DECLARE SUB ParseVertex (a$, v AS VertexType)
 DECLARE SUB ParseVertices (a$, f AS FaceType)
 DECLARE SUB PutArt (ox#, oy#, angle#, pixels%(), mask%())
+DECLARE SUB PutGlyph (gx%, gy%, c%, w%)
 DECLARE SUB RenderObject (sourcevertices() AS PointType, sourcenormals() AS PointType, faces() AS FaceType, transform#(), rotation#(), lightposition AS PointType, LightIntensity#, AmbientLightIntensity#, ox%, oy%)
 DECLARE SUB RenderShot (shot AS ShotType)
 DECLARE SUB RotateTransformX (matrix#(), angle#)
@@ -117,6 +119,7 @@ DECLARE SUB UpdateAndRenderShot (shot AS ShotType)
 DECLARE FUNCTION Distance# (t AS PointType)
 DECLARE FUNCTION DotProduct# (a AS PointType, b AS PointType)
 DECLARE FUNCTION IsNaNOrInf% (d#)
+DECLARE FUNCTION MeasureText% (text$)
 DECLARE FUNCTION RandomDustColour% ()
 
 TYPE RegTypeX
@@ -352,8 +355,18 @@ GetArtDimensions "DOG.ART", w%, h%
 DIM SHARED Dog%(1 TO w%, 1 TO h%), DogMask%(1 TO w%, 1 TO h%)
 LoadArt "DOG.ART", Dog%(), DogMask%()
 
+GetArtDimensions "FONT.ART", w%, h%
+DIM Font%(1 TO w%, 1 TO h%), FontMask%(1 TO w%, 1 TO h%)
+LoadArt "FONT.ART", Font%(), FontMask%()
+
 ' Phew!
 
+' Get set up to draw text
+DIM FontWidths%(0 TO 127)
+
+InitializeFont
+
+' Get set up to render the fighter
 GetObjectCounts "FIGHTER.OBJ", numvertices%, numnormals%, numfaces%
 
 DIM FighterVertices(1 TO numvertices%) AS PointType
@@ -364,12 +377,14 @@ DIM FighterLightPosition AS PointType
 
 LoadObject "FIGHTER.OBJ", FighterVertices(), FighterNormals(), FighterFaces()
 
+' Get set up to draw aliens
 DIM AlienSpecies(0 TO 2) AS AlienSpeciesType
 
 AlienSpecies(0).Radius = 6
 AlienSpecies(1).Radius = 35
 AlienSpecies(2).Radius = 17
 
+' State
 
 DIM Shots(1 TO MaxShots%) AS ShotType
 DIM Dusts(1 TO MaxDusts%) AS DustType
@@ -379,14 +394,20 @@ DIM Booms(1 TO MaxBooms%) AS BoomType
 
 InitializeDust Dusts()
 
+' Rate limit the gun
+
 guncooldown% = 3 ' frames
 gunheat% = 0
 
 nextround% = RoundInterval%
 roundnumber% = 0
 
+' 3D transfom
+
 DIM transform#(0 TO 3, 0 TO 3)
 DIM rotation#(0 TO 3, 0 TO 3) ' same as transform, but without translation
+
+' Hit testing
 
 DIM SHARED HitGrid%(0 TO HitGridWidth% - 1, 0 TO HitGridHeight% - 1)
 DIM SHARED FighterHit%, DeathFrames%, FramesSinceDeath%
@@ -491,6 +512,7 @@ DO
     buf&(i%) = 0
   NEXT i%
 
+  ' Hamburgers
   UpdateAndRenderDust Dusts()
 
   CheckForHits Shots(), Rocks(), Aliens(), Booms(), (fighterx#), FighterY%
@@ -541,9 +563,22 @@ IF FramesSinceDeath% = 13 OR FramesSinceDeath% = 18 OR FramesSinceDeath% = 27 TH
 END IF
 END SUB
 
-SUB CentreText (row%, text$)
-LOCATE row%, 21 - LEN(text$) \ 2
-PRINT text$;
+SUB CentreText (tx%, ty%, text$)
+SHARED FontWidths%()
+
+w% = MeasureText%(text$)
+
+tx% = tx% - w% \ 2
+
+FOR i% = 1 TO LEN(text$)
+  ch% = ASC(MID$(text$, i%, 1))
+
+  glyphwidth% = FontWidths%(ch%)
+
+  PutGlyph tx%, ty%, ch%, glyphwidth%
+
+  tx% = tx% + glyphwidth%
+NEXT i%
 END SUB
 
 SUB CheckForHits (Shots() AS ShotType, Rocks() AS RockType, Aliens() AS AlienType, Booms() AS BoomType, fx%, fy%)
@@ -1062,6 +1097,36 @@ FOR i% = 1 TO MaxDusts%
 NEXT i%
 END SUB
 
+SUB InitializeFont ()
+SHARED Font%(), FontMask%(), FontWidths%()
+
+gw% = (UBOUND(Font%, 1) - LBOUND(Font%, 1) + 1) \ 16
+gh% = (UBOUND(Font%, 2) - LBOUND(Font%, 2) + 1) \ 8
+
+FOR ch% = 0 TO 127
+  chx% = (ch% AND 15) * gw% + 1
+  chy% = (ch% \ 16) * gh% + 1
+
+  FontWidths%(ch%) = 0
+
+  FOR xx% = gw% - 1 TO 0 STEP -1
+    FOR yy% = 0 TO gh% - 1
+      IF Font%(chx% + xx%, chy% + yy%) THEN
+        FontWidths%(ch%) = xx% + 2
+        IF Font%(chx% + xx%, chy% + yy%) = 13 THEN
+          FontMask%(chx% + xx%, chy% + yy%) = 0
+        END IF
+        EXIT FOR
+      END IF
+    NEXT yy%
+
+    IF FontWidths%(ch%) > 0 THEN EXIT FOR
+  NEXT xx%
+
+  IF FontWidths%(ch%) = 0 THEN FontWidths%(ch%) = gw% + 1
+NEXT ch%
+END SUB
+
 FUNCTION IsNaNOrInf% (d#)
 e# = d# / d#
 IsNaNOrInf% = e# <> e#
@@ -1141,6 +1206,18 @@ FOR i% = 1 TO MaxBooms%
   END IF
 NEXT i%
 END SUB
+
+FUNCTION MeasureText% (text$)
+SHARED FontWidths%()
+
+w% = 0
+
+FOR i% = 1 TO LEN(text$)
+  w% = w% + FontWidths%(ASC(MID$(text$, i%, 1)))
+NEXT i%
+
+MeasureText% = w%
+END FUNCTION
 
 REM $DYNAMIC
 SUB MultiplyMatrix (subject#(), transform#())
@@ -1395,6 +1472,38 @@ FOR yy% = yy1% TO yy2%
   NEXT xx%
 
   so& = so& + 320
+NEXT yy%
+END SUB
+
+SUB PutGlyph (gx%, gy%, ch%, w%)
+SHARED Font%(), FontMask%(), FontWidths%()
+
+gw% = (UBOUND(Font%, 1) - LBOUND(Font%, 1) + 1) \ 16
+gh% = (UBOUND(Font%, 2) - LBOUND(Font%, 2) + 1) \ 8
+
+chx% = (ch% AND 15) * gw% + 1
+chy% = (ch% \ 16) * gh% + 1
+
+o& = gy% * 320& + gx% + bufofs%
+
+x1% = 0
+x2% = w% - 1
+
+IF gx% + x1% < 0 THEN x1% = -gx%
+IF gx% + x2% >= 319 THEN x2% = 319 - gx%
+
+FOR yy% = 0 TO gh% - 1
+  IF yy% >= 200 THEN EXIT FOR
+
+  IF yy% >= 0 THEN
+    FOR xx% = x1% TO x2%
+      IF FontMask%(chx% + xx%, chy% + yy%) THEN
+        POKE o& + xx%, Font%(chx% + xx%, chy% + yy%)
+      END IF
+    NEXT xx%
+  END IF
+
+  o& = o& + 320
 NEXT yy%
 END SUB
 
@@ -1705,23 +1814,15 @@ END IF
 
 COLOR 13
 
-CentreText 12, "S H R I K E"
 
 COLOR 15
 
-CentreText 15, "They came to earth."
-CentreText 16, "They killed your dog."
-CentreText 17, "They're going to pay."
 
 COLOR 24
 
-CentreText 20, "Your Shrike is faster than anything"
-CentreText 21, "they've got. Pursue them back to"
-CentreText 22, "their homeworld."
 
 COLOR 8
 
-CentreText 24, "Press any key"
 
 SLEEP
 END SUB
