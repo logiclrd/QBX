@@ -43,6 +43,7 @@ END TYPE
 
 TYPE AlienSpeciesType
   Radius AS INTEGER
+  Value AS INTEGER
 END TYPE
 
 TYPE AlienType
@@ -77,13 +78,14 @@ DECLARE SUB AddPoint (t AS PointType, s AS PointType)
 DECLARE SUB ApplyTransform (i AS PointType, matrix#(), o AS PointType)
 DECLARE SUB CascadeFighterBoom (fx%, fy%, fdx%, Booms() AS BoomType)
 DECLARE SUB CentreText (tx%, ty%, text$)
-DECLARE SUB CheckForHits (Shots() AS ShotType, Rocks() AS RockType, Aliens() AS AlienType, Booms() AS BoomType, fx%, fy%, nextround%)
+DECLARE SUB CheckForHits (Shots() AS ShotType, Rocks() AS RockType, Aliens() AS AlienType, Booms() AS BoomType, fx%, fy%, nextround%, score&)
 DECLARE SUB CreateKamikaze (Aliens() AS AlienType, ox#, oy#, odx#, ody#, acceleration#, activatey%, dropy%)
 DECLARE SUB CreateOrbitCluster (Aliens() AS AlienType, clustersize%, ox#, oy#, odx#, ody#)
 DECLARE SUB DrawAlien (alien AS AlienType, ox%, oy%)
 DECLARE SUB DrawBoom (boom AS BoomType)
 DECLARE SUB DrawReticle (ox%, oy%)
 DECLARE SUB DrawRock (rock AS RockType)
+DECLARE SUB DrawScore (score&)
 DECLARE SUB FillTriangle (x1%, y1%, x2%, y2%, x3%, y3%, c%)
 DECLARE SUB GetArtDimensions (filename$, w%, h%)
 DECLARE SUB GetObjectCounts (objfilename$, numvertices%, numnormals%, numfaces%)
@@ -396,9 +398,9 @@ LoadObject "FIGHTER.OBJ", FighterVertices(), FighterNormals(), FighterFaces()
 ' Get set up to draw aliens
 DIM AlienSpecies(0 TO 2) AS AlienSpeciesType
 
-AlienSpecies(0).Radius = 6
-AlienSpecies(1).Radius = 35
-AlienSpecies(2).Radius = 17
+AlienSpecies(0).Radius = 6: AlienSpecies(0).Value = 5
+AlienSpecies(1).Radius = 35: AlienSpecies(1).Value = 25
+AlienSpecies(2).Radius = 17: AlienSpecies(2).Value = 40
 
 ' State
 
@@ -453,6 +455,8 @@ CALL InterruptX(&H33, rin, rout)
 fighterx# = 160
 fighterdx# = 0
 fightertiltangle# = 0
+
+score& = 0
 
 ProgramTimerRate FPSLimit%
 
@@ -533,7 +537,7 @@ DO
   ' Hamburgers
   UpdateAndRenderDust Dusts()
 
-  CheckForHits Shots(), Rocks(), Aliens(), Booms(), (fighterx#), FighterY%, nextround%
+  CheckForHits Shots(), Rocks(), Aliens(), Booms(), (fighterx#), FighterY%, nextround%, score&
 
   UpdateAndRenderAliens Aliens(), (fighterx#), FighterY%, (fighterdx#), Booms()
 
@@ -552,6 +556,8 @@ DO
   IF FighterHit% = 0 THEN
     DrawReticle mousex%, mousey%
   END IF
+
+  DrawScore score&
 
   ' Blit
   PUT (0, 0), buf&, PSET
@@ -602,7 +608,7 @@ FOR i% = 1 TO LEN(text$)
 NEXT i%
 END SUB
 
-SUB CheckForHits (Shots() AS ShotType, Rocks() AS RockType, Aliens() AS AlienType, Booms() AS BoomType, fx%, fy%, nextround%)
+SUB CheckForHits (Shots() AS ShotType, Rocks() AS RockType, Aliens() AS AlienType, Booms() AS BoomType, fx%, fy%, nextround%, score&)
 SHARED Rock01%()
 SHARED AlienSpecies() AS AlienSpeciesType
 
@@ -758,6 +764,8 @@ FOR i% = 1 TO MaxShots%
 
                 IF Aliens(hit%).HealthPoints <= 0 THEN
                   Aliens(hit%).Active = 0
+
+                  score& = score& + AlienSpecies(Aliens(hit%).Species).Value
 
                   activealiens% = activealiens% - 1
 
@@ -1006,6 +1014,11 @@ SELECT CASE rock.SpriteIndex
   CASE 15: PutArt (rock.X), (rock.Y), 0, Rock15%(), Rock15Mask%()
   CASE 16: PutArt (rock.X), (rock.Y), 0, Rock16%(), Rock16Mask%()
 END SELECT
+END SUB
+
+SUB DrawScore (score&)
+CentreText 255, 0, "SCORE:"
+CentreText 300, 0, RIGHT$("00000" + LTRIM$(STR$(score&)), 5)
 END SUB
 
 SUB FillTriangle (x1%, y1%, x2%, y2%, x3%, y3%, c%)
@@ -1275,10 +1288,10 @@ SHARED FontWidths%()
 w% = 0
 
 FOR i% = 1 TO LEN(text$)
-  w% = w% + FontWidths%(ASC(MID$(text$, i%, 1)))
+  w% = w% + FontWidths%(ASC(MID$(text$, i%, 1))) + 1
 NEXT i%
 
-MeasureText% = w%
+MeasureText% = w% - 1
 END FUNCTION
 
 REM $DYNAMIC
