@@ -78,23 +78,23 @@ DECLARE SUB CascadeFighterBoom (fx%, fy%, fdx%, Booms() AS BoomType)
 DECLARE SUB CentreText (tx%, ty%, text$)
 DECLARE SUB CheckForHits (Shots() AS ShotType, Rocks() AS RockType, Aliens() AS AlienType, Booms() AS BoomType, fx%, fy%)
 DECLARE SUB CreateOrbitCluster (Aliens() AS AlienType, AlienSpecies%, clustersize%, ox#, oy#, odx#, ody#)
-DECLARE SUB DrawAlien (alien AS AlienType, X%, Y%)
+DECLARE SUB DrawAlien (alien AS AlienType, ox%, oy%)
 DECLARE SUB DrawBoom (boom AS BoomType)
 DECLARE SUB DrawReticle (ox%, oy%)
 DECLARE SUB DrawRock (rock AS RockType)
-DECLARE SUB FillTriangle (x1%, y1%, x2%, y2%, x3%, y3%, Colour%)
+DECLARE SUB FillTriangle (x1%, y1%, x2%, y2%, x3%, y3%, c%)
 DECLARE SUB GetArtDimensions (filename$, w%, h%)
 DECLARE SUB GetObjectCounts (objfilename$, numvertices%, numnormals%, numfaces%)
-DECLARE SUB HorizontalLine (scanofs&, x1%, x2%, Colour%)
+DECLARE SUB HorizontalLine (scanofs&, x1%, x2%, c%)
 DECLARE SUB InitializeDust (Dusts() AS DustType)
 DECLARE SUB InitializeFont ()
 DECLARE SUB LoadArt (filename$, pixels%(), mask%())
 DECLARE SUB LoadObject (objfilename$, vertices() AS PointType, normals() AS PointType, faces() AS FaceType)
 DECLARE SUB MakeBoom (Booms() AS BoomType, ox%, oy%, odx%, ody%)
 DECLARE SUB MultiplyMatrix (subject#(), transform#())
-DECLARE SUB MultiplyPoint (t AS PointType, Scale#)
+DECLARE SUB MultiplyPoint (t AS PointType, scale#)
 DECLARE SUB NormalizePoint (t AS PointType)
-DECLARE SUB ParseTriple (a$, P AS PointType)
+DECLARE SUB ParseTriple (a$, p AS PointType)
 DECLARE SUB ParseVertex (a$, v AS VertexType)
 DECLARE SUB ParseVertices (a$, f AS FaceType)
 DECLARE SUB PutArt (ox#, oy#, angle#, pixels%(), mask%())
@@ -940,7 +940,7 @@ SELECT CASE rock.SpriteIndex
 END SELECT
 END SUB
 
-SUB FillTriangle (x1%, y1%, x2%, y2%, x3%, y3%, Colour%)
+SUB FillTriangle (x1%, y1%, x2%, y2%, x3%, y3%, c%)
 ' Sort coordinates
 IF y1% > y2% THEN
   SWAP x1%, x2%
@@ -967,7 +967,7 @@ IF y1% = y3% THEN
     IF x2% > nx% THEN nx% = x2%
     IF x3% > nx% THEN nx% = x3%
 
-    HorizontalLine y1% * 320&, mx%, nx%, Colour%
+    HorizontalLine o&, mx%, nx%, c%
   END IF
 ELSE
   xfp% = 0
@@ -981,7 +981,7 @@ ELSE
 
     FOR yy% = y1% TO y2%
       IF yy% >= 200 THEN EXIT FOR
-      IF yy% >= 0 THEN HorizontalLine o&, xx%, xx2%, Colour%
+      IF yy% >= 0 THEN HorizontalLine o&, xx%, xx2%, c%
 
       xfp% = xfp% + dxfp%
       WHILE xfp% < 0: xx% = xx% - 1: xfp% = xfp% + 256: WEND
@@ -994,7 +994,7 @@ ELSE
       o& = o& + 320&
     NEXT yy%
   ELSEIF y1% >= 0 AND y1% < 200 THEN
-    HorizontalLine o&, xx%, x2%, Colour%
+    HorizontalLine o&, xx%, x2%, c%
 
     xfp% = xfp% + dxfp%
     WHILE xfp% < 0: xx% = xx% - 1: xfp% = xfp% + 256: WEND
@@ -1017,7 +1017,7 @@ ELSE
       WHILE x2fp% < 0: xx2% = xx2% - 1: x2fp% = x2fp% + 256: WEND
       WHILE x2fp% >= 256: xx2% = xx2% + 1: x2fp% = x2fp% - 256: WEND
 
-      IF yy% >= 0 THEN HorizontalLine o&, xx%, xx2%, Colour%
+      IF yy% >= 0 THEN HorizontalLine o&, xx%, xx2%, c%
 
       xfp% = xfp% + dxfp%
       WHILE xfp% < 0: xx% = xx% - 1: xfp% = xfp% + 256: WEND
@@ -1030,7 +1030,7 @@ ELSE
     WHILE x2fp% < 0: xx2% = xx2% - 1: x2fp% = x2fp% + 256: WEND
     WHILE x2fp% >= 256: xx2% = xx2% + 1: x2fp% = x2fp% - 256: WEND
 
-    IF yy% >= 0 AND yy% < 200 THEN HorizontalLine o&, xx%, xx2%, Colour%
+    IF yy% >= 0 AND yy% < 200 THEN HorizontalLine o&, xx%, xx2%, c%
   END IF
 END IF
 END SUB
@@ -1070,18 +1070,18 @@ LOOP UNTIL EOF(ff%)
 CLOSE #ff%
 END SUB
 
-SUB HorizontalLine (scanofs&, x1%, x2%, Colour%)
+SUB HorizontalLine (scanofs&, x1%, x2%, c%)
 IF x1% <= x2% THEN
   IF x1% < 0 THEN x1% = 0
   IF x2% > 319 THEN x2% = 319
   FOR xx% = x1% TO x2%
-    POKE scanofs& + xx%, Colour%
+    POKE scanofs& + xx%, c%
   NEXT xx%
 ELSE
   IF x2% < 0 THEN x2% = 0
   IF x1% > 319 THEN x1% = 319
   FOR xx% = x2% TO x1%
-    POKE scanofs& + xx%, Colour%
+    POKE scanofs& + xx%, c%
   NEXT xx%
 END IF
 END SUB
@@ -1138,17 +1138,17 @@ OPEN filename$ FOR BINARY AS #ff%
 w% = ASC(INPUT$(1, ff%))
 h% = ASC(INPUT$(1, ff%))
 
-FOR Y% = 1 TO h%
-  FOR X% = 1 TO w%
-    pixels%(X%, Y%) = ASC(INPUT$(1, ff%))
-  NEXT X%
-NEXT Y%
+FOR yy% = 1 TO h%
+  FOR xx% = 1 TO w%
+    pixels%(xx%, yy%) = ASC(INPUT$(1, ff%))
+  NEXT xx%
+NEXT yy%
 
-FOR Y% = 1 TO h%
-  FOR X% = 1 TO w%
-    mask%(X%, Y%) = ASC(INPUT$(1, ff%))
-  NEXT X%
-NEXT Y%
+FOR yy% = 1 TO h%
+  FOR xx% = 1 TO w%
+    mask%(xx%, yy%) = ASC(INPUT$(1, ff%))
+  NEXT xx%
+NEXT yy%
 
 CLOSE #ff%
 END SUB
@@ -1232,10 +1232,10 @@ FOR i% = 0 TO 3
 NEXT i%
 END SUB
 
-SUB MultiplyPoint (t AS PointType, Scale#)
-t.X = t.X * Scale#
-t.Y = t.Y * Scale#
-t.Z = t.Z * Scale#
+SUB MultiplyPoint (t AS PointType, scale#)
+t.X = t.X * scale#
+t.Y = t.Y * scale#
+t.Z = t.Z * scale#
 END SUB
 
 SUB NormalizePoint (t AS PointType)
@@ -1246,30 +1246,30 @@ t.Y = t.Y / d#
 t.Z = t.Z / d#
 END SUB
 
-SUB ParseTriple (a$, P AS PointType)
+SUB ParseTriple (a$, p AS PointType)
 a$ = LTRIM$(a$)
 i% = INSTR(a$, " ")
 
 IF i% = 0 THEN
-  P.X = VAL(a$)
+  p.X = VAL(a$)
 ELSE
-  P.X = VAL(LEFT$(a$, i% - 1))
+  p.X = VAL(LEFT$(a$, i% - 1))
 
   a$ = LTRIM$(MID$(a$, i% + 1))
   i% = INSTR(a$, " ")
 
   IF i% = 0 THEN
-    P.Y = VAL(a$)
+    p.Y = VAL(a$)
   ELSE
-    P.Y = VAL(LEFT$(a$, i% - 1))
+    p.Y = VAL(LEFT$(a$, i% - 1))
 
     a$ = LTRIM$(MID$(a$, i% + 1))
     i% = INSTR(a$, " ")
 
     IF i% = 0 THEN
-      P.Z = VAL(a$)
+      p.Z = VAL(a$)
     ELSE
-      P.Z = VAL(LEFT$(a$, i% - 1))
+      p.Z = VAL(LEFT$(a$, i% - 1))
     END IF
   END IF
 END IF
