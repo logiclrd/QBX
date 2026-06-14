@@ -43,8 +43,6 @@ END TYPE
 
 TYPE AlienSpeciesType
   Radius AS INTEGER
-  FighterHitDistance AS INTEGER
-  FighterHitDistance2 AS LONG
 END TYPE
 
 TYPE AlienType
@@ -78,7 +76,7 @@ DECLARE SUB AddPoint (t AS PointType, s AS PointType)
 DECLARE SUB ApplyTransform (i AS PointType, matrix#(), o AS PointType)
 DECLARE SUB CascadeFighterBoom (fx%, fy%, fdx%, Booms() AS BoomType)
 DECLARE SUB CentreText (row%, text$)
-DECLARE SUB CheckForHits (Shots() AS ShotType, Rocks() AS RockType, Aliens() AS AlienType, Booms() AS BoomType)
+DECLARE SUB CheckForHits (Shots() AS ShotType, Rocks() AS RockType, Aliens() AS AlienType, Booms() AS BoomType, fx%, fy%)
 DECLARE SUB CreateOrbitCluster (Aliens() AS AlienType, AlienSpecies%, clustersize%, ox#, oy#, odx#, ody#)
 DECLARE SUB DrawAlien (alien AS AlienType, X%, Y%)
 DECLARE SUB DrawBoom (boom AS BoomType)
@@ -372,10 +370,6 @@ AlienSpecies(0).Radius = 6
 AlienSpecies(1).Radius = 35
 AlienSpecies(2).Radius = 17
 
-FOR i% = LBOUND(AlienSpecies) TO UBOUND(AlienSpecies)
-  AlienSpecies(i%).FighterHitDistance = FighterRadius% + AlienSpecies(i%).Radius
-  AlienSpecies(i%).FighterHitDistance2 = AlienSpecies(i%).FighterHitDistance ^ 2
-NEXT i%
 
 DIM Shots(1 TO MaxShots%) AS ShotType
 DIM Dusts(1 TO MaxDusts%) AS DustType
@@ -499,7 +493,7 @@ DO
 
   UpdateAndRenderDust Dusts()
 
-  CheckForHits Shots(), Rocks(), Aliens(), Booms()
+  CheckForHits Shots(), Rocks(), Aliens(), Booms(), (fighterx#), FighterY%
 
   UpdateAndRenderAliens Aliens(), (fighterx#), FighterY%, (fighterdx#), Booms()
 
@@ -552,7 +546,7 @@ LOCATE row%, 21 - LEN(text$) \ 2
 PRINT text$;
 END SUB
 
-SUB CheckForHits (Shots() AS ShotType, Rocks() AS RockType, Aliens() AS AlienType, Booms() AS BoomType)
+SUB CheckForHits (Shots() AS ShotType, Rocks() AS RockType, Aliens() AS AlienType, Booms() AS BoomType, fx%, fy%)
 SHARED Rock01%()
 SHARED AlienSpecies() AS AlienSpeciesType
 
@@ -626,7 +620,47 @@ FOR i% = 1 TO MaxAliens%
   END IF
 NEXT i%
 
-' Check for collisions
+' Check for fighter collisions
+IF NOT FighterHit% THEN
+  fightery1% = fy% - FighterRadius%
+  fightery2% = fy% + FighterRadius%
+
+  hyy% = fightery1% * HitGridHeight% \ 200
+
+  IF fightery2% > 199 THEN fightery2% = 199
+
+  DO
+    syy% = hyy% * 200 \ HitGridHeight%
+
+    IF syy% >= fightery2% THEN EXIT DO
+
+    ' Maximize chord width
+    IF syy% < fy% THEN syy% = syy% + HitGridHeight% - 1
+
+    dsyy% = ABS(syy% - fy%)
+
+    chordwidth% = SQR(FighterRadius% * FighterRadius% - dsyy% * dsyy%)
+
+    fighterx1% = fx% - chordwidth%
+    fighterx2% = fx% + chordwidth%
+
+    FOR hxx% = fighterx1% * HitGridWidth% \ 320 TO fighterx2% * HitGridWidth% \ 320 + 1
+      IF hxx% >= HitGridWidth% THEN EXIT FOR
+      IF hxx% >= 0 THEN
+        IF HitGrid%(hxx%, hyy%) THEN
+          FighterHit% = -1
+          MakeBoom Booms(), fx%, fy%, fdx%, 0
+          DeathFrames% = 15 * BoomFrames%
+          EXIT DO
+        END IF
+      END IF
+    NEXT hxx%
+
+    hyy% = hyy% + 1
+  LOOP
+END IF
+
+' Check for shot hits
 shotlength% = ShotSpeed# * HitGridHeight% \ 200
 
 FOR i% = 1 TO MaxShots%
@@ -1795,7 +1829,6 @@ NEXT i%
 END SUB
 
 SUB UpdateAndRenderRocks (Rocks() AS RockType, fx%, fy%, fdx%, Booms() AS BoomType)
-SHARED Rock01%()
 IF RND < RockSpawnRate# THEN
   FOR i% = LBOUND(Rocks) TO UBOUND(Rocks)
     IF Rocks(i%).Active = 0 THEN
@@ -1817,8 +1850,6 @@ IF RND < RockSpawnRate# THEN
   NEXT i%
 END IF
 
-rocksize% = UBOUND(Rock01%, 1) - LBOUND(Rock01%, 1)
-rockr2& = rocksize% * rocksize%
 FOR i% = LBOUND(Rocks) TO UBOUND(Rocks)
   IF Rocks(i%).Active THEN
     Rocks(i%).Y = Rocks(i%).Y + RockSpeed%
@@ -1830,17 +1861,6 @@ FOR i% = LBOUND(Rocks) TO UBOUND(Rocks)
       Rocks(i%).SpriteIndex = Rocks(i%).SpriteIndex + Rocks(i%).SpriteIndexDelta
 
       DrawRock Rocks(i%)
-
-      IF FighterHit% = 0 THEN
-        dfx& = Rocks(i%).X - fx%
-        dfy& = Rocks(i%).Y - fy%
-        fr2& = dfx& * dfx& + dfy& * dfy&
-        IF fr2& < rockr2& THEN
-          FighterHit% = -1
-          MakeBoom Booms(), fx%, fy%, fdx%, 0
-          DeathFrames% = 15 * BoomFrames%
-        END IF
-      END IF
     END IF
   END IF
 NEXT i%
