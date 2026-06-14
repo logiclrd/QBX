@@ -53,6 +53,7 @@ TYPE AlienType
   Argument2 AS DOUBLE
   Argument3 AS DOUBLE
   FrameNumber AS INTEGER
+  HealthPoints AS INTEGER
   Damaged AS INTEGER
   SpriteIndex AS INTEGER
   X AS DOUBLE
@@ -735,11 +736,20 @@ FOR i% = 1 TO MaxShots%
             CASE IS > HitGridAlien%:
               hit% = hit% - HitGridAlien%
 
-              Aliens(hit%).Active = 0
+              IF Aliens(hit%).Active THEN
+                Aliens(hit%).HealthPoints = Aliens(hit%).HealthPoints - 1
+                Aliens(hit%).Damaged = 10
 
-              ' TODO: ejected aliens
+                IF Aliens(hit%).HealthPoints <= 0 THEN
+                  Aliens(hit%).Active = 0
 
-              MakeBoom Booms(), Aliens(hit%).ActualX, Aliens(hit%).ActualY, 0, 0
+                  activealiens% = activealiens% - 1
+
+                  ' TODO: ejected aliens
+
+                  MakeBoom Booms(), Aliens(hit%).ActualX, Aliens(hit%).ActualY, 0, 0
+                END IF
+              END IF
           END SELECT
         END IF
       END IF
@@ -757,6 +767,7 @@ FOR i% = 1 TO MaxAliens%
     Aliens(i%).Active = -1
     Aliens(i%).Variety = 0 ' Orbit Cluster
     Aliens(i%).Species = AlienSpecies%
+    Aliens(i%).HealthPoints = 1
 
     ' Argument1: Time
     ' Argument2: Phase
@@ -811,8 +822,9 @@ SELECT CASE alien.Species
   CASE 0:
     PutArt xx#, yy#, 0, Alien0%(), Alien0Mask%()
   CASE 1:
-    IF alien.Damaged THEN
+    IF alien.Damaged > 0 THEN
       PutArt xx#, yy#, 0, Alien1D%(), Alien1DMask%()
+      alien.Damaged = alien.Damaged - 1
     ELSE
       SELECT CASE alien.SpriteIndex
         CASE 0: PutArt xx#, yy#, 0, Alien1A%(), Alien1AMask%()
