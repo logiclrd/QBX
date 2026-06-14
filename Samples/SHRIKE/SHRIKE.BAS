@@ -15,6 +15,7 @@ TYPE FaceType
   P1 AS VertexType
   P2 AS VertexType
   P3 AS VertexType
+  SortZ AS DOUBLE
   Centre AS PointType
   Normal AS PointType
 END TYPE
@@ -105,7 +106,7 @@ DECLARE SUB RotateTransformY (matrix#(), angle#)
 DECLARE SUB RotateTransformZ (matrix#(), angle#)
 DECLARE SUB ScaleTransform (matrix#(), factor#)
 DECLARE SUB SetIdentityTransform (transform#())
-DECLARE SUB SortFaces (faces() AS FaceType, facez#(), first%, last%)
+DECLARE SUB SortFaces (faces() AS FaceType, first%, last%)
 DECLARE SUB StartRound (Aliens() AS AlienType, roundnumber%)
 DECLARE SUB SubtractPoint (t AS PointType, s AS PointType)
 DECLARE SUB TitleScreen (FighterVertices() AS PointType, FighterNormals() AS PointType, FighterFaces() AS FaceType, FighterLightPosition AS PointType)
@@ -1395,31 +1396,41 @@ FOR i% = LBOUND(sourcenormals) TO UBOUND(sourcenormals)
 NEXT i%
 
 ' Sort faces
-DIM facez#(LBOUND(faces) TO UBOUND(faces))
+DIM faceP1 AS VertexType
+DIM faceP2 AS VertexType
+DIM faceP3 AS VertexType
+DIM faceCentre AS PointType
+DIM faceNormal AS PointType
 
 FOR i% = LBOUND(faces) TO UBOUND(faces)
-  z1# = vertices(faces(i%).P1.VertexIndex).Z
-  z2# = vertices(faces(i%).P2.VertexIndex).Z
-  z3# = vertices(faces(i%).P3.VertexIndex).Z
+  faceP1 = faces(i%).P1
+  faceP2 = faces(i%).P2
+  faceP3 = faces(i%).P3
+
+  z1# = vertices(faceP1.VertexIndex).Z
+  z2# = vertices(faceP2.VertexIndex).Z
+  z3# = vertices(faceP3.VertexIndex).Z
 
   IF z1# < z2# THEN
-    IF z1# < z3# THEN facez#(i%) = z1# ELSE facez#(i%) = z3#
+    IF z1# < z3# THEN faces(i%).SortZ = z1# ELSE faces(i%).SortZ = z3#
   ELSE
-    IF z2# < z3# THEN facez#(i%) = z2# ELSE facez#(i%) = z3#
+    IF z2# < z3# THEN faces(i%).SortZ = z2# ELSE faces(i%).SortZ = z3#
   END IF
 
-  faces(i%).Centre = vertices(faces(i%).P1.VertexIndex)
-  AddPoint faces(i%).Centre, normals(faces(i%).P2.VertexIndex)
-  AddPoint faces(i%).Centre, normals(faces(i%).P3.VertexIndex)
+  faceCentre = vertices(faceP1.VertexIndex)
+  AddPoint faceCentre, vertices(faceP2.VertexIndex)
+  AddPoint faceCentre, vertices(faceP3.VertexIndex)
 
-  faces(i%).Normal = normals(faces(i%).P1.NormalIndex)
-  AddPoint faces(i%).Normal, normals(faces(i%).P2.NormalIndex)
-  AddPoint faces(i%).Normal, normals(faces(i%).P3.NormalIndex)
+  faceNormal = normals(faceP1.NormalIndex)
+  AddPoint faceNormal, normals(faceP2.NormalIndex)
+  AddPoint faceNormal, normals(faceP3.NormalIndex)
+  NormalizePoint faceNormal
 
-  NormalizePoint faces(i%).Normal
+  faces(i%).Centre = faceCentre
+  faces(i%).Normal = faceNormal
 NEXT i%
 
-SortFaces faces(), facez#(), LBOUND(faces), UBOUND(faces)
+SortFaces faces(), LBOUND(faces), UBOUND(faces)
 
 ' Project vertices - from this point on, vertex (X, Y) is screen
 FOR i% = LBOUND(vertices) TO UBOUND(vertices)
@@ -1565,8 +1576,7 @@ FOR i% = 0 TO 3
 NEXT i%
 END SUB
 
-REM $DYNAMIC
-SUB SortFaces (faces() AS FaceType, facez#(), first%, last%)
+SUB SortFaces (faces() AS FaceType, first%, last%)
 ' Try to avoid pathological cases
 r% = last% - first% + 1
 
@@ -1574,33 +1584,28 @@ s1% = INT(RND * r%) + first%
 s2% = INT(RND * r%) + first%
 s3% = INT(RND * r%) + first%
 
-IF facez#(s1%) > facez#(s2%) THEN
-  SWAP facez#(s1%), facez#(s2%)
+IF faces(s1%).SortZ > faces(s2%).SortZ THEN
   SWAP faces(s1%), faces(s2%)
 END IF
-IF facez#(s2%) > facez#(s3%) THEN
-  SWAP facez#(s2%), facez#(s3%)
+IF faces(s2%).SortZ > faces(s3%).SortZ THEN
   SWAP faces(s2%), faces(s3%)
 END IF
-IF facez#(s1%) > facez#(s2%) THEN
-  SWAP facez#(s1%), facez#(s2%)
+IF faces(s1%).SortZ > faces(s2%).SortZ THEN
   SWAP faces(s1%), faces(s2%)
 END IF
 
 ' Put the median of the 3 randomly selected values at the
 ' start as the initial pivot.
-SWAP facez#(s2%), facez#(first%)
 SWAP faces(s2%), faces(first%)
 
 ' Pivot
 pivot% = first%
+pivotz# = faces(pivot%).SortZ
 FOR i% = first% + 1 TO last%
-  IF facez#(i%) < facez#(pivot%) THEN
-    SWAP facez#(pivot%), facez#(pivot% + 1)
+  IF faces(i%).SortZ < pivotz# THEN
     SWAP faces(pivot%), faces(pivot% + 1)
 
     IF i% <> pivot% + 1 THEN
-      SWAP facez#(pivot%), facez#(i%)
       SWAP faces(pivot%), faces(i%)
 
       i% = i% - 1
@@ -1611,8 +1616,8 @@ FOR i% = first% + 1 TO last%
 NEXT i%
 
 ' Recurse
-IF pivot% - first% >= 2 THEN SortFaces faces(), facez#(), first%, pivot% - 1
-IF last% - pivot% >= 2 THEN SortFaces faces(), facez#(), pivot% + 1, last%
+IF pivot% - first% >= 2 THEN SortFaces faces(), first%, pivot% - 1
+IF last% - pivot% >= 2 THEN SortFaces faces(), pivot% + 1, last%
 END SUB
 
 SUB StartRound (Aliens() AS AlienType, roundnumber%)
