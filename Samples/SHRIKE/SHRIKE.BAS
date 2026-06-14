@@ -78,7 +78,7 @@ DECLARE SUB ApplyTransform (i AS PointType, matrix#(), o AS PointType)
 DECLARE SUB CascadeFighterBoom (fx%, fy%, fdx%, Booms() AS BoomType)
 DECLARE SUB CentreText (tx%, ty%, text$)
 DECLARE SUB CheckForHits (Shots() AS ShotType, Rocks() AS RockType, Aliens() AS AlienType, Booms() AS BoomType, fx%, fy%, nextround%)
-DECLARE SUB CreateKamikaze (Aliens() AS AlienType, ox#, oy#, odx#, ody#, acceleration#)
+DECLARE SUB CreateKamikaze (Aliens() AS AlienType, ox#, oy#, odx#, ody#, acceleration#, activatey%, dropy%)
 DECLARE SUB CreateOrbitCluster (Aliens() AS AlienType, clustersize%, ox#, oy#, odx#, ody#)
 DECLARE SUB DrawAlien (alien AS AlienType, ox%, oy%)
 DECLARE SUB DrawBoom (boom AS BoomType)
@@ -778,7 +778,7 @@ IF (activealiens% = 0) AND (nextround% > RoundInterval% \ 2) THEN
 END IF
 END SUB
 
-SUB CreateKamikaze (Aliens() AS AlienType, ox#, oy#, odx#, ody#, acceleration#)
+SUB CreateKamikaze (Aliens() AS AlienType, ox#, oy#, odx#, ody#, acceleration#, activatey%, dropy%)
 FOR i% = 1 TO MaxAliens%
   IF Aliens(i%).Active = 0 THEN
     Aliens(i%).Active = -1
@@ -787,8 +787,12 @@ FOR i% = 1 TO MaxAliens%
     Aliens(i%).HealthPoints = KamikazeAlienHealthPoints%
 
     ' Argument1: Acceleration
+    ' Argument2: Activate Y
+    ' Argument3: Drop Y
 
     Aliens(i%).Argument1 = acceleration#
+    Aliens(i%).Argument2 = activatey%
+    Aliens(i%).Argument3 = dropy%
 
     Aliens(i%).X = ox#
     Aliens(i%).Y = oy#
@@ -1864,10 +1868,18 @@ SELECT CASE roundtype%
     NEXT i%
   CASE 1: ' Kamikaze Fighters
     numaliens% = INT(RND * 3) + roundnumber% \ 4 + 1
-    acceleration# = roundnumber% / 8
+    acceleration# = roundnumber% / 16
+    activatey% = KamikazeAlienActivateY%
+    dropy% = KamikazeAlienDropY%
+    IF roundnumber% > 6 THEN
+      activatey% = activatey% - roundnumber% * 5
+      dropy% = dropy% - roundnumber% * 10
+
+      IF dropy% < 60 THEN dropy% = 60
+    END IF
 
     FOR i% = 1 TO numaliens%
-      CreateKamikaze Aliens(), INT(RND * 320), -AlienSpecies(0).Radius - 20 * i%, 0, .3, acceleration#
+      CreateKamikaze Aliens(), INT(RND * 320), -AlienSpecies(0).Radius - 20 * i%, 0, .3, acceleration#, activatey%, dropy%
     NEXT i%
 
     nextround% = nextround% + 5 * RoundInterval%
@@ -1967,9 +1979,13 @@ FOR i% = 1 TO MaxAliens%
           END IF
         END IF
       CASE 1: ' Kamikaze
+        ' Argument1: Acceleration (after drop)
+        ' Argument2: Activate Y
+        ' Argument3: Drop Y
+
         Aliens(i%).DX = Aliens(i%).DX * KamikazeAlienDragFactor#
 
-        IF Aliens(i%).Y > KamikazeAlienActivateY% THEN
+        IF Aliens(i%).Y > Aliens(i%).Argument2 THEN
           dfx# = fx% - Aliens(i%).X
           IF ABS(dfx#) > 1 THEN
             dfx# = dfx# - SGN(dfx#)
@@ -1980,7 +1996,7 @@ FOR i% = 1 TO MaxAliens%
         IF Aliens(i%).DX < -KamikazeAlienMaxSpeed# THEN Aliens(i%).DX = -KamikazeAlienMaxSpeed#
         IF Aliens(i%).DX > KamikazeAlienMaxSpeed# THEN Aliens(i%).DX = KamikazeAlienMaxSpeed#
 
-        IF Aliens(i%).Y > KamikazeAlienDropY% THEN Aliens(i%).DY = Aliens(i%).DY + Aliens(i%).Argument1
+        IF Aliens(i%).Y >= Aliens(i%).Argument3 THEN Aliens(i%).DY = Aliens(i%).DY + Aliens(i%).Argument1
 
         IF (Aliens(i%).FrameNumber AND 7) = 0 THEN
           Aliens(i%).SpriteIndex = 1 - Aliens(i%).SpriteIndex
