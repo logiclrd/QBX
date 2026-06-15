@@ -2220,6 +2220,8 @@ FOR i% = 1 TO MaxAliens%
               END IF
             END IF
           CASE 5: ' Mine
+            Aliens(i%).DX = 0
+
             IF (Aliens(i%).FrameNumber AND 31) = 0 THEN
               CreateMine Aliens(), Aliens(i%).X, Aliens(i%).Y + AlienSpecies(1).Radius
             END IF
