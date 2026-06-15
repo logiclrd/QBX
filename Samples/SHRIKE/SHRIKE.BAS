@@ -178,6 +178,7 @@ CONST AmbientLightIntensity# = .3
 
 CONST MaxAliens% = 25
 CONST AlienActiveMargin% = 40
+CONST AlienDamageVisibleFrames% = 6
 
 CONST OrbitClusterAlienHealthPoints% = 1
 CONST OrbitClusterAlienVeerOffY% = 90
@@ -424,7 +425,7 @@ DIM AlienSpecies(0 TO 4) AS AlienSpeciesType
 
 AlienSpecies(0).Radius = 6: AlienSpecies(0).Value = 5
 AlienSpecies(1).Radius = 35: AlienSpecies(1).Value = 25
-AlienSpecies(2).Radius = 17: AlienSpecies(2).Value = 40
+AlienSpecies(2).Radius = 17: AlienSpecies(2).Value = 70
 AlienSpecies(3).Radius = 6: AlienSpecies(3).Value = 2
 AlienSpecies(4).Radius = 4: AlienSpecies(4).Value = 1: AlienSpecies(4).Squishy = 1
 
@@ -786,7 +787,7 @@ FOR i% = 1 TO MaxShots%
 
               IF Aliens(hit%).Active THEN
                 Aliens(hit%).HealthPoints = Aliens(hit%).HealthPoints - 1
-                Aliens(hit%).Damaged = 10
+                Aliens(hit%).Damaged = AlienDamageVisibleFrames%
 
                 IF Aliens(hit%).HealthPoints <= 0 THEN
                   Aliens(hit%).Active = 0
