@@ -20,6 +20,10 @@ FOR i% = 2 TO UBOUND(sieve%)
     ' Draw a dot for this prime on the number line.
     x% = (i% - 2) * Interval% + Interval% \ 2
 
+    CIRCLE (x%, y%), DotSize% + 2, 5
+    PAINT (x%, y%), 5, 5
+    CIRCLE (x%, y%), DotSize% + 1, 13
+    PAINT (x%, y%), 13, 13
     CIRCLE (x%, y%), DotSize%, 14
     PAINT (x%, y%), 14, 14
 
@@ -27,9 +31,29 @@ FOR i% = 2 TO UBOUND(sieve%)
     polarity% = 0 ' Alternate top and bottom curve segments.
 
     FOR j% = i% TO UBOUND(sieve%) STEP i%
-      x% = (2 * j% + i% - 3) * Interval% \ 2
-      CIRCLE (x%, y%), Interval% * i% \ 2, 14, PI# * polarity%, PI# * (polarity% + 1)
+      cx% = (2 * j% + i% - 3) * Interval% \ 2
+      CIRCLE (cx%, y%), Interval% * i% \ 2, 14, PI# * polarity%, PI# * (polarity% + 1)
       polarity% = polarity% XOR 1
     NEXT j%
+
+    ' Hollow out the prime's dot
+    CIRCLE (x%, y%), 1, 0
+    PAINT (x%, y%), 0, 0
   END IF
+NEXT i%
+
+' Waste some CPU cycles for aesthetic appearance: Give all
+' yellow pixels a red glow. :-)
+FOR i% = 0 TO 639
+  FOR j% = 0 TO 479
+    IF POINT(i%, j%) = 14 THEN
+      FOR k% = -1 TO 1
+        FOR l% = -1 TO 1
+          IF k% OR l% THEN
+            IF POINT(i% + k%, j% + l%) = 0 THEN PSET (i% + k%, j% + l%), 4
+          END IF
+        NEXT l%
+      NEXT k%
+    END IF
+  NEXT j%
 NEXT i%
