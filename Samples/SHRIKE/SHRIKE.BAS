@@ -44,6 +44,7 @@ END TYPE
 TYPE AlienSpeciesType
   Radius AS INTEGER
   Value AS INTEGER
+  Squishy AS INTEGER
 END TYPE
 
 TYPE AlienType
@@ -53,6 +54,7 @@ TYPE AlienType
   Argument1 AS DOUBLE
   Argument2 AS DOUBLE
   Argument3 AS DOUBLE
+  Argument4 AS INTEGER
   FrameNumber AS INTEGER
   HealthPoints AS INTEGER
   Damaged AS INTEGER
@@ -80,8 +82,14 @@ DECLARE SUB CascadeFighterBoom (fx%, fy%, fdx%, Booms() AS BoomType)
 DECLARE SUB CentreText (tx%, ty%, text$)
 DECLARE SUB CheckForHits (Shots() AS ShotType, Rocks() AS RockType, Aliens() AS AlienType, Booms() AS BoomType, fx%, fy%, nextround%, score&)
 DECLARE SUB CreateKamikaze (Aliens() AS AlienType, ox#, oy#, odx#, ody#, acceleration#, activatey%, dropy%)
+DECLARE SUB CreateMine (Aliens() AS AlienType, ox#, oy#)
+DECLARE SUB CreateMineLayer (Aliens() AS AlienType, ox#, oy#)
 DECLARE SUB CreateOrbitCluster (Aliens() AS AlienType, clustersize%, ox#, oy#, odx#, ody#)
 DECLARE SUB DrawAlien (alien AS AlienType, ox%, oy%)
+DECLARE SUB DrawAlien0 (xx#, yy#)
+DECLARE SUB DrawAlien1 (xx#, yy#, alien AS AlienType)
+DECLARE SUB DrawAlien1Mine (xx#, yy#, alien AS AlienType)
+DECLARE SUB DrawAlien2 (xx#, yy#, alien AS AlienType)
 DECLARE SUB DrawBoom (boom AS BoomType)
 DECLARE SUB DrawReticle (ox%, oy%)
 DECLARE SUB DrawRock (rock AS RockType)
@@ -181,6 +189,15 @@ CONST KamikazeAlienActivateY% = 75
 CONST KamikazeAlienAttractionFactor# = .05
 CONST KamikazeAlienMaxSpeed# = 1.5
 CONST KamikazeAlienDropY% = 120
+
+CONST MineLayerHealthPoints% = 75
+CONST MineLayerDropSpeed# = .3
+CONST MineLayerDecelerationFactor# = .95
+CONST MineLayerRotationSpeed# = .04
+CONST MineLayerMaxSpeed# = 3.25
+
+CONST MineHealthPoints% = 2
+CONST MineSpeed# = 1.5
 
 CONST RoundInterval% = 200
 
@@ -396,11 +413,20 @@ DIM FighterLightPosition AS PointType
 LoadObject "FIGHTER.OBJ", FighterVertices(), FighterNormals(), FighterFaces()
 
 ' Get set up to draw aliens
-DIM AlienSpecies(0 TO 2) AS AlienSpeciesType
+DIM AlienSpecies(0 TO 4) AS AlienSpeciesType
+
+' Species:
+'   0 - Little guy
+'   1 - Mine layer (big)
+'   2 - Kamikaze (medium)
+'   3 - Mine from alien 1
+'   4 - Floater
 
 AlienSpecies(0).Radius = 6: AlienSpecies(0).Value = 5
 AlienSpecies(1).Radius = 35: AlienSpecies(1).Value = 25
 AlienSpecies(2).Radius = 17: AlienSpecies(2).Value = 40
+AlienSpecies(3).Radius = 6: AlienSpecies(3).Value = 2
+AlienSpecies(4).Radius = 4: AlienSpecies(4).Value = 1: AlienSpecies(4).Squishy = 1
 
 ' State
 
@@ -812,6 +838,85 @@ FOR i% = 1 TO MaxAliens%
 NEXT i%
 END SUB
 
+SUB CreateMine (Aliens() AS AlienType, ox#, oy#)
+FOR i% = 1 TO MaxAliens%
+  IF Aliens(i%).Active = 0 THEN
+    Aliens(i%).Active = -1
+    Aliens(i%).Variety = 3 ' Blink
+    Aliens(i%).Species = 3 ' Mine (MINE)
+    Aliens(i%).HealthPoints = MineHealthPoints%
+
+    Aliens(i%).X = ox#
+    Aliens(i%).Y = oy#
+    Aliens(i%).DX = 0
+    Aliens(i%).DY = MineSpeed#
+
+    EXIT FOR
+  END IF
+NEXT i%
+END SUB
+
+SUB CreateMineLayer (Aliens() AS AlienType, ox#, oy#)
+SHARED AlienSpecies() AS AlienSpeciesType
+STATIC lastslot%
+
+hh% = AlienSpecies(1).Radius * 2 + 3
+
+FOR i% = 1 TO MaxAliens%
+  IF Aliens(i%).Active AND (Aliens(i%).Species = 1) THEN
+    existingtargety% = Aliens(i%).Argument1
+    IF existingtargety% < hh% THEN
+      slot0% = 1
+    ELSEIF existingtargety% < 2 * hh% THEN
+      slot1% = 1
+    ELSEIF existingtargety% < 3 * hh% THEN
+      slot2% = 1
+    END IF
+
+    IF slot0% AND slot1% AND slot2% THEN EXIT FOR
+  END IF
+NEXT i%
+
+IF slot0% = 0 THEN
+  slot% = 0
+ELSEIF slot1% = 0 THEN
+  slot% = 1
+ELSEIF slot2% = 0 THEN
+  slot% = 2
+ELSE
+  slot% = (lastslot% + 1) MOD 3
+END IF
+
+lastslot% = slot%
+
+targety% = slot% * hh% + AlienSpecies(1).Radius
+
+FOR i% = 1 TO MaxAliens%
+  IF Aliens(i%).Active = 0 THEN
+    Aliens(i%).Active = -1
+    Aliens(i%).Variety = 2 ' Mine Layer
+    Aliens(i%).Species = 1 ' Large Alien (ALIEN1)
+    Aliens(i%).HealthPoints = MineLayerHealthPoints%
+
+    ' Argument1: Target Y
+    ' Argument2: State
+    ' Argument3: Rotation
+    ' Argument4: (Move state) Target X
+
+    Aliens(i%).Argument1 = targety%
+    Aliens(i%).Argument2 = 0
+    Aliens(i%).Argument3 = 0
+
+    Aliens(i%).X = ox#
+    Aliens(i%).Y = oy#
+    Aliens(i%).DX = 0
+    Aliens(i%).DY = MineLayerDropSpeed#
+
+    EXIT FOR
+  END IF
+NEXT i%
+END SUB
+
 SUB CreateOrbitCluster (Aliens() AS AlienType, clustersize%, ox#, oy#, odx#, ody#)
 n% = 1
 a# = 2 * PI# * n% / clustersize%
@@ -854,47 +959,73 @@ DotProduct# = a.X * b.X + a.Y * b.Y + a.Z * b.Z
 END FUNCTION
 
 SUB DrawAlien (alien AS AlienType, ox%, oy%)
-SHARED Alien0%(), Alien0Mask%()
-SHARED Alien1A%(), Alien1AMask%()
-SHARED Alien1B%(), Alien1BMask%()
-SHARED Alien1D%(), Alien1DMask%()
-SHARED Alien2A%(), Alien2AMask%()
-SHARED Alien2B%(), Alien2BMask%()
-SHARED Alien2D%(), Alien2DMask%()
-
 xx# = alien.X + ox%
 yy# = alien.Y + oy%
 
 alien.ActualX = xx#
 alien.ActualY = yy#
 
-IF (alien.FrameNumber AND 3) = 0 THEN
-  alien.SpriteIndex = 1 - alien.SpriteIndex
-END IF
-
 SELECT CASE alien.Species
-  CASE 0:
-    PutArt xx#, yy#, 0, Alien0%(), Alien0Mask%()
-  CASE 1:
-    IF alien.Damaged > 0 THEN
-      PutArt xx#, yy#, 0, Alien1D%(), Alien1DMask%()
-      alien.Damaged = alien.Damaged - 1
-    ELSE
-      SELECT CASE alien.SpriteIndex
-        CASE 0: PutArt xx#, yy#, 0, Alien1A%(), Alien1AMask%()
-        CASE 1: PutArt xx#, yy#, 0, Alien1B%(), Alien1BMask%()
-      END SELECT
-    END IF
-  CASE 2:
-    IF alien.Damaged THEN
-      PutArt xx#, yy#, 0, Alien2D%(), Alien2DMask%()
-    ELSE
-      SELECT CASE alien.SpriteIndex
-        CASE 0: PutArt xx#, yy#, 0, Alien2A%(), Alien2AMask%()
-        CASE 1: PutArt xx#, yy#, 0, Alien2B%(), Alien2BMask%()
-      END SELECT
-    END IF
+  CASE 0: ' Little guy
+    DrawAlien0 xx#, yy#
+  CASE 1: ' Big mine layer
+    DrawAlien1 xx#, yy#, alien
+  CASE 3: ' Mine
+    DrawAlien1Mine xx#, yy#, alien
+  CASE 2: ' Medium fighter
+    DrawAlien2 xx#, yy#, alien
 END SELECT
+END SUB
+
+SUB DrawAlien0 (xx#, yy#)
+SHARED Alien0%(), Alien0Mask%()
+PutArt xx#, yy#, 0, Alien0%(), Alien0Mask%()
+END SUB
+
+SUB DrawAlien1 (xx#, yy#, alien AS AlienType)
+SHARED Alien1A%(), Alien1AMask%()
+SHARED Alien1B%(), Alien1BMask%()
+SHARED Alien1D%(), Alien1DMask%()
+
+a# = alien.Argument3
+
+IF alien.Damaged > 0 THEN
+  PutArt xx#, yy#, a#, Alien1D%(), Alien1DMask%()
+ELSE
+  SELECT CASE alien.SpriteIndex
+    CASE 0: PutArt xx#, yy#, a#, Alien1A%(), Alien1AMask%()
+    CASE 1: PutArt xx#, yy#, a#, Alien1B%(), Alien1BMask%()
+  END SELECT
+END IF
+END SUB
+
+SUB DrawAlien1Mine (xx#, yy#, alien AS AlienType)
+SHARED MineA%(), MineAMask%()
+SHARED MineB%(), MineBMask%()
+
+a# = alien.FrameNumber / 30
+
+SELECT CASE alien.SpriteIndex
+  CASE 0: PutArt xx#, yy#, a#, MineA%(), MineAMask%()
+  CASE 1: PutArt xx#, yy#, a#, MineB%(), MineBMask%()
+END SELECT
+END SUB
+
+SUB DrawAlien2 (xx#, yy#, alien AS AlienType)
+SHARED Alien2A%(), Alien2AMask%()
+SHARED Alien2B%(), Alien2BMask%()
+SHARED Alien2D%(), Alien2DMask%()
+
+a# = alien.DX * -.1
+
+IF alien.Damaged THEN
+  PutArt xx#, yy#, a#, Alien2D%(), Alien2DMask%()
+ELSE
+  SELECT CASE alien.SpriteIndex
+    CASE 0: PutArt xx#, yy#, a#, Alien2A%(), Alien2AMask%()
+    CASE 1: PutArt xx#, yy#, a#, Alien2B%(), Alien2BMask%()
+  END SELECT
+END IF
 END SUB
 
 SUB DrawBoom (boom AS BoomType)
@@ -1855,7 +1986,7 @@ SHARED AlienSpecies() AS AlienSpeciesType
 STATIC lastroundtype%, secondlastroundtype%
 
 ' Try to reduce repetitiveness
-minroundtype% = roundnumber% \ 4 - 2
+minroundtype% = roundnumber% \ 6 - 2
 maxroundtype% = minroundtype% + 2
 
 IF minroundtype% < 0 THEN minroundtype% = 0
@@ -1871,33 +2002,40 @@ LOOP WHILE (minroundtype% <> maxroundtype%) AND (roundtype% = lastroundtype%) AN
 secondlastroundtype% = lastroundtype%
 lastroundtype% = roundtype%
 
-SELECT CASE roundtype%
-  CASE 0: ' Orbit Clusters
-    clustersize% = (roundnumber% + 2) \ 4 + 3
-    IF clustersize% > 6 THEN clustersize% = 6
+maxroundtype% = roundtype%
+IF roundnumber% = 15 THEN minroundtype% = 1 ELSE minroundtype% = roundtype%
 
-    FOR i% = 0 TO 3
-      CreateOrbitCluster Aliens(), clustersize%, (i% AND 1) * 100 + 110, -20 - 40 * i%, 0, 2
-    NEXT i%
-  CASE 1: ' Kamikaze Fighters
-    numaliens% = INT(RND * 3) + roundnumber% \ 4 + 1
-    acceleration# = roundnumber% / 16
-    activatey% = KamikazeAlienActivateY%
-    dropy% = KamikazeAlienDropY%
-    IF roundnumber% > 6 THEN
-      activatey% = activatey% - roundnumber% * 3
-      dropy% = dropy% - roundnumber% * 5
+FOR roundtype% = minroundtype% TO maxroundtype%
+  SELECT CASE roundtype%
+    CASE 0: ' Orbit Clusters
+      clustersize% = (roundnumber% + 2) \ 4 + 3
+      IF clustersize% > 6 THEN clustersize% = 6
 
-      IF dropy% < 60 THEN dropy% = 60
-    END IF
+      FOR i% = 0 TO 3
+        CreateOrbitCluster Aliens(), clustersize%, (i% AND 1) * 100 + 110, -20 - 40 * i%, 0, 2
+      NEXT i%
+    CASE 1: ' Kamikaze Fighters
+      numaliens% = INT(RND * 3) + roundnumber% \ 4 + 1
+      acceleration# = roundnumber% / 16
+      activatey% = KamikazeAlienActivateY%
+      dropy% = KamikazeAlienDropY%
+      IF roundnumber% > 6 THEN
+        activatey% = activatey% - roundnumber% * 3
+        dropy% = dropy% - roundnumber% * 5
 
-    FOR i% = 1 TO numaliens%
-      CreateKamikaze Aliens(), INT(RND * 320), -AlienSpecies(0).Radius - 20 * i%, 0, .3, acceleration#, activatey%, dropy%
-    NEXT i%
+        IF dropy% < 60 THEN dropy% = 60
+      END IF
 
-    nextround% = nextround% + 5 * RoundInterval%
-  CASE 2: ' Mine Layers
-END SELECT
+      FOR i% = 1 TO numaliens%
+        CreateKamikaze Aliens(), INT(RND * 320), -AlienSpecies(2).Radius - 20 * (i% - 1), 0, .3, acceleration#, activatey%, dropy%
+      NEXT i%
+
+      nextround% = nextround% + 5 * RoundInterval%
+    CASE 2: ' Mine Layers
+      CreateMineLayer Aliens(), INT(RND * 320), -2 * AlienSpecies(1).Radius - 20 * (i% - 1)
+      nextround% = nextround% + 15 * RoundInterval%
+  END SELECT
+NEXT roundtype%
 END SUB
 
 SUB SubtractPoint (t AS PointType, s AS PointType)
@@ -2011,6 +2149,87 @@ FOR i% = 1 TO MaxAliens%
 
         IF Aliens(i%).Y >= Aliens(i%).Argument3 THEN Aliens(i%).DY = Aliens(i%).DY + Aliens(i%).Argument1
 
+        IF (Aliens(i%).FrameNumber AND 7) = 0 THEN
+          Aliens(i%).SpriteIndex = 1 - Aliens(i%).SpriteIndex
+        END IF
+      CASE 2: ' Mine Layer
+        ' Argument1: Target Y
+        ' Argument2: State (  Drop to target Y
+        '                        |
+        '                        v
+        '               .-> Rotate to scan->Scan->Rotate from scan->Move->Mines-.
+        '               `-------------------------------------------------------'  )
+        ' Argument3: Rotation
+        ' Argument4: (Move state) Target X
+
+        state% = INT(Aliens(i%).Argument2)
+
+        SELECT CASE state%
+          CASE 0: ' Drop to target Y
+            IF Aliens(i%).Y >= Aliens(i%).Argument1 THEN
+              Aliens(i%).DY = Aliens(i%).DY * MineLayerDecelerationFactor# - .1
+              IF Aliens(i%).DY < 0 THEN
+                Aliens(i%).DY = 0
+                Aliens(i%).Argument2 = 1 ' Rotate to scan
+                Aliens(i%).Argument3 = 0
+                Aliens(i%).FrameNumber = 0
+              END IF
+            END IF
+          CASE 1: ' Rotate to scan
+            IF Aliens(i%).FrameNumber > 40 THEN
+              Aliens(i%).Argument3 = Aliens(i%).Argument3 + MineLayerRotationSpeed#
+
+              IF Aliens(i%).Argument3 > PI# THEN
+                Aliens(i%).Argument3 = PI#
+                Aliens(i%).Argument2 = 2 ' Scan
+                Aliens(i%).FrameNumber = 0
+              END IF
+            END IF
+          CASE 2: ' Scan
+            IF (Aliens(i%).FrameNumber AND 7) = 0 THEN Aliens(i%).SpriteIndex = 1 - Aliens(i%).SpriteIndex
+
+            IF Aliens(i%).FrameNumber > 53 THEN
+              Aliens(i%).Argument4 = fx% ' Latch fighter position at this time
+
+              Aliens(i%).Argument2 = 3 ' Rotate from scan
+              Aliens(i%).Argument3 = -PI#
+            END IF
+          CASE 3: ' Rotate from scan
+            Aliens(i%).Argument3 = Aliens(i%).Argument3 + MineLayerRotationSpeed#
+
+            IF Aliens(i%).Argument3 > 0# THEN
+              Aliens(i%).Argument3 = 0#
+              Aliens(i%).Argument2 = 4 ' Move
+              Aliens(i%).FrameNumber = 0
+            END IF
+          CASE 4: ' Move
+            IF Aliens(i%).FrameNumber > 40 THEN
+              targetdx# = Aliens(i%).Argument4 - Aliens(i%).X
+
+              Aliens(i%).DX = targetdx# * .2 + SGN(targetdx#) * .1
+
+              IF ABS(Aliens(i%).DX) > MineLayerMaxSpeed# THEN
+                Aliens(i%).DX = MineLayerMaxSpeed# * SGN(Aliens(i%).DX)
+              END IF
+
+              IF ABS(Aliens(i%).DX) > ABS(targetdx#) THEN
+                Aliens(i%).DX = targetdx#
+                Aliens(i%).Argument2 = 5 ' Lay mines
+                Aliens(i%).FrameNumber = 0
+              END IF
+            END IF
+          CASE 5: ' Mine
+            IF (Aliens(i%).FrameNumber AND 31) = 0 THEN
+              CreateMine Aliens(), Aliens(i%).X, Aliens(i%).Y + AlienSpecies(1).Radius
+            END IF
+
+            IF Aliens(i%).FrameNumber > 120 THEN
+              Aliens(i%).Argument2 = 1 ' Rotate to scan
+              Aliens(i%).Argument3 = 0
+              Aliens(i%).FrameNumber = 0
+            END IF
+        END SELECT
+      CASE 3: ' Mine
         IF (Aliens(i%).FrameNumber AND 7) = 0 THEN
           Aliens(i%).SpriteIndex = 1 - Aliens(i%).SpriteIndex
         END IF
