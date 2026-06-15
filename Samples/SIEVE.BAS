@@ -53,12 +53,9 @@ NEXT i%
 FOR i% = 0 TO 639
   FOR j% = 0 TO 479
     IF POINT(i%, j%) = 14 THEN
-      FOR k% = -1 TO 1
-        FOR l% = -1 TO 1
-          IF k% OR l% THEN
-            IF POINT(i% + k%, j% + l%) = 0 THEN PSET (i% + k%, j% + l%), 4
-          END IF
-        NEXT l%
+      FOR k% = -1 TO 1 STEP 2
+        IF POINT(i% + k%, j%) = 0 THEN PSET (i% + k%, j%), 4
+        IF POINT(i%, j% + k%) = 0 THEN PSET (i%, j% + k%), 4
       NEXT k%
     END IF
   NEXT j%
