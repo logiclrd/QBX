@@ -1,5 +1,11 @@
 SCREEN 12
 
+' This looks better with a subtler red, because it's used as a glow.
+OUT &H3C8, 4 ' Reprogram VGA DAC entry 4
+OUT &H3C9, 28 ' Red: 28 (out of 63) (default is 42)
+OUT &H3C9, 0  ' Green
+OUT &H3C9, 0  ' Blue
+
 CONST Interval% = 9
 CONST DotSize% = 3
 
