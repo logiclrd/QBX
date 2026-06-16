@@ -145,6 +145,7 @@ DECLARE SUB UpdateAndRenderShot (shot AS ShotType)
 DECLARE SUB UpdateAndRenderSplats (Splats() AS SplatType)
 DECLARE FUNCTION Distance# (t AS PointType)
 DECLARE FUNCTION DotProduct# (a AS PointType, b AS PointType)
+DECLARE FUNCTION FLOOR# (d#)
 DECLARE FUNCTION IsNaNOrInf% (d#)
 DECLARE FUNCTION MeasureText% (text$)
 DECLARE FUNCTION RandomDustColour% ()
@@ -1387,6 +1388,11 @@ ELSE
 END IF
 END SUB
 
+FUNCTION FLOOR# (d#)
+e% = INT(d#)
+FLOOR# = e% + (e% > d#)
+END FUNCTION
+
 SUB GetArtDimensions (filename$, w%, h%)
 ff% = FREEFILE
 
@@ -1478,8 +1484,10 @@ NEXT ch%
 END SUB
 
 FUNCTION IsNaNOrInf% (d#)
-e# = d# / d#
-IsNaNOrInf% = e# <> e#
+IF d# <> 0 THEN
+  e# = d# / d#
+  IsNaNOrInf% = e# <> e#
+END IF
 END FUNCTION
 
 SUB LoadArt (filename$, pixels%(), mask%())
@@ -1702,6 +1710,10 @@ SUB PutArt (ox#, oy#, angle#, pixels%(), mask%())
 w% = UBOUND(pixels%, 1) - LBOUND(pixels%, 1) + 1
 h% = UBOUND(pixels%, 2) - LBOUND(pixels%, 2) + 1
 
+rotations% = FLOOR(angle# / (2 * PI#))
+
+angle# = angle# - rotations% * (2 * PI#)
+
 l# = (w% - 1) * -.5: r# = (w% - 1) * .5
 t# = (h% - 1) * -.5: b# = (h% - 1) * .5
 
@@ -1724,13 +1736,55 @@ sx2% = w%: sy2% = 1
 sx3% = 1: sy3% = h%
 sx4% = w%: sy4% = h%
 
-IF y1# > y2# THEN SWAP x1#, x2#: SWAP y1#, y2#: SWAP sx1%, sx2%: SWAP sy1%, sy2%
-IF y1# > y3# THEN SWAP x1#, x3#: SWAP y1#, y3#: SWAP sx1%, sx3%: SWAP sy1%, sy3%
-IF y1# > y4# THEN SWAP x1#, x4#: SWAP y1#, y4#: SWAP sx1%, sx4%: SWAP sy1%, sy4%
-IF y2# > y4# THEN SWAP x2#, x4#: SWAP y2#, y4#: SWAP sx2%, sx4%: SWAP sy2%, sy4%
-IF y3# > y4# THEN SWAP x3#, x4#: SWAP y3#, y4#: SWAP sx3%, sx4%: SWAP sy3%, sy4%
+' We need (x1,y1) to be the topmost point and (x4,y4) to be the bottom,
+' and then 1-2-4 traces the left edge and 1-3-4 traces the right edge.
+'
+' Starting point:
+'
+'   1   2
+'
+'   3   4
 
-IF x2# > x3# THEN SWAP x2#, x3#: SWAP y2#, y3#: SWAP sx2%, sx3%: SWAP sy2%, sy3%
+SELECT CASE angle#
+  CASE IS < PI# * .5:
+    ' 0-90 degrees
+    '
+    '     2          1
+    ' 1       => 2
+    '       4          3
+    '   3          4
+    '
+    SWAP x1#, x2#: SWAP y1#, y2#: SWAP sx1%, sx2%: SWAP sy1%, sy2%
+    SWAP x3#, x4#: SWAP y3#, y4#: SWAP sx3%, sx4%: SWAP sy3%, sy4%
+  CASE IS < PI#:
+    ' 90-180 degrees
+    '
+    '     4          1
+    ' 2       => 2
+    '       3          3
+    '   1          4
+    '
+    SWAP x1#, x4#: SWAP y1#, y4#: SWAP sx1%, sx4%: SWAP sy1%, sy4%
+  CASE IS < PI# * 1.5:
+    ' 180-270 degrees
+    '
+    '     3          1
+    ' 4       => 2
+    '       1          3
+    '   2          4
+    '
+    SWAP x1#, x3#: SWAP y1#, y3#: SWAP sx1%, sx3%: SWAP sy1%, sy3%
+    SWAP x2#, x4#: SWAP y2#, y4#: SWAP sx2%, sx4%: SWAP sy2%, sy4%
+  CASE ELSE:
+    ' 270-360 degrees
+    '
+    '     1          1
+    ' 3       => 2
+    '       2          3
+    '   4          4
+    '
+    SWAP x2#, x3#: SWAP y2#, y3#: SWAP sx2%, sx3%: SWAP sy2%, sy3%
+END SELECT
 
 x2mx1# = x2# - x1#: sx2msx1% = sx2% - sx1%
 x3mx1# = x3# - x1#: sx3msx1% = sx3% - sx1%
@@ -1816,6 +1870,12 @@ FOR yy% = yy1% TO yy2%
     xx2# = yyp# * r43# + x3# + br43% * x4mx3#
     sxx2# = yyp# * srx43# + sx3% + bsrx43% * sx4msx3%
     syy2# = yyp# * sry43# + sy3% + bsry43% * sy4msy3%
+  END IF
+
+  IF xx1# > xx2# THEN
+    SWAP xx1#, xx2#
+    SWAP sxx1#, sxx2#
+    SWAP syy1#, syy2#
   END IF
 
   ww# = xx2# - xx1#
