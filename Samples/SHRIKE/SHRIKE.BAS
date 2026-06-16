@@ -49,7 +49,6 @@ END TYPE
 
 TYPE AlienType
   Active AS INTEGER
-  Variety AS INTEGER
   Species AS INTEGER
   Argument1 AS DOUBLE
   Argument2 AS DOUBLE
@@ -88,8 +87,8 @@ DECLARE SUB CreateOrbitCluster (Aliens() AS AlienType, clustersize%, ox#, oy#, o
 DECLARE SUB DrawAlien (alien AS AlienType, ox%, oy%)
 DECLARE SUB DrawAlien0 (xx#, yy#)
 DECLARE SUB DrawAlien1 (xx#, yy#, alien AS AlienType)
-DECLARE SUB DrawAlien1Mine (xx#, yy#, alien AS AlienType)
 DECLARE SUB DrawAlien2 (xx#, yy#, alien AS AlienType)
+DECLARE SUB DrawAlien2Mine (xx#, yy#, alien AS AlienType)
 DECLARE SUB DrawBoom (boom AS BoomType)
 DECLARE SUB DrawReticle (ox%, oy%)
 DECLARE SUB DrawRock (rock AS RockType)
@@ -259,25 +258,25 @@ GetArtDimensions "ALIEN2_D.ART", w%, h%
 DIM Alien2D%(1 TO w%, 1 TO h%), Alien2DMask%(1 TO w%, 1 TO h%)
 LoadArt "ALIEN2_D.ART", Alien2D%(), Alien2DMask%()
 
-GetArtDimensions "ALIEN3.ART", w%, h%
-DIM Alien3%(1 TO w%, 1 TO h%), Alien3Mask%(1 TO w%, 1 TO h%)
-LoadArt "ALIEN3.ART", Alien3%(), Alien3Mask%()
+GetArtDimensions "ALIEN3_A.ART", w%, h%
+DIM Alien3A%(1 TO w%, 1 TO h%), Alien3AMask%(1 TO w%, 1 TO h%)
+LoadArt "ALIEN3_A.ART", Alien3A%(), Alien3AMask%()
 
-GetArtDimensions "ALIEN4_A.ART", w%, h%
-DIM Alien4A%(1 TO w%, 1 TO h%), Alien4AMask%(1 TO w%, 1 TO h%)
-LoadArt "ALIEN4_A.ART", Alien4A%(), Alien4AMask%()
+GetArtDimensions "ALIEN3_B.ART", w%, h%
+DIM Alien3B%(1 TO w%, 1 TO h%), Alien3BMask%(1 TO w%, 1 TO h%)
+LoadArt "ALIEN3_B.ART", Alien3B%(), Alien3BMask%()
 
-GetArtDimensions "ALIEN4_B.ART", w%, h%
-DIM Alien4B%(1 TO w%, 1 TO h%), Alien4BMask%(1 TO w%, 1 TO h%)
-LoadArt "ALIEN4_B.ART", Alien4B%(), Alien4BMask%()
+GetArtDimensions "ALIEN4.ART", w%, h%
+DIM Alien4%(1 TO w%, 1 TO h%), Alien4Mask%(1 TO w%, 1 TO h%)
+LoadArt "ALIEN4.ART", Alien4%(), Alien4Mask%()
 
-GetArtDimensions "MINE_A.ART", w%, h%
-DIM MineA%(1 TO w%, 1 TO h%), MineAMask%(1 TO w%, 1 TO h%)
-LoadArt "MINE_A.ART", MineA%(), MineAMask%()
+GetArtDimensions "ALIEN5_A.ART", w%, h%
+DIM Alien5A%(1 TO w%, 1 TO h%), Alien5AMask%(1 TO w%, 1 TO h%)
+LoadArt "ALIEN5_A.ART", Alien5A%(), Alien5AMask%()
 
-GetArtDimensions "MINE_B.ART", w%, h%
-DIM MineB%(1 TO w%, 1 TO h%), MineBMask%(1 TO w%, 1 TO h%)
-LoadArt "MINE_B.ART", MineB%(), MineBMask%()
+GetArtDimensions "ALIEN5_B.ART", w%, h%
+DIM Alien5B%(1 TO w%, 1 TO h%), Alien5BMask%(1 TO w%, 1 TO h%)
+LoadArt "ALIEN5_B.ART", Alien5B%(), Alien5BMask%()
 
 GetArtDimensions "ROCK01.ART", w%, h%
 DIM Rock01%(1 TO w%, 1 TO h%), Rock01Mask%(1 TO w%, 1 TO h%)
@@ -418,10 +417,11 @@ DIM AlienSpecies(0 TO 4) AS AlienSpeciesType
 
 ' Species:
 '   0 - Little guy
-'   1 - Mine layer (big)
-'   2 - Kamikaze (medium)
+'   1 - Kamikaze (medium)
+'   2 - Mine layer (big)
 '   3 - Mine from alien 1
-'   4 - Floater
+'   4 - Mothership
+'   5 - Floater
 
 AlienSpecies(0).Radius = 6: AlienSpecies(0).Value = 5
 AlienSpecies(1).Radius = 35: AlienSpecies(1).Value = 25
@@ -817,8 +817,7 @@ SUB CreateKamikaze (Aliens() AS AlienType, ox#, oy#, odx#, ody#, acceleration#, 
 FOR i% = 1 TO MaxAliens%
   IF Aliens(i%).Active = 0 THEN
     Aliens(i%).Active = -1
-    Aliens(i%).Variety = 1 ' Kamikaze
-    Aliens(i%).Species = 2 ' Medium Alien (ALIEN2)
+    Aliens(i%).Species = 1 ' Kamikaze - Medium Alien (ALIEN2)
     Aliens(i%).HealthPoints = KamikazeAlienHealthPoints%
 
     ' Argument1: Acceleration
@@ -843,8 +842,7 @@ SUB CreateMine (Aliens() AS AlienType, ox#, oy#)
 FOR i% = 1 TO MaxAliens%
   IF Aliens(i%).Active = 0 THEN
     Aliens(i%).Active = -1
-    Aliens(i%).Variety = 3 ' Blink
-    Aliens(i%).Species = 3 ' Mine (MINE)
+    Aliens(i%).Species = 3 ' Mine (ALIEN3)
     Aliens(i%).HealthPoints = MineHealthPoints%
 
     Aliens(i%).X = ox#
@@ -895,8 +893,7 @@ targety% = slot% * hh% + AlienSpecies(1).Radius
 FOR i% = 1 TO MaxAliens%
   IF Aliens(i%).Active = 0 THEN
     Aliens(i%).Active = -1
-    Aliens(i%).Variety = 2 ' Mine Layer
-    Aliens(i%).Species = 1 ' Large Alien (ALIEN1)
+    Aliens(i%).Species = 2 ' Large Alien (ALIEN2)
     Aliens(i%).HealthPoints = MineLayerHealthPoints%
 
     ' Argument1: Target Y
@@ -925,8 +922,7 @@ a# = 2 * PI# * n% / clustersize%
 FOR i% = 1 TO MaxAliens%
   IF Aliens(i%).Active = 0 THEN
     Aliens(i%).Active = -1
-    Aliens(i%).Variety = 0 ' Orbit Cluster
-    Aliens(i%).Species = 0 ' Tiny Alien (ALIEN0)
+    Aliens(i%).Species = 0 ' Orbit Cluster - Tiny Alien (ALIEN0)
     Aliens(i%).HealthPoints = OrbitClusterAlienHealthPoints%
 
     ' Argument1: Time
@@ -969,12 +965,12 @@ alien.ActualY = yy#
 SELECT CASE alien.Species
   CASE 0: ' Little guy
     DrawAlien0 xx#, yy#
-  CASE 1: ' Big mine layer
+  CASE 1: ' Medium fighter
     DrawAlien1 xx#, yy#, alien
-  CASE 3: ' Mine
-    DrawAlien1Mine xx#, yy#, alien
-  CASE 2: ' Medium fighter
+  CASE 2: ' Big mine layer
     DrawAlien2 xx#, yy#, alien
+  CASE 3: ' Mine
+    DrawAlien2Mine xx#, yy#, alien
 END SELECT
 END SUB
 
@@ -988,9 +984,9 @@ SHARED Alien1A%(), Alien1AMask%()
 SHARED Alien1B%(), Alien1BMask%()
 SHARED Alien1D%(), Alien1DMask%()
 
-a# = alien.Argument3
+a# = alien.DX * -.1
 
-IF alien.Damaged > 0 THEN
+IF alien.Damaged THEN
   PutArt xx#, yy#, a#, Alien1D%(), Alien1DMask%()
 ELSE
   SELECT CASE alien.SpriteIndex
@@ -1000,26 +996,14 @@ ELSE
 END IF
 END SUB
 
-SUB DrawAlien1Mine (xx#, yy#, alien AS AlienType)
-SHARED MineA%(), MineAMask%()
-SHARED MineB%(), MineBMask%()
-
-a# = alien.FrameNumber / 30
-
-SELECT CASE alien.SpriteIndex
-  CASE 0: PutArt xx#, yy#, a#, MineA%(), MineAMask%()
-  CASE 1: PutArt xx#, yy#, a#, MineB%(), MineBMask%()
-END SELECT
-END SUB
-
 SUB DrawAlien2 (xx#, yy#, alien AS AlienType)
 SHARED Alien2A%(), Alien2AMask%()
 SHARED Alien2B%(), Alien2BMask%()
 SHARED Alien2D%(), Alien2DMask%()
 
-a# = alien.DX * -.1
+a# = alien.Argument3
 
-IF alien.Damaged THEN
+IF alien.Damaged > 0 THEN
   PutArt xx#, yy#, a#, Alien2D%(), Alien2DMask%()
 ELSE
   SELECT CASE alien.SpriteIndex
@@ -1027,6 +1011,18 @@ ELSE
     CASE 1: PutArt xx#, yy#, a#, Alien2B%(), Alien2BMask%()
   END SELECT
 END IF
+END SUB
+
+SUB DrawAlien2Mine (xx#, yy#, alien AS AlienType)
+SHARED Alien3A%(), Alien3AMask%()
+SHARED Alien3B%(), Alien3BMask%()
+
+a# = alien.FrameNumber / 30
+
+SELECT CASE alien.SpriteIndex
+  CASE 0: PutArt xx#, yy#, a#, Alien3A%(), Alien3AMask%()
+  CASE 1: PutArt xx#, yy#, a#, Alien3B%(), Alien3BMask%()
+END SELECT
 END SUB
 
 SUB DrawBoom (boom AS BoomType)
@@ -2107,7 +2103,7 @@ FOR i% = 1 TO MaxAliens%
     ox% = 0
     oy% = 0
 
-    SELECT CASE Aliens(i%).Variety
+    SELECT CASE Aliens(i%).Species
       CASE 0: ' Orbit Cluster
         ' Argument1: Time
         ' Argument2: Phase
