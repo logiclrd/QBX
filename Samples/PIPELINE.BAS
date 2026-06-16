@@ -60,7 +60,7 @@ END SUB
 SUB DrawRandomPipe (x%, y%, direction%)
 STATIC c%
 
-IF c% = 0 THEN c% = 1: COLOR c%:
+IF c% = 0 THEN c% = 1: COLOR c%
 
 WHILE IsOnScreen%(x%, y%)
   MaybePickNewColour c%

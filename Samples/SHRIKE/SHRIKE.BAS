@@ -1724,13 +1724,13 @@ sx2% = w%: sy2% = 1
 sx3% = 1: sy3% = h%
 sx4% = w%: sy4% = h%
 
-IF y1# > y2# THEN SWAP x1#, x2#: SWAP y1#, y2#: SWAP sx1%, sx2%: SWAP sy1%, sy2%: :
-IF y1# > y3# THEN SWAP x1#, x3#: SWAP y1#, y3#: SWAP sx1%, sx3%: SWAP sy1%, sy3%:
-IF y1# > y4# THEN SWAP x1#, x4#: SWAP y1#, y4#: SWAP sx1%, sx4%: SWAP sy1%, sy4%: :
-IF y2# > y4# THEN SWAP x2#, x4#: SWAP y2#, y4#: SWAP sx2%, sx4%: SWAP sy2%, sy4%:
-IF y3# > y4# THEN SWAP x3#, x4#: SWAP y3#, y4#: SWAP sx3%, sx4%: SWAP sy3%, sy4%:
+IF y1# > y2# THEN SWAP x1#, x2#: SWAP y1#, y2#: SWAP sx1%, sx2%: SWAP sy1%, sy2%
+IF y1# > y3# THEN SWAP x1#, x3#: SWAP y1#, y3#: SWAP sx1%, sx3%: SWAP sy1%, sy3%
+IF y1# > y4# THEN SWAP x1#, x4#: SWAP y1#, y4#: SWAP sx1%, sx4%: SWAP sy1%, sy4%
+IF y2# > y4# THEN SWAP x2#, x4#: SWAP y2#, y4#: SWAP sx2%, sx4%: SWAP sy2%, sy4%
+IF y3# > y4# THEN SWAP x3#, x4#: SWAP y3#, y4#: SWAP sx3%, sx4%: SWAP sy3%, sy4%
 
-IF x2# > x3# THEN SWAP x2#, x3#: SWAP y2#, y3#: SWAP sx2%, sx3%: SWAP sy2%, sy3%:
+IF x2# > x3# THEN SWAP x2#, x3#: SWAP y2#, y3#: SWAP sx2%, sx3%: SWAP sy2%, sy3%
 
 x2mx1# = x2# - x1#: sx2msx1% = sx2% - sx1%
 x3mx1# = x3# - x1#: sx3msx1% = sx3% - sx1%
@@ -1761,19 +1761,19 @@ srx43# = sx4msx3% / y4my3#: sry43# = sy4msy3% / y4my3#
 
 ' Collapse NaN
 IF IsNaNOrInf%(r21#) THEN r21# = 0
-IF IsNaNOrInf%(r31#) THEN r31# = 0: br31% = 1:
+IF IsNaNOrInf%(r31#) THEN r31# = 0: br31% = 1
 IF IsNaNOrInf%(r42#) THEN r42# = 0
-IF IsNaNOrInf%(r43#) THEN r43# = 0: br43% = 1:
+IF IsNaNOrInf%(r43#) THEN r43# = 0: br43% = 1
 
 IF IsNaNOrInf%(srx21#) THEN srx21# = 0
-IF IsNaNOrInf%(srx31#) THEN srx31# = 0: bsrx31% = 1: : : :
+IF IsNaNOrInf%(srx31#) THEN srx31# = 0: bsrx31% = 1
 IF IsNaNOrInf%(srx42#) THEN srx42# = 0
-IF IsNaNOrInf%(srx43#) THEN srx43# = 0: bsrx43% = 1: : : :
+IF IsNaNOrInf%(srx43#) THEN srx43# = 0: bsrx43% = 1
 
 IF IsNaNOrInf%(sry21#) THEN sry21# = 0
-IF IsNaNOrInf%(sry31#) THEN sry31# = 0: bsry31% = 1: : :
+IF IsNaNOrInf%(sry31#) THEN sry31# = 0: bsry31% = 1
 IF IsNaNOrInf%(sry42#) THEN sry42# = 0
-IF IsNaNOrInf%(sry43#) THEN sry43# = 0: bsry43% = 1: : :
+IF IsNaNOrInf%(sry43#) THEN sry43# = 0: bsry43% = 1
 
 x1# = x1# - .5
 x2# = x2# - .5

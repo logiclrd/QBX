@@ -221,4 +221,39 @@ GOTO top
 			line.Statements.Should().HaveCount(expectedStatements);
 		}
 	}
+
+	[TestCase("IF a THEN b = c: d = e", 2, 0)]
+	[TestCase("IF a THEN b = c ELSE d = e: f = g", 1, 2)]
+	public void IfStatementEndOfLine(string input, int expectedThenStatements, int expectedElseStatements)
+	{
+		// Arrange
+		var lexer = new Lexer(input);
+
+		var tokens = lexer.ToList();
+
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
+
+		// Act
+		var result = sut.ParseCodeLines(tokens, ignoreErrors: false).ToList();
+
+		// Assert
+		result.Should().HaveCount(1);
+
+		var resultLine = result[0];
+
+		resultLine.Statements.Should().HaveCount(1);
+
+		var resultStatement = resultLine.Statements[0];
+
+		var resultIf = resultStatement.Should().BeOfType<IfStatement>().Subject;
+
+		resultIf.ThenBody.Should().HaveCount(expectedThenStatements);
+
+		if (expectedElseStatements == 0)
+			resultIf.ElseBody.Should().BeNullOrEmpty();
+		else
+			resultIf.ElseBody.Should().HaveCount(expectedElseStatements);
+	}
 }
