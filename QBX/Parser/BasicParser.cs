@@ -4777,10 +4777,11 @@ public class BasicParser(IdentifierRepository identifierRepository)
 		if (lastOperatorIndex > 0)
 		{
 			// Exponentiation and field access need to be evaluated
-			// before unary negation, everything else after.
+			// before unary negation and NOT, everything else after.
 			if (lastOperatorPrecedence <= 1)
 			{
-				if (tokens[0].Type == TokenType.Minus)
+				if ((tokens[0].Type == TokenType.Minus)
+				 || (tokens[0].Type == TokenType.NOT))
 					return new UnaryExpression(tokens[0], ParseExpression(tokens.Slice(1), endToken));
 
 				if ((tokens[0].Type == TokenType.Number)
