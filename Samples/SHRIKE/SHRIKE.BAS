@@ -45,6 +45,8 @@ TYPE AlienSpeciesType
   Radius AS INTEGER
   Value AS INTEGER
   Squishy AS INTEGER
+  MinFloaters AS SINGLE
+  MaxFloaters AS SINGLE
 END TYPE
 
 TYPE AlienType
@@ -56,7 +58,8 @@ TYPE AlienType
   Argument4 AS INTEGER
   FrameNumber AS INTEGER
   HealthPoints AS INTEGER
-  Damaged AS INTEGER
+  Damaged AS INTEGER ' frames
+  Immune AS INTEGER ' frames
   SpriteIndex AS INTEGER
   X AS DOUBLE
   Y AS DOUBLE
@@ -87,6 +90,7 @@ DECLARE SUB ApplyTransform (i AS PointType, matrix#(), o AS PointType)
 DECLARE SUB CascadeFighterBoom (fx%, fy%, fdx%, Booms() AS BoomType)
 DECLARE SUB CentreText (tx%, ty%, text$)
 DECLARE SUB CheckForHits (Shots() AS ShotType, Rocks() AS RockType, Aliens() AS AlienType, Booms() AS BoomType, Splats() AS SplatType, fx%, fy%, nextround%, score&)
+DECLARE SUB CreateFloaters (Aliens() AS AlienType, killedalien AS AlienType)
 DECLARE SUB CreateKamikaze (Aliens() AS AlienType, ox#, oy#, odx#, ody#, acceleration#, activatey%, dropy%)
 DECLARE SUB CreateMine (Aliens() AS AlienType, ox#, oy#)
 DECLARE SUB CreateMineLayer (Aliens() AS AlienType, ox#, oy#)
@@ -96,6 +100,7 @@ DECLARE SUB DrawAlien0 (xx#, yy#)
 DECLARE SUB DrawAlien1 (xx#, yy#, alien AS AlienType)
 DECLARE SUB DrawAlien2 (xx#, yy#, alien AS AlienType)
 DECLARE SUB DrawAlien2Mine (xx#, yy#, alien AS AlienType)
+DECLARE SUB DrawAlien5 (ox#, oy#, alien AS AlienType)
 DECLARE SUB DrawBoom (boom AS BoomType)
 DECLARE SUB DrawReticle (ox%, oy%)
 DECLARE SUB DrawRock (rock AS RockType)
@@ -208,6 +213,12 @@ CONST MineLayerMaxSpeed# = 3.25
 
 CONST MineHealthPoints% = 2
 CONST MineSpeed# = 1.5
+
+CONST FloaterHealthPoints% = 1
+CONST FloaterImmuneFrames% = 7
+CONST FloaterMaxSpinRate# = .4
+CONST FloaterVelocityMin# = .01
+CONST FloaterVelocityMax# = 1.5
 
 CONST RoundInterval% = 200
 
@@ -430,7 +441,7 @@ DIM FighterLightPosition AS PointType
 LoadObject "FIGHTER.OBJ", FighterVertices(), FighterNormals(), FighterFaces()
 
 ' Get set up to draw aliens
-DIM AlienSpecies(0 TO 4) AS AlienSpeciesType
+DIM AlienSpecies(0 TO 5) AS AlienSpeciesType
 
 ' Species:
 '   0 - Little guy
@@ -440,11 +451,27 @@ DIM AlienSpecies(0 TO 4) AS AlienSpeciesType
 '   4 - Mothership
 '   5 - Floater
 
-AlienSpecies(0).Radius = 6: AlienSpecies(0).Value = 5
-AlienSpecies(1).Radius = 35: AlienSpecies(1).Value = 25
-AlienSpecies(2).Radius = 17: AlienSpecies(2).Value = 70
-AlienSpecies(3).Radius = 6: AlienSpecies(3).Value = 2
-AlienSpecies(4).Radius = 4: AlienSpecies(4).Value = 1: AlienSpecies(4).Squishy = 1
+AlienSpecies(0).Radius = 6
+AlienSpecies(0).Value = 5
+AlienSpecies(0).MinFloaters = 0
+AlienSpecies(0).MaxFloaters = .7
+
+AlienSpecies(1).Radius = 35
+AlienSpecies(1).Value = 25
+AlienSpecies(1).MinFloaters = 1
+AlienSpecies(1).MaxFloaters = 2
+
+AlienSpecies(2).Radius = 17
+AlienSpecies(2).Value = 70
+AlienSpecies(2).MinFloaters = 3
+AlienSpecies(2).MaxFloaters = 5
+
+AlienSpecies(3).Radius = 6
+AlienSpecies(3).Value = 2
+
+AlienSpecies(5).Radius = 4
+AlienSpecies(5).Value = 1
+AlienSpecies(5).Squishy = 1
 
 ' State
 
@@ -822,23 +849,24 @@ FOR i% = 1 TO MaxShots%
             CASE IS > HitGridAlien%:
               hit% = hit% - HitGridAlien%
 
-              IF Aliens(hit%).Active THEN
+              IF Aliens(hit%).Active AND NOT Aliens(hit%).Immune THEN
                 Aliens(hit%).HealthPoints = Aliens(hit%).HealthPoints - 1
                 Aliens(hit%).Damaged = AlienDamageVisibleFrames%
 
                 IF Aliens(hit%).HealthPoints <= 0 THEN
                   Aliens(hit%).Active = 0
 
-                  score& = score& + AlienSpecies(Aliens(hit%).Species).Value
+                  killedspecies% = Aliens(hit%).Species
+
+                  score& = score& + AlienSpecies(killedspecies%).Value
 
                   activealiens% = activealiens% - 1
-
-                  ' TODO: ejected aliens
 
                   IF AlienSpecies(killedspecies%).Squishy THEN
                     MakeSplat Splats(), Aliens(hit%).X, Aliens(hit%).Y
                   ELSE
                     MakeBoom Booms(), Aliens(hit%).ActualX, Aliens(hit%).ActualY, 0, 0
+                    CreateFloaters Aliens(), Aliens(hit%)
                   END IF
                 END IF
               END IF
@@ -849,9 +877,57 @@ FOR i% = 1 TO MaxShots%
   END IF
 NEXT i%
 
+FOR i% = 1 TO MaxAliens%
+  IF Aliens(i%).Immune > 0 THEN Aliens(i%).Immune = Aliens(i%).Immune - 1
+NEXT i%
+
 IF (activealiens% = 0) AND (nextround% > RoundInterval% \ 2) THEN
   nextround% = RoundInterval% \ 2
 END IF
+END SUB
+
+SUB CreateFloaters (Aliens() AS AlienType, killedalien AS AlienType)
+SHARED AlienSpecies() AS AlienSpeciesType
+
+floaterrange! = AlienSpecies(killedspecies%).MaxFloaters - AlienSpecies(killedspecies%).MinFloaters
+numfloaters! = RND * floaterrange! + AlienSpecies(killedspecies%).MinFloaters
+
+numfloaters% = FIX(numfloaters! + .5)
+
+ox# = killedalien.X
+oy# = killedalien.Y
+orad# = AlienSpecies(killedalien.Species).Radius
+
+FOR i% = 1 TO MaxAliens%
+  IF numfloaters% = 0 THEN EXIT FOR
+
+  IF Aliens(i%).Active = 0 THEN
+    Aliens(i%).Active = -1
+    Aliens(i%).Species = 5 ' Floater (ALIEN5)
+    Aliens(i%).HealthPoints = FloaterHealthPoints%
+    Aliens(i%).Immune = FloaterImmuneFrames%
+
+    ' Argument1: Angle
+    ' Argument2: Rotation (delta angle per frame)
+
+    Aliens(i%).Argument1 = RND * (2 * PI#)
+    Aliens(i%).Argument2 = (RND - .5) * FloaterMaxSpinRate#
+
+    fa# = RND * PI# + PI#
+
+    cfa# = COS(fa#)
+    sfa# = SIN(fa#)
+
+    velocity# = RND * (FloaterVelocityMax# - FloaterVelocityMin#) + FloaterVelocityMin#
+
+    Aliens(i%).X = ox# + orad# * cfa#
+    Aliens(i%).Y = oy# - orad# * sfa#
+    Aliens(i%).DX = killedalien.DX + cfa# * velocity#
+    Aliens(i%).DY = killedalien.DY - sfa# * velocity#
+
+    numfloaters% = numfloaters% - 1
+  END IF
+NEXT i%
 END SUB
 
 SUB CreateKamikaze (Aliens() AS AlienType, ox#, oy#, odx#, ody#, acceleration#, activatey%, dropy%)
@@ -1012,6 +1088,8 @@ SELECT CASE alien.Species
     DrawAlien2 xx#, yy#, alien
   CASE 3: ' Mine
     DrawAlien2Mine xx#, yy#, alien
+  CASE 5: ' Floater
+    DrawAlien5 xx#, yy#, alien
 END SELECT
 END SUB
 
@@ -1063,6 +1141,24 @@ a# = alien.FrameNumber / 30
 SELECT CASE alien.SpriteIndex
   CASE 0: PutArt xx#, yy#, a#, Alien3A%(), Alien3AMask%()
   CASE 1: PutArt xx#, yy#, a#, Alien3B%(), Alien3BMask%()
+END SELECT
+END SUB
+
+SUB DrawAlien5 (ox#, oy#, alien AS AlienType)
+SHARED Alien5A%(), Alien5AMask%()
+SHARED Alien5B%(), Alien5BMask%()
+
+a% = alien.Argument1 * (8 / (2 * PI#))
+
+SELECT CASE a% AND 7
+  CASE 0: PutArt ox#, oy#, PI# * 1.5, Alien5A%(), Alien5AMask%()
+  CASE 1: PutArt ox#, oy#, 0, Alien5B%(), Alien5BMask%()
+  CASE 2: PutArt ox#, oy#, 0, Alien5A%(), Alien5AMask%()
+  CASE 3: PutArt ox#, oy#, PI# * .5, Alien5B%(), Alien5BMask%()
+  CASE 4: PutArt ox#, oy#, PI# * .5, Alien5A%(), Alien5AMask%()
+  CASE 5: PutArt ox#, oy#, PI#, Alien5B%(), Alien5BMask%()
+  CASE 6: PutArt ox#, oy#, PI#, Alien5A%(), Alien5AMask%()
+  CASE 7: PutArt ox#, oy#, PI# * 1.5, Alien5B%(), Alien5BMask%()
 END SELECT
 END SUB
 
@@ -2292,6 +2388,11 @@ FOR i% = 1 TO MaxAliens%
         IF (Aliens(i%).FrameNumber AND 7) = 0 THEN
           Aliens(i%).SpriteIndex = 1 - Aliens(i%).SpriteIndex
         END IF
+      CASE 5: ' Floater
+        ' Argument1: Angle
+        ' Argument2: Rotation (delta angle per frame)
+
+        Aliens(i%).Argument1 = Aliens(i%).Argument1 + Aliens(i%).Argument2
     END SELECT
 
     Aliens(i%).X = Aliens(i%).X + Aliens(i%).DX
