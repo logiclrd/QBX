@@ -75,11 +75,18 @@ TYPE BoomType
   SpriteIndex AS INTEGER
 END TYPE
 
+TYPE SplatType
+  ActiveForFrames AS INTEGER
+  X AS DOUBLE
+  Y AS DOUBLE
+  SplatAngle AS DOUBLE
+END TYPE
+
 DECLARE SUB AddPoint (t AS PointType, s AS PointType)
 DECLARE SUB ApplyTransform (i AS PointType, matrix#(), o AS PointType)
 DECLARE SUB CascadeFighterBoom (fx%, fy%, fdx%, Booms() AS BoomType)
 DECLARE SUB CentreText (tx%, ty%, text$)
-DECLARE SUB CheckForHits (Shots() AS ShotType, Rocks() AS RockType, Aliens() AS AlienType, Booms() AS BoomType, fx%, fy%, nextround%, score&)
+DECLARE SUB CheckForHits (Shots() AS ShotType, Rocks() AS RockType, Aliens() AS AlienType, Booms() AS BoomType, Splats() AS SplatType, fx%, fy%, nextround%, score&)
 DECLARE SUB CreateKamikaze (Aliens() AS AlienType, ox#, oy#, odx#, ody#, acceleration#, activatey%, dropy%)
 DECLARE SUB CreateMine (Aliens() AS AlienType, ox#, oy#)
 DECLARE SUB CreateMineLayer (Aliens() AS AlienType, ox#, oy#)
@@ -93,6 +100,7 @@ DECLARE SUB DrawBoom (boom AS BoomType)
 DECLARE SUB DrawReticle (ox%, oy%)
 DECLARE SUB DrawRock (rock AS RockType)
 DECLARE SUB DrawScore (score&)
+DECLARE SUB DrawSplat (splatinfo AS SplatType)
 DECLARE SUB FillTriangle (x1%, y1%, x2%, y2%, x3%, y3%, c%)
 DECLARE SUB GetArtDimensions (filename$, w%, h%)
 DECLARE SUB GetObjectCounts (objfilename$, numvertices%, numnormals%, numfaces%)
@@ -102,6 +110,7 @@ DECLARE SUB InitializeFont ()
 DECLARE SUB LoadArt (filename$, pixels%(), mask%())
 DECLARE SUB LoadObject (objfilename$, vertices() AS PointType, normals() AS PointType, faces() AS FaceType)
 DECLARE SUB MakeBoom (Booms() AS BoomType, ox%, oy%, odx%, ody%)
+DECLARE SUB MakeSplat (Splats() AS SplatType, ox#, oy#)
 DECLARE SUB MultiplyMatrix (subject#(), transform#())
 DECLARE SUB MultiplyPoint (t AS PointType, scale#)
 DECLARE SUB NormalizePoint (t AS PointType)
@@ -128,6 +137,7 @@ DECLARE SUB UpdateAndRenderBooms (Booms() AS BoomType)
 DECLARE SUB UpdateAndRenderDust (Dusts() AS DustType)
 DECLARE SUB UpdateAndRenderRocks (Rocks() AS RockType, fx%, fy%, fdx%, Booms() AS BoomType)
 DECLARE SUB UpdateAndRenderShot (shot AS ShotType)
+DECLARE SUB UpdateAndRenderSplats (Splats() AS SplatType)
 DECLARE FUNCTION Distance# (t AS PointType)
 DECLARE FUNCTION DotProduct# (a AS PointType, b AS PointType)
 DECLARE FUNCTION IsNaNOrInf% (d#)
@@ -217,6 +227,9 @@ CONST RockSpawnRate# = 1 / 100 ' Try once every 100 frames
 
 CONST MaxBooms% = 10
 CONST BoomFrames% = 10
+
+CONST MaxSplats% = 10
+CONST SplatFrames% = 3
 
 CONST MarginX% = 18
 CONST FighterY% = 180
@@ -382,6 +395,10 @@ GetArtDimensions "BOOM10.ART", w%, h%
 DIM Boom10%(1 TO w%, 1 TO h%), Boom10Mask%(1 TO w%, 1 TO h%)
 LoadArt "BOOM10.ART", Boom10%(), Boom10Mask%()
 
+GetArtDimensions "SPLAT.ART", w%, h%
+DIM Splat%(1 TO w%, 1 TO h%), SplatMask%(1 TO w%, 1 TO h%)
+LoadArt "SPLAT.ART", Splat%(), SplatMask%()
+
 GetArtDimensions "SPACEMAN.ART", w%, h%
 DIM SHARED SpaceMan%(1 TO w%, 1 TO h%), SpaceManMask%(1 TO w%, 1 TO h%)
 LoadArt "SPACEMAN.ART", SpaceMan%(), SpaceManMask%()
@@ -436,6 +453,7 @@ DIM Dusts(1 TO MaxDusts%) AS DustType
 DIM Aliens(1 TO MaxAliens%) AS AlienType
 DIM Rocks(1 TO MaxRocks%) AS RockType
 DIM Booms(1 TO MaxBooms%) AS BoomType
+DIM Splats(1 TO MaxSplats%) AS SplatType
 
 InitializeDust Dusts()
 
@@ -564,12 +582,13 @@ DO
   ' Hamburgers
   UpdateAndRenderDust Dusts()
 
-  CheckForHits Shots(), Rocks(), Aliens(), Booms(), (fighterx#), FighterY%, nextround%, score&
+  CheckForHits Shots(), Rocks(), Aliens(), Booms(), Splats(), (fighterx#), FighterY%, nextround%, score&
 
   UpdateAndRenderAliens Aliens(), (fighterx#), FighterY%, (fighterdx#), Booms()
 
   UpdateAndRenderRocks Rocks(), (fighterx#), FighterY%, (fighterdx#), Booms()
 
+  UpdateAndRenderSplats Splats()
   UpdateAndRenderBooms Booms()
 
   IF FighterHit% = 0 THEN
@@ -635,7 +654,7 @@ FOR i% = 1 TO LEN(text$)
 NEXT i%
 END SUB
 
-SUB CheckForHits (Shots() AS ShotType, Rocks() AS RockType, Aliens() AS AlienType, Booms() AS BoomType, fx%, fy%, nextround%, score&)
+SUB CheckForHits (Shots() AS ShotType, Rocks() AS RockType, Aliens() AS AlienType, Booms() AS BoomType, Splats() AS SplatType, fx%, fy%, nextround%, score&)
 SHARED Rock01%()
 SHARED AlienSpecies() AS AlienSpeciesType
 
@@ -740,11 +759,29 @@ IF NOT FighterHit% THEN
     FOR hxx% = fighterx1% * HitGridWidth% \ 320 TO fighterx2% * HitGridWidth% \ 320 + 1
       IF hxx% >= HitGridWidth% THEN EXIT FOR
       IF hxx% >= 0 THEN
-        IF HitGrid%(hxx%, hyy%) THEN
-          FighterHit% = -1
-          MakeBoom Booms(), fx%, fy%, fdx%, 0
-          DeathFrames% = 15 * BoomFrames%
-          EXIT DO
+        hit% = HitGrid%(hxx%, hyy%)
+
+        IF hit% THEN
+          squishyhit% = 0
+
+          IF hit% > HitGridAlien% THEN
+            hit% = hit% - HitGridAlien%
+
+            IF AlienSpecies(Aliens(hit%).Species).Squishy THEN
+              squishyhit% = -1
+            END IF
+          END IF
+
+          IF squishyhit% THEN
+            Aliens(hit%).Active = 0
+            score& = score& + AlienSpecies(Aliens(hit%).Species).Value
+            MakeSplat Splats(), Aliens(hit%).X, Aliens(hit%).Y
+          ELSE
+            FighterHit% = -1
+            MakeBoom Booms(), fx%, fy%, fdx%, 0
+            DeathFrames% = 15 * BoomFrames%
+            EXIT DO
+          END IF
         END IF
       END IF
     NEXT hxx%
@@ -798,7 +835,11 @@ FOR i% = 1 TO MaxShots%
 
                   ' TODO: ejected aliens
 
-                  MakeBoom Booms(), Aliens(hit%).ActualX, Aliens(hit%).ActualY, 0, 0
+                  IF AlienSpecies(killedspecies%).Squishy THEN
+                    MakeSplat Splats(), Aliens(hit%).X, Aliens(hit%).Y
+                  ELSE
+                    MakeBoom Booms(), Aliens(hit%).ActualX, Aliens(hit%).ActualY, 0, 0
+                  END IF
                 END IF
               END IF
           END SELECT
@@ -1149,6 +1190,12 @@ CentreText 255, 0, "SCORE:"
 CentreText 300, 0, RIGHT$("00000" + LTRIM$(STR$(score&)), 5)
 END SUB
 
+SUB DrawSplat (splatinfo AS SplatType)
+SHARED Splat%(), SplatMask%()
+
+PutArt (splatinfo.X), (splatinfo.Y), splatinfo.SplatAngle, Splat%(), SplatMask%()
+END SUB
+
 SUB FillTriangle (x1%, y1%, x2%, y2%, x3%, y3%, c%)
 ' Sort coordinates
 IF y1% > y2% THEN
@@ -1404,6 +1451,19 @@ FOR i% = 1 TO MaxBooms%
     Booms(i%).DX = odx%
     Booms(i%).DY = ody%
     Booms(i%).SpriteIndex = 0
+
+    EXIT FOR
+  END IF
+NEXT i%
+END SUB
+
+SUB MakeSplat (Splats() AS SplatType, ox#, oy#)
+FOR i% = 1 TO MaxSplats%
+  IF Splats(i%).ActiveForFrames = 0 THEN
+    Splats(i%).ActiveForFrames = SplatFrames%
+    Splats(i%).X = ox#
+    Splats(i%).Y = oy#
+    Splats(i%).SplatAngle = RND * (2 * PI#)
 
     EXIT FOR
   END IF
@@ -2366,4 +2426,13 @@ IF shot.Active THEN
     FillTriangle x1%, y1%, x2%, y2%, x3%, y3%, ShotColour%
   END IF
 END IF
+END SUB
+
+SUB UpdateAndRenderSplats (Splats() AS SplatType)
+FOR i% = LBOUND(Splats) TO UBOUND(Splats)
+  IF Splats(i%).ActiveForFrames THEN
+    Splats(i%).ActiveForFrames = Splats(i%).ActiveForFrames - 1
+    DrawSplat Splats(i%)
+  END IF
+NEXT i%
 END SUB
