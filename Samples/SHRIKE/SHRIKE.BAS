@@ -1742,6 +1742,13 @@ y3my1# = y3# - y1#: sy3msy1% = sy3% - sy1%
 y4my2# = y4# - y2#: sy4msy2% = sy4% - sy2%
 y4my3# = y4# - y3#: sy4msy3% = sy4% - sy3%
 
+' We're dividing by dy, so if y values are very close together, we'll
+' produce huge values and crash.
+IF ABS(y2my1#) < .01 THEN y2my1# = SGN(y2my1#) * .01
+IF ABS(y3my1#) < .01 THEN y3my1# = SGN(y3my1#) * .01
+IF ABS(y4my2#) < .01 THEN y4my2# = SGN(y4my2#) * .01
+IF ABS(y4my3#) < .01 THEN y4my3# = SGN(y4my3#) * .01
+
 r21# = x2mx1# / y2my1#
 r31# = x3mx1# / y3my1#
 r42# = x4mx2# / y4my2#
