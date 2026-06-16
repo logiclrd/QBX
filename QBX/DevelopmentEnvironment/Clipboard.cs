@@ -186,6 +186,9 @@ public class Clipboard(Viewport owner)
 		{
 			var buffer = _owner.EditCurrentLine();
 
+			while (buffer.Length < _owner.CursorX)
+				buffer.Append(' ');
+
 			buffer.Insert(_owner.CursorX, _clipboardContentSingleLine);
 
 			_owner.CurrentLineChanged = true;
