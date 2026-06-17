@@ -157,15 +157,16 @@ DATA ...x.x.....
 DATA xxxx.xxxxxxx
 
 30
-DATA 15, 8
-DATA .xxxxxxxxxxxxxx.
-DATA .x............x.
-DATA .x.xxxx.xxxxx.x.
-DATA .x.x..x.x...x.x.
-DATA .x.x..x.x.xxxxx.
-DATA xx.xxxx.x.x.xxxxx
-DATA ........x.x.....
-DATA xxxxxxxxx.xxxxxxx
+DATA 16, 9
+DATA .xxxxxxxxxxxxxxx.
+DATA .x.............x.
+DATA .x.xxxxx.xxxxx.x.
+DATA .x.x...x.x...x.x.
+DATA .x.x...x.x.xxxxx.
+DATA .x.x...x.x.x.x...
+DATA xx.xxxxx.x.x.xxxxx
+DATA .........x.x.....
+DATA xxxxxxxxxx.xxxxxxx
 
 40
 DATA 6, 9
