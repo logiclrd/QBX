@@ -1717,7 +1717,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 		int x1 = PixelGetSpanFind(x, 0, y, scan, borderAttribute);
 		int x2 = PixelGetSpanFind(x, Width - 1, y, scan.Slice(x), borderAttribute);
 
-		if (x1 == x) // Starting on a border pixel.
+		if (x1 == x2) // Starting on a border pixel.
 			return;
 
 		// Don't include the border pixels themselves.
