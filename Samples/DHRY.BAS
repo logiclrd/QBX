@@ -58,10 +58,10 @@ END FUNCTION
 
 SUB PrintTimer (label$, t!)
 h% = FIX(t! / 3600)
-t! = t! - h% * 3600!
-m% = FIX(t! / 60)
-t! = t! - m% * 60!
-s% = FIX(t!)
+u! = t! - h% * 3600!
+m% = FIX(u! / 60)
+u! = u! - m% * 60!
+s% = FIX(u!)
 
 PRINT label$;
 
