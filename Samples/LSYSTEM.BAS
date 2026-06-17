@@ -1,63 +1,47 @@
-DECLARE FUNCTION ConvertToDRAWCommand$ (lsystem$)
-DECLARE FUNCTION Iterate$ (s$, rules$())
-
-DIM rules$(127)
-
-rules$(ASC("X")) = "X+YF+"
-rules$(ASC("Y")) = "-FX-Y"
-
-axiom$ = "FX"
-
-numlevels% = 10
-
-lsystem$ = axiom$
-
-FOR i% = 1 TO numlevels%
-  lsystem$ = Iterate$(lsystem$, rules$())
-NEXT i%
-
-drawcommand$ = ConvertToDRAWCommand$(lsystem$)
+DECLARE SUB DrawLSystem (t$, rules$(), x#, y#, d#, angle#, angledelta#, depth%, charcount&)
 
 SCREEN 12
 
-PSET (450, 300)
-DRAW drawcommand$
+DIM rules$(255)
 
-FUNCTION ConvertToDRAWCommand$ (lsystem$)
-result$ = "s43"
+rules$(ASC("F")) = "F+F-F-FF+F+F-F"
+initial$ = "F+F+F+F"
 
-a% = 0
-lasta% = 0
+FOR i% = 1 TO 5
+  CLS
+  charcount& = 0
+  DrawLSystem initial$, rules$(), 200, 380, (5.5 - i%) * .5, 0, 90, i%, charcount&
+  LOCATE 1, 1
+  PRINT "Virtual string length:"; charcount&
+  SLEEP
+NEXT i%
 
-FOR i% = 1 TO LEN(lsystem$)
-  SELECT CASE MID$(lsystem$, i%, 1)
-    CASE "+": a% = (a% + 1) MOD 4
-    CASE "-": a% = (a% + 3) MOD 4
-    CASE "F":
-      IF a% <> lasta% THEN
-        result$ = result$ + "a" + LTRIM$(STR$(a%))
-        lasta% = a%
+SUB DrawLSystem (t$, rules$(), x#, y#, d#, angle#, angledelta#, depth%, charcount&)
+nextdepth% = depth% - 1
+
+FOR i% = 1 TO LEN(t$)
+  c$ = MID$(t$, i%, 1)
+
+  SELECT CASE c$
+    CASE "-": angle# = angle# - angledelta#
+    CASE "+": angle# = angle# + angledelta#
+
+    CASE ELSE:
+      IF depth% > 0 THEN
+        c% = ASC(c$)
+
+        DrawLSystem rules$(c%), rules$(), x#, y#, d#, angle#, angledelta#, nextdepth%, charcount&
+      ELSE
+        nx# = x# + d# * COS(angle# / 57.295779)
+        ny# = y# - d# * SIN(angle# / 57.295779)
+
+        LINE (x#, y#)-(nx#, ny#)
+
+        x# = nx#
+        y# = ny#
       END IF
-      result$ = result$ + "u"
   END SELECT
+
+  charcount& = charcount& + 1
 NEXT i%
-
-ConvertToDRAWCommand$ = result$
-END FUNCTION
-
-FUNCTION Iterate$ (s$, rules$())
-result$ = ""
-
-FOR i% = 1 TO LEN(s$)
-  c% = ASC(MID$(s$, i%, 1))
-
-  IF rules$(c%) <> "" THEN
-    result$ = result$ + rules$(c%)
-  ELSE
-    result$ = result$ + MID$(s$, i%, 1)
-  END IF
-NEXT i%
-
-Iterate$ = result$
-END FUNCTION
-
+END SUB
