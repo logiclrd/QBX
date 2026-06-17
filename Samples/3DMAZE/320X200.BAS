@@ -118,7 +118,7 @@ DO
   END IF
 
   WAIT &H3DA, 1
-  PUT (0, 0), RenderBuffer&
+  PUT (0, 0), RenderBuffer&, PSET
 
   exitloop% = HandleInput%(pX, pY, pXI%, pYI%, pA, flashing%, exitopen%, victory%)
 LOOP UNTIL exitloop%
