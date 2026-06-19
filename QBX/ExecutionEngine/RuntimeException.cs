@@ -224,6 +224,8 @@ public class RuntimeException : Exception
 		=> ForErrorNumber(6, context);
 	public static RuntimeException OutOfMemory(CodeModel.Statements.Statement? statement)
 		=> ForErrorNumber(7, statement);
+	public static RuntimeException SubscriptOutOfRange(CodeModel.Statements.Statement? statement)
+		=> ForErrorNumber(9, statement);
 	public static RuntimeException SubscriptOutOfRange(CodeModel.Expressions.Expression? expression)
 		=> ForErrorNumber(9, expression);
 	public static RuntimeException SubscriptOutOfRange()

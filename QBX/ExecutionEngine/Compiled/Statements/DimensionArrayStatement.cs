@@ -15,6 +15,10 @@ public class DimensionArrayStatement(CodeModel.Statements.DimStatement? source) 
 	{
 		var subscripts = Subscripts.Evaluate(context, stackFrame);
 
+		foreach (var subscript in subscripts.Subscripts)
+			if (subscript.UpperBound < subscript.LowerBound)
+				throw RuntimeException.SubscriptOutOfRange(Source);
+
 		var variable = (ArrayVariable)stackFrame.Variables[VariableIndex];
 
 		if (!IsRedimension && !variable.Array.IsUninitialized)
