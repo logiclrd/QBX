@@ -87,10 +87,16 @@ END TYPE
 
 DECLARE SUB AddPoint (t AS PointType, s AS PointType)
 DECLARE SUB ApplyTransform (i AS PointType, matrix#(), o AS PointType)
+DECLARE SUB BossPieceDoActualSplit ()
+DECLARE SUB BossPieceDoActualSplitTo (splitfrom%(), splitfrommask%(), splitto%(), splittomask%())
+DECLARE SUB BossPieceDoActualSplitFrom (splitfrom%(), splitfrommask%())
+DECLARE SUB BossPiecePrepareForSplit (sourcepiece%, sourcealienindex%, splitstartx%, sourcepiecewidth%, Aliens() AS AlienType, Booms() AS BoomType)
 DECLARE SUB CascadeFighterBoom (fx%, fy%, fdx%, Booms() AS BoomType)
 DECLARE SUB CentreText (tx%, ty%, text$)
 DECLARE SUB CheckForHits (Shots() AS ShotType, Rocks() AS RockType, Aliens() AS AlienType, Booms() AS BoomType, Splats() AS SplatType, fx%, fy%, nextround%, score&)
+DECLARE SUB CopySprite (frompixels%(), frommask%(), topixels%(), tomask%())
 DECLARE SUB CreateFloaters (Aliens() AS AlienType, killedalien AS AlienType)
+DECLARE SUB CreateFloatersAt (Aliens() AS AlienType, numfloaters%, ox#, oy#, orad#, odx#, ody#)
 DECLARE SUB CreateKamikaze (Aliens() AS AlienType, ox#, oy#, odx#, ody#, acceleration#, activatey%, dropy%)
 DECLARE SUB CreateMine (Aliens() AS AlienType, ox#, oy#)
 DECLARE SUB CreateMineLayer (Aliens() AS AlienType, ox#, oy#)
@@ -100,6 +106,14 @@ DECLARE SUB DrawAlien0 (xx#, yy#)
 DECLARE SUB DrawAlien1 (xx#, yy#, alien AS AlienType)
 DECLARE SUB DrawAlien2 (xx#, yy#, alien AS AlienType)
 DECLARE SUB DrawAlien2Mine (xx#, yy#, alien AS AlienType)
+DECLARE SUB DrawAlien4 (ox#, oy#, alien AS AlienType)
+DECLARE SUB DrawAlien4Sprite (ox#, oy#, alien AS AlienType, pixels%(), mask%())
+DECLARE SUB DrawAlien4Sprite1 (ox#, oy#, alien AS AlienType)
+DECLARE SUB DrawAlien4Sprite2 (ox#, oy#, alien AS AlienType)
+DECLARE SUB DrawAlien4Sprite3 (ox#, oy#, alien AS AlienType)
+DECLARE SUB DrawAlien4Sprite4 (ox#, oy#, alien AS AlienType)
+DECLARE SUB DrawAlien4Sprite5 (ox#, oy#, alien AS AlienType)
+DECLARE SUB DrawAlien4Sprite6 (ox#, oy#, alien AS AlienType)
 DECLARE SUB DrawAlien5 (ox#, oy#, alien AS AlienType)
 DECLARE SUB DrawBoom (boom AS BoomType)
 DECLARE SUB DrawReticle (ox%, oy%)
@@ -119,6 +133,20 @@ DECLARE SUB MakeSplat (Splats() AS SplatType, ox#, oy#)
 DECLARE SUB MultiplyMatrix (subject#(), transform#())
 DECLARE SUB MultiplyPoint (t AS PointType, scale#)
 DECLARE SUB NormalizePoint (t AS PointType)
+DECLARE SUB PaintHitGridAlien (hitvalue%, alien AS AlienType)
+DECLARE SUB PaintHitGridAlien0 (hitvalue%, alien AS AlienType)
+DECLARE SUB PaintHitGridAlien1 (hitvalue%, alien AS AlienType)
+DECLARE SUB PaintHitGridAlien2 (hitvalue%, alien AS AlienType)
+DECLARE SUB PaintHitGridAlien2Mine (hitvalue%, alien AS AlienType)
+DECLARE SUB PaintHitGridAlien4 (hitvalue%, alien AS AlienType)
+DECLARE SUB PaintHitGridAlien4Sprite1 (hitvalue%, alien AS AlienType)
+DECLARE SUB PaintHitGridAlien4Sprite2 (hitvalue%, alien AS AlienType)
+DECLARE SUB PaintHitGridAlien4Sprite3 (hitvalue%, alien AS AlienType)
+DECLARE SUB PaintHitGridAlien4Sprite4 (hitvalue%, alien AS AlienType)
+DECLARE SUB PaintHitGridAlien4Sprite5 (hitvalue%, alien AS AlienType)
+DECLARE SUB PaintHitGridAlien4Sprite6 (hitvalue%, alien AS AlienType)
+DECLARE SUB PaintHitGridAlien5 (hitvalue%, alien AS AlienType)
+DECLARE SUB PaintHitGridSpriteMask (hitvalue%, ox%, oy%, mask%())
 DECLARE SUB ParseTriple (a$, p AS PointType)
 DECLARE SUB ParseVertex (a$, v AS VertexType)
 DECLARE SUB ParseVertices (a$, f AS FaceType)
@@ -133,6 +161,7 @@ DECLARE SUB RotateTransformZ (matrix#(), angle#)
 DECLARE SUB ScaleTransform (matrix#(), factor#)
 DECLARE SUB SetIdentityTransform (transform#())
 DECLARE SUB SortFaces (faces() AS FaceType, first%, last%)
+DECLARE SUB StartBossRound (Aliens() AS AlienType, Booms() AS BoomType)
 DECLARE SUB StartRound (Aliens() AS AlienType, roundnumber%, nextround%)
 DECLARE SUB SubtractPoint (t AS PointType, s AS PointType)
 DECLARE SUB TitleScreen (FighterVertices() AS PointType, FighterNormals() AS PointType, FighterFaces() AS FaceType, FighterLightPosition AS PointType)
@@ -411,6 +440,14 @@ GetArtDimensions "SPLAT.ART", w%, h%
 DIM Splat%(1 TO w%, 1 TO h%), SplatMask%(1 TO w%, 1 TO h%)
 LoadArt "SPLAT.ART", Splat%(), SplatMask%()
 
+GetArtDimensions "PLANET.ART", w%, h%
+DIM SHARED Planet%(1 TO w%, 1 TO h%), PlanetMask%(1 TO w%, 1 TO h%)
+LoadArt "PLANET.ART", Planet%(), PlanetMask%()
+
+GetArtDimensions "CRATER.ART", w%, h%
+DIM SHARED Crater%(1 TO w%, 1 TO h%), CraterMask%(1 TO w%, 1 TO h%)
+LoadArt "CRATER.ART", Crater%(), CraterMask%()
+
 GetArtDimensions "SPACEMAN.ART", w%, h%
 DIM SHARED SpaceMan%(1 TO w%, 1 TO h%), SpaceManMask%(1 TO w%, 1 TO h%)
 LoadArt "SPACEMAN.ART", SpaceMan%(), SpaceManMask%()
@@ -424,6 +461,32 @@ DIM Font%(1 TO w%, 1 TO h%), FontMask%(1 TO w%, 1 TO h%)
 LoadArt "FONT.ART", Font%(), FontMask%()
 
 ' Phew!
+
+' Prepare storage for the pieces the user shoots the boss into.
+DIM BossPiece1%(1 TO 1, 1 TO 1), BossPiece1Mask%(1 TO 1, 1 TO 1)
+DIM BossPiece2%(1 TO 1, 1 TO 1), BossPiece2Mask%(1 TO 1, 1 TO 1)
+DIM BossPiece3%(1 TO 1, 1 TO 1), BossPiece3Mask%(1 TO 1, 1 TO 1)
+DIM BossPiece4%(1 TO 1, 1 TO 1), BossPiece4Mask%(1 TO 1, 1 TO 1)
+DIM BossPiece5%(1 TO 1, 1 TO 1), BossPiece5Mask%(1 TO 1, 1 TO 1)
+DIM BossPiece6%(1 TO 1, 1 TO 1), BossPiece6Mask%(1 TO 1, 1 TO 1)
+
+DIM BossPieceActive%(1 TO 6)
+
+BossHeight% = UBOUND(Alien4%, 2)
+
+' State to request that the main module set up new boss piece memory.
+'
+' - CreateBossPiece%: new piece number to create
+' - CreateBossPieceAlienIndex%: Aliens() entry to set up
+' - CreateBossPieceSourcePiece%: source piece to split
+' - CreateBossPieceSourceAlienIndex%: Aliens() entry being split
+' - CreateBossPieceLeftWidth%: pixel width of the left part of the split
+' - CreateBossPieceRightWidth%: pixel width of the right part of the split
+' - CreateBossPieceX%(): shape of the split
+'
+' These are SHARED into SUBs that need them.
+
+DIM CreateBossPieceX%(1 TO BossHeight%)
 
 ' Get set up to draw text
 DIM FontWidths%(0 TO 127)
@@ -587,9 +650,14 @@ DO
 
   IF nextround% <= 0 THEN
     nextround% = RoundInterval%
-    roundnumber% = roundnumber% + 1
 
-    StartRound Aliens(), roundnumber%, nextround%
+    IF roundnumber% < 15 THEN
+      roundnumber% = roundnumber% + 1
+      StartRound Aliens(), roundnumber%, nextround%
+    ELSEIF roundnumber < 16 THEN
+      roundnumber% = roundnumber% + 1
+      StartBossRound Aliens(), Booms()
+    END IF
   END IF
 
   ' Fighter transform
@@ -607,12 +675,90 @@ DO
     buf&(i%) = 0
   NEXT i%
 
+  ' Boss sprite logic
+  IF CreateBossPiece% THEN
+    ' Fun rigamarole because we can only reallocate these arrays in the
+    ' routine in which they were created. :-)
+
+    SELECT CASE CreateBossPiece%
+      CASE 1:
+        REDIM BossPiece1%(1 TO CreateBossPieceRightWidth%, 1 TO BossHeight%)
+        REDIM BossPiece1Mask%(1 TO CreateBossPieceRightWidth%, 1 TO BossHeight%)
+      CASE 2:
+        REDIM BossPiece2%(1 TO CreateBossPieceRightWidth%, 1 TO BossHeight%)
+        REDIM BossPiece2Mask%(1 TO CreateBossPieceRightWidth%, 1 TO BossHeight%)
+      CASE 3:
+        REDIM BossPiece3%(1 TO CreateBossPieceRightWidth%, 1 TO BossHeight%)
+        REDIM BossPiece3Mask%(1 TO CreateBossPieceRightWidth%, 1 TO BossHeight%)
+      CASE 4:
+        REDIM BossPiece4%(1 TO CreateBossPieceRightWidth%, 1 TO BossHeight%)
+        REDIM BossPiece4Mask%(1 TO CreateBossPieceRightWidth%, 1 TO BossHeight%)
+      CASE 5:
+        REDIM BossPiece5%(1 TO CreateBossPieceRightWidth%, 1 TO BossHeight%)
+        REDIM BossPiece5Mask%(1 TO CreateBossPieceRightWidth%, 1 TO BossHeight%)
+      CASE 6:
+        REDIM BossPiece6%(1 TO CreateBossPieceRightWidth%, 1 TO BossHeight%)
+        REDIM BossPiece6Mask%(1 TO CreateBossPieceRightWidth%, 1 TO BossHeight%)
+    END SELECT
+
+    BossPieceDoActualSplit
+
+    IF CreateBossPieceSourcePiece% > 0 THEN
+      SELECT CASE CreateBossPiece%
+        CASE 1:
+          REDIM Temporary%(1 TO CreateBossPieceLeftWidth%, 1 TO BossHeight%)
+          REDIM TemporaryMask%(1 TO CreateBossPieceLeftWidth%, 1 TO BossHeight%)
+          CopySprite BossPiece1%(), BossPiece1Mask%(), Temporary%(), TemporaryMask%()
+          REDIM BossPiece1%(1 TO CreateBossPieceLeftWidth%, 1 TO BossHeight%)
+          REDIM BossPiece1Mask%(1 TO CreateBossPieceLeftWidth%, 1 TO BossHeight%)
+          CopySprite Temporary%(), TemporaryMask%(), BossPiece1%(), BossPiece1Mask%()
+        CASE 2:
+          REDIM Temporary%(1 TO CreateBossPieceLeftWidth%, 1 TO BossHeight%)
+          REDIM TemporaryMask%(1 TO CreateBossPieceLeftWidth%, 1 TO BossHeight%)
+          CopySprite BossPiece2%(), BossPiece2Mask%(), Temporary%(), TemporaryMask%()
+          REDIM BossPiece2%(1 TO CreateBossPieceLeftWidth%, 1 TO BossHeight%)
+          REDIM BossPiece2Mask%(1 TO CreateBossPieceLeftWidth%, 1 TO BossHeight%)
+          CopySprite Temporary%(), TemporaryMask%(), BossPiece2%(), BossPiece2Mask%()
+        CASE 3:
+          REDIM Temporary%(1 TO CreateBossPieceLeftWidth%, 1 TO BossHeight%)
+          REDIM TemporaryMask%(1 TO CreateBossPieceLeftWidth%, 1 TO BossHeight%)
+          CopySprite BossPiece3%(), BossPiece3Mask%(), Temporary%(), TemporaryMask%()
+          REDIM BossPiece3%(1 TO CreateBossPieceLeftWidth%, 1 TO BossHeight%)
+          REDIM BossPiece3Mask%(1 TO CreateBossPieceLeftWidth%, 1 TO BossHeight%)
+          CopySprite Temporary%(), TemporaryMask%(), BossPiece3%(), BossPiece3Mask%()
+        CASE 4:
+          REDIM Temporary%(1 TO CreateBossPieceLeftWidth%, 1 TO BossHeight%)
+          REDIM TemporaryMask%(1 TO CreateBossPieceLeftWidth%, 1 TO BossHeight%)
+          CopySprite BossPiece4%(), BossPiece4Mask%(), Temporary%(), TemporaryMask%()
+          REDIM BossPiece4%(1 TO CreateBossPieceLeftWidth%, 1 TO BossHeight%)
+          REDIM BossPiece4Mask%(1 TO CreateBossPieceLeftWidth%, 1 TO BossHeight%)
+          CopySprite Temporary%(), TemporaryMask%(), BossPiece4%(), BossPiece4Mask%()
+        CASE 5:
+          REDIM Temporary%(1 TO CreateBossPieceLeftWidth%, 1 TO BossHeight%)
+          REDIM TemporaryMask%(1 TO CreateBossPieceLeftWidth%, 1 TO BossHeight%)
+          CopySprite BossPiece5%(), BossPiece5Mask%(), Temporary%(), TemporaryMask%()
+          REDIM BossPiece5%(1 TO CreateBossPieceLeftWidth%, 1 TO BossHeight%)
+          REDIM BossPiece5Mask%(1 TO CreateBossPieceLeftWidth%, 1 TO BossHeight%)
+          CopySprite Temporary%(), TemporaryMask%(), BossPiece5%(), BossPiece5Mask%()
+        CASE 6:
+          REDIM Temporary%(1 TO CreateBossPieceLeftWidth%, 1 TO BossHeight%)
+          REDIM TemporaryMask%(1 TO CreateBossPieceLeftWidth%, 1 TO BossHeight%)
+          CopySprite BossPiece6%(), BossPiece6Mask%(), Temporary%(), TemporaryMask%()
+          REDIM BossPiece6%(1 TO CreateBossPieceLeftWidth%, 1 TO BossHeight%)
+          REDIM BossPiece6Mask%(1 TO CreateBossPieceLeftWidth%, 1 TO BossHeight%)
+          CopySprite Temporary%(), TemporaryMask%(), BossPiece6%(), BossPiece6Mask%()
+      END SELECT
+    END IF
+
+    CreateBossPiece% = 0
+  END IF
+
   ' Hamburgers
   UpdateAndRenderDust Dusts()
 
-  CheckForHits Shots(), Rocks(), Aliens(), Booms(), Splats(), (fighterx#), FighterY%, nextround%, score&
-
   UpdateAndRenderAliens Aliens(), (fighterx#), FighterY%, (fighterdx#), Booms()
+
+  CheckForHits Shots(), Rocks(), Aliens(), Booms(), Splats(), (fighterx#), FighterY%, nextround%, score&
 
   UpdateAndRenderRocks Rocks(), (fighterx#), FighterY%, (fighterdx#), Booms()
 
@@ -644,7 +790,7 @@ DO
 
   ' Framerate limit
   WHILE TIMER = framestarttime!: WEND
-LOOP WHILE (FighterHit% = 0) OR (DeathFrames% > 0)
+LOOP WHILE (FighterHit% = 0) OR (DeathFrames% > 0) OR (ReachedEnd% <> 0)
 
 SUB AddPoint (t AS PointType, s AS PointType)
 t.X = t.X + s.X
@@ -656,6 +802,185 @@ SUB ApplyTransform (i AS PointType, matrix#(), o AS PointType)
 o.X = i.X * matrix#(0, 0) + i.Y * matrix#(1, 0) + i.Z * matrix#(2, 0) + matrix#(3, 0)
 o.Y = i.X * matrix#(0, 1) + i.Y * matrix#(1, 1) + i.Z * matrix#(2, 1) + matrix#(3, 1)
 o.Z = i.X * matrix#(0, 2) + i.Y * matrix#(1, 2) + i.Z * matrix#(2, 2) + matrix#(3, 2)
+END SUB
+
+SUB BossPieceDoActualSplit
+SHARED CreateBossPieceSourcePiece% ' source piece to split
+
+SHARED Alien4%(), Alien4Mask%()
+SHARED BossPiece1%(), BossPiece1Mask%()
+SHARED BossPiece2%(), BossPiece2Mask%()
+SHARED BossPiece3%(), BossPiece3Mask%()
+SHARED BossPiece4%(), BossPiece4Mask%()
+SHARED BossPiece5%(), BossPiece5Mask%()
+SHARED BossPiece6%(), BossPiece6Mask%()
+
+SELECT CASE CreateBossPieceSourcePiece%
+  CASE 0: BossPieceDoActualSplitFrom Alien4%(), Alien4Mask%()
+  CASE 1: BossPieceDoActualSplitFrom BossPiece1%(), BossPiece1Mask%()
+  CASE 2: BossPieceDoActualSplitFrom BossPiece2%(), BossPiece2Mask%()
+  CASE 3: BossPieceDoActualSplitFrom BossPiece3%(), BossPiece3Mask%()
+  CASE 4: BossPieceDoActualSplitFrom BossPiece4%(), BossPiece4Mask%()
+  CASE 5: BossPieceDoActualSplitFrom BossPiece5%(), BossPiece5Mask%()
+  CASE 6: BossPieceDoActualSplitFrom BossPiece6%(), BossPiece6Mask%()
+END SELECT
+END SUB
+
+SUB BossPieceDoActualSplitFrom (splitfrom%(), splitfrommask%())
+SHARED CreateBossPiece%            ' new piece number to create
+
+SHARED BossPiece1%(), BossPiece1Mask%()
+SHARED BossPiece2%(), BossPiece2Mask%()
+SHARED BossPiece3%(), BossPiece3Mask%()
+SHARED BossPiece4%(), BossPiece4Mask%()
+SHARED BossPiece5%(), BossPiece5Mask%()
+SHARED BossPiece6%(), BossPiece6Mask%()
+
+SELECT CASE CreateBossPiece%
+  CASE 1: BossPieceDoActualSplitTo splitfrom%(), splitfrommask%(), BossPiece1%(), BossPiece1Mask%()
+  CASE 2: BossPieceDoActualSplitTo splitfrom%(), splitfrommask%(), BossPiece2%(), BossPiece2Mask%()
+  CASE 3: BossPieceDoActualSplitTo splitfrom%(), splitfrommask%(), BossPiece3%(), BossPiece3Mask%()
+  CASE 4: BossPieceDoActualSplitTo splitfrom%(), splitfrommask%(), BossPiece4%(), BossPiece4Mask%()
+  CASE 5: BossPieceDoActualSplitTo splitfrom%(), splitfrommask%(), BossPiece5%(), BossPiece5Mask%()
+  CASE 6: BossPieceDoActualSplitTo splitfrom%(), splitfrommask%(), BossPiece6%(), BossPiece6Mask%()
+END SELECT
+END SUB
+
+SUB BossPieceDoActualSplitTo (splitfrom%(), splitfrommask%(), splitto%(), splittomask%())
+SHARED CreateBossPieceX%()         ' shape of the split
+
+x1% = UBOUND(splitfrom%, 1)
+x2% = x1%
+
+FOR i% = 1 TO UBOUND(CreateBossPieceX%)
+  IF CreateBossPieceX%(i%) < splitminx% THEN
+    x1% = CreateBossPieceX%(i%)
+  END IF
+NEXT i%
+
+y1% = LBOUND(splitfrom%, 2)
+y2% = UBOUND(splitfrom%, 2)
+
+FOR yy% = y1% TO y2%
+  cutx% = CreateBossPieceX%(yy%)
+  tx% = cutx% - x1% + 1
+  FOR xx% = cutx% TO x2%
+    ' Copy right half along split line from splitfrom% to splitto%
+    splittomask%(tx%, yy%) = splitfrommask%(xx%, yy%)
+    IF splittomask%(tx%, yy%) THEN splitto%(tx%, yy%) = splitfrom%(tx%, yy%)
+
+    ' Mask off the copied pixels in splitfrom%.
+    splitfrommask%(xx%, yy%) = 0
+
+    tx% = tx% + 1
+  NEXT xx%
+NEXT yy%
+
+' splitfrom%/splitfrommask% will be reallocated in the main module.
+END SUB
+
+SUB BossPiecePrepareForSplit (sourcepiece%, sourcealienindex%, splitstartx%, sourcepiecewidth%, Aliens() AS AlienType, Booms() AS BoomType)
+SHARED CreateBossPiece%                 ' new piece number to create
+SHARED CreateBossPieceAlienIndex%       ' Aliens() entry to set up
+SHARED CreateBossPieceSourcePiece%      ' source piece to split
+SHARED CreateBossPieceSourceAlienIndex% ' Aliens() entry being split
+SHARED CreateBossPieceLeftWidth%        ' pixel width of the left part of the split
+SHARED CreateBossPieceRightWidth%       ' pixel width of the right part of the split
+SHARED CreateBossPieceX%()              ' shape of the split
+
+SHARED BossPiece1%()
+SHARED BossPiece2%()
+SHARED BossPiece3%()
+SHARED BossPiece4%()
+SHARED BossPiece5%()
+SHARED BossPiece6%()
+
+SHARED BossPieceActive%()
+
+' Create jagged split line
+splitx% = splitstartx%
+FOR yy% = UBOUND(CreateBossPieceX%) TO LBOUND(CreateBossPieceX%) STEP -1
+  CreateBossPieceX%(yy%) = splitx%
+
+  p! = (splitx% - splitstartx% + 3) / 6
+
+  IF splitx% < 6 THEN p! = 0
+  IF splitx% + 5 > sourcepiecewidth% THEN p! = 1
+
+  IF RND < p! THEN splitx% = splitx% - 1 ELSE splitx% = splitx% + 1
+NEXT yy%
+
+SELECT CASE sourcepiece%
+  CASE 1: sourcepiecew% = UBOUND(BossPiece1%, 1): sourcepieceh% = UBOUND(BossPiece1%, 2)
+  CASE 2: sourcepiecew% = UBOUND(BossPiece2%, 1): sourcepieceh% = UBOUND(BossPiece2%, 2)
+  CASE 3: sourcepiecew% = UBOUND(BossPiece3%, 1): sourcepieceh% = UBOUND(BossPiece3%, 2)
+  CASE 4: sourcepiecew% = UBOUND(BossPiece4%, 1): sourcepieceh% = UBOUND(BossPiece4%, 2)
+  CASE 5: sourcepiecew% = UBOUND(BossPiece5%, 1): sourcepieceh% = UBOUND(BossPiece5%, 2)
+  CASE 6: sourcepiecew% = UBOUND(BossPiece6%, 1): sourcepieceh% = UBOUND(BossPiece6%, 2)
+END SELECT
+
+lw% = 0
+rw% = 0
+
+FOR yy% = LBOUND(CreateBossPieceX%) TO UBOUND(CreateBossPieceX%)
+  w% = CreateBossPieceX%(yy%)
+  IF w% > lw% THEN lw% = w%
+
+  w% = sourcepiecew% - w%
+  IF w% > rw% THEN rw% = w%
+NEXT yy%
+
+CreateBossPieceLeftWidth% = lw%
+CreateBossPieceRightWidth% = rw%
+
+CreateBossPieceSourcePiece% = sourcepiece%
+CreateBossPieceSourceAlienIndex% = sourcealienindex%
+
+CreateBossPiece% = -1
+CreateBossPieceAlienIndex% = -1
+
+FOR i% = 1 TO 6
+  IF BossPieceActive%(i%) = 0 THEN
+    BossPieceActive%(i%) = -1
+    CreateBossPiece% = i%
+    EXIT FOR
+  END IF
+NEXT i%
+
+IF CreateBossPiece% > 0 THEN
+  FOR i% = 1 TO MaxAliens%
+    IF Aliens(i%).Active = 0 THEN
+      Aliens(i%).Active = 1
+      Aliens(i%).Species = 4
+      CreateBossPieceAlienIndex% = i%
+      EXIT FOR
+    END IF
+  NEXT i%
+END IF
+
+IF CreateBossPiece% = -1 OR CreateBossPieceAlienIndex% = -1 THEN
+  ' Can't allocate both a piece and a corresponding Aliens() entry,
+  ' deallocate the piece we won't be using.
+  IF CreateBossPiece% > 0 THEN
+    BossPieceActive%(CreateBossPiece%) = 0
+    CreateBossPiece% = -1
+  END IF
+
+  IF CreateBossPieceAlienIndex% > 0 THEN
+    Aliens(CreateBossPieceAlienIndex%).Active = 0
+    CreateBossPieceAlienIndex% = -1
+  END IF
+
+  FOR i% = 1 TO 3
+    yy% = RND * sourcepieceh%
+    xx% = CreateBossPieceX%(yy%)
+
+    yy# = Aliens(sourcealienindex%).Y - .5 * sourcepieceh% + yy%
+    xx# = INT(RND * (sourcepieceh% - xx%)) + xx%
+
+    MakeBoom Booms(), (xx#), (yy#), (Aliens(sourcealienindex%).DX), (Aliens(sourcealienindex%).DY)
+  NEXT i%
+END IF
 END SUB
 
 SUB CascadeFighterBoom (fx%, fy%, fdx%, Booms() AS BoomType)
@@ -726,37 +1051,7 @@ activealiens% = 0
 FOR i% = 1 TO MaxAliens%
   IF Aliens(i%).Active THEN
     activealiens% = activealiens% + 1
-
-    xx% = Aliens(i%).ActualX * HitGridWidth% \ 320
-    yy% = Aliens(i%).ActualY * HitGridHeight% \ 200
-
-    aliensize% = AlienSpecies(Aliens(i%).Species).Radius
-
-    aliensizex% = aliensize% * HitGridWidth% \ 320
-    aliensizey% = aliensize% * HitGridHeight% \ 200
-
-    x1% = xx% - aliensizex%
-    x2% = xx% + aliensizey%
-    y1% = yy% - aliensizex%
-    y2% = yy% + aliensizey%
-
-    IF x1% < 0 THEN x1% = 0
-    IF y1% < 0 THEN y1% = 0
-    IF x2% >= HitGridWidth% THEN x2% = HitGridWidth% - 1
-    IF y2% >= HitGridHeight% THEN y2% = HitGridHeight% - 1
-
-    aliensize2% = aliensize% * aliensize%
-
-    FOR px% = x1% TO x2%
-      FOR py% = y1% TO y2%
-        pdx% = (xx% - px%) * 320 \ HitGridWidth%
-        pdy% = (yy% - py%) * 200 \ HitGridHeight%
-
-        IF pdx% * pdx% + pdy% * pdy% <= aliensize2% THEN
-          HitGrid%(px%, py%) = HitGridAlien% + i%
-        END IF
-      NEXT py%
-    NEXT px%
+    PaintHitGridAlien HitGridAlien% + i%, Aliens(i%)
   END IF
 NEXT i%
 
@@ -852,22 +1147,38 @@ FOR i% = 1 TO MaxShots%
 
               IF Aliens(hit%).Active AND NOT Aliens(hit%).Immune THEN
                 Aliens(hit%).HealthPoints = Aliens(hit%).HealthPoints - 1
-                Aliens(hit%).Damaged = AlienDamageVisibleFrames%
+
+                IF Aliens(hit%).Species = 4 THEN
+                  MakeBoom Booms(), (Shots(i%).ShotX), (Shots(i%).ShotY), 0, 0
+                ELSE
+                  Aliens(hit%).Damaged = AlienDamageVisibleFrames%
+                END IF
 
                 IF Aliens(hit%).HealthPoints <= 0 THEN
-                  Aliens(hit%).Active = 0
+                  IF Aliens(hit%).Species = 4 THEN
+                    sourcepiece% = Aliens(hit%).SpriteIndex
 
-                  killedspecies% = Aliens(hit%).Species
+                    BossPiecePrepareForSplit sourcepiece%, hit%, splitstartx%, sourcepiecewidth%, Aliens(), Booms()
 
-                  score& = score& + AlienSpecies(killedspecies%).Value
-
-                  activealiens% = activealiens% - 1
-
-                  IF AlienSpecies(killedspecies%).Squishy THEN
-                    MakeSplat Splats(), Aliens(hit%).X, Aliens(hit%).Y
+                    ' TODO: if the piece is narrow enough, it should just explode,
+                    '       and if either resulting piece is too narrow, it should just explode
                   ELSE
-                    MakeBoom Booms(), Aliens(hit%).ActualX, Aliens(hit%).ActualY, 0, 0
-                    CreateFloaters Aliens(), Aliens(hit%)
+                    killedspecies% = Aliens(hit%).Species
+
+                    score& = score& + AlienSpecies(killedspecies%).Value
+
+                    activealiens% = activealiens% - 1
+
+                    IF AlienSpecies(killedspecies%).Squishy THEN
+                      MakeSplat Splats(), Aliens(hit%).X, Aliens(hit%).Y
+                    ELSE
+                      MakeBoom Booms(), Aliens(hit%).ActualX, Aliens(hit%).ActualY, 0, 0
+                      CreateFloaters Aliens(), Aliens(hit%)
+                    END IF
+
+                    Aliens(hit%).Active = 0
+                    Aliens(hit%).ActualX = -999
+                    Aliens(hit%).ActualY = -999
                   END IF
                 END IF
               END IF
@@ -887,6 +1198,24 @@ IF (activealiens% = 0) AND (nextround% > RoundInterval% \ 2) THEN
 END IF
 END SUB
 
+SUB CopySprite (frompixels%(), frommask%(), topixels%(), tomask%())
+w1% = UBOUND(frompixels%, 1)
+h1% = UBOUND(frompixels%, 2)
+
+w2% = UBOUND(topixels%, 1)
+h2% = UBOUND(topixels%, 2)
+
+IF w1% < w2% THEN w% = w1% ELSE w% = w2%
+IF h1% < h2% THEN h% = h1% ELSE h% = h2%
+
+FOR yy% = 1 TO h%
+  FOR xx% = 1 TO w%
+    topixels%(xx%, yy%) = frompixels%(xx%, yy%)
+    tomask%(xx%, yy%) = frommask%(xx%, yy%)
+  NEXT xx%
+NEXT yy%
+END SUB
+
 SUB CreateFloaters (Aliens() AS AlienType, killedalien AS AlienType)
 SHARED AlienSpecies() AS AlienSpeciesType
 
@@ -898,7 +1227,13 @@ numfloaters% = FIX(numfloaters! + .5)
 ox# = killedalien.X
 oy# = killedalien.Y
 orad# = AlienSpecies(killedalien.Species).Radius
+odx# = killedalien.DX
+ody# = killedalien.DY
 
+CreateFloatersAt Aliens(), numfloaters%, ox#, oy#, orad#, odx#, ody#
+END SUB
+
+SUB CreateFloatersAt (Aliens() AS AlienType, numfloaters%, ox#, oy#, orad#, odx#, ody#)
 FOR i% = 1 TO MaxAliens%
   IF numfloaters% = 0 THEN EXIT FOR
 
@@ -923,8 +1258,8 @@ FOR i% = 1 TO MaxAliens%
 
     Aliens(i%).X = ox# + orad# * cfa#
     Aliens(i%).Y = oy# - orad# * sfa#
-    Aliens(i%).DX = killedalien.DX + cfa# * velocity#
-    Aliens(i%).DY = killedalien.DY - sfa# * velocity#
+    Aliens(i%).DX = odx# + cfa# * velocity#
+    Aliens(i%).DY = ody# - sfa# * velocity#
 
     numfloaters% = numfloaters% - 1
   END IF
@@ -1089,6 +1424,8 @@ SELECT CASE alien.Species
     DrawAlien2 xx#, yy#, alien
   CASE 3: ' Mine
     DrawAlien2Mine xx#, yy#, alien
+  CASE 4: ' Boss
+    DrawAlien4 xx#, yy#, alien
   CASE 5: ' Floater
     DrawAlien5 xx#, yy#, alien
 END SELECT
@@ -1143,6 +1480,51 @@ SELECT CASE alien.SpriteIndex
   CASE 0: PutArt xx#, yy#, a#, Alien3A%(), Alien3AMask%()
   CASE 1: PutArt xx#, yy#, a#, Alien3B%(), Alien3BMask%()
 END SELECT
+END SUB
+
+SUB DrawAlien4 (ox#, oy#, alien AS AlienType)
+SELECT CASE alien.SpriteIndex
+  CASE 1: DrawAlien4Sprite1 ox#, oy#, alien
+  CASE 2: DrawAlien4Sprite2 ox#, oy#, alien
+  CASE 3: DrawAlien4Sprite3 ox#, oy#, alien
+  CASE 4: DrawAlien4Sprite4 ox#, oy#, alien
+  CASE 5: DrawAlien4Sprite5 ox#, oy#, alien
+  CASE 6: DrawAlien4Sprite6 ox#, oy#, alien
+END SELECT
+END SUB
+
+SUB DrawAlien4Sprite (ox#, oy#, alien AS AlienType, pixels%(), mask%())
+PutArt ox#, oy#, alien.Argument2, pixels%(), mask%()
+END SUB
+
+SUB DrawAlien4Sprite1 (ox#, oy#, alien AS AlienType)
+SHARED BossPiece1%(), BossPiece1Mask%()
+DrawAlien4Sprite ox#, oy#, alien, BossPiece1%(), BossPiece1Mask%()
+END SUB
+
+SUB DrawAlien4Sprite2 (ox#, oy#, alien AS AlienType)
+SHARED BossPiece2%(), BossPiece2Mask%()
+DrawAlien4Sprite ox#, oy#, alien, BossPiece2%(), BossPiece2Mask%()
+END SUB
+
+SUB DrawAlien4Sprite3 (ox#, oy#, alien AS AlienType)
+SHARED BossPiece3%(), BossPiece3Mask%()
+DrawAlien4Sprite ox#, oy#, alien, BossPiece3%(), BossPiece3Mask%()
+END SUB
+
+SUB DrawAlien4Sprite4 (ox#, oy#, alien AS AlienType)
+SHARED BossPiece4%(), BossPiece4Mask%()
+DrawAlien4Sprite ox#, oy#, alien, BossPiece4%(), BossPiece4Mask%()
+END SUB
+
+SUB DrawAlien4Sprite5 (ox#, oy#, alien AS AlienType)
+SHARED BossPiece5%(), BossPiece5Mask%()
+DrawAlien4Sprite ox#, oy#, alien, BossPiece5%(), BossPiece5Mask%()
+END SUB
+
+SUB DrawAlien4Sprite6 (ox#, oy#, alien AS AlienType)
+SHARED BossPiece6%(), BossPiece6Mask%()
+DrawAlien4Sprite ox#, oy#, alien, BossPiece6%(), BossPiece6Mask%()
 END SUB
 
 SUB DrawAlien5 (ox#, oy#, alien AS AlienType)
@@ -1617,6 +1999,210 @@ id# = 1# / Distance#(t)
 t.X = t.X * id#
 t.Y = t.Y * id#
 t.Z = t.Z * id#
+END SUB
+
+SUB PaintHitGridAlien (hitvalue%, alien AS AlienType)
+SELECT CASE alien.Species
+  CASE 0: ' Little guy
+    PaintHitGridAlien0 hitvalue%, alien
+  CASE 1: ' Medium fighter
+    PaintHitGridAlien1 hitvalue%, alien
+  CASE 2: ' Big mine layer
+    PaintHitGridAlien2 hitvalue%, alien
+  CASE 3: ' Mine
+    PaintHitGridAlien2Mine hitvalue%, alien
+  CASE 4: ' Boss
+    PaintHitGridAlien4 hitvalue%, alien
+  CASE 5: ' Floater
+    PaintHitGridAlien5 hitvalue%, alien
+END SELECT
+END SUB
+
+SUB PaintHitGridAlien0 (hitvalue%, alien AS AlienType)
+SHARED Alien0Mask%()
+
+w% = UBOUND(Alien0Mask%, 1)
+h% = UBOUND(Alien0Mask%, 2)
+
+PaintHitGridSpriteMask hitvalue%, alien.ActualX - w% \ 2, alien.ActualY - w% \ 2, Alien0Mask%()
+END SUB
+
+SUB PaintHitGridAlien1 (hitvalue%, alien AS AlienType)
+SHARED Alien1AMask%()
+
+w% = UBOUND(Alien1AMask%, 1)
+h% = UBOUND(Alien1AMask%, 2)
+
+PaintHitGridSpriteMask hitvalue%, alien.ActualX - w% \ 2, alien.ActualY - w% \ 2, Alien1AMask%()
+END SUB
+
+SUB PaintHitGridAlien2 (hitvalue%, alien AS AlienType)
+SHARED Alien2AMask%()
+
+w% = UBOUND(Alien2AMask%, 1)
+h% = UBOUND(Alien2AMask%, 2)
+
+PaintHitGridSpriteMask hitvalue%, alien.ActualX - w% \ 2, alien.ActualY - w% \ 2, Alien2AMask%()
+END SUB
+
+SUB PaintHitGridAlien2Mine (hitvalue%, alien AS AlienType)
+SHARED Alien3AMask%()
+
+w% = UBOUND(Alien3AMask%, 1)
+h% = UBOUND(Alien3AMask%, 2)
+
+PaintHitGridSpriteMask hitvalue%, alien.ActualX - w% \ 2, alien.ActualY - w% \ 2, Alien3AMask%()
+END SUB
+
+SUB PaintHitGridAlien4 (hitvalue%, alien AS AlienType)
+SELECT CASE alien.SpriteIndex
+  CASE 1: PaintHitGridAlien4Sprite1 hitvalue%, alien
+  CASE 2: PaintHitGridAlien4Sprite2 hitvalue%, alien
+  CASE 3: PaintHitGridAlien4Sprite3 hitvalue%, alien
+  CASE 4: PaintHitGridAlien4Sprite4 hitvalue%, alien
+  CASE 5: PaintHitGridAlien4Sprite5 hitvalue%, alien
+  CASE 6: PaintHitGridAlien4Sprite6 hitvalue%, alien
+END SELECT
+END SUB
+
+SUB PaintHitGridAlien4Sprite1 (hitvalue%, alien AS AlienType)
+SHARED BossPiece1Mask%()
+
+w% = UBOUND(BossPiece1Mask%, 1)
+h% = UBOUND(BossPiece1Mask%, 2)
+
+PaintHitGridSpriteMask hitvalue%, alien.ActualX - w% \ 2, alien.ActualY - w% \ 2, BossPiece1Mask%()
+END SUB
+
+SUB PaintHitGridAlien4Sprite2 (hitvalue%, alien AS AlienType)
+SHARED BossPiece2Mask%()
+
+w% = UBOUND(BossPiece2Mask%, 1)
+h% = UBOUND(BossPiece2Mask%, 2)
+
+PaintHitGridSpriteMask hitvalue%, alien.ActualX - w% \ 2, alien.ActualY - w% \ 2, BossPiece2Mask%()
+END SUB
+
+SUB PaintHitGridAlien4Sprite3 (hitvalue%, alien AS AlienType)
+SHARED BossPiece3Mask%()
+
+w% = UBOUND(BossPiece3Mask%, 1)
+h% = UBOUND(BossPiece3Mask%, 2)
+
+PaintHitGridSpriteMask hitvalue%, alien.ActualX - w% \ 2, alien.ActualY - w% \ 2, BossPiece3Mask%()
+END SUB
+
+SUB PaintHitGridAlien4Sprite4 (hitvalue%, alien AS AlienType)
+SHARED BossPiece4Mask%()
+
+w% = UBOUND(BossPiece4Mask%, 1)
+h% = UBOUND(BossPiece4Mask%, 2)
+
+PaintHitGridSpriteMask hitvalue%, alien.ActualX - w% \ 2, alien.ActualY - w% \ 2, BossPiece4Mask%()
+END SUB
+
+SUB PaintHitGridAlien4Sprite5 (hitvalue%, alien AS AlienType)
+SHARED BossPiece5Mask%()
+
+w% = UBOUND(BossPiece5Mask%, 1)
+h% = UBOUND(BossPiece5Mask%, 2)
+
+PaintHitGridSpriteMask hitvalue%, alien.ActualX - w% \ 2, alien.ActualY - w% \ 2, BossPiece5Mask%()
+END SUB
+
+SUB PaintHitGridAlien4Sprite6 (hitvalue%, alien AS AlienType)
+SHARED BossPiece6Mask%()
+
+w% = UBOUND(BossPiece6Mask%, 1)
+h% = UBOUND(BossPiece6Mask%, 2)
+
+PaintHitGridSpriteMask hitvalue%, alien.ActualX - w% \ 2, alien.ActualY - w% \ 2, BossPiece6Mask%()
+END SUB
+
+SUB PaintHitGridAlien5 (hitvalue%, alien AS AlienType)
+SHARED Alien5AMask%()
+
+w% = UBOUND(Alien5AMask%, 1)
+h% = UBOUND(Alien5AMask%, 2)
+
+ox% = alien.ActualX - w% \ 2
+oy% = alien.ActualY - h% \ 2
+
+px% = ox% * HitGridWidth% \ 320
+py% = oy% * HitGridHeight% \ 200
+
+qx% = (ox% + w% - 1) * HitGridWidth% \ 320
+qy% = (oy% + h% - 1) * HitGridHeight% \ 200
+
+IF px% < 0 THEN px% = 0
+IF py% < 0 THEN py% = 0
+IF qx% >= HitGridWidth% THEN qx% = HitGridWidth% - 1
+IF qy% >= HitGridHeight% THEN qy% = HitGridHeight% - 1
+
+FOR yy% = py% TO qy%
+  FOR xx% = px% TO qx%
+    HitGrid%(xx%, yy%) = hitvalue%
+  NEXT xx%
+NEXT yy%
+END SUB
+
+SUB PaintHitGridSpriteMask (hitvalue%, ox%, oy%, mask%())
+w% = UBOUND(mask%, 1)
+h% = UBOUND(mask%, 2)
+
+ox& = ox%
+oy& = oy%
+
+px% = ox& * HitGridWidth% \ 320
+py% = oy& * HitGridHeight% \ 200
+
+qx% = (ox& + w% - 1) * HitGridWidth% \ 320
+qy% = (oy& + h% - 1) * HitGridHeight% \ 200
+
+IF px% < 0 THEN px% = 0
+IF py% < 0 THEN py% = 0
+IF qx% >= HitGridWidth% THEN qx% = HitGridWidth% - 1
+IF qy% >= HitGridHeight% THEN qy% = HitGridHeight% - 1
+
+IF (px% <= qx%) AND (py% <= qy%) THEN
+  DIM mx%(px% TO qx%)
+  DIM my%(py% TO qy%)
+
+  FOR xx% = px% TO qx%
+    mx%(xx%) = xx% * 320& \ HitGridWidth% - ox% + 1
+
+    IF mx%(xx%) < 1 THEN mx%(xx%) = 1
+    IF mx%(xx%) > w% THEN mx%(xx%) = w%
+  NEXT xx%
+
+  FOR yy% = py% TO qy%
+    my%(yy%) = yy% * 200& \ HitGridHeight% - oy% + 1
+
+    IF my%(yy%) < 1 THEN my%(yy%) = 1
+    IF my%(yy%) > h% THEN my%(yy%) = h%
+  NEXT yy%
+
+  FOR yy% = py% TO qy%
+    FOR xx% = px% TO qx%
+      mxx% = mx%(xx%)
+      myy% = my%(yy%)
+
+      IF mask%(mxx%, myy%) THEN HitGrid%(xx%, yy%) = hitvalue%
+      IF xx% < qx% THEN
+        IF mask%(mx%(xx% + 1) - 1, myy%) THEN HitGrid%(xx%, yy%) = hitvalue%
+      END IF
+
+      IF yy% < qy% THEN
+        myy% = my%(yy% + 1) - 1
+
+        IF mask%(mxx%, myy%) THEN HitGrid%(xx%, yy%) = hitvalue%
+        IF xx% < qx% THEN
+          IF mask%(mx%(xx% + 1) - 1, myy%) THEN HitGrid%(xx%, yy%) = hitvalue%
+        END IF
+      END IF
+    NEXT xx%
+  NEXT yy%
+END IF
 END SUB
 
 SUB ParseTriple (a$, p AS PointType)
@@ -2200,6 +2786,52 @@ IF pivot% - first% >= 2 THEN SortFaces faces(), first%, pivot% - 1
 IF last% - pivot% >= 2 THEN SortFaces faces(), pivot% + 1, last%
 END SUB
 
+SUB StartBossRound (Aliens() AS AlienType, Booms() AS BoomType)
+SHARED CreateBossPiece%            ' new piece number to create
+SHARED CreateBossPieceSourcePiece% ' source piece to split
+SHARED CreateBossPieceLeftWidth%   ' pixel width of the left part of the split
+SHARED CreateBossPieceRightWidth%  ' pixel width of the right part of the split
+SHARED CreateBossPieceX%()         ' shape of the split
+
+SHARED Alien4%()
+
+FOR i% = 1 TO MaxAliens%
+  IF Aliens(i%).Active THEN
+    a# = RND * (2 * PI#)
+    ca# = COS(a#)
+    sa# = SIN(a#)
+    xx# = Aliens(i%).X + 2 * ca#
+    yy# = Aliens(i%).Y - 2 * sa#
+    dxx# = Aliens(i%).DX + .4 * ca#
+    dyy# = Aliens(i%).DY - .4 * sa#
+    MakeBoom Booms(), (xx#), (yy#), (dxx#), (dyy#)
+    Aliens(i%).Active = 0
+  END IF
+NEXT i%
+
+CreateBossPiece% = 1
+CreateBossPieceSourcePiece% = 0
+CreateBossPieceLeftWidth% = 0
+CreateBossPieceRightWidth% = UBOUND(Alien4%, 1)
+
+FOR i% = LBOUND(CreateBossPieceX%) TO UBOUND(CreateBossPieceX%)
+  CreateBossPieceX%(i%) = 0
+NEXT i%
+
+Aliens(1).Active = 1
+Aliens(1).Species = 4
+Aliens(1).X = 10
+Aliens(1).Y = -UBOUND(Alien4%, 2)
+Aliens(1).DX = 0
+Aliens(1).DY = .2
+Aliens(1).HealthPoints = 200
+Aliens(1).SpriteIndex = 1
+Aliens(1).Argument1 = 0 ' Target DY
+Aliens(1).Argument2 = 0 ' Angle
+Aliens(1).Argument3 = 0 ' Target angle
+Aliens(1).Argument4 = -1 ' Drop mines
+END SUB
+
 SUB StartRound (Aliens() AS AlienType, roundnumber%, nextround%)
 SHARED AlienSpecies() AS AlienSpeciesType
 
@@ -2454,6 +3086,28 @@ FOR i% = 1 TO MaxAliens%
       CASE 3: ' Mine
         IF (Aliens(i%).FrameNumber AND 7) = 0 THEN
           Aliens(i%).SpriteIndex = 1 - Aliens(i%).SpriteIndex
+        END IF
+      CASE 4: ' Boss
+        ' Argument1: Target DY
+        ' Argument2: Angle
+        ' Argument3: Target Angle
+        ' Argument4: Lay Mines Flag
+        IF Aliens(i%).Y > 0 THEN
+          difference# = Aliens(i%).Argument1 - Aliens(i%).DY
+
+          IF difference# <> 0 THEN
+            IF difference# > .1 THEN difference# = difference# * .05
+
+            Aliens(i%).DY = Aliens(i%).DY + difference#
+          END IF
+
+          difference# = Aliens(i%).Argument3 - Aliens(i%).Argument2
+
+          IF difference# <> 0 THEN
+            IF difference# > .02 THEN difference# = difference# * .05
+
+            Aliens(i%).Argument2 = Aliens(i%).Argument2 + difference#
+          END IF
         END IF
       CASE 5: ' Floater
         ' Argument1: Angle
