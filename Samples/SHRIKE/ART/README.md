@@ -10,14 +10,14 @@ This is a very simple file format.
 
 * Header (offset `0`):
 
-    * `byte width`
-    * `byte height`
+    * `int16 width`
+    * `int16 height`
 
-* Pixels (offset `2`):
+* Pixels (offset `4`):
 
     * `byte[] data`, length `width * height`
 
-* Mask (offset `2 + data.Length`):
+* Mask (offset `4 + data.Length`):
 
     * `byte[] mask`, length `width * height`
 
@@ -72,3 +72,11 @@ Source: https://www.vecteezy.com/vector-art/23530772-pixel-art-explosion-boom-or
 ### ROCK
 
 Source: https://www.reddit.com/r/PixelArt/comments/cxn5aq/attempt_at_rotating_pixel_art_asteroid_while/
+
+### PLANET
+
+Clanker-generated.
+
+### CRATER
+
+Clanker-generated as an alteration to `PLANET`, manually masked.

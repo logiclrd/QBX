@@ -1779,8 +1779,8 @@ SUB GetArtDimensions (filename$, w%, h%)
 ff% = FREEFILE
 
 OPEN filename$ FOR BINARY AS #ff%
-w% = ASC(INPUT$(1, ff%))
-h% = ASC(INPUT$(1, ff%))
+GET #ff%, , w%
+GET #ff%, , h%
 CLOSE #ff%
 END SUB
 
@@ -1877,8 +1877,8 @@ ff% = FREEFILE
 
 OPEN filename$ FOR BINARY AS #ff%
 
-w% = ASC(INPUT$(1, ff%))
-h% = ASC(INPUT$(1, ff%))
+GET #ff%, , w%
+GET #ff%, , h%
 
 FOR yy% = 1 TO h%
   FOR xx% = 1 TO w%
