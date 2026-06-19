@@ -488,6 +488,8 @@ BossHeight% = UBOUND(Alien4%, 2)
 
 DIM CreateBossPieceX%(1 TO BossHeight%)
 
+BossY% = UBOUND(Alien4%, 2) \ 2 + 1
+
 ' Get set up to draw text
 DIM FontWidths%(0 TO 127)
 
@@ -654,7 +656,7 @@ DO
     IF roundnumber% < 15 THEN
       roundnumber% = roundnumber% + 1
       StartRound Aliens(), roundnumber%, nextround%
-    ELSEIF roundnumber < 16 THEN
+    ELSEIF roundnumber% < 16 THEN
       roundnumber% = roundnumber% + 1
       StartBossRound Aliens(), Booms()
     END IF
@@ -676,7 +678,7 @@ DO
   NEXT i%
 
   ' Boss sprite logic
-  IF CreateBossPiece% THEN
+  IF CreateBossPiece% > 0 THEN
     ' Fun rigamarole because we can only reallocate these arrays in the
     ' routine in which they were created. :-)
 
@@ -853,7 +855,7 @@ x1% = UBOUND(splitfrom%, 1)
 x2% = x1%
 
 FOR i% = 1 TO UBOUND(CreateBossPieceX%)
-  IF CreateBossPieceX%(i%) < splitminx% THEN
+  IF CreateBossPieceX%(i%) < x1% THEN
     x1% = CreateBossPieceX%(i%)
   END IF
 NEXT i%
@@ -1149,7 +1151,9 @@ FOR i% = 1 TO MaxShots%
                 Aliens(hit%).HealthPoints = Aliens(hit%).HealthPoints - 1
 
                 IF Aliens(hit%).Species = 4 THEN
-                  MakeBoom Booms(), (Shots(i%).ShotX), (Shots(i%).ShotY), 0, 0
+                  xx% = Shots(i%).ShotX
+                  yyy% = Shots(i%).ShotY + (yyy% - yy%) * 200 \ HitGridHeight%
+                  MakeBoom Booms(), xx%, yyy%, 0, 0
                 ELSE
                   Aliens(hit%).Damaged = AlienDamageVisibleFrames%
                 END IF
@@ -2071,7 +2075,7 @@ SHARED BossPiece1Mask%()
 w% = UBOUND(BossPiece1Mask%, 1)
 h% = UBOUND(BossPiece1Mask%, 2)
 
-PaintHitGridSpriteMask hitvalue%, alien.ActualX - w% \ 2, alien.ActualY - w% \ 2, BossPiece1Mask%()
+PaintHitGridSpriteMask hitvalue%, alien.ActualX - w% \ 2, alien.ActualY - h% \ 2, BossPiece1Mask%()
 END SUB
 
 SUB PaintHitGridAlien4Sprite2 (hitvalue%, alien AS AlienType)
@@ -2080,7 +2084,7 @@ SHARED BossPiece2Mask%()
 w% = UBOUND(BossPiece2Mask%, 1)
 h% = UBOUND(BossPiece2Mask%, 2)
 
-PaintHitGridSpriteMask hitvalue%, alien.ActualX - w% \ 2, alien.ActualY - w% \ 2, BossPiece2Mask%()
+PaintHitGridSpriteMask hitvalue%, alien.ActualX - w% \ 2, alien.ActualY - h% \ 2, BossPiece2Mask%()
 END SUB
 
 SUB PaintHitGridAlien4Sprite3 (hitvalue%, alien AS AlienType)
@@ -2089,7 +2093,7 @@ SHARED BossPiece3Mask%()
 w% = UBOUND(BossPiece3Mask%, 1)
 h% = UBOUND(BossPiece3Mask%, 2)
 
-PaintHitGridSpriteMask hitvalue%, alien.ActualX - w% \ 2, alien.ActualY - w% \ 2, BossPiece3Mask%()
+PaintHitGridSpriteMask hitvalue%, alien.ActualX - w% \ 2, alien.ActualY - h% \ 2, BossPiece3Mask%()
 END SUB
 
 SUB PaintHitGridAlien4Sprite4 (hitvalue%, alien AS AlienType)
@@ -2098,7 +2102,7 @@ SHARED BossPiece4Mask%()
 w% = UBOUND(BossPiece4Mask%, 1)
 h% = UBOUND(BossPiece4Mask%, 2)
 
-PaintHitGridSpriteMask hitvalue%, alien.ActualX - w% \ 2, alien.ActualY - w% \ 2, BossPiece4Mask%()
+PaintHitGridSpriteMask hitvalue%, alien.ActualX - w% \ 2, alien.ActualY - h% \ 2, BossPiece4Mask%()
 END SUB
 
 SUB PaintHitGridAlien4Sprite5 (hitvalue%, alien AS AlienType)
@@ -2107,7 +2111,7 @@ SHARED BossPiece5Mask%()
 w% = UBOUND(BossPiece5Mask%, 1)
 h% = UBOUND(BossPiece5Mask%, 2)
 
-PaintHitGridSpriteMask hitvalue%, alien.ActualX - w% \ 2, alien.ActualY - w% \ 2, BossPiece5Mask%()
+PaintHitGridSpriteMask hitvalue%, alien.ActualX - w% \ 2, alien.ActualY - h% \ 2, BossPiece5Mask%()
 END SUB
 
 SUB PaintHitGridAlien4Sprite6 (hitvalue%, alien AS AlienType)
@@ -2116,7 +2120,7 @@ SHARED BossPiece6Mask%()
 w% = UBOUND(BossPiece6Mask%, 1)
 h% = UBOUND(BossPiece6Mask%, 2)
 
-PaintHitGridSpriteMask hitvalue%, alien.ActualX - w% \ 2, alien.ActualY - w% \ 2, BossPiece6Mask%()
+PaintHitGridSpriteMask hitvalue%, alien.ActualX - w% \ 2, alien.ActualY - h% \ 2, BossPiece6Mask%()
 END SUB
 
 SUB PaintHitGridAlien5 (hitvalue%, alien AS AlienType)
@@ -2815,13 +2819,13 @@ CreateBossPieceLeftWidth% = 0
 CreateBossPieceRightWidth% = UBOUND(Alien4%, 1)
 
 FOR i% = LBOUND(CreateBossPieceX%) TO UBOUND(CreateBossPieceX%)
-  CreateBossPieceX%(i%) = 0
+  CreateBossPieceX%(i%) = 1
 NEXT i%
 
 Aliens(1).Active = 1
 Aliens(1).Species = 4
-Aliens(1).X = 10
-Aliens(1).Y = -UBOUND(Alien4%, 2)
+Aliens(1).X = 160
+Aliens(1).Y = -UBOUND(Alien4%, 2) \ 2 - 1
 Aliens(1).DX = 0
 Aliens(1).DY = .2
 Aliens(1).HealthPoints = 200
@@ -2952,6 +2956,7 @@ END SUB
 
 SUB UpdateAndRenderAliens (Aliens() AS AlienType, fx%, fy%, fdx%, Booms() AS BoomType)
 SHARED AlienSpecies() AS AlienSpeciesType
+SHARED BossY%
 
 FOR i% = 1 TO MaxAliens%
   IF Aliens(i%).Active THEN
@@ -3092,7 +3097,7 @@ FOR i% = 1 TO MaxAliens%
         ' Argument2: Angle
         ' Argument3: Target Angle
         ' Argument4: Lay Mines Flag
-        IF Aliens(i%).Y > 0 THEN
+        IF Aliens(i%).Y > BossY% THEN
           difference# = Aliens(i%).Argument1 - Aliens(i%).DY
 
           IF difference# <> 0 THEN
