@@ -40,12 +40,13 @@ class Convert
 		var pngStream = new MemoryStream(pngData);
 
 		using (var img = (Bitmap)Bitmap.FromFile(pngPath))
-		using (var art = File.OpenWrite(artPath))
+		using (var artStream = File.OpenWrite(artPath))
+		using (var art = new BinaryWriter(artStream))
 		{
 			Console.WriteLine("{0}x{1}", img.Width, img.Height);
 
-			art.WriteByte((byte)img.Width);
-			art.WriteByte((byte)img.Height);
+			art.Write((short)img.Width);
+			art.Write((short)img.Height);
 
 			//var data = img.LockBits(new Rectangle(0, 0, img.Width, img.Height), ImageLockMode.ReadOnly, PixelFormat.Format8bppIndexed);
 
@@ -58,7 +59,7 @@ class Convert
 
 						s_vgaPal.TryGetValue(pel, out var pelIdx);
 
-						art.WriteByte(pelIdx);
+						art.Write((byte)pelIdx);
 					}
 			}
 			finally
@@ -71,7 +72,7 @@ class Convert
 				{
 					var pel = img.GetPixel(x, y);
 
-					art.WriteByte(pel.A);
+					art.Write((byte)pel.A);
 				}
 		}
 	}
