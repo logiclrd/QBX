@@ -71,6 +71,7 @@ jobs:
 
     - name: Stage
       run: |
+        # Populate Stage
         md Stage
         Copy-Item RELEASES.md Stage\
         md Stage\BIN
@@ -79,7 +80,25 @@ jobs:
         Copy-Item HELP.md Stage\HELP\README.md
         md Stage\SRC
         robocopy Samples Stage\SRC /XF *.vbproj /XF .gitignore /XD bin /XD obj /S
-        foreach ($i in (Get-Content .\Samples\.pack-exclude)) { Get-ChildItem -Recurse Stage\SRC -Name | Where { $_ -like $i } | ForEach { Remove-Item "Stage\SRC\$_" } }
+
+        # Exclude files matched by .pack-exclude
+        foreach ($i in (Get-Content .\Samples\.pack-exclude))
+        {
+          $p = $i.Replace('/', [System.IO.Path]::DirectorySeparatorChar)
+          Get-ChildItem -Recurse Stage\SRC -Force -File -Name `
+          | Where { $_ -like $p } `
+          | ForEach { Remove-Item "Stage\SRC\$_" -Force }
+        }
+
+        # Clean up empty directories
+        $stagedDirectories = Get-ChildItem -Recurse Stage\SRC -Force -Directory
+        [Array]::Reverse($stagedDirectories)
+        foreach ($directory in $stagedDirectories)
+        {
+          try { [System.IO.Directory]::Delete($directory.FullName) } catch { }
+        }
+
+        # Create package file
         Compress-Archive -Path Stage\* -DestinationPath ${{ env.PackageFileName }}
         Get-ChildItem ${{ env.PackageFileName }} | Select-Object Mode,LastWriteTime,Length,FullName
 
