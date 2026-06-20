@@ -1,5 +1,22 @@
 # QBX Releases
 
+## 1.13.0 - 2026-06-20
+
+### Fixed
+
+- String substrings passed into functions using `LEFT$()`, `MID$()` and `RIGHT$()` no longer alias the underlying storage.
+- Lines with end-of-line comments and `IF` statements with multiple statements in the `THEN` or `ELSE` clause no longer generate extraneous empty statements (shows up as extra `:` characters).
+- Expressions using the unary operator `NOT` now parse correctly.
+- Pasting a buffer in the virtual space after the end of the current line no longer crashes QBX.
+- `PAINT` starting on a border pixel no longer crashes.
+- `DIM` now correctly throws `Subscript out of range` if the range for a subscript is in the wrong order.
+- Parsing now only tries to interpret a line as a `TYPE` element if the `AS` keyword is specifically the second token.
+- `FOR` statements now assign the initial value to the iterator even if the end value is _before_ the initial value, causing the loop to be skipped entirely.
+
+### Added
+
+- Top scroller game `SHRIKE` under `Samples`. Worth checking out!
+
 ## 1.12.0 - 2026-06-05
 
 ### Fixed
