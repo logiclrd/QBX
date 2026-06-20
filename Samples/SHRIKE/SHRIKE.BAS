@@ -2169,9 +2169,6 @@ DO
     buf&(i%) = 0
   NEXT i%
 
-  PutArt 160, 30, 0, GameOver%(), GameOverMask%()
-  PutArt 160, 50, 0, MissionFailed%(), MissionFailedMask%()
-
   PutArt spacemanx#, spacemany#, 0, SpaceMan%(), SpaceManMask%()
   PutArt dogx#, dogy#, 0, Dog%(), DogMask%()
 
@@ -2182,6 +2179,9 @@ DO
   dogy# = dogy# * .98 + dogty# * .02
 
   CentreText 160, 120, scoretext$
+
+  PutArt 160, 30, 0, GameOver%(), GameOverMask%()
+  PutArt 160, 50, 0, MissionFailed%(), MissionFailedMask%()
 
   ' Blit
   PUT (0, 0), buf&, PSET
