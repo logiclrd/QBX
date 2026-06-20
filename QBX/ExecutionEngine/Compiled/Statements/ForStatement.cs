@@ -216,7 +216,7 @@ public class IntegerForStatement(CodeModel.Statements.ForStatement sourceForStat
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
-		var iteratorVariable = stackFrame.Variables[IteratorVariableIndex];
+		var iteratorVariable = stackFrame.Variables[IteratorVariableIndex] as IntegerVariable;
 
 		if (iteratorVariable == null)
 			throw new Exception("IntegerForStatement with no IteratorVariable");
@@ -245,7 +245,12 @@ public class IntegerForStatement(CodeModel.Statements.ForStatement sourceForStat
 				proceed = (step < 0);
 		}
 
-		if (proceed)
+		if (!proceed)
+		{
+			iteratorVariable.Value = from;
+			iteratorVariable.WritePinnedData();
+		}
+		else
 		{
 			var nextStatement = new NextStatement(from, to, step, SourceNextStatement);
 
@@ -319,7 +324,7 @@ public class LongForStatement(CodeModel.Statements.ForStatement sourceForStateme
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
-		var iteratorVariable = stackFrame.Variables[IteratorVariableIndex];
+		var iteratorVariable = stackFrame.Variables[IteratorVariableIndex] as LongVariable;
 
 		if (iteratorVariable == null)
 			throw new Exception("LongForStatement with no IteratorVariable");
@@ -348,7 +353,12 @@ public class LongForStatement(CodeModel.Statements.ForStatement sourceForStateme
 				proceed = (step < 0);
 		}
 
-		if (proceed)
+		if (!proceed)
+		{
+			iteratorVariable.Value = from;
+			iteratorVariable.WritePinnedData();
+		}
+		else
 		{
 			var nextStatement = new NextStatement(from, to, step, SourceNextStatement);
 
@@ -422,7 +432,7 @@ public class SingleForStatement(CodeModel.Statements.ForStatement sourceForState
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
-		var iteratorVariable = stackFrame.Variables[IteratorVariableIndex];
+		var iteratorVariable = stackFrame.Variables[IteratorVariableIndex] as SingleVariable;
 
 		if (iteratorVariable == null)
 			throw new Exception("SingleForStatement with no IteratorVariable");
@@ -451,7 +461,12 @@ public class SingleForStatement(CodeModel.Statements.ForStatement sourceForState
 				proceed = (step < 0);
 		}
 
-		if (proceed)
+		if (!proceed)
+		{
+			iteratorVariable.Value = from;
+			iteratorVariable.WritePinnedData();
+		}
+		else
 		{
 			var nextStatement = new NextStatement(from, to, step, SourceNextStatement);
 
@@ -525,7 +540,7 @@ public class DoubleForStatement(CodeModel.Statements.ForStatement sourceForState
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
-		var iteratorVariable = stackFrame.Variables[IteratorVariableIndex];
+		var iteratorVariable = stackFrame.Variables[IteratorVariableIndex] as DoubleVariable;
 
 		if (iteratorVariable == null)
 			throw new Exception("DoubleForStatement with no IteratorVariable");
@@ -554,7 +569,12 @@ public class DoubleForStatement(CodeModel.Statements.ForStatement sourceForState
 				proceed = (step < 0);
 		}
 
-		if (proceed)
+		if (!proceed)
+		{
+			iteratorVariable.Value = from;
+			iteratorVariable.WritePinnedData();
+		}
+		else
 		{
 			var nextStatement = new NextStatement(from, to, step, SourceNextStatement);
 
@@ -628,7 +648,7 @@ public class CurrencyForStatement(CodeModel.Statements.ForStatement sourceForSta
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
-		var iteratorVariable = stackFrame.Variables[IteratorVariableIndex];
+		var iteratorVariable = stackFrame.Variables[IteratorVariableIndex] as CurrencyVariable;
 
 		if (iteratorVariable == null)
 			throw new Exception("CurrencyForStatement with no IteratorVariable");
@@ -657,7 +677,12 @@ public class CurrencyForStatement(CodeModel.Statements.ForStatement sourceForSta
 				proceed = (step < 0);
 		}
 
-		if (proceed)
+		if (!proceed)
+		{
+			iteratorVariable.Value = from;
+			iteratorVariable.WritePinnedData();
+		}
+		else
 		{
 			var nextStatement = new NextStatement(from, to, step, SourceNextStatement);
 
@@ -761,7 +786,12 @@ public class DelayLoopForStatement(CodeModel.Statements.ForStatement sourceForSt
 				proceed = (step < 0);
 		}
 
-		if (proceed)
+		if (!proceed)
+		{
+			iteratorVariable.SetData(fromVariable.GetData());
+			iteratorVariable.WritePinnedData();
+		}
+		else
 		{
 			double iterations = (to - from) / step;
 
