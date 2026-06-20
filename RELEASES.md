@@ -10,7 +10,7 @@
 - Pasting a buffer in the virtual space after the end of the current line no longer crashes QBX.
 - `PAINT` starting on a border pixel no longer crashes.
 - `DIM` now correctly throws `Subscript out of range` if the range for a subscript is in the wrong order.
-- Parsing now only tries to interpret a line as a `TYPE` element if the `AS` keyword is specifically the second token.
+- Parsing now only tries to interpret a line as a `TYPE` element if the `AS` keyword is either specifically the second token, or the second token is an open parenthesis and the `AS` keyword comes directly after the corresponding close parenthesis.
 - `FOR` statements now assign the initial value to the iterator even if the end value is _before_ the initial value, causing the loop to be skipped entirely.
 
 ### Added

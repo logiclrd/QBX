@@ -4130,7 +4130,10 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 			int asTokenIndex = tokenHandler.FindNextUnparenthesizedOf(TokenType.AS);
 
-			if (asTokenIndex == 1)
+			if ((asTokenIndex == 1)
+			 || ((asTokenIndex > 1)
+			  && (tokenHandler[1].Type == TokenType.OpenParenthesis)
+			  && (tokenHandler[asTokenIndex - 1].Type == TokenType.CloseParenthesis)))
 			{
 				var typeElement = new TypeElementStatement();
 
