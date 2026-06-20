@@ -3388,18 +3388,20 @@ FOR i% = 1 TO MaxAliens%
           END IF
 
           IF Aliens(i%).Argument4 THEN
-            IF (Aliens(i%).FrameNumber AND 31) = 0 THEN
-              r# = RND - .5
+            IF Aliens(i%).BossPieceWidth% > BossMinesMinimumWidth% THEN
+              IF (Aliens(i%).FrameNumber AND 63) = 0 THEN
+                r# = RND - .5
 
-              minex# = Aliens(i%).X + r# * Aliens(i%).BossPieceWidth
-              miney# = Aliens(i%).Y + (1 - ABS(r#)) * BossHeight%
-              minedx# = 0
+                minex# = Aliens(i%).X + r# * Aliens(i%).BossPieceWidth
+                miney# = Aliens(i%).Y + (1 - ABS(r#)) * BossHeight%
+                minedx# = 0
 
-              IF RND < BossAimedMineProbability! THEN
-                minedx# = (fx% - Aliens(i%).X) * MineSpeed# / (fy% - Aliens(i%).Y)
+                IF RND < BossAimedMineProbability! THEN
+                  minedx# = (fx% - Aliens(i%).X) * MineSpeed# / (fy% - Aliens(i%).Y)
+                END IF
+
+                CreateMine Aliens(), minex#, miney#, minedx#
               END IF
-
-              CreateMine Aliens(), minex#, miney#, minedx#
             END IF
           END IF
         END IF
