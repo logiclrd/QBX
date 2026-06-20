@@ -95,7 +95,7 @@ DECLARE SUB BossPiecePrepareForSplit (sourcepiece%, sourcealienindex%, splitstar
 DECLARE SUB BurnEdge (pixels%(), direction%)
 DECLARE SUB CascadeFighterBoom (fx%, fy%, fdx%, Booms() AS BoomType)
 DECLARE SUB CentreText (tx%, ty%, text$)
-DECLARE SUB CheckForHits (Shots() AS ShotType, Rocks() AS RockType, Aliens() AS AlienType, Booms() AS BoomType, Splats() AS SplatType, fx%, fy%, nextround%, score&)
+DECLARE SUB CheckForHits (Shots() AS ShotType, Rocks() AS RockType, Aliens() AS AlienType, Booms() AS BoomType, Splats() AS SplatType, fx%, fy%, nextround%, score&, isbossround%)
 DECLARE SUB ComputeGrayscaleMap
 DECLARE SUB CopySprite (frompixels%(), frommask%(), topixels%(), tomask%())
 DECLARE SUB CreateFloaters (Aliens() AS AlienType, killedalien AS AlienType)
@@ -123,6 +123,9 @@ DECLARE SUB DrawReticle (ox%, oy%)
 DECLARE SUB DrawRock (rock AS RockType)
 DECLARE SUB DrawScore (score&)
 DECLARE SUB DrawSplat (splatinfo AS SplatType)
+DECLARE SUB EndingSequence (Dusts() AS DustType, Shots() AS ShotType, Rocks() AS RockType, Booms() AS BoomType, Splats() AS SplatType, fighterx#)
+DECLARE SUB EndScreenWin (score&)
+DECLARE SUB EndScreenLose (score&)
 DECLARE SUB FillTriangle (x1%, y1%, x2%, y2%, x3%, y3%, c%)
 DECLARE SUB GetArtDimensions (filename$, w%, h%)
 DECLARE SUB GetObjectCounts (objfilename$, numvertices%, numnormals%, numfaces%)
@@ -160,7 +163,7 @@ DECLARE SUB PutArt (ox#, oy#, angle#, pixels%(), mask%())
 DECLARE SUB PutGlyph (gx%, gy%, c%, w%)
 DECLARE SUB RenderObject (sourcevertices() AS PointType, sourcenormals() AS PointType, faces() AS FaceType, transform#(), rotation#(), lightposition AS PointType, LightIntensity#, AmbientLightIntensity#, ox%, oy%)
 DECLARE SUB RenderShot (shot AS ShotType)
-DECLARE SUB ResetGameState (Dusts() AS DustType, Shots() AS ShotType, Rocks() AS RockType, Aliens() AS AlienType, Booms() AS BoomType, Splats() AS SplatType, BossPieceActive%(), score&, gunheat%, roundnumber%, nextround%)
+DECLARE SUB ResetGameState (Dusts() AS DustType, Shots() AS ShotType, Rocks() AS RockType, Aliens() AS AlienType, Booms() AS BoomType, Splats() AS SplatType, BossPieceActive%(), score&, gunheat%, roundnumber%, nextround%, isbossround%)
 DECLARE SUB RotateTransformX (matrix#(), angle#)
 DECLARE SUB RotateTransformY (matrix#(), angle#)
 DECLARE SUB RotateTransformZ (matrix#(), angle#)
@@ -174,7 +177,7 @@ DECLARE SUB TitleScreen (FighterVertices() AS PointType, FighterNormals() AS Poi
 DECLARE SUB Translate (matrix#(), deltax#, deltay#, deltaz#)
 DECLARE SUB UpdateAndRenderAliens (Aliens() AS AlienType, fx%, fy%, fdx%, Booms() AS BoomType)
 DECLARE SUB UpdateAndRenderBooms (Booms() AS BoomType)
-DECLARE SUB UpdateAndRenderDust (Dusts() AS DustType)
+DECLARE SUB UpdateAndRenderDust (Dusts() AS DustType, freeze%)
 DECLARE SUB UpdateAndRenderRocks (Rocks() AS RockType, fx%, fy%, fdx%, Booms() AS BoomType)
 DECLARE SUB UpdateAndRenderShot (shot AS ShotType)
 DECLARE SUB UpdateAndRenderSplats (Splats() AS SplatType)
@@ -452,22 +455,6 @@ GetArtDimensions "SPLAT.ART", w%, h%
 DIM Splat%(1 TO w%, 1 TO h%), SplatMask%(1 TO w%, 1 TO h%)
 LoadArt "SPLAT.ART", Splat%(), SplatMask%()
 
-GetArtDimensions "PLANET.ART", w%, h%
-DIM SHARED Planet%(1 TO w%, 1 TO h%), PlanetMask%(1 TO w%, 1 TO h%)
-LoadArt "PLANET.ART", Planet%(), PlanetMask%()
-
-GetArtDimensions "CRATER.ART", w%, h%
-DIM SHARED Crater%(1 TO w%, 1 TO h%), CraterMask%(1 TO w%, 1 TO h%)
-LoadArt "CRATER.ART", Crater%(), CraterMask%()
-
-GetArtDimensions "SPACEMAN.ART", w%, h%
-DIM SHARED SpaceMan%(1 TO w%, 1 TO h%), SpaceManMask%(1 TO w%, 1 TO h%)
-LoadArt "SPACEMAN.ART", SpaceMan%(), SpaceManMask%()
-
-GetArtDimensions "DOG.ART", w%, h%
-DIM SHARED Dog%(1 TO w%, 1 TO h%), DogMask%(1 TO w%, 1 TO h%)
-LoadArt "DOG.ART", Dog%(), DogMask%()
-
 GetArtDimensions "FONT.ART", w%, h%
 DIM Font%(1 TO w%, 1 TO h%), FontMask%(1 TO w%, 1 TO h%)
 LoadArt "FONT.ART", Font%(), FontMask%()
@@ -611,7 +598,7 @@ DO
   rin.AX = 0
   CALL InterruptX(&H33, rin, rout)
 
-  ResetGameState Dusts(), Shots(), Rocks(), Aliens(), Booms(), Splats(), BossPieceActive%(), score&, gunheat%, roundnumber%, nextround%
+  ResetGameState Dusts(), Shots(), Rocks(), Aliens(), Booms(), Splats(), BossPieceActive%(), score&, gunheat%, roundnumber%, nextround%, isbossround%
 
   fighterx# = 160
   fighterdx# = 0
@@ -678,13 +665,9 @@ DO
       ELSEIF roundnumber% < 16 THEN
         roundnumber% = roundnumber% + 1
         StartBossRound Aliens(), Booms()
+        isbossround% = -1
       END IF
     END IF
-
-    ' Clear buffer
-    FOR i% = 1 TO 16000
-      buf&(i%) = 0
-    NEXT i%
 
     ' Boss sprite logic
     IF CreateBossPiece% > 0 THEN
@@ -790,12 +773,17 @@ DO
       CreateBossPieceSourcePiece% = 0
     END IF
 
+    ' Clear buffer
+    FOR i% = 1 TO 16000
+      buf&(i%) = 0
+    NEXT i%
+
     ' Hamburgers
-    UpdateAndRenderDust Dusts()
+    UpdateAndRenderDust Dusts(), 0
 
     UpdateAndRenderAliens Aliens(), (fighterx#), FighterY%, (fighterdx#), Booms()
 
-    CheckForHits Shots(), Rocks(), Aliens(), Booms(), Splats(), (fighterx#), FighterY%, nextround%, score&
+    CheckForHits Shots(), Rocks(), Aliens(), Booms(), Splats(), (fighterx#), FighterY%, nextround%, score&, isbossround%
 
     UpdateAndRenderRocks Rocks(), (fighterx#), FighterY%, (fighterdx#), Booms()
 
@@ -852,7 +840,14 @@ DO
     WHILE TIMER = framestarttime!: WEND
 
     IF INKEY$ = CHR$(27) THEN EXIT DO
-  LOOP WHILE (FighterHit% = 0) OR (DeathFrames% > 0) OR (ReachedEnd% <> 0)
+  LOOP WHILE ((FighterHit% = 0) OR (DeathFrames% > 0)) AND (ReachedEnd% = 0)
+
+  IF ReachedEnd% THEN
+    EndingSequence Dusts(), Shots(), Rocks(), Booms(), Splats(), fighterx#
+    EndScreenWin score&
+  ELSE
+    EndScreenLose score&
+  END IF
 LOOP
 
 SCREEN 0
@@ -1164,7 +1159,7 @@ FOR i% = 1 TO LEN(text$)
 NEXT i%
 END SUB
 
-SUB CheckForHits (Shots() AS ShotType, Rocks() AS RockType, Aliens() AS AlienType, Booms() AS BoomType, Splats() AS SplatType, fx%, fy%, nextround%, score&)
+SUB CheckForHits (Shots() AS ShotType, Rocks() AS RockType, Aliens() AS AlienType, Booms() AS BoomType, Splats() AS SplatType, fx%, fy%, nextround%, score&, isbossround%)
 SHARED Rock01%()
 SHARED BossPiece1%()
 SHARED BossPiece2%()
@@ -1173,6 +1168,8 @@ SHARED BossPiece4%()
 SHARED BossPiece5%()
 SHARED BossPiece6%()
 SHARED AlienSpecies() AS AlienSpeciesType
+
+SHARED ReachedEnd%
 
 ' Render a hit grid for quick collision tests
 FOR xx% = 0 TO HitGridWidth% - 1
@@ -1376,8 +1373,12 @@ FOR i% = 1 TO MaxAliens%
   IF Aliens(i%).Immune > 0 THEN Aliens(i%).Immune = Aliens(i%).Immune - 1
 NEXT i%
 
-IF (activealiens% = 0) AND (nextround% > RoundInterval% \ 2) THEN
-  nextround% = RoundInterval% \ 2
+IF activealiens% = 0 THEN
+  IF isbossround% THEN
+    ReachedEnd% = -1
+  ELSEIF nextround% > RoundInterval% \ 2 THEN
+    nextround% = RoundInterval% \ 2
+  END IF
 END IF
 END SUB
 
@@ -1876,6 +1877,369 @@ SUB DrawSplat (splatinfo AS SplatType)
 SHARED Splat%(), SplatMask%()
 
 PutArt (splatinfo.X), (splatinfo.Y), splatinfo.SplatAngle, Splat%(), SplatMask%()
+END SUB
+
+SUB EndingSequence (Dusts() AS DustType, Shots() AS ShotType, Rocks() AS RockType, Booms() AS BoomType, Splats() AS SplatType, fighterx#)
+SHARED FighterVertices() AS PointType
+SHARED FighterNormals() AS PointType
+SHARED FighterFaces() AS FaceType
+SHARED FighterLightPosition AS PointType
+
+DIM transform#(0 TO 3, 0 TO 3)
+DIM rotation#(0 TO 3, 0 TO 3) ' same as transform, but without translation
+
+' Capture palette
+DIM pal%(767)
+
+OUT &H3C7, 0
+
+FOR i% = 0 TO 767
+  pal%(i%) = INP(&H3C9)
+NEXT i%
+
+FOR i% = 1 TO MaxRocks%
+  IF Rocks(i%).Active THEN
+    Rocks(i%).Active = 0
+    MakeBoom Booms(), Rocks(i%).X, Rocks(i%).Y, Rocks(i%).DX, RockSpeed%
+  END IF
+NEXT i%
+
+flyoffy# = FighterY%
+flyoffdy# = -1.1
+flyoffddy# = -.1
+
+fade% = 100
+
+DO
+  framestarttime! = TIMER
+
+  delta# = 160 - fighterx#
+
+  fighterdx# = fighterdx# * .8 + delta# * .1
+
+  fighterx# = fighterx# + fighterdx#
+  fightertiltangle# = ATN(delta# * FighterTiltSpeed#) * FighterTiltMax#
+
+  flyoffy# = flyoffy# + flyoffdy#
+  flyoffdy# = flyoffdy# + flyoffddy#
+  flyoffddy# = flyoffddy# * 1.05
+
+  ' Clear buffer
+  FOR i% = 1 TO 16000
+    buf&(i%) = 0
+  NEXT i%
+
+  ' Hamburgers
+  UpdateAndRenderDust Dusts(), 0
+
+  UpdateAndRenderSplats Splats()
+  UpdateAndRenderBooms Booms()
+
+  IF flyoffy# > -100 THEN
+    ' Fighter transform
+    SetIdentityTransform transform#()
+    SetIdentityTransform rotation#()
+
+    ScaleTransform transform#(), 3
+
+    RotateTransformZ transform#(), -10 * SIN(fightertiltangle#) / 57.295779
+    RotateTransformY transform#(), 10 * SIN(fightertiltangle#) / 57.295779
+    RotateTransformX transform#(), -100 / 57.295779
+
+    RenderObject FighterVertices(), FighterNormals(), FighterFaces(), transform#(), rotation#(), FighterLightPosition, LightIntensity#, AmbientLightIntensity#, INT(fighterx#), INT(flyoffy#)
+
+    FOR i% = 1 TO MaxShots%
+      UpdateAndRenderShot Shots(i%)
+    NEXT i%
+  ELSE
+    ' Fade to black
+    fade% = fade% - 1
+
+    OUT &H3C8, 0
+
+    FOR i% = 0 TO 767
+      OUT &H3C9, pal%(i%) * fade% \ 100
+    NEXT i%
+  END IF
+
+  DrawScore score&
+
+  ' Blit
+  PUT (0, 0), buf&, PSET
+
+  ' Framerate limit
+  WHILE TIMER = framestarttime!: WEND
+LOOP WHILE fade% > 0
+
+' Clear buffer
+FOR i% = 1 TO 16000
+  buf&(i%) = 0
+NEXT i%
+
+PUT (0, 0), buf&, PSET
+
+' Restore palette
+OUT &H3C8, 0
+
+FOR i% = 0 TO 767
+  OUT &H3C9, pal%(i%)
+NEXT i%
+
+FOR messageframe% = 0 TO 15 * FPSLimit%
+  framestarttime! = TIMER
+
+  ' Clear buffer
+  FOR i% = 1 TO 16000
+    buf&(i%) = 0
+  NEXT i%
+
+  messagesecond% = messageframe% \ FPSLimit%
+
+  SELECT CASE messagesecond%
+    CASE 0, 1: CentreText 160, 95, CHR$(34) + "Oh no" + CHR$(34)
+    CASE 5, 6: CentreText 160, 95, CHR$(34) + "I'm going too fast" + CHR$(34)
+    CASE 10, 11: CentreText 160, 95, CHR$(34) + "I can't stop!" + CHR$(34)
+  END SELECT
+
+  ' Blit
+  PUT (0, 0), buf&, PSET
+
+  ' Framerate limit
+  WHILE TIMER = framestarttime!: WEND
+NEXT messageframe%
+
+' Black out palette again
+OUT &H3C8, 0
+
+FOR i% = 0 TO 767
+  OUT &H3C9, pal%(i%)
+NEXT i%
+
+' Final crash sequence
+GetArtDimensions "PLANET.ART", w%, h%
+DIM Planet%(1 TO w%, 1 TO h%), PlanetMask%(1 TO w%, 1 TO h%)
+LoadArt "PLANET.ART", Planet%(), PlanetMask%()
+
+planety% = h% \ 2
+
+GetArtDimensions "CRATER.ART", w%, h%
+DIM Crater%(1 TO w%, 1 TO h%), CraterMask%(1 TO w%, 1 TO h%)
+LoadArt "CRATER.ART", Crater%(), CraterMask%()
+
+InitializeDust Dusts()
+
+flyiny# = 250
+flyindy# = -22
+
+staticframes% = 70
+
+CONST CraterX% = 154
+CONST CraterY% = 30
+
+FOR i% = 1 TO MaxBooms%
+  Booms(i%).Active = 0
+NEXT i%
+
+DIM staticpixels&(16001)
+
+FOR i% = 1 TO 16000
+  buf&(i%) = 0
+NEXT i%
+
+UpdateAndRenderDust Dusts(), -1 ' frozen
+
+PutArt 160, (planety%), 0, Planet%(), PlanetMask%()
+
+FOR i% = 1 TO 16000
+  staticpixels&(i%) = buf&(i%)
+NEXT i%
+
+PUT (0, 0), buf&, PSET
+
+DO
+  framestarttime! = TIMER
+
+  fade% = fade% + 4
+
+  OUT &H3C8, 0
+
+  FOR i% = 0 TO 767
+    OUT &H3C9, pal%(i%) * fade% \ 100
+  NEXT i%
+
+    ' Framerate limit
+  WHILE TIMER = framestarttime!: WEND
+LOOP WHILE fade% < 100
+
+framesleft% = 60
+
+DO
+  framestarttime! = TIMER
+
+  ' Repaint static pixels
+  FOR i% = 1 TO 16000
+    buf&(i%) = staticpixels&(i%)
+  NEXT i%
+
+  IF staticframes% > 0 THEN
+    staticframes% = staticframes% - 1
+  ELSE
+    IF hascrashed% = 0 THEN
+      flyiny# = flyiny# + flyindy#
+
+      IF flyiny# < CraterY% THEN
+        flyiny# = CraterY%
+        hascrashed% = -1
+        MakeBoom Booms(), CraterX%, CraterY%, 0, 0
+      END IF
+
+      RenderObject FighterVertices(), FighterNormals(), FighterFaces(), transform#(), rotation#(), FighterLightPosition, LightIntensity#, AmbientLightIntensity#, CraterX%, INT(flyiny#)
+    ELSE
+      PutArt (CraterX%), (CraterY%), 0, Crater%(), CraterMask%()
+      framesleft% = framesleft% - 1
+
+      IF framesleft% <= 0 THEN
+        ' Fade to black
+        fade% = fade% - 1
+
+        OUT &H3C8, 0
+
+        FOR i% = 0 TO 767
+          OUT &H3C9, pal%(i%) * fade% \ 100
+        NEXT i%
+      END IF
+    END IF
+  END IF
+
+  UpdateAndRenderBooms Booms()
+
+  ' Blit
+  PUT (0, 0), buf&, PSET
+
+  ' Framerate limit
+  WHILE TIMER = framestarttime!: WEND
+LOOP WHILE framesleft% > 0 OR fade% > 0
+
+CLS
+
+' Restore palette
+OUT &H3C8, 0
+
+FOR i% = 0 TO 767
+  OUT &H3C9, pal%(i%)
+NEXT i%
+END SUB
+
+SUB EndScreenLose (score&)
+GetArtDimensions "DEAD.ART", w%, h%
+DIM SpaceMan%(1 TO w%, 1 TO h%), SpaceManMask%(1 TO w%, 1 TO h%)
+LoadArt "DEAD.ART", SpaceMan%(), SpaceManMask%()
+
+GetArtDimensions "SADDOG.ART", w%, h%
+DIM Dog%(1 TO w%, 1 TO h%), DogMask%(1 TO w%, 1 TO h%)
+LoadArt "SADDOG.ART", Dog%(), DogMask%()
+
+GetArtDimensions "GAMEOVER.ART", w%, h%
+DIM GameOver%(1 TO w%, 1 TO h%), GameOverMask%(1 TO w%, 1 TO h%)
+LoadArt "GAMEOVER.ART", GameOver%(), GameOverMask%()
+
+GetArtDimensions "FAILED.ART", w%, h%
+DIM MissionFailed%(1 TO w%, 1 TO h%), MissionFailedMask%(1 TO w%, 1 TO h%)
+LoadArt "FAILED.ART", MissionFailed%(), MissionFailedMask%()
+
+spacemanx# = 70
+spacemany# = 100
+
+spacemantx# = spacemanx# - 6
+spacemanty# = spacemany# + 5
+
+dogx# = 250
+dogy# = 100
+
+dogtx# = dogx# + 5
+dogty# = dogy# + 4
+
+CONST EndScreenTextX% = 240
+
+scoretext$ = "SCORE:" + STR$(score&)
+
+DO
+  ' Clear buffer
+  FOR i% = 1 TO 16000
+    buf&(i%) = 0
+  NEXT i%
+
+  PutArt 160, 30, 0, GameOver%(), GameOverMask%()
+  PutArt 160, 50, 0, MissionFailed%(), MissionFailedMask%()
+
+  PutArt spacemanx#, spacemany#, 0, SpaceMan%(), SpaceManMask%()
+  PutArt dogx#, dogy#, 0, Dog%(), DogMask%()
+
+  spacemanx# = spacemanx# * .98 + spacemantx# * .02
+  spacemany# = spacemany# * .98 + spacemanty# * .02
+
+  dogx# = dogx# * .98 + dogtx# * .02
+  dogy# = dogy# * .98 + dogty# * .02
+
+  CentreText 160, 120, scoretext$
+
+  ' Blit
+  PUT (0, 0), buf&, PSET
+
+  ' Framerate limit
+  WHILE TIMER = framestarttime!: WEND
+
+  framestarttime! = TIMER
+LOOP WHILE INKEY$ = ""
+END SUB
+
+SUB EndScreenWin (score&)
+GetArtDimensions "SPACEMAN.ART", w%, h%
+DIM SpaceMan%(1 TO w%, 1 TO h%), SpaceManMask%(1 TO w%, 1 TO h%)
+LoadArt "SPACEMAN.ART", SpaceMan%(), SpaceManMask%()
+
+GetArtDimensions "DOG.ART", w%, h%
+DIM Dog%(1 TO w%, 1 TO h%), DogMask%(1 TO w%, 1 TO h%)
+LoadArt "DOG.ART", Dog%(), DogMask%()
+
+GetArtDimensions "YOUDIDIT.ART", w%, h%
+DIM YouDidIt%(1 TO w%, 1 TO h%), YouDidItMask%(1 TO w%, 1 TO h%)
+LoadArt "YOUDIDIT.ART", YouDidIt%(), YouDidItMask%()
+
+spacemanx# = 70
+spacemany# = 100
+
+dogx# = 150
+dogy# = 100
+
+CONST EndScreenTextX% = 240
+
+scoretext$ = "SCORE:" + STR$(score&)
+
+DO
+  ' Clear buffer
+  FOR i% = 1 TO 16000
+    buf&(i%) = 0
+  NEXT i%
+
+  PutArt EndScreenTextX%, 80, 0, YouDidIt%(), YouDidItMask%()
+
+  PutArt spacemanx#, spacemany# + 5 * SIN(spacemana#), 0, SpaceMan%(), SpaceManMask%()
+  PutArt dogx#, dogy# + 3 * SIN(doga#), 0, Dog%(), DogMask%()
+
+  spacemana# = spacemana# + .3
+  doga# = doga# + .5
+
+  CentreText EndScreenTextX%, 160, scoretext$
+
+  ' Blit
+  PUT (0, 0), buf&, PSET
+
+  ' Framerate limit
+  WHILE TIMER = framestarttime!: WEND
+
+  framestarttime! = TIMER
+LOOP WHILE INKEY$ = ""
 END SUB
 
 SUB FillTriangle (x1%, y1%, x2%, y2%, x3%, y3%, c%)
@@ -2908,7 +3272,9 @@ FOR i% = UBOUND(faces) TO LBOUND(faces) STEP -1
 NEXT i%
 END SUB
 
-SUB ResetGameState (Dusts() AS DustType, Shots() AS ShotType, Rocks() AS RockType, Aliens() AS AlienType, Booms() AS BoomType, Splats() AS SplatType, BossPieceActive%(), score&, gunheat%, roundnumber%, nextround%)
+SUB ResetGameState (Dusts() AS DustType, Shots() AS ShotType, Rocks() AS RockType, Aliens() AS AlienType, Booms() AS BoomType, Splats() AS SplatType, BossPieceActive%(), score&, gunheat%, roundnumber%, nextround%, isbossround%)
+SHARED ReachedEnd%
+
 InitializeDust Dusts()
 
 FOR i% = 1 TO MaxShots%
@@ -2938,6 +3304,7 @@ NEXT i%
 FighterHit% = 0
 DeathFrames% = 0
 FramesSinceDeath% = 0
+ReachedEnd% = 0
 
 score& = 0
 
@@ -2945,6 +3312,7 @@ gunheat% = 0
 
 nextround% = RoundInterval%
 roundnumber% = 0
+isbossround% = 0
 END SUB
 
 REM $STATIC
@@ -3450,15 +3818,17 @@ FOR i% = LBOUND(Booms) TO UBOUND(Booms)
 NEXT i%
 END SUB
 
-SUB UpdateAndRenderDust (Dusts() AS DustType)
+SUB UpdateAndRenderDust (Dusts() AS DustType, freeze%)
 FOR i% = 1 TO MaxDusts%
-  Dusts(i%).Position.Y = Dusts(i%).Position.Y - DustSpeed#
+  IF freeze% = 0 THEN
+    Dusts(i%).Position.Y = Dusts(i%).Position.Y - DustSpeed#
 
-  IF Dusts(i%).Position.Y < DustYMin# THEN
-    Dusts(i%).Position.X = RND * (DustXMax# - DustXMin#) + DustXMin#
-    Dusts(i%).Position.Y = RND * (DustYMax# - DustYSpawnMin#) + DustYSpawnMin#
-    Dusts(i%).Position.Z = RND * (DustZMax# - DustZMin#) + DustZMin#
-    Dusts(i%).Colour = RandomDustColour%
+    IF Dusts(i%).Position.Y < DustYMin# THEN
+      Dusts(i%).Position.X = RND * (DustXMax# - DustXMin#) + DustXMin#
+      Dusts(i%).Position.Y = RND * (DustYMax# - DustYSpawnMin#) + DustYSpawnMin#
+      Dusts(i%).Position.Z = RND * (DustZMax# - DustZMin#) + DustZMin#
+      Dusts(i%).Colour = RandomDustColour%
+    END IF
   END IF
 
   dz# = Dusts(i%).Position.Z - CameraZ#
