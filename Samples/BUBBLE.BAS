@@ -46,11 +46,14 @@ x# = 0
 t# = RND * 10
 
 rotatec% = -1
+clearbuffer% = -1
 
 DO
-  FOR i% = 1 TO 16000
-    buf&(i%) = 0
-  NEXT i%
+  IF clearbuffer% THEN
+    FOR i% = 1 TO 16000
+      buf&(i%) = 0
+    NEXT i%
+  END IF
 
   t# = t# + .035
 
@@ -84,10 +87,13 @@ DO
 
   k$ = INKEY$
 
-  IF k$ = "r" THEN
-    rotatec% = NOT rotatec%
-    c% = INT(RND * 64) * 4
-  END IF
+  SELECT CASE k$
+    CASE "r":
+      rotatec% = NOT rotatec%
+      c% = INT(RND * 64) * 4
+    CASE "c":
+      clearbuffer% = NOT clearbuffer%
+  END SELECT
 LOOP UNTIL k$ = ESC$
 
 SUB BubbleRow (iang#, b#, v#, x#, hp#, xs#, ys#, xc#, yc#, c%(), d%())
