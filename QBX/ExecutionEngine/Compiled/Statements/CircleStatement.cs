@@ -105,6 +105,8 @@ public class CircleStatement(CodeModel.Statements.CircleStatement source) : Exec
 				Math.Abs(endAngle),
 				drawStartRadius: startAngle < 0,
 				drawEndRadius: endAngle < 0);
+
+			context.DrawProcessor.SetColour(visual.DrawingAttribute);
 		}
 		else
 		{
@@ -120,6 +122,8 @@ public class CircleStatement(CodeModel.Statements.CircleStatement source) : Exec
 				drawStartRadius: startAngle < 0,
 				drawEndRadius: endAngle < 0,
 				colour);
+
+			context.DrawProcessor.SetColour(colour);
 		}
 	}
 }

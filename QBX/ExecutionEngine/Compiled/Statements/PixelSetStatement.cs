@@ -32,9 +32,15 @@ public class PixelSetStatement(CodeModel.Statements.PixelSetStatement source) : 
 		if (ColourExpression == null)
 		{
 			if (UseForegroundColour)
+			{
 				graphicsLibrary.PixelSet(x, y);
+				context.DrawProcessor.SetColour(graphicsLibrary.DrawingAttribute);
+			}
 			else
+			{
 				graphicsLibrary.PixelSet(x, y, 0);
+				context.DrawProcessor.SetColour(0);
+			}
 		}
 		else
 		{
@@ -46,6 +52,8 @@ public class PixelSetStatement(CodeModel.Statements.PixelSetStatement source) : 
 				colour = graphicsLibrary.MaximumAttribute;
 
 			graphicsLibrary.PixelSet(x, y, colour);
+
+			context.DrawProcessor.SetColour(colour);
 		}
 	}
 }

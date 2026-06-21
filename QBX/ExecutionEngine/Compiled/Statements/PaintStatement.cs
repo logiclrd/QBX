@@ -110,6 +110,8 @@ public class PaintSolidFill(CodeModel.Statements.PaintStatement source) : PaintS
 			border = BorderExpression.EvaluateAndCoerceToInt(context, stackFrame);
 
 		visual.BorderFill(x, y, border, paint);
+
+		context.DrawProcessor.SetColour(paint);
 	}
 }
 

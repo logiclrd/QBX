@@ -106,5 +106,7 @@ public class LineStatement(CodeModel.Statements.LineStatement source) : Executab
 				visual.FillBox(fromX, fromY, toX, toY, attribute);
 				break;
 		}
+
+		context.DrawProcessor.SetColour(attribute);
 	}
 }
