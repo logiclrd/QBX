@@ -19,11 +19,19 @@ FOR a% = 0 TO 63
     CASE 320 TO 383: r% = 0: g% = 63 - o%: b% = 63
   END SELECT
 
-  FOR i% = 0 TO 3
-    OUT &H3C9, r% * i% \ 3
-    OUT &H3C9, g% * i% \ 3
-    OUT &H3C9, b% * i% \ 3
-  NEXT i%
+  IF a% = 0 THEN
+    FOR i% = 0 TO 3
+      OUT &H3C9, r% * i% \ 3
+      OUT &H3C9, g% * i% \ 3
+      OUT &H3C9, b% * i% \ 3
+    NEXT i%
+  ELSE
+    FOR i% = 1 TO 4
+      OUT &H3C9, r% * i% \ 4
+      OUT &H3C9, g% * i% \ 4
+      OUT &H3C9, b% * i% \ 4
+    NEXT i%
+  END IF
 NEXT a%
 
 DIM buf&(16001)
@@ -75,9 +83,18 @@ DO
 
       o& = y% * 320& + x% + bufofs%
 
-      p% = PEEK(o&) AND 3
+      p% = PEEK(o&)
 
-      IF p% < 3 THEN POKE o&, c% + p% + 1
+      ' We only have one black, so if we are black, then
+      ' switch to the darkest non-black in the current hue.
+      ' Otherwise increment the brightness by 1 within the
+      ' current hue sub-palette.
+      IF p% = 0 AND c% <> 0 THEN
+        POKE o&, c%
+      ELSE
+        p% = p% AND 3
+        IF p% < 3 THEN POKE o&, c% + p% + 1
+      END IF
     NEXT j%
 
     IF rotatec% THEN c% = c% + 4
