@@ -177,10 +177,7 @@ public partial class Program
 
 		_executionThread.Start();
 
-		if (_compilation.IsEmpty)
-			_executionContext.Controls.Terminate();
-		else
-			_executionContext.WaitForRootFrame();
+		_executionContext.WaitForRootFrame();
 
 		return true;
 	}

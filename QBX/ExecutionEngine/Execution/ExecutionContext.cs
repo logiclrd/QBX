@@ -441,6 +441,17 @@ public class ExecutionContext
 
 		_rootFrameEstablished.Set();
 
+		foreach (var module in compilation.Modules)
+		{
+			if (module.ModuleFrame?.StaticArrayInitializers != null)
+			{
+				foreach (var staticArrayInitializer in module.ModuleFrame.StaticArrayInitializers)
+					Dispatch(staticArrayInitializer, module.ModuleFrame);
+
+				module.ModuleFrame.StaticArrayInitializers = null;
+			}
+		}
+
 		try
 		{
 			AttachEvents();
@@ -821,9 +832,7 @@ public class ExecutionContext
 		var stackFrame = new StackFrame(routine, variables);
 
 		stackFrame.IsModuleFrame = isModuleFrame;
-
-		foreach (var staticArrayInitializer in routine.StaticArrays)
-			staticArrayInitializer.Execute(this, stackFrame);
+		stackFrame.StaticArrayInitializers = routine.StaticArrays;
 
 		return stackFrame;
 	}

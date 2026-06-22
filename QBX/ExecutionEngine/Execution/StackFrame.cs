@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 
 using QBX.ExecutionEngine.Compiled;
+using QBX.ExecutionEngine.Compiled.Statements;
 using QBX.ExecutionEngine.Execution.Variables;
 
 namespace QBX.ExecutionEngine.Execution;
@@ -11,6 +12,7 @@ public class StackFrame(Routine routine, Variable[] variables)
 	public readonly Routine Routine = routine;
 	public readonly Module Module = routine.Module;
 	public readonly Variable[] Variables = variables;
+	public IEnumerable<DimensionArrayStatement>? StaticArrayInitializers;
 	public CodeModel.Statements.Statement? CurrentStatement;
 
 	public bool IsModuleFrame;
