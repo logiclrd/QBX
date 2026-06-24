@@ -9,10 +9,49 @@ namespace QBX.Hardware;
 
 public class Keyboard(Machine machine)
 {
+	public const int StatusPort = 0x64;
+	public const int DataPort = 0x60;
+
+	public enum PortIOCommand : byte
+	{
+		ReadMemoryByte = 0x20,
+		WriteMemoryByte = 0x60,
+		PasswordTest = 0xA4,
+		SelfTest = 0xAA,
+		InterfaceTest = 0xAB,
+		DisableKeyboard = 0xAD,
+		EnableKeyboard = 0xAE,
+	}
+
+	[Flags]
+	public enum CommandByteFlags : byte
+	{
+		PCCompatibilityMode = 0x40,
+		PCMode = 0x20,
+		DisableKeyboard = 0x10,
+		InhibitOverride = 0x08,
+		SystemFlag = 0x04,
+		EnableOutputBufferFullInterrupt = 0x01,
+	}
+
 	object _sync = new();
 	Queue<KeyEvent> _inputQueue = new Queue<KeyEvent>();
 	Queue<KeyEvent> _divertedEvents = new Queue<KeyEvent>();
 	bool _divertEvents = false;
+
+	CommandByteFlags[] _ram = new CommandByteFlags[32];
+
+	CommandByteFlags CommandByte
+	{
+		get => _ram[0];
+		set => _ram[0] = value;
+	}
+
+	PortIOCommand _lastCommand;
+	int _lastCommandAddress;
+
+	ScanCode _lastEventScanCode;
+	bool _lastEventIsRelease;
 
 	public event Action? Break;
 	public event Func<KeyEvent, bool>? InterceptKeyEvent;
@@ -38,6 +77,9 @@ public class Keyboard(Machine machine)
 
 	public void HandleEvent(SDL.KeyboardEvent evt)
 	{
+		if ((CommandByte & CommandByteFlags.DisableKeyboard) != 0)
+			return;
+
 		lock (_sync)
 		{
 			var rawScanCode = evt.Scancode;
@@ -74,6 +116,9 @@ public class Keyboard(Machine machine)
 					_divertedEvents.Enqueue(keyEvent);
 				else
 					_inputQueue.Enqueue(keyEvent);
+
+				_lastEventScanCode = keyEvent.ScanCode;
+				_lastEventIsRelease = isRelease;
 			}
 
 			Monitor.PulseAll(_sync);
@@ -368,12 +413,94 @@ public class Keyboard(Machine machine)
 	public void OutPort(int portNumber, byte data)
 	{
 		// TODO: https://wiki.osdev.org/I8042_PS/2_Controller#Data_Port
+		switch (portNumber)
+		{
+			case StatusPort:
+				const PortIOCommand CommandMask = (PortIOCommand)0xE0;
+				const int AddressMask = 0x1F;
+
+				_lastCommand = (PortIOCommand)data;
+
+				switch (_lastCommand & CommandMask)
+				{
+					case PortIOCommand.ReadMemoryByte:
+					case PortIOCommand.WriteMemoryByte:
+						_lastCommandAddress = (int)_lastCommand & AddressMask;
+						_lastCommand &= CommandMask;
+						break;
+					case PortIOCommand.DisableKeyboard:
+						CommandByte |= CommandByteFlags.DisableKeyboard;
+						break;
+					case PortIOCommand.EnableKeyboard:
+						CommandByte &= ~CommandByteFlags.DisableKeyboard;
+						break;
+				}
+
+				break;
+			case DataPort:
+				switch (_lastCommand)
+				{
+					case PortIOCommand.WriteMemoryByte:
+					{
+						_ram[_lastCommandAddress] = (CommandByteFlags)data;
+						break;
+					}
+				}
+
+				break;
+		}
+
+		_lastCommand = 0;
 	}
 
 	public byte InPort(int portNumber, out bool handled)
 	{
+		switch (portNumber)
+		{
+			case StatusPort:
+				byte statusByte = 0;
+
+				if ((CommandByte & CommandByteFlags.DisableKeyboard) != 0)
+					statusByte |= 0x10;
+
+				statusByte |= 0x04; // "self-test passed"
+				statusByte |= 0x02; // mouse interrupt enabled
+				statusByte |= 0x01; // keyboard interrupt enabled
+
+				handled = true;
+				return statusByte;
+			case DataPort:
+				switch (_lastCommand)
+				{
+					case PortIOCommand.ReadMemoryByte:
+						handled = true;
+						return (byte)_ram[_lastCommandAddress];
+					case PortIOCommand.PasswordTest:
+						handled = true;
+						return 0xF1; // "no password"
+					case PortIOCommand.SelfTest:
+						handled = true;
+						return 0x55; // "success"
+					case PortIOCommand.InterfaceTest:
+						handled = true;
+						return 0; // "success"
+
+					default:
+						int value = (int)_lastEventScanCode;
+
+						if ((value < 1) || (value > 127))
+							value = 0;
+
+						if (_lastEventIsRelease)
+							value |= 128;
+
+						handled = true;
+
+						return unchecked((byte)value);
+				}
+		}
+
 		handled = false;
 		return 0;
-		// TODO
 	}
 }
