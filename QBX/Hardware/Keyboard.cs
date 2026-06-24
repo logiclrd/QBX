@@ -412,7 +412,6 @@ public class Keyboard(Machine machine)
 
 	public void OutPort(int portNumber, byte data)
 	{
-		// TODO: https://wiki.osdev.org/I8042_PS/2_Controller#Data_Port
 		switch (portNumber)
 		{
 			case StatusPort:
