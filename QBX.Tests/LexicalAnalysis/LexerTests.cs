@@ -480,4 +480,33 @@ public class LexerTests
 		result[1].Type.Should().Be(TokenType.Number);
 		result[1].Value.Should().Be(input);
 	}
+
+	[TestCase("PRINT _\na%", "PRINT a%")]
+	[TestCase("PRINT vari_\nable%", "PRINT vari able%")]
+	[TestCase("PRINT \"str_\ning\"", "PRINT \"str_\"\ning \"\"")]
+	public void LineContinuation(string input, string equivalentToInput)
+	{
+		// Arrange
+		var sut = new Lexer(input);
+
+		var expectedTokens = new Lexer(equivalentToInput)
+			.Where(token => token.Type != TokenType.Whitespace)
+			.ToList();
+
+		// Act
+		var result = sut
+			.Where(token => token.Type != TokenType.Whitespace)
+			.ToList();
+
+		// Assert
+		foreach (var (actual, expected) in result.Zip(expectedTokens))
+		{
+			actual.Type.Should().Be(expected.Type);
+
+			if (actual.Type == TokenType.String)
+				actual.StringLiteralValue.Should().Be(expected.StringLiteralValue);
+			else
+				actual.Value.Should().Be(expected.Value);
+		}
+	}
 }

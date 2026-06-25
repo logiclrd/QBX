@@ -62,7 +62,7 @@ public class Token(MutableBox<int> line, int column, TokenType type, string valu
 			if (!value.StartsWith("\""))
 				throw new Exception("Internal error: String token that doesn't start with double quote character.");
 
-			if (value.EndsWith("\""))
+			if ((value.Length > 1) && value.EndsWith("\""))
 				return value.Substring(1, value.Length - 2);
 			else
 				return value.Substring(1, value.Length - 1);

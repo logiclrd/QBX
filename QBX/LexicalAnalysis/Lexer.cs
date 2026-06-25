@@ -45,6 +45,8 @@ public class Lexer(TextReader input, CompilationElement? element = null, int sta
 		MaybeOrEquals, // seen a '<' or '>', don't know if it'll be a "<=" or ">="
 		MaybeCrLf, // seen a '\r', don't know if it'll be a "\r\n"
 		Word,
+		ContinueLine,
+		ContinueLineMaybeCrLf,
 	}
 
 	public IEnumerator<Token> GetEnumerator()
@@ -125,6 +127,8 @@ public class Lexer(TextReader input, CompilationElement? element = null, int sta
 							tokenStartColumn = column;
 							break;
 						}
+						else if (ch == '_')
+							mode = Mode.ContinueLine;
 						else if ((ch == '<') || (ch == '>'))
 							mode = Mode.MaybeOrEquals;
 						else if (ch == '\'')
@@ -664,6 +668,43 @@ public class Lexer(TextReader input, CompilationElement? element = null, int sta
 
 						break;
 					}
+					case Mode.ContinueLine:
+					{
+						// Discard everything up to the next EOL, including the EOL, joining this line
+						// with the preceding one.
+						if (ch == '\r')
+							mode = Mode.ContinueLineMaybeCrLf;
+						else if (ch == '\n')
+						{
+							tokenStartColumn = column;
+
+							buffer.Clear();
+							mode = Mode.Any;
+						}
+
+						break;
+					}
+					case Mode.ContinueLineMaybeCrLf:
+					{
+						if (ch == '\n')
+						{
+							// Consume \r\n
+
+							tokenStartColumn = column;
+
+							buffer.Clear();
+							mode = Mode.Any;
+						}
+						else
+						{
+							// Read \rX; consume \r, reparse X.
+							buffer.Clear();
+							mode = Mode.Any;
+							reparse = true;
+						}
+
+						break;
+					}
 				}
 			} while (reparse);
 
@@ -673,7 +714,7 @@ public class Lexer(TextReader input, CompilationElement? element = null, int sta
 				break;
 			}
 
-			if ((ch != '\r') && (ch != '\n'))
+			if ((ch != '\r') && (ch != '\n') && (mode != Mode.ContinueLine))
 				column++;
 		}
 	}
