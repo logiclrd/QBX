@@ -18,6 +18,8 @@ public class ParserCodeModelEndToEndTests
 
 		var formattedBuffer = new StringWriter() { NewLine = "\r\n" };
 
+		sourceCode = CollapseLineContinuations(sourceCode);
+
 		// Act
 		var parsed = BasicParser.Parse(lexer);
 
@@ -32,5 +34,27 @@ public class ParserCodeModelEndToEndTests
 		sourceCode = sourceCode.RemoveTrailingWhitespace();
 
 		formatted.Should().Be(sourceCode);
+	}
+
+	static string CollapseLineContinuations(string code)
+	{
+		using (var reader = new StringReader(code))
+		using (var writer = new StringWriter() { NewLine = "\r\n" })
+		{
+			while (true)
+			{
+				string? line = reader.ReadLine();
+
+				if (line == null)
+					break;
+
+				if (line.EndsWith(" _"))
+					writer.Write(line.Remove(line.Length - 2));
+				else
+					writer.WriteLine(line);
+			}
+
+			return writer.ToString();
+		}
 	}
 }

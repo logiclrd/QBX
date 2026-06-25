@@ -41,6 +41,8 @@ public class CompilationUnit : IRenderableCode, IEditableUnit
 		}
 	}
 
+	const int MaxLineLength = 250;
+
 	public List<CompilationElement> Elements { get; } = new List<CompilationElement>();
 
 	IReadOnlyList<IEditableElement> IEditableUnit.Elements => Elements;
@@ -329,33 +331,36 @@ public class CompilationUnit : IRenderableCode, IEditableUnit
 
 	public void Write(TextWriter writer)
 	{
-		var allSingleTypeMap = CompilationElement.MakeDefaultDefTypeMap();
-		var identifierTypesGlobalState = CompilationElement.MakeDefaultDefTypeMap();
-
-		bool lastLineEmpty = false;
-
-		for (int i = 0; i < Elements.Count; i++)
+		using (var lineSplitter = new LineSplittingTextWriter(writer, MaxLineLength) { NewLine = writer.NewLine })
 		{
-			var element = Elements[i];
+			var allSingleTypeMap = CompilationElement.MakeDefaultDefTypeMap();
+			var identifierTypesGlobalState = CompilationElement.MakeDefaultDefTypeMap();
 
-			if (i > 0)
+			bool lastLineEmpty = false;
+
+			for (int i = 0; i < Elements.Count; i++)
 			{
-				element = element.Clone();
-				element.RewriteDefTypeStatements(
-					oldRelativeTo: allSingleTypeMap,
-					newRelativeTo: identifierTypesGlobalState);
+				var element = Elements[i];
 
-				if (!lastLineEmpty)
-					writer.WriteLine();
+				if (i > 0)
+				{
+					element = element.Clone();
+					element.RewriteDefTypeStatements(
+						oldRelativeTo: allSingleTypeMap,
+						newRelativeTo: identifierTypesGlobalState);
+
+					if (!lastLineEmpty)
+						lineSplitter.WriteLine();
+				}
+
+				foreach (var line in element.Lines)
+				{
+					line.Render(lineSplitter);
+					lastLineEmpty = line.IsEmpty;
+				}
+
+				element.ApplyDefTypeStatements(identifierTypesGlobalState, stopAtSubroutineOpeningStatement: false);
 			}
-
-			foreach (var line in element.Lines)
-			{
-				line.Render(writer);
-				lastLineEmpty = line.IsEmpty;
-			}
-
-			element.ApplyDefTypeStatements(identifierTypesGlobalState, stopAtSubroutineOpeningStatement: false);
 		}
 	}
 }
