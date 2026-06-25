@@ -75,13 +75,43 @@ public class Compiler(IdentifierRepository identifierRepository)
 				throw new Exception("CompilationUnit does not have any CompilationElements");
 
 			// Second pass: process all TYPE definitions
+			// We gather CONSTs as we go, but then discard that and start over when we start translating statements, because
+			// they might actually not be valid (if the identifier is used as a variable before the CONST statement).
 			CodeModel.Statements.TypeStatement? typeStatement = null;
 			var typeElementStatements = new List<CodeModel.Statements.TypeElementStatement>();
 
 			foreach (var statement in unit.Elements[0].AllStatements)
 			{
 				if (typeStatement == null)
-					typeStatement = statement as CodeModel.Statements.TypeStatement;
+				{
+					if (statement is CodeModel.Statements.ConstStatement constStatement)
+					{
+						foreach (var definition in constStatement.Definitions)
+						{
+							var constValueExpression = TranslateExpression(definition.Value, container: null, moduleMapper, compilation, module);
+
+							if (definition.Identifier is QualifiedIdentifier qualifiedIdentifier)
+							{
+								if (!constValueExpression.Type.IsPrimitiveType)
+									throw CompilerException.TypeMismatch(definition.Value.Token);
+
+								var targetType = Mapper.GetPrimitiveDataType(qualifiedIdentifier.TypeCharacter);
+
+								if (constValueExpression.Type.PrimitiveType != targetType)
+								{
+									constValueExpression =
+										Conversion.Construct(constValueExpression, targetType);
+								}
+							}
+
+							moduleMapper.DefineConstant(
+								definition.Identifier,
+								constValueExpression.EvaluateConstant());
+						}
+					}
+					else
+						typeStatement = statement as CodeModel.Statements.TypeStatement;
+				}
 				else
 				{
 					switch (statement)
@@ -100,12 +130,17 @@ public class Compiler(IdentifierRepository identifierRepository)
 							typeElementStatements.Clear();
 
 							break;
+
+						default:
+							throw new CompilerException(statement, "Statement illegal in TYPE block");
 					}
 				}
 			}
 
 			if (typeStatement != null)
 				throw CompilerException.TypeWithoutEndType(typeStatement);
+
+			moduleMapper.ResetConstants();
 
 			// Third pass: process parameters, which requires that we know all the FUNCTIONs and UDTs.
 			// We can also match up forward references.
@@ -399,6 +434,8 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 			if (typeElementStatement.Subscripts != null)
 			{
+				type = type.MakeArrayType();
+
 				translatedSubscripts = new ArraySubscripts();
 
 				foreach (var subscript in typeElementStatement.Subscripts.Subscripts)

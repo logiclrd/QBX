@@ -666,6 +666,11 @@ public class Mapper
 		_constantValueByName[name] = literalValue;
 	}
 
+	public void ResetConstants()
+	{
+		_constantValueByName.Clear();
+	}
+
 	public bool TryResolveConstant(Identifier name, [NotNullWhen(true)] out LiteralValue? literalValue)
 	{
 		if (_constantValueByName.TryGetValue(name, out literalValue))

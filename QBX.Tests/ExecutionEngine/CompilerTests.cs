@@ -350,4 +350,48 @@ END SELECT", typeof(QBX.ExecutionEngine.Compiled.Statements.SelectCaseStatement)
 		module.MainRoutine.Statements.Should().HaveCount(1);
 		module.MainRoutine.Statements[0].Should().BeAssignableTo(expectedStatementType);
 	}
+
+	[TestCase("PRINT 35")]
+	[TestCase("GOTO labelname")]
+	[TestCase("SELECT CASE expression% + value%")]
+	public void StatementInTypeBlock(string statement)
+	{
+		// Arrange
+		var input = $@"
+TYPE typename
+  {statement}
+END TYPE";
+
+		var tokens = new Lexer(input);
+
+		var identifierRepository = new IdentifierRepository();
+
+		var parser = new BasicParser(identifierRepository);
+
+		var parsedCode = parser.ParseCodeLines(tokens, ignoreErrors: false);
+
+		var unit = new CompilationUnit();
+
+		var element = new CompilationElement(unit);
+
+		element.Type = CompilationElementType.Main;
+
+		unit.AddElement(element);
+
+		element.AddLines(parsedCode);
+
+		var compiler = new Compiler(identifierRepository);
+
+		var compilation = new Compilation();
+
+		// Act & Assert
+		Action action =
+			() =>
+			{
+				compiler.Compile(unit, compilation);
+			};
+
+		action.Should().Throw<CompilerException>()
+			.Which.Message.Should().Contain("illegal in TYPE");
+	}
 }
