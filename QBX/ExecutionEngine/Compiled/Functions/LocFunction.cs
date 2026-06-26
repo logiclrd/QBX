@@ -47,6 +47,6 @@ public class LocFunction : Function
 				filePointer = (filePointer + 127) / 128;
 		}
 
-		return new LongVariable(filePointer);
+		return new LongVariable(filePointer + 1);
 	}
 }
