@@ -1,5 +1,28 @@
 # QBX Releases
 
+## 1.14.0 - 2026-06-26
+
+### Fixed
+
+- The `DRAW` statement's colour is now correctly updated by other graphics commands (`CIRCLE`, `LINE`, `PAINT`, `PSET`).
+- A crash that could occur when starting a program file whose only context is static array initialization has been fixed.
+- Errors that occur during static array initialization are now properly presented.
+- 8042 keyboard controller I/O ports are now emulated. An error in internal mapping of keys to scancodes that is visible on port &H60 as a result of this change has been fixed.
+- Unterminated empty string literals no longer cause QBX to crash.
+- Array elements in `TYPE` definitions, broken by a previous change, now work again.
+- `UBOUND` and `LBOUND` now work on array elements in `TYPE`s.
+- Statements inside `TYPE` definitions now produce the appropriate compile-time error.
+- `CONST`s can now be used in the bounds of array elements in `TYPE`s.
+- `DECLARE` statements that have been pasted are no longer ignored by the `DECLARE` statement generator when saving files.
+- The `LOC` function is now properly 1-based instead of 0-based.
+- The `LOC` function now returns the correct values for files opened `FOR INPUT`.
+
+### Added
+
+- QBX now supports reading `.BAS` files with line continuations (`_` at the end of lines, usually used when they exceed 250 characters in length).
+- QBX now emits line continuation characters when writing lines that exceed 250 characters (excluding comments and `DATA` statements).
+- Complete translation of the Chromium T-Rex game (chrome://dino) in `TREX.BAS` under `Samples`. :-)
+
 ## 1.13.0 - 2026-06-20
 
 ### Fixed
