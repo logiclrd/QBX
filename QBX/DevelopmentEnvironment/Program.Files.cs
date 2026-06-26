@@ -291,6 +291,8 @@ namespace QBX.DevelopmentEnvironment
 
 		void Save(IEditableUnit editable, TextWriter writer)
 		{
+			EnsureAllCodeIsParsed(presentErrors: false);
+
 			editable.PrepareForWrite();
 			editable.Write(writer);
 			editable.IsPristine = true;

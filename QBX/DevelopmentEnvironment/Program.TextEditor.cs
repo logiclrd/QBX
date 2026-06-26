@@ -815,7 +815,7 @@ public partial class Program
 			FocusedViewport.Clipboard.ExtendSelection(FocusedViewport.CursorX, FocusedViewport.CursorY);
 	}
 
-	bool EnsureAllCodeIsParsed()
+	bool EnsureAllCodeIsParsed(bool presentErrors = true)
 	{
 		try
 		{
@@ -867,7 +867,8 @@ public partial class Program
 		}
 		catch (Exception exception)
 		{
-			PresentError(exception);
+			if (presentErrors)
+				PresentError(exception);
 		}
 
 		return false;
