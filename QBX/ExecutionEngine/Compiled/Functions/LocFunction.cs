@@ -44,7 +44,7 @@ public class LocFunction : Function
 			filePointer = checked((int)fileDescriptor.FilePointer);
 
 			if (openFile.IOMode != OpenFileIOMode.Binary)
-				filePointer = (filePointer + 127) / 128;
+				filePointer = (filePointer - 1) / 128;
 		}
 
 		return new LongVariable(filePointer + 1);

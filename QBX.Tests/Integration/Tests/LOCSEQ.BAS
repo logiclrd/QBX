@@ -1,0 +1,18 @@
+' LOC with sequential files
+OPEN "LOCSEQ.BAS" FOR INPUT AS #1
+l1% = LOC(1)
+a$ = INPUT$(127, 1)
+l2% = LOC(1)
+a$ = INPUT$(1, 1)
+l3% = LOC(1)
+a$ = INPUT$(1, 1)
+l4% = LOC(1)
+CLOSE #1
+
+OPEN "TESTOUT$" FOR OUTPUT AS #1
+IF l1% <> 1 THEN PRINT #1, "FAIL"
+IF l2% <> 1 THEN PRINT #1, "FAIL"
+IF l3% <> 1 THEN PRINT #1, "FAIL"
+IF l4% <> 2 THEN PRINT #1, "FAIL"
+PRINT #1, "PASS OTHERWISE"
+CLOSE #1
