@@ -801,8 +801,8 @@ distancemeter.ShowAchievement = 0
 UpdateTRex trex, .1, TRexStatusCRASHED%
 
 ' Update the high score
-IF loopstate.DistanceRan > runner.HighestScore THEN
-  runner.HighestScore = -INT(-loopstate.DistanceRan)
+IF distancemeter.CurrentScore > runner.HighestScore THEN
+  runner.HighestScore = distancemeter.CurrentScore
   distancemeter.HighScore = runner.HighestScore
 END IF
 
