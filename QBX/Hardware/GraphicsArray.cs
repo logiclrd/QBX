@@ -358,7 +358,7 @@ public class GraphicsArray : IMemory
 		public const int InputStatus0Port = 0x3C2;
 		public const int InputStatus1Port = 0x3DA;
 
-		public const byte Register1_VerticalRetrace = 1;
+		public const byte Register1_VerticalRetrace = 8;
 
 		public byte Register1;
 	}
