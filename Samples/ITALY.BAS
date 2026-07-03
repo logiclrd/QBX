@@ -1,0 +1,4 @@
+SCREEN 7
+FOR i = 0 TO 2
+LINE (i * 106, 0)-STEP(106, 200), 2 + i + (i AND 1) * 12, BF
+NEXT
