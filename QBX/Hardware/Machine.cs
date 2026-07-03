@@ -111,6 +111,7 @@ public class Machine
 		if (handled)
 			return value;
 
-		return 0;
+		// ISA bus I/O is pulled up, so if nothing responds, we see all bits set.
+		return 0xFF;
 	}
 }
