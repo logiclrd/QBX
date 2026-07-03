@@ -1,9 +1,19 @@
 ' Reset
+st! = TIMER: WHILE TIMER = st!: WEND
+
 OUT &H343, &H4C
 OUT &H345, 0
 
-' Enable GF1 and DAC
+' Wait 20ms, which is actually 55ms because TIMER only changes that frequently.
+st! = TIMER: WHILE TIMER = st!: WEND
+
+' Enable GF1. This clears bits 2 and 4, so we can't enable the DAC yet.
+OUT &H345, 1
+a% = INP(&H345)
+
+' Now also enable the DAC
 OUT &H345, 3
+a% = INP(&H345)
 
 ' RAM IO address high -- always 0 in this case
 OUT &H343, &H44
@@ -15,7 +25,7 @@ OUT &H343, &H43
 
 ' Write a 100 Hz (at 44100 Hz) sine wave to the start of DRAM.
 FOR i% = 0 TO 440
-  a% = SIN(i% * 6.283185 / 440) * 25000
+  a% = SIN(i% * 6.283185 / 441) * 25000
   b$ = MKI$(a%)
 
   ' RAM IO address low
@@ -46,12 +56,16 @@ notefreq& = 44100
 
 notefreqcontrol& = INT(.5# + notefreq& * 512# / outputfreq&)
 
+' The frequency control register stores its value in bits 15:1.
+' Bit 0 is unused.
+notefreqcontrol& = notefreqcontrol& * 2
+
 ' Start and end address: The registers storing these values
 ' use a fixed-point representation that matches the
 ' scale of the frequency control word.
 
 startaddress& = 0 * 512&
-endaddress& = 882 * 512&
+endaddress& = 441 * 512&
 
 volumeexponent% = &HF
 volumemantissa% = &HFF
@@ -96,6 +110,9 @@ OUT &H345, volume& \ 256
 ' Voice: Panning
 OUT &H343, &HC
 OUT &H345, 7 ' just left of centre
+
+' Mix: Enable line out
+OUT &H240, 1
 
 ' Voice: Control
 ' - Bit 0: Stop when set
