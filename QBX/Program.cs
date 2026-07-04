@@ -119,24 +119,24 @@ class Program
 				new SDL.AudioSpec()
 				{
 					Channels = 1,
-					Format = SDL.AudioFormat.AudioU8,
+					Format = SDL.AudioFormat.AudioS16LE,
 					Freq = Speaker.SampleRate,
 				};
 
-			byte[] audioBuffer = new byte[8192];
+			short[] audioBuffer = new short[8192];
 
 			void AudioCallback(nint userData, IntPtr stream, int additionalAmount, int totalAmount)
 			{
 				while (additionalAmount > 0)
 				{
-					Span<byte> buffer = audioBuffer;
+					Span<short> buffer = audioBuffer;
 
 					if (buffer.Length > additionalAmount)
 						buffer = buffer.Slice(0, additionalAmount);
 
 					machine.Speaker.GetMoreSound(buffer);
 
-					SDL.PutAudioStreamData(stream, audioBuffer, buffer.Length);
+					SDL.PutAudioStreamData(stream, MemoryMarshal.Cast<short, byte>(audioBuffer), buffer.Length * 2);
 
 					additionalAmount -= buffer.Length;
 				}

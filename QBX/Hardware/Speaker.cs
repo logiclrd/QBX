@@ -36,13 +36,13 @@ public class Speaker(Machine machine)
 	volatile int _tickLength;
 	volatile bool _isEnabled;
 	volatile byte _value;
-	volatile byte _latchedValue;
-	volatile byte _lastValue = 127;
+	volatile short _latchedValue;
+	volatile short _lastValue = 0;
 
-	const byte Off = 127 - 30;
-	const byte On = 127 + 30;
+	const short Off = -30 * 256;
+	const short On = +30 * 256;
 
-	const byte Delta = 15;
+	const short Delta = 15 * 256;
 
 	DateTime _firstSampleEmittedTime;
 	long _lastSampleEmitted;
@@ -138,12 +138,12 @@ public class Speaker(Machine machine)
 		_eventualEnabled = enabled;
 	}
 
-	public void GetMoreSound(Span<byte> samples)
+	public void GetMoreSound(Span<short> samples)
 	{
 		bool isEnabled = _isEnabled;
 		byte value = _value;
-		byte latchedValue = _latchedValue;
-		byte lastValue = _lastValue;
+		short latchedValue = _latchedValue;
+		short lastValue = _lastValue;
 		long lastSampleEmitted = _lastSampleEmitted;
 		int tickValue = _tickValue;
 		int tickLength = _tickLength;
@@ -163,13 +163,13 @@ public class Speaker(Machine machine)
 		{
 			if (lastValue < latchedValue)
 			{
-				lastValue = unchecked((byte)(lastValue + Delta));
+				lastValue = unchecked((short)(lastValue + Delta));
 				if (lastValue > latchedValue)
 					lastValue = latchedValue;
 			}
 			else if (lastValue > latchedValue)
 			{
-				lastValue = unchecked((byte)(lastValue - Delta));
+				lastValue = unchecked((short)(lastValue - Delta));
 				if (lastValue < latchedValue)
 					lastValue = latchedValue;
 			}
