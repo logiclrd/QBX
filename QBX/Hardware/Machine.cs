@@ -17,6 +17,7 @@ public class Machine
 	public Keyboard Keyboard { get; }
 	public Mouse Mouse { get; }
 	public Speaker Speaker { get; }
+	public GravisUltraSound GravisUltraSound { get; }
 	public TimerChip Timer { get; }
 
 	public DOS DOS { get; }
@@ -54,6 +55,7 @@ public class Machine
 		Keyboard = new Keyboard(this);
 		Mouse = new Mouse();
 		Speaker = new Speaker(this);
+		GravisUltraSound = new GravisUltraSound();
 		Timer = new TimerChip(Speaker);
 
 		MemoryBus.MapRange(0x0000, SystemMemory.Length, SystemMemory);
@@ -92,6 +94,7 @@ public class Machine
 		Keyboard.OutPort(portNumber, data);
 		Timer.OutPort(portNumber, data);
 		Speaker.OutPort(portNumber, data);
+		GravisUltraSound.OutPort(portNumber, data);
 	}
 
 	public byte InPort(int portNumber)
@@ -108,6 +111,10 @@ public class Machine
 			return value;
 
 		value = Keyboard.InPort(portNumber, out handled);
+		if (handled)
+			return value;
+
+		value = GravisUltraSound.InPort(portNumber, out handled);
 		if (handled)
 			return value;
 

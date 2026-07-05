@@ -298,6 +298,10 @@ public partial class Program : HostedProgram, IOvertypeFlag
 					Machine.KeyboardDriver.SetLayoutByName(layoutName);
 				}
 			}
+			else if (argument.Equals("/GUS", StringComparison.OrdinalIgnoreCase))
+			{
+				Machine.GravisUltraSound.IsEnabled = true;
+			}
 			else if (argument.StartsWith("/CMD", StringComparison.OrdinalIgnoreCase))
 			{
 				// COMMAND$ value
@@ -345,7 +349,7 @@ public partial class Program : HostedProgram, IOvertypeFlag
 			TextLibrary.NewLine();
 			TextLibrary.WriteText("    /AH /B /C:n {/Ea | /Es} /E:n /G /H /K:[file] /L [lib]");
 			TextLibrary.NewLine();
-			TextLibrary.WriteText("    /MBF /NOF[RILLS] /NOHI /W [/RUN] file /KBD name /CMD string");
+			TextLibrary.WriteText("    /MBF /NOF[RILLS] /NOHI /W [/RUN] file /KBD name /GUS /CMD string");
 			TextLibrary.NewLine();
 
 			Aborted = true;

@@ -118,7 +118,7 @@ class Program
 			var audioSpec =
 				new SDL.AudioSpec()
 				{
-					Channels = 1,
+					Channels = 2,
 					Format = SDL.AudioFormat.AudioS16LE,
 					Freq = Speaker.SampleRate,
 				};
@@ -135,6 +135,7 @@ class Program
 						buffer = buffer.Slice(0, additionalAmount);
 
 					machine.Speaker.GetMoreSound(buffer);
+					machine.GravisUltraSound.GetMoreSound(buffer);
 
 					SDL.PutAudioStreamData(stream, MemoryMarshal.Cast<short, byte>(audioBuffer), buffer.Length * 2);
 

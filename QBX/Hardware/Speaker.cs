@@ -35,6 +35,7 @@ public class Speaker(Machine machine)
 	volatile int _tickValue;
 	volatile int _tickLength;
 	volatile bool _isEnabled;
+	volatile bool _nextIsLeftChannel = true;
 	volatile byte _value;
 	volatile short _latchedValue;
 	volatile short _lastValue = 0;
@@ -161,67 +162,78 @@ public class Speaker(Machine machine)
 
 		for (int i = 0; i < samples.Length; i++)
 		{
-			if (lastValue < latchedValue)
+			if (_nextIsLeftChannel)
 			{
-				lastValue = unchecked((short)(lastValue + Delta));
-				if (lastValue > latchedValue)
-					lastValue = latchedValue;
-			}
-			else if (lastValue > latchedValue)
-			{
-				lastValue = unchecked((short)(lastValue - Delta));
+				_nextIsLeftChannel = false;
+
 				if (lastValue < latchedValue)
-					lastValue = latchedValue;
-			}
-
-			samples[i] = lastValue;
-			lastSampleEmitted++;
-
-			tickValue += tickLength;
-
-			while (tickValue >= HalfWavelength)
-			{
-				tickValue -= HalfWavelength;
-				value = unchecked((byte)~value);
-				if (isEnabled)
-					latchedValue = (value == 0) ? Off : On;
-			}
-
-			var nextSoundChange = _nextSoundChange;
-
-			if (nextSoundChange != null)
-			{
-				var sampleTime = _firstSampleEmittedTime
-					.AddTicks(lastSampleEmitted * 10_000_000L / SampleRate);
-
-				if (sampleTime >= nextSoundChange.ChangeAtTime)
 				{
-					if (nextSoundChange.Enabled.HasValue)
-						isEnabled = nextSoundChange.Enabled.Value;
-					tickLength = nextSoundChange.TickLength;
+					lastValue = unchecked((short)(lastValue + Delta));
+					if (lastValue > latchedValue)
+						lastValue = latchedValue;
+				}
+				else if (lastValue > latchedValue)
+				{
+					lastValue = unchecked((short)(lastValue - Delta));
+					if (lastValue < latchedValue)
+						lastValue = latchedValue;
+				}
 
-					if (!isEnabled)
-						latchedValue = Off;
-					else
+				samples[i] = lastValue;
+			}
+			else
+			{
+				samples[i] = lastValue;
+
+				_nextIsLeftChannel = true;
+				lastSampleEmitted++;
+
+				tickValue += tickLength;
+
+				while (tickValue >= HalfWavelength)
+				{
+					tickValue -= HalfWavelength;
+					value = unchecked((byte)~value);
+					if (isEnabled)
+						latchedValue = (value == 0) ? Off : On;
+				}
+
+				var nextSoundChange = _nextSoundChange;
+
+				if (nextSoundChange != null)
+				{
+					var sampleTime = _firstSampleEmittedTime
+						.AddTicks(lastSampleEmitted * 10_000_000L / SampleRate);
+
+					if (sampleTime >= nextSoundChange.ChangeAtTime)
 					{
-						if (nextSoundChange.InvertValue)
+						if (nextSoundChange.Enabled.HasValue)
+							isEnabled = nextSoundChange.Enabled.Value;
+						tickLength = nextSoundChange.TickLength;
+
+						if (!isEnabled)
+							latchedValue = Off;
+						else
 						{
-							value = unchecked((byte)~value);
-							latchedValue = (value == 0) ? Off : On;
+							if (nextSoundChange.InvertValue)
+							{
+								value = unchecked((byte)~value);
+								latchedValue = (value == 0) ? Off : On;
+							}
+
+							if (nextSoundChange.Frequency != 0)
+								machine.Timer.Timer2.ConfigureToMatchSound(nextSoundChange.Frequency);
 						}
 
-						if (nextSoundChange.Frequency != 0)
-							machine.Timer.Timer2.ConfigureToMatchSound(nextSoundChange.Frequency);
-					}
+						lock (_sync)
+						{
+							if (!_soundChanges.TryDequeue(out nextSoundChange, out _))
+								_eventualEnabled = null;
 
-					lock (_sync)
-					{
-						if (!_soundChanges.TryDequeue(out nextSoundChange, out _))
-							_eventualEnabled = null;
+							_nextSoundChange = nextSoundChange;
 
-						_nextSoundChange = nextSoundChange;
-
-						Monitor.PulseAll(_sync);
+							Monitor.PulseAll(_sync);
+						}
 					}
 				}
 			}
