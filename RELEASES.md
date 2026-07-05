@@ -1,5 +1,12 @@
 # QBX Releases
 
+## 1.15.2 - 2026-07-05
+
+### Fixed
+
+- Gravis UltraSound audio quality has been improved by smoothing abrupt changes of voice playhead address.
+- Volume ramp looping now updates the correct variable.
+
 ## 1.15.1 - 2026-07-05
 
 ### Fixed
