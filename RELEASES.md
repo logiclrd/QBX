@@ -1,5 +1,12 @@
 # QBX Releases
 
+## 1.15.1 - 2026-07-05
+
+### Fixed
+
+- Gravis UltraSound voice selection ("Page Register" port output) now works correctly.
+- `PALETTE` now updates DAC entries in `SCREEN 12`.
+
 ## 1.15.0 - 2026-07-05
 
 ### Fixed
