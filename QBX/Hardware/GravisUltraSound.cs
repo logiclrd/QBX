@@ -231,6 +231,8 @@ public class GravisUltraSound
 		public int Left, Right;
 	}
 
+	const int SoftTransitionSamples = 85;
+
 	struct Registers
 	{
 		struct Voice
@@ -267,6 +269,10 @@ public class GravisUltraSound
 			public int VolumeRampFrameCount;
 			public ushort VolumeRampDelta;
 
+			public int SoftTransition;
+			public short SoftTransitionFromLeft;
+			public short SoftTransitionFromRight;
+
 			bool _enableWaveTableIRQ;
 			bool _enableVolumeRampIRQ;
 
@@ -289,8 +295,18 @@ public class GravisUltraSound
 				switch (index)
 				{
 					case Register.Voice_VoiceControl:
+						bool wasStopped = (VoiceControl & VoiceControlFlags.VoiceStopped) != 0;
+
 						VoiceControl &= VoiceControlFlags.PendingIRQ;
 						VoiceControl |= unchecked((VoiceControlFlags)highByte) & ~VoiceControlFlags.PendingIRQ;
+
+						bool isNowPlaying = (VoiceControl & VoiceControlFlags.VoiceStopped) == 0;
+
+						if (wasStopped && isNowPlaying)
+						{
+							if (SoftTransition == 0)
+								SoftTransition = SoftTransitionSamples;
+						}
 
 						UpdateEnableWaveTableIRQ();
 
@@ -360,6 +376,8 @@ public class GravisUltraSound
 						// high value is 7 bits into the integer part.
 						SampleOffset &= 0b11111111;
 						SampleOffset |= value << 7;
+						if (SoftTransition == 0)
+							SoftTransition = SoftTransitionSamples;
 						break;
 					case Register.Voice_CurrentAddressLow:
 						// Native GUS uses 9-bit fixed point, which means that the
@@ -368,6 +386,8 @@ public class GravisUltraSound
 						SampleOffset &= ~0b11111111;
 						SampleOffset |= value >> 9;
 						SampleOffsetFraction = (value & 0b111111111) * SampleOffsetScale / 512;
+						if (SoftTransition == 0)
+							SoftTransition = SoftTransitionSamples;
 						break;
 					case Register.Voice_Panning:
 						Panning = unchecked((PanValues)highByte);
@@ -535,6 +555,9 @@ public class GravisUltraSound
 
 						int newSampleOffsetScaled;
 
+						if (overshoot > 2 * FrequencyControl)
+							SoftTransition = SoftTransitionSamples;
+
 						if ((VoiceControl & VoiceControlFlags.ReverseWaveData) == 0)
 							newSampleOffsetScaled = StartAddress + overshoot;
 						else
@@ -599,9 +622,9 @@ public class GravisUltraSound
 									VolumeRampControl ^= VolumeRampControlFlags.ReverseRamp;
 
 								if ((VolumeRampControl & VolumeRampControlFlags.ReverseRamp) == 0)
-									SampleOffset = VolumeRampLowEndScaled + overshoot;
+									CurrentVolumeScaled = unchecked((ushort)(VolumeRampLowEndScaled + overshoot));
 								else
-									SampleOffset = VolumeRampHighEndScaled + overshoot;
+									CurrentVolumeScaled = unchecked((ushort)(VolumeRampHighEndScaled + overshoot));
 							}
 						}
 					}
@@ -889,8 +912,28 @@ public class GravisUltraSound
 				if (panning > 15)
 					leftVolume = leftVolume * (30 - panning) / 15;
 
-				accumulator.Left += unchecked((short)((s * leftVolume) >> 16));
-				accumulator.Right += unchecked((short)((s * rightVolume) >> 16));
+				short leftFinal = unchecked((short)((s * leftVolume) >> 16));
+				short rightFinal = unchecked((short)((s * rightVolume) >> 16));
+
+				if (voice.SoftTransition == 0)
+				{
+					voice.SoftTransitionFromLeft = leftFinal;
+					voice.SoftTransitionFromRight = rightFinal;
+				}
+				else
+				{
+					voice.SoftTransition = voice.SoftTransition - 1;
+
+					leftFinal = unchecked((short)(
+						(leftFinal * (SoftTransitionSamples - voice.SoftTransition)
+						+ voice.SoftTransitionFromLeft * voice.SoftTransition) / SoftTransitionSamples));
+					rightFinal = unchecked((short)(
+						(rightFinal * (SoftTransitionSamples - voice.SoftTransition)
+						+ voice.SoftTransitionFromRight * voice.SoftTransition) / SoftTransitionSamples));
+				}
+
+				accumulator.Left += leftFinal;
+				accumulator.Right += rightFinal;
 			}
 
 			return 0;

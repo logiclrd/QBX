@@ -286,6 +286,15 @@ OUT &H343, 5 ' low
 OUT &H344, endaddress& AND 255
 OUT &H345, endaddress& \ 256
 
+' Voice: Current address
+OUT &H343, 6 ' high
+OUT &H344, startaddress& \ 65536
+OUT &H345, startaddress& \ 16777216
+
+OUT &H343, 7 ' low
+OUT &H344, startaddress& AND 255
+OUT &H345, startaddress& \ 256
+
 ' Voice: Frequency
 OUT &H343, 1
 OUT &H344, notefreqcontrol& AND 255
