@@ -1,5 +1,17 @@
 # QBX Releases
 
+## 1.15.0 - 2026-07-05
+
+### Fixed
+
+- VGA port &H3DA now correctly reports the Vertical Retrace bit (8), in addition to Display Disabled, in between frames.
+- The `INP` function now correctly returns value &HFF when used on an unmapped port number.
+- In the `TREX.BAS` sample, the high score is now latched from the correct variable.
+
+### Added
+
+- Gravis UltraSound emulation! Enable it with the `/GUS` command-line option. Currently hardwired to base port &H240.
+
 ## 1.14.0 - 2026-06-26
 
 ### Fixed
