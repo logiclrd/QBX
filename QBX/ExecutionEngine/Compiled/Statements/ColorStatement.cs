@@ -121,7 +121,7 @@ public class ColorStatement(CodeModel.Statements.ColorStatement source) : Execut
 				if (Argument3Expression != null)
 					throw RuntimeException.IllegalFunctionCall(Argument3Expression.Source);
 
-				if ((Argument2Expression != null) && !context.RuntimeState.EnablePaletteRemapping)
+				if ((Argument2Expression != null) && (context.RuntimeState.PaletteMode == PaletteMode.DAC))
 					throw RuntimeException.IllegalFunctionCall(Argument2Expression.Source);
 
 				if (Argument1Expression != null)

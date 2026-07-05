@@ -213,7 +213,7 @@ public partial class Video
 			Characters = (80, 30),
 			IsGraphicsMode = true,
 			IsMonochrome = true,
-			PaletteType = PaletteType.EGA,
+			PaletteType = PaletteType.VGA,
 			BaseAddress = BaseAddress.A000,
 			CharacterWidth = CharacterWidth._8,
 			CharacterHeight = 16,

@@ -14,9 +14,6 @@ public class PaletteStatement(CodeModel.Statements.PaletteStatement source) : Ex
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
-		if (!context.RuntimeState.EnablePaletteRemapping)
-			throw RuntimeException.IllegalFunctionCall(Source);
-
 		if (AttributeExpression == null)
 			throw new Exception("PaletteStatement with no AttributeExpression");
 		if (ColourExpression == null)

@@ -1,3 +1,5 @@
+using System;
+
 using QBX.ExecutionEngine.Execution;
 using QBX.Firmware;
 
@@ -35,8 +37,16 @@ public class ScreenStatement(CodeModel.Statements.ScreenStatement source) : Exec
 
 				if (Video.Modes[hardwareMode] is ModeParameters modeParams)
 				{
-					context.RuntimeState.EnablePaletteRemapping = (hardwareMode < 0x12);
-					context.RuntimeState.PaletteMode = modeParams.Use256Colours ? PaletteMode.DAC : PaletteMode.Attribute;
+					context.RuntimeState.PaletteMode =
+						modeParams.PaletteType switch
+						{
+							PaletteType.VGA => PaletteMode.DAC,
+							PaletteType.EGA => PaletteMode.Attribute,
+							PaletteType.CGA => PaletteMode.CGA,
+
+							_ => throw new Exception("Internal error: Unrecognized palette type " + modeParams.PaletteType)
+						};
+
 					context.RuntimeState.MaximumAttribute = modeParams.Use256Colours ? 255 : 15;
 
 					if (modeParams.ShiftRegisterInterleave)
