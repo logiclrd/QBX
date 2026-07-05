@@ -359,6 +359,7 @@ public class GraphicsArray : IMemory
 		public const int InputStatus1Port = 0x3DA;
 
 		public const byte Register1_VerticalRetrace = 8;
+		public const byte Register1_DisplayDisabled = 1;
 
 		public byte Register1;
 	}
@@ -918,12 +919,12 @@ public class GraphicsArray : IMemory
 
 	public void BeginVerticalRetrace()
 	{
-		InputStatus.Register1 |= InputStatusRegisters.Register1_VerticalRetrace;
+		InputStatus.Register1 |= InputStatusRegisters.Register1_VerticalRetrace | InputStatusRegisters.Register1_DisplayDisabled;
 	}
 
 	public void EndVerticalRetrace()
 	{
-		InputStatus.Register1 &= unchecked((byte)~InputStatusRegisters.Register1_VerticalRetrace);
+		InputStatus.Register1 &= unchecked((byte)~(InputStatusRegisters.Register1_VerticalRetrace | InputStatusRegisters.Register1_DisplayDisabled));
 	}
 
 	public byte this[int address]
