@@ -788,7 +788,7 @@ public class GravisUltraSound
 					return true;
 
 				case PageRegisterPortOffset:
-					SelectedVoice = unchecked((byte)(value & 0x31));
+					SelectedVoice = unchecked((byte)(value & 31));
 					LastIOByte = value;
 					return true;
 				case RegisterSelectPortOffset:
