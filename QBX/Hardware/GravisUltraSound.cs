@@ -202,7 +202,9 @@ public class GravisUltraSound
 		Mask = 0x0F,
 
 		FullLeft = 0,
+		DefaultLeft = 7,
 		// center?? 7.5 lul
+		DefaultRight = 8,
 		FullRight = 15,
 	}
 
@@ -221,7 +223,7 @@ public class GravisUltraSound
 	[Flags]
 	enum ResetFlags : byte
 	{
-		MasterReset = 1,
+		MasterEnable = 1,
 		EnableDAC = 2,
 		EnableIRQ = 4,
 	}
@@ -237,10 +239,13 @@ public class GravisUltraSound
 	{
 		struct Voice
 		{
-			public Voice(MutableBox<int> activeVoices)
+			public Voice(int voiceNumber, MutableBox<int> activeVoices)
 			{
+				VoiceNumber = voiceNumber;
 				ActiveVoices = activeVoices;
 			}
+
+			public int VoiceNumber;
 
 			public MutableBox<int> ActiveVoices;
 
@@ -289,6 +294,48 @@ public class GravisUltraSound
 			void UpdateEnableVolumeRampIRQ()
 			{
 				_enableVolumeRampIRQ = ((VolumeRampControl & VolumeRampControlFlags.EnableIRQ) != 0);
+			}
+
+			public void Reset()
+			{
+				ActiveVoices.Value = 14;
+
+				VoiceControl = VoiceControlFlags.VoiceStopped;
+				FrequencyControl = 0;
+				StartAddress = 0;
+				EndAddress = 0;
+				VolumeRamp = 0;
+				VolumeRampLowEndScaled = 0;
+				VolumeRampHighEndScaled = 0;
+				CurrentVolumeScaled = 0;
+				CurrentLinearVolume = 0;
+				Panning = ((VoiceNumber & 1) == 0) ? PanValues.DefaultLeft : PanValues.DefaultRight;
+				VolumeRampControl = VolumeRampControlFlags.RampStopped;
+
+				_startAddressWhole = 0;
+				_endAddressWhole = 0;
+
+				SampleOffset = 0;
+				SampleOffsetFraction = 0;
+				SampleOffsetDelta = 0;
+				SampleOffsetDeltaFraction = 0;
+
+				VolumeRampFrameInterval = 0;
+				VolumeRampFrameCount = 0;
+				VolumeRampDelta = 0;
+
+				LastSampleLeft = 0;
+				LastSampleRight = 0;
+
+				SoftTransition = 0;
+				SoftTransitionFromLeft = 0;
+				SoftTransitionFromRight = 0;
+
+				_enableWaveTableIRQ = false;
+				_enableVolumeRampIRQ = false;
+
+				sampleCount = 0;
+				rampCount = 0;
 			}
 
 			public void SetRegister(Register index, byte lowByte, byte highByte)
@@ -747,13 +794,16 @@ public class GravisUltraSound
 		public IRQStatusFlags IRQStatus;
 
 		public byte LastIOByte;
-		
+
+		// Must be 0b11000000, nobody should ever not supply that, but if they do, then the emulator pauses voice updates.
+		public int ClockDividerEnableBits;
+
+		public const int ClockDividerEnableBitsCorrectValue = 0b11000000;
+
 		Register _selectedRegister;
 		byte _dataLowByte;
 
 		int _maxActiveVoice;
-		// Must be 0b11000000, nobody should ever not supply that, but if they do, then the emulator pauses voice updates.
-		int _clockDividerEnableBits;
 		byte _irqControl = 0;
 		byte _dmaControl;
 		int _dmaAddress;
@@ -787,7 +837,7 @@ public class GravisUltraSound
 			ActiveVoices.Value = 14;
 
 			for (int i = 0; i < VoiceCount; i++)
-				_voices[i] = new Voice(ActiveVoices);
+				_voices[i] = new Voice(i, ActiveVoices);
 		}
 
 		public void CopyFrom(ref Registers other)
@@ -807,8 +857,37 @@ public class GravisUltraSound
 			ActiveVoices.Value = other.ActiveVoices.Value;
 		}
 
+		public void Reset()
+		{
+			LastIOByte = 0;
+
+			ClockDividerEnableBits = ClockDividerEnableBitsCorrectValue;
+
+			_maxActiveVoice = 13;
+			_irqControl = 0;
+			_dmaControl = 0;
+			_dmaAddress = 0;
+			_timerControl = 0;
+			_timer1Count = 0;
+			_timer2Count = 0;
+			_dmaSamplingStep = 0;
+			_dmaSamplingControl = 0;
+
+			ActiveVoices.Value = 14;
+			RAMIOAddress = 0;
+
+			_dram.AsSpan().Fill(0);
+
+			for (int i = 0; i < VoiceCount; i++)
+				_voices[i].Reset();
+		}
+
 		public void SetGlobalRegister(Register index, byte lowByte, byte highByte)
 		{
+			if (((_reset & ResetFlags.MasterEnable) == 0)
+			 && (index != Register.Global_Reset))
+				return;
+
 			switch (index)
 			{
 				case Register.Global_MaxActiveVoice:
@@ -829,7 +908,9 @@ public class GravisUltraSound
 					// bits 6 and 7 as enable bits for the clock divider.
 
 					_maxActiveVoice = highByte & 31;
-					_clockDividerEnableBits = highByte & 0b11000000;
+
+					ClockDividerEnableBits = highByte & 0b11000000;
+
 					break;
 				case Register.Global_DMAControl:
 					_dmaControl = highByte;
@@ -863,10 +944,13 @@ public class GravisUltraSound
 				case Register.Global_Reset:
 					ResetFlags newReset = unchecked((ResetFlags)highByte);
 
-					if (_reset.HasFlag(ResetFlags.MasterReset) && !newReset.HasFlag(ResetFlags.MasterReset))
+					if (!_reset.HasFlag(ResetFlags.MasterEnable) && newReset.HasFlag(ResetFlags.MasterEnable))
 						newReset &= ~(ResetFlags.EnableDAC | ResetFlags.EnableIRQ);
 
 					_reset = newReset;
+
+					if (!_reset.HasFlag(ResetFlags.MasterEnable))
+						Reset();
 
 					break;
 			}
@@ -876,7 +960,7 @@ public class GravisUltraSound
 		{
 			switch (index ^ Register.ReadFlag)
 			{
-				case Register.Global_MaxActiveVoice: return unchecked((byte)(_maxActiveVoice | _clockDividerEnableBits));
+				case Register.Global_MaxActiveVoice: return unchecked((byte)(_maxActiveVoice | ClockDividerEnableBits));
 				case Register.Global_DMAControl: return _dmaControl;
 				case Register.Global_TimerControl: return _timerControl;
 				case Register.Global_DMASamplingControl: return _dmaSamplingControl;
@@ -888,6 +972,10 @@ public class GravisUltraSound
 
 		public void SetRegister(Register index, byte lowByte, byte highByte)
 		{
+			if (((_reset & ResetFlags.MasterEnable) == 0)
+			 && (index != Register.Global_Reset))
+				return;
+
 			if (index > Register.LastVoiceRegister)
 				SetGlobalRegister(index, lowByte, highByte);
 			else
@@ -937,6 +1025,12 @@ public class GravisUltraSound
 			}
 
 			return false;
+		}
+
+		public void UpdateVoice(int voiceNumber)
+		{
+			if ((voiceNumber >= 0) && (voiceNumber <= _maxActiveVoice))
+				_voices[voiceNumber].Update(ref IRQStatus);
 		}
 
 		public short UpdateVoiceAndAccumulateSample(int voiceNumber, Span<byte> dram, ref StereoSample accumulator)
@@ -1120,20 +1214,33 @@ public class GravisUltraSound
 
 			int activeVoices = _playbackRegisters.ActiveVoices.Value;
 
-			var accumulator = new StereoSample();
-
-			Span<byte> dramSpan = _dram;
-
-			for (int ch = 0; ch < activeVoices; ch++)
-			{
-				_playbackRegisters.UpdateVoiceAndAccumulateSample(ch, dramSpan, ref accumulator);
-				lastSampleEmitted++;
-			}
-
 			if (!enableLineOut)
+			{
+				if (_playbackRegisters.ClockDividerEnableBits == Registers.ClockDividerEnableBitsCorrectValue)
+				{
+					Span<byte> dramSpan = _dram;
+
+					for (int ch = 0; ch < activeVoices; ch++)
+					{
+						_playbackRegisters.UpdateVoice(ch);
+						lastSampleEmitted++;
+					}
+				}
+
 				i += 2;
+			}
 			else
 			{
+				var accumulator = new StereoSample();
+
+				if (_playbackRegisters.ClockDividerEnableBits == Registers.ClockDividerEnableBitsCorrectValue)
+				{
+					Span<byte> dramSpan = _dram;
+
+					for (int ch = 0; ch < activeVoices; ch++)
+						_playbackRegisters.UpdateVoiceAndAccumulateSample(ch, dramSpan, ref accumulator);
+				}
+
 				samples[i++] = unchecked((short)Math.Clamp(accumulator.Left >> 1, short.MinValue, short.MaxValue));
 
 				if (i >= samples.Length)
@@ -1145,6 +1252,8 @@ public class GravisUltraSound
 
 				samples[i++] = unchecked((short)Math.Clamp(accumulator.Right >> 1, short.MinValue, short.MaxValue));
 			}
+
+			lastSampleEmitted++;
 		}
 
 		_playbackRegisters.SampleNumber = lastSampleEmitted;
