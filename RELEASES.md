@@ -1,5 +1,16 @@
 # QBX Releases
 
+## 1.15.3 - 2026-07-06
+
+### Fixed
+
+- Soft transitions between notes now function correctly when the voice is being stopped.
+- When soft transitions are started, the previous sample values are now always correctly latched.
+- Gravis UltraSound emulation now implements the reset function.
+- The `EnableDAC` and `EnableIRQ` flags are now cleared when transitioning from the reset state rather that to it.
+- Gravis UltraSound emulation now stops updating voices when the top two bits of the page select register aren't both set.
+- The last sample emitted counter is now updated at the correct rate.
+
 ## 1.15.2 - 2026-07-05
 
 ### Fixed
