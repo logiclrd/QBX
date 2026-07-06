@@ -287,11 +287,11 @@ OUT &H344, endaddress& AND 255
 OUT &H345, endaddress& \ 256
 
 ' Voice: Current address
-OUT &H343, 6 ' high
+OUT &H343, 10 ' high
 OUT &H344, startaddress& \ 65536
 OUT &H345, startaddress& \ 16777216
 
-OUT &H343, 7 ' low
+OUT &H343, 11 ' low
 OUT &H344, startaddress& AND 255
 OUT &H345, startaddress& \ 256
 

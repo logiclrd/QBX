@@ -269,6 +269,9 @@ public class GravisUltraSound
 			public int VolumeRampFrameCount;
 			public ushort VolumeRampDelta;
 
+			public short LastSampleLeft;
+			public short LastSampleRight;
+
 			public int SoftTransition;
 			public short SoftTransitionFromLeft;
 			public short SoftTransitionFromRight;
@@ -302,10 +305,23 @@ public class GravisUltraSound
 
 						bool isNowPlaying = (VoiceControl & VoiceControlFlags.VoiceStopped) == 0;
 
-						if (wasStopped && isNowPlaying)
+						if (wasStopped == isNowPlaying)
 						{
 							if (SoftTransition == 0)
+							{
 								SoftTransition = SoftTransitionSamples;
+
+								if (wasStopped)
+								{
+									SoftTransitionFromLeft = 0;
+									SoftTransitionFromRight = 0;
+								}
+								else
+								{
+									SoftTransitionFromLeft = LastSampleLeft;
+									SoftTransitionFromRight = LastSampleRight;
+								}
+							}
 						}
 
 						UpdateEnableWaveTableIRQ();
@@ -376,8 +392,14 @@ public class GravisUltraSound
 						// high value is 7 bits into the integer part.
 						SampleOffset &= 0b11111111;
 						SampleOffset |= value << 7;
+
 						if (SoftTransition == 0)
+						{
 							SoftTransition = SoftTransitionSamples;
+							SoftTransitionFromLeft = LastSampleLeft;
+							SoftTransitionFromRight = LastSampleRight;
+						}
+
 						break;
 					case Register.Voice_CurrentAddressLow:
 						// Native GUS uses 9-bit fixed point, which means that the
@@ -386,8 +408,14 @@ public class GravisUltraSound
 						SampleOffset &= ~0b11111111;
 						SampleOffset |= value >> 9;
 						SampleOffsetFraction = (value & 0b111111111) * SampleOffsetScale / 512;
+
 						if (SoftTransition == 0)
+						{
 							SoftTransition = SoftTransitionSamples;
+							SoftTransitionFromLeft = LastSampleLeft;
+							SoftTransitionFromRight = LastSampleRight;
+						}
+
 						break;
 					case Register.Voice_Panning:
 						Panning = unchecked((PanValues)highByte);
@@ -439,195 +467,269 @@ public class GravisUltraSound
 			// Process one tick, move to the next sample
 			public void Update(ref IRQStatusFlags irqStatus)
 			{
-				if ((VoiceControl & VoiceControlFlags.VoiceStopped) != 0)
-					return;
-
-				if ((VoiceControl & VoiceControlFlags.StopVoice) != 0)
+				if ((VoiceControl & VoiceControlFlags.VoiceStopped) == 0)
 				{
-					VoiceControl |= VoiceControlFlags.VoiceStopped;
-					return;
-				}
-
-				sampleCount++;
-
-				bool hitBoundary;
-				int overshoot;
-
-				// Update the sample offset
-				hitBoundary = false;
-				overshoot = 0;
-
-				if ((VoiceControl & VoiceControlFlags.ReverseWaveData) == 0)
-				{
-					SampleOffset += SampleOffsetDelta;
-					SampleOffsetFraction += SampleOffsetDeltaFraction;
-
-					if (SampleOffsetFraction >= SampleOffsetScale)
-					{
-						SampleOffset++;
-						SampleOffsetFraction -= SampleOffsetScale;
-					}
-
-					if (SampleOffset >= _endAddressWhole)
-					{
-						int sampleOffsetScaled = (SampleOffset << 9) | (SampleOffsetFraction >> (SampleOffsetScale - 9));
-
-						if (sampleOffsetScaled >= EndAddress)
-						{
-							hitBoundary = true;
-							overshoot = sampleOffsetScaled - EndAddress;
-						}
-					}
-				}
-				else
-				{
-					SampleOffset -= SampleOffsetDelta;
-					SampleOffsetFraction -= SampleOffsetDeltaFraction;
-
-					if (SampleOffsetFraction < 0)
-					{
-						SampleOffset--;
-						SampleOffsetFraction += SampleOffsetScale;
-					}
-
-					// This replicates a GF1 hardware bug, whereby if the sample offset crosses the
-					// start address but also crosses 0 in the same tick, it wraps around to the top
-					// of memory before the processor can detect that it has crossed over the start
-					// address. Another way to interpret this is that the sample offset is an
-					// intrinsically unsigned value, so if offset < delta, then subtracting delta
-					// fails to make it negative. The bug, then, is that it is unable to detect that
-					// it has hit a boundary should loop or terminate.
-					SampleOffset &= 1048575;
-
-					if (SampleOffset <= _startAddressWhole)
-					{
-						int sampleOffsetScaled = (SampleOffset << 9) | (SampleOffsetFraction >> (SampleOffsetScale - 9));
-
-						if (sampleOffsetScaled < StartAddress)
-						{
-							hitBoundary = true;
-							overshoot = sampleOffsetScaled - StartAddress + 1;
-						}
-					}
-				}
-
-				if (hitBoundary)
-				{
-					if (_enableWaveTableIRQ)
-						irqStatus |= IRQStatusFlags.WaveTable;
-
-					if ((VoiceControl & VoiceControlFlags.Loop) == 0)
-					{
-						if ((VolumeRampControl & VolumeRampControlFlags.EnableRollOverIRQ) == 0)
-						{
-							VoiceControl |= VoiceControlFlags.VoiceStopped;
-
-							if ((VoiceControl & VoiceControlFlags.ReverseWaveData) == 0)
-							{
-								SampleOffset = StartAddress >> 9;
-								SampleOffsetFraction = (StartAddress & 511) << (SampleOffsetScale - 9);
-							}
-							else
-							{
-								SampleOffset = EndAddress >> 9;
-								SampleOffsetFraction = (EndAddress & 511) << (SampleOffsetScale - 9);
-							}
-
-							SampleOffsetFraction = 0;
-						}
-					}
+					if ((VoiceControl & VoiceControlFlags.StopVoice) != 0)
+						VoiceControl |= VoiceControlFlags.VoiceStopped;
 					else
 					{
-						if ((VoiceControl & VoiceControlFlags.PingPongLoop) != 0)
-						{
-							VoiceControl ^= VoiceControlFlags.ReverseWaveData;
+						sampleCount++;
 
-							// If we have a fractional part, invert it. To illustrate, suppose the
-							// sample offset scale is 1,000. If we overshoot and end at +1.002, then
-							// mirroring that across the boundary, we want to go to -1.002, which is
-							// represented as -2 + .998.
-							if (SampleOffsetFraction != 0)
-							{
-								SampleOffsetFraction = SampleOffsetScale - SampleOffsetFraction;
-								overshoot++;
-							}
-						}
+						bool hitBoundary;
+						int overshoot;
 
-						int newSampleOffsetScaled;
-
-						if (overshoot > 2 * FrequencyControl)
-							SoftTransition = SoftTransitionSamples;
-
-						if ((VoiceControl & VoiceControlFlags.ReverseWaveData) == 0)
-							newSampleOffsetScaled = StartAddress + overshoot;
-						else
-							newSampleOffsetScaled = EndAddress + overshoot;
-
-						SampleOffset = newSampleOffsetScaled >> 9;
-						SampleOffsetFraction = (newSampleOffsetScaled & 511) << (SampleOffsetScale - 9);
-					}
-				}
-
-				// Update the volume ramp
-				if ((VolumeRampControl & VolumeRampControlFlags.StopRamp) != 0)
-					VolumeRampControl |= VolumeRampControlFlags.RampStopped;
-
-				if ((VolumeRampControl & VolumeRampControlFlags.RampStopped) == 0)
-				{
-					VolumeRampFrameCount++;
-
-					if (VolumeRampFrameCount >= VolumeRampFrameInterval)
-					{
-						VolumeRampFrameCount = 0;
-
+						// Update the sample offset
 						hitBoundary = false;
 						overshoot = 0;
 
-						rampCount++;
-
-						int newVolumeScaled = CurrentVolumeScaled;
-
-						if ((VolumeRampControl & VolumeRampControlFlags.ReverseRamp) == 0)
+						if ((VoiceControl & VoiceControlFlags.ReverseWaveData) == 0)
 						{
-							newVolumeScaled += VolumeRampDelta;
+							SampleOffset += SampleOffsetDelta;
+							SampleOffsetFraction += SampleOffsetDeltaFraction;
 
-							hitBoundary = (newVolumeScaled >= VolumeRampHighEndScaled);
-							overshoot = newVolumeScaled - VolumeRampHighEndScaled;
+							if (SampleOffsetFraction >= SampleOffsetScale)
+							{
+								SampleOffset++;
+								SampleOffsetFraction -= SampleOffsetScale;
+							}
+
+							if (SampleOffset >= _endAddressWhole)
+							{
+								int sampleOffsetScaled = (SampleOffset << 9) | (SampleOffsetFraction >> (SampleOffsetScale - 9));
+
+								if (sampleOffsetScaled >= EndAddress)
+								{
+									hitBoundary = true;
+									overshoot = sampleOffsetScaled - EndAddress;
+								}
+							}
 						}
 						else
 						{
-							newVolumeScaled -= VolumeRampDelta;
+							SampleOffset -= SampleOffsetDelta;
+							SampleOffsetFraction -= SampleOffsetDeltaFraction;
 
-							hitBoundary = (newVolumeScaled <= VolumeRampLowEndScaled);
-							overshoot = newVolumeScaled - VolumeRampLowEndScaled;
+							if (SampleOffsetFraction < 0)
+							{
+								SampleOffset--;
+								SampleOffsetFraction += SampleOffsetScale;
+							}
+
+							// This replicates a GF1 hardware bug, whereby if the sample offset crosses the
+							// start address but also crosses 0 in the same tick, it wraps around to the top
+							// of memory before the processor can detect that it has crossed over the start
+							// address. Another way to interpret this is that the sample offset is an
+							// intrinsically unsigned value, so if offset < delta, then subtracting delta
+							// fails to make it negative. The bug, then, is that it is unable to detect that
+							// it has hit a boundary should loop or terminate.
+							SampleOffset &= 1048575;
+
+							if (SampleOffset <= _startAddressWhole)
+							{
+								int sampleOffsetScaled = (SampleOffset << 9) | (SampleOffsetFraction >> (SampleOffsetScale - 9));
+
+								if (sampleOffsetScaled < StartAddress)
+								{
+									hitBoundary = true;
+									overshoot = sampleOffsetScaled - StartAddress + 1;
+								}
+							}
 						}
-
-						CurrentVolumeScaled = unchecked((ushort)newVolumeScaled);
-						CurrentLinearVolume = s_volumeTable[CurrentVolumeScaled >> 4];
 
 						if (hitBoundary)
 						{
-							if (_enableVolumeRampIRQ)
-								irqStatus |= IRQStatusFlags.VolumeRamp;
+							if (_enableWaveTableIRQ)
+								irqStatus |= IRQStatusFlags.WaveTable;
 
-							if ((VolumeRampControl & VolumeRampControlFlags.Loop) == 0)
+							if ((VoiceControl & VoiceControlFlags.Loop) == 0)
 							{
-								VolumeRampControl |= VolumeRampControlFlags.RampStopped;
-								CurrentVolumeScaled = unchecked((ushort)(CurrentVolumeScaled - overshoot));
-								CurrentLinearVolume = s_volumeTable[CurrentVolumeScaled >> 4];
+								if ((VolumeRampControl & VolumeRampControlFlags.EnableRollOverIRQ) == 0)
+								{
+									VoiceControl |= VoiceControlFlags.VoiceStopped;
+
+									if ((VoiceControl & VoiceControlFlags.ReverseWaveData) == 0)
+									{
+										SampleOffset = StartAddress >> 9;
+										SampleOffsetFraction = (StartAddress & 511) << (SampleOffsetScale - 9);
+									}
+									else
+									{
+										SampleOffset = EndAddress >> 9;
+										SampleOffsetFraction = (EndAddress & 511) << (SampleOffsetScale - 9);
+									}
+
+									SampleOffsetFraction = 0;
+								}
 							}
 							else
 							{
-								if ((VolumeRampControl & VolumeRampControlFlags.PingPongLoop) != 0)
-									VolumeRampControl ^= VolumeRampControlFlags.ReverseRamp;
+								if ((VoiceControl & VoiceControlFlags.PingPongLoop) != 0)
+								{
+									VoiceControl ^= VoiceControlFlags.ReverseWaveData;
+
+									// If we have a fractional part, invert it. To illustrate, suppose the
+									// sample offset scale is 1,000. If we overshoot and end at +1.002, then
+									// mirroring that across the boundary, we want to go to -1.002, which is
+									// represented as -2 + .998.
+									if (SampleOffsetFraction != 0)
+									{
+										SampleOffsetFraction = SampleOffsetScale - SampleOffsetFraction;
+										overshoot++;
+									}
+								}
+
+								int newSampleOffsetScaled;
+
+								if (overshoot > 2 * FrequencyControl)
+								{
+									SoftTransition = SoftTransitionSamples;
+									SoftTransitionFromLeft = LastSampleLeft;
+									SoftTransitionFromRight = LastSampleRight;
+
+									overshoot = 0;
+								}
+
+								if ((VoiceControl & VoiceControlFlags.ReverseWaveData) == 0)
+									newSampleOffsetScaled = StartAddress + overshoot;
+								else
+									newSampleOffsetScaled = EndAddress + overshoot;
+
+								SampleOffset = newSampleOffsetScaled >> 9;
+								SampleOffsetFraction = (newSampleOffsetScaled & 511) << (SampleOffsetScale - 9);
+							}
+						}
+
+						// Update the volume ramp
+						if ((VolumeRampControl & VolumeRampControlFlags.StopRamp) != 0)
+							VolumeRampControl |= VolumeRampControlFlags.RampStopped;
+
+						if ((VolumeRampControl & VolumeRampControlFlags.RampStopped) == 0)
+						{
+							VolumeRampFrameCount++;
+
+							if (VolumeRampFrameCount >= VolumeRampFrameInterval)
+							{
+								VolumeRampFrameCount = 0;
+
+								hitBoundary = false;
+								overshoot = 0;
+
+								rampCount++;
+
+								int newVolumeScaled = CurrentVolumeScaled;
 
 								if ((VolumeRampControl & VolumeRampControlFlags.ReverseRamp) == 0)
-									CurrentVolumeScaled = unchecked((ushort)(VolumeRampLowEndScaled + overshoot));
+								{
+									newVolumeScaled += VolumeRampDelta;
+
+									hitBoundary = (newVolumeScaled >= VolumeRampHighEndScaled);
+									overshoot = newVolumeScaled - VolumeRampHighEndScaled;
+								}
 								else
-									CurrentVolumeScaled = unchecked((ushort)(VolumeRampHighEndScaled + overshoot));
+								{
+									newVolumeScaled -= VolumeRampDelta;
+
+									hitBoundary = (newVolumeScaled <= VolumeRampLowEndScaled);
+									overshoot = newVolumeScaled - VolumeRampLowEndScaled;
+								}
+
+								CurrentVolumeScaled = unchecked((ushort)newVolumeScaled);
+								CurrentLinearVolume = s_volumeTable[CurrentVolumeScaled >> 4];
+
+								if (hitBoundary)
+								{
+									if (_enableVolumeRampIRQ)
+										irqStatus |= IRQStatusFlags.VolumeRamp;
+
+									if ((VolumeRampControl & VolumeRampControlFlags.Loop) == 0)
+									{
+										VolumeRampControl |= VolumeRampControlFlags.RampStopped;
+										CurrentVolumeScaled = unchecked((ushort)(CurrentVolumeScaled - overshoot));
+										CurrentLinearVolume = s_volumeTable[CurrentVolumeScaled >> 4];
+									}
+									else
+									{
+										if ((VolumeRampControl & VolumeRampControlFlags.PingPongLoop) != 0)
+											VolumeRampControl ^= VolumeRampControlFlags.ReverseRamp;
+
+										if ((VolumeRampControl & VolumeRampControlFlags.ReverseRamp) == 0)
+											CurrentVolumeScaled = unchecked((ushort)(VolumeRampLowEndScaled + overshoot));
+										else
+											CurrentVolumeScaled = unchecked((ushort)(VolumeRampHighEndScaled + overshoot));
+									}
+								}
 							}
 						}
 					}
+				}
+			}
+
+			public void ComputeSample(Span<byte> dram)
+			{
+				if ((VoiceControl & VoiceControlFlags.VoiceStopped) == 0)
+				{
+					// As efficiently as possible, pluck the two samples surrounding the current
+					// playhead position and convert them to S16LE.
+					int s1, s2;
+
+					unchecked
+					{
+						uint sampleOffset1 = (uint)SampleOffset;
+						uint sampleOffset2 = sampleOffset1 + 1;
+
+						if ((VoiceControl & VoiceControlFlags._16bit) != 0)
+						{
+							var data = MemoryMarshal.Cast<byte, short>(dram);
+
+							if (sampleOffset2 < (uint)data.Length)
+							{
+								s1 = data[(int)sampleOffset1];
+								s2 = data[(int)sampleOffset2];
+							}
+							else
+							{
+								s1 = (sampleOffset1 < (uint)data.Length) ? data[(int)sampleOffset1] : 0;
+								s2 = 0;
+							}
+						}
+						else
+						{
+							if (sampleOffset2 < (uint)dram.Length)
+							{
+								ushort ss1 = dram[(int)sampleOffset1];
+								ushort ss2 = dram[(int)sampleOffset2];
+
+								s1 = unchecked((short)(ss1 * 0x101));
+								s2 = unchecked((short)(ss2 * 0x101));
+							}
+							else
+							{
+								ushort ss1 = (sampleOffset1 < (uint)dram.Length) ? dram[(int)sampleOffset1] : (ushort)0;
+
+								s1 = unchecked((short)(ss1 * 0x101));
+								s2 = 0;
+							}
+						}
+					}
+
+					// Interpolate between the two samples.
+					int s = ((s1 << SampleOffsetScaleBits)
+						+ SampleOffsetFraction * (s2 - s1)
+						+ (1 << (SampleOffsetScaleBits - 1))) >> SampleOffsetScaleBits;
+
+					// Apply volume & panning.
+					int leftVolume = CurrentLinearVolume;
+					int rightVolume = leftVolume;
+
+					int panning = 2 * unchecked((int)Panning);
+
+					if (panning < 16)
+						rightVolume = rightVolume * panning / 15;
+					if (panning > 15)
+						leftVolume = leftVolume * (30 - panning) / 15;
+
+					LastSampleLeft = unchecked((short)((s * leftVolume) >> 16));
+					LastSampleRight = unchecked((short)((s * rightVolume) >> 16));
 				}
 			}
 		}
@@ -837,103 +939,30 @@ public class GravisUltraSound
 			return false;
 		}
 
-		public void UpdateVoice(int voiceNumber)
-		{
-			if ((voiceNumber >= 0) && (voiceNumber <= _maxActiveVoice))
-				_voices[voiceNumber].Update(ref IRQStatus);
-		}
-
 		public short UpdateVoiceAndAccumulateSample(int voiceNumber, Span<byte> dram, ref StereoSample accumulator)
 		{
 			if ((voiceNumber >= 0) && (voiceNumber <= _maxActiveVoice))
 			{
 				ref Voice voice = ref _voices[voiceNumber];
 
-				// Update playhead and volume ramp positions.
+				// Update playhead and volume ramp positions and interpolate sample values.
 				voice.Update(ref IRQStatus);
+				voice.ComputeSample(dram);
 
-				// As efficiently as possible, pluck the two samples surrounding the current
-				// playhead position and convert them to S16LE.
-				int s1, s2;
-
-				unchecked
-				{
-					uint sampleOffset1 = (uint)voice.SampleOffset;
-					uint sampleOffset2 = sampleOffset1 + 1;
-
-					if ((voice.VoiceControl & VoiceControlFlags._16bit) != 0)
-					{
-						var data = MemoryMarshal.Cast<byte, short>(dram);
-
-						if (sampleOffset2 < (uint)data.Length)
-						{
-							s1 = data[(int)sampleOffset1];
-							s2 = data[(int)sampleOffset2];
-						}
-						else
-						{
-							s1 = (sampleOffset1 < (uint)data.Length) ? data[(int)sampleOffset1] : 0;
-							s2 = 0;
-						}
-					}
-					else
-					{
-						if (sampleOffset2 < (uint)dram.Length)
-						{
-							ushort ss1 = dram[(int)sampleOffset1];
-							ushort ss2 = dram[(int)sampleOffset2];
-
-							s1 = unchecked((short)(ss1 * 0x101));
-							s2 = unchecked((short)(ss2 * 0x101));
-						}
-						else
-						{
-							ushort ss1 = (sampleOffset1 < (uint)dram.Length) ? dram[(int)sampleOffset1] : (ushort)0;
-
-							s1 = unchecked((short)(ss1 * 0x101));
-							s2 = 0;
-						}
-					}
-				}
-
-				// Interpolate between the two samples.
-				int s = ((s1 << SampleOffsetScaleBits)
-					+ voice.SampleOffsetFraction * (s2 - s1)
-					+ (1 << (SampleOffsetScaleBits - 1))) >> SampleOffsetScaleBits;
-
-				// Apply volume & panning.
-				int leftVolume = voice.CurrentLinearVolume;
-				int rightVolume = leftVolume;
-
-				int panning = 2 * unchecked((int)voice.Panning);
-
-				if (panning < 16)
-					rightVolume = rightVolume * panning / 15;
-				if (panning > 15)
-					leftVolume = leftVolume * (30 - panning) / 15;
-
-				short leftFinal = unchecked((short)((s * leftVolume) >> 16));
-				short rightFinal = unchecked((short)((s * rightVolume) >> 16));
-
-				if (voice.SoftTransition == 0)
-				{
-					voice.SoftTransitionFromLeft = leftFinal;
-					voice.SoftTransitionFromRight = rightFinal;
-				}
-				else
+				if (voice.SoftTransition != 0)
 				{
 					voice.SoftTransition = voice.SoftTransition - 1;
 
-					leftFinal = unchecked((short)(
-						(leftFinal * (SoftTransitionSamples - voice.SoftTransition)
+					voice.LastSampleLeft = unchecked((short)(
+						(voice.LastSampleLeft * (SoftTransitionSamples - voice.SoftTransition)
 						+ voice.SoftTransitionFromLeft * voice.SoftTransition) / SoftTransitionSamples));
-					rightFinal = unchecked((short)(
-						(rightFinal * (SoftTransitionSamples - voice.SoftTransition)
+					voice.LastSampleRight = unchecked((short)(
+						(voice.LastSampleRight * (SoftTransitionSamples - voice.SoftTransition)
 						+ voice.SoftTransitionFromRight * voice.SoftTransition) / SoftTransitionSamples));
 				}
 
-				accumulator.Left += leftFinal;
-				accumulator.Right += rightFinal;
+				accumulator.Left += voice.LastSampleLeft;
+				accumulator.Right += voice.LastSampleRight;
 			}
 
 			return 0;
