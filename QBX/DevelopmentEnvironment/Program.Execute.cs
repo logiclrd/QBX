@@ -329,6 +329,8 @@ public partial class Program
 		SaveOutput();
 
 		outputLibrary.MoveCursor(0, outputLibrary.CharacterHeight - 1);
+		outputLibrary.UpdateCharacterLineWindow(outputLibrary.CharacterHeight - 1, outputLibrary.CharacterHeight - 1);
+		outputLibrary.ClearCharacterLineWindow();
 		outputLibrary.WriteText("Press any key to continue");
 
 		WaitForKey();
