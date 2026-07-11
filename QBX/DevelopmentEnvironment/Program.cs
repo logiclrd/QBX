@@ -104,6 +104,7 @@ public partial class Program : HostedProgram, IOvertypeFlag
 		TextLibrary = new TextLibrary(machine);
 		TextLibrary.MovePhysicalCursor = false;
 		TextLibrary.ProcessControlCharacters = false;
+		TextLibrary.UpdateCharacterLineWindow(0, TextLibrary.CharacterHeight - 1);
 
 		TextLibrary.Clear();
 		TextLibrary.HideCursor();

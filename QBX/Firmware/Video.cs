@@ -484,6 +484,9 @@ public partial class Video(Machine machine)
 
 		LoadFontIntoCharacterGenerator(font);
 
+		VisualLibrary.RefreshParameters();
+		VisualLibrary.ResetCharacterLineWindow();
+
 		ModeChanged?.Invoke(null);
 	}
 

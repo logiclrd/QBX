@@ -21,6 +21,7 @@ public abstract class VisualLibrary : IDisposable
 		Array = machine.GraphicsArray;
 
 		RefreshParameters();
+		ResetCharacterLineWindow();
 	}
 
 	public void Dispose()
@@ -121,8 +122,6 @@ public abstract class VisualLibrary : IDisposable
 
 	public virtual void RefreshParameters()
 	{
-		CharacterLineWindowStart = 0;
-		CharacterLineWindowEnd = CharacterHeight - 1;
 	}
 
 	public abstract byte CurrentAttributeByte { get; set; }
@@ -199,7 +198,7 @@ public abstract class VisualLibrary : IDisposable
 
 	public void ResetCharacterLineWindow()
 	{
-		UpdateCharacterLineWindow(0, CharacterHeight - 1);
+		UpdateCharacterLineWindow(0, CharacterHeight - 2);
 	}
 
 	public void UpdateCharacterLineWindow(int windowStart, int windowEnd)

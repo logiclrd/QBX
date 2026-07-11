@@ -63,6 +63,7 @@ public class ScreenWidthStatement(CodeModel.Statements.ScreenWidthStatement sour
 				}
 
 				context.VisualLibrary.RefreshParameters();
+				context.VisualLibrary.ResetCharacterLineWindow();
 				context.VisualLibrary.Clear();
 			}
 			catch
