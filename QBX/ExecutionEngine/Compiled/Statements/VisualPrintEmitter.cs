@@ -18,7 +18,7 @@ public class VisualPrintEmitter(VisualLibrary visual) : PrintEmitter
 
 	public override void Emit(ReadOnlySpan<char> chars)
 	{
-		if ((visual.CursorX > 0) && (visual.CursorX + chars.Length >= visual.CharacterWidth))
+		if ((visual.CursorX > 0) && (visual.CursorX + chars.Length > visual.CharacterWidth))
 			visual.NewLine();
 
 		visual.WriteText(chars);
@@ -26,7 +26,7 @@ public class VisualPrintEmitter(VisualLibrary visual) : PrintEmitter
 
 	public override void Emit(ReadOnlySpan<byte> str)
 	{
-		if ((visual.CursorX > 0) && (visual.CursorX + str.Length >= visual.CharacterWidth))
+		if ((visual.CursorX > 0) && (visual.CursorX + str.Length > visual.CharacterWidth))
 			visual.NewLine();
 
 		visual.WriteText(str);

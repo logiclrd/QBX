@@ -30,6 +30,6 @@ public class PosFunction : Function
 		// but it is required and it is evaluated.
 		DummyExpression.Evaluate(context, stackFrame);
 
-		return new IntegerVariable((short)(context.VisualLibrary.CursorX + 1));
+		return new IntegerVariable((short)(context.VisualLibrary.CursorXAfterPassiveNewLine + 1));
 	}
 }

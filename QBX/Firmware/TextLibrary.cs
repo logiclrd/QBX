@@ -311,10 +311,13 @@ public class TextLibrary : VisualLibrary
 
 		vramSpan = vramSpan.Slice(startAddress);
 
-		var plane0 = vramSpan.Slice(0x00000, windowEndOffset);
-		var plane1 = vramSpan.Slice(0x10000, windowEndOffset);
+		int planeBytesUsed = Height * _stride;
+
+		var plane0 = vramSpan.Slice(0x00000, planeBytesUsed);
+		var plane1 = vramSpan.Slice(0x10000, planeBytesUsed);
 
 		int scrollOffset = 0;
+		int scrollLength = plane0.Length;
 		bool clearLastLineOnScroll = true;
 
 		if (CharacterLineWindowStart < _clipRect.Y1)
@@ -328,8 +331,7 @@ public class TextLibrary : VisualLibrary
 		{
 			int difference = CharacterLineWindowEnd - _clipRect.Y2;
 
-			plane0 = plane0.Slice(0, plane0.Length - (difference - 1) * _stride);
-			plane1 = plane1.Slice(0, plane1.Length - (difference - 1) * _stride);
+			scrollLength -= (difference - 1) * _stride;
 			clearLastLineOnScroll = false;
 		}
 
@@ -340,11 +342,12 @@ public class TextLibrary : VisualLibrary
 			void BeginNewLine()
 			{
 				CursorX = 0;
+				CursorY = CursorY + 1;
 
-				if (CursorY + 1 <= CharacterLineWindowEnd)
-					CursorY++;
-				else
+				if (CursorY > CharacterLineWindowEnd)
 				{
+					CursorY = CharacterLineWindowEnd;
+
 					Span<byte> vramSpan = Array.VRAM;
 
 					vramSpan = vramSpan.Slice(startAddress);
@@ -353,8 +356,8 @@ public class TextLibrary : VisualLibrary
 					var plane1 = vramSpan.Slice(0x10000, windowEndOffset);
 
 					ScrollTextUp(
-						plane0.Slice(scrollOffset, plane0.Length - scrollOffset),
-						plane1.Slice(scrollOffset, plane1.Length - scrollOffset),
+						plane0.Slice(scrollOffset, scrollLength - scrollOffset),
+						plane1.Slice(scrollOffset, scrollLength - scrollOffset),
 						clearLastLineOnScroll);
 
 					o -= _stride;
@@ -434,9 +437,10 @@ public class TextLibrary : VisualLibrary
 
 		vramSpan = vramSpan.Slice(StartAddress);
 
-		var plane1 = vramSpan.Slice(0x10000, (CharacterLineWindowEnd + 1) * _stride);
+		var plane1 = vramSpan.Slice(0x10000, Height * _stride);
 
 		int scrollOffset = 0;
+		int scrollLength = plane1.Length;
 		bool clearLastLineOnScroll = true;
 
 		if (CharacterLineWindowStart < _clipRect.Y1)
@@ -450,7 +454,7 @@ public class TextLibrary : VisualLibrary
 		{
 			int difference = CharacterLineWindowEnd - _clipRect.Y2;
 
-			plane1 = plane1.Slice(0, plane1.Length - (difference - 1) * _stride);
+			scrollLength -= (difference - 1) * _stride;
 			clearLastLineOnScroll = false;
 		}
 
@@ -478,12 +482,13 @@ public class TextLibrary : VisualLibrary
 				if (charCount > 0)
 				{
 					CursorX = 0;
+					CursorY++;
 
-					if (CursorY + 1 <= CharacterLineWindowEnd)
-						CursorY++;
-					else
+					if (CursorY > CharacterLineWindowEnd)
 					{
-						ScrollTextUp(Span<byte>.Empty, plane1.Slice(scrollOffset, plane1.Length - scrollOffset), clearLastLineOnScroll);
+						CursorY = CharacterLineWindowEnd;
+
+						ScrollTextUp(Span<byte>.Empty, plane1.Slice(scrollOffset, scrollLength - scrollOffset), clearLastLineOnScroll);
 						o -= _stride;
 					}
 				}

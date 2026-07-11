@@ -12,6 +12,6 @@ public class CsrLinFunction : Function
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
-		return new IntegerVariable((short)(context.VisualLibrary.CursorY + 1));
+		return new IntegerVariable((short)(context.VisualLibrary.CursorYAfterPassiveNewLine + 1));
 	}
 }

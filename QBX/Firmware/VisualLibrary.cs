@@ -120,6 +120,28 @@ public abstract class VisualLibrary : IDisposable
 	public int CursorX = 0;
 	public int CursorY = 0;
 
+	public int CursorXAfterPassiveNewLine
+	{
+		get
+		{
+			if (_delayedNewLine)
+				return 0;
+			else
+				return CursorX;
+		}
+	}
+
+	public int CursorYAfterPassiveNewLine
+	{
+		get
+		{
+			if (_delayedNewLine)
+				return (CursorY + 1).Clamp(CharacterLineWindowStart, CharacterLineWindowEnd);
+			else
+				return CursorY;
+		}
+	}
+
 	public virtual void RefreshParameters()
 	{
 	}
@@ -228,7 +250,7 @@ public abstract class VisualLibrary : IDisposable
 	protected void SetCursorPosition(int x, int y)
 	{
 		x = x.Clamp(0, CharacterWidth - 1);
-		y = y.Clamp(CharacterLineWindowStart, CharacterLineWindowEnd);
+		y = y.Clamp(0, CharacterHeight - 1);
 
 		CursorX = x;
 		CursorY = y;
@@ -724,8 +746,11 @@ public abstract class VisualLibrary : IDisposable
 
 		newX = 0;
 
-		if (newY == CharacterLineWindowEnd)
+		if (newY >= CharacterLineWindowEnd)
+		{
 			ScrollTextUp();
+			newY = CharacterLineWindowEnd;
+		}
 		else
 			newY++;
 
