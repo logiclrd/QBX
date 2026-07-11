@@ -1,4 +1,5 @@
-﻿using QBX.CodeModel.Statements;
+﻿using QBX.CodeModel.Expressions;
+using QBX.CodeModel.Statements;
 using QBX.LexicalAnalysis;
 using QBX.Parser;
 
@@ -255,5 +256,40 @@ GOTO top
 			resultIf.ElseBody.Should().BeNullOrEmpty();
 		else
 			resultIf.ElseBody.Should().HaveCount(expectedElseStatements);
+	}
+
+	[Test]
+	public void AssignmentToIdentifierStartingWithData()
+	{
+		// Arrange
+		string identifier = "datatype%";
+
+		string input = $"{identifier} = 3";
+
+		var lexer = new Lexer(input);
+
+		var tokens = lexer.ToList();
+
+		var identifierRepository = new IdentifierRepository();
+
+		var sut = new BasicParser(identifierRepository);
+
+		// Act
+		var result = sut.ParseCodeLines(tokens, ignoreErrors: false).ToList();
+
+		// Assert
+		result.Should().HaveCount(1);
+
+		var resultLine = result[0];
+
+		resultLine.Statements.Should().HaveCount(1);
+
+		var resultStatement = resultLine.Statements[0];
+
+		var resultAssignment = resultStatement.Should().BeOfType<AssignmentStatement>().Subject;
+
+		var assignmentTarget = resultAssignment.TargetExpression.Should().BeOfType<IdentifierExpression>().Subject;
+
+		assignmentTarget.Identifier.Value.Should().Be(identifier);
 	}
 }

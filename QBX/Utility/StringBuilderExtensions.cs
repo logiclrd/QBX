@@ -51,22 +51,22 @@ public static class StringBuilderExtensions
 
 		foreach (var chunk in self.GetChunks())
 		{
+			if (other.Length < chunk.Length)
+				return false;
+
 			int length = Math.Min(chunk.Length, other.Length);
 
 			bool equals = comparisonInfo.Equals(
-				chunk.Span.Slice(0, length),
-				other.Slice(0, length));
+				chunk.Span,
+				other.Slice(0, chunk.Length));
 
 			if (!equals)
 				return false;
 
 			other = other.Slice(length);
-
-			if (other.IsEmpty)
-				return true;
 		}
 
-		return false;
+		return other.Length == 0;
 	}
 
 	abstract class ComparisonInfo
