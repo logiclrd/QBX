@@ -407,6 +407,18 @@ public class Viewport
 
 	public void ScrollCursorIntoView(int newCursorX, int newCursorY, int newScrollX, int newScrollY, ViewportPositioningPriority priority, int viewportWidth, bool ignoreErrors = false)
 	{
+		if (newScrollX < 0)
+		{
+			newCursorX -= newScrollX;
+			newScrollX = 0;
+		}
+
+		if (newScrollY < 0)
+		{
+			newCursorY -= newScrollY;
+			newScrollY = 0;
+		}
+
 		int contentLineCount = GetContentLineCount();
 
 		int viewportHeight = CachedContentHeight;
