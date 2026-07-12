@@ -26,6 +26,7 @@ public class Viewport
 	public bool IsDirectMode = false;
 	public bool ShowMaximize = true;
 	public int Height; // Ignored for the first, which fills available space.
+	public bool HasHorizontalScrollBar = true;
 	public int ScrollX, ScrollY;
 	public int CursorX, CursorY;
 	public bool CurrentLineChanged;
@@ -384,6 +385,24 @@ public class Viewport
 			}
 
 		return 0;
+	}
+
+	public void ScrollCursorIntoView(Configuration configuration)
+	{
+		int contentHeight = Height;
+
+		if (HasHorizontalScrollBar && configuration.ShowScrollBars)
+			contentHeight--;
+
+		if (CursorX >= ScrollX + 78)
+			ScrollX = CursorX - 77;
+		if (CursorX < ScrollX)
+			ScrollX = CursorX;
+
+		if (CursorY >= ScrollY + contentHeight)
+			ScrollY = CursorY - contentHeight + 1;
+		if (CursorY < ScrollY)
+			ScrollY = CursorY;
 	}
 
 	public void ScrollCursorIntoView(int newCursorX, int newCursorY, int newScrollX, int newScrollY, ViewportPositioningPriority priority, int viewportWidth, bool ignoreErrors = false)

@@ -62,6 +62,12 @@ public partial class Program
 
 		PrimaryViewport.Height = height;
 
+		// Check if things moving around has bumped the cursor outside of the viewport range.
+		HelpViewport?.ScrollCursorIntoView(Configuration);
+		PrimaryViewport.ScrollCursorIntoView(Configuration);
+		SplitViewport?.ScrollCursorIntoView(Configuration);
+		ImmediateViewport.ScrollCursorIntoView(Configuration);
+
 		var currentDialog = Dialogs.LastOrDefault();
 
 		bool hideCursor = (isMenuActive || isMenuOpen) && (currentDialog == null);
@@ -83,14 +89,14 @@ public partial class Program
 				row += RenderWatch(row, watch);
 
 			if (HelpViewport != null)
-				row += RenderViewport(row, HelpViewport, connectUp: false, horizontalScrollBar: false);
+				row += RenderViewport(row, HelpViewport, connectUp: false);
 
 			row += RenderViewport(row, PrimaryViewport, connectUp: (HelpViewport != null));
 
 			if (SplitViewport != null)
 				row += RenderViewport(row, SplitViewport, connectUp: true);
 
-			row += RenderViewport(row, ImmediateViewport, connectUp: true, horizontalScrollBar: false);
+			row += RenderViewport(row, ImmediateViewport, connectUp: true);
 
 			TextLibrary.MoveCursor(0, TextLibrary.Height - 1);
 
@@ -283,11 +289,13 @@ public partial class Program
 
 	static readonly StringBuilder EmptyBuffer = new StringBuilder();
 
-	int RenderViewport(int row, Viewport viewport, bool connectUp, bool verticalScrollBar = true, bool horizontalScrollBar = true)
+	int RenderViewport(int row, Viewport viewport, bool connectUp, bool verticalScrollBar = true)
 	{
 		int nextLineIndex = -1;
 		int nextStartColumn = -1;
 		int nextEndColumn = -1;
+
+		bool horizontalScrollBar = viewport.HasHorizontalScrollBar;
 
 		if (!Configuration.ShowScrollBars)
 		{

@@ -119,6 +119,7 @@ public partial class Program : HostedProgram, IOvertypeFlag
 				Heading = "Immediate",
 				ShowMaximize = false,
 				Height = 2,
+				HasHorizontalScrollBar = false,
 				IsDirectMode = true,
 			});
 
@@ -749,7 +750,7 @@ public partial class Program : HostedProgram, IOvertypeFlag
 		int splitViewportLines = (SplitViewport != null) ? remainingLines / 2 : 0;
 		int immediateViewportLines = remainingLines - splitViewportLines;
 
-		HelpViewport ??= AttachViewport(new Viewport() { IsEditable = false });
+		HelpViewport ??= AttachViewport(new Viewport() { IsEditable = false, HasHorizontalScrollBar = false });
 		HelpViewport.HelpTopic = topic;
 		HelpViewport.Height = helpViewportHeight;
 		HelpViewport.UpdateHeading();
