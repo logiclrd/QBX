@@ -746,14 +746,14 @@ public class GravisUltraSound
 								ushort ss1 = dram[(int)sampleOffset1];
 								ushort ss2 = dram[(int)sampleOffset2];
 
-								s1 = unchecked((short)(ss1 * 0x101));
-								s2 = unchecked((short)(ss2 * 0x101));
+								s1 = unchecked((short)(ss1 * 0x101 - 32768));
+								s2 = unchecked((short)(ss2 * 0x101 - 32768));
 							}
 							else
 							{
 								ushort ss1 = (sampleOffset1 < (uint)dram.Length) ? dram[(int)sampleOffset1] : (ushort)0;
 
-								s1 = unchecked((short)(ss1 * 0x101));
+								s1 = unchecked((short)(ss1 * 0x101 - 32768));
 								s2 = 0;
 							}
 						}
