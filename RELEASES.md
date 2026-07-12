@@ -1,5 +1,18 @@
 # QBX Releases
 
+## 1.15.4 - 2026-07-11
+
+### Fixed
+
+- Identifiers whose names start with "data" are no longer incorrectly interpreted as the `DATA` keyword.
+- The "Press any key to continue" prompt at program termination now clears the entire text row.
+- The default character line window now correctly excludes the last physical row of text.
+- The `LOCATE` statement can now place the cursor on rows outside of the current character line window. (Newlines still move the cursor back into the character line window.)
+- `PRINT` at the very end of a line of text no longer emits a newline before emitting the characters.
+- The `CSRLIN` and `POS(0)` functions now return the _effective_ cursor position, even if the physical cursor is still at the end of the line to delay newline and possible scrolling.
+- In the IDE, the viewport can no longer be scrolled to the null space to the left of the document with Ctrl-PageUp.
+- In the IDE, when viewports are bumped around (e.g. by adding a Watch), if the cursor is bumped out of the viewport's content area, it is scrolled back into view.
+
 ## 1.15.3 - 2026-07-06
 
 ### Fixed
