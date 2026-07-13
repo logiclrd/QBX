@@ -1,0 +1,653 @@
+'$STATIC
+
+DECLARE SUB S3MLoadPattern (filenum%, ignorechannel%(), samples() AS SampleType, mastervolume!, notes() AS NoteType, rownotes%(), numnotes%, numrows%, order%, jumptoorder%, jumptorow%)
+DECLARE SUB S3MLoadSample (filenum%, sample AS SampleType, signedsampledata%, nextfreedramaddress&, mastervolume!, visualize%)
+DECLARE SUB S3MMeasurePattern (filenum%, ignorechannel%(), numnotes%, numrows%, order%, jumptoorder%, jumptorow%)
+DECLARE SUB S3MPlayNote (samples() AS SampleType, note AS NoteType, channellastsample%(), globalvolume!)
+
+TYPE SampleType
+  StartAddress AS LONG
+  EndAddress AS LONG
+  LoopStartAddress AS LONG
+  DefaultVolume AS SINGLE
+  EnableLoop AS INTEGER
+  Is16bitSample AS INTEGER
+  C4Frequency AS LONG
+  VisualizationColour AS INTEGER
+END TYPE
+
+TYPE NoteType
+  ChannelNumber AS INTEGER
+  SampleNumber AS INTEGER ' -1 means no action, 0 means note cut
+  NoteFrequency AS LONG
+  Volume AS SINGLE ' -1 means no action
+  JumpToRowNumber AS INTEGER ' -1 means no action
+  NewGlobalVolume AS SINGLE ' -1 means no action
+END TYPE
+
+DIM s3msemitonetable#(15)
+
+
+SUB S3MLoad (filenum%, samples() AS SampleType, notes() AS NoteType, rownotes%(), globalvolume!)
+SHARED s3msemitonetable#()
+
+IF s3msemitonetable#(0) = 0 THEN
+  FOR i% = 0 TO 15
+    s3msemitonetable#(i%) = 2 ^ (i% / 12)
+  NEXT i%
+END IF
+
+DIM emptysample AS SampleType
+DIM emptynote AS NoteType
+
+FOR i% = LBOUND(samples) TO UBOUND(samples)
+  samples(i%) = emptysample
+NEXT i%
+
+FOR i% = LBOUND(notes) TO UBOUND(notes)
+  notes(i%) = emptynote
+NEXT i%
+
+FOR i% = LBOUND(rownotes%) TO UBOUND(rownotes%)
+  rownotes%(i%) = 0
+NEXT i%
+
+ignore$ = INPUT$(28, #filenum%) ' title
+signature$ = INPUT$(1, #filenum%)
+songtype$ = INPUT$(1, #filenum%)
+
+IF ASC(signature$) <> &H1A THEN EXIT SUB
+IF ASC(songtype$) <> &H10 THEN EXIT SUB
+
+ignore$ = INPUT$(2, #filenum%) ' reserved (expected to be 00 00)
+
+numorders% = CVI(INPUT$(2, #filenum%))
+numsamples% = CVI(INPUT$(2, #filenum%))
+numpatterns% = CVI(INPUT$(2, #filenum%))
+
+IF numsamples% > UBOUND(samples) THEN EXIT SUB
+
+flags% = CVI(INPUT$(2, #filenum%))
+
+ignore$ = INPUT$(2, #filenum%) ' tracker version
+
+sampleformat% = CVI(INPUT$(2, #filenum%))
+
+signedsampledata% = (sampleformat% = 1)
+
+signature$ = INPUT$(4, #filenum%)
+
+IF signature$ <> "SCRM" THEN GOTO failexit
+
+' Global Volume is a variable that can be adjusted during the
+' song with Vxx.
+'
+' Master Volume is an up-front constant that prescales everything.
+
+globalvolume% = ASC(INPUT$(1, #filenum%)) / 64
+
+IF globalvolume% > 64 THEN globalvolume% = 64
+
+globalvolume! = globalvolume% / 64
+
+ignore$ = INPUT$(2, #filenum%) 'initial speed + tempo
+
+mastervolume% = ASC(INPUT$(1, #filenum%)) AND 127 ' bit 128 == stereo flag
+
+mastervolume! = mastervolume% / 128
+
+' ultra click removal + default pan + reserved[8]
+ignore$ = INPUT$(10, #filenum%)
+
+' "additional data" parapointer + channel_settings[32]
+ignore$ = INPUT$(2, #filenum%)
+
+' channel settings - channels with the high bit set are disabled
+channelsettings$ = INPUT$(32, #filenum%)
+
+DIM ignorechannel%(0 TO 31)
+
+FOR i% = 1 TO 32
+  ignorechannel%(i% - 1) = (ASC(MID$(channelsettings$, i%, 1)) AND 128) <> 0
+NEXT i%
+
+' Okay, great, we're at the end the header now :-)
+orderbytes% = numorders%
+sampleptrbytes% = numsamples% * 2
+patternptrbytes% = numpatterns% * 2
+
+bytesneeeded% = orderbytes% + sampleptrbytes% + patternptrbytes%
+
+IF LOF(filenum%) - LOC(filenum%) < bytesneeded% THEN GOTO failexit
+
+' Save for later
+order$ = INPUT$(numorders%, #filenum%)
+
+sampletableoffset% = LOC(filenum%)
+
+ON LOCAL ERROR RESUME NEXT
+
+nuls$ = STRING$(2, 0)
+
+nextfreedramaddress& = 0
+
+visualize% = -1
+
+FOR i% = 1 TO numsamples%
+  sampleptroffset% = sampletableoffset% + 2 * (i% - 1)
+
+  SEEK #filenum%, sampleptroffset%
+  sampleparapointer$ = INPUT$(2, #filenum%)
+
+  sampleoffset& = CVL(sampleparapointer$ + nuls$) * 16 + 1
+
+  SEEK #1, sampleoffset&
+
+  S3MLoadSample filenum%, samples(i%), signedsampledata%, nextfreedramaddress&, mastervolume!, visualize%
+NEXT i%
+
+numnotes% = 0
+numrows% = 0
+
+patterntableoffset% = sampletableoffset% + numsamples% * 2
+
+order% = 1
+
+skiptoorder% = -1
+skiptorow% = -1
+
+numnotes% = 0
+numrows% = 0
+
+DIM firstorderrow%(1 TO LEN(order$))
+
+x% = POS(0): y% = CSRLIN
+PRINT STRING$(LEN(order$), ".")
+x2% = POS(0): y2% = CSRLIN
+LOCATE y%, x%
+
+DO WHILE order% <= LEN(order$)
+  pattern% = ASC(MID$(order$, order%, 1))
+
+  IF pattern% = 254 THEN
+    PRINT "=";
+  ELSEIF pattern% < 254 THEN
+    PRINT "|";
+
+    patternptroffset% = patterntableoffset% + 2 * pattern%
+
+    SEEK #filenum%, patternptroffset%
+    patternparapointer$ = INPUT$(2, #filenum%)
+
+    patternoffset& = CVL(patternparapointer$ + nuls$) * 16 + 1
+
+    SEEK #1, patternoffset&
+
+    IF ERR THEN GOTO failexit
+
+    firstorderrow%(order%) = numrows% + 1
+
+    S3MLoadPattern filenum%, ignorechannel%(), samples(), mastervolume!, notes(), rownotes%(), numnotes%, numrows%, order%, jumptoorder%, jumptorow%
+  END IF
+
+  IF jumptoorder% >= 0 THEN
+    ' A jump backward is a loop. No further pattern data will be played.
+    IF jumptoorder% <= order% THEN
+      jumpfromexistingnote% = 0
+
+      IF numrows% >= firstorderrow%(order%) THEN
+        IF rownotes%(numrows%) > 0 THEN
+          jumpfromexistingnote% = -1
+        END IF
+      END IF
+
+      IF NOT jumpfromexistingnote% THEN
+        numnotes% = numnotes% + 1
+        rownotes%(numrows%) = rownotes%(numrows%) + 1
+      END IF
+
+      notes(numnotes%).JumpToRowNumber = firstorderrow%(order%)
+
+      EXIT DO
+    END IF
+
+    order% = jumptoorder%
+    jumptoorder% = -1
+  ELSE
+    order% = order% + 1
+  END IF
+LOOP
+
+LOCATE y2%, x2%
+
+EXIT SUB
+
+failexit:
+  numsamples% = 0
+  numnotes% = 0
+  numrows% = 0
+END SUB
+
+SUB S3MLoadPattern (filenum%, ignorechannel%(), samples() AS SampleType, mastervolume!, notes() AS NoteType, rownotes%(), numnotes%, numrows%, order%, jumptoorder%, jumptorow%)
+SHARED s3msemitonetable#()
+
+packedlen% = CVI(INPUT$(2, #filenum%))
+packeddata$ = INPUT$(packedlen% - 2, #filenum%)
+
+haverow% = 0
+jumptoorder% = -1
+
+newglobalvol! = -1
+
+i% = 1
+rownumber% = 1
+
+DO WHILE i% <= LEN(packeddata$)
+  rowisplayed% = (rownumber% >= jumptorow%)
+
+  what% = ASC(MID$(packeddata$, i%, 1))
+  i% = i% + 1
+
+  IF what% = 0 THEN
+    IF newglobalvol! >= 0 THEN
+      IF rowisplayed% THEN
+        IF NOT haverow% THEN
+          haverow% = -1
+          numrows% = numrows% + 1
+
+          numnotes% = numnotes% + 1
+          rownotes%(numrows%) = rownotes%(numrows%) + 1
+        END IF
+
+        rowfirstnote% = numnotes% - rownotes%(numrows%) + 1
+
+        notes(rowfirstnote%).NewGlobalVolume = newglobalvol!
+      END IF
+
+      newglobalvol! = -1
+    END IF
+
+    IF haverow% = 0 THEN numrows% = numrows% + 1 ' empty row
+
+    rownumber% = rownumber% + 1
+    haverow% = 0
+
+    IF jumptoorder% >= 0 THEN
+      EXIT DO
+    END IF
+  ELSE
+    IF haverow% = 0 THEN
+      haverow% = -1
+      IF rowisplayed% THEN numrows% = numrows% + 1
+    END IF
+
+    effectpresent% = (what% AND 128) <> 0
+    volumepresent% = (what% AND 64) <> 0
+    notepresent% = (what% AND 32) <> 0
+
+    IF notepresent% THEN notedata$ = MID$(packeddata$, i%, 2): i% = i% + 2
+    IF volumepresent% THEN volumedata$ = MID$(packeddata$, i%, 1): i% = i% + 1
+    IF effectpresent% THEN effectdata$ = MID$(packeddata$, i%, 2): i% = i% + 2
+
+    channel% = what% AND 31
+
+    IF NOT ignorechannel%(channel%) THEN
+      IF rowisplayed% AND (notepresent% OR volumepresent%) THEN
+        numnotes% = numnotes% + 1
+
+        rownotes%(numrows%) = rownotes%(numrows%) + 1
+
+        notes(numnotes%).ChannelNumber = channel%
+        notes(numnotes%).SampleNumber = -1
+        notes(numnotes%).Volume = -1
+        notes(numnotes%).JumpToRowNumber = -1
+        notes(numnotes%).NewGlobalVolume = -1
+
+        IF notepresent% THEN
+          snote% = ASC(notedata$)
+
+          IF snote% >= 254 THEN
+            notes(numnotes%).SampleNumber = 0 ' note cut
+          ELSE
+            notes(numnotes%).SampleNumber = ASC(MID$(notedata$, 2, 1))
+            notes(numnotes%).NoteFrequency = samples(notes(numnotes%).SampleNumber).C4Frequency
+
+            ' octaves
+            FOR o% = &H50 TO snote% STEP &H10
+              notes(numnotes%).NoteFrequency = notes(numnotes%).NoteFrequency + notes(numnotes%).NoteFrequency
+            NEXT o%
+            FOR o% = &H30 TO snote% STEP -&H10
+              notes(numnotes%).NoteFrequency = notes(numnotes%).NoteFrequency \ 2
+            NEXT o%
+
+            ' semitones
+            notes(numnotes%).NoteFrequency = notes(numnotes%).NoteFrequency * s3msemitonetable#(snote% AND 15)
+          END IF
+        END IF
+
+        IF volumepresent% THEN
+          s3mvolume% = ASC(volumedata$)
+
+          notes(numnotes%).Volume = s3mvolume% * mastervolume! / 64
+        END IF
+      END IF
+
+      IF effectpresent% THEN
+        effect% = ASC(effectdata$)
+
+        SELECT CASE effect%
+          CASE 2: ' B - order jump
+            jumptoorder% = ASC(MID$(effectdata$, 2, 1)) + 1 ' 1-based
+          CASE 3: ' C - skip to next pattern
+            jumptoorder% = order% + 1
+            jumptorow% = ASC(MID$(effectdata$, 2, 1))
+
+            ' jumptorow% is now "decimal-as-hex"
+            tens% = jumptorow% \ 16
+            jumptorow% = (jumptorow% AND 15) + tens% * 10
+          CASE 22: ' V - set global volume
+            globalvolume% = ASC(MID$(effectdata$, 2, 1))
+            IF globalvolume% > 64 THEN globalvolume% = 64
+
+            ' This note needs to take effect immediately for the
+            ' entire row. So, we need to assign the value to the
+            ' first note of the row. Keeping in mind that we
+            ' might not actually have any notes on the row at
+            ' this point, but might yet see a note. So, we defer
+            ' processing to the end of the row.
+
+            newglobalvol! = globalvolume% * mastervolume! / 64
+        END SELECT
+      END IF
+    END IF
+  END IF
+LOOP
+
+jumptorow% = 0
+END SUB
+
+SUB S3MLoadSample (filenum%, sample AS SampleType, signedsampledata%, nextfreedramaddress&, mastervolume!, visualize%)
+typebyte% = ASC(INPUT$(1, #filenum%))
+filename$ = INPUT$(12, #filenum%)
+
+IF typebyte% = 1 THEN
+  parapointerhigh$ = INPUT$(1, #filenum%)
+  parapointerlow$ = INPUT$(2, #filenum%)
+
+  dataaddressbytes$ = parapointerlow$ + parapointerhigh$ + CHR$(0)
+
+  address& = CVL(dataaddressbytes$) * 16&
+
+  numbytes& = CVL(INPUT$(4, #filenum%))
+  loopstartbyte& = CVL(INPUT$(4, #filenum%))
+  loopendbyte& = CVL(INPUT$(4, #filenum%))
+
+  defaultvol% = ASC(INPUT$(1, #filenum%))
+
+  reserved$ = INPUT$(1, #filenum%)
+  pack$ = INPUT$(1, #filenum%) ' in practice always 0
+  flags% = ASC(INPUT$(1, #filenum%))
+
+  frequency& = CVL(INPUT$(4, #filenum%))
+
+  reserved$ = INPUT$(12, #filenum%)
+  reserved$ = INPUT$(28, #filenum%) ' title
+  reserved$ = INPUT$(4, #filenum%) ' signature "SCRS"
+
+  enablesampleloop% = (flags% AND 1) <> 0
+  isstereo% = (flags% AND 2) <> 0
+  is16bit% = (flags% AND 4) <> 0
+
+  IF is16bit% THEN
+    numbytes& = numbytes& * 2
+    loopstartbyte& = loopstartbyte& * 2
+    loopendbyte& = loopendbyte& * 2
+  END IF
+
+  savedoffset& = LOC(filenum%)
+
+  sample.StartAddress = nextfreedramaddress&
+  sample.EndAddress = nextfreedramaddress& + numbytes&
+  sample.LoopStartAddress = nextfreedramaddress& + loopstart&
+  sample.DefaultVolume = defaultvol% * mastervolume! / 64
+  sample.EnableLoop = (flags% AND 1) <> 0
+  sample.Is16bitSample = (flags% AND 4) <> 0
+  sample.C4Frequency = frequency&
+  sample.VisualizationColour = ABS(visualize%)
+
+  SEEK #filenum%, address& + 1
+
+  IF sample.Is16bitSample THEN samplebits% = 16 ELSE samplebits% = 8
+
+  GUSUploadSampleData filenum%, numbytes&, signedsampledata%, samplebits%, isstereo%, nextfreedramaddress&, visualize%
+
+  nextfreedramaddress& = nextfreedramaddress& + numbytes&
+
+  SEEK #filenum%, savedoffset&
+
+  visualize% = ABS(visualize%) + 1
+
+  IF visualize% = 7 THEN visualize% = 9
+  IF visualize% = 15 THEN visualize% = 1
+END IF
+END SUB
+
+SUB S3MMeasure (filenum%, numsamples%, numnotes%, numrows%)
+ignore$ = INPUT$(28, #filenum%) ' title
+signature$ = INPUT$(1, #filenum%)
+songtype$ = INPUT$(1, #filenum%)
+
+IF ASC(signature$) <> &H1A THEN GOTO failexit
+IF ASC(songtype$) <> &H10 THEN GOTO failexit
+
+ignore$ = INPUT$(2, #filenum%) ' reserved (expected to be 00 00)
+
+numorders% = CVI(INPUT$(2, #filenum%))
+numsamples% = CVI(INPUT$(2, #filenum%))
+numpatterns% = CVI(INPUT$(2, #filenum%))
+
+flags% = CVI(INPUT$(2, #filenum%))
+
+ignore$ = INPUT$(2, #filenum%) ' tracker version
+
+sampleformat% = CVI(INPUT$(2, #filenum%))
+
+signature$ = INPUT$(4, #filenum%)
+
+IF signature$ <> "SCRM" THEN GOTO failexit
+
+' global volume + initial speed + tempo + master volume
+' + ultra click removal + default pan + reserved[8]
+ignore$ = INPUT$(14, #filenum%)
+
+' "additional data" parapointer + channel_settings[32]
+ignore$ = INPUT$(2, #filenum%)
+
+' channel settings - channels with the high bit set are disabled
+channelsettings$ = INPUT$(32, #filenum%)
+
+DIM ignorechannel%(0 TO 31)
+
+FOR i% = 1 TO 32
+  ignorechannel%(i% - 1) = (ASC(MID$(channelsettings$, i%, 1)) AND 128) <> 0
+NEXT i%
+
+' Okay, great, we're at the end the header now :-)
+orderbytes% = numorders%
+sampleptrbytes% = numsamples% * 2
+patternptrbytes% = numpatterns% * 2
+
+bytesneeeded% = orderbytes% + sampleptrbytes% + patternptrbytes%
+
+IF LOF(filenum%) - LOC(filenum%) < bytesneeded% THEN GOTO failexit
+
+order$ = INPUT$(numorders%, #filenum%)
+
+ignore$ = INPUT$(sampleptrbytes%, #filenum%) ' not pertinent to measuring
+
+numnotes% = 0
+numrows% = 0
+
+patterntableoffset% = LOC(filenum%)
+
+nuls$ = STRING$(2, 0)
+
+ON LOCAL ERROR RESUME NEXT
+
+order% = 1
+
+DO WHILE order% <= LEN(order$)
+  pattern% = ASC(MID$(order$, order%, 1))
+
+  IF pattern% < 254 THEN
+    patternptroffset% = patterntableoffset% + 2 * pattern%
+
+    SEEK #filenum%, patternptroffset%
+    patternparapointer$ = INPUT$(2, #filenum%)
+
+    patternoffset& = CVL(patternparapointer$ + nuls$) * 16 + 1
+
+    SEEK #1, patternoffset&
+
+    IF ERR THEN GOTO failexit
+
+    S3MMeasurePattern filenum%, ignorechannel%(), numnotes%, numrows%, order%, jumptoorder%, jumptorow%
+  END IF
+
+  IF jumptoorder% >= 0 THEN
+    ' A jump backward is a loop. No further pattern data will be played.
+    IF jumptoorder% <= order% THEN
+      ' just in case we need a dedicated note (only thing in row)
+      numnotes% = numnotes% + 1
+      EXIT DO
+    END IF
+
+    order% = jumptoorder%
+    jumptoorder% = -1
+  ELSE
+    order% = order% + 1
+  END IF
+LOOP
+
+EXIT SUB
+
+failexit:
+  numsamples% = 0
+  numnotes% = 0
+  numrows% = 0
+END SUB
+
+SUB S3MMeasurePattern (filenum%, ignorechannel%(), numnotes%, numrows%, order%, jumptoorder%, jumptorow%)
+packedlen% = CVI(INPUT$(2, #filenum%))
+packeddata$ = INPUT$(packedlen% - 2, #filenum%)
+
+haverow% = 0
+jumptoorder% = -1
+
+i% = 1
+rownumber% = 1
+
+DO WHILE i% <= LEN(packeddata$)
+  what% = ASC(MID$(packeddata$, i%, 1))
+  i% = i% + 1
+
+  IF what% = 0 THEN
+    IF haverow% = 0 THEN numrows% = numrows% + 1 ' empty row
+
+    rownumber% = rownumber% + 1
+    haverow% = 0
+
+    IF jumptoorder% >= 0 THEN EXIT DO
+  ELSE
+    rowisplayed% = (rownumber% >= jumptorow%)
+
+    IF haverow% = 0 THEN
+      haverow% = -1
+      IF rowisplayed% THEN numrows% = numrows% + 1
+    END IF
+
+    effectpresent% = (what% AND 128) <> 0
+    volumepresent% = (what% AND 64) <> 0
+    notepresent% = (what% AND 32) <> 0
+
+    IF notepresent% THEN notedata$ = MID$(packeddata$, i%, 2): i% = i% + 2
+    IF volumepresent% THEN volumedata$ = MID$(packeddata$, i%, 1): i% = i% + 1
+    IF effectpresent% THEN effectdata$ = MID$(packeddata$, i%, 2): i% = i% + 2
+
+    channel% = what% AND 31
+
+    IF NOT ignorechannel%(channel%) THEN
+      IF rowisplayed% THEN
+        IF notepresent% OR volumepresent% THEN numnotes% = numnotes% + 1
+
+        IF effectpresent% THEN
+          effect% = ASC(effectdata$)
+
+          SELECT CASE effect%
+            CASE 2: ' B - order jump
+              jumptoorder% = ASC(MID$(effectdata$, 2, 1)) + 1 ' 1-based
+            CASE 3: ' C - skip to next pattern
+              jumptoorder% = order% + 1
+              jumptorow% = ASC(MID$(effectdata$, 2, 1))
+
+              ' jumptorow% is now "decimal-as-hex"
+              tens% = jumptorow% \ 16
+              jumptorow% = (jumptorow% AND 15) + tens% * 10
+          END SELECT
+        END IF
+      END IF
+    END IF
+  END IF
+LOOP
+
+jumptorow% = 0
+END SUB
+
+SUB S3MPlayNextRow (samples() AS SampleType, notes() AS NoteType, rownotes%(), nextrow%, nextnote%, channellastsample%(), globalvolume!)
+jumptorow% = nextrow% + 1
+
+FOR i% = 1 TO rownotes%(nextrow%)
+  S3MPlayNote samples(), notes(nextnote%), channellastsample%(), globalvolume!
+
+  IF notes(nextnote%).JumpToRowNumber >= 0 THEN
+    jumptorow% = notes(nextnote%).JumpToRowNumber
+  END IF
+
+  nextnote% = nextnote% + 1
+NEXT i%
+
+nextrow% = jumptorow%
+END SUB
+
+SUB S3MPlayNote (samples() AS SampleType, note AS NoteType, channellastsample%(), globalvolume!)
+IF note.NewGlobalVolume >= 0 THEN globalvolume! = note.NewGlobalVolume
+
+IF note.SampleNumber = 0 THEN
+  GUSStopNote note.ChannelNumber
+ELSEIF note.SampleNumber < 0 THEN
+  IF note.Volume >= 0 THEN
+    GUSSetVoiceVolume note.ChannelNumber, note.Volume * globalvolume!
+  END IF
+ELSE
+  samplenum% = note.SampleNumber
+
+  IF samplenum% > 0 THEN
+    channellastsample%(note.ChannelNumber) = samplenum%
+  ELSE
+    samplenum% = channellastsample%(note.ChannelNumber)
+  END IF
+
+  IF samplenum% > 0 THEN
+    notevolume! = note.Volume
+
+    IF notevolume! < 0 THEN notevolume! = samples(samplenum%).DefaultVolume
+
+    is16bit% = samples(samplenum%).Is16bitSample
+    startaddr& = samples(samplenum%).StartAddress
+    endaddr& = samples(samplenum%).EndAddress
+    loopsample% = samples(samplenum%).EnableLoop
+
+    GUSPlayNote note.ChannelNumber, note.NoteFrequency, notevolume!, is16bit%, startaddr&, endaddr&, loopsample%
+  END IF
+END IF
+END SUB
