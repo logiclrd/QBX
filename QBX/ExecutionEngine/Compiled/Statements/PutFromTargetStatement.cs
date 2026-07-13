@@ -1,4 +1,6 @@
 using System;
+using System.Buffers.Binary;
+using System.Resources;
 
 using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
@@ -62,7 +64,15 @@ public class PutFromTargetStatement(CodeModel.Statements.PutStatement source) : 
 
 		var stringTarget = target as StringVariable;
 
+		bool includeStringLengthPrefix =
+			(openFile.IOMode == OpenFileIOMode.Random) &&
+			(stringTarget != null) &&
+			!stringTarget.Value.IsFixedLength;
+
 		int writeSize = stringTarget?.Value.Length ?? target.DataType.ByteSize;
+
+		if (includeStringLengthPrefix)
+			writeSize += 2;
 
 		if ((openFile.IOMode == OpenFileIOMode.Random)
 		 && (writeSize > openFile.RecordLength))
@@ -73,12 +83,46 @@ public class PutFromTargetStatement(CodeModel.Statements.PutStatement source) : 
 			? stringTarget.ValueSpan
 			: EnsureBuffer(writeSize);
 
-		int numWritten = context.Machine.DOS.Read(
-			openFile.FileHandle,
-			bufferSpan);
+		int remaining, numWritten;
 
-		if (numWritten < writeSize)
-			throw RuntimeException.InputPastEndOfFile(Source);
+		if (includeStringLengthPrefix)
+		{
+			Span<byte> lengthPrefixBytes = stackalloc byte[2];
+
+			BinaryPrimitives.WriteInt16LittleEndian(lengthPrefixBytes, (short)bufferSpan.Length);
+
+			remaining = lengthPrefixBytes.Length;
+
+			while (remaining > 0)
+			{
+				numWritten = context.Machine.DOS.Write(
+					openFile.FileHandle,
+					lengthPrefixBytes,
+					out _);
+
+				if (numWritten <= 0)
+					throw RuntimeException.DeviceIOError(Source);
+
+				lengthPrefixBytes = lengthPrefixBytes.Slice(numWritten);
+				remaining -= numWritten;
+			}
+		}
+
+		remaining = bufferSpan.Length;
+
+		while (remaining > 0)
+		{
+			numWritten = context.Machine.DOS.Write(
+				openFile.FileHandle,
+				bufferSpan,
+				out _);
+
+			if (numWritten <= 0)
+				throw RuntimeException.DeviceIOError(Source);
+
+			bufferSpan = bufferSpan.Slice(numWritten);
+			remaining -= numWritten;
+		}
 
 		if (stringTarget == null)
 			target.Deserialize(bufferSpan);

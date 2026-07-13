@@ -1,0 +1,17 @@
+' Arrange
+OPEN "random1.tmp" FOR OUTPUT AS #1
+PRINT #1, CHR$(3) + CHR$(0) + "abc";
+CLOSE #1
+
+OPEN "random1.tmp" FOR RANDOM AS #1 LEN = 4
+
+ON ERROR RESUME NEXT
+GET #1, , a$
+e% = ERR
+
+CLOSE #1
+
+OPEN "TESTOUT$" FOR OUTPUT AS #1
+IF e% = 59 THEN PRINT #1, "PASS"
+CLOSE #1
+

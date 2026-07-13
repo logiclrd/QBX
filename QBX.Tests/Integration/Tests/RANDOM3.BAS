@@ -1,0 +1,22 @@
+' Arrange
+OPEN "random3.tmp" FOR OUTPUT AS #1
+PRINT #1, CHR$(3) + CHR$(0) + "abc";
+CLOSE #1
+
+OPEN "random3.tmp" FOR RANDOM AS #1 LEN = 5
+
+l1% = LOC(1)
+SEEK #1, 1
+l2% = LOC(1)
+SEEK #1, 10
+l3% = LOC(1)
+
+CLOSE #1
+
+OPEN "TESTOUT$" FOR OUTPUT AS #1
+IF l1% <> 0 THEN PRINT #1, "FAIL"
+IF l2% <> 0 THEN PRINT #1, "FAIL"
+IF l3% <> 9 THEN PRINT #1, "FAIL"
+PRINT #1, "PASS OTHERWISE"
+CLOSE #1
+

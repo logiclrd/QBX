@@ -45,8 +45,10 @@ public class LocFunction : Function
 
 			if (openFile.IOMode != OpenFileIOMode.Binary)
 				filePointer = (filePointer - 1) / 128;
+
+			filePointer++;
 		}
 
-		return new LongVariable(filePointer + 1);
+		return new LongVariable(filePointer);
 	}
 }

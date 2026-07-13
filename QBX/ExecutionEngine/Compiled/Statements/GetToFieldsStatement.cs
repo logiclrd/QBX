@@ -27,7 +27,7 @@ public class GetToFieldsStatement(CodeModel.Statements.GetStatement source) : Ge
 
 		if (RecordNumberExpression != null)
 		{
-			int recordNumber = RecordNumberExpression.EvaluateAndCoerceToInt(context, stackFrame);
+			int recordNumber = RecordNumberExpression.EvaluateAndCoerceToInt(context, stackFrame) - 1;
 
 			if (recordNumber < 1)
 				throw RuntimeException.BadRecordNumber(Source);

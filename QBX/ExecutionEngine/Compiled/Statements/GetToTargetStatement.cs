@@ -1,4 +1,5 @@
 using System;
+using System.Buffers.Binary;
 
 using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
@@ -41,7 +42,7 @@ public class GetToTargetStatement(CodeModel.Statements.GetStatement source) : Ge
 
 		if (RecordNumberExpression != null)
 		{
-			int recordNumber = RecordNumberExpression.EvaluateAndCoerceToInt(context, stackFrame);
+			int recordNumber = RecordNumberExpression.EvaluateAndCoerceToInt(context, stackFrame) - 1;
 
 			if (recordNumber < 1)
 				throw RuntimeException.BadRecordNumber(Source);
@@ -62,18 +63,52 @@ public class GetToTargetStatement(CodeModel.Statements.GetStatement source) : Ge
 
 		var stringTarget = target as StringVariable;
 
-		int readSize = stringTarget?.Value.Length ?? target.DataType.ByteSize;
+		bool useStringLengthPrefix =
+			(openFile.IOMode == OpenFileIOMode.Random) &&
+			(stringTarget != null) &&
+			!stringTarget.Value.IsFixedLength;
+
+		int alreadyRead = 0;
+		int readSize;
+		int numRead;
+
+		if (!useStringLengthPrefix)
+			readSize = stringTarget?.Value.Length ?? target.DataType.ByteSize;
+		else
+		{
+			Span<byte> lengthPrefixBytes = stackalloc byte[2];
+
+			try
+			{
+				numRead = context.Machine.DOS.Read(
+					openFile.FileHandle,
+					lengthPrefixBytes);
+
+				if (numRead < lengthPrefixBytes.Length)
+					throw RuntimeException.InputPastEndOfFile(Source);
+			}
+			catch (Exception e) when (e is not RuntimeException)
+			{
+				throw RuntimeException.DeviceIOError(Source);
+			}
+
+			alreadyRead = 2;
+			readSize = BinaryPrimitives.ReadInt16LittleEndian(lengthPrefixBytes);
+		}
 
 		if ((openFile.IOMode == OpenFileIOMode.Random)
-		 && (readSize > openFile.RecordLength))
+		 && (alreadyRead + readSize > openFile.RecordLength))
 			throw RuntimeException.BadRecordLength(Source);
+
+		if (stringTarget != null)
+			stringTarget.Value.Length = readSize;
 
 		var bufferSpan =
 			(stringTarget != null)
 			? stringTarget.ValueSpan
 			: EnsureBuffer(readSize);
 
-		int numRead = context.Machine.DOS.Read(
+		numRead = context.Machine.DOS.Read(
 			openFile.FileHandle,
 			bufferSpan);
 
