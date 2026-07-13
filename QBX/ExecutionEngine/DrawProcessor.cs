@@ -18,7 +18,7 @@ public class DrawProcessor : ProcessorCommon
 	// Remote state: Last (x, y)
 
 	GraphicsLibrary? _graphics;
-	int _colourMask;
+	int _maxColour;
 	int _colour;
 	double _angle;
 	double _scale;
@@ -28,19 +28,24 @@ public class DrawProcessor : ProcessorCommon
 		_graphics = null;
 	}
 
-	public void Initialize(GraphicsLibrary graphics, int colourMask)
+	public void Initialize(GraphicsLibrary graphics, int maxColour)
 	{
 		_graphics = graphics;
 
-		_colour = graphics.DrawingAttribute & colourMask;
-		_colourMask = colourMask;
+		_maxColour = maxColour;
+
+		SetColour(graphics.DrawingAttribute);
+
 		_angle = 0;
 		_scale = 1.0;
 	}
 
 	public void SetColour(int colour)
 	{
-		_colour = colour & _colourMask;
+		if (colour > _maxColour)
+			_colour = _maxColour;
+		else
+			_colour = colour;
 	}
 
 	public void DrawCommandString(StringValue commandString, CodeModel.Statements.Statement? source)
@@ -260,8 +265,7 @@ public class DrawProcessor : ProcessorCommon
 				{
 					AdvanceAndSkipWhitespace(ref input);
 
-					_colour = ExpectInteger(ref input, executionContext);
-					_colour &= _colourMask;
+					SetColour(ExpectInteger(ref input, executionContext));
 
 					break;
 				}
@@ -270,8 +274,7 @@ public class DrawProcessor : ProcessorCommon
 				{
 					AdvanceAndSkipWhitespace(ref input);
 
-					_colour = ExpectInteger(ref input, executionContext);
-					_colour &= _colourMask;
+					SetColour(ExpectInteger(ref input, executionContext));
 
 					if ((input.Length == 0) || (input[0] != Comma))
 						Fail();
@@ -281,7 +284,9 @@ public class DrawProcessor : ProcessorCommon
 					int borderColour;
 
 					borderColour = ExpectInteger(ref input, executionContext);
-					borderColour &= _colourMask;
+
+					if (borderColour > _maxColour)
+						borderColour = _maxColour;
 
 					_graphics.BorderFill(
 						_graphics.LastPoint.X,
