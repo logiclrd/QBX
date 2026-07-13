@@ -1,5 +1,18 @@
 # QBX Releases
 
+## 1.16.0 - 2026-07-12
+
+### Fixed
+
+- The conversion of unsigned 8-bit sample data to signed 16-bit in the Gravis UltraSound mix loop is now correct.
+- The `LOC` function now returns 0-based record numbers for files in `RANDOM` mode.
+- The `GET #` and `PUT #` functions now treat the record number provided, if any, as 1-based.
+- The `GET #` and `PUT #` functions now read/write string length prefixes when operating on a variable-length string in `RANDOM` mode.
+
+### Added
+
+- In the SHRIKE `Samples` folder, there is now a minimal S3M audio file player using the Gravis UltraSound for wavetable synthesis. Check out `PLAYSONG.BAS`.
+
 ## 1.15.4 - 2026-07-11
 
 ### Fixed
