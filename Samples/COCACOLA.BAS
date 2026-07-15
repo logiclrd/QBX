@@ -1,8 +1,8 @@
 10 REM -= Programmed by VintageWatches.PK =-
 11 REM Colours by Jonathan Gilbert
-20 KEY OFF: SCREEN 13
+20 KEY OFF: SCREEN 7
 21 REM Make a second white colour
-22 OUT &H3C8, 14: OUT &H3C9, 63: OUT &H3C9, 63: OUT &H3C9, 63
+22 PALETTE 14, 15
 30 PAINT (0, 0), 14, 14
 40 DRAW "S4C15 BM+128,124 M-8,-3 M-11,-2 M-13,1 M-15,3 M-16,3 M-11,1 L9 M-8,-3 M-4,-6 U8 M+7,-16 M+15,-17 M+10,-8 M+11,-6 M+5,1 D3 L3 M-3,5 F2 M+4,-1 M+3,-5 U6 M-5,-2 M-11,1 M-11,4 M-19,15 M-13,17 M-5,12 M+3,14 M+8,7 M+14,1"
 50 DRAW "S4C15 M+20,-3 M+8,-2 M+13,-1 M+13,1 M+10,7 M+2,-3 M+9,-2 M+11,1 M+11,4 M-14,-9 BM-44,-46 L5 M-7,2 M-13,10 M-8,12 M-1,6 M+1,4 M+5,2 M+6,-2 M+9,-6 M+8,-9 E3 M+4,-1 G M-2,4 M-3,8 M+1,4 M+5,4 M+11,-2 M+9,-6 M+1,6 M+3,2 M+8,-3"
