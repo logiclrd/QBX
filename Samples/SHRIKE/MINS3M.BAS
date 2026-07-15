@@ -4,6 +4,7 @@ DECLARE SUB S3MLoadPattern (filenum%, ignorechannel%(), samples() AS SampleType,
 DECLARE SUB S3MLoadSample (filenum%, sample AS SampleType, signedsampledata%, nextfreedramaddress&, mastervolume!, visualize%)
 DECLARE SUB S3MMeasurePattern (filenum%, ignorechannel%(), numnotes%, numrows%, order%, jumptoorder%, jumptorow%)
 DECLARE SUB S3MPlayNote (samples() AS SampleType, note AS NoteType, channellastsample%(), globalvolume!)
+DECLARE SUB S3MPlayNextRow (samples() AS SampleType, notes() AS NoteType, rownotes%(), nextrow%, nextnote%, channellastsample%(), globalvolume!)
 
 TYPE SampleType
   StartAddress AS LONG
@@ -25,11 +26,51 @@ TYPE NoteType
   NewGlobalVolume AS SINGLE ' -1 means no action
 END TYPE
 
+CONST TicksPerTIMERUnit# = 1193181# / 65536#
+CONST MaxPITRate% = 1500
+
 DIM s3msemitonetable#(15)
 
 
-SUB S3MLoad (filenum%, samples() AS SampleType, notes() AS NoteType, rownotes%(), globalvolume!)
+SUB S3MFrameWait (frameticks%, lastframetick&, rowticks%, lastrowtick&, tickbase&, samples() AS SampleType, notes() AS NoteType, rownotes%(), nextrow%, nextnote%, channellastsample%(), globalvolume!)
+nextframetick& = lastframetick& + frameticks%
+nextrowtick& = lastrowtick& + rowticks%
+
+DO
+  tick& = INT(TIMER * TicksPerTIMERUnit# + .5) + tickbase&
+
+  IF tick& < lasttick& THEN
+    tickbase& = tickbase& + 86400
+    tick& = tick& + 86400
+  END IF
+
+  WHILE nextrowtick& <= tick&
+    S3MPlayNextRow samples(), notes(), rownotes%(), nextrow%, nextnote%, channellastsample%(), globalvolume!
+
+    lastrowtick& = nextrowtick&
+    nextrowtick& = lastrowtick& + rowticks%
+  WEND
+
+  IF tick& >= nextframetick& THEN
+    lastframetick& = nextframetick&
+
+    ' Just in case we stall
+    WHILE lastframetick& + frameticks% < tick&
+      lastframetick& = lastframetick& + frameticks%
+    WEND
+
+    EXIT DO
+  END IF
+LOOP
+END SUB
+
+SUB S3MLoad (filenum%, samples() AS SampleType, notes() AS NoteType, rownotes%(), globalvolume!, fps%, frameticks%, rowticks%, tickfrequency%)
 SHARED s3msemitonetable#()
+
+' If loading fails, use the provided FPS directly.
+tickfrequency% = fps%
+frameticks% = 1
+rowticks% = 32000
 
 IF s3msemitonetable#(0) = 0 THEN
   FOR i% = 0 TO 15
@@ -90,7 +131,8 @@ IF globalvolume% > 64 THEN globalvolume% = 64
 
 globalvolume! = globalvolume% / 64
 
-ignore$ = INPUT$(2, #filenum%) 'initial speed + tempo
+speed% = ASC(INPUT$(1, #filenum%))
+tempo% = ASC(INPUT$(1, #filenum%))
 
 mastervolume% = ASC(INPUT$(1, #filenum%)) AND 127 ' bit 128 == stereo flag
 
@@ -219,6 +261,74 @@ DO WHILE order% <= LEN(order$)
 LOOP
 
 LOCATE y2%, x2%
+
+' Load succeeded -- calculate timing variables
+
+' S3M tempo is expressed in human-centric BPM, but it's really
+' configuring the number of ticks per second. The conversion
+' is chosen so that the default tempo of 125 BPM corresponds
+' exactly to the PAL vertical refresh rate of 50 Hz (which
+' itself comes from the European power grid).
+tickspersecond# = tempo% * .4
+
+' S3M speed is really misnamed, because the relationship is
+' reciprocal. It is simply the number of ticks per pattern row.
+' We need the number of pattern rows per second.
+rowspersecond# = tickspersecond# / speed%
+
+' Now we need to find a core timer rate that will generate
+' ticks at a rate that can be divided (by an integer) to
+' produce exactly rowspersecond# and as close as possible to
+' the requested fps%. It also can't be ridiculously large,
+' as IRQ 8 firing too quickly will start to impose system
+' overhead. We consider integer multiples that are themselves
+' close to integers, and which don't exceed MaxPITRate%.
+
+' Usable default in case the loop somehow fails to find
+' anything (shouldn't happen).
+besttickfrequency% = MaxPITRate%
+bestrowticks% = besttickfrequency% / rowspersecond#
+bestfpserror# = fps%
+
+rowticks% = -FIX(-fps% / rowspersecond#)
+
+DO
+  targetfrequency# = rowspersecond# * rowticks%
+
+  IF targetfrequency# >= MaxPITRate% THEN EXIT DO
+
+  proposedfrequency% = INT(targetfrequency# + .5)
+
+  proposederror# = ABS(targetfrequency# - proposedfrequency%) / rowticks%
+
+  IF proposederror# < .2 THEN
+    frameticks% = INT(proposedfrequency% / fps% + .5)
+
+    IF frameticks% >= 1 THEN
+      proposedfps# = proposedfrequency% / frameticks%
+
+      IF proposedfps# < fps% THEN
+        proposedfpserror# = fps% / proposedfps#
+      ELSE
+        proposedfpserror# = proposedfps# / fps%
+      END IF
+
+      IF proposedfpserror# < bestfpserror# THEN
+        besttickfrequency% = proposedfrequency%
+        bestrowticks% = rowticks%
+        bestfpserror# = proposedfpserror#
+
+        IF bestfpserror# = 1 THEN EXIT DO
+      END IF
+    END IF
+  END IF
+
+  rowticks% = rowticks% + 1
+LOOP
+
+tickfrequency% = besttickfrequency%
+rowticks% = bestrowticks%
+frameticks% = (tickfrequency% + fps% \ 2) \ fps%
 
 EXIT SUB
 
@@ -650,4 +760,40 @@ ELSE
     GUSPlayNote note.ChannelNumber, note.NoteFrequency, notevolume!, is16bit%, startaddr&, endaddr&, loopsample%
   END IF
 END IF
+END SUB
+
+SUB S3MProgramTimerRate (tickspersecond#)
+CONST BaseFrequency& = 1193181
+
+interval& = BaseFrequency& / tickspersecond#
+
+OUT &H43, &H36
+OUT &H40, interval&
+OUT &H40, interval& \ 256
+END SUB
+
+SUB S3MRowUpdateCheck (rowticks%, lastrowtick&, tickbase&, samples() AS SampleType, notes() AS NoteType, rownotes%(), nextrow%, nextnote%, channellastsample%(), globalvolume!)
+tick& = INT(TIMER * TicksPerTIMERUnit# + .5) + tickbase&
+
+IF tick& < lastrowtick& THEN
+  tickbase& = tickbase& + 86400
+  tick& = tick& + 86400
+END IF
+
+nextrowtick& = lastrowtick& + rowticks%
+
+WHILE nextrowtick& <= tick&
+  S3MPlayNextRow samples(), notes(), rownotes%(), nextrow%, nextnote%, channellastsample%(), globalvolume!
+
+  lastrowtick& = nextrowtick&
+  nextrowtick& = lastrowtick& + rowticks%
+WEND
+END SUB
+
+SUB S3MInitializeTiming (lastframetick&, lastrowtick&, tickbase&)
+tick& = INT(TIMER * TicksPerTIMERUnit# + .5) + tickbase&
+
+lastframetick& = tick&
+lastrowtick& = tick&
+tickbase& = 0
 END SUB
