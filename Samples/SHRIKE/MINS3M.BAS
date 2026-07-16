@@ -17,14 +17,25 @@ TYPE SampleType
   VisualizationColour AS INTEGER
 END TYPE
 
+TYPE SongType
+  FirstRowNumber AS INTEGER
+  FirstNoteNumber AS INTEGER
+END TYPE
+
 TYPE NoteType
   ChannelNumber AS INTEGER
-  SampleNumber AS INTEGER ' -1 means no action, 0 means note cut
-  NoteFrequency AS LONG
-  Volume AS SINGLE ' -1 means no action
-  JumpToRowNumber AS INTEGER ' -1 means no action
-  NewGlobalVolume AS SINGLE ' -1 means no action
+  NoteAction AS INTEGER ' encodes row number for jump, sample for note
+  NoteFrequency AS LONG ' or note number for jump
+  Volume AS SINGLE
 END TYPE
+
+CONST NoteActionStartNote% = 0 ' plus sample number
+CONST NoteActionStartNoteLast% = 255
+CONST NoteActionJump% = 256 ' plus row number
+CONST NoteActionSetNoteVolume% = 257
+CONST NoteActionSetGlobalVolume% = 258
+CONST NoteActionNoteCut% = 259
+CONST NoteActionEndSong% = 260
 
 CONST TicksPerTIMERUnit# = 1193181# / 65536#
 CONST MaxPITRate% = 1500
@@ -64,7 +75,20 @@ DO
 LOOP
 END SUB
 
-SUB S3MLoad (filenum%, samples() AS SampleType, notes() AS NoteType, rownotes%(), globalvolume!, fps%, frameticks%, rowticks%, tickfrequency%)
+SUB S3MInitializeTiming (lastframetick&, lastrowtick&, tickbase&)
+tick& = INT(TIMER * TicksPerTIMERUnit# + .5) + tickbase&
+
+lastframetick& = tick&
+lastrowtick& = tick&
+tickbase& = 0
+END SUB
+
+SUB S3MJumpToSong (song AS SongType, nextrow%, nextnote%)
+nextrow% = song.FirstRowNumber
+nextnote% = song.FirstNoteNumber
+END SUB
+
+SUB S3MLoad (filenum%, samples() AS SampleType, songs() AS SongType, notes() AS NoteType, rownotes%(), globalvolume!, fps%, frameticks%, rowticks%, tickfrequency%)
 SHARED s3msemitonetable#()
 
 ' If loading fails, use the provided FPS directly.
@@ -95,10 +119,10 @@ NEXT i%
 
 ignore$ = INPUT$(28, #filenum%) ' title
 signature$ = INPUT$(1, #filenum%)
-songtype$ = INPUT$(1, #filenum%)
+s3msongtype$ = INPUT$(1, #filenum%)
 
 IF ASC(signature$) <> &H1A THEN EXIT SUB
-IF ASC(songtype$) <> &H10 THEN EXIT SUB
+IF ASC(s3msongtype$) <> &H10 THEN EXIT SUB
 
 ignore$ = INPUT$(2, #filenum%) ' reserved (expected to be 00 00)
 
@@ -201,6 +225,10 @@ skiptorow% = -1
 numnotes% = 0
 numrows% = 0
 
+numsongs% = 0
+
+betweensongs% = -1
+
 DIM firstorderrow%(1 TO LEN(order$))
 
 x% = POS(0): y% = CSRLIN
@@ -211,10 +239,30 @@ LOCATE y%, x%
 DO WHILE order% <= LEN(order$)
   pattern% = ASC(MID$(order$, order%, 1))
 
-  IF pattern% = 254 THEN
+  IF pattern% = 255 THEN
+    PRINT ".";
+    betweensongs% = -1
+  ELSEIF pattern% = 254 THEN
     PRINT "=";
+    betweensongs% = -1
   ELSEIF pattern% < 254 THEN
     PRINT "|";
+
+    IF betweensongs% THEN
+      IF numnotes% > 0 THEN
+        numnotes% = numnotes% + 1
+        rownotes%(numrows%) = rownotes%(numrows%) + 1
+
+        notes(numnotes%).NoteAction = NoteActionEndSong%
+      END IF
+
+      numsongs% = numsongs% + 1
+
+      songs(numsongs%).FirstRowNumber = numrows% + 1
+      songs(numsongs%).FirstNoteNumber = numnotes% + 1
+
+      betweensongs% = 0
+    END IF
 
     patternptroffset% = patterntableoffset% + 2 * pattern%
 
@@ -232,29 +280,34 @@ DO WHILE order% <= LEN(order$)
     S3MLoadPattern filenum%, ignorechannel%(), samples(), mastervolume!, notes(), rownotes%(), numnotes%, numrows%, order%, jumptoorder%, jumptorow%
   END IF
 
-  IF jumptoorder% >= 0 THEN
-    ' A jump backward is a loop. No further pattern data will be played.
-    IF jumptoorder% <= order% THEN
-      jumpfromexistingnote% = 0
+  IF jumptoorder% > 0 THEN
+    IF jumptoorder% > order% THEN
+      order% = jumptoorder%
+    ELSE
+      numnotes% = numnotes% + 1
+      rownotes%(numrows%) = rownotes%(numrows%) + 1
 
-      IF numrows% >= firstorderrow%(order%) THEN
-        IF rownotes%(numrows%) > 0 THEN
-          jumpfromexistingnote% = -1
-        END IF
-      END IF
+      notes(numnotes%).NoteAction = NoteActionJump%
 
-      IF NOT jumpfromexistingnote% THEN
-        numnotes% = numnotes% + 1
-        rownotes%(numrows%) = rownotes%(numrows%) + 1
-      END IF
+      ' Calculate absolute row and note numbers from
+      ' jumptorow% relative to the target pattern.
+      jumptorow% = jumptorow% + firstorderrow%(jumptoorder%)
 
-      notes(numnotes%).JumpToRowNumber = firstorderrow%(order%)
+      jumptonote% = 1
 
-      EXIT DO
+      FOR i% = 1 TO jumptorow% - 1
+        jumptonote% = jumptonote% + rownotes%(i%)
+      NEXT i%
+
+      ' Pack the values into a spare 32-bit field.
+      notes(numnotes%).NoteFrequency = jumptonote% * 16384& + jumptorow% ' naughty overloading
+
+      ' Keep decoding to find next song start
+      order% = order% + 1
     END IF
 
-    order% = jumptoorder%
     jumptoorder% = -1
+    jumptorow% = -1
   ELSE
     order% = order% + 1
   END IF
@@ -352,8 +405,11 @@ newglobalvol! = -1
 i% = 1
 rownumber% = 1
 
+firstrowplayed% = jumptorow%
+jumptorow% = 0
+
 DO WHILE i% <= LEN(packeddata$)
-  rowisplayed% = (rownumber% >= jumptorow%)
+  rowisplayed% = (rownumber% >= firstrowplayed%)
 
   what% = ASC(MID$(packeddata$, i%, 1))
   i% = i% + 1
@@ -364,14 +420,19 @@ DO WHILE i% <= LEN(packeddata$)
         IF NOT haverow% THEN
           haverow% = -1
           numrows% = numrows% + 1
-
-          numnotes% = numnotes% + 1
-          rownotes%(numrows%) = rownotes%(numrows%) + 1
         END IF
+
+        numnotes% = numnotes% + 1
+        rownotes%(numrows%) = rownotes%(numrows%) + 1
 
         rowfirstnote% = numnotes% - rownotes%(numrows%) + 1
 
-        notes(rowfirstnote%).NewGlobalVolume = newglobalvol!
+        FOR i% = numnotes% TO rowfirstnote% + 1 STEP -1
+          notes(i%) = notes(i% - 1)
+        NEXT i%
+
+        notes(rowfirstnote%).NoteAction = NoteActionSetGlobalVolume%
+        notes(rowfirstnote%).Volume = newglobalvol!
       END IF
 
       newglobalvol! = -1
@@ -408,19 +469,26 @@ DO WHILE i% <= LEN(packeddata$)
         rownotes%(numrows%) = rownotes%(numrows%) + 1
 
         notes(numnotes%).ChannelNumber = channel%
-        notes(numnotes%).SampleNumber = -1
+        notes(numnotes%).NoteAction = -1
         notes(numnotes%).Volume = -1
-        notes(numnotes%).JumpToRowNumber = -1
-        notes(numnotes%).NewGlobalVolume = -1
 
         IF notepresent% THEN
           snote% = ASC(notedata$)
 
           IF snote% >= 254 THEN
-            notes(numnotes%).SampleNumber = 0 ' note cut
+            notes(numnotes%).NoteAction = NoteActionNoteCut%
           ELSE
-            notes(numnotes%).SampleNumber = ASC(MID$(notedata$, 2, 1))
-            notes(numnotes%).NoteFrequency = samples(notes(numnotes%).SampleNumber).C4Frequency
+            sample% = ASC(MID$(notedata$, 2, 1))
+
+            notes(numnotes%).NoteAction = NoteActionStartNote% + sample%
+
+            IF sample% > 0 THEN
+              notes(numnotes%).NoteFrequency = samples(sample%).C4Frequency
+            ELSE
+              ' Will need to scale once we know which sample
+              ' it is during playback.
+              notes(numnotes%).NoteFrequency = 44100
+            END IF
 
             ' octaves
             FOR o% = &H50 TO snote% STEP &H10
@@ -437,6 +505,10 @@ DO WHILE i% <= LEN(packeddata$)
 
         IF volumepresent% THEN
           s3mvolume% = ASC(volumedata$)
+
+          IF notes(numnotes%).NoteAction < 0 THEN
+            notes(numnotes%).NoteAction = NoteActionSetNoteVolume%
+          END IF
 
           notes(numnotes%).Volume = s3mvolume% * mastervolume! / 64
         END IF
@@ -472,8 +544,6 @@ DO WHILE i% <= LEN(packeddata$)
     END IF
   END IF
 LOOP
-
-jumptorow% = 0
 END SUB
 
 SUB S3MLoadSample (filenum%, sample AS SampleType, signedsampledata%, nextfreedramaddress&, mastervolume!, visualize%)
@@ -542,13 +612,13 @@ IF typebyte% = 1 THEN
 END IF
 END SUB
 
-SUB S3MMeasure (filenum%, numsamples%, numnotes%, numrows%)
+SUB S3MMeasure (filenum%, numsamples%, numsongs%, numnotes%, numrows%)
 ignore$ = INPUT$(28, #filenum%) ' title
 signature$ = INPUT$(1, #filenum%)
-songtype$ = INPUT$(1, #filenum%)
+s3msongtype$ = INPUT$(1, #filenum%)
 
 IF ASC(signature$) <> &H1A THEN GOTO failexit
-IF ASC(songtype$) <> &H10 THEN GOTO failexit
+IF ASC(s3msongtype$) <> &H10 THEN GOTO failexit
 
 ignore$ = INPUT$(2, #filenum%) ' reserved (expected to be 00 00)
 
@@ -605,11 +675,24 @@ nuls$ = STRING$(2, 0)
 ON LOCAL ERROR RESUME NEXT
 
 order% = 1
+numsongs% = 0
+
+betweensongs% = -1
 
 DO WHILE order% <= LEN(order$)
   pattern% = ASC(MID$(order$, order%, 1))
 
-  IF pattern% < 254 THEN
+  IF pattern% >= 254 THEN
+    betweensongs% = -1
+  ELSE
+    IF betweensongs% THEN
+      ' We may need a separate note record to end the song.
+      numnotes% = numnotes% + 1
+
+      betweensongs% = 0
+      numsongs% = numsongs% + 1
+    END IF
+
     patternptroffset% = patterntableoffset% + 2 * pattern%
 
     SEEK #filenum%, patternptroffset%
@@ -625,14 +708,15 @@ DO WHILE order% <= LEN(order$)
   END IF
 
   IF jumptoorder% >= 0 THEN
-    ' A jump backward is a loop. No further pattern data will be played.
-    IF jumptoorder% <= order% THEN
+    IF jumptoorder% > order% THEN
+      order% = jumptoorder%
+    ELSE
       ' just in case we need a dedicated note (only thing in row)
       numnotes% = numnotes% + 1
-      EXIT DO
+
+      order% = order% + 1
     END IF
 
-    order% = jumptoorder%
     jumptoorder% = -1
   ELSE
     order% = order% + 1
@@ -695,14 +779,19 @@ DO WHILE i% <= LEN(packeddata$)
 
           SELECT CASE effect%
             CASE 2: ' B - order jump
+              numnotes% = numnotes% + 1
               jumptoorder% = ASC(MID$(effectdata$, 2, 1)) + 1 ' 1-based
             CASE 3: ' C - skip to next pattern
+              numnotes% = numnotes% + 1
+
               jumptoorder% = order% + 1
               jumptorow% = ASC(MID$(effectdata$, 2, 1))
 
               ' jumptorow% is now "decimal-as-hex"
               tens% = jumptorow% \ 16
               jumptorow% = (jumptorow% AND 15) + tens% * 10
+            CASE 22: ' V - set global volume
+              numnotes% = numnotes% + 1
           END SELECT
         END IF
       END IF
@@ -719,47 +808,54 @@ jumptorow% = nextrow% + 1
 FOR i% = 1 TO rownotes%(nextrow%)
   S3MPlayNote samples(), notes(nextnote%), channellastsample%(), globalvolume!
 
-  IF notes(nextnote%).JumpToRowNumber >= 0 THEN
-    jumptorow% = notes(nextnote%).JumpToRowNumber
+  IF notes(nextnote%).NoteAction = NoteActionJump% THEN
+    ' Unpack jump target values.
+    jumptorow% = notes(nextnote%).NoteFrequency AND 16383
+    nextnote% = notes(nextnote%).NoteFrequency \ 16384
+  ELSE
+    nextnote% = nextnote% + 1
   END IF
-
-  nextnote% = nextnote% + 1
 NEXT i%
 
 nextrow% = jumptorow%
 END SUB
 
 SUB S3MPlayNote (samples() AS SampleType, note AS NoteType, channellastsample%(), globalvolume!)
-IF note.NewGlobalVolume >= 0 THEN globalvolume! = note.NewGlobalVolume
-
-IF note.SampleNumber = 0 THEN
-  GUSStopNote note.ChannelNumber
-ELSEIF note.SampleNumber < 0 THEN
-  IF note.Volume >= 0 THEN
+SELECT CASE note.NoteAction
+  CASE NoteActionSetGlobalVolume%:
+    globalvolume! = note.Volume
+  CASE NoteActionNoteCut%:
+    GUSStopNote note.ChannelNumber
+  CASE NoteActionSetNoteVolume%:
     GUSSetVoiceVolume note.ChannelNumber, note.Volume * globalvolume!
-  END IF
-ELSE
-  samplenum% = note.SampleNumber
+  CASE NoteActionStartNote% TO NoteActionStartNoteLast%:
+    samplenum% = note.NoteAction - NoteActionStartNote%
+    notefreq& = note.NoteFrequency
 
-  IF samplenum% > 0 THEN
-    channellastsample%(note.ChannelNumber) = samplenum%
-  ELSE
-    samplenum% = channellastsample%(note.ChannelNumber)
-  END IF
+    IF samplenum% > 0 THEN
+      channellastsample%(note.ChannelNumber) = samplenum%
+    ELSE
+      samplenum% = channellastsample%(note.ChannelNumber)
 
-  IF samplenum% > 0 THEN
-    notevolume! = note.Volume
+      IF samplenum% > 0 THEN
+        ' Can't calculate ahead of time when we don't know the sample number yet.
+        notefreq& = samples(samplenum%).C4Frequency * (note.NoteFrequency / 44100#)
+      END IF
+    END IF
 
-    IF notevolume! < 0 THEN notevolume! = samples(samplenum%).DefaultVolume
+    IF samplenum% > 0 THEN
+      notevolume! = note.Volume
 
-    is16bit% = samples(samplenum%).Is16bitSample
-    startaddr& = samples(samplenum%).StartAddress
-    endaddr& = samples(samplenum%).EndAddress
-    loopsample% = samples(samplenum%).EnableLoop
+      IF notevolume! < 0 THEN notevolume! = samples(samplenum%).DefaultVolume
 
-    GUSPlayNote note.ChannelNumber, note.NoteFrequency, notevolume!, is16bit%, startaddr&, endaddr&, loopsample%
-  END IF
-END IF
+      is16bit% = samples(samplenum%).Is16bitSample
+      startaddr& = samples(samplenum%).StartAddress
+      endaddr& = samples(samplenum%).EndAddress
+      loopsample% = samples(samplenum%).EnableLoop
+
+      GUSPlayNote note.ChannelNumber, notefreq&, notevolume!, is16bit%, startaddr&, endaddr&, loopsample%
+    END IF
+END SELECT
 END SUB
 
 SUB S3MProgramTimerRate (tickspersecond#)
@@ -788,12 +884,4 @@ WHILE nextrowtick& <= tick&
   lastrowtick& = nextrowtick&
   nextrowtick& = lastrowtick& + rowticks%
 WEND
-END SUB
-
-SUB S3MInitializeTiming (lastframetick&, lastrowtick&, tickbase&)
-tick& = INT(TIMER * TicksPerTIMERUnit# + .5) + tickbase&
-
-lastframetick& = tick&
-lastrowtick& = tick&
-tickbase& = 0
 END SUB

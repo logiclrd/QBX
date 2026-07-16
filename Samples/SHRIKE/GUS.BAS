@@ -213,7 +213,7 @@ STATIC vislastchar%
 
 IF visualize% < 0 THEN
   COLOR 7, 0
-  CLS
+  LOCATE 1, 1
   PRINT "GUS Memory"
   PRINT "00000"
   PRINT STRING$(80 * 8, 249)
