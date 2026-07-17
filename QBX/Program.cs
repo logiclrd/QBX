@@ -162,7 +162,13 @@ class Program
 				{
 					try
 					{
-						SDL.WarpMouseInWindow(window, machine.Mouse.X, machine.Mouse.Y);
+						// Retrieve the window size, in case it changed since the last time we set it.
+						SDL.GetWindowSize(window, out var windowWidth, out var windowHeight);
+
+						int warpToX = (machine.Mouse.X + (Mouse.MickeysPerPixel >> 1)) * windowWidth / machine.Mouse.Width;
+						int warpToY = (machine.Mouse.Y + (Mouse.MickeysPerPixel >> 1)) * windowHeight / machine.Mouse.Height;
+
+						SDL.WarpMouseInWindow(window, warpToX, warpToY);
 					}
 					catch { }
 				};
