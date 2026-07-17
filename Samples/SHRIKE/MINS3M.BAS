@@ -144,6 +144,8 @@ signature$ = INPUT$(4, #filenum%)
 
 IF signature$ <> "SCRM" THEN GOTO failexit
 
+S3MLoadCallBack 0, numsamples%, 0, numorders%
+
 ' Global Volume is a variable that can be adjusted during the
 ' song with Vxx.
 '
@@ -210,6 +212,8 @@ FOR i% = 1 TO numsamples%
   SEEK #1, sampleoffset&
 
   S3MLoadSample filenum%, samples(i%), signedsampledata%, nextfreedramaddress&, mastervolume!, visualize%
+
+  S3MLoadCallBack i%, numsamples%, 0, numorders%
 NEXT i%
 
 numnotes% = 0
@@ -311,6 +315,8 @@ DO WHILE order% <= LEN(order$)
   ELSE
     order% = order% + 1
   END IF
+
+  S3MLoadCallBack numsamples%, numsamples%, order%, numorders%
 LOOP
 
 LOCATE y2%, x2%
@@ -803,21 +809,23 @@ jumptorow% = 0
 END SUB
 
 SUB S3MPlayNextRow (samples() AS SampleType, notes() AS NoteType, rownotes%(), nextrow%, nextnote%, channellastsample%(), globalvolume!)
-jumptorow% = nextrow% + 1
+IF nextrow% >= 0 THEN
+  jumptorow% = nextrow% + 1
 
-FOR i% = 1 TO rownotes%(nextrow%)
-  S3MPlayNote samples(), notes(nextnote%), channellastsample%(), globalvolume!
+  FOR i% = 1 TO rownotes%(nextrow%)
+    S3MPlayNote samples(), notes(nextnote%), channellastsample%(), globalvolume!
 
-  IF notes(nextnote%).NoteAction = NoteActionJump% THEN
-    ' Unpack jump target values.
-    jumptorow% = notes(nextnote%).NoteFrequency AND 16383
-    nextnote% = notes(nextnote%).NoteFrequency \ 16384
-  ELSE
-    nextnote% = nextnote% + 1
-  END IF
-NEXT i%
+    IF notes(nextnote%).NoteAction = NoteActionJump% THEN
+      ' Unpack jump target values.
+      jumptorow% = notes(nextnote%).NoteFrequency AND 16383
+      nextnote% = notes(nextnote%).NoteFrequency \ 16384
+    ELSE
+      nextnote% = nextnote% + 1
+    END IF
+  NEXT i%
 
-nextrow% = jumptorow%
+  nextrow% = jumptorow%
+END IF
 END SUB
 
 SUB S3MPlayNote (samples() AS SampleType, note AS NoteType, channellastsample%(), globalvolume!)
@@ -884,4 +892,13 @@ WHILE nextrowtick& <= tick&
   lastrowtick& = nextrowtick&
   nextrowtick& = lastrowtick& + rowticks%
 WEND
+END SUB
+
+SUB S3MStop (nextrow%, nextnote%)
+nextrow% = -1
+nextnote% = -1
+
+FOR i% = 0 TO 31
+  GUSStopNote i%
+NEXT i%
 END SUB

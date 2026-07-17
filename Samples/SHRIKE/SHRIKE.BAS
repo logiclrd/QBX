@@ -1,5 +1,28 @@
 '$DYNAMIC
 
+TYPE SampleType
+  StartAddress AS LONG
+  EndAddress AS LONG
+  LoopStartAddress AS LONG
+  DefaultVolume AS SINGLE
+  EnableLoop AS INTEGER
+  Is16bitSample AS INTEGER
+  C4Frequency AS LONG
+  VisualizationColour AS INTEGER
+END TYPE
+
+TYPE SongType
+  FirstRowNumber AS INTEGER
+  FirstNoteNumber AS INTEGER
+END TYPE
+
+TYPE NoteType
+  ChannelNumber AS INTEGER
+  NoteAction AS INTEGER ' encodes row number for jump, sample for note
+  NoteFrequency AS LONG ' or note number for jump
+  Volume AS SINGLE
+END TYPE
+
 TYPE PointType
   X AS DOUBLE
   Y AS DOUBLE
@@ -88,6 +111,7 @@ END TYPE
 
 DECLARE SUB AddPoint (t AS PointType, s AS PointType)
 DECLARE SUB ApplyTransform (i AS PointType, matrix#(), o AS PointType)
+DECLARE SUB BootLog (message$)
 DECLARE SUB BossPieceDoActualSplit ()
 DECLARE SUB BossPieceDoActualSplitTo (splitfrom%(), splitfrommask%(), splitto%(), splittomask%(), copypixels%)
 DECLARE SUB BossPieceDoActualSplitFrom (splitfrom%(), splitfrommask%(), copypixels%)
@@ -127,6 +151,7 @@ DECLARE SUB EndingSequence (Dusts() AS DustType, Shots() AS ShotType, Rocks() AS
 DECLARE SUB EndScreenWin (score&)
 DECLARE SUB EndScreenLose (score&)
 DECLARE SUB FillTriangle (x1%, y1%, x2%, y2%, x3%, y3%, c%)
+DECLARE SUB FrameWait ()
 DECLARE SUB GetArtDimensions (filename$, w%, h%)
 DECLARE SUB GetObjectCounts (objfilename$, numvertices%, numnormals%, numfaces%)
 DECLARE SUB HorizontalLine (scanofs&, x1%, x2%, c%)
@@ -158,6 +183,7 @@ DECLARE SUB PaintHitGridSpriteMask (hitvalue%, ox%, oy%, mask%())
 DECLARE SUB ParseTriple (a$, p AS PointType)
 DECLARE SUB ParseVertex (a$, v AS VertexType)
 DECLARE SUB ParseVertices (a$, f AS FaceType)
+DECLARE SUB PlaySoundEffect (effect%)
 DECLARE SUB ProgramTimerRate (tickspersecond#)
 DECLARE SUB PutArt (ox#, oy#, angle#, pixels%(), mask%())
 DECLARE SUB PutGlyph (gx%, gy%, c%, w%)
@@ -169,6 +195,7 @@ DECLARE SUB RotateTransformY (matrix#(), angle#)
 DECLARE SUB RotateTransformZ (matrix#(), angle#)
 DECLARE SUB ScaleTransform (matrix#(), factor#)
 DECLARE SUB SetIdentityTransform (transform#())
+DECLARE SUB SongUpdateCheck ()
 DECLARE SUB SortFaces (faces() AS FaceType, first%, last%)
 DECLARE SUB StartBossRound (Aliens() AS AlienType, Booms() AS BoomType)
 DECLARE SUB StartRound (Aliens() AS AlienType, roundnumber%, nextround%)
@@ -295,6 +322,24 @@ CONST HitGridHeight% = 50
 CONST HitGridRock% = 1000
 CONST HitGridAlien% = 2000
 
+CONST PixelsPerSongUpdateCheck% = 1500
+
+CONST SoundEffectPew% = 1
+CONST SoundEffectSplode% = 2
+CONST SoundEffectMineRelease% = 3
+CONST SoundEffectBark% = 4
+CONST SoundEffectSplat% = 5
+
+SCREEN 0
+WIDTH 80, 25
+VIEW PRINT 1 TO 25
+CLS
+
+BootLog "SHRIKE"
+BootLog "DQDBIOS (C) 2926 Delta Q Development"
+BootLog "BIOS Date: 12-07-2926 Ver: 1.42"
+BootLog "Frame: Universal Dynamics SHRIKE 6.9"
+
 ' Load art. Unfortunately, we have to repeat the pattern like
 ' this because we can't set the array sizes within a SUB on
 ' a parameter.
@@ -311,6 +356,8 @@ GetArtDimensions "ALIEN1_B.ART", w%, h%
 DIM Alien1B%(1 TO w%, 1 TO h%), Alien1BMask%(1 TO w%, 1 TO h%)
 LoadArt "ALIEN1_B.ART", Alien1B%(), Alien1BMask%()
 
+BootLog "Power Plant: Helicon Industries Quantum Confinement Reactor"
+
 GetArtDimensions "ALIEN1_D.ART", w%, h%
 DIM Alien1D%(1 TO w%, 1 TO h%), Alien1DMask%(1 TO w%, 1 TO h%)
 LoadArt "ALIEN1_D.ART", Alien1D%(), Alien1DMask%()
@@ -318,6 +365,8 @@ LoadArt "ALIEN1_D.ART", Alien1D%(), Alien1DMask%()
 GetArtDimensions "ALIEN2_A.ART", w%, h%
 DIM Alien2A%(1 TO w%, 1 TO h%), Alien2AMask%(1 TO w%, 1 TO h%)
 LoadArt "ALIEN2_A.ART", Alien2A%(), Alien2AMask%()
+
+BootLog "Propulsion: Graviton Thrusters"
 
 GetArtDimensions "ALIEN2_B.ART", w%, h%
 DIM Alien2B%(1 TO w%, 1 TO h%), Alien2BMask%(1 TO w%, 1 TO h%)
@@ -331,6 +380,8 @@ GetArtDimensions "ALIEN3_A.ART", w%, h%
 DIM Alien3A%(1 TO w%, 1 TO h%), Alien3AMask%(1 TO w%, 1 TO h%)
 LoadArt "ALIEN3_A.ART", Alien3A%(), Alien3AMask%()
 
+BootLog "          + Inertial Field Dampener"
+
 GetArtDimensions "ALIEN3_B.ART", w%, h%
 DIM Alien3B%(1 TO w%, 1 TO h%), Alien3BMask%(1 TO w%, 1 TO h%)
 LoadArt "ALIEN3_B.ART", Alien3B%(), Alien3BMask%()
@@ -343,6 +394,8 @@ GetArtDimensions "ALIEN5_A.ART", w%, h%
 DIM Alien5A%(1 TO w%, 1 TO h%), Alien5AMask%(1 TO w%, 1 TO h%)
 LoadArt "ALIEN5_A.ART", Alien5A%(), Alien5AMask%()
 
+BootLog "Hard Point 1: Ares P-35 Medium Plasma Cycle Pulse Cannon"
+
 GetArtDimensions "ALIEN5_B.ART", w%, h%
 DIM Alien5B%(1 TO w%, 1 TO h%), Alien5BMask%(1 TO w%, 1 TO h%)
 LoadArt "ALIEN5_B.ART", Alien5B%(), Alien5BMask%()
@@ -354,6 +407,10 @@ LoadArt "ROCK01.ART", Rock01%(), Rock01Mask%()
 GetArtDimensions "ROCK02.ART", w%, h%
 DIM Rock02%(1 TO w%, 1 TO h%), Rock02Mask%(1 TO w%, 1 TO h%)
 LoadArt "ROCK02.ART", Rock02%(), Rock02Mask%()
+
+BootLog "Hard Point 2: Empty"
+BootLog "Hard Point 3: Empty"
+BootLog "Hard Point 4: Empty"
 
 GetArtDimensions "ROCK03.ART", w%, h%
 DIM Rock03%(1 TO w%, 1 TO h%), Rock03Mask%(1 TO w%, 1 TO h%)
@@ -371,6 +428,10 @@ GetArtDimensions "ROCK06.ART", w%, h%
 DIM Rock06%(1 TO w%, 1 TO h%), Rock06Mask%(1 TO w%, 1 TO h%)
 LoadArt "ROCK06.ART", Rock06%(), Rock06Mask%()
 
+BootLog ""
+BootLog "Auxiliary bus online"
+BootLog "Beginning reactor self-test"
+
 GetArtDimensions "ROCK07.ART", w%, h%
 DIM Rock07%(1 TO w%, 1 TO h%), Rock07Mask%(1 TO w%, 1 TO h%)
 LoadArt "ROCK07.ART", Rock07%(), Rock07Mask%()
@@ -386,6 +447,8 @@ LoadArt "ROCK09.ART", Rock09%(), Rock09Mask%()
 GetArtDimensions "ROCK10.ART", w%, h%
 DIM Rock10%(1 TO w%, 1 TO h%), Rock10Mask%(1 TO w%, 1 TO h%)
 LoadArt "ROCK10.ART", Rock10%(), Rock10Mask%()
+
+BootLog "Control systems nominal"
 
 GetArtDimensions "ROCK11.ART", w%, h%
 DIM Rock11%(1 TO w%, 1 TO h%), Rock11Mask%(1 TO w%, 1 TO h%)
@@ -407,6 +470,8 @@ GetArtDimensions "ROCK15.ART", w%, h%
 DIM Rock15%(1 TO w%, 1 TO h%), Rock15Mask%(1 TO w%, 1 TO h%)
 LoadArt "ROCK15.ART", Rock15%(), Rock15Mask%()
 
+BootLog "Reactor containment nominal"
+
 GetArtDimensions "ROCK16.ART", w%, h%
 DIM Rock16%(1 TO w%, 1 TO h%), Rock16Mask%(1 TO w%, 1 TO h%)
 LoadArt "ROCK16.ART", Rock16%(), Rock16Mask%()
@@ -422,6 +487,8 @@ LoadArt "BOOM02.ART", Boom02%(), Boom02Mask%()
 GetArtDimensions "BOOM03.ART", w%, h%
 DIM Boom03%(1 TO w%, 1 TO h%), Boom03Mask%(1 TO w%, 1 TO h%)
 LoadArt "BOOM03.ART", Boom03%(), Boom03Mask%()
+
+BootLog "Matter flow nominal"
 
 GetArtDimensions "BOOM04.ART", w%, h%
 DIM Boom04%(1 TO w%, 1 TO h%), Boom04Mask%(1 TO w%, 1 TO h%)
@@ -451,6 +518,8 @@ GetArtDimensions "BOOM10.ART", w%, h%
 DIM Boom10%(1 TO w%, 1 TO h%), Boom10Mask%(1 TO w%, 1 TO h%)
 LoadArt "BOOM10.ART", Boom10%(), Boom10Mask%()
 
+BootLog "Reactor bootstrap starting..."
+
 GetArtDimensions "SPLAT.ART", w%, h%
 DIM Splat%(1 TO w%, 1 TO h%), SplatMask%(1 TO w%, 1 TO h%)
 LoadArt "SPLAT.ART", Splat%(), SplatMask%()
@@ -458,6 +527,37 @@ LoadArt "SPLAT.ART", Splat%(), SplatMask%()
 GetArtDimensions "FONT.ART", w%, h%
 DIM Font%(1 TO w%, 1 TO h%), FontMask%(1 TO w%, 1 TO h%)
 LoadArt "FONT.ART", Font%(), FontMask%()
+
+' Load music and sound effects. The sample data is uploaded
+' to the Gravis UltraSound DRAM, so we don't have to store it
+' ourselves. :-)
+
+OPEN "SHRIKE.S3M" FOR BINARY AS #1
+
+S3MMeasure 1, numsamples%, numsongs%, numnotes%, numrows%
+
+SEEK #1, 1
+
+DIM songsamples(1 TO numsamples%) AS SampleType
+DIM songsongs(1 TO numsongs%) AS SongType
+DIM songnotes(1 TO numnotes%) AS NoteType
+DIM songrownotes%(1 TO numrows%)
+
+GUSReset
+
+S3MLoad 1, songsamples(), songsongs(), songnotes(), songrownotes%(), songglobalvolume!, FPSLimit%, frameticks%, songrowticks%, tickfrequency%
+
+CLOSE #1
+
+BootLog ""
+BootLog "Systems startup complete"
+BootLog ""
+BootLog "Welcome to SHRIKE, pilot!"
+
+' Ensure default timer rate initially
+S3MProgramTimerRate 18.2065
+
+st# = TIMER
 
 ' Phew!
 
@@ -555,7 +655,7 @@ DIM Splats(1 TO MaxSplats%) AS SplatType
 guncooldown% = 3 ' frames
 gunheat% = 0
 
-' 3D transfom
+' 3D transform
 
 DIM transform#(0 TO 3, 0 TO 3)
 DIM rotation#(0 TO 3, 0 TO 3) ' same as transform, but without translation
@@ -564,6 +664,13 @@ DIM rotation#(0 TO 3, 0 TO 3) ' same as transform, but without translation
 
 DIM SHARED HitGrid%(0 TO HitGridWidth% - 1, 0 TO HitGridHeight% - 1)
 DIM SHARED FighterHit%, DeathFrames%, FramesSinceDeath%
+
+' Ensure the "Welcome" message is visible long enough to read
+et# = st# + 2
+WHILE TIMER < et#
+  ' Check for midnight wrap-around, just in case
+  IF et# - TIMER > 86400 THEN et# = et# - 86400
+WEND
 
 SCREEN 13
 
@@ -587,16 +694,26 @@ FighterLightPosition.X = -30
 FighterLightPosition.Y = -90
 FighterLightPosition.Z = CameraZ#
 
-ProgramTimerRate FPSLimit%
+S3MProgramTimerRate (tickfrequency%)
+
+S3MInitializeTiming songlastframetick&, songlastrowtick&, tickbase&
+
+DIM songchannellastsample%(31)
 
 DO
+  S3MJumpToSong songsongs(1), songnextrow%, songnextnote%
+
   TitleScreen FighterVertices(), FighterNormals(), FighterFaces(), FighterLightPosition, exitgame%
+
+  S3MStop songnextrow%, songnextnote%
 
   IF exitgame% THEN EXIT DO
 
   ' Reset mouse driver
   rin.AX = 0
   CALL InterruptX(&H33, rin, rout)
+
+  S3MJumpToSong songsongs(2), songnextrow%, songnextnote%
 
   ResetGameState Dusts(), Shots(), Rocks(), Aliens(), Booms(), Splats(), BossPieceActive%(), score&, gunheat%, roundnumber%, nextround%, isbossround%
 
@@ -605,7 +722,7 @@ DO
   fightertiltangle# = 0
 
   DO
-    framestarttime! = TIMER
+    FrameWait
 
     ' Get mouse
     rin.AX = 3
@@ -649,6 +766,8 @@ DO
           Shots(shotindex%).ShotX = fighterx# + cosa# * ShotStartOffset#
           Shots(shotindex%).ShotY = FighterY% - sina# * ShotStartOffset#
           Shots(shotindex%).ShotAngle = angle#
+
+          PlaySoundEffect SoundEffectPew%
         END IF
       END IF
     END IF
@@ -836,11 +955,10 @@ DO
       CascadeFighterBoom (fighterx#), FighterY%, (fighterdx#), Booms()
     END IF
 
-    ' Framerate limit
-    WHILE TIMER = framestarttime!: WEND
-
     IF INKEY$ = CHR$(27) THEN EXIT DO
   LOOP WHILE ((FighterHit% = 0) OR (DeathFrames% > 0)) AND (ReachedEnd% = 0)
+
+  S3MStop songnextrow%, songnextnote%
 
   IF ReachedEnd% THEN
     EndingSequence Dusts(), Shots(), Rocks(), Booms(), Splats(), fighterx#
@@ -849,6 +967,11 @@ DO
     EndScreenLose score&
   END IF
 LOOP
+
+' Reset timer rate
+S3MProgramTimerRate 18.2065
+
+GUSReset
 
 SCREEN 0
 WIDTH 80, 25
@@ -863,6 +986,21 @@ SUB ApplyTransform (i AS PointType, matrix#(), o AS PointType)
 o.X = i.X * matrix#(0, 0) + i.Y * matrix#(1, 0) + i.Z * matrix#(2, 0) + matrix#(3, 0)
 o.Y = i.X * matrix#(0, 1) + i.Y * matrix#(1, 1) + i.Z * matrix#(2, 1) + matrix#(3, 1)
 o.Z = i.X * matrix#(0, 2) + i.Y * matrix#(1, 2) + i.Z * matrix#(2, 2) + matrix#(3, 2)
+END SUB
+
+SUB BootLog (message$)
+STATIC logcursory%
+
+IF logcursory% = 0 THEN logcursory% = 14
+
+VIEW PRINT 14 TO 24
+
+LOCATE logcursory%, 1
+PRINT message$
+
+logcursory% = CSRLIN
+
+VIEW PRINT
 END SUB
 
 SUB BossPieceDoActualSplit
@@ -1137,6 +1275,7 @@ END SUB
 
 SUB CascadeFighterBoom (fx%, fy%, fdx%, Booms() AS BoomType)
 IF FramesSinceDeath% = 13 OR FramesSinceDeath% = 18 OR FramesSinceDeath% = 27 THEN
+  PlaySoundEffect SoundEffectSplode%
   MakeBoom Booms(), fx%, fy%, fdx%, 0
 END IF
 END SUB
@@ -1170,6 +1309,11 @@ SHARED BossPiece6%()
 SHARED AlienSpecies() AS AlienSpeciesType
 
 SHARED ReachedEnd%
+
+playsplode% = 0
+playsplat% = 0
+
+STATIC suppresssplat%
 
 ' Render a hit grid for quick collision tests
 FOR xx% = 0 TO HitGridWidth% - 1
@@ -1256,10 +1400,12 @@ IF NOT FighterHit% THEN
           END IF
 
           IF squishyhit% THEN
+            playsplat% = -1
             Aliens(hit%).Active = 0
             score& = score& + AlienSpecies(Aliens(hit%).Species).Value
             MakeSplat Splats(), Aliens(hit%).X, Aliens(hit%).Y
           ELSE
+            playsplode% = -1
             FighterHit% = -1
             MakeBoom Booms(), fx%, fy%, fdx%, 0
             DeathFrames% = 15 * BoomFrames%
@@ -1301,12 +1447,16 @@ FOR i% = 1 TO MaxShots%
 
               Rocks(hit%).Active = 0
 
+              playsplode% = -1
+
               MakeBoom Booms(), Rocks(hit%).X, Rocks(hit%).Y, Rocks(hit%).DX, RockSpeed%
             CASE IS > HitGridAlien%:
               hit% = hit% - HitGridAlien%
 
               IF Aliens(hit%).Active THEN
                 IF Aliens(hit%).Species = 4 THEN
+                  playsplode% = -1
+
                   xx% = Shots(i%).ShotX
                   yyy% = Shots(i%).ShotY + (yyy% - yy%) * 200 \ HitGridHeight%
                   MakeBoom Booms(), xx%, yyy%, 0, 0
@@ -1340,6 +1490,8 @@ FOR i% = 1 TO MaxShots%
 
                       splitstartx% = Shots(i%).ShotX - alienleftx%
 
+                      playsplode% = -1
+
                       BossPiecePrepareForSplit sourcepiece%, hit%, splitstartx%, sourcepiecewidth%, Aliens(), Booms()
 
                       numfloaters% = RND * 3 - RND * 2
@@ -1349,8 +1501,10 @@ FOR i% = 1 TO MaxShots%
                       activealiens% = activealiens% - 1
 
                       IF AlienSpecies(killedspecies%).Squishy THEN
+                        playsplat% = -1
                         MakeSplat Splats(), Aliens(hit%).X, Aliens(hit%).Y
                       ELSE
+                        playsplode% = -1
                         MakeBoom Booms(), Aliens(hit%).ActualX, Aliens(hit%).ActualY, 0, 0
                         CreateFloaters Aliens(), Aliens(hit%)
                       END IF
@@ -1379,6 +1533,15 @@ IF activealiens% = 0 THEN
   ELSEIF nextround% > RoundInterval% \ 2 THEN
     nextround% = RoundInterval% \ 2
   END IF
+END IF
+
+IF suppresssplat% > 0 THEN suppresssplat% = suppresssplat% - 1
+
+IF playsplode% THEN
+  PlaySoundEffect SoundEffectSplode%
+  suppresssplat% = 4
+ELSEIF playsplat% AND (suppresssplat% = 0) THEN
+  PlaySoundEffect SoundEffectSplat%
 END IF
 END SUB
 
@@ -1897,12 +2060,17 @@ FOR i% = 0 TO 767
   pal%(i%) = INP(&H3C9)
 NEXT i%
 
+emitboomsound% = 0
+
 FOR i% = 1 TO MaxRocks%
   IF Rocks(i%).Active THEN
     Rocks(i%).Active = 0
     MakeBoom Booms(), Rocks(i%).X, Rocks(i%).Y, Rocks(i%).DX, RockSpeed%
+    emitboomsound% = -1
   END IF
 NEXT i%
+
+IF emitboomsound% THEN PlaySoundEffect SoundEffectSplode%
 
 flyoffy# = FighterY%
 flyoffdy# = -1.1
@@ -1911,7 +2079,7 @@ flyoffddy# = -.1
 fade% = 100
 
 DO
-  framestarttime! = TIMER
+  FrameWait
 
   delta# = 160 - fighterx#
 
@@ -1966,9 +2134,6 @@ DO
 
   ' Blit
   PUT (0, 0), buf&, PSET
-
-  ' Framerate limit
-  WHILE TIMER = framestarttime!: WEND
 LOOP WHILE fade% > 0
 
 ' Clear buffer
@@ -1986,7 +2151,7 @@ FOR i% = 0 TO 767
 NEXT i%
 
 FOR messageframe% = 0 TO 15 * FPSLimit%
-  framestarttime! = TIMER
+  FrameWait
 
   ' Clear buffer
   FOR i% = 1 TO 16000
@@ -2003,9 +2168,6 @@ FOR messageframe% = 0 TO 15 * FPSLimit%
 
   ' Blit
   PUT (0, 0), buf&, PSET
-
-  ' Framerate limit
-  WHILE TIMER = framestarttime!: WEND
 NEXT messageframe%
 
 ' Black out palette again
@@ -2057,7 +2219,7 @@ NEXT i%
 PUT (0, 0), buf&, PSET
 
 DO
-  framestarttime! = TIMER
+  FrameWait
 
   fade% = fade% + 4
 
@@ -2066,15 +2228,12 @@ DO
   FOR i% = 0 TO 767
     OUT &H3C9, pal%(i%) * fade% \ 100
   NEXT i%
-
-    ' Framerate limit
-  WHILE TIMER = framestarttime!: WEND
 LOOP WHILE fade% < 100
 
 framesleft% = 60
 
 DO
-  framestarttime! = TIMER
+  FrameWait
 
   ' Repaint static pixels
   FOR i% = 1 TO 16000
@@ -2091,6 +2250,7 @@ DO
         flyiny# = CraterY%
         hascrashed% = -1
         MakeBoom Booms(), CraterX%, CraterY%, 0, 0
+        PlaySoundEffect SoundEffectSplode%
       END IF
 
       RenderObject FighterVertices(), FighterNormals(), FighterFaces(), transform#(), rotation#(), FighterLightPosition, LightIntensity#, AmbientLightIntensity#, CraterX%, INT(flyiny#)
@@ -2115,9 +2275,6 @@ DO
 
   ' Blit
   PUT (0, 0), buf&, PSET
-
-  ' Framerate limit
-  WHILE TIMER = framestarttime!: WEND
 LOOP WHILE framesleft% > 0 OR fade% > 0
 
 CLS
@@ -2164,6 +2321,8 @@ CONST EndScreenTextX% = 240
 scoretext$ = "SCORE:" + STR$(score&)
 
 DO
+  FrameWait
+
   ' Clear buffer
   FOR i% = 1 TO 16000
     buf&(i%) = 0
@@ -2185,11 +2344,6 @@ DO
 
   ' Blit
   PUT (0, 0), buf&, PSET
-
-  ' Framerate limit
-  WHILE TIMER = framestarttime!: WEND
-
-  framestarttime! = TIMER
 LOOP WHILE INKEY$ = ""
 END SUB
 
@@ -2216,7 +2370,18 @@ CONST EndScreenTextX% = 240
 
 scoretext$ = "SCORE:" + STR$(score&)
 
+barkdelay% = RND * 300 + 200
+
 DO
+  FrameWait
+
+  ' Woof woof
+  barkdelay% = barkdelay% - 1
+  IF barkdelay% < 0 THEN
+    PlaySoundEffect SoundEffectBark%
+    barkdelay% = RND * 300 + 200
+  END IF
+
   ' Clear buffer
   FOR i% = 1 TO 16000
     buf&(i%) = 0
@@ -2234,11 +2399,6 @@ DO
 
   ' Blit
   PUT (0, 0), buf&, PSET
-
-  ' Framerate limit
-  WHILE TIMER = framestarttime!: WEND
-
-  framestarttime! = TIMER
 LOOP WHILE INKEY$ = ""
 END SUB
 
@@ -2342,6 +2502,20 @@ e% = INT(d#)
 FLOOR# = e% + (e% > d#)
 END FUNCTION
 
+SUB FrameWait
+SHARED frameticks%, songrowticks%
+SHARED lastframetick&, songlastrowtick&
+SHARED tickbase&
+SHARED songsamples() AS SampleType
+SHARED songnotes() AS NoteType
+SHARED songrownotes%()
+SHARED songnextrow%, songnextnote%
+SHARED songchannellastsample%()
+SHARED songglobalvolume!
+
+S3MFrameWait frameticks%, lastframetick&, songrowticks%, songlastrowtick&, tickbase&, songsamples(), songnotes(), songrownotes%(), songnextrow%, songnextnote%, songchannellastsample%(), songglobalvolume!
+END SUB
+
 SUB GetArtDimensions (filename$, w%, h%)
 ff% = FREEFILE
 
@@ -2378,15 +2552,33 @@ CLOSE #ff%
 END SUB
 
 SUB HorizontalLine (scanofs&, x1%, x2%, c%)
+SHARED globalpixelcounter%
+
 IF x1% <= x2% THEN
   IF x1% < 0 THEN x1% = 0
   IF x2% > 319 THEN x2% = 319
+
+  globalpixelcounter% = globalpixelcounter% + x2% - x1% + 1
+
+  IF globalpixelcounter% > PixelsPerSongUpdateCheck% THEN
+    globalpixelcounter% = globalpixelcounter% - PixelsPerSongUpdateCheck%
+    SongUpdateCheck
+  END IF
+
   FOR xx% = x1% TO x2%
     POKE scanofs& + xx%, c%
   NEXT xx%
 ELSE
   IF x2% < 0 THEN x2% = 0
   IF x1% > 319 THEN x1% = 319
+
+  globalpixelcounter% = globalpixelcounter% + x2% - x1% + 1
+
+  IF globalpixelcounter% > PixelsPerSongUpdateCheck% THEN
+    globalpixelcounter% = globalpixelcounter% - PixelsPerSongUpdateCheck%
+    SongUpdateCheck
+  END IF
+
   FOR xx% = x2% TO x1%
     POKE scanofs& + xx%, c%
   NEXT xx%
@@ -2877,17 +3069,52 @@ ELSE
 END IF
 END SUB
 
-SUB ProgramTimerRate (tickspersecond#)
-CONST BaseFrequency& = 1193181
+SUB PlaySoundEffect (effect%)
+SHARED songsamples() AS SampleType
+SHARED songchannellastsample%()
 
-interval& = BaseFrequency& / tickspersecond#
+STATIC lastpew%
 
-OUT &H43, &H36
-OUT &H40, interval&
-OUT &H40, interval& \ 256
+DIM note AS NoteType
+
+CONST NoteActionStartNote% = 0
+
+SELECT CASE effect%
+  CASE SoundEffectPew%:
+    note.ChannelNumber = 10 + lastpew%
+    note.NoteAction = NoteActionStartNote% + 16
+    note.NoteFrequency = songsamples(16).C4Frequency
+    note.Volume = 1
+
+    lastpew% = 1 - lastpew%
+  CASE SoundEffectSplode%:
+    note.ChannelNumber = 12
+    note.NoteAction = NoteActionStartNote% + 17
+    note.NoteFrequency = songsamples(17).C4Frequency
+    note.Volume = 1
+  CASE SoundEffectMineRelease%:
+    note.ChannelNumber = 13
+    note.NoteAction = NoteActionStartNote% + 18
+    note.NoteFrequency = songsamples(18).C4Frequency
+    note.Volume = 1
+  CASE SoundEffectBark%:
+    note.ChannelNumber = 8
+    note.NoteAction = NoteActionStartNote% + 9
+    note.NoteFrequency = songsamples(9).C4Frequency
+    note.Volume = 1
+  CASE SoundEffectSplat%:
+    note.ChannelNumber = 12
+    note.NoteAction = NoteActionStartNote% + 18
+    note.NoteFrequency = songsamples(18).C4Frequency * 16
+    note.Volume = .5
+END SELECT
+
+S3MPlayNote songsamples(), note, songchannellastsample%(), 1
 END SUB
 
 SUB PutArt (ox#, oy#, angle#, pixels%(), mask%())
+SHARED globalpixelcounter%
+
 w% = UBOUND(pixels%, 1) - LBOUND(pixels%, 1) + 1
 h% = UBOUND(pixels%, 2) - LBOUND(pixels%, 2) + 1
 
@@ -3071,6 +3298,13 @@ FOR yy% = yy1% TO yy2%
 
   IF xx1% < 0 THEN xx1% = 0
   IF xx2% > 319 THEN xx2% = 319
+
+  globalpixelcounter% = globalpixelcounter% + xx2% - xx1% + 1
+
+  IF globalpixelcounter% > PixelsPerSongUpdateCheck% THEN
+    globalpixelcounter% = globalpixelcounter% - PixelsPerSongUpdateCheck%
+    SongUpdateCheck
+  END IF
 
   o& = so& + xx1%
 
@@ -3364,6 +3598,62 @@ transform#(3, 3) = 1
 MultiplyMatrix matrix#(), transform#()
 END SUB
 
+SUB S3MLoadCallback (samplesloaded%, totalsamples%, ordersloaded%, totalorders%)
+STATIC lastlevel%
+
+p! = samplesloaded% / totalsamples%
+
+IF p! < .1 THEN
+  level% = 0
+ELSEIF p! < .15 THEN
+  level% = 1
+ELSEIF p! < .25 THEN
+  level% = 2
+ELSEIF p! < .3 THEN
+  level% = 3
+ELSEIF p! < .45 THEN
+  level% = 4
+ELSEIF p! < .55 THEN
+  level% = 5
+ELSEIF p! < .68 THEN
+  level% = 6
+ELSEIF p! < .71 THEN
+  level% = 7
+ELSEIF p! < .9 THEN
+  level% = 8
+END IF
+
+WHILE lastlevel% < level%
+  lastlevel% = lastlevel% + 1
+  SELECT CASE lastlevel%
+    CASE 1:
+      BootLog "Auxiliary battery levels tested"
+      BootLog "- Battery 1:" + LEFT$(STR$(90 + 9.5 * RND), 5) + "%"
+      BootLog "- Battery 2:" + LEFT$(STR$(90 + 9.5 * RND), 5) + "%"
+    CASE 2:
+      BootLog "Injector alignment nominal"
+    CASE 3:
+      BootLog "Seed module ready"
+    CASE 4:
+      BootLog "Neutron blanket established"
+    CASE 5:
+      BootLog "Cabin Environment Stabilization System Initializing"
+      FOR i% = 1 TO 2
+        st# = TIMER: WHILE st# = TIMER: WEND
+      NEXT i%
+      BootLog "Verteron flux" + STR$(INT(3000 + RND * 2000))
+    CASE 6:
+      BootLog "Verteron flux" + STR$(INT(26500 + RND * 700))
+      BootLog "Oxygen production nominal"
+    CASE 7:
+      BootLog "Verteron flux" + STR$(INT(26500 + RND * 700))
+    CASE 8:
+      BootLog "Scrubbers self-test passed"
+      BootLog "Verteron flux" + STR$(INT(26500 + RND * 700))
+  END SELECT
+WEND
+END SUB
+
 SUB ScaleTransform (matrix#(), factor#)
 FOR i% = 0 TO 3
   FOR j% = 0 TO 3
@@ -3378,6 +3668,19 @@ FOR i% = 0 TO 3
     transform#(i%, j%) = ABS(i% = j%)
   NEXT j%
 NEXT i%
+END SUB
+
+SUB SongUpdateCheck
+SHARED songrowticks%, songlastrowtick&
+SHARED tickbase&
+SHARED songsamples() AS SampleType
+SHARED songnotes() AS NoteType
+SHARED songrownotes%()
+SHARED songnextrow%, songnextnote%
+SHARED songchannellastsample%()
+SHARED songglobalvolume!
+
+S3MRowUpdateCheck songrowticks%, songlastrowtick&, tickbase&, songsamples(), songnotes(), songrownotes%(), songnextrow%, songnextnote%, songchannellastsample%(), songglobalvolume!
 END SUB
 
 SUB SortFaces (faces() AS FaceType, first%, last%)
@@ -3546,6 +3849,8 @@ DIM rotation#(0 TO 3, 0 TO 3) ' same as transform, but without translation
 float# = 0
 
 DO
+  FrameWait
+
   FOR i% = 1 TO 16000
     buf&(i%) = 0
   NEXT i%
@@ -3596,6 +3901,8 @@ END SUB
 SUB UpdateAndRenderAliens (Aliens() AS AlienType, fx%, fy%, fdx%, Booms() AS BoomType)
 SHARED AlienSpecies() AS AlienSpeciesType
 SHARED BossY%
+
+playminesoundeffect% = 0
 
 FOR i% = 1 TO MaxAliens%
   IF Aliens(i%).Active THEN
@@ -3719,6 +4026,7 @@ FOR i% = 1 TO MaxAliens%
 
             IF (Aliens(i%).FrameNumber AND 31) = 0 THEN
               CreateMine Aliens(), Aliens(i%).X, Aliens(i%).Y + AlienSpecies(1).Radius, 0
+              playminesoundeffect% = -1
             END IF
 
             IF Aliens(i%).FrameNumber > 120 THEN
@@ -3769,6 +4077,7 @@ FOR i% = 1 TO MaxAliens%
                 END IF
 
                 CreateMine Aliens(), minex#, miney#, minedx#
+                playminesoundeffect% = -1
               END IF
             END IF
           END IF
@@ -3799,6 +4108,11 @@ FOR i% = 1 TO MaxAliens%
     END IF
   END IF
 NEXT i%
+
+IF playminesoundeffect% THEN
+  PlaySoundEffect SoundEffectMineRelease%
+END IF
+
 END SUB
 
 SUB UpdateAndRenderBooms (Booms() AS BoomType)

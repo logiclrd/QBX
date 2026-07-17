@@ -139,6 +139,10 @@ FOR i% = chan1line% TO chan1line% + maxchannel%
 NEXT i%
 END SUB
 
+SUB S3MLoadCallback (a%, b%, c%, d%)
+' Must be present
+END SUB
+
 '$DYNAMIC
 FUNCTION SelectFile$
 w% = 15
