@@ -722,8 +722,6 @@ DO
   fightertiltangle# = 0
 
   DO
-    FrameWait
-
     ' Get mouse
     rin.AX = 3
     CALL InterruptX(&H33, rin, rout)
@@ -947,6 +945,8 @@ DO
     END IF
 
     ' Blit
+    FrameWait
+
     PUT (0, 0), buf&, PSET
 
     IF DeathFrames% > 0 THEN
