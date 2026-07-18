@@ -2079,8 +2079,6 @@ flyoffddy# = -.1
 fade% = 100
 
 DO
-  FrameWait
-
   delta# = 160 - fighterx#
 
   fighterdx# = fighterdx# * .8 + delta# * .1
@@ -2133,6 +2131,8 @@ DO
   DrawScore score&
 
   ' Blit
+  FrameWait
+
   PUT (0, 0), buf&, PSET
 LOOP WHILE fade% > 0
 
@@ -2151,8 +2151,6 @@ FOR i% = 0 TO 767
 NEXT i%
 
 FOR messageframe% = 0 TO 15 * FPSLimit%
-  FrameWait
-
   ' Clear buffer
   FOR i% = 1 TO 16000
     buf&(i%) = 0
@@ -2167,6 +2165,8 @@ FOR messageframe% = 0 TO 15 * FPSLimit%
   END SELECT
 
   ' Blit
+  FrameWait
+
   PUT (0, 0), buf&, PSET
 NEXT messageframe%
 
@@ -2321,8 +2321,6 @@ CONST EndScreenTextX% = 240
 scoretext$ = "SCORE:" + STR$(score&)
 
 DO
-  FrameWait
-
   ' Clear buffer
   FOR i% = 1 TO 16000
     buf&(i%) = 0
@@ -2343,6 +2341,8 @@ DO
   CentreText 160, 120, scoretext$
 
   ' Blit
+  FrameWait
+
   PUT (0, 0), buf&, PSET
 LOOP WHILE INKEY$ = ""
 END SUB
@@ -2373,8 +2373,6 @@ scoretext$ = "SCORE:" + STR$(score&)
 barkdelay% = RND * 300 + 200
 
 DO
-  FrameWait
-
   ' Woof woof
   barkdelay% = barkdelay% - 1
   IF barkdelay% < 0 THEN
@@ -2398,6 +2396,8 @@ DO
   CentreText EndScreenTextX%, 160, scoretext$
 
   ' Blit
+  FrameWait
+
   PUT (0, 0), buf&, PSET
 LOOP WHILE INKEY$ = ""
 END SUB
