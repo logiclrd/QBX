@@ -1,5 +1,19 @@
 # QBX Releases
 
+## 1.16.1 - 2026-07-18
+
+### Fixed
+
+- The `DRAW` processor now limits colours by clamping to the maximum rather than ignoring higher bits.
+- When the Set Mouse Cursor Position function of INT 33h is activated (and when the cursor is reset to the centre of the screen during a reset), the physical cursor position set on the host system is now correctly translated to the window client area.
+
+### Added
+
+- Frame and song row joint timing in `MINS3M.BAS`.
+- Support for multiple songs in an S3M file in `MINS3M.BAS`, treating empty order list entries as dividers.
+- Improved user interface for `PLAYSONG.BAS`, allowing interactive selection of S3M file and song.
+- SHRIKE now fully integrates music and sound effects.
+
 ## 1.16.0 - 2026-07-12
 
 ### Fixed
