@@ -31,7 +31,7 @@ public class NumberFormatter
 
 	public static string FormatHex(int value, bool includePrefix, bool qualify = true)
 	{
-		qualify &= ((value >= 0) && (value <= short.MaxValue));
+		qualify &= ((value >= 0) && (value <= ushort.MaxValue));
 
 		if (qualify)
 		{
@@ -53,7 +53,7 @@ public class NumberFormatter
 
 	static string FormatOctal(int value, bool includePrefix, int bits, bool forceLong)
 	{
-		forceLong &= ((value >= 0) && (value <= short.MaxValue));
+		forceLong &= ((value >= 0) && (value <= ushort.MaxValue));
 
 		var builder = new StringBuilder();
 
