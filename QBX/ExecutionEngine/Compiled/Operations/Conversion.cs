@@ -33,16 +33,16 @@ public abstract class Conversion(Evaluable value) : Evaluable
 			{
 				switch (targetType)
 				{
-					case PrimitiveDataType.Integer: return new IntegerLiteralValue(NumberConverter.ToInteger(value.GetData()));
-					case PrimitiveDataType.Long: return new LongLiteralValue(NumberConverter.ToLong(value.GetData()));
-					case PrimitiveDataType.Single: return new SingleLiteralValue(NumberConverter.ToSingle(value.GetData()));
-					case PrimitiveDataType.Double: return new DoubleLiteralValue(NumberConverter.ToDouble(value.GetData()));
-					case PrimitiveDataType.Currency: return new CurrencyLiteralValue(NumberConverter.ToCurrency(value.GetData()));
+					case PrimitiveDataType.Integer: return new IntegerLiteralValue(NumberConverter.ToInteger(value.GetData(), context));
+					case PrimitiveDataType.Long: return new LongLiteralValue(NumberConverter.ToLong(value.GetData(), context));
+					case PrimitiveDataType.Single: return new SingleLiteralValue(NumberConverter.ToSingle(value.GetData(), context));
+					case PrimitiveDataType.Double: return new DoubleLiteralValue(NumberConverter.ToDouble(value.GetData(), context));
+					case PrimitiveDataType.Currency: return new CurrencyLiteralValue(NumberConverter.ToCurrency(value.GetData(), context));
 
 					default: throw new Exception("Internal error: Failed to match PrimitiveDataType");
 				}
 			}
-			catch (RuntimeException)
+			catch (RuntimeException e) when (e.ErrorNumber != 6) // pass overflow errors through
 			{
 				throw CompilerException.IllegalNumber(expression.Source);
 			}
@@ -62,10 +62,18 @@ public abstract class Conversion(Evaluable value) : Evaluable
 			default: throw new Exception("Internal error: Unrecognized PrimitiveDataType " + targetType);
 		}
 
-		if (conversion.IsConstant)
-			return conversion.EvaluateConstant();
-		else
-			return conversion;
+		try
+		{
+			if (conversion.IsConstant)
+				return conversion.EvaluateConstant();
+			else
+				return conversion;
+		}
+		catch (CompilerException e)
+		{
+			e.AddContext(context);
+			throw;
+		}
 	}
 
 	public Evaluable Value => value;

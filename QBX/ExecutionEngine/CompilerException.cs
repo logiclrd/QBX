@@ -49,7 +49,7 @@ public class CompilerException : Exception
 	public CompilerException AddContext(CodeModel.Expressions.Expression? expression)
 		=> AddContext(expression?.Token);
 
-	CompilerException AddContext(Token? context, int? contextLength = null)
+	public CompilerException AddContext(Token? context, int? contextLength = null)
 	{
 		if (Context == null)
 		{
