@@ -97,12 +97,17 @@ public class ExpressionTests
 		var result = sut.ParseExpression(tokens, endToken);
 
 		// Assert
-		result.Should().BeOfType<LiteralExpression>();
+		result.Should().BeOfType<UnaryExpression>();
 
-		var literalExpression = (LiteralExpression)result;
+		var unaryExpression = (UnaryExpression)result;
+
+		unaryExpression.Operator.Should().Be(Operator.Negate);
+		unaryExpression.Child.Should().BeOfType<LiteralExpression>();
+
+		var literalExpression = (LiteralExpression)unaryExpression.Child;
 
 		literalExpression.Token.Should().NotBeNull();
-		literalExpression.Token!.Value.Should().Be("-" + tokens[1].Value);
+		literalExpression.Token!.Value.Should().Be(tokens[1].Value);
 	}
 
 	[Test]

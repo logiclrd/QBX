@@ -441,6 +441,8 @@ public class LexerTests
 	[TestCase("-&O12")]
 	public void NegativeNumber(string input)
 	{
+		Assume.That(input.StartsWith('-'));
+
 		// Arrange
 		var sut = new Lexer(input);
 
@@ -448,9 +450,10 @@ public class LexerTests
 		var result = sut.ToList();
 
 		// Assert
-		result.Should().HaveCount(1);
-		result[0].Type.Should().Be(TokenType.Number);
-		result[0].Value.Should().Be(input);
+		result.Should().HaveCount(2);
+		result[0].Type.Should().Be(TokenType.Minus);
+		result[1].Type.Should().Be(TokenType.Number);
+		result[1].Value.Should().Be(input.Substring(1));
 	}
 
 	[TestCase("-0")]
@@ -467,6 +470,8 @@ public class LexerTests
 	[TestCase("-&O12")]
 	public void NegativeNumberFollowedByNegativeNumber(string input)
 	{
+		Assume.That(input.StartsWith('-'));
+
 		// Arrange
 		var sut = new Lexer(input + input);
 
@@ -474,11 +479,15 @@ public class LexerTests
 		var result = sut.ToList();
 
 		// Assert
-		result.Should().HaveCount(2);
-		result[0].Type.Should().Be(TokenType.Number);
-		result[0].Value.Should().Be(input);
+		string bareInput = input.Substring(1);
+
+		result.Should().HaveCount(4);
+		result[0].Type.Should().Be(TokenType.Minus);
 		result[1].Type.Should().Be(TokenType.Number);
-		result[1].Value.Should().Be(input);
+		result[1].Value.Should().Be(bareInput);
+		result[2].Type.Should().Be(TokenType.Minus);
+		result[3].Type.Should().Be(TokenType.Number);
+		result[3].Value.Should().Be(bareInput);
 	}
 
 	[TestCase("PRINT _\na%", "PRINT a%")]

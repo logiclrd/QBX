@@ -427,8 +427,6 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 	internal Statement ParseStatement(ListRange<Token> tokens, Func<IEnumerable<Token>> consumeTokensToEndOfLine, bool isNested, bool ignoreErrors)
 	{
-		// TODO: OPTION BASE
-
 		if (!tokens.Any(token => token.Type != TokenType.Whitespace))
 			return new EmptyStatement();
 
@@ -4811,20 +4809,6 @@ public class BasicParser(IdentifierRepository identifierRepository)
 		}
 		else
 		{
-			if ((tokens.Count == 2)
-			 && (tokens[0].Type == TokenType.Minus)
-			 && (tokens[1].Type == TokenType.Number))
-			{
-				// Coalesce "-" and a number into a single token for a negative number.
-				return new LiteralExpression(
-					new Token(
-						tokens[0].LineNumberBox,
-						tokens[0].Column,
-						tokens[1].Type,
-						tokens[0].Value + tokens[1].Value,
-						tokens[1].DataType));
-			}
-
 			// Unary expressions
 			if (tokens[0].Type == TokenType.Plus)
 				return ParseExpression(tokens.Slice(1), endToken);

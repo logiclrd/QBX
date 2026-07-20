@@ -404,7 +404,18 @@ public class Lexer(TextReader input, CompilationElement? element = null, int sta
 										break;
 								}
 
-								yield return new Token(line, tokenStartColumn, TokenType.Number, buffer.ToString(), dataType);
+								// To ensure operator precedence in sequences like "A-2*B", we need to always
+								// yield the minus sign as an operator. The parser can put the parts back
+								// together if it's really a negative number, such as in "-2" or "A+-2".
+
+								if (buffer[0] == '-')
+								{
+									yield return new Token(line, tokenStartColumn, TokenType.Minus, "-");
+									yield return new Token(line, tokenStartColumn + 1, TokenType.Number, buffer.ToString(1, buffer.Length - 1), dataType);
+								}
+								else
+									yield return new Token(line, tokenStartColumn, TokenType.Number, buffer.ToString(), dataType);
+
 								buffer.Clear();
 								mode = Mode.Any;
 								tokenStartColumn = column;
@@ -445,7 +456,18 @@ public class Lexer(TextReader input, CompilationElement? element = null, int sta
 									break;
 							}
 
-							yield return new Token(line, tokenStartColumn, TokenType.Number, buffer.ToString(), dataType);
+							// To ensure operator precedence in sequences like "A-2*B", we need to always
+							// yield the minus sign as an operator. The parser can put the parts back
+							// together if it's really a negative number, such as in "-2" or "A+-2".
+
+							if (buffer[0] == '-')
+							{
+								yield return new Token(line, tokenStartColumn, TokenType.Minus, "-");
+								yield return new Token(line, tokenStartColumn + 1, TokenType.Number, buffer.ToString(1, buffer.Length - 1), dataType);
+							}
+							else
+								yield return new Token(line, tokenStartColumn, TokenType.Number, buffer.ToString(), dataType);
+
 							buffer.Clear();
 							mode = Mode.Any;
 							tokenStartColumn = column;
@@ -499,9 +521,18 @@ public class Lexer(TextReader input, CompilationElement? element = null, int sta
 									break;
 							}
 
-							string hexString = buffer.ToString(2, buffer.Length - 2);
+							// To ensure operator precedence in sequences like "A-2*B", we need to always
+							// yield the minus sign as an operator. The parser can put the parts back
+							// together if it's really a negative number, such as in "-2" or "A+-2".
 
-							yield return new Token(line, tokenStartColumn, TokenType.Number, buffer.ToString(), dataType);
+							if (buffer[0] == '-')
+							{
+								yield return new Token(line, tokenStartColumn, TokenType.Minus, "-");
+								yield return new Token(line, tokenStartColumn, TokenType.Number, buffer.ToString(1, buffer.Length - 1), dataType);
+							}
+							else
+								yield return new Token(line, tokenStartColumn, TokenType.Number, buffer.ToString(), dataType);
+
 							buffer.Clear();
 							mode = Mode.Any;
 							tokenStartColumn = column;
@@ -538,7 +569,18 @@ public class Lexer(TextReader input, CompilationElement? element = null, int sta
 									break;
 							}
 
-							yield return new Token(line, tokenStartColumn, TokenType.Number, buffer.ToString(), dataType);
+							// To ensure operator precedence in sequences like "A-2*B", we need to always
+							// yield the minus sign as an operator. The parser can put the parts back
+							// together if it's really a negative number, such as in "-2" or "A+-2".
+
+							if (buffer[0] == '-')
+							{
+								yield return new Token(line, tokenStartColumn, TokenType.Minus, "-");
+								yield return new Token(line, tokenStartColumn, TokenType.Number, buffer.ToString(1, buffer.Length - 1), dataType);
+							}
+							else
+								yield return new Token(line, tokenStartColumn, TokenType.Number, buffer.ToString(), dataType);
+
 							buffer.Clear();
 							mode = Mode.Any;
 							tokenStartColumn = column;
