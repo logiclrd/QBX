@@ -666,7 +666,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 					 || !valueExpression.Type.IsPrimitiveType)
 						throw CompilerException.TypeMismatch(assignmentStatement.ValueExpression?.Token);
 
-					valueExpression = Conversion.Construct(valueExpression, targetExpression.Type.PrimitiveType);
+					valueExpression = Conversion.Construct(valueExpression, targetExpression.Type.PrimitiveType, context: assignmentStatement.TargetExpression?.Token);
 				}
 
 				var translatedAssignmentStatement = new AssignmentStatement(assignmentStatement);
