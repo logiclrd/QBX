@@ -1,5 +1,15 @@
 # QBX Releases
 
+## 1.16.2 - 2026-07-20
+
+### Fixed
+
+- A corner case with operator precedence where a `-` operator next to a number was initially misinterpreted as being part of a negative number is fixed.
+- Hexadecimal and octal literals that resolve to different values as `INTEGER` and as `LONG` now preserve the `&` type declaration character if it is supplied.
+- Hexadecimal and octal literal values that are valid `INTEGER` values that are intrinsically negative now evaluate to these `INTEGER` values, unless they are explicitly qualified with `&`.
+- When using Shift-F5 to restart the execution of a program, if a compile error occurs, it is no longer thrown & presented twice (resulting in stacked error dialogs).
+- Some paths where context was lost, preventing compile-time errors from jumping to the error location in the IDE, have been fixed.
+
 ## 1.16.1 - 2026-07-18
 
 ### Fixed
