@@ -328,7 +328,7 @@ public class Viewport
 
 					parsedCodeLine.Render(writer);
 
-					lexer = new Lexer(new StringBuilderReader(buffer), startingLineNumber: CursorY);
+					lexer = new Lexer(new StringBuilderReader(buffer), EditableElement as CompilationElement, startingLineNumber: CursorY);
 
 					parsedCodeLine = parser.ParseCodeLines(lexer).SingleOrDefault();
 				}
