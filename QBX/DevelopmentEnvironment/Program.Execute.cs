@@ -47,8 +47,8 @@ public partial class Program
 
 	public void Run()
 	{
-		Restart();
-		Continue();
+		if (Restart())
+			Continue();
 	}
 
 	public void Terminate()
