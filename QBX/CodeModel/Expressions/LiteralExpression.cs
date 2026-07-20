@@ -111,7 +111,11 @@ public class LiteralExpression : Expression
 			if (NumberParser.TryAsInteger(chars, out var integerValue))
 				writer.Write(NumberFormatter.FormatHex(integerValue, includePrefix: true));
 			else if (NumberParser.TryAsLong(chars, out var longValue))
-				writer.Write(NumberFormatter.FormatHex(longValue, includePrefix: true));
+			{
+				bool forceLong = chars.EndsWith('&');
+
+				writer.Write(NumberFormatter.FormatHex(longValue, includePrefix: true, qualify: forceLong));
+			}
 			else
 			{
 				writer.Write(chars);
@@ -123,7 +127,11 @@ public class LiteralExpression : Expression
 			if (NumberParser.TryAsInteger(chars, out var integerValue))
 				writer.Write(NumberFormatter.FormatOctal(integerValue, includePrefix: true));
 			else if (NumberParser.TryAsLong(chars, out var longValue))
-				writer.Write(NumberFormatter.FormatOctal(longValue, includePrefix: true));
+			{
+				bool forceLong = chars.EndsWith("&");
+
+				writer.Write(NumberFormatter.FormatOctal(longValue, includePrefix: true, qualify: forceLong));
+			}
 			else
 			{
 				writer.Write(chars);
