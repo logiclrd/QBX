@@ -9,9 +9,21 @@ public class PromptToSaveDialog : Dialog
 {
 	public event Action? Save;
 	public event Action? DoNotSave;
+	public event Action? Cancel;
 
-	protected void OnSave() => Save?.Invoke();
-	protected void OnDoNotSave() => DoNotSave?.Invoke();
+	bool _isCancelled = true;
+
+	protected void OnSave() { _isCancelled = false; Save?.Invoke(); }
+	protected void OnDoNotSave() { _isCancelled = false; DoNotSave?.Invoke(); }
+	protected void OnCancel() => Cancel?.Invoke();
+
+	protected override void OnClosed()
+	{
+		base.OnClosed();
+
+		if (_isCancelled)
+			OnCancel();
+	}
 
 	public PromptToSaveDialog(Machine machine, Configuration configuration)
 		: base(machine, configuration)
@@ -38,7 +50,7 @@ public class PromptToSaveDialog : Dialog
 				Y = 4,
 				Text = "Yes",
 				Width = 7,
-				Activated = () => { Close(); OnSave(); }
+				Activated = () => { Close(); OnSave(); },
 			});
 
 		Widgets.Add(
@@ -49,7 +61,7 @@ public class PromptToSaveDialog : Dialog
 				Text = "No",
 				Width = 8,
 				AccessKeyIndex = 0,
-				Activated = () => { Close(); OnDoNotSave(); }
+				Activated = () => { Close(); OnDoNotSave(); },
 			});
 
 		Widgets.Add(
@@ -58,8 +70,8 @@ public class PromptToSaveDialog : Dialog
 				X = midX + 1,
 				Y = 4,
 				Text = "Cancel",
-				Activated = Close,
 				Width = 8,
+				Activated = Close,
 			});
 
 		Widgets.Add(

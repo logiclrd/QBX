@@ -1080,23 +1080,37 @@ public partial class Program
 			SplitViewport.SwitchTo(element);
 	}
 
-	private bool CommitViewportsOrPresentError()
-		=> CommitViewportOrPresentError(PrimaryViewport)
-		&& CommitViewportOrPresentError(SplitViewport);
-
-	private bool CommitViewportOrPresentError(Viewport? viewport)
+	private bool CommitViewportsAndSwallowError()
 	{
 		try
 		{
-			viewport?.CommitCurrentLine();
+			CommitViewports();
+			return true;
+		}
+		catch
+		{
+			return false;
+		}
+	}
+
+	private bool CommitViewportsOrPresentError()
+	{
+		try
+		{
+			CommitViewports();
 			return true;
 		}
 		catch (Exception exception)
 		{
 			PresentError(exception);
+			return false;
 		}
+	}
 
-		return false;
+	private void CommitViewports()
+	{
+		PrimaryViewport?.CommitCurrentLine();
+		SplitViewport?.CommitCurrentLine();
 	}
 
 	private void InstantWatchAtCurrentCursorLocation()

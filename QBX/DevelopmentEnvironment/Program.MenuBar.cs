@@ -287,16 +287,16 @@ public partial class Program
 
 	private void mnuFileNew_Clicked()
 	{
-		if (CommitViewportsOrPresentError())
-			PromptToSaveChanges(StartNewProgram);
+		CommitViewportsAndSwallowError();
+		PromptToSaveChanges(StartNewProgram);
 	}
 
 	private void mnuFileSave_Clicked()
 	{
 		if (FocusedViewport?.EditableUnit is CompilationUnit unit)
 		{
-			if (CommitViewportsOrPresentError())
-				InteractiveSaveIfUnitHasNoFilePath(unit);
+			CommitViewportsAndSwallowError();
+			InteractiveSaveIfUnitHasNoFilePath(unit);
 		}
 	}
 
@@ -304,33 +304,38 @@ public partial class Program
 	{
 		if (FocusedViewport?.EditableUnit is CompilationUnit unit)
 		{
-			if (CommitViewportsOrPresentError())
-				InteractiveSave(unit, title: DevelopmentEnvironment.Dialogs.SaveFileDialogTitle.SaveAs);
+			CommitViewportsAndSwallowError();
+			InteractiveSave(unit, title: DevelopmentEnvironment.Dialogs.SaveFileDialogTitle.SaveAs);
 		}
 	}
 
 	private void mnuFileSaveAll_Clicked()
 	{
-		if (CommitViewportsOrPresentError())
-			SaveAll();
+		CommitViewportsAndSwallowError();
+		SaveAll();
 	}
 
 	private void mnuFileOpenProgram_Clicked()
 	{
-		if (CommitViewportsOrPresentError())
-			ShowOpenFileDialog(replaceExistingProgram: true);
+		CommitViewportsAndSwallowError();
+		ShowOpenFileDialog(replaceExistingProgram: true);
 	}
 
 	private void mnuFileCreateFile_Clicked()
 	{
-		if (CommitViewportsOrPresentError())
-			ShowCreateFileDialog();
+		CommitViewportsAndSwallowError();
+		ShowCreateFileDialog();
 	}
 
 	private void mnuFileLoadFile_Clicked()
 	{
-		if (CommitViewportsOrPresentError())
-			ShowOpenFileDialog(replaceExistingProgram: false);
+		CommitViewportsAndSwallowError();
+		ShowOpenFileDialog(replaceExistingProgram: false);
+	}
+
+	void mnuFileExit_Clicked()
+	{
+		ExitWithSavePrompt();
 	}
 
 	private void mnuViewSplit_Clicked()
@@ -712,10 +717,5 @@ public partial class Program
 	{
 		if (mnuCalls.Count > 1)
 			mnuCalls.RemoveAt(0);
-	}
-
-	void mnuFileExit_Clicked()
-	{
-		ExitWithSavePrompt();
 	}
 }

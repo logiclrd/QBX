@@ -8,7 +8,7 @@ namespace QBX.DevelopmentEnvironment
 {
 	partial class Program
 	{
-		public void PromptToSaveChanges(Action continuation)
+		public void PromptToSaveChanges(Action continuation, Action? cancellation = null)
 		{
 			int i = 0;
 			bool saving = false;
@@ -22,9 +22,9 @@ namespace QBX.DevelopmentEnvironment
 					i++;
 
 					if (!saving)
-						PromptToSaveChanges(unit, Continue, notifySave: () => saving = true);
+						PromptToSaveChanges(unit, Continue, cancellation, notifySave: () => saving = true);
 					else
-						InteractiveSave(unit, Continue);
+						InteractiveSave(unit, Continue, cancellation);
 				}
 				else
 					continuation();
@@ -33,7 +33,7 @@ namespace QBX.DevelopmentEnvironment
 			Continue();
 		}
 
-		public Dialog? PromptToSaveChanges(IEditableUnit unit, Action continuation, Action? notifySave = null)
+		public Dialog? PromptToSaveChanges(IEditableUnit unit, Action continuation, Action? cancellation = null, Action? notifySave = null)
 		{
 			if (unit.IsPristine)
 			{
@@ -51,6 +51,8 @@ namespace QBX.DevelopmentEnvironment
 				};
 
 			dialog.DoNotSave += continuation;
+
+			dialog.Cancel += cancellation;
 
 			return ShowDialog(dialog);
 		}
@@ -95,9 +97,11 @@ namespace QBX.DevelopmentEnvironment
 				InteractiveSave(unit);
 		}
 
-		public void InteractiveSave(IEditableUnit unit, Action? continuation = null, SaveFileDialogTitle title = SaveFileDialogTitle.Save)
+		public void InteractiveSave(IEditableUnit unit, Action? continuation = null, Action? cancellation = null, SaveFileDialogTitle title = SaveFileDialogTitle.Save)
 		{
 			var dialog = new SaveFileDialog(Machine, Configuration, title, unit.FilePath);
+
+			bool cancelled = true;
 
 			dialog.Error +=
 				(error) =>
@@ -110,12 +114,16 @@ namespace QBX.DevelopmentEnvironment
 				{
 					SaveFile(unit, filePath);
 					dialog.Close();
+					cancelled = false;
 				};
 
 			dialog.Closed +=
 				(_, _) =>
 				{
-					continuation?.Invoke();
+					if (!cancelled)
+						continuation?.Invoke();
+					else
+						cancellation?.Invoke();
 				};
 
 			ShowDialog(dialog);
@@ -140,25 +148,37 @@ namespace QBX.DevelopmentEnvironment
 				{
 					dialog.IsVisible = false;
 
-					var dummyUnit = CompilationUnit.CreateNew();
+					void DoOpenFile()
+					{
+						var dummyUnit = CompilationUnit.CreateNew();
 
-					dummyUnit.FilePath = filePath;
+						dummyUnit.FilePath = filePath;
 
-					FocusedViewport.SwitchTo(dummyUnit.Elements[0]);
+						FocusedViewport.SwitchTo(dummyUnit.Elements[0]);
 
-					Render();
+						Render();
 
-					LoadFile(
-						filePath,
-						replaceExistingProgram,
-						lineCountCallback:
-							lineCount =>
-							{
-								TextLibrary.MoveCursor(0, TextLibrary.Height - 1);
-								RenderReferenceBar(overrideLineNumber: lineCount);
-							});
+						LoadFile(
+							filePath,
+							replaceExistingProgram,
+							lineCountCallback:
+								lineCount =>
+								{
+									TextLibrary.MoveCursor(0, TextLibrary.Height - 1);
+									RenderReferenceBar(overrideLineNumber: lineCount);
+								});
 
-					dialog.Close();
+						dialog.Close();
+					}
+
+					if (!replaceExistingProgram)
+						DoOpenFile();
+					else
+					{
+						PromptToSaveChanges(
+							continuation: DoOpenFile,
+							cancellation: dialog.Close);
+					}
 				};
 
 			ShowDialog(dialog);

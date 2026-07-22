@@ -193,7 +193,7 @@ public abstract class Dialog(Machine machine, Configuration configuration) : IFo
 				break;
 
 			case ScanCode.Escape:
-				Closed?.Invoke(this, EventArgs.Empty);
+				OnClosed();
 				break;
 
 			default:

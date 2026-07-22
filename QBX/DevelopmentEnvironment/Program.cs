@@ -811,7 +811,7 @@ public partial class Program : HostedProgram, IOvertypeFlag
 
 	public void ExitWithSavePrompt()
 	{
-		if (CommitViewportsOrPresentError())
-			PromptToSaveChanges(continuation: Exit);
+		CommitViewportsAndSwallowError();
+		PromptToSaveChanges(continuation: Exit);
 	}
 }
