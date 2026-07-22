@@ -3454,7 +3454,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 							{
 								var range = arguments[4].Unwrap();
 
-								throw new SyntaxErrorException(tokens[range.Offset - 1], "Expected: end of statement");
+								throw new SyntaxErrorException(tokenHandler[range.Offset - 1], "Expected: end of statement");
 							}
 						}
 					}
