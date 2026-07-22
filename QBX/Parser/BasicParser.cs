@@ -349,7 +349,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 				lastToken.LineNumberBox,
 				lastToken.Column + lastToken.Length,
 				TokenType.Empty,
-				"");
+				" ");
 
 			var parsedStatement = ParseStatementWithIndentation(
 				buffer,
@@ -3402,11 +3402,18 @@ public class BasicParser(IdentifierRepository identifierRepository)
 					? tokens[arguments[1].Unwrap().Offset - 1]
 					: tokenHandler.EndToken;
 
-				screen.ModeExpression = ParseExpressionForStatement(screen, arguments[0], modeEndToken);
+				bool haveMode = arguments[0].Count > 0;
+				bool omitModeAllowed = arguments.Count > 1;
+
+				if (haveMode || !omitModeAllowed)
+					screen.ModeExpression = ParseExpressionForStatement(screen, arguments[0], modeEndToken);
 
 				if (arguments.Count > 1)
 				{
-					if (arguments[1].Any())
+					bool haveColour = arguments[1].Count > 0;
+					bool omitColourAllowed = arguments.Count > 2;
+
+					if (haveColour || !omitColourAllowed)
 					{
 						var endToken = arguments.Count > 2
 							? tokens[arguments[2].Unwrap().Offset - 1]
@@ -3417,7 +3424,10 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 					if (arguments.Count > 2)
 					{
-						if (arguments[2].Any())
+						bool haveActivePage = arguments[2].Count > 0;
+						bool omitActivePageAllowed = arguments.Count > 3;
+
+						if (haveActivePage || !omitActivePageAllowed)
 						{
 							var endToken = arguments.Count > 3
 								? tokens[arguments[3].Unwrap().Offset - 1]
@@ -3428,23 +3438,17 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 						if (arguments.Count > 3)
 						{
-							if (!arguments[3].Any())
+							bool haveVisiblePage = arguments[3].Count > 0;
+							bool omitVisiblePageAllowed = arguments.Count > 4;
+
+							if (haveVisiblePage || !omitVisiblePageAllowed)
 							{
-								if (arguments.Count > 4)
-								{
-									var range = arguments[4].Unwrap();
+								var endToken = arguments.Count > 4
+									? tokens[arguments[4].Unwrap().Offset - 1]
+									: tokenHandler.EndToken;
 
-									throw new SyntaxErrorException(tokens[range.Offset - 1], "Expected: expression");
-								}
-								else
-									throw new SyntaxErrorException(tokenHandler.EndToken, "Expected: expression");
+								screen.VisiblePageExpression = ParseExpressionForStatement(screen, arguments[3], endToken);
 							}
-
-							var endToken = arguments.Count > 4
-								? tokens[arguments[4].Unwrap().Offset - 1]
-								: tokenHandler.EndToken;
-
-							screen.VisiblePageExpression = ParseExpressionForStatement(screen, arguments[3], endToken);
 
 							if (arguments.Count > 4)
 							{
