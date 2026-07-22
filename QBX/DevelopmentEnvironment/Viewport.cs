@@ -217,7 +217,8 @@ public class Viewport
 		if (buffer == null)
 			return false;
 
-		if (EditableUnit is not CompilationUnit unit)
+		if ((EditableUnit is not CompilationUnit unit)
+		 || (EditableElement is not CompilationElement element))
 		{
 			EditableElement.ReplaceLine(CursorY, EditableElement.ConstructLine(buffer));
 			return false;
@@ -225,7 +226,7 @@ public class Viewport
 
 		try
 		{
-			var lexer = new Lexer(new StringBuilderReader(buffer), EditableElement as CompilationElement, startingLineNumber: CursorY);
+			var lexer = new Lexer(new StringBuilderReader(buffer), element, startingLineNumber: CursorY);
 
 			var parser = new BasicParser(unit.IdentifierRepository);
 
@@ -342,8 +343,15 @@ public class Viewport
 			// => don't know if this is going to be possible, but if it is, it's probably
 			// going to involve transplanting execution state and reconstructing call stacks
 		}
-		catch
+		catch (Exception e)
 		{
+			if (e is SyntaxErrorException error)
+			{
+				// The error's context needs to link back to the CompilationElement for the IDE to highlight it.
+				if (error.Token.OwnerElement == null)
+					error.Token.OwnerElement = element;
+			}
+
 			ReplaceCurrentLine(CodeLine.CreateUnparsed(buffer.ToString()));
 
 			if (!IsDirectMode)
