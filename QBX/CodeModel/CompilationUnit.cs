@@ -246,7 +246,7 @@ public class CompilationUnit : IRenderableCode, IEditableUnit
 
 			var parser = new BasicParser(IdentifierRepository);
 
-			var parsedDeclaration = parser.ParseCodeLines(lexer, ignoreErrors: true).FirstOrDefault(); ;
+			var parsedDeclaration = parser.ParseCodeLines(lexer, ignoreErrors: true).FirstOrDefault();
 
 			if (parsedDeclaration != null)
 				newDeclarations.Add(parsedDeclaration);
