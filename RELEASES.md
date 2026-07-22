@@ -1,5 +1,16 @@
 # QBX Releases
 
+## 1.16.3 - 2026-07-22
+
+### Fixed
+
+- `SCREEN` now allows the `mode%` argument to be omitted, as long as at least one later argument is supplied.
+- Errors at the ends of lines will now show the space character after the end of the line as selected while the error dialog is presented.
+- Syntax errors that occur while committing an edited line of text now highlight the correct token in the correct viewport.
+- If too many arguments to `SCREEN` are supplied, the correct character is now highlighted while presenting the associated syntax error.
+- Errors parsing the current line of text when activating File menu items no longer interrupt the operation to present the error.
+- When using File->Open, if the current compilation unit has changes, the IDE now prompts the user to save them.
+
 ## 1.16.2 - 2026-07-20
 
 ### Fixed
