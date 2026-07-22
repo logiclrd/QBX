@@ -13,7 +13,7 @@ public class Lexer(TextReader input, CompilationElement? element = null, int sta
 {
 	TextReader _input = input;
 	bool _consumed = false;
-	Token _endToken = new Token(new MutableBox<int>(-1), -1, TokenType.Empty, "");
+	Token _endToken = new Token(new MutableBox<int>(-1), -1, TokenType.Empty, " ");
 
 	public Token EndToken => _endToken;
 

@@ -35,7 +35,7 @@ public class ExpressionTests
 	}
 
 	Token MakeEndToken(IEnumerable<Token> tokens)
-		=> new Token(new MutableBox<int>(1), tokens.Max(tok => tok.Column + tok.Length), TokenType.Empty, "");
+		=> new Token(new MutableBox<int>(1), tokens.Max(tok => tok.Column + tok.Length), TokenType.Empty, " ");
 
 	[Test]
 	public void NumericLiteral()
@@ -722,7 +722,7 @@ public class ExpressionTests
 
 		var lastToken = tokens.Last();
 
-		var endToken = new Token(lastToken.LineNumberBox, lastToken.Column + lastToken.Length, TokenType.Empty, "");
+		var endToken = new Token(lastToken.LineNumberBox, lastToken.Column + lastToken.Length, TokenType.Empty, " ");
 
 		var sut = new BasicParser(identifierRepository);
 

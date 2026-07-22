@@ -40,7 +40,7 @@ public class TokenHandler(ListRange<Token> tokens, IdentifierRepository identifi
 				lastToken.LineNumberBox,
 				lastToken.Column + (lastToken.Value?.Length ?? 1),
 				TokenType.Empty,
-				"");
+				" ");
 		}
 	}
 
