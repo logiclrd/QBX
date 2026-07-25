@@ -75,6 +75,9 @@ class Program
 				return 2;
 			}
 
+			// Disable the translation of raw key events to text input events.
+			SDL.StopTextInput(window);
+
 			bool fullScreen = false;
 
 			void ToggleFullScreen()
