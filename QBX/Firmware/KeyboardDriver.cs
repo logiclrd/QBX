@@ -92,7 +92,14 @@ public class KeyboardDriver
 		while (ActiveKeyboardLayout.TryGetNextTranslatedKeyPress(out var translatedData))
 		{
 			if (!_altNumPadEntry.ProcessKeyEvent(translatedData))
-				yield return new KeyEvent(translatedData);
+			{
+				var keyEvent = new KeyEvent(translatedData);
+
+				if (_altNumPadEntry.InputQueue.Any())
+					keyEvent.IsKeyPad = true; // When releasing Alt, if characters were generated, set IsKeyPad.
+
+				yield return keyEvent;
+			}
 		}
 
 		if (_altNumPadEntry.InputQueue.Any())

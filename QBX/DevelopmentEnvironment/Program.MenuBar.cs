@@ -468,7 +468,12 @@ public partial class Program
 				switch (AltReleaseAction)
 				{
 					case AltRelease.Ignore: break;
-					case AltRelease.ActivateMenuBar: SelectedMenu = 0; break;
+					case AltRelease.ActivateMenuBar:
+						if (input.IsKeyPad) // Alt-NumPad character entry.
+							Mode = UIMode.TextEditor;
+						else
+							SelectedMenu = 0;
+						break;
 					case AltRelease.DeactivateMenuBar: Mode = UIMode.TextEditor; break;
 				}
 
