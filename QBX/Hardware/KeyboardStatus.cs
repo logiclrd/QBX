@@ -8,8 +8,8 @@ public class KeyboardStatus(SystemMemory systemMemory)
 
 	public const int Byte0Address = 1047;
 	public const int Byte1Address = 1048;
-	public const int Byte2Address = 1121;
-	public const int Byte3Address = 1120;
+	public const int Byte2Address = 1175;
+	public const int Byte3Address = 1174;
 
 	public abstract class ByteData(SystemMemory memory)
 	{
