@@ -550,14 +550,14 @@ public class ExecutionContext
 					{
 						executable.Execute(this, stackFrame);
 					}
-					catch (BreakExecution)
+					catch (BreakExecution bex)
 					{
 						if (!_executionState.IgnoreBreakFromNextStatement)
 						{
 							if (executable.CanBreak)
 							{
 								Controls.Break();
-								retryStatement = true;
+								retryStatement = bex.RetryStatement;
 							}
 							else
 								throw;

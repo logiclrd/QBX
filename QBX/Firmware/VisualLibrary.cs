@@ -681,7 +681,7 @@ public abstract class VisualLibrary : IDisposable
 				if ((evt == null) || evt.IsRelease)
 					continue;
 
-				if (evt.ScanCode == ScanCode.Backspace)
+				if ((evt.ScanCode == ScanCode.Backspace) || (evt.TextCharacter == '\b'))
 				{
 					if (buffer.Length > 0)
 					{
@@ -699,20 +699,79 @@ public abstract class VisualLibrary : IDisposable
 						WriteTextAt(x, y, ' ');
 					}
 				}
-				else if (evt.ScanCode == ScanCode.Return)
+				else if ((evt.ScanCode == ScanCode.Return) || (evt.TextCharacter == '\r'))
 				{
 					if (echoNewline)
 						NewLine();
 					break;
 				}
-				else if (evt.TextCharacter != '\0')
+				else if ((evt.ScanCode == ScanCode.Tab) || (evt.TextCharacter == '\t'))
 				{
-					buffer.Append(evt.TextCharacter);
-
-					WriteText(evt.TextCharacter);
+					do
+					{
+						buffer.Append(' ');
+						WriteText(' ');
+					} while ((buffer.Length & 7) != 0);
 
 					x = CursorX;
 					y = CursorY;
+				}
+				else if ((evt.ScanCode == ScanCode.Insert) || (evt.TextCharacter == (char)18))
+				{
+					// TODO: toggle overtype mode
+				}
+				else if (evt.TextCharacter != '\0')
+				{
+					switch (evt.TextCharacter)
+					{
+						case (char)2: // ^B - treated as home key
+							// TODO
+							break;
+						case (char)3: // ^C
+							throw new BreakExecution() { RetryStatement = false };
+						case (char)5: // ^E -- nothing?
+						case (char)6: // ^F -- nothing?
+						case (char)7: // ^G -- nothing?
+						case (char)10: // ^J -- nothing?
+						case (char)11: // ^K -- nothing?
+						case (char)12: // ^L -- nothing?
+						case (char)14: // ^N -- nothing?
+							break;
+						case (char)21: // ^U -- clear line
+						case (char)27: // Esc -- clear line
+							while (buffer.Length > 0)
+							{
+								buffer.Length--;
+								x--;
+								if (x < 0)
+								{
+									x += CharacterWidth;
+									y--;
+
+									if (y < 0)
+										y = 0;
+								}
+
+								WriteTextAt(x, y, ' ');
+							}
+
+							break;
+						case (char)28: // right arrow
+						case (char)29: // left arrow
+						case (char)30: // up arrow
+						case (char)31: // down arro
+							// TODO
+							break;
+						default:
+							buffer.Append(evt.TextCharacter);
+
+							WriteText(evt.TextCharacter);
+
+							x = CursorX;
+							y = CursorY;
+
+							break;
+					}
 				}
 			}
 
