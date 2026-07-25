@@ -1,5 +1,20 @@
 # QBX Releases
 
+## 1.17.0 - 2026-07-25
+
+### Fixed
+
+- Extremely narrow circles (very large and very small aspect ratios) no longer sometimes leave holes in the circle outline.
+- When `SCREEN` is used to change the visible page, it now waits for vertical retrace.
+- The `PUT` (graphics) statement in `PRESET` mode no longer incorrectly maps to the `PSET` action.
+- Keyboard status bytes 2 and 3 are now stored in the correct BIOS data area offsets.
+- Text input (`INPUT`, `LINE INPUT`) now recognizes control characters (such as ^U to clear the input). There remain gaps in the implementation (the cursor can still only be at the end of the text), but all the characters are recognized.
+
+### Added
+
+- Much of the BIOS Data Area is now populated and updated. Omitted fields are mostly to do with floppy disks, hard disks, COM ports and parallel ports.
+- Alt-NumPad character entry is now supported.
+
 ## 1.16.3 - 2026-07-22
 
 ### Fixed
