@@ -1272,6 +1272,9 @@ public abstract class GraphicsLibrary : VisualLibrary
 			}
 
 			// Quadrants 1, 2, 5 and 6
+			int connectToSX = sx;
+			int connectToSY = sy;
+
 			sx = 0;
 			sy = radiusY;
 
@@ -1326,6 +1329,31 @@ public abstract class GraphicsLibrary : VisualLibrary
 					yStop -= twoRadiusXSquared;
 					ellipseError += yChange;
 					yChange += twoRadiusXSquared;
+				}
+			}
+
+			while (sy >= connectToSY)
+			{
+				SpanPlot(1, +1, +1);
+				SpanPlot(2, -1, +1);
+				SpanPlot(5, -1, -1);
+				SpanPlot(6, +1, -1);
+
+				sy--;
+			}
+
+			if (sx <= connectToSX)
+			{
+				sy++;
+
+				while (sx <= connectToSX)
+				{
+					SpanPlot(1, +1, +1);
+					SpanPlot(2, -1, +1);
+					SpanPlot(5, -1, -1);
+					SpanPlot(6, +1, -1);
+
+					sx++;
 				}
 			}
 
