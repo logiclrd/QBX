@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
@@ -361,6 +362,29 @@ public abstract class GraphicsLibrary : VisualLibrary
 		public int GetAttribute(int x, int y)
 		{
 			return tileData[(y & 63) * 8 + (x & 7)];
+		}
+	}
+	#endregion
+
+	#region Debugging
+	// This outputs to a log that PixelLogVisualizer can monitor.
+	[Conditional("PIXELDEBUG")]
+	void PixelDebug(int x, int y)
+	{
+		using (var dbgLogStream = new System.IO.FileStream(@"C:\code\QBX\pixels.log", System.IO.FileMode.Append, System.IO.FileAccess.Write, System.IO.FileShare.ReadWrite))
+		using (var dbgLog = new System.IO.StreamWriter(dbgLogStream))
+			dbgLog.WriteLine("{0} {1}", x, y);
+	}
+
+	// This outputs to a log that PixelLogVisualizer can monitor.
+	[Conditional("PIXELDEBUG")]
+	void HorizontalSpanDebug(int x1, int x2, int y)
+	{
+		using (var dbgLogStream = new System.IO.FileStream(@"C:\code\QBX\pixels.log", System.IO.FileMode.Append, System.IO.FileAccess.Write, System.IO.FileShare.ReadWrite))
+		using (var dbgLog = new System.IO.StreamWriter(dbgLogStream))
+		{
+			for (int x = x1; x <= x2; x++)
+				dbgLog.WriteLine("{0} {1}", x, y);
 		}
 	}
 	#endregion
@@ -1209,7 +1233,10 @@ public abstract class GraphicsLibrary : VisualLibrary
 				int dy = sy * ySign;
 
 				if (CheckOctant(octant, dx, dy))
+				{
+					PixelDebug(x + dx, y - dy);
 					PixelSet(x + dx, y - dy, attribute);
+				}
 			}
 
 			sx = radiusX;
@@ -1274,6 +1301,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 					if (!span.Extend(dx, dy))
 					{
+						HorizontalSpanDebug(x + span.X1, x + span.X2, y - span.Y);
 						HorizontalLine(x + span.X1, x + span.X2, y - span.Y, attribute);
 						spans[octant] = new PixelSpan(dx, dy);
 					}
@@ -1302,13 +1330,28 @@ public abstract class GraphicsLibrary : VisualLibrary
 			}
 
 			if (!spans[1].IsEmpty)
+			{
+				HorizontalSpanDebug(x + spans[1].X1, x + spans[1].X2, y - spans[1].Y);
 				HorizontalLine(x + spans[1].X1, x + spans[1].X2, y - spans[1].Y, attribute);
+			}
+
 			if (!spans[2].IsEmpty)
+			{
+				HorizontalSpanDebug(x + spans[2].X1, x + spans[2].X2, y - spans[2].Y);
 				HorizontalLine(x + spans[2].X1, x + spans[2].X2, y - spans[2].Y, attribute);
+			}
+
 			if (!spans[5].IsEmpty)
+			{
+				HorizontalSpanDebug(x + spans[5].X1, x + spans[5].X2, y - spans[5].Y);
 				HorizontalLine(x + spans[5].X1, x + spans[5].X2, y - spans[5].Y, attribute);
+			}
+
 			if (!spans[6].IsEmpty)
+			{
+				HorizontalSpanDebug(x + spans[6].X1, x + spans[6].X2, y - spans[6].Y);
 				HorizontalLine(x + spans[6].X1, x + spans[6].X2, y - spans[6].Y, attribute);
+			}
 
 			LastPoint = CoordinateSystem.TranslateScreenToWindow(x, y);
 		}
