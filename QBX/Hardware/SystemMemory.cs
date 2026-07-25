@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
+using QBX.Firmware;
+
 namespace QBX.Hardware;
 
 public class SystemMemory : IMemory
@@ -9,16 +11,33 @@ public class SystemMemory : IMemory
 
 	public int Length => _ram.Length;
 
+	public BIOSDataArea BIOSDataArea { get; }
+
 	public KeyboardStatus KeyboardStatus { get; }
 
 	Machine _machine;
 
 	public SystemMemory(Machine machine)
 	{
+		BIOSDataArea = new BIOSDataArea(machine);
+
 		KeyboardStatus = new KeyboardStatus(this);
 		KeyboardStatus.Byte3.EnhancedKeyboard = true;
 
 		_machine = machine;
+	}
+
+	public void InitializeBIOSDataArea()
+	{
+		BIOSDataArea.EquipmentFlags1 =
+			BDAEquipmentFlags1.MathCoprocessorPresent |
+			BDAEquipmentFlags1.MouseInstalled |
+			BDAEquipmentFlags1.InitialVideoMode_EGAOrVGA;
+
+		BIOSDataArea.EquipmentFlags2 =
+			BDAEquipmentFlags2.None;
+
+		BIOSDataArea.MemorySize = Length;
 	}
 
 	public void UpdateDynamicData(int rangeStart, int rangeEnd)

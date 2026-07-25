@@ -3,6 +3,7 @@ using System.Buffers;
 using System.Text;
 using System.Threading;
 
+using QBX.ExecutionEngine.Execution;
 using QBX.Firmware.Fonts;
 using QBX.Hardware;
 using QBX.Utility;
@@ -175,6 +176,8 @@ public abstract class VisualLibrary : IDisposable
 			RefreshParameters();
 
 			ActivePageNumber = pageNumber;
+
+			Machine.SystemMemory.BIOSDataArea.VideoActivePage = pageNumber;
 
 			DrawPointer();
 

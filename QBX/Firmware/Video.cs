@@ -26,7 +26,18 @@ public partial class Video(Machine machine)
 	}
 
 	public int DesiredTextModeScanLines = 400;
-	public bool LoadPaletteOnModeChange = true;
+
+	public bool LoadPaletteOnModeChange
+	{
+		get => !machine.SystemMemory.BIOSDataArea.VideoDisplayData.HasFlag(BDAVideoDisplayDataFlags.PreservePaletteOnModeSwitch);
+		set
+		{
+			if (value)
+				machine.SystemMemory.BIOSDataArea.VideoDisplayData &= ~BDAVideoDisplayDataFlags.PreservePaletteOnModeSwitch;
+			else
+				machine.SystemMemory.BIOSDataArea.VideoDisplayData |= BDAVideoDisplayDataFlags.PreservePaletteOnModeSwitch;
+		}
+	}
 
 	public bool SetMode(int modeNumber)
 		=> SetMode(modeNumber, clearVRAM: true);
@@ -341,6 +352,31 @@ public partial class Video(Machine machine)
 			AttributeControllerRegisters.IndexAndDataWritePort,
 			AttributeControllerRegisters.Index_PaletteAddressSourceBit);
 
+		var bda = machine.SystemMemory.BIOSDataArea;
+
+		bda.VideoMode = modeNumber;
+		bda.VideoCharacterWidth = VisualLibrary.CharacterWidth;
+		bda.VideoCharacterHeight = VisualLibrary.CharacterHeight;
+		bda.VideoCharacterScans = characterHeight;
+
+		bda.VideoCRTControllerBasePort = CRTControllerRegisters.IndexPort;
+
+		bda.VideoModeOptions =
+			BDAVideoModeOptions.AlphanumericCursorEmulationEnabled |
+			BDAVideoModeOptions.RAMSize_256KB;
+
+		BDAVideoDisplayDataFlags scanLinesFlags;
+
+		if (mode.Pixels.Height == 350)
+			scanLinesFlags = BDAVideoDisplayDataFlags.ScanLines_350;
+		else if (mode.Pixels.Height >= 400)
+			scanLinesFlags = BDAVideoDisplayDataFlags.ScanLines_400;
+		else
+			scanLinesFlags = BDAVideoDisplayDataFlags.ScanLines_200;
+
+		bda.VideoDisplayData =
+			BDAVideoDisplayDataFlags.VGAActive | scanLinesFlags;
+
 		ModeChanged?.Invoke(mode);
 
 		return true;
@@ -387,6 +423,9 @@ public partial class Video(Machine machine)
 			SetVisualLibrary(new GraphicsLibrary_8bppFlat(machine));
 		else
 			SetVisualLibrary(new GraphicsLibrary_4bppPlanar(machine));
+
+		machine.SystemMemory.BIOSDataArea.VideoPageSize =
+			ComputePageSizeUnrounded(machine.GraphicsArray);
 	}
 
 	public void SetCharacterRows(int rows)
@@ -487,6 +526,10 @@ public partial class Video(Machine machine)
 		VisualLibrary.RefreshParameters();
 		VisualLibrary.ResetCharacterLineWindow();
 
+		machine.SystemMemory.BIOSDataArea.VideoCharacterWidth = VisualLibrary.CharacterWidth;
+		machine.SystemMemory.BIOSDataArea.VideoCharacterHeight = VisualLibrary.CharacterHeight;
+		machine.SystemMemory.BIOSDataArea.VideoCharacterScans = maximumScanLineValue + 1;
+
 		ModeChanged?.Invoke(null);
 	}
 
@@ -584,6 +627,10 @@ public partial class Video(Machine machine)
 			CRTControllerRegisters.IndexPort,
 			CRTControllerRegisters.CursorEnd,
 			cursorEnd);
+
+		// Update BDA
+		machine.SystemMemory.BIOSDataArea.VideoCursorStartScan = cursorStart;
+		machine.SystemMemory.BIOSDataArea.VideoCursorEndScan = cursorEnd;
 	}
 
 	public void SetCursorScans(int newStart, int newEnd, bool newVisible)
@@ -649,6 +696,8 @@ public partial class Video(Machine machine)
 
 		_cursorAddressByPageNumber[pageNumber] = cursorAddress;
 
+		machine.SystemMemory.BIOSDataArea.VideoCursorAddress[pageNumber] = (short)cursorAddress;
+
 		if (pageNumber == _visiblePageNumber)
 		{
 			array.OutPort2(
@@ -664,7 +713,10 @@ public partial class Video(Machine machine)
 
 	public int ComputePageSize() => ComputePageSize(machine.GraphicsArray);
 
-	public static int ComputePageSize(GraphicsArray array)
+	public static ushort ComputePageSize(GraphicsArray array)
+		=> unchecked((ushort)(256 * ((ComputePageSizeUnrounded(array) + 255) / 256)));
+
+	public static ushort ComputePageSizeUnrounded(GraphicsArray array)
 	{
 		int dataLength;
 
@@ -687,7 +739,7 @@ public partial class Video(Machine machine)
 			dataLength = stride * scans;
 		}
 
-		return 256 * ((dataLength + 255) / 256);
+		return unchecked((ushort)dataLength);
 	}
 
 	public static int ComputePageCount(GraphicsArray array, int pageSize)
@@ -744,6 +796,8 @@ public partial class Video(Machine machine)
 				unchecked((byte)((cursorAddress >> 8) & 0xFF)));
 
 			_visiblePageNumber = pageNumber;
+
+			machine.SystemMemory.BIOSDataArea.VideoStartAddress = (ushort)startAddress;
 
 			return true;
 		}

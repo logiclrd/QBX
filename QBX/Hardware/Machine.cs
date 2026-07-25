@@ -62,6 +62,11 @@ public class Machine
 		MemoryBus.MapRange(0xA000, GraphicsArray.VRAM.Length, GraphicsArray);
 		MemoryBus.MapRange(0xF000, FirmwareROM.Length, FirmwareROM);
 
+		SystemMemory.InitializeBIOSDataArea();
+
+		SystemMemory.BIOSDataArea.VideoDisplayCombinationCode =
+			BDAVideoDisplayCombinationCode.VGA_ColourDisplay;
+
 		KeyboardDriver = new KeyboardDriver(this);
 		MouseDriver = new MouseDriver(this);
 
