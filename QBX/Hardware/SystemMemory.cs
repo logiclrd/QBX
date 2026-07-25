@@ -14,6 +14,7 @@ public class SystemMemory : IMemory
 	public BIOSDataArea BIOSDataArea { get; }
 
 	public KeyboardStatus KeyboardStatus { get; }
+	public KeyboardAltNumPadEntry KeyboardAltNumPadEntry { get; }
 
 	Machine _machine;
 
@@ -23,6 +24,8 @@ public class SystemMemory : IMemory
 
 		KeyboardStatus = new KeyboardStatus(this);
 		KeyboardStatus.Byte3.EnhancedKeyboard = true;
+
+		KeyboardAltNumPadEntry = new KeyboardAltNumPadEntry(this);
 
 		_machine = machine;
 	}

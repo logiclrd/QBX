@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
+using QBX.Firmware.Fonts;
 using QBX.Hardware;
 
 using SDL3;
@@ -11,6 +12,7 @@ namespace QBX.Firmware;
 public class KeyboardDriver
 {
 	Machine _machine;
+	KeyboardAltNumPadEntry _altNumPadEntry;
 
 	public KeyboardLayout ActiveKeyboardLayout
 	{
@@ -25,6 +27,7 @@ public class KeyboardDriver
 	public KeyboardDriver(Machine machine)
 	{
 		_machine = machine;
+		_altNumPadEntry = machine.SystemMemory.KeyboardAltNumPadEntry;
 
 		ActiveKeyboardLayout = new KeyboardLayouts.US(machine);
 	}
@@ -87,6 +90,33 @@ public class KeyboardDriver
 		ActiveKeyboardLayout.ProcessKeyPress(rawData);
 
 		while (ActiveKeyboardLayout.TryGetNextTranslatedKeyPress(out var translatedData))
-			yield return new KeyEvent(translatedData);
+		{
+			if (!_altNumPadEntry.ProcessKeyEvent(translatedData))
+				yield return new KeyEvent(translatedData);
+		}
+
+		if (_altNumPadEntry.InputQueue.Any())
+		{
+			var syntheticRawData = new RawKeyEventData(
+				rawData.RawScanCode,
+				rawData.Modifiers & ~SDL.Keymod.Alt,
+				isRelease: false);
+
+			var keyModifiers = _machine.SystemMemory.KeyboardStatus.GetKeyModifiers();
+
+			while (_altNumPadEntry.InputQueue.TryDequeue(out var altByte))
+			{
+				var syntheticEventData = new KeyEventData(
+					syntheticRawData,
+					textCharacter: CP437Encoding.GetCharSemantic(altByte),
+					ScanCode.None,
+					keyModifiers,
+					isRight: false,
+					isKeyPad: false,
+					isEphemeral: false);
+
+				yield return new KeyEvent(syntheticEventData);
+			}
+		}
 	}
 }
