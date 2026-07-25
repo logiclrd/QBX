@@ -35,7 +35,7 @@ public class PutSpriteStatement(CodeModel.Statements.PutSpriteStatement source) 
 			ActionVerb switch
 			{
 				PutSpriteAction.PixelSet => Firmware.PutSpriteAction.PixelSet,
-				PutSpriteAction.PixelSetInverted => Firmware.PutSpriteAction.PixelSet,
+				PutSpriteAction.PixelSetInverted => Firmware.PutSpriteAction.PixelSetInverted,
 				PutSpriteAction.And => Firmware.PutSpriteAction.And,
 				PutSpriteAction.Or => Firmware.PutSpriteAction.Or,
 				PutSpriteAction.ExclusiveOr => Firmware.PutSpriteAction.ExclusiveOr,

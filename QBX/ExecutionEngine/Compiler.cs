@@ -2666,7 +2666,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 					putSpriteStatement.ActionVerb switch
 					{
 						CodeModel.Statements.PutSpriteAction.PixelSet => PutSpriteAction.PixelSet,
-						CodeModel.Statements.PutSpriteAction.PixelSetInverted => PutSpriteAction.PixelSet,
+						CodeModel.Statements.PutSpriteAction.PixelSetInverted => PutSpriteAction.PixelSetInverted,
 						CodeModel.Statements.PutSpriteAction.And => PutSpriteAction.And,
 						CodeModel.Statements.PutSpriteAction.Or => PutSpriteAction.Or,
 						CodeModel.Statements.PutSpriteAction.ExclusiveOr => PutSpriteAction.ExclusiveOr,
