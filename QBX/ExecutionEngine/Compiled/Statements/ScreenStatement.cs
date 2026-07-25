@@ -2,6 +2,7 @@ using System;
 
 using QBX.ExecutionEngine.Execution;
 using QBX.Firmware;
+using QBX.Hardware;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
@@ -97,6 +98,13 @@ public class ScreenStatement(CodeModel.Statements.ScreenStatement source) : Exec
 		if (VisiblePageExpression != null)
 		{
 			int visiblePage = VisiblePageExpression.EvaluateAndCoerceToInt(context, stackFrame);
+
+			// Wait for vertical retrace. Busy wait because needing to be rescheduled
+			// defeats the purpose.
+			var array = context.Machine.GraphicsArray;
+
+			while ((array.InputStatus.Register1 & GraphicsArray.InputStatusRegisters.Register1_VerticalRetrace) == 0)
+				;
 
 			if (!context.Machine.VideoFirmware.SetVisiblePage(visiblePage))
 				throw RuntimeException.IllegalFunctionCall(VisiblePageExpression.Source);
