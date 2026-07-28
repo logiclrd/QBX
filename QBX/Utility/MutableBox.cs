@@ -1,4 +1,6 @@
-﻿namespace QBX.Utility;
+﻿using System;
+
+namespace QBX.Utility;
 
 public class MutableBox<T>
 	where T : struct
@@ -13,4 +15,7 @@ public class MutableBox<T>
 	{
 		Value = value;
 	}
+
+	public MutableBox<T> Clone()
+		=> new MutableBox<T>(Value);
 }

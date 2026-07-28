@@ -68,7 +68,15 @@ public class CompilationElement : IRenderableCode, IEditableElement
 		var clone = new CompilationElement(Owner);
 
 		clone.Type = Type;
-		clone.AddLines(Lines);
+
+		// CodeLine objects maintain a parent reference and have their own
+		// mutable state (such as the Statements list). They need to be
+		// cloned as well. The underlying statements are (currently) never
+		// modified in a clone, only (potentially) removed from the (cloned)
+		// CodeLine, and thus don't themselves need to be cloned.
+
+		foreach (var line in Lines)
+			clone.AddLine(line.CloneShallow());
 
 		return clone;
 	}

@@ -120,6 +120,23 @@ public class CodeLine : IRenderableCode, IEditableLine
 		return statement;
 	}
 
+	public CodeLine CloneShallow()
+	{
+		var clone = new CodeLine();
+
+		clone.CompilationElement = null;
+		clone.SourceLineIndex = SourceLineIndex.Clone();
+		clone.LineNumber = LineNumber;
+		clone.Label = Label;
+		clone.EndOfLineComment = EndOfLineComment;
+
+		// These statements all have parent references to this. We don't want them
+		// to be redirected to the clone.
+		clone._statements.AddRange(_statements);
+
+		return clone;
+	}
+
 	public void Render(TextWriter writer) => Render(writer, includeCRLF: true);
 
 	public void Render(TextWriter writer, bool includeCRLF = true) => Render(writer, includeCRLF, trimEnd: true);
