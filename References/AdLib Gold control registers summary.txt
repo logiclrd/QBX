@@ -1,0 +1,61 @@
+control registers:
+- register 0 read:
+  - bits 0-3 model ID, use value 1 for model 1000
+  - bits 4-6: all 0, because no extra board options are present
+
+- registers 4-5:
+  - left/right volume
+  - bits 0-5
+  - logarithmic, 2 dB steps
+  - 3F means +6 dB, 1C means -64 dB
+  - anything under 1C is muted
+
+- register 6:
+  - bass control
+  - bits 0-3
+  - logarithmic, 3 dB steps
+  - B means +15 dB, 2 means -12 dB
+  - clamped
+
+- register 7:
+  - treble control
+  - bits 0-3
+  - logarithmic, 3 dB steps
+  - A means +12 dB, 2 means -12 dB
+  - clamped
+
+- register 8:
+  - output mode
+  - bits 0-2 select mixer output
+    - 0 is silence
+    - 2 is mono from left
+    - 4 is mono from right
+    - 6 is stereo
+  - bits 3-4 enable stereo
+    - if 0, then output is average of inputs
+
+- registers 9 through 16:
+  - individual volume control
+  - bits 0-6 are linear volume
+  - bit 7 is sign (0 = negative polarity, 1 = positive)
+    [9] FM left
+    [10] FM right
+    [11] PCM
+    [12] microphone input
+    [13] aux input
+    [14] master left
+    [15] master right
+    [16] eq tone
+
+- register 19:
+  - bits 0-2 select IRQ from [3, 4, 5, 7, 10, 11, 12, 13]
+  - bit 3 is global interrupt enable
+  - bits 4-6 select DMA from [0, 1, 2, 3] (for sampling, channel 0)
+  - bit 7 enables DMA for sampling (channel 0)
+
+- register 20:
+  - bits 4-6 select DMA from [0, 1, 2, 3] (for sampling, channel 1)
+  - bit 7 enables DMA for sampling (channel 1)
+
+- register 21:
+  - bits 0-6 set the base port (shifted by 3 bits)

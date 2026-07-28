@@ -1,6 +1,9 @@
-﻿using QBX.OperatingSystem;
+﻿using System;
+
+using QBX.OperatingSystem;
 using QBX.Firmware;
 using QBX.Interrupts;
+using QBX.Hardware.AdLib;
 
 namespace QBX.Hardware;
 
@@ -18,6 +21,7 @@ public class Machine
 	public Mouse Mouse { get; }
 	public Speaker Speaker { get; }
 	public GravisUltraSound GravisUltraSound { get; }
+	public AdLibGold AdLibGold { get; }
 	public TimerChip Timer { get; }
 
 	public DOS DOS { get; }
@@ -56,6 +60,7 @@ public class Machine
 		Mouse = new Mouse();
 		Speaker = new Speaker(this);
 		GravisUltraSound = new GravisUltraSound();
+		AdLibGold = new AdLibGold();
 		Timer = new TimerChip(Speaker);
 
 		MemoryBus.MapRange(0x0000, SystemMemory.Length, SystemMemory);
@@ -100,6 +105,7 @@ public class Machine
 		Timer.OutPort(portNumber, data);
 		Speaker.OutPort(portNumber, data);
 		GravisUltraSound.OutPort(portNumber, data);
+		AdLibGold.OutPort(portNumber, data);
 	}
 
 	public byte InPort(int portNumber)
@@ -123,7 +129,18 @@ public class Machine
 		if (handled)
 			return value;
 
+		value = AdLibGold.InPort(portNumber, out handled);
+		if (handled)
+			return value;
+
 		// ISA bus I/O is pulled up, so if nothing responds, we see all bits set.
 		return 0xFF;
+	}
+
+	public void GetMoreSound(Span<short> buffer)
+	{
+		Speaker.GetMoreSound(buffer);
+		GravisUltraSound.GetMoreSound(buffer);
+		AdLibGold.GetMoreSound(buffer);
 	}
 }

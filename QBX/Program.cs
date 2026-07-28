@@ -137,8 +137,7 @@ class Program
 					if (buffer.Length > additionalAmount)
 						buffer = buffer.Slice(0, additionalAmount);
 
-					machine.Speaker.GetMoreSound(buffer);
-					machine.GravisUltraSound.GetMoreSound(buffer);
+					machine.GetMoreSound(buffer);
 
 					SDL.PutAudioStreamData(stream, MemoryMarshal.Cast<short, byte>(audioBuffer), buffer.Length * 2);
 
