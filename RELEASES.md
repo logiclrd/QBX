@@ -1,5 +1,15 @@
 # QBX Releases
 
+## 1.18.0 - 2026-07-28
+
+### Added
+
+- AdLib Gold 1000 emulation (FM synthesis only).
+
+### Fixed
+
+- Different sound emitters now work in isolation, and clamping to the output sample range is done once at the end.
+
 ## 1.17.0 - 2026-07-25
 
 ### Fixed
