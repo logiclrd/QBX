@@ -205,10 +205,32 @@ public class YMF262Chip
 
 	bool   _hasRhythmPart;                 /* Rhythm mode                  */
 
+	const long BaseTimerTickDuration = 200; // 200 system ticks, which are 100ns each, is 20 μs
+
 	struct TimerFields
 	{
-		public int Tick;
+		public int Interval;
 		public bool IsEnabled;
+		public DateTime Epoch;
+		public DateTime NextTrigger;
+
+		public void ComputeNextTrigger()
+		{
+			if (!IsEnabled || (Interval <= 0))
+				NextTrigger = DateTime.MaxValue;
+			else
+			{
+				var now = DateTime.UtcNow;
+
+				long currentBaseTimerTick = (now - Epoch).Ticks / BaseTimerTickDuration;
+
+				int currentIntervalElapsed = unchecked((int)(currentBaseTimerTick % Interval));
+
+				int currentIntervalRemaining = Interval - currentIntervalElapsed;
+
+				NextTrigger = now.AddTicks(currentIntervalRemaining * BaseTimerTickDuration);
+			}
+		}
 	}
 
 	[InlineArray(length: 2)]
@@ -1096,10 +1118,10 @@ public class YMF262Chip
 					case 0x01:  /* test register */
 						break;
 					case 0x02:  /* Timer 1 */
-						_timers[0].Tick = (256-v)*4;
+						_timers[0].Interval = (256 - v) * 4; // 4 base ticks => 80 μs
 						break;
 					case 0x03:  /* Timer 2 */
-						_timers[1].Tick = (256-v)*16;
+						_timers[1].Interval = (256 - v) * 16; // 16 base ticks => 320 μs
 						break;
 					case 0x04:  /* IRQ clear / mask and Timer enable */
 						if ((v & 0x80) != 0)
@@ -1118,23 +1140,35 @@ public class YMF262Chip
 							ResetStatus(vf & (StatusFlags.TimerA | StatusFlags.TimerB));
 							SetIRQMask((~vf) & (StatusFlags.TimerA | StatusFlags.TimerB));
 
+							var now = DateTime.UtcNow;
+
+							vf = 0;
+
 							/* timer 2 */
 							if (_timers[1].IsEnabled != st2)
 							{
+								if (_timers[1].IsEnabled && (now >= _timers[1].NextTrigger))
+									vf |= StatusFlags.TimerB;
+
 								_timers[1].IsEnabled = st2;
 
-								//double period = st2 ? TimerBase * _timers[1].Tick : 0.0;
-								//OnTimer(1, period);
+								_timers[1].Epoch = now;
+								_timers[1].ComputeNextTrigger();
 							}
 
 							/* timer 1 */
 							if (_timers[0].IsEnabled != st1)
 							{
+								if (_timers[0].IsEnabled && (now >= _timers[0].NextTrigger))
+									vf |= StatusFlags.TimerA;
+
 								_timers[0].IsEnabled = st1;
 
-								//double period = st1 ? TimerBase * _timers[0].Tick : 0.0;
-								//OnTimer(0, period);
+								_timers[0].Epoch = now;
+								_timers[0].ComputeNextTrigger();
 							}
+
+							SetStatus(vf);
 						}
 						break;
 					case 0x08:  /* x,NTS,x,x, x,x,x,x */
@@ -1798,16 +1832,30 @@ public class YMF262Chip
 
 		/* YMF278(OPL4) returns bit2 in LOW and bit1 in HIGH state ??? info from manual - not verified */
 
-		if (portNumber == 0)
+		if (portNumber == 0) // status port
 		{
+			// Check if either timer has elapsed.
+			var now = DateTime.UtcNow;
+
+			if (now >= _timers[0].NextTrigger)
+			{
+				_status |= StatusFlags.TimerA;
+				_timers[0].ComputeNextTrigger();
+			}
+
+			if (now >= _timers[1].NextTrigger)
+			{
+				_status |= StatusFlags.TimerB;
+				_timers[1].ComputeNextTrigger();
+			}
+
 			/* status port */
 			return unchecked((byte)_status);
+
+
 		}
 
 		return 0x00;    /* verified on real YMF262 */
-
-
-
 	}
 
 	public void GetMoreSound(Span<double> samples)
