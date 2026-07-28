@@ -228,12 +228,12 @@ public class YMF262Chip
 		EOS = 0x10,
 		TimerB = 0x20,
 		TimerA = 0x40,
-		IRQEnabled = 0x80,
+		IRQ = 0x80,
 	}
 
 	int _selectedRegister;
 	StatusFlags _status;
-	StatusFlags _statusMask;
+	StatusFlags _irqMask;
 
 	byte _noteSelect;
 
@@ -256,41 +256,29 @@ public class YMF262Chip
 
 	void SetStatus(StatusFlags flag)
 	{
-		_status |= (flag & _statusMask);
-		if ((_status & StatusFlags.IRQEnabled) != StatusFlags.IRQEnabled)
+		_status |= (flag & ~StatusFlags.IRQ);
+
+		// Check whether an unmasked signal has occurred which should pull IRQ high.
+		if ((_status & StatusFlags.IRQ) != StatusFlags.IRQ)
 		{
-			if ((_status & _statusMask) != 0)
-			{
-				/* IRQ on */
-				_status |= StatusFlags.IRQEnabled;
-				/* callback user interrupt handler (IRQ is OFF to ON) */
-				//OnIRQ(true);
-			}
+			if ((_status & _irqMask) != 0)
+				_status |= StatusFlags.IRQ;
 		}
 	}
 
 	void ResetStatus(StatusFlags flag)
 	{
-		/* reset status flag */
-		_status &= ~flag;
-		if ((_status & StatusFlags.IRQEnabled) != StatusFlags.IRQEnabled)
-		{
-			if ((_status & _statusMask) != 0)
-			{
-				_status &= ~StatusFlags.IRQEnabled;
-				/* callback user interrupt handler (IRQ is OFF to ON) */
-				//OnIRQ(true);
-			}
-		}
+		/* reset status flag, but do not clear IRQ if it is set */
+		_status &= StatusFlags.IRQ | ~flag;
 	}
 
 	/* IRQ mask set */
-	void SetStatusMask(StatusFlags flag)
+	void SetIRQMask(StatusFlags flag)
 	{
-		_statusMask = flag;
-		/* IRQ handling check */
+		_irqMask = flag;
+
+		// Set IRQ if we've unmasked a signal.
 		SetStatus(0);
-		ResetStatus(0);
 	}
 
 	void AdvanceLowFrequencyOscillator()
@@ -1122,13 +1110,13 @@ public class YMF262Chip
 						{
 							StatusFlags vf = (StatusFlags)v;
 
-							/* set IRQ mask ,timer enable */
+							/* set IRQ mask, timer enable */
 							bool st1 = (vf & StatusFlags.ST1) == StatusFlags.ST1;
 							bool st2 = (vf & StatusFlags.ST2) == StatusFlags.ST2;
 
 							/* IRQRST,T1MSK,t2MSK,x,x,x,ST2,ST1 */
 							ResetStatus(vf & (StatusFlags.TimerA | StatusFlags.TimerB));
-							SetStatusMask((~vf) & (StatusFlags.TimerA | StatusFlags.TimerB));
+							SetIRQMask((~vf) & (StatusFlags.TimerA | StatusFlags.TimerB));
 
 							/* timer 2 */
 							if (_timers[1].IsEnabled != st2)
@@ -1796,7 +1784,7 @@ public class YMF262Chip
 				break;
 		}
 
-		return (_status & StatusFlags.IRQEnabled) == StatusFlags.IRQEnabled;
+		return (_status & StatusFlags.IRQ) == StatusFlags.IRQ;
 	}
 
 	public byte InPort(int portNumber)
@@ -1817,25 +1805,9 @@ public class YMF262Chip
 		}
 
 		return 0x00;    /* verified on real YMF262 */
-	}
 
-	public bool TimerOver(int c)
-	{
-		if (c != 0)
-		{
-			/* Timer B */
-			SetStatus(StatusFlags.TimerB);
-		}
-		else
-		{
-			/* Timer A */
-			SetStatus(StatusFlags.TimerA);
-		}
 
-		/* reload timer */
-		//OnTimer(c, TimerBase * T[c]);
 
-		return (_status & StatusFlags.IRQEnabled) == StatusFlags.IRQEnabled;
 	}
 
 	public void GetMoreSound(Span<double> samples)
