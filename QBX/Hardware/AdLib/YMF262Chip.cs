@@ -1680,15 +1680,6 @@ public class YMF262Chip
 		return true;
 	}
 
-	void UnlockTable()
-	{
-		if (YMF262Tables.LockCount != 0) YMF262Tables.LockCount--;
-		if (YMF262Tables.LockCount != 0) return;
-
-		/* last time */
-		OPLCloseTable();
-	}
-
 	public void ResetChip()
 	{
 		int c,s;
