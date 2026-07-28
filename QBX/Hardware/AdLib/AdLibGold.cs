@@ -136,7 +136,25 @@ public class AdLibGold
 				if (_secondPortMode == PortMode.ControlChip)
 				{
 					handled = true;
-					return (byte)_controlRegister;
+
+					// The return value is a status byte:
+					//
+					//   7    6    5    4    3    2    1    0
+					//   RB   SB   x    x    SCSI TEL  SMP  FM
+					//
+					// RB and SB go high while the chip is busy reading/writing
+					// settings from EEPROM.
+					//
+					// SCSI, TEL, SMP and FM go high when the respective subsystem
+					// raises an IRQ. But, we don't have SCSI, TEL or SMP subsystems,
+					// and our YMF262 chip doesn't currently track timer advancement,
+					// so we don't have any meaningful bits to return.
+					//
+					// This does mean that anybody who is polling for a timer
+					// interrupt is going to be waiting a long time... We'll cross
+					// that bridge when we get to it. :-)
+
+					return 0;
 				}
 
 				goto case Bank0IndexPortOffset;
@@ -157,13 +175,22 @@ public class AdLibGold
 		return 0;
 	}
 
-	short _leftOverRightSample;
+	double _leftOverRightSample;
 	bool _haveLeftOverRightSample;
 
-	public void GetMoreSound(Span<short> samples)
+	double[]? s_buffer;
+
+	public void GetMoreSound(Span<double> samples)
 	{
 		if (!_isActive)
 			return;
+
+		if ((s_buffer == null) || (s_buffer.Length < samples.Length))
+			s_buffer = new double[Math.Max(256, samples.Length)];
+
+		int frameCount = (samples.Length + 1) >> 1;
+
+		Span<double> buffer = s_buffer.AsSpan().Slice(0, frameCount * 2);
 
 		var thisBufferStartTime = _firstSampleEmittedTime
 			.AddTicks(_lastFrameEmitted * 10_000_000L / SampleRate);
@@ -175,7 +202,7 @@ public class AdLibGold
 
 		if (_haveLeftOverRightSample)
 		{
-			samples[0] = _leftOverRightSample;
+			samples[0] += _leftOverRightSample;
 			samples = samples.Slice(1);
 
 			_haveLeftOverRightSample = false;
@@ -194,7 +221,7 @@ public class AdLibGold
 				framesBeforeNextChange = (int)(nextChangeFrame - _lastFrameEmitted);
 			}
 			else
-				framesBeforeNextChange = samples.Length / 2;
+				framesBeforeNextChange = buffer.Length / 2;
 
 			if (framesBeforeNextChange > 0)
 			{
@@ -205,14 +232,14 @@ public class AdLibGold
 				// Don't generate partial frames here
 				samplesToGenerate &= ~1;
 
-				_generator.GetMoreSound(samples.Slice(0, samplesToGenerate));
+				_generator.GetMoreSound(buffer.Slice(0, samplesToGenerate));
 
 				for (int i = 0; i < samplesToGenerate; i += 2)
 				{
-					var finalOutput = _control.ProcessFrame(samples[i], samples[i + 1]);
+					var finalOutput = _control.ProcessFrame(buffer[i], buffer[i + 1]);
 
-					samples[i + 0] = (short)Math.Clamp(samples[i + 0] + finalOutput.Left, short.MinValue, short.MaxValue);
-					samples[i + 1] = (short)Math.Clamp(samples[i + 1] + finalOutput.Right, short.MinValue, short.MaxValue);
+					samples[i + 0] += finalOutput.Left;
+					samples[i + 1] += finalOutput.Right;
 				}
 
 				samples = samples.Slice(samplesToGenerate);
@@ -222,9 +249,7 @@ public class AdLibGold
 				if (samples.Length == 1)
 				{
 					// How odd. We've been asked to generate a partial frame.
-					Span<short> buffer = stackalloc short[2];
-
-					_generator.GetMoreSound(buffer);
+					_generator.GetMoreSound(buffer.Slice(0, 2));
 
 					var finalOutput = _control.ProcessFrame(buffer[0], buffer[1]);
 

@@ -1838,7 +1838,7 @@ public class YMF262Chip
 		return (_status & StatusFlags.IRQEnabled) == StatusFlags.IRQEnabled;
 	}
 
-	public void GetMoreSound(Span<short> samples)
+	public void GetMoreSound(Span<double> samples)
 	{
 		while (samples.Length >= 1)
 		{
@@ -1907,7 +1907,10 @@ public class YMF262Chip
 			UpdateChannel(ref _channels[17]);
 
 			/* accumulate register set #1 */
-			for (int j = 0, k = 0; j < 18; j++)
+			samples[0] = unchecked((short)(_channelOutputSlots[0].Value & _outputMasks[0]));
+			samples[1] = unchecked((short)(_channelOutputSlots[0].Value & _outputMasks[1]));
+
+			for (int j = 1, k = 2; j < 18; j++)
 			{
 				samples[0] += unchecked((short)(_channelOutputSlots[j].Value & _outputMasks[k++]));
 				samples[1] += unchecked((short)(_channelOutputSlots[j].Value & _outputMasks[k++]));

@@ -1167,10 +1167,10 @@ public class GravisUltraSound
 
 	ConcurrentQueue<PortIOOperation> _portIOOperations = new ConcurrentQueue<PortIOOperation>();
 
-	short _leftOverRightSample;
+	int _leftOverRightSample;
 	bool _haveLeftOverRightSample;
 
-	public void GetMoreSound(Span<short> samples)
+	public void GetMoreSound(Span<double> samples)
 	{
 		if (!IsEnabled)
 			return;
@@ -1190,7 +1190,7 @@ public class GravisUltraSound
 
 		if (_haveLeftOverRightSample)
 		{
-			samples[0] = _leftOverRightSample;
+			samples[0] += _leftOverRightSample;
 			samples = samples.Slice(1);
 
 			_haveLeftOverRightSample = false;
@@ -1241,16 +1241,16 @@ public class GravisUltraSound
 						_playbackRegisters.UpdateVoiceAndAccumulateSample(ch, dramSpan, ref accumulator);
 				}
 
-				samples[i++] = unchecked((short)Math.Clamp(accumulator.Left >> 1, short.MinValue, short.MaxValue));
+				samples[i++] += accumulator.Left >> 1;
 
 				if (i >= samples.Length)
 				{
 					_haveLeftOverRightSample = true;
-					_leftOverRightSample = unchecked((short)Math.Clamp(accumulator.Right >> 1, short.MinValue, short.MaxValue));
+					_leftOverRightSample = accumulator.Right >> 1;
 					break;
 				}
 
-				samples[i++] = unchecked((short)Math.Clamp(accumulator.Right >> 1, short.MinValue, short.MaxValue));
+				samples[i++] += accumulator.Right >> 1;
 			}
 
 			lastSampleEmitted++;

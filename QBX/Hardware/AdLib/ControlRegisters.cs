@@ -6,6 +6,23 @@ struct ControlRegisters
 {
 	public ControlRegisters()
 	{
+		SetRegister(ControlRegister.SamplingGainLeft, 25);  // 250/256 initial sampling volume
+		SetRegister(ControlRegister.SamplingGainRight, 25); //
+		SetRegister(ControlRegister.FinalOutputVolumeLeft, 0xC0 | 0x3C);  // 100%
+		SetRegister(ControlRegister.FinalOutputVolumeRight, 0xC0 | 0x3C); //
+		SetRegister(ControlRegister.Bass, 6); // 0 dB
+		SetRegister(ControlRegister.Treble, 6); // 0 dB
+		SetRegister(ControlRegister.OutputMode, (byte)ChannelSourceMode.Stereo | (byte)StereoMixMode.LinearStereo);
+		SetRegister(ControlRegister.Volume_FMLeft, 255);      // 128 = positive, 127 = max volume
+		SetRegister(ControlRegister.Volume_FMRight, 255);     //
+		SetRegister(ControlRegister.Volume_PCM, 255);         //
+		SetRegister(ControlRegister.Volume_Microphone, 255);  //
+		SetRegister(ControlRegister.Volume_AuxInput, 255);    //
+		SetRegister(ControlRegister.Volume_MasterLeft, 255);  //
+		SetRegister(ControlRegister.Volume_MasterRight, 255); //
+		SetRegister(ControlRegister.Volume_Tone, 0);          //
+		SetRegister(ControlRegister.BasePort, 0x388 >> 3);
+		SetRegister(ControlRegister.SCSIPort, 0x390 >> 3);
 	}
 
 	ControlRegisterData _data;

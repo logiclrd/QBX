@@ -139,7 +139,7 @@ public class Speaker(Machine machine)
 		_eventualEnabled = enabled;
 	}
 
-	public void GetMoreSound(Span<short> samples)
+	public void GetMoreSound(Span<double> samples)
 	{
 		bool isEnabled = _isEnabled;
 		byte value = _value;
@@ -179,11 +179,11 @@ public class Speaker(Machine machine)
 						lastValue = latchedValue;
 				}
 
-				samples[i] = lastValue;
+				samples[i] += lastValue;
 			}
 			else
 			{
-				samples[i] = lastValue;
+				samples[i] += lastValue;
 
 				_nextIsLeftChannel = true;
 				lastSampleEmitted++;

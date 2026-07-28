@@ -137,10 +137,22 @@ public class Machine
 		return 0xFF;
 	}
 
+	double[]? s_mixBuffer;
+
 	public void GetMoreSound(Span<short> buffer)
 	{
-		Speaker.GetMoreSound(buffer);
-		GravisUltraSound.GetMoreSound(buffer);
-		AdLibGold.GetMoreSound(buffer);
+		if ((s_mixBuffer == null) || (s_mixBuffer.Length < buffer.Length))
+			s_mixBuffer = new double[buffer.Length];
+
+		Span<double> mixBuffer = s_mixBuffer.AsSpan().Slice(0, buffer.Length);
+
+		mixBuffer.Clear();
+
+		Speaker.GetMoreSound(mixBuffer);
+		GravisUltraSound.GetMoreSound(mixBuffer);
+		AdLibGold.GetMoreSound(mixBuffer);
+
+		for (int i = 0; i < buffer.Length; i++)
+			buffer[i] = (short)double.Clamp(mixBuffer[i], short.MinValue, short.MaxValue);
 	}
 }
