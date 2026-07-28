@@ -241,6 +241,7 @@ public class YMF262Chip
 
 	Timers _timers;
 
+	[Flags]
 	enum StatusFlags : byte
 	{
 		ST1 = 0x01,
@@ -274,33 +275,6 @@ public class YMF262Chip
 	public YMF262Chip(int mixFrequency)
 	{
 		Initialize(RateBase * RateDivisor, (uint)mixFrequency);
-	}
-
-	void SetStatus(StatusFlags flag)
-	{
-		_status |= (flag & ~StatusFlags.IRQ);
-
-		// Check whether an unmasked signal has occurred which should pull IRQ high.
-		if ((_status & StatusFlags.IRQ) != StatusFlags.IRQ)
-		{
-			if ((_status & _irqMask) != 0)
-				_status |= StatusFlags.IRQ;
-		}
-	}
-
-	void ResetStatus(StatusFlags flag)
-	{
-		/* reset status flag, but do not clear IRQ if it is set */
-		_status &= StatusFlags.IRQ | ~flag;
-	}
-
-	/* IRQ mask set */
-	void SetIRQMask(StatusFlags flag)
-	{
-		_irqMask = flag;
-
-		// Set IRQ if we've unmasked a signal.
-		SetStatus(0);
 	}
 
 	void AdvanceLowFrequencyOscillator()
@@ -1125,8 +1099,9 @@ public class YMF262Chip
 						break;
 					case 0x04:  /* IRQ clear / mask and Timer enable */
 						if ((v & 0x80) != 0)
-						{   /* IRQ flags clear */
-							ResetStatus(StatusFlags.TimerA | StatusFlags.TimerB);
+						{
+							/* IRQ flags clear */
+							_status &= ~(StatusFlags.TimerA | StatusFlags.TimerB);
 						}
 						else
 						{
@@ -1137,18 +1112,16 @@ public class YMF262Chip
 							bool st2 = (vf & StatusFlags.ST2) == StatusFlags.ST2;
 
 							/* IRQRST,T1MSK,t2MSK,x,x,x,ST2,ST1 */
-							ResetStatus(vf & (StatusFlags.TimerA | StatusFlags.TimerB));
-							SetIRQMask((~vf) & (StatusFlags.TimerA | StatusFlags.TimerB));
+							_status &= vf & ~(StatusFlags.TimerA | StatusFlags.TimerB);
+							_irqMask = ~vf & (StatusFlags.TimerA | StatusFlags.TimerB);
 
 							var now = DateTime.UtcNow;
-
-							vf = 0;
 
 							/* timer 2 */
 							if (_timers[1].IsEnabled != st2)
 							{
 								if (_timers[1].IsEnabled && (now >= _timers[1].NextTrigger))
-									vf |= StatusFlags.TimerB;
+									_status |= StatusFlags.TimerB;
 
 								_timers[1].IsEnabled = st2;
 
@@ -1160,15 +1133,13 @@ public class YMF262Chip
 							if (_timers[0].IsEnabled != st1)
 							{
 								if (_timers[0].IsEnabled && (now >= _timers[0].NextTrigger))
-									vf |= StatusFlags.TimerA;
+									_status |= StatusFlags.TimerA;
 
 								_timers[0].IsEnabled = st1;
 
 								_timers[0].Epoch = now;
 								_timers[0].ComputeNextTrigger();
 							}
-
-							SetStatus(vf);
 						}
 						break;
 					case 0x08:  /* x,NTS,x,x, x,x,x,x */
@@ -1727,7 +1698,7 @@ public class YMF262Chip
 
 		_noise.Value = 1;    /* noise shift register */
 		_noteSelect       = 0;    /* note split */
-		ResetStatus(StatusFlags.TimerA | StatusFlags.TimerB);
+		_status &= ~(StatusFlags.TimerA | StatusFlags.TimerB);
 
 		/* reset with register write */
 		WriteRegister(0x01, 0); /* test register */
@@ -1849,10 +1820,12 @@ public class YMF262Chip
 				_timers[1].ComputeNextTrigger();
 			}
 
-			/* status port */
-			return unchecked((byte)_status);
+			var ret = _status;
 
+			if ((ret & (StatusFlags.TimerA | StatusFlags.TimerB)) != 0)
+				ret |= StatusFlags.IRQ;
 
+			return unchecked((byte)ret);
 		}
 
 		return 0x00;    /* verified on real YMF262 */
