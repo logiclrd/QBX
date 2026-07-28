@@ -1,5 +1,17 @@
 # QBX Releases
 
+## 1.18.1 - 2026-07-28
+
+### Fixed
+
+- The YMF262 emulation that underpins the AdLib Gold card now supports timers and sets the corresponding event and IRQ flags in the status register.
+- The rewriting of DEFtype statements during save/load of .BAS files no longer inadvertently leaves the modifications in the loaded document.
+- Parsing and execution of `ON PLAY(n%)` statements now expects and processes the `n%` queue length argument.
+
+### Added
+
+- The `Samples` collection now includes a folder `ADLIBS3M` with Bisqwit's fabulous FM S3M player and a handful of sample tracks. Try `FMENGINX.BAS`, an update to `FMENGINE.BAS` that fixes a bug, improves the UI and reworks the timing to be based on the 8253 timer directly instead of QuickBASIC's `PLAY` queue.
+
 ## 1.18.0 - 2026-07-28
 
 ### Added
