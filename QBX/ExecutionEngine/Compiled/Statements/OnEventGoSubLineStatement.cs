@@ -25,9 +25,19 @@ public class OnEventGoSubLineStatement(Identifier target, CodeModel.Statements.O
 		if (TargetPath == null)
 			throw new Exception("Internal error: Executing an unresolved OnErrorGoSubLineStatement");
 
+		bool needSourceExpression = true;
+
+		switch (EventType)
+		{
+			case EventType.Pen:
+			case EventType.UserEvent:
+				needSourceExpression = false;
+				break;
+		}
+
 		int source = Event.NoSource;
 
-		if (EventType == EventType.Key)
+		if (needSourceExpression)
 		{
 			if (SourceExpression == null)
 				throw new Exception("OnErrorGoSubLineStatement with no SourceExpression");

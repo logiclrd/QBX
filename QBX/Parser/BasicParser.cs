@@ -2474,7 +2474,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 								case TokenType.COM: onEvent.EventType = EventType.Com; break;
 								case TokenType.KEY: onEvent.EventType = EventType.Key; break;
 								case TokenType.PEN: onEvent.EventType = EventType.Pen; needSourceExpression = false; break;
-								case TokenType.PLAY: onEvent.EventType = EventType.Play; needSourceExpression = false; break;
+								case TokenType.PLAY: onEvent.EventType = EventType.Play; break;
 								case TokenType.SIGNAL: onEvent.EventType = EventType.OS2Signal; break;
 								case TokenType.STRIG: onEvent.EventType = EventType.JoystickTrigger; break;
 								case TokenType.TIMER: onEvent.EventType = EventType.Timer; break;
