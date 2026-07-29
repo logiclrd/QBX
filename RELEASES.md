@@ -1,5 +1,13 @@
 # QBX Releases
 
+## 1.18.2 - 2026-07-29
+
+### Fixed
+
+- `FOR` loops no longer assign the from value to the iterator variable if execution jumps past the `FOR` statement with `GOTO`.
+- `GOTO` directly into a `FOR` statement that has not previously run in the current stack frame no longer crashes.
+- `FOR` loops now treat step values of 0 the same way as positive step values for calculating the loop termination condition (an iterator value that is greater than the "to" value causes the loop to terminate).
+
 ## 1.18.1 - 2026-07-28
 
 ### Fixed
