@@ -13,6 +13,7 @@ in1:
     OPEN "TESTOUT$" FOR OUTPUT AS #1
     PRINT #1, "PASS"
     CLOSE #1
+    END
   END IF
     
   ' Expected: will loop forever, i never changes.
