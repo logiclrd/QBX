@@ -186,8 +186,12 @@ public abstract class ForStatement : Executable
 		if (sequenceIndex == 1)
 			statementIndex += Body!.Count;
 
+		EnterLoop(stackFrame);
+
 		DispatchImplementation(statementIndex, context, stackFrame);
 	}
+
+	protected abstract void EnterLoop(StackFrame stackFrame);
 
 	protected abstract void DispatchImplementation(int statementIndex, ExecutionContext context, StackFrame stackFrame);
 
@@ -256,8 +260,28 @@ public class IntegerForStatement(CodeModel.Statements.ForStatement sourceForStat
 
 			stackFrame.NextStatements[_nextDispatcherIndex] = nextStatement;
 
+			iteratorVariable.Value = nextStatement.NextValue;
+			iteratorVariable.WritePinnedData();
+
 			DispatchImplementation(0, context, stackFrame);
 		}
+	}
+
+	protected override void EnterLoop(StackFrame stackFrame)
+	{
+		NextStatement nextStatement;
+
+		if (stackFrame.NextStatements.TryGetValue(_nextDispatcherIndex, out var executable))
+			nextStatement = (NextStatement)executable;
+		else
+		{
+			nextStatement = new NextStatement(0, 0, 0, SourceNextStatement);
+			stackFrame.NextStatements[_nextDispatcherIndex] = nextStatement;
+		}
+
+		var iteratorVariable = (IntegerVariable)stackFrame.Variables[IteratorVariableIndex];
+
+		nextStatement.NextValue = iteratorVariable.Value;
 	}
 
 	protected override void DispatchImplementation(int statementIndex, ExecutionContext context, StackFrame stackFrame)
@@ -272,9 +296,6 @@ public class IntegerForStatement(CodeModel.Statements.ForStatement sourceForStat
 			{
 				System.Threading.Thread.Yield();
 
-				iteratorVariable.Value = nextStatement.NextValue;
-				iteratorVariable.WritePinnedData();
-
 				if (nextStatement.FinishLoop)
 					break;
 
@@ -284,6 +305,9 @@ public class IntegerForStatement(CodeModel.Statements.ForStatement sourceForStat
 				statementIndex = 0;
 
 				context.Dispatch(nextStatement, stackFrame);
+
+				iteratorVariable.Value = nextStatement.NextValue;
+				iteratorVariable.WritePinnedData();
 			}
 		}
 		catch (ExitFor) { }
@@ -306,9 +330,9 @@ public class IntegerForStatement(CodeModel.Statements.ForStatement sourceForStat
 				throw RuntimeException.Overflow(Source);
 			}
 
-			if (step > 0)
+			if (step >= 0)
 				FinishLoop = (NextValue > to);
-			else if (step < 0)
+			else
 				FinishLoop = (NextValue < to);
 		}
 	}
@@ -364,8 +388,28 @@ public class LongForStatement(CodeModel.Statements.ForStatement sourceForStateme
 
 			stackFrame.NextStatements[_nextDispatcherIndex] = nextStatement;
 
+			iteratorVariable.Value = nextStatement.NextValue;
+			iteratorVariable.WritePinnedData();
+
 			DispatchImplementation(0, context, stackFrame);
 		}
+	}
+
+	protected override void EnterLoop(StackFrame stackFrame)
+	{
+		NextStatement nextStatement;
+
+		if (stackFrame.NextStatements.TryGetValue(_nextDispatcherIndex, out var executable))
+			nextStatement = (NextStatement)executable;
+		else
+		{
+			nextStatement = new NextStatement(0, 0, 0, SourceNextStatement);
+			stackFrame.NextStatements[_nextDispatcherIndex] = nextStatement;
+		}
+
+		var iteratorVariable = (LongVariable)stackFrame.Variables[IteratorVariableIndex];
+
+		nextStatement.NextValue = iteratorVariable.Value;
 	}
 
 	protected override void DispatchImplementation(int statementIndex, ExecutionContext context, StackFrame stackFrame)
@@ -380,9 +424,6 @@ public class LongForStatement(CodeModel.Statements.ForStatement sourceForStateme
 			{
 				System.Threading.Thread.Yield();
 
-				iteratorVariable.Value = nextStatement.NextValue;
-				iteratorVariable.WritePinnedData();
-
 				if (nextStatement.FinishLoop)
 					break;
 
@@ -392,6 +433,9 @@ public class LongForStatement(CodeModel.Statements.ForStatement sourceForStateme
 				statementIndex = 0;
 
 				context.Dispatch(nextStatement, stackFrame);
+
+				iteratorVariable.Value = nextStatement.NextValue;
+				iteratorVariable.WritePinnedData();
 			}
 		}
 		catch (ExitFor) { }
@@ -414,9 +458,9 @@ public class LongForStatement(CodeModel.Statements.ForStatement sourceForStateme
 				throw RuntimeException.Overflow(Source);
 			}
 
-			if (step > 0)
+			if (step >= 0)
 				FinishLoop = (NextValue > to);
-			else if (step < 0)
+			else
 				FinishLoop = (NextValue < to);
 		}
 	}
@@ -472,8 +516,28 @@ public class SingleForStatement(CodeModel.Statements.ForStatement sourceForState
 
 			stackFrame.NextStatements[_nextDispatcherIndex] = nextStatement;
 
+			iteratorVariable.Value = nextStatement.NextValue;
+			iteratorVariable.WritePinnedData();
+
 			DispatchImplementation(0, context, stackFrame);
 		}
+	}
+
+	protected override void EnterLoop(StackFrame stackFrame)
+	{
+		NextStatement nextStatement;
+
+		if (stackFrame.NextStatements.TryGetValue(_nextDispatcherIndex, out var executable))
+			nextStatement = (NextStatement)executable;
+		else
+		{
+			nextStatement = new NextStatement(0, 0, 0, SourceNextStatement);
+			stackFrame.NextStatements[_nextDispatcherIndex] = nextStatement;
+		}
+
+		var iteratorVariable = (SingleVariable)stackFrame.Variables[IteratorVariableIndex];
+
+		nextStatement.NextValue = iteratorVariable.Value;
 	}
 
 	protected override void DispatchImplementation(int statementIndex, ExecutionContext context, StackFrame stackFrame)
@@ -488,9 +552,6 @@ public class SingleForStatement(CodeModel.Statements.ForStatement sourceForState
 			{
 				System.Threading.Thread.Yield();
 
-				iteratorVariable.Value = nextStatement.NextValue;
-				iteratorVariable.WritePinnedData();
-
 				if (nextStatement.FinishLoop)
 					break;
 
@@ -500,6 +561,9 @@ public class SingleForStatement(CodeModel.Statements.ForStatement sourceForState
 				statementIndex = 0;
 
 				context.Dispatch(nextStatement, stackFrame);
+
+				iteratorVariable.Value = nextStatement.NextValue;
+				iteratorVariable.WritePinnedData();
 			}
 		}
 		catch (ExitFor) { }
@@ -522,9 +586,9 @@ public class SingleForStatement(CodeModel.Statements.ForStatement sourceForState
 				throw RuntimeException.Overflow(Source);
 			}
 
-			if (step > 0)
+			if (step >= 0)
 				FinishLoop = (NextValue > to);
-			else if (step < 0)
+			else
 				FinishLoop = (NextValue < to);
 		}
 	}
@@ -580,8 +644,28 @@ public class DoubleForStatement(CodeModel.Statements.ForStatement sourceForState
 
 			stackFrame.NextStatements[_nextDispatcherIndex] = nextStatement;
 
+			iteratorVariable.Value = nextStatement.NextValue;
+			iteratorVariable.WritePinnedData();
+
 			DispatchImplementation(0, context, stackFrame);
 		}
+	}
+
+	protected override void EnterLoop(StackFrame stackFrame)
+	{
+		NextStatement nextStatement;
+
+		if (stackFrame.NextStatements.TryGetValue(_nextDispatcherIndex, out var executable))
+			nextStatement = (NextStatement)executable;
+		else
+		{
+			nextStatement = new NextStatement(0, 0, 0, SourceNextStatement);
+			stackFrame.NextStatements[_nextDispatcherIndex] = nextStatement;
+		}
+
+		var iteratorVariable = (DoubleVariable)stackFrame.Variables[IteratorVariableIndex];
+
+		nextStatement.NextValue = iteratorVariable.Value;
 	}
 
 	protected override void DispatchImplementation(int statementIndex, ExecutionContext context, StackFrame stackFrame)
@@ -596,9 +680,6 @@ public class DoubleForStatement(CodeModel.Statements.ForStatement sourceForState
 			{
 				System.Threading.Thread.Yield();
 
-				iteratorVariable.Value = nextStatement.NextValue;
-				iteratorVariable.WritePinnedData();
-
 				if (nextStatement.FinishLoop)
 					break;
 
@@ -608,6 +689,9 @@ public class DoubleForStatement(CodeModel.Statements.ForStatement sourceForState
 				statementIndex = 0;
 
 				context.Dispatch(nextStatement, stackFrame);
+
+				iteratorVariable.Value = nextStatement.NextValue;
+				iteratorVariable.WritePinnedData();
 			}
 		}
 		catch (ExitFor) { }
@@ -630,9 +714,9 @@ public class DoubleForStatement(CodeModel.Statements.ForStatement sourceForState
 				throw RuntimeException.Overflow(Source);
 			}
 
-			if (step > 0)
+			if (step >= 0)
 				FinishLoop = (NextValue > to);
-			else if (step < 0)
+			else
 				FinishLoop = (NextValue < to);
 		}
 	}
@@ -688,8 +772,28 @@ public class CurrencyForStatement(CodeModel.Statements.ForStatement sourceForSta
 
 			stackFrame.NextStatements[_nextDispatcherIndex] = nextStatement;
 
+			iteratorVariable.Value = nextStatement.NextValue;
+			iteratorVariable.WritePinnedData();
+
 			DispatchImplementation(0, context, stackFrame);
 		}
+	}
+
+	protected override void EnterLoop(StackFrame stackFrame)
+	{
+		NextStatement nextStatement;
+
+		if (stackFrame.NextStatements.TryGetValue(_nextDispatcherIndex, out var executable))
+			nextStatement = (NextStatement)executable;
+		else
+		{
+			nextStatement = new NextStatement(0, 0, 0, SourceNextStatement);
+			stackFrame.NextStatements[_nextDispatcherIndex] = nextStatement;
+		}
+
+		var iteratorVariable = (CurrencyVariable)stackFrame.Variables[IteratorVariableIndex];
+
+		nextStatement.NextValue = iteratorVariable.Value;
 	}
 
 	protected override void DispatchImplementation(int statementIndex, ExecutionContext context, StackFrame stackFrame)
@@ -704,9 +808,6 @@ public class CurrencyForStatement(CodeModel.Statements.ForStatement sourceForSta
 			{
 				System.Threading.Thread.Yield();
 
-				iteratorVariable.Value = nextStatement.NextValue;
-				iteratorVariable.WritePinnedData();
-
 				if (nextStatement.FinishLoop)
 					break;
 
@@ -716,6 +817,9 @@ public class CurrencyForStatement(CodeModel.Statements.ForStatement sourceForSta
 				statementIndex = 0;
 
 				context.Dispatch(nextStatement, stackFrame);
+
+				iteratorVariable.Value = nextStatement.NextValue;
+				iteratorVariable.WritePinnedData();
 			}
 		}
 		catch (ExitFor) { }
@@ -741,9 +845,9 @@ public class CurrencyForStatement(CodeModel.Statements.ForStatement sourceForSta
 			if (!NextValue.IsInCurrencyRange())
 				throw RuntimeException.Overflow(Source);
 
-			if (step > 0)
+			if (step >= 0)
 				FinishLoop = (NextValue > to);
-			else if (step < 0)
+			else
 				FinishLoop = (NextValue < to);
 		}
 	}
@@ -804,6 +908,11 @@ public class DelayLoopForStatement(CodeModel.Statements.ForStatement sourceForSt
 					from + step * Math.Truncate(iterations),
 					stackFrame.Variables[IteratorVariableIndex].DataType.PrimitiveType));
 		}
+	}
+
+	protected override void EnterLoop(StackFrame stackFrame)
+	{
+		// It is not possible to jump into the middle of a DelayLoopForStatement.
 	}
 
 	protected override void DispatchImplementation(int statementIndex, ExecutionContext context, StackFrame stackFrame)
