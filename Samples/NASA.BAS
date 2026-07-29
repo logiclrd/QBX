@@ -160,7 +160,7 @@ ELSE
   y234! = (y23! + y34!) * .5
 
   ' This is the exact midpoint (t = .5) of the curve. This
-  ' becomes the ned of the first half and the start of the
+  ' becomes the end of the first half and the start of the
   ' second half.
 
   mx! = (x123! + x234!) * .5
