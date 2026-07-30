@@ -499,7 +499,7 @@ public partial class Program
 
 										if (newCursorX < newScrollX)
 										{
-											newScrollX = newCursorX - 20;
+											newScrollX = newCursorX - 19;
 
 											if (newScrollX < 0)
 												newScrollX = 0;
