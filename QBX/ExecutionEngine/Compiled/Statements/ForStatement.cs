@@ -304,6 +304,8 @@ public class IntegerForStatement(CodeModel.Statements.ForStatement sourceForStat
 
 				statementIndex = 0;
 
+				nextStatement.NextValue = iteratorVariable.Value;
+
 				context.Dispatch(nextStatement, stackFrame);
 
 				iteratorVariable.Value = nextStatement.NextValue;
@@ -431,6 +433,8 @@ public class LongForStatement(CodeModel.Statements.ForStatement sourceForStateme
 					context.Dispatch(Body[i], stackFrame);
 
 				statementIndex = 0;
+
+				nextStatement.NextValue = iteratorVariable.Value;
 
 				context.Dispatch(nextStatement, stackFrame);
 
@@ -560,6 +564,8 @@ public class SingleForStatement(CodeModel.Statements.ForStatement sourceForState
 
 				statementIndex = 0;
 
+				nextStatement.NextValue = iteratorVariable.Value;
+
 				context.Dispatch(nextStatement, stackFrame);
 
 				iteratorVariable.Value = nextStatement.NextValue;
@@ -688,6 +694,8 @@ public class DoubleForStatement(CodeModel.Statements.ForStatement sourceForState
 
 				statementIndex = 0;
 
+				nextStatement.NextValue = iteratorVariable.Value;
+
 				context.Dispatch(nextStatement, stackFrame);
 
 				iteratorVariable.Value = nextStatement.NextValue;
@@ -815,6 +823,8 @@ public class CurrencyForStatement(CodeModel.Statements.ForStatement sourceForSta
 					context.Dispatch(Body[i], stackFrame);
 
 				statementIndex = 0;
+
+				nextStatement.NextValue = iteratorVariable.Value;
 
 				context.Dispatch(nextStatement, stackFrame);
 
