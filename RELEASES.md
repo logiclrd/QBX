@@ -1,5 +1,12 @@
 # QBX Releases
 
+## 1.19.1 - 2026-07-29
+
+### Fixed
+
+- Watches are re-evaluated after Immediate window execution.
+- Changes made to `FOR` statement iterators while execution is paused in break mode directly on the associated `NEXT` statement are no longer lost.
+
 ## 1.19.0 - 2026-07-29
 
 ### Added
