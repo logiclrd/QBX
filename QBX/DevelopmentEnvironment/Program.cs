@@ -779,7 +779,7 @@ public partial class Program : HostedProgram, IOvertypeFlag
 			}
 		}
 
-		HelpViewport.ScrollCursorIntoView(cursorX, cursorY, 0, 0, ViewportPositioningPriority.Cursor, TextLibrary.Width - 2, ignoreErrors: true);
+		HelpViewport.ScrollCursorIntoView(cursorX, cursorY, 0, 0, ViewportPositioningPriority.Cursor, TextLibrary.Width - 2, terminateToCommitEdit: null, ignoreErrors: true);
 
 		PrimaryViewport.Height = primaryViewportLines - 1;
 		SplitViewport?.Height = splitViewportLines - 1;

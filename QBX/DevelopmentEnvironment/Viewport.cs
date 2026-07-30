@@ -29,9 +29,34 @@ public class Viewport
 	public bool HasHorizontalScrollBar = true;
 	public int ScrollX, ScrollY;
 	public int CursorX, CursorY;
-	public bool CurrentLineChanged;
+	public bool CurrentLineEdited;
 	public StringBuilder? CurrentLineBuffer;
 	public SelectionManager SelectionManager;
+
+	public bool RerenderCurrentLineAndCheckForActualChanges()
+	{
+		if (!CurrentLineEdited || (CurrentLineBuffer == null))
+			return false;
+
+		var writer = new StringWriter();
+
+		RenderLine(CursorY, writer);
+
+		var uneditedLine = writer.GetStringBuilder();
+
+		if (CurrentLineBuffer.Length < uneditedLine.Length)
+			return true;
+
+		for (int i = 0; i < uneditedLine.Length; i++)
+			if (CurrentLineBuffer[i] != uneditedLine[i])
+				return true;
+
+		for (int i = uneditedLine.Length; i < CurrentLineBuffer.Length; i++)
+			if (CurrentLineBuffer[i] != ' ')
+				return true;
+
+		return false;
+	}
 
 	public event Func<string, IEditableElement?>? GetElementByName;
 
@@ -89,7 +114,7 @@ public class Viewport
 		{
 			int count = EditableElement.Lines.Count;
 
-			if ((CursorY >= count) && CurrentLineChanged)
+			if ((CursorY >= count) && CurrentLineEdited)
 				count++;
 
 			return count;
@@ -175,7 +200,7 @@ public class Viewport
 
 			EditableElement.Dirty();
 
-			CurrentLineChanged = false;
+			CurrentLineEdited = false;
 			CurrentLineBuffer = null;
 		}
 	}
@@ -198,7 +223,7 @@ public class Viewport
 	public void CancelEdit()
 	{
 		CurrentLineBuffer = null;
-		CurrentLineChanged = false;
+		CurrentLineEdited = false;
 	}
 
 	public bool CommitCurrentLine(StringBuilder? buffer = null)
@@ -206,7 +231,7 @@ public class Viewport
 		if (!IsEditable || (EditableElement == null))
 			return false;
 
-		if (!CurrentLineChanged || (CursorY < 0))
+		if (!CurrentLineEdited || (CursorY < 0))
 		{
 			CurrentLineBuffer = null;
 			return false;
@@ -413,7 +438,7 @@ public class Viewport
 			ScrollY = CursorY;
 	}
 
-	public void ScrollCursorIntoView(int newCursorX, int newCursorY, int newScrollX, int newScrollY, ViewportPositioningPriority priority, int viewportWidth, bool ignoreErrors = false)
+	public void ScrollCursorIntoView(int newCursorX, int newCursorY, int newScrollX, int newScrollY, ViewportPositioningPriority priority, int viewportWidth, Action<Action>? terminateToCommitEdit, bool ignoreErrors = false)
 	{
 		if (newScrollX < 0)
 		{
@@ -481,20 +506,33 @@ public class Viewport
 		if (newScrollY < 0)
 			newScrollY = 0;
 
-		if (newCursorY != CursorY)
+		if (newCursorY == CursorY)
 		{
-			try
-			{
-				CommitCurrentLine();
-			}
-			catch when (ignoreErrors)
-			{
-			}
+			CursorX = newCursorX;
+			CursorY = newCursorY;
+			ScrollX = newScrollX;
+			ScrollY = newScrollY;
 		}
+		else
+		{
+			terminateToCommitEdit ??= x => x();
 
-		CursorX = newCursorX;
-		CursorY = newCursorY;
-		ScrollX = newScrollX;
-		ScrollY = newScrollY;
+			terminateToCommitEdit(
+				() =>
+				{
+					try
+					{
+						CommitCurrentLine();
+					}
+					catch when (ignoreErrors)
+					{
+					}
+
+					CursorX = newCursorX;
+					CursorY = newCursorY;
+					ScrollX = newScrollX;
+					ScrollY = newScrollY;
+				});
+		}
 	}
 }

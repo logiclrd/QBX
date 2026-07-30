@@ -138,7 +138,8 @@ public partial class Program
 				newCursorX: context.Column, newCursorY: context.Line,
 				FocusedViewport.ScrollX, FocusedViewport.ScrollY,
 				ViewportPositioningPriority.Cursor,
-				viewportWidth: TextLibrary.CharacterWidth - 2);
+				viewportWidth: TextLibrary.CharacterWidth - 2,
+				PromptTerminateToCommitEdit);
 		}
 
 		_errorToken = context;

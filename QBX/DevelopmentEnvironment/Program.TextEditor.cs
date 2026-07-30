@@ -239,7 +239,7 @@ public partial class Program
 				buffer.Insert(newCursorX, inputText);
 				newCursorX += inputText.Length;
 
-				FocusedViewport.CurrentLineChanged = true;
+				FocusedViewport.CurrentLineEdited = true;
 				FocusedViewport.CurrentLineBuffer = buffer;
 
 				_alreadyPresentedError = false;
@@ -269,16 +269,20 @@ public partial class Program
 				{
 					if (!input.Modifiers.CtrlKey && !input.Modifiers.AltKey)
 					{
-						try
-						{
-							FocusedViewport.CommitCurrentLine();
-						}
-						catch { }
+						PromptTerminateToCommitEdit(
+							() =>
+							{
+								try
+								{
+									FocusedViewport.CommitCurrentLine();
+								}
+								catch { }
 
-						if (input.Modifiers.ShiftKey)
-							SwitchToNextElement();
-						else
-							ShowSubsDialog();
+								if (input.Modifiers.ShiftKey)
+									SwitchToNextElement();
+								else
+									ShowSubsDialog();
+							});
 					}
 
 					break;
@@ -297,15 +301,19 @@ public partial class Program
 				{
 					Machine.Keyboard.SuppressNextEventIf(isRelease: true, ScanCode.F5);
 
-					if (CommitViewportsOrPresentError())
-					{
-						if (input.Modifiers.ShiftKey)
-							Run();
-						else
-							Continue();
+					PromptTerminateToCommitEdit(
+						() =>
+						{
+							if (CommitViewportsOrPresentError())
+							{
+								if (input.Modifiers.ShiftKey)
+									Run();
+								else
+									Continue();
 
-						ReloadViewportParameters();
-					}
+								ReloadViewportParameters();
+							}
+						});
 
 					break;
 				}
@@ -314,36 +322,42 @@ public partial class Program
 					if (input.Modifiers.CtrlKey || input.Modifiers.AltKey)
 						break;
 
-					try
-					{
-						FocusedViewport.CommitCurrentLine();
-					}
-					catch { }
+					PromptTerminateToCommitEdit(
+						() =>
+						{
+							try
+							{
+								FocusedViewport.CommitCurrentLine();
+							}
+							catch { }
 
-					if (input.Modifiers.ShiftKey == false)
-					{
-						// Forward
-						if (FocusedViewport == HelpViewport)
-							FocusedViewport = PrimaryViewport;
-						else if (FocusedViewport == PrimaryViewport)
-							FocusedViewport = SplitViewport ?? ImmediateViewport;
-						else if (FocusedViewport == SplitViewport)
-							FocusedViewport = ImmediateViewport;
-						else if (FocusedViewport == ImmediateViewport)
-							FocusedViewport = HelpViewport ?? PrimaryViewport;
-					}
-					else
-					{
-						// Backward
-						if (FocusedViewport == HelpViewport)
-							FocusedViewport = ImmediateViewport;
-						else if (FocusedViewport == PrimaryViewport)
-							FocusedViewport = HelpViewport ?? ImmediateViewport;
-						else if (FocusedViewport == SplitViewport)
-							FocusedViewport = PrimaryViewport;
-						else if (FocusedViewport == ImmediateViewport)
-							FocusedViewport = SplitViewport ?? PrimaryViewport;
-					}
+							if (input.Modifiers.ShiftKey == false)
+							{
+								// Forward
+								if (FocusedViewport == HelpViewport)
+									FocusedViewport = PrimaryViewport;
+								else if (FocusedViewport == PrimaryViewport)
+									FocusedViewport = SplitViewport ?? ImmediateViewport;
+								else if (FocusedViewport == SplitViewport)
+									FocusedViewport = ImmediateViewport;
+								else if (FocusedViewport == ImmediateViewport)
+									FocusedViewport = HelpViewport ?? PrimaryViewport;
+							}
+							else
+							{
+								// Backward
+								if (FocusedViewport == HelpViewport)
+									FocusedViewport = ImmediateViewport;
+								else if (FocusedViewport == PrimaryViewport)
+									FocusedViewport = HelpViewport ?? ImmediateViewport;
+								else if (FocusedViewport == SplitViewport)
+									FocusedViewport = PrimaryViewport;
+								else if (FocusedViewport == ImmediateViewport)
+									FocusedViewport = SplitViewport ?? PrimaryViewport;
+							}
+
+							ReloadViewportParameters();
+						});
 
 					break;
 				}
@@ -351,12 +365,16 @@ public partial class Program
 				{
 					Machine.Keyboard.SuppressNextEventIf(isRelease: true, ScanCode.F8);
 
-					if (CommitViewportsOrPresentError())
-					{
-						Step();
+					PromptTerminateToCommitEdit(
+						() =>
+						{
+							if (CommitViewportsOrPresentError())
+							{
+								Step();
 
-						ReloadViewportParameters();
-					}
+								ReloadViewportParameters();
+							}
+						});
 
 					break;
 				}
@@ -473,88 +491,95 @@ public partial class Program
 						}
 						else
 						{
-							StringBuilder newLine = new StringBuilder();
-
-							if (FocusedViewport.CursorX < buffer.Length)
-							{
-								// Enter mid-line: Split lines
-								newLine = new StringBuilder(capacity: indentation + buffer.Length - FocusedViewport.CursorX);
-
-								for (int i = 0; i < indentation; i++)
-									newLine.Append(' ');
-
-								newLine.Append(buffer, FocusedViewport.CursorX, buffer.Length - FocusedViewport.CursorX);
-
-								while ((newLine.Length > 0) && char.IsWhiteSpace(newLine[newLine.Length - 1]))
-									newLine.Length--;
-
-								buffer.Remove(FocusedViewport.CursorX, buffer.Length - FocusedViewport.CursorX);
-
-								FocusedViewport.CurrentLineBuffer = buffer;
-								FocusedViewport.CurrentLineChanged = true;
-
-								if (FocusedViewport.CursorX == 0)
-									_alreadyPresentedError = savedAlreadyPresentedError;
-							}
-
-							// Step 1: Try to commit left part
-							bool commitRightPart = false;
-
-							try
-							{
-								bool reloadViewport = FocusedViewport.CommitCurrentLine();
-
-								if (reloadViewport)
-								{
-									ReloadViewportParameters();
-									commitRightPart = true;
-
-									if (newLine.Length == 0)
+							PromptTerminateToCommitEdit(
+								willMakeChanges: true,
+								proceedAction:
+									() =>
 									{
-										newCursorX = 0;
-										newCursorY = 1;
-										break;
-									}
-								}
-							}
-							catch (Exception exception)
-							{
-								// No syntax checking applied when splitting an existing line,
-								// and if the user tries twice in a row without altering the
-								// line, they are allowed to keep it the second time.
-								if ((newLine.Length == 0) && !_alreadyPresentedError
-								 && Configuration.EnableSyntaxChecking)
-								{
-									_alreadyPresentedError = true;
-									PresentError(exception);
-									return;
-								}
-							}
+										StringBuilder newLine = new StringBuilder();
 
-							// Step 2: Insert right part as new line being edited
-							FocusedViewport.CursorY++;
-							FocusedViewport.InsertLine(FocusedViewport.CursorY, new CodeLine());
+										if (FocusedViewport.CursorX < buffer.Length)
+										{
+											// Enter mid-line: Split lines
+											newLine = new StringBuilder(capacity: indentation + buffer.Length - FocusedViewport.CursorX);
 
-							contentLineCount++;
+											for (int i = 0; i < indentation; i++)
+												newLine.Append(' ');
 
-							FocusedViewport.CurrentLineBuffer = newLine;
-							FocusedViewport.CurrentLineChanged = true;
+											newLine.Append(buffer, FocusedViewport.CursorX, buffer.Length - FocusedViewport.CursorX);
 
-							if (commitRightPart)
-							{
-								try
-								{
-									FocusedViewport.CommitCurrentLine();
-								}
-								catch { }
-							}
+											while ((newLine.Length > 0) && char.IsWhiteSpace(newLine[newLine.Length - 1]))
+												newLine.Length--;
+
+											buffer.Remove(FocusedViewport.CursorX, buffer.Length - FocusedViewport.CursorX);
+
+											FocusedViewport.CurrentLineBuffer = buffer;
+											FocusedViewport.CurrentLineEdited = true;
+
+											if (FocusedViewport.CursorX == 0)
+												_alreadyPresentedError = savedAlreadyPresentedError;
+										}
+
+										// Step 1: Try to commit left part
+										bool commitRightPart = false;
+
+										try
+										{
+											bool reloadViewport = FocusedViewport.CommitCurrentLine();
+
+											if (reloadViewport)
+											{
+												ReloadViewportParameters();
+												commitRightPart = true;
+
+												if (newLine.Length == 0)
+												{
+													FocusedViewport.CursorX = 0;
+													FocusedViewport.CursorY = 1;
+
+													return;
+												}
+											}
+										}
+										catch (Exception exception)
+										{
+											// No syntax checking applied when splitting an existing line,
+											// and if the user tries twice in a row without altering the
+											// line, they are allowed to keep it the second time.
+											if ((newLine.Length == 0) && !_alreadyPresentedError
+											 && Configuration.EnableSyntaxChecking)
+											{
+												_alreadyPresentedError = true;
+												PresentError(exception);
+												return;
+											}
+										}
+
+										// Step 2: Insert right part as new line being edited
+										newCursorY++;
+										newCursorX = indentation;
+
+										ApplyCursorMovement();
+
+										FocusedViewport.InsertLine(newCursorY, new CodeLine());
+
+										contentLineCount++;
+
+										FocusedViewport.CurrentLineBuffer = newLine;
+										FocusedViewport.CurrentLineEdited = true;
+
+										if (commitRightPart)
+										{
+											try
+											{
+												FocusedViewport.CommitCurrentLine();
+											}
+											catch { }
+										}
+									});
+
+							return;
 						}
-
-						newCursorX = indentation;
-						newCursorY = FocusedViewport.CursorY;
-
-						if (newCursorX < newScrollX)
-							newScrollX = 0;
 					}
 					else if (FocusedViewport.HelpTopic != null)
 					{
@@ -614,15 +639,27 @@ public partial class Program
 					{
 						if (FocusedViewport.IsEditable)
 						{
-							if (FocusedViewport.SelectionManager.HasSelection)
+							void PerformPaste()
 							{
-								FocusedViewport.SelectionManager.Delete();
-								newCursorX = FocusedViewport.CursorX;
+								if (FocusedViewport.SelectionManager.HasSelection)
+								{
+									FocusedViewport.SelectionManager.Delete();
+									newCursorX = FocusedViewport.CursorX;
+								}
+
+								FocusedViewport.SelectionManager.Paste();
+								select = false;
+								_alreadyPresentedError = false;
 							}
 
-							FocusedViewport.SelectionManager.Paste();
-							select = false;
-							_alreadyPresentedError = false;
+							if (FocusedViewport.SelectionManager.HasMultilineSelection
+							 || FocusedViewport.SelectionManager.HasMultilineClipboardContent)
+							{
+								PromptTerminateToCommitEdit(willMakeChanges: true, PerformPaste);
+								return;
+							}
+							else
+								PerformPaste();
 						}
 					}
 					else
@@ -639,10 +676,31 @@ public partial class Program
 					{
 						if (FocusedViewport.IsEditable)
 						{
-							if (input.Modifiers.ShiftKey && !input.Modifiers.CtrlKey && !input.Modifiers.AltKey)
-								FocusedViewport.SelectionManager.Cut();
+							void PerformDelete()
+							{
+								if (input.Modifiers.ShiftKey && !input.Modifiers.CtrlKey && !input.Modifiers.AltKey)
+									FocusedViewport.SelectionManager.Cut();
+								else
+									FocusedViewport.SelectionManager.Delete();
+
+								newCursorX = FocusedViewport.CursorX;
+								newCursorY = FocusedViewport.CursorY;
+							}
+
+							if (FocusedViewport.SelectionManager.HasMultilineSelection)
+							{
+								PromptTerminateToCommitEdit(
+									willMakeChanges: true,
+									() =>
+									{
+										PerformDelete();
+										ApplyCursorMovement();
+									});
+
+								return;
+							}
 							else
-								FocusedViewport.SelectionManager.Delete();
+								PerformDelete();
 						}
 						else
 							FocusedViewport.SelectionManager.CancelSelection();
@@ -664,38 +722,45 @@ public partial class Program
 					{
 						buffer.Remove(FocusedViewport.CursorX, 1);
 						FocusedViewport.CurrentLineBuffer = buffer;
-						FocusedViewport.CurrentLineChanged = true;
+						FocusedViewport.CurrentLineEdited = true;
 					}
 					else
 					{
 						// Delete at end of line: join lines
 						if (FocusedViewport.CursorY + 1 < contentLineCount)
 						{
-							var nextLine = new StringWriter();
-
-							FocusedViewport.RenderLine(FocusedViewport.CursorY + 1, nextLine);
-
-							while (buffer.Length < FocusedViewport.CursorX)
-								buffer.Append(' ');
-
-							var nextLineBuffer = nextLine.GetStringBuilder();
-
-							int firstNonSpace = 0;
-
-							for (int i = 0; i < nextLineBuffer.Length; i++)
-								if (nextLineBuffer[i] != ' ')
+							PromptTerminateToCommitEdit(
+								willMakeChanges: true,
+								() =>
 								{
-									firstNonSpace = i;
-									break;
-								}
+									var nextLine = new StringWriter();
 
-							buffer.Append(nextLineBuffer, firstNonSpace, nextLineBuffer.Length - firstNonSpace);
+									FocusedViewport.RenderLine(FocusedViewport.CursorY + 1, nextLine);
 
-							FocusedViewport.DeleteLine(FocusedViewport.CursorY + 1);
+									while (buffer.Length < FocusedViewport.CursorX)
+										buffer.Append(' ');
 
-							FocusedViewport.CurrentLineBuffer = buffer;
-							FocusedViewport.CurrentLineChanged = true;
+									var nextLineBuffer = nextLine.GetStringBuilder();
+
+									int firstNonSpace = 0;
+
+									for (int i = 0; i < nextLineBuffer.Length; i++)
+										if (nextLineBuffer[i] != ' ')
+										{
+											firstNonSpace = i;
+											break;
+										}
+
+									buffer.Append(nextLineBuffer, firstNonSpace, nextLineBuffer.Length - firstNonSpace);
+
+									FocusedViewport.DeleteLine(FocusedViewport.CursorY + 1);
+
+									FocusedViewport.CurrentLineBuffer = buffer;
+									FocusedViewport.CurrentLineEdited = true;
+								});
 						}
+
+						return;
 					}
 
 					_alreadyPresentedError = false;
@@ -762,27 +827,37 @@ public partial class Program
 								}
 
 								FocusedViewport.CurrentLineBuffer = buffer;
-								FocusedViewport.CurrentLineChanged = true;
+								FocusedViewport.CurrentLineEdited = true;
 							}
 							else if (FocusedViewport.CursorY > 0)
 							{
-								// Backspace at start of line: join lines
-								string lineToCollapse = buffer.ToString();
+								PromptTerminateToCommitEdit(
+									willMakeChanges: true,
+									() =>
+									{
+										// Backspace at start of line: join lines
+										string lineToCollapse = buffer.ToString();
 
-								newCursorY--;
+										newCursorY = newCursorY - 1;
 
-								FocusedViewport.CursorY = newCursorY;
-								FocusedViewport.CurrentLineBuffer = null;
+										ApplyCursorMovement();
 
-								buffer = FocusedViewport.EditCurrentLine();
+										FocusedViewport.CurrentLineBuffer = null;
 
-								newCursorX = buffer.Length;
+										buffer = FocusedViewport.EditCurrentLine();
 
-								buffer.Append(lineToCollapse);
+										newCursorX = buffer.Length;
 
-								FocusedViewport.DeleteLine(FocusedViewport.CursorY);
-								FocusedViewport.CurrentLineBuffer = buffer;
-								FocusedViewport.CurrentLineChanged = true;
+										ApplyCursorMovement();
+
+										buffer.Append(lineToCollapse);
+
+										FocusedViewport.DeleteLine(FocusedViewport.CursorY);
+										FocusedViewport.CurrentLineBuffer = buffer;
+										FocusedViewport.CurrentLineEdited = true;
+									});
+
+								return;
 							}
 
 							_alreadyPresentedError = false;
@@ -794,25 +869,58 @@ public partial class Program
 			}
 		}
 
-		try
-		{
-			FocusedViewport.ScrollCursorIntoView(
-				newCursorX, newCursorY,
-				newScrollX, newScrollY,
-				priority,
-				viewportWidth,
-				ignoreErrors: _alreadyPresentedError || !Configuration.EnableSyntaxChecking);
-		}
-		catch (Exception exception)
-		{
-			PresentError(exception);
-			_alreadyPresentedError = true;
-		}
+		ApplyCursorMovement();
 
-		if (!select && !input.IsModifierKey)
-			FocusedViewport.SelectionManager.StartSelection(FocusedViewport.CursorX, FocusedViewport.CursorY);
+		void ApplyCursorMovement()
+		{
+			try
+			{
+				FocusedViewport.ScrollCursorIntoView(
+					newCursorX, newCursorY,
+					newScrollX, newScrollY,
+					priority,
+					viewportWidth,
+					PromptTerminateToCommitEdit,
+					ignoreErrors: _alreadyPresentedError || !Configuration.EnableSyntaxChecking);
+			}
+			catch (Exception exception)
+			{
+				PresentError(exception);
+				_alreadyPresentedError = true;
+			}
+
+			if (!select && !input.IsModifierKey)
+				FocusedViewport.SelectionManager.StartSelection(FocusedViewport.CursorX, FocusedViewport.CursorY);
+			else
+				FocusedViewport.SelectionManager.ExtendSelection(FocusedViewport.CursorX, FocusedViewport.CursorY);
+		}
+	}
+
+	void PromptTerminateToCommitEdit(Action proceedAction)
+		=> PromptTerminateToCommitEdit(false, proceedAction);
+
+	void PromptTerminateToCommitEdit(bool willMakeChanges, Action proceedAction)
+	{
+		bool actualChanges = willMakeChanges || FocusedViewport.RerenderCurrentLineAndCheckForActualChanges();
+
+		if (!actualChanges && FocusedViewport.CurrentLineEdited)
+			FocusedViewport.CancelEdit();
+
+		if (!actualChanges || (_executionContext == null))
+			proceedAction();
 		else
-			FocusedViewport.SelectionManager.ExtendSelection(FocusedViewport.CursorX, FocusedViewport.CursorY);
+		{
+			var dialog = new CannotContinueDialog(Machine, Configuration);
+
+			dialog.Proceed +=
+				() =>
+				{
+					Terminate();
+					proceedAction();
+				};
+
+			ShowDialog(dialog);
+		}
 	}
 
 	bool EnsureAllCodeIsParsed(bool presentErrors = true)
