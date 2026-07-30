@@ -27,6 +27,8 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 	bool _chainExecution;
 	bool _isTerminated;
 
+	Sequence? _directSequence = null;
+
 	int _stepOverNesting;
 
 	object _sync = new object();
@@ -94,9 +96,34 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 		}
 	}
 
+	public void ExecuteDirect(Sequence directSequence)
+	{
+		if (!_break)
+			throw new InvalidOperationException("Invalid state for ExecuteDirect, program execution must be in break state");
+
+		_directSequence = directSequence;
+
+		ContinueExecution();
+		WaitForInterruption();
+	}
+
+	public Sequence? CollectDirectSequence()
+	{
+		var ret = _directSequence;
+
+		_directSequence = null;
+
+		return ret;
+	}
+
 	public void Break()
 	{
 		_break = true;
+	}
+
+	public void Unbreak()
+	{
+		_break = false;
 	}
 
 	public void Terminate()
@@ -141,7 +168,7 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 		}
 	}
 
-	public void NextStatement(CodeModel.Statements.Statement? statement)
+	public DebugInstruction NextStatement(CodeModel.Statements.Statement? statement)
 	{
 		DebugOut("PROGRAM: beginning statement");
 
@@ -162,7 +189,12 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 		{
 			DebugOut("PROGRAM: break");
 			WaitToContinue();
+
+			if (_directSequence != null)
+				return DebugInstruction.ExecuteDirect;
 		}
+
+		return DebugInstruction.Proceed;
 	}
 
 	public void Error(RuntimeException error)

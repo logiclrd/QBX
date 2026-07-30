@@ -29,6 +29,39 @@ public class Compiler(IdentifierRepository identifierRepository)
 {
 	public bool DetectDelayLoops { get; set; }
 
+	public void CompileDirect(CodeModel.CodeLine line, Compilation compilation, Routine context, Sequence sequence, StackFrame executingFrame)
+	{
+		using (new CultureScope(BasicCulture.Instance))
+		{
+			var module = context.Module;
+			var mapper = context.Mapper;
+
+			mapper.ScanForDisallowedSlugs(line.AllStatements);
+
+			// We might add variables. We'll need to make sure they're represented in the
+			// executing frame before we return.
+			mapper.Unfreeze();
+
+			foreach (var statement in line.AllStatements)
+			{
+				if (!statement.IsLegalInDirectMode)
+					throw RuntimeException.IllegalInDirectMode(statement);
+
+				int statementIndex = 0;
+
+				var statements = line.Statements;
+
+				while (statementIndex < statements.Count)
+					TranslateStatement(context.Source, statements, ref statementIndex, sequence, context, compilation, module);
+			}
+
+			mapper.Freeze();
+
+			// Make sure any variables created ad hoc exist in the executing stack frame.
+			executingFrame.ExtendVariables(mapper);
+		}
+	}
+
 	public Module Compile(CodeModel.CompilationUnit unit, Compilation compilation)
 	{
 		using (new CultureScope(BasicCulture.Instance))
@@ -368,32 +401,8 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 	public void ProcessCommentForDirectives(string commentText, Compilation compilation)
 	{
-		var commentSpan = commentText.AsSpan();
-
-		bool IsSpace(char ch) => (ch == ' ') || (ch == '\t');
-
-		while ((commentSpan.Length > 0) && IsSpace(commentSpan[0]))
-			commentSpan = commentSpan.Slice(1);
-
-		// Metacommand comments must start with $.
-		if ((commentSpan.Length == 0) || (commentSpan[0] != '$'))
-			return;
-
-		int directiveIndex = commentSpan.IndexOf('$');
-
-		while (directiveIndex >= 0)
+		foreach (string directive in MetacommandParser.ParseDirectives(commentText))
 		{
-			commentSpan = commentSpan.Slice(directiveIndex);
-
-			int directiveEnd = 1;
-
-			while ((directiveEnd < commentSpan.Length) && char.IsAsciiLetterOrDigit(commentSpan[directiveEnd]))
-				directiveEnd++;
-
-			var directive = commentSpan.Slice(0, directiveEnd);
-
-			commentSpan = commentSpan.Slice(directiveEnd);
-
 			if (directive.Equals("$STATIC", StringComparison.OrdinalIgnoreCase))
 				compilation.UseStaticArrays = true;
 			else if (directive.Equals("$DYNAMIC", StringComparison.OrdinalIgnoreCase))
@@ -408,8 +417,6 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 				break; // $INCLUDE directives consume to the end of the line
 			}
-
-			directiveIndex = commentSpan.IndexOf('$');
 		}
 	}
 
@@ -575,7 +582,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 		}
 	}
 
-	void TranslateStatement(CodeModel.CompilationElement element, IList<CodeModel.Statements.Statement> statements, ref int statementIndexRef, Sequence container, Routine routine, Compilation compilation, Module module)
+	void TranslateStatement(CodeModel.CompilationElement element, IReadOnlyList<CodeModel.Statements.Statement> statements, ref int statementIndexRef, Sequence container, Routine routine, Compilation compilation, Module module)
 	{
 		int statementIndex = statementIndexRef;
 

@@ -19,6 +19,7 @@ public class Viewport
 	const string DefaultHeading = "Untitled";
 
 	public string Heading = DefaultHeading;
+	public bool StaticHeading = false;
 	public IEditableUnit? EditableUnit;
 	public IEditableElement? EditableElement;
 	public HelpDatabaseTopic? HelpTopic;
@@ -70,14 +71,17 @@ public class Viewport
 
 	public void UpdateHeading()
 	{
-		if (HelpTopic != null)
-			Heading = HelpTopic.TopicName;
-		else if (EditableElement == null)
-			Heading = DefaultHeading;
-		else if (EditableElement.Name == null)
-			Heading = EditableElement.Owner.Name;
-		else
-			Heading = EditableElement.Owner.Name + ":" + EditableElement.Name;
+		if (!StaticHeading)
+		{
+			if (HelpTopic != null)
+				Heading = HelpTopic.TopicName;
+			else if (EditableElement == null)
+				Heading = DefaultHeading;
+			else if (EditableElement.Name == null)
+				Heading = EditableElement.Owner.Name;
+			else
+				Heading = EditableElement.Owner.Name + ":" + EditableElement.Name;
+		}
 	}
 
 	public void SwitchTo(IEditableElement element)
@@ -245,7 +249,7 @@ public class Viewport
 		if ((EditableUnit is not CompilationUnit unit)
 		 || (EditableElement is not CompilationElement element))
 		{
-			EditableElement.ReplaceLine(CursorY, EditableElement.ConstructLine(buffer));
+			ReplaceCurrentLine(EditableElement.ConstructLine(buffer));
 			return false;
 		}
 

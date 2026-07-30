@@ -65,6 +65,11 @@ public class Routine : Sequence
 
 	// SUB or FUNCTION
 	public Routine(Module module, Mapper? moduleMapper, CodeModel.CompilationElement source)
+		: this(module, moduleMapper, source, detached: false)
+	{
+	}
+
+	public Routine(Module module, Mapper? moduleMapper, CodeModel.CompilationElement source, bool detached)
 	{
 		Module = module;
 
@@ -91,7 +96,8 @@ public class Routine : Sequence
 			}
 		}
 
-		module.Routines.Add(Name, this);
+		if (!detached)
+			module.Routines.Add(Name, this);
 	}
 
 	public void ApplyOpeningDefTypeStatements(Mapper mapper)

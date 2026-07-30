@@ -9,6 +9,8 @@ public class TypeStatement : Statement
 {
 	public override StatementType Type => StatementType.Type;
 
+	public override bool IsLegalInDirectMode => false;
+
 	public Identifier Name { get; set; } = Identifier.Empty;
 
 	public Token? NameToken { get; set; }

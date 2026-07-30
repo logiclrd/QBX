@@ -542,7 +542,32 @@ public class ExecutionContext
 					}
 
 					if (executable.CanBreak)
-						_executionState.NextStatement(executable.Source);
+					{
+						DebugInstruction debugInstruction;
+
+						do
+						{
+							debugInstruction = _executionState.NextStatement(executable.Source);
+
+							if (debugInstruction == DebugInstruction.ExecuteDirect)
+							{
+								_executionState.Unbreak();
+
+								try
+								{
+									var directSequence = _executionState.CollectDirectSequence();
+
+									Dispatch(directSequence, stackFrame);
+								}
+								catch (RuntimeException error)
+								{
+									_executionState.Error(error);
+								}
+
+								_executionState.Break();
+							}
+						} while (debugInstruction != DebugInstruction.Proceed);
+					}
 
 					RuntimeException.LastLineNumber = executable.LineNumberForErrorReporting;
 

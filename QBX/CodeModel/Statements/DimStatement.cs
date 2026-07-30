@@ -7,6 +7,8 @@ public class DimStatement : Statement
 {
 	public override StatementType Type => StatementType.Dim;
 
+	public override bool IsLegalInDirectMode => false;
+
 	public bool Shared { get; set; }
 	public IReadOnlyList<VariableDeclaration> Declarations => _declarations;
 

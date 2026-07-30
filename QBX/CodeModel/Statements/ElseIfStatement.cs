@@ -7,6 +7,8 @@ public class ElseIfStatement : IfStatement
 {
 	public override StatementType Type => StatementType.ElseIf;
 
+	public override bool IsLegalInDirectMode => false;
+
 	protected override void Validate()
 	{
 		if (ElseBody != null)

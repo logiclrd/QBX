@@ -4,12 +4,25 @@ using System.IO;
 using System.Text;
 
 using QBX.ExecutionEngine;
+using QBX.Utility;
 
 namespace QBX.CodeModel.Statements;
 
 public class CommentStatement(CommentStatementType type, string comment) : Statement
 {
 	public override StatementType Type => StatementType.Comment;
+
+	public override bool IsLegalInDirectMode
+	{
+		get
+		{
+			foreach (var directive in MetacommandParser.ParseDirectives(Comment))
+				if (Metacommands.ContainsKey(directive))
+					return false;
+
+			return true;
+		}
+	}
 
 	public CommentStatementType CommentStatementType { get; set; } = type;
 	public string Comment { get; set; } = comment;

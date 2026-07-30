@@ -40,6 +40,7 @@ public partial class Program : HostedProgram, IOvertypeFlag
 	public Viewport PrimaryViewport;
 	public Viewport? SplitViewport;
 	public Viewport ImmediateViewport;
+	public PlainTextElement ImmediateTextElement;
 	public ReferenceBarAction[]? ReferenceBarActions;
 	public int SelectedReferenceBarAction = -1;
 	public string? ReferenceBarText;
@@ -117,16 +118,20 @@ public partial class Program : HostedProgram, IOvertypeFlag
 
 		PrimaryViewport = AttachViewport(new Viewport(Clipboard));
 
+		ImmediateTextElement = new PlainTextElement(new PlainTextUnit());
 
 		ImmediateViewport = AttachViewport(
 			new Viewport(Clipboard)
 			{
 				Heading = "Immediate",
+				StaticHeading = true,
 				ShowMaximize = false,
 				Height = 2,
 				HasHorizontalScrollBar = false,
 				IsDirectMode = true,
 			});
+
+		ImmediateViewport.SwitchTo(ImmediateTextElement);
 
 		FocusedViewport = PrimaryViewport;
 

@@ -9,6 +9,8 @@ public class CommonStatement : DimStatement
 {
 	public override StatementType Type => StatementType.Common;
 
+	public override bool IsLegalInDirectMode => false;
+
 	public Identifier BlockName { get; set; } = CommonBlock.DefaultBlockName;
 
 	public override bool AlwaysDeclareArrays => false;

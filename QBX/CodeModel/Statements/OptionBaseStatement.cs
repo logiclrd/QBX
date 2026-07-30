@@ -7,6 +7,8 @@ public class OptionBaseStatement : Statement
 {
 	public override StatementType Type => StatementType.OptionBase;
 
+	public override bool IsLegalInDirectMode => false;
+
 	public short ArrayBase
 	{
 		get;

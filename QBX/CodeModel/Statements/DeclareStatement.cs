@@ -10,6 +10,8 @@ public class DeclareStatement : Statement
 {
 	public override StatementType Type => StatementType.Declare;
 
+	public override bool IsLegalInDirectMode => false;
+
 	public Token DeclarationType { get; set; }
 	public Identifier Name { get; set; }
 	public bool IsCDecl { get; set; }

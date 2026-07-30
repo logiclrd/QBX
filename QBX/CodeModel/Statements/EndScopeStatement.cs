@@ -7,6 +7,8 @@ public class EndScopeStatement : Statement
 {
 	public override StatementType Type => StatementType.EndScope;
 
+	public override bool IsLegalInDirectMode => false;
+
 	public ScopeType ScopeType { get; set; }
 
 	protected override void RenderImplementation(TextWriter writer)

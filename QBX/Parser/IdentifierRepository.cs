@@ -6,6 +6,8 @@ namespace QBX.Parser;
 
 public class IdentifierRepository
 {
+	public bool IsLocked;
+
 	Dictionary<Identifier, Identifier> _canonicalIdentifiers = new();
 
 	public Identifier GetOrAddCanonicalIdentifier(string identifier)
@@ -53,7 +55,8 @@ public class IdentifierRepository
 	{
 		if (_canonicalIdentifiers.TryGetValue(identifier, out var existing))
 		{
-			existing.SetValue(identifier.Value);
+			if (!IsLocked)
+				existing.SetValue(identifier.Value);
 
 			if (identifier is QualifiedIdentifier qualifiedIdentifier)
 				return new QualifiedIdentifier(existing, qualifiedIdentifier.TypeCharacter);

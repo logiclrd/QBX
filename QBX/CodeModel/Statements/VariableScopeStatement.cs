@@ -7,6 +7,8 @@ public class VariableScopeStatement : Statement
 {
 	public override StatementType Type => StatementType.VariableScopeStatement;
 
+	public override bool IsLegalInDirectMode => false;
+
 	public VariableScopeType ScopeType { get; set; }
 	public List<VariableScopeDeclaration> Declarations { get; } = new List<VariableScopeDeclaration>();
 

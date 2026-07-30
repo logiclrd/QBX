@@ -20,6 +20,8 @@ public abstract class Statement : IRenderableCode
 	public int SourceColumn { get; set; }
 	public int SourceLength { get; set; }
 
+	public virtual bool IsLegalInDirectMode => true;
+
 	public Statement? TrueSource { get; set; }
 	public bool IsBreakpoint;
 

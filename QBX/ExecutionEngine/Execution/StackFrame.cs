@@ -11,7 +11,7 @@ public class StackFrame(Routine routine, Variable[] variables)
 {
 	public readonly Routine Routine = routine;
 	public readonly Module Module = routine.Module;
-	public readonly Variable[] Variables = variables;
+	public Variable[] Variables { get; private set; } = variables;
 	public IEnumerable<DimensionArrayStatement>? StaticArrayInitializers;
 	public CodeModel.Statements.Statement? CurrentStatement;
 
@@ -50,5 +50,21 @@ public class StackFrame(Routine routine, Variable[] variables)
 			variable.Reset();
 
 		_goSubStack.Clear();
+	}
+
+	public void ExtendVariables(Mapper updatedMapper)
+	{
+		// Used to add scalars introduced during direct mode execution.
+
+		var variableTypes = updatedMapper.GetVariableTypes();
+
+		var newVariables = new Variable[variableTypes.Count];
+
+		Variables.CopyTo(newVariables);
+
+		for (int i = Variables.Length; i < newVariables.Length; i++)
+			Variables[i] = Variable.Construct(variableTypes[i]);
+
+		Variables = newVariables;
 	}
 }

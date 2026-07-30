@@ -489,6 +489,22 @@ public partial class Program
 									break;
 								}
 						}
+						else if (FocusedViewport == ImmediateViewport)
+						{
+							try
+							{
+								FocusedViewport.CommitCurrentLine();
+
+								newCursorX = 0;
+
+								if (ParseAndExecuteDirect(ImmediateTextElement.Lines[FocusedViewport.CursorY].Read()))
+									newCursorY++;
+							}
+							catch (Exception ex)
+							{
+								PresentError(ex);
+							}
+						}
 						else
 						{
 							PromptTerminateToCommitEdit(

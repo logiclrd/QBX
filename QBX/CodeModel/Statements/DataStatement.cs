@@ -6,6 +6,8 @@ public class DataStatement : Statement
 {
 	public override StatementType Type => StatementType.Data;
 
+	public override bool IsLegalInDirectMode => false;
+
 	public string? RawString { get; set; }
 
 	public DataStatement(string dataString)

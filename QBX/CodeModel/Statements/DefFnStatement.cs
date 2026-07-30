@@ -9,6 +9,8 @@ public class DefFnStatement : SubroutineOpeningStatement
 {
 	public override StatementType Type => StatementType.DefFn;
 
+	public override bool IsLegalInDirectMode => false;
+
 	protected override string StatementName => "DEF";
 
 	static readonly Identifier UninitializedName = Identifier.Standalone("FN");

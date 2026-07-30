@@ -8,6 +8,8 @@ public class DefTypeStatement : Statement
 {
 	public override StatementType Type => StatementType.DefType;
 
+	public override bool IsLegalInDirectMode => false;
+
 	public DataType DataType { get; set; }
 	public List<DefTypeRange> Ranges { get; } = new List<DefTypeRange>();
 

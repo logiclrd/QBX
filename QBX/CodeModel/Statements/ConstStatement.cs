@@ -7,6 +7,8 @@ public class ConstStatement : Statement
 {
 	public override StatementType Type => StatementType.Const;
 
+	public override bool IsLegalInDirectMode => false;
+
 	public List<ConstDefinition> Definitions { get; set; }
 
 	public ConstStatement(List<ConstDefinition> definitions)

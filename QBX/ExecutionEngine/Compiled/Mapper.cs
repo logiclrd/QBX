@@ -89,6 +89,14 @@ public class Mapper
 		_isFrozen = true;
 	}
 
+	// Mappers are frozen when there could be stack frames already configured
+	// based on them. If you unfreeze a Mapper, you are responsible for ensuring
+	// relevant stack frames are correspondingly updated.
+	public void Unfreeze()
+	{
+		_isFrozen = true;
+	}
+
 	Dictionary<string, LiteralValue> _constantValueByName = new(StringComparer.OrdinalIgnoreCase);
 
 	List<VariableInfo> _variables = new List<VariableInfo>();

@@ -1,4 +1,6 @@
-﻿namespace QBX.ExecutionEngine.Execution;
+﻿using QBX.ExecutionEngine.Compiled;
+
+namespace QBX.ExecutionEngine.Execution;
 
 public interface IExecutionControls
 {
@@ -9,6 +11,8 @@ public interface IExecutionControls
 	void ExecuteOneStatement();
 	void Break();
 	void Terminate();
+
+	void ExecuteDirect(Sequence sequence);
 
 	void IgnoreBreakFromNextStatement();
 

@@ -13,9 +13,11 @@ namespace QBX.CodeModel;
 
 public class CompilationElement : IRenderableCode, IEditableElement
 {
-	public CompilationUnit Owner { get; }
+	public CompilationUnit Owner { get; private set; }
 
 	IEditableUnit IEditableElement.Owner => Owner;
+
+	bool _isAttached; // Not actually a part of Owner
 
 	public Identifier? Name { get; set; }
 
@@ -81,9 +83,16 @@ public class CompilationElement : IRenderableCode, IEditableElement
 		return clone;
 	}
 
+	public void AttachToUnit(CompilationUnit unit)
+	{
+		Owner = unit;
+		_isAttached = true;
+	}
+
 	public void Dirty()
 	{
-		Owner.IsPristine = false;
+		if (!_isAttached) // Do not mark owner as dirty if this element is merely attached.
+			Owner.IsPristine = false;
 	}
 
 	void ReindexLines(int startIndex)
