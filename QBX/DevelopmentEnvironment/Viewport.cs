@@ -341,6 +341,8 @@ public class Viewport
 
 						ScrollX = 0;
 						ScrollY = 0;
+
+						SelectionManager.CancelSelection();
 					}
 
 					return true; // reload viewport parameters, if we were in the middle of handling a text editor key

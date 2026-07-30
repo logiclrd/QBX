@@ -41,8 +41,13 @@ public class SelectionManager(Viewport owner, Clipboard clipboard)
 
 	public void ExtendSelection(int x, int y)
 	{
-		_clipEndX = x;
-		_clipEndY = y;
+		if (_clipStartX < 0)
+			StartSelection(x, y);
+		else
+		{
+			_clipEndX = x;
+			_clipEndY = y;
+		}
 	}
 
 	public void CancelSelection()
