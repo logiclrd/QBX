@@ -3,7 +3,7 @@ DEFINT A-Z
 DECLARE SUB BeSilent ()
 DECLARE SUB FMend ()
 DECLARE FUNCTION FMinit ()
-DECLARE SUB FMload (fs$)
+DECLARE SUB FMload (fs$, header$)
 DECLARE SUB FMnoteoff (chan, ope)
 DECLARE SUB FMplayrowfrom (pat$, ofs, effnum)
 DECLARE SUB FMtimer ()
@@ -107,8 +107,6 @@ PRINT MPUDetect
 'MPUwrite 61
 'MPUwrite 127
 
-LOCATE 3, 1
-
 DIM files$(25)
 
 numfiles = 0
@@ -116,11 +114,16 @@ numfiles = 0
 files$(numfiles) = DIR$("*.s3m")
 
 DO WHILE files$(numfiles) <> ""
-  numfiles = numfiles + 1
+  IF LCASE$(files$(numfiles)) <> "effects.s3m" THEN numfiles = numfiles + 1
+
   IF numfiles > UBOUND(files$) THEN EXIT DO
 
   files$(numfiles) = DIR$
 LOOP
+
+LOCATE 2, 64
+PRINT "(a-"; CHR$(96 + numfiles); ")";
+LOCATE 3, 1
 
 statuschar$ = "."
 
@@ -153,7 +156,7 @@ DO
             fileindex = ASC(y$) - ASC("a")
 
             IF fileindex >= 0 AND fileindex < numfiles THEN
-                FMload files$(fileindex)
+                FMload files$(fileindex), y$ + ": "
                 ispaused = 0
             END IF
         END IF
@@ -211,7 +214,7 @@ FUNCTION FMinit
     CALL BeSilent
 
     ' Let us load effects.
-    FMload efffile
+    FMload efffile, "1: "
 
     CALL BeSilent
     fmdata.effind = 0
@@ -228,7 +231,7 @@ FUNCTION FMinit
     FMinit = 1
 END FUNCTION
 
-SUB FMload (fs$)
+SUB FMload (fs$, header$)
     fmfilename$ = ""
 
     CALL BeSilent
@@ -358,8 +361,8 @@ SUB FMload (fs$)
 
     cursorx = POS(0)
 
-    LOCATE 1, 64
-    PRINT SPACE$(15);
+    LOCATE 1, 64 - LEN(header$)
+    PRINT header$; SPACE$(15);
     LOCATE 1, 64
     PRINT fmfilename$;
 
@@ -389,7 +392,11 @@ SUB FMplayeffect (ind)
     patptr = CVI(INPUT$(2, fp))
     SEEK fp, patptr * 16& + 1
     patlen = CVI(INPUT$(2, fp)) - 2
-    fmeffect$(fmdata.effind) = INPUT$(patlen, fp)
+    IF patlen > 0 THEN
+        fmeffect$(fmdata.effind) = INPUT$(patlen, fp)
+    ELSE
+        fmeffect$(fmdata.effind) = ""
+    END IF
     fmeff(fmdata.effind).effptr = 1
     fmeff(fmdata.effind).effTickPos = 0
     fmdata.effind = (fmdata.effind + 1) AND 3
@@ -539,8 +546,8 @@ SUB FMtimer
                         SEEK fp, &H61 + fmdata.ordnum + fmdata.insnum * 2 + CurPat * 2
                         patptr = CVI(INPUT$(2, fp))
                         SEEK fp, patptr * 16& + 1
-                        patlen = CVI(INPUT$(2, fp))
-                        fmpattern$ = INPUT$(patlen, fp)
+                        patlen = CVI(INPUT$(2, fp)) - 2
+                        IF patlen > 0 THEN fmpattern$ = INPUT$(patlen, fp) ELSE fmpattern$ = ""
 
                         LOCATE 2, 10: COLOR 1: PRINT "Fetched:"; LEN(fmpattern$); "bytes"
 
