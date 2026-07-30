@@ -256,12 +256,11 @@ public class IntegerForStatement(CodeModel.Statements.ForStatement sourceForStat
 		}
 		else
 		{
-			var nextStatement = new NextStatement(from, to, step, SourceNextStatement);
+			var nextStatement = new NextStatement(from, to, step, iteratorVariable, SourceNextStatement);
 
 			stackFrame.NextStatements[_nextDispatcherIndex] = nextStatement;
 
-			iteratorVariable.Value = nextStatement.NextValue;
-			iteratorVariable.WritePinnedData();
+			nextStatement.StartIteration();
 
 			DispatchImplementation(0, context, stackFrame);
 		}
@@ -269,19 +268,17 @@ public class IntegerForStatement(CodeModel.Statements.ForStatement sourceForStat
 
 	protected override void EnterLoop(StackFrame stackFrame)
 	{
+		var iteratorVariable = (IntegerVariable)stackFrame.Variables[IteratorVariableIndex];
+
 		NextStatement nextStatement;
 
 		if (stackFrame.NextStatements.TryGetValue(_nextDispatcherIndex, out var executable))
 			nextStatement = (NextStatement)executable;
 		else
 		{
-			nextStatement = new NextStatement(0, 0, 0, SourceNextStatement);
+			nextStatement = new NextStatement(0, 0, 0, iteratorVariable, SourceNextStatement);
 			stackFrame.NextStatements[_nextDispatcherIndex] = nextStatement;
 		}
-
-		var iteratorVariable = (IntegerVariable)stackFrame.Variables[IteratorVariableIndex];
-
-		nextStatement.NextValue = iteratorVariable.Value;
 	}
 
 	protected override void DispatchImplementation(int statementIndex, ExecutionContext context, StackFrame stackFrame)
@@ -304,28 +301,29 @@ public class IntegerForStatement(CodeModel.Statements.ForStatement sourceForStat
 
 				statementIndex = 0;
 
-				nextStatement.NextValue = iteratorVariable.Value;
-
 				context.Dispatch(nextStatement, stackFrame);
-
-				iteratorVariable.Value = nextStatement.NextValue;
-				iteratorVariable.WritePinnedData();
 			}
 		}
 		catch (ExitFor) { }
 	}
 
-	class NextStatement(short from, short to, short step, CodeModel.Statements.NextStatement sourceNextStatement)
+	class NextStatement(short from, short to, short step, IntegerVariable iteratorVariable, CodeModel.Statements.NextStatement sourceNextStatement)
 		: Executable(sourceNextStatement)
 	{
 		public bool FinishLoop = false;
-		public short NextValue = from;
+
+		public void StartIteration()
+		{
+			iteratorVariable.Value = from;
+			iteratorVariable.WritePinnedData();
+		}
 
 		public override void Execute(ExecutionContext context, StackFrame stackFrame)
 		{
 			try
 			{
-				NextValue += step;
+				iteratorVariable.Value += step;
+				iteratorVariable.WritePinnedData();
 			}
 			catch (OverflowException)
 			{
@@ -333,9 +331,9 @@ public class IntegerForStatement(CodeModel.Statements.ForStatement sourceForStat
 			}
 
 			if (step >= 0)
-				FinishLoop = (NextValue > to);
+				FinishLoop = (iteratorVariable.Value > to);
 			else
-				FinishLoop = (NextValue < to);
+				FinishLoop = (iteratorVariable.Value < to);
 		}
 	}
 }
@@ -386,12 +384,11 @@ public class LongForStatement(CodeModel.Statements.ForStatement sourceForStateme
 		}
 		else
 		{
-			var nextStatement = new NextStatement(from, to, step, SourceNextStatement);
+			var nextStatement = new NextStatement(from, to, step, iteratorVariable, SourceNextStatement);
 
 			stackFrame.NextStatements[_nextDispatcherIndex] = nextStatement;
 
-			iteratorVariable.Value = nextStatement.NextValue;
-			iteratorVariable.WritePinnedData();
+			nextStatement.StartIteration();
 
 			DispatchImplementation(0, context, stackFrame);
 		}
@@ -401,17 +398,15 @@ public class LongForStatement(CodeModel.Statements.ForStatement sourceForStateme
 	{
 		NextStatement nextStatement;
 
+		var iteratorVariable = (LongVariable)stackFrame.Variables[IteratorVariableIndex];
+
 		if (stackFrame.NextStatements.TryGetValue(_nextDispatcherIndex, out var executable))
 			nextStatement = (NextStatement)executable;
 		else
 		{
-			nextStatement = new NextStatement(0, 0, 0, SourceNextStatement);
+			nextStatement = new NextStatement(0, 0, 0, iteratorVariable, SourceNextStatement);
 			stackFrame.NextStatements[_nextDispatcherIndex] = nextStatement;
 		}
-
-		var iteratorVariable = (LongVariable)stackFrame.Variables[IteratorVariableIndex];
-
-		nextStatement.NextValue = iteratorVariable.Value;
 	}
 
 	protected override void DispatchImplementation(int statementIndex, ExecutionContext context, StackFrame stackFrame)
@@ -434,28 +429,29 @@ public class LongForStatement(CodeModel.Statements.ForStatement sourceForStateme
 
 				statementIndex = 0;
 
-				nextStatement.NextValue = iteratorVariable.Value;
-
 				context.Dispatch(nextStatement, stackFrame);
-
-				iteratorVariable.Value = nextStatement.NextValue;
-				iteratorVariable.WritePinnedData();
 			}
 		}
 		catch (ExitFor) { }
 	}
 
-	class NextStatement(int from, int to, int step, CodeModel.Statements.NextStatement sourceNextStatement)
+	class NextStatement(int from, int to, int step, LongVariable iteratorVariable, CodeModel.Statements.NextStatement sourceNextStatement)
 		: Executable(sourceNextStatement)
 	{
 		public bool FinishLoop = false;
-		public int NextValue = from;
+
+		public void StartIteration()
+		{
+			iteratorVariable.Value = from;
+			iteratorVariable.WritePinnedData();
+		}
 
 		public override void Execute(ExecutionContext context, StackFrame stackFrame)
 		{
 			try
 			{
-				NextValue += step;
+				iteratorVariable.Value += step;
+				iteratorVariable.WritePinnedData();
 			}
 			catch (OverflowException)
 			{
@@ -463,9 +459,9 @@ public class LongForStatement(CodeModel.Statements.ForStatement sourceForStateme
 			}
 
 			if (step >= 0)
-				FinishLoop = (NextValue > to);
+				FinishLoop = (iteratorVariable.Value > to);
 			else
-				FinishLoop = (NextValue < to);
+				FinishLoop = (iteratorVariable.Value < to);
 		}
 	}
 }
@@ -516,12 +512,11 @@ public class SingleForStatement(CodeModel.Statements.ForStatement sourceForState
 		}
 		else
 		{
-			var nextStatement = new NextStatement(from, to, step, SourceNextStatement);
+			var nextStatement = new NextStatement(from, to, step, iteratorVariable, SourceNextStatement);
 
 			stackFrame.NextStatements[_nextDispatcherIndex] = nextStatement;
 
-			iteratorVariable.Value = nextStatement.NextValue;
-			iteratorVariable.WritePinnedData();
+			nextStatement.StartIteration();
 
 			DispatchImplementation(0, context, stackFrame);
 		}
@@ -531,17 +526,15 @@ public class SingleForStatement(CodeModel.Statements.ForStatement sourceForState
 	{
 		NextStatement nextStatement;
 
+		var iteratorVariable = (SingleVariable)stackFrame.Variables[IteratorVariableIndex];
+
 		if (stackFrame.NextStatements.TryGetValue(_nextDispatcherIndex, out var executable))
 			nextStatement = (NextStatement)executable;
 		else
 		{
-			nextStatement = new NextStatement(0, 0, 0, SourceNextStatement);
+			nextStatement = new NextStatement(0, 0, 0, iteratorVariable, SourceNextStatement);
 			stackFrame.NextStatements[_nextDispatcherIndex] = nextStatement;
 		}
-
-		var iteratorVariable = (SingleVariable)stackFrame.Variables[IteratorVariableIndex];
-
-		nextStatement.NextValue = iteratorVariable.Value;
 	}
 
 	protected override void DispatchImplementation(int statementIndex, ExecutionContext context, StackFrame stackFrame)
@@ -564,28 +557,29 @@ public class SingleForStatement(CodeModel.Statements.ForStatement sourceForState
 
 				statementIndex = 0;
 
-				nextStatement.NextValue = iteratorVariable.Value;
-
 				context.Dispatch(nextStatement, stackFrame);
-
-				iteratorVariable.Value = nextStatement.NextValue;
-				iteratorVariable.WritePinnedData();
 			}
 		}
 		catch (ExitFor) { }
 	}
 
-	class NextStatement(float from, float to, float step, CodeModel.Statements.NextStatement sourceNextStatement)
+	class NextStatement(float from, float to, float step, SingleVariable iteratorVariable, CodeModel.Statements.NextStatement sourceNextStatement)
 		: Executable(sourceNextStatement)
 	{
 		public bool FinishLoop = false;
-		public float NextValue = from;
+
+		public void StartIteration()
+		{
+			iteratorVariable.Value = from;
+			iteratorVariable.WritePinnedData();
+		}
 
 		public override void Execute(ExecutionContext context, StackFrame stackFrame)
 		{
 			try
 			{
-				NextValue += step;
+				iteratorVariable.Value += step;
+				iteratorVariable.WritePinnedData();
 			}
 			catch (OverflowException)
 			{
@@ -593,9 +587,9 @@ public class SingleForStatement(CodeModel.Statements.ForStatement sourceForState
 			}
 
 			if (step >= 0)
-				FinishLoop = (NextValue > to);
+				FinishLoop = (iteratorVariable.Value > to);
 			else
-				FinishLoop = (NextValue < to);
+				FinishLoop = (iteratorVariable.Value < to);
 		}
 	}
 }
@@ -646,12 +640,11 @@ public class DoubleForStatement(CodeModel.Statements.ForStatement sourceForState
 		}
 		else
 		{
-			var nextStatement = new NextStatement(from, to, step, SourceNextStatement);
+			var nextStatement = new NextStatement(from, to, step, iteratorVariable, SourceNextStatement);
 
 			stackFrame.NextStatements[_nextDispatcherIndex] = nextStatement;
 
-			iteratorVariable.Value = nextStatement.NextValue;
-			iteratorVariable.WritePinnedData();
+			nextStatement.StartIteration();
 
 			DispatchImplementation(0, context, stackFrame);
 		}
@@ -661,17 +654,15 @@ public class DoubleForStatement(CodeModel.Statements.ForStatement sourceForState
 	{
 		NextStatement nextStatement;
 
+		var iteratorVariable = (DoubleVariable)stackFrame.Variables[IteratorVariableIndex];
+
 		if (stackFrame.NextStatements.TryGetValue(_nextDispatcherIndex, out var executable))
 			nextStatement = (NextStatement)executable;
 		else
 		{
-			nextStatement = new NextStatement(0, 0, 0, SourceNextStatement);
+			nextStatement = new NextStatement(0, 0, 0, iteratorVariable, SourceNextStatement);
 			stackFrame.NextStatements[_nextDispatcherIndex] = nextStatement;
 		}
-
-		var iteratorVariable = (DoubleVariable)stackFrame.Variables[IteratorVariableIndex];
-
-		nextStatement.NextValue = iteratorVariable.Value;
 	}
 
 	protected override void DispatchImplementation(int statementIndex, ExecutionContext context, StackFrame stackFrame)
@@ -694,28 +685,29 @@ public class DoubleForStatement(CodeModel.Statements.ForStatement sourceForState
 
 				statementIndex = 0;
 
-				nextStatement.NextValue = iteratorVariable.Value;
-
 				context.Dispatch(nextStatement, stackFrame);
-
-				iteratorVariable.Value = nextStatement.NextValue;
-				iteratorVariable.WritePinnedData();
 			}
 		}
 		catch (ExitFor) { }
 	}
 
-	class NextStatement(double from, double to, double step, CodeModel.Statements.NextStatement sourceNextStatement)
+	class NextStatement(double from, double to, double step, DoubleVariable iteratorVariable, CodeModel.Statements.NextStatement sourceNextStatement)
 		: Executable(sourceNextStatement)
 	{
 		public bool FinishLoop = false;
-		public double NextValue = from;
+
+		public void StartIteration()
+		{
+			iteratorVariable.Value = from;
+			iteratorVariable.WritePinnedData();
+		}
 
 		public override void Execute(ExecutionContext context, StackFrame stackFrame)
 		{
 			try
 			{
-				NextValue += step;
+				iteratorVariable.Value += step;
+				iteratorVariable.WritePinnedData();
 			}
 			catch (OverflowException)
 			{
@@ -723,9 +715,9 @@ public class DoubleForStatement(CodeModel.Statements.ForStatement sourceForState
 			}
 
 			if (step >= 0)
-				FinishLoop = (NextValue > to);
+				FinishLoop = (iteratorVariable.Value > to);
 			else
-				FinishLoop = (NextValue < to);
+				FinishLoop = (iteratorVariable.Value < to);
 		}
 	}
 }
@@ -776,12 +768,11 @@ public class CurrencyForStatement(CodeModel.Statements.ForStatement sourceForSta
 		}
 		else
 		{
-			var nextStatement = new NextStatement(from, to, step, SourceNextStatement);
+			var nextStatement = new NextStatement(from, to, step, iteratorVariable, SourceNextStatement);
 
 			stackFrame.NextStatements[_nextDispatcherIndex] = nextStatement;
 
-			iteratorVariable.Value = nextStatement.NextValue;
-			iteratorVariable.WritePinnedData();
+			nextStatement.StartIteration();
 
 			DispatchImplementation(0, context, stackFrame);
 		}
@@ -791,17 +782,15 @@ public class CurrencyForStatement(CodeModel.Statements.ForStatement sourceForSta
 	{
 		NextStatement nextStatement;
 
+		var iteratorVariable = (CurrencyVariable)stackFrame.Variables[IteratorVariableIndex];
+
 		if (stackFrame.NextStatements.TryGetValue(_nextDispatcherIndex, out var executable))
 			nextStatement = (NextStatement)executable;
 		else
 		{
-			nextStatement = new NextStatement(0, 0, 0, SourceNextStatement);
+			nextStatement = new NextStatement(0, 0, 0, iteratorVariable, SourceNextStatement);
 			stackFrame.NextStatements[_nextDispatcherIndex] = nextStatement;
 		}
-
-		var iteratorVariable = (CurrencyVariable)stackFrame.Variables[IteratorVariableIndex];
-
-		nextStatement.NextValue = iteratorVariable.Value;
 	}
 
 	protected override void DispatchImplementation(int statementIndex, ExecutionContext context, StackFrame stackFrame)
@@ -824,41 +813,42 @@ public class CurrencyForStatement(CodeModel.Statements.ForStatement sourceForSta
 
 				statementIndex = 0;
 
-				nextStatement.NextValue = iteratorVariable.Value;
-
 				context.Dispatch(nextStatement, stackFrame);
-
-				iteratorVariable.Value = nextStatement.NextValue;
-				iteratorVariable.WritePinnedData();
 			}
 		}
 		catch (ExitFor) { }
 	}
 
-	class NextStatement(decimal from, decimal to, decimal step, CodeModel.Statements.NextStatement sourceNextStatement)
+	class NextStatement(decimal from, decimal to, decimal step, CurrencyVariable iteratorVariable, CodeModel.Statements.NextStatement sourceNextStatement)
 		: Executable(sourceNextStatement)
 	{
 		public bool FinishLoop = false;
-		public decimal NextValue = from;
+
+		public void StartIteration()
+		{
+			iteratorVariable.Value = from;
+			iteratorVariable.WritePinnedData();
+		}
 
 		public override void Execute(ExecutionContext context, StackFrame stackFrame)
 		{
 			try
 			{
-				NextValue += step;
+				iteratorVariable.Value += step;
+				iteratorVariable.WritePinnedData();
 			}
 			catch (OverflowException)
 			{
 				throw RuntimeException.Overflow(Source);
 			}
 
-			if (!NextValue.IsInCurrencyRange())
+			if (!iteratorVariable.Value.IsInCurrencyRange())
 				throw RuntimeException.Overflow(Source);
 
 			if (step >= 0)
-				FinishLoop = (NextValue > to);
+				FinishLoop = (iteratorVariable.Value > to);
 			else
-				FinishLoop = (NextValue < to);
+				FinishLoop = (iteratorVariable.Value < to);
 		}
 	}
 }
