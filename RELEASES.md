@@ -1,5 +1,11 @@
 # QBX Releases
 
+## 1.19.2 - 2026-07-30
+
+### Fixed
+
+- In the `ADLIBS3M` sample, a bug with pattern loading in `FMENGINX.BAS` has been fixed.
+
 ## 1.19.1 - 2026-07-29
 
 ### Fixed
