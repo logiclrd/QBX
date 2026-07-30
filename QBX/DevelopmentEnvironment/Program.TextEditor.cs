@@ -213,9 +213,9 @@ public partial class Program
 
 			if (FocusedViewport.IsEditable)
 			{
-				if (FocusedViewport.Clipboard.HasSelection)
+				if (FocusedViewport.SelectionManager.HasSelection)
 				{
-					FocusedViewport.Clipboard.Delete();
+					FocusedViewport.SelectionManager.Delete();
 					newCursorX = FocusedViewport.CursorX;
 				}
 
@@ -598,7 +598,7 @@ public partial class Program
 
 					HelpViewport = null;
 
-					FocusedViewport.Clipboard.CancelSelection();
+					FocusedViewport.SelectionManager.CancelSelection();
 
 					break;
 				}
@@ -607,20 +607,20 @@ public partial class Program
 				{
 					if (input.Modifiers.CtrlKey && !input.Modifiers.ShiftKey && !input.Modifiers.AltKey)
 					{
-						FocusedViewport.Clipboard.Copy();
+						FocusedViewport.SelectionManager.Copy();
 						select = true;
 					}
 					else if (input.Modifiers.ShiftKey && !input.Modifiers.CtrlKey && !input.Modifiers.AltKey)
 					{
 						if (FocusedViewport.IsEditable)
 						{
-							if (FocusedViewport.Clipboard.HasSelection)
+							if (FocusedViewport.SelectionManager.HasSelection)
 							{
-								FocusedViewport.Clipboard.Delete();
+								FocusedViewport.SelectionManager.Delete();
 								newCursorX = FocusedViewport.CursorX;
 							}
 
-							FocusedViewport.Clipboard.Paste();
+							FocusedViewport.SelectionManager.Paste();
 							select = false;
 							_alreadyPresentedError = false;
 						}
@@ -635,17 +635,17 @@ public partial class Program
 				{
 					select = false;
 
-					if (FocusedViewport.Clipboard.HasSelection)
+					if (FocusedViewport.SelectionManager.HasSelection)
 					{
 						if (FocusedViewport.IsEditable)
 						{
 							if (input.Modifiers.ShiftKey && !input.Modifiers.CtrlKey && !input.Modifiers.AltKey)
-								FocusedViewport.Clipboard.Cut();
+								FocusedViewport.SelectionManager.Cut();
 							else
-								FocusedViewport.Clipboard.Delete();
+								FocusedViewport.SelectionManager.Delete();
 						}
 						else
-							FocusedViewport.Clipboard.CancelSelection();
+							FocusedViewport.SelectionManager.CancelSelection();
 
 						newCursorX = FocusedViewport.CursorX;
 						newCursorY = FocusedViewport.CursorY;
@@ -708,7 +708,7 @@ public partial class Program
 
 					if (FocusedViewport.IsEditable && !input.Modifiers.CtrlKey)
 					{
-						FocusedViewport.Clipboard.CancelSelection();
+						FocusedViewport.SelectionManager.CancelSelection();
 
 						if (FocusedViewport.IsEditable)
 						{
@@ -748,7 +748,7 @@ public partial class Program
 									newCursorX -= difference;
 
 									if (newCursorX + difference > buffer.Length)
-									  difference = buffer.Length - newCursorX;
+										difference = buffer.Length - newCursorX;
 
 									if (difference > 0)
 										buffer.Remove(newCursorX, difference);
@@ -810,9 +810,9 @@ public partial class Program
 		}
 
 		if (!select && !input.IsModifierKey)
-			FocusedViewport.Clipboard.StartSelection(FocusedViewport.CursorX, FocusedViewport.CursorY);
+			FocusedViewport.SelectionManager.StartSelection(FocusedViewport.CursorX, FocusedViewport.CursorY);
 		else
-			FocusedViewport.Clipboard.ExtendSelection(FocusedViewport.CursorX, FocusedViewport.CursorY);
+			FocusedViewport.SelectionManager.ExtendSelection(FocusedViewport.CursorX, FocusedViewport.CursorY);
 	}
 
 	bool EnsureAllCodeIsParsed(bool presentErrors = true)
@@ -1074,7 +1074,7 @@ public partial class Program
 		if (SplitViewport != null)
 			return;
 
-		SplitViewport = AttachViewport(new Viewport());
+		SplitViewport = AttachViewport(new Viewport(Clipboard));
 
 		if (FocusedViewport.EditableElement is IEditableElement element)
 			SplitViewport.SwitchTo(element);
@@ -1135,8 +1135,8 @@ public partial class Program
 
 		bool isValid = true;
 
-		if (FocusedViewport.Clipboard.HasSelection)
-			subject = FocusedViewport.Clipboard.GetSelectedText(multiline: false);
+		if (FocusedViewport.SelectionManager.HasSelection)
+			subject = FocusedViewport.SelectionManager.GetSelectedText(multiline: false);
 		else
 		{
 			FocusedViewport.EditCurrentLine();
@@ -1278,6 +1278,6 @@ public partial class Program
 		viewport.CursorX = column;
 		viewport.CursorY = lineNumber;
 
-		viewport.Clipboard.StartSelection(viewport.CursorX, viewport.CursorY);
+		viewport.SelectionManager.StartSelection(viewport.CursorX, viewport.CursorY);
 	}
 }

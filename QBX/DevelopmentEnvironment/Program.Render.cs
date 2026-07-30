@@ -422,7 +422,7 @@ public partial class Program
 			int lineIndex = y + viewport.ScrollY;
 
 			var (unselectedLeft, selected, unselectedRight) =
-				CalculateSelectionHighlight(viewport.Clipboard, lineIndex, viewport.ScrollX, viewportContentWidth, viewport.EditableElement);
+				CalculateSelectionHighlight(viewport.SelectionManager, lineIndex, viewport.ScrollX, viewportContentWidth, viewport.EditableElement);
 
 			StringBuilder buffer;
 
@@ -674,14 +674,14 @@ public partial class Program
 	}
 
 	(int unselectedLeft, int selected, int unselectedRight) CalculateSelectionHighlight(
-		Clipboard clipboard,
+		SelectionManager selectionManager,
 		int lineIndex, int scrollX, int chars,
 		IEditableElement? compilationElement)
 	{
 		// In a viewport showing line lineIndex, scrolled right by scrollX characters,
 		// subdivide chars characters into unselected and selected regions.
 
-		var (startX, startY, endX, endY) = clipboard.GetSelectionRange();
+		var (startX, startY, endX, endY) = selectionManager.GetSelectionRange();
 
 		// When a dialog is active, error context is rendered as selection.
 		if (Dialogs.Count != 0)

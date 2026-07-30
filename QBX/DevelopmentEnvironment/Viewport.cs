@@ -31,13 +31,13 @@ public class Viewport
 	public int CursorX, CursorY;
 	public bool CurrentLineChanged;
 	public StringBuilder? CurrentLineBuffer;
-	public Clipboard Clipboard;
+	public SelectionManager SelectionManager;
 
 	public event Func<string, IEditableElement?>? GetElementByName;
 
-	public Viewport()
+	public Viewport(Clipboard clipboard)
 	{
-		Clipboard = new Clipboard(this);
+		SelectionManager = new SelectionManager(this, clipboard);
 	}
 
 	public int CachedContentTopY;
@@ -78,7 +78,7 @@ public class Viewport
 		if (ScrollY < 0)
 			ScrollY = 0;
 
-		Clipboard.StartSelection(CursorX, CursorY);
+		SelectionManager.StartSelection(CursorX, CursorY);
 	}
 
 	public int GetContentLineCount()

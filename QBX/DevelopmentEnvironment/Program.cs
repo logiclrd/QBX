@@ -34,6 +34,8 @@ public partial class Program : HostedProgram, IOvertypeFlag
 	const string EnvironmentHelpFilePrefix = EnvironmentHelpFile + "!";
 	const string QuickHelpFilePrefix = QuickHelpFile + "!";
 
+	public Clipboard Clipboard;
+
 	public Viewport? HelpViewport = null;
 	public Viewport PrimaryViewport;
 	public Viewport? SplitViewport;
@@ -111,10 +113,13 @@ public partial class Program : HostedProgram, IOvertypeFlag
 
 		HelpSystem = new HelpSystem(Configuration);
 
-		PrimaryViewport = AttachViewport(new Viewport());
+		Clipboard = new Clipboard();
+
+		PrimaryViewport = AttachViewport(new Viewport(Clipboard));
+
 
 		ImmediateViewport = AttachViewport(
-			new Viewport()
+			new Viewport(Clipboard)
 			{
 				Heading = "Immediate",
 				ShowMaximize = false,
@@ -750,7 +755,7 @@ public partial class Program : HostedProgram, IOvertypeFlag
 		int splitViewportLines = (SplitViewport != null) ? remainingLines / 2 : 0;
 		int immediateViewportLines = remainingLines - splitViewportLines;
 
-		HelpViewport ??= AttachViewport(new Viewport() { IsEditable = false, HasHorizontalScrollBar = false });
+		HelpViewport ??= AttachViewport(new Viewport(Clipboard) { IsEditable = false, HasHorizontalScrollBar = false });
 		HelpViewport.HelpTopic = topic;
 		HelpViewport.Height = helpViewportHeight;
 		HelpViewport.UpdateHeading();
