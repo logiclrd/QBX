@@ -1,5 +1,19 @@
 # QBX Releases
 
+## 1.19.0 - 2026-07-29
+
+### Added
+
+- Immediate (direct mode) processing.
+- Edits made while running trigger the "Cannot Continue" dialog and terminate execution if the user chooses to proceed anyway.
+
+### Fixed
+
+- `FOR` loops no longer overwrite changes to the iterator that occur within the loop with what the next value was expected to be.
+- The clipboard buffer is now shared across all viewports.
+- Edits made to lines are no longer lost when Ctrl-Enter is pressed.
+- Ctrl-Enter handling now attempts to scroll in 19 addition columns on the left.
+
 ## 1.18.2 - 2026-07-29
 
 ### Fixed
