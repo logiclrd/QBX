@@ -326,6 +326,8 @@ public partial class Program
 
 			using (Machine.DOS.EnableBreak())
 				_executionContext.Controls.ExecuteDirect(sequence);
+
+			EvaluateWatches(out _);
 		}
 
 		return true;
