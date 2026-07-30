@@ -472,22 +472,46 @@ public partial class Program
 						if (input.Modifiers.CtrlKey)
 						{
 							// Ctrl-Enter: Do not insert newline.
-							FocusedViewport.CancelEdit();
-							FocusedViewport.CursorY = ++newCursorY;
-
-							if (newCursorY >= FocusedViewport.GetContentLineCount())
-								FocusedViewport.InsertLine(newCursorY, new CodeLine());
-
-							currentLine = ResetCurrentLine();
-
-							buffer = currentLine.Value;
-
-							for (int i = 0; i < buffer.Length; i++)
-								if (buffer[i] != ' ')
+							PromptTerminateToCommitEdit(
+								() =>
 								{
-									indentation = i;
-									break;
-								}
+									try
+									{
+										FocusedViewport.CommitCurrentLine();
+										FocusedViewport.CursorY = ++newCursorY;
+
+										if (newCursorY >= FocusedViewport.GetContentLineCount())
+											FocusedViewport.InsertLine(newCursorY, new CodeLine());
+
+										currentLine = ResetCurrentLine();
+
+										buffer = currentLine.Value;
+
+										for (int i = 0; i < buffer.Length; i++)
+											if (buffer[i] != ' ')
+											{
+												indentation = i;
+												break;
+											}
+
+										newCursorX = indentation;
+										newCursorY = FocusedViewport.CursorY;
+
+										if (newCursorX < newScrollX)
+										{
+											newScrollX = newCursorX - 20;
+
+											if (newScrollX < 0)
+												newScrollX = 0;
+										}
+
+										ApplyCursorMovement();
+									}
+									catch (Exception e)
+									{
+										PresentError(e);
+									}
+								});
 						}
 						else if (FocusedViewport == ImmediateViewport)
 						{
