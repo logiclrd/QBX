@@ -4,7 +4,7 @@ using QBX.CodeModel.Statements;
 
 namespace QBX.ExecutionEngine;
 
-public class ListStatementIterator(IList<Statement> statements, int statementIndex) : StatementIterator
+public class ListStatementIterator(IReadOnlyList<Statement> statements, int statementIndex) : StatementIterator
 {
 	public int StatementIndex => statementIndex;
 
