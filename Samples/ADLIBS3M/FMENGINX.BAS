@@ -15,7 +15,9 @@ DECLARE FUNCTION MPUvol (vol, ins)
 DECLARE SUB MPUwrite (b)
 DECLARE FUNCTION note2period (note, Oct, ins)
 DECLARE FUNCTION VibVal (ind, mode)
+DECLARE SUB ConfigureTimerForSongTempo (tempo%)
 DECLARE SUB ProgramTimerRate (tickspersecond#)
+DECLARE FUNCTION CEIL# (x#)
 
 '***FM PLAYER BEGIN***
 ' option
@@ -127,10 +129,10 @@ LOCATE 3, 1
 
 statuschar$ = "."
 
-DO
-    Ti! = TIMER
+LastTi! = TIMER
 
-    ThisSecond& = Ti! * fmdata.effectT / 437
+DO
+    ThisSecond& = LastTi! * fmdata.effectT / 437 / timerscale%
 
     IF ThisSecond& <> LastSecond& THEN
         PRINT statuschar$;
@@ -143,7 +145,8 @@ DO
         LastSecond& = ThisSecond&
     END IF
 
-    WHILE Ti! = TIMER
+    Ti! = TIMER
+    WHILE Ti! = LastTi!
         y$ = INKEY$
         IF y$ = "0" THEN FMplayeffect 0
         IF y$ = "1" THEN FMplayeffect 1
@@ -160,9 +163,17 @@ DO
                 ispaused = 0
             END IF
         END IF
+        Ti! = TIMER
     WEND
 
-    IF NOT ispaused THEN FMtimer
+    LastTi! = Ti!
+
+    timertick% = timertick% + 1
+
+    IF timertick% >= timerscale% THEN
+        timertick% = 0
+        IF NOT ispaused THEN FMtimer
+    END IF
 LOOP
 
 CALL FMend
@@ -174,6 +185,25 @@ SUB BeSilent
         FMnoteoff j, j
     NEXT
     FOR j = 0 TO 244: FMwrite j, 0: NEXT
+END SUB
+
+FUNCTION CEIL# (x#)
+' We need the ceiling of multiple#. QuickBASIC does
+' not have a ceiling function, but it does have a floor
+' function, called INT. INT(2.5) will give us 2 where
+' we need 3, but if we negate multiple# first, then
+' INT(-2.5) will give us -3, which we can then negate
+' again to get back a positive value.
+CEIL# = -INT(-x#)
+END FUNCTION
+
+SUB ConfigureTimerForSongTempo (tempo%)
+' S3M tempo is expressed in huamn-centric BPM, but it's really
+' configuring the number of ticks (frames) per second. The conversion
+' is chosen so that the default tempo of 125 BPM corresponds
+' exactly to the PAL vertical refresh rate of 50 Hz (which
+' itself comes from the European power grid).
+ProgramTimerRate tempo% * .4
 END SUB
 
 SUB FMend
@@ -254,11 +284,7 @@ SUB FMload (fs$, header$)
     fmdata.effectA = ASC(INPUT$(1, fp))
     fmdata.effectT = ASC(INPUT$(1, fp))
 
-    ' effectT is frames per 24 seconds
-    ' We want a timer tick for every frame,
-    ' so the timer frequency needs to be set
-    ' to the number of frames per second
-    ProgramTimerRate fmdata.effectT / 24
+    ConfigureTimerForSongTempo fmdata.effectT
 
     SEEK fp, &H61
     FOR x = 1 TO fmdata.ordnum
@@ -466,11 +492,7 @@ SUB FMplayrowfrom (pat$, ofs%, effnum%)
                     IF info = 20 THEN
                         fmdata.effectT = adlchan(chan).i 'T'
 
-                        ' effectT is frames per 24 seconds
-                        ' We want a timer tick for every frame,
-                        ' so the timer frequency needs to be set
-                        ' to the number of frames per second
-                        ProgramTimerRate fmdata.effectT / 24
+                        ConfigureTimerForSongTempo fmdata.effectT
                     END IF
 
                     'IF effnum >= 0 THEN
@@ -517,279 +539,277 @@ SUB FMtimer
     ' 240/255/effectT/0.2 = L
     ' 240/255/0.2 = 4.7058823529411764703
 
-    FOR looper = 0 TO 1
-        IF fmdata.TickPos = 0 THEN
-            IF fmdata.patdelay = 0 THEN
-                'PRINT "Ticking CurOrd="; fmdata.CurOrd; ", CurRow="; fmdata.CurRow
+    IF fmdata.TickPos = 0 THEN
+        IF fmdata.patdelay = 0 THEN
+            'PRINT "Ticking CurOrd="; fmdata.CurOrd; ", CurRow="; fmdata.CurRow
 
-                ' We do not keep all the patterns in memory,
-                ' due to the limited memory space of QuickBasic.
-                ' Instead, we load them from disk when we need them.
+            ' We do not keep all the patterns in memory,
+            ' due to the limited memory space of QuickBasic.
+            ' Instead, we load them from disk when we need them.
 
-                IF fmdata.NeedPat THEN
-                    c = 0
-                    DO
-                        CurPat = order(fmdata.CurOrd)
-                        IF CurPat < 254 THEN EXIT DO
-                        fmdata.CurOrd = (fmdata.CurOrd + 1) MOD fmdata.ordnum
-                        c = c + 1
-                    LOOP WHILE c < fmdata.ordnum
+            IF fmdata.NeedPat THEN
+                c = 0
+                DO
+                    CurPat = order(fmdata.CurOrd)
+                    IF CurPat < 254 THEN EXIT DO
+                    fmdata.CurOrd = (fmdata.CurOrd + 1) MOD fmdata.ordnum
+                    c = c + 1
+                LOOP WHILE c < fmdata.ordnum
 
-                    IF CurPat <> fmdata.EdPat THEN
-                        fmdata.EdPat = CurPat
+                IF CurPat <> fmdata.EdPat THEN
+                    fmdata.EdPat = CurPat
 
-                        LOCATE 1, 10: COLOR 1: PRINT "Loading pattern"; CurPat; "(order"; CurOrd; ")"
+                    LOCATE 1, 10: COLOR 1: PRINT "Loading pattern"; CurPat; "(order"; CurOrd; ")"
 
-                        fp = FREEFILE
-                        OPEN fmfilename$ FOR BINARY AS #fp
+                    fp = FREEFILE
+                    OPEN fmfilename$ FOR BINARY AS #fp
 
-                        SEEK fp, &H61 + fmdata.ordnum + fmdata.insnum * 2 + CurPat * 2
-                        patptr = CVI(INPUT$(2, fp))
-                        SEEK fp, patptr * 16& + 1
-                        patlen = CVI(INPUT$(2, fp)) - 2
-                        IF patlen > 0 THEN fmpattern$ = INPUT$(patlen, fp) ELSE fmpattern$ = ""
+                    SEEK fp, &H61 + fmdata.ordnum + fmdata.insnum * 2 + CurPat * 2
+                    patptr = CVI(INPUT$(2, fp))
+                    SEEK fp, patptr * 16& + 1
+                    patlen = CVI(INPUT$(2, fp)) - 2
+                    IF patlen > 0 THEN fmpattern$ = INPUT$(patlen, fp) ELSE fmpattern$ = ""
 
-                        LOCATE 2, 10: COLOR 1: PRINT "Fetched:"; LEN(fmpattern$); "bytes"
+                    LOCATE 2, 10: COLOR 1: PRINT "Fetched:"; LEN(fmpattern$); "bytes"
 
-                        CLOSE fp
-                    END IF
-
-                    fmdata.CurRow = 0
-                    fmdata.NeedPat = FALSE
-                    fmdata.patpos = 1
+                    CLOSE fp
                 END IF
 
-                ' Now fmpattern$ contains the remainder of the pattern.
-                ' fmdata.SkipRow contains the number of rows to be skipped (may originate from Cxx)
-
-                WHILE fmdata.SkipRow > 0
-                    DO
-                        n = 1
-                        c = ASC(MID$(fmpattern$, fmdata.patpos, 1))
-                        IF (c AND 32) THEN n = n + 2
-                        IF (c AND 64) THEN n = n + 1
-                        IF (c AND 128) THEN n = n + 2
-                        fmdata.patpos = fmdata.patpos + n
-                    LOOP UNTIL c = 0
-                    fmdata.SkipRow = fmdata.SkipRow - 1
-                    fmdata.CurRow = fmdata.CurRow + 1
-                WEND
-
-                ' Now fmpattern$ points to the beginning of the current row.
-                FMplayrowfrom fmpattern$, fmdata.patpos, -1
+                fmdata.CurRow = 0
+                fmdata.NeedPat = FALSE
+                fmdata.patpos = 1
             END IF
-            fmdata.TickPos = fmdata.effectA
+
+            ' Now fmpattern$ contains the remainder of the pattern.
+            ' fmdata.SkipRow contains the number of rows to be skipped (may originate from Cxx)
+
+            WHILE fmdata.SkipRow > 0
+                DO
+                    n = 1
+                    c = ASC(MID$(fmpattern$, fmdata.patpos, 1))
+                    IF (c AND 32) THEN n = n + 2
+                    IF (c AND 64) THEN n = n + 1
+                    IF (c AND 128) THEN n = n + 2
+                    fmdata.patpos = fmdata.patpos + n
+                LOOP UNTIL c = 0
+                fmdata.SkipRow = fmdata.SkipRow - 1
+                fmdata.CurRow = fmdata.CurRow + 1
+            WEND
+
+            ' Now fmpattern$ points to the beginning of the current row.
+            FMplayrowfrom fmpattern$, fmdata.patpos, -1
         END IF
-        FOR x = 0 TO 3
-            IF fmeff(x).effTickPos = 0 THEN
-                ' Time to fetch a new row for the effect...
-                ' TODO: Somehow clean the adlchan table...
+        fmdata.TickPos = fmdata.effectA
+    END IF
+    FOR x = 0 TO 3
+        IF fmeff(x).effTickPos = 0 THEN
+            ' Time to fetch a new row for the effect...
+            ' TODO: Somehow clean the adlchan table...
 
-                c = fmdata.effectA
-                fmdata.effectA = fmeff(x).effA
-                FMplayrowfrom fmeffect$(x), fmeff(x).effptr, x
-                ' Muuttaa fmdata.effectA:ta
-                fmeff(x).effA = fmdata.effectA
-                fmdata.effectA = c
-                fmeff(x).effTickPos = fmeff(x).effA
-                fmeff(x).effTickPos = fmeff(x).effA
-            END IF
-        NEXT
-
-        loophere = FALSE
-        FOR x = -1 TO 3
-            IF x >= 0 THEN
-                CurTick = fmeff(x).effA - fmeff(x).effTickPos
-            ELSE
-                CurTick = fmdata.effectA - fmdata.TickPos  '0..(A-1)
-            END IF
-
-            FOR c = 0 TO 8
-                IF adlchan(c).effres = x THEN
-                    ' Mark the vibrato obsolete
-                    IF adlchan(c).VibEff = 2 THEN adlchan(c).VibEff = 1
-
-                    chan = c 'FIXME: Take from the headers
-                    ope = chan
-                    IF chan > 2 THEN ope = ope + 5
-                    IF chan > 5 THEN ope = ope + 5
-
-                    notedelay = 0
-                    notecut = -1
-
-                    cmd = adlchan(c).c
-                    info = adlchan(c).i
-
-                    IF cmd = 19 THEN      'S'
-                        sclass = info \ 16
-                        sinfo = info AND 15
-
-                        'Supported S commands:
-                        '   SB0..SBF (loop)
-                        '   SCx      (notecut)
-                        '   SDx      (notedelay)
-                        '   SEx      (patterndelay (handled later))
-                        'A=10, B=11, jne.  (hex)
-
-                        IF sclass = 11 THEN  'B'
-                            IF CurTick = 0 THEN
-                                IF sinfo = 0 THEN
-                                    fmdata.LoopBegin = fmdata.CurRow
-                                ELSE
-                                    IF fmdata.LoopCount = 0 THEN
-                                        fmdata.LoopCount = sinfo + 1
-                                    END IF
-                                END IF
-                            END IF
-                            IF sinfo > 0 THEN loophere = TRUE
-                        END IF
-                        IF sclass = 12 THEN notecut = sinfo   'C'
-                        IF sclass = 13 THEN notedelay = sinfo 'D'
-                        IF sclass = 14 THEN  'E'
-                            'PRINT fmdata.patdelay;
-                            IF CurTick = 0 THEN
-                                IF fmdata.patdelay = 0 THEN
-                                    fmdata.patdelay = sinfo
-                                    fmdata.patdelaymax = sinfo
-                                ELSE
-                                    fmdata.patdelay = fmdata.patdelay - 1
-                                END IF
-                            END IF
-                        END IF
-                    END IF
-                    IF notedelay = CurTick AND (fmdata.patdelay = fmdata.patdelaymax OR CurTick > 0) THEN
-                        vol = adlchan(c).v
-                        note = adlchan(c).n
-                        ins = adlchan(c).s
-                        IF ins = 0 THEN
-                            ins = adlchan(c).CurInst
-                        ELSE
-                            adlchan(c).CurInst = ins
-                        END IF
-                        IF ins > 0 THEN
-                            IF vol = 255 THEN
-                                vol = insdata(ins).vol
-                            ELSE
-                                FMtouch chan, ope, vol, ins
-                                adlchan(c).CurVol = vol
-                            END IF
-                            IF note < 255 THEN 'Something indeed mentioned
-                                FMnoteoff chan, ope
-                                IF note <> 254 THEN  'adlib notecut
-                                    Oct = note \ 16
-                                    note = note AND 15
-
-                                    adlchan(c).Period = note2period(note, Oct, ins)
-
-                                    FMupdate chan, ope, adlchan(c).Period, ins, vol
-                                    adlchan(c).CurVol = vol
-                                END IF
-                            END IF
-                        END IF
-                    END IF
-                    IF adlchan(c).CurInst > 0 THEN ' No command on channels without instrus playing
-                        IF cmd = 4 OR cmd = 11 THEN 'D', 'K'
-                            vol = adlchan(c).CurVol
-                            IF info = 0 THEN info = adlchan(c).DefD ELSE adlchan(c).DefD = info
-                            IF info = 255 THEN       'FF
-                                vol = 64
-                            ELSEIF info >= 240 THEN  'F0..FE
-                                IF CurTick = 0 THEN vol = vol - (info AND 15)
-                            ELSEIF info < 16 THEN    '01..0F
-                                vol = vol - (info AND 15)
-                            ELSEIF (info AND 15) = 15 THEN
-                                IF CurTick = 0 THEN vol = vol + (info \ 16)
-                            ELSEIF info <= 240 THEN '10..F0
-                                vol = vol + (info \ 16)
-                            END IF
-                            IF vol < 0 THEN vol = 0 ELSE IF vol > 64 THEN vol = 64
-                            adlchan(c).CurVol = vol
-                            FMtouch chan, ope, vol, adlchan(c).CurInst
-                        END IF
-                        IF cmd = 5 OR cmd = 6 THEN     'E' or 'F'
-                            IF info = 0 THEN info = adlchan(c).DefE ELSE adlchan(c).DefE = info
-                            IF cmd = 6 THEN info = -info
-                            adlchan(c).Period = adlchan(c).Period + info * 4
-                            FMupdate chan, ope, adlchan(c).Period, adlchan(c).CurInst, adlchan(c).CurVol
-                        END IF
-                        IF cmd = 8 OR cmd = 11 THEN     'H', 'K'
-                            IF cmd = 11 THEN info = 0
-                            IF info = 0 THEN info = adlchan(c).DefH ELSE adlchan(c).DefH = info
-                            IF adlchan(c).VibEff = 0 THEN
-                                adlchan(c).VibPos = 0
-                            END IF
-                            vspeed = info \ 16
-                            vdepth = info AND 15
-                            value = VibVal(adlchan(c).VibPos, 0) * vdepth \ 32
-                            FMupdate chan, ope, adlchan(c).Period + value, adlchan(c).CurInst, adlchan(c).CurVol
-                            adlchan(c).VibPos = adlchan(c).VibPos + vspeed
-                            adlchan(c).VibEff = 2
-                        END IF
-                        IF notecut = CurTick AND (fmdata.patdelay = fmdata.patdelaymax OR CurTick > 0) THEN
-                            FMnoteoff chan, ope
-                        END IF
-                    END IF
-                    IF adlchan(c).VibEff = 1 THEN 'Vibrato still obsolete?
-                        adlchan(c).VibEff = 0   'No more vibrato
-                        FMupdate chan, ope, adlchan(c).Period, adlchan(c).CurInst, adlchan(c).CurVol
-                    END IF
-                END IF
-            NEXT
-        NEXT
-
-        fmdata.TickPos = fmdata.TickPos - 1
-        FOR x = 0 TO 3
-            fmeff(x).effTickPos = fmeff(x).effTickPos - 1
-        NEXT
-
-        ' If this row is finished, find out where to go next.
-        IF fmdata.TickPos = 0 AND fmdata.patdelay = 0 THEN
-            fmdata.patdelaymax = 0
-            brkord = -1
-            brkrow = -1
-
-            fmdata.CurRow = fmdata.CurRow + 1
-            IF fmdata.CurRow = 64 THEN
-                brkrow = 0
-            END IF
-
-            doloop = FALSE
-            IF fmdata.LoopCount > 0 AND loophere = TRUE THEN
-                fmdata.LoopCount = fmdata.LoopCount - 1
-                IF fmdata.LoopCount = 0 THEN
-                    ' SB0 pending.
-                    fmdata.LoopBegin = fmdata.CurRow
-                ELSE
-                    brkord = fmdata.CurOrd
-                    brkrow = fmdata.LoopBegin
-                    doloop = TRUE
-                END IF
-            END IF
-
-            IF doloop = FALSE THEN
-                FOR c = 0 TO 8
-                    cmd = adlchan(c).c     '1=A, 2=B, and so on... 0=none
-                    info = adlchan(c).i
-
-                    IF cmd = 2 THEN   'B'
-                        brkord = info
-                        fmdata.LoopBegin = 0
-                    END IF
-                    IF cmd = 3 THEN   'C'
-                        brkrow = (info \ 16) * 10 + (info AND 15)
-                        fmdata.LoopBegin = 0
-                    END IF
-                NEXT
-                IF brkord >= 0 AND brkrow = -1 THEN brkrow = 0
-            END IF
-            IF brkrow >= 0 THEN
-                fmdata.CurOrd = (fmdata.CurOrd + 1) MOD fmdata.ordnum
-                fmdata.NeedPat = TRUE
-                IF brkord >= 0 THEN fmdata.CurOrd = brkord
-                fmdata.SkipRow = brkrow
-            END IF
+            c = fmdata.effectA
+            fmdata.effectA = fmeff(x).effA
+            FMplayrowfrom fmeffect$(x), fmeff(x).effptr, x
+            ' Muuttaa fmdata.effectA:ta
+            fmeff(x).effA = fmdata.effectA
+            fmdata.effectA = c
+            fmeff(x).effTickPos = fmeff(x).effA
+            fmeff(x).effTickPos = fmeff(x).effA
         END IF
     NEXT
+
+    loophere = FALSE
+    FOR x = -1 TO 3
+        IF x >= 0 THEN
+            CurTick = fmeff(x).effA - fmeff(x).effTickPos
+        ELSE
+            CurTick = fmdata.effectA - fmdata.TickPos  '0..(A-1)
+        END IF
+
+        FOR c = 0 TO 8
+            IF adlchan(c).effres = x THEN
+                ' Mark the vibrato obsolete
+                IF adlchan(c).VibEff = 2 THEN adlchan(c).VibEff = 1
+
+                chan = c 'FIXME: Take from the headers
+                ope = chan
+                IF chan > 2 THEN ope = ope + 5
+                IF chan > 5 THEN ope = ope + 5
+
+                notedelay = 0
+                notecut = -1
+
+                cmd = adlchan(c).c
+                info = adlchan(c).i
+
+                IF cmd = 19 THEN      'S'
+                    sclass = info \ 16
+                    sinfo = info AND 15
+
+                    'Supported S commands:
+                    '   SB0..SBF (loop)
+                    '   SCx      (notecut)
+                    '   SDx      (notedelay)
+                    '   SEx      (patterndelay (handled later))
+                    'A=10, B=11, jne.  (hex)
+
+                    IF sclass = 11 THEN  'B'
+                        IF CurTick = 0 THEN
+                            IF sinfo = 0 THEN
+                                fmdata.LoopBegin = fmdata.CurRow
+                            ELSE
+                                IF fmdata.LoopCount = 0 THEN
+                                    fmdata.LoopCount = sinfo + 1
+                                END IF
+                            END IF
+                        END IF
+                        IF sinfo > 0 THEN loophere = TRUE
+                    END IF
+                    IF sclass = 12 THEN notecut = sinfo   'C'
+                    IF sclass = 13 THEN notedelay = sinfo 'D'
+                    IF sclass = 14 THEN  'E'
+                        'PRINT fmdata.patdelay;
+                        IF CurTick = 0 THEN
+                            IF fmdata.patdelay = 0 THEN
+                                fmdata.patdelay = sinfo
+                                fmdata.patdelaymax = sinfo
+                            ELSE
+                                fmdata.patdelay = fmdata.patdelay - 1
+                            END IF
+                        END IF
+                    END IF
+                END IF
+                IF notedelay = CurTick AND (fmdata.patdelay = fmdata.patdelaymax OR CurTick > 0) THEN
+                    vol = adlchan(c).v
+                    note = adlchan(c).n
+                    ins = adlchan(c).s
+                    IF ins = 0 THEN
+                        ins = adlchan(c).CurInst
+                    ELSE
+                        adlchan(c).CurInst = ins
+                    END IF
+                    IF ins > 0 THEN
+                        IF vol = 255 THEN
+                            vol = insdata(ins).vol
+                        ELSE
+                            FMtouch chan, ope, vol, ins
+                            adlchan(c).CurVol = vol
+                        END IF
+                        IF note < 255 THEN 'Something indeed mentioned
+                            FMnoteoff chan, ope
+                            IF note <> 254 THEN  'adlib notecut
+                                Oct = note \ 16
+                                note = note AND 15
+
+                                adlchan(c).Period = note2period(note, Oct, ins)
+
+                                FMupdate chan, ope, adlchan(c).Period, ins, vol
+                                adlchan(c).CurVol = vol
+                            END IF
+                        END IF
+                    END IF
+                END IF
+                IF adlchan(c).CurInst > 0 THEN ' No command on channels without instrus playing
+                    IF cmd = 4 OR cmd = 11 THEN 'D', 'K'
+                        vol = adlchan(c).CurVol
+                        IF info = 0 THEN info = adlchan(c).DefD ELSE adlchan(c).DefD = info
+                        IF info = 255 THEN       'FF
+                            vol = 64
+                        ELSEIF info >= 240 THEN  'F0..FE
+                            IF CurTick = 0 THEN vol = vol - (info AND 15)
+                        ELSEIF info < 16 THEN    '01..0F
+                            vol = vol - (info AND 15)
+                        ELSEIF (info AND 15) = 15 THEN
+                            IF CurTick = 0 THEN vol = vol + (info \ 16)
+                        ELSEIF info <= 240 THEN '10..F0
+                            vol = vol + (info \ 16)
+                        END IF
+                        IF vol < 0 THEN vol = 0 ELSE IF vol > 64 THEN vol = 64
+                        adlchan(c).CurVol = vol
+                        FMtouch chan, ope, vol, adlchan(c).CurInst
+                    END IF
+                    IF cmd = 5 OR cmd = 6 THEN     'E' or 'F'
+                        IF info = 0 THEN info = adlchan(c).DefE ELSE adlchan(c).DefE = info
+                        IF cmd = 6 THEN info = -info
+                        adlchan(c).Period = adlchan(c).Period + info * 4
+                        FMupdate chan, ope, adlchan(c).Period, adlchan(c).CurInst, adlchan(c).CurVol
+                    END IF
+                    IF cmd = 8 OR cmd = 11 THEN     'H', 'K'
+                        IF cmd = 11 THEN info = 0
+                        IF info = 0 THEN info = adlchan(c).DefH ELSE adlchan(c).DefH = info
+                        IF adlchan(c).VibEff = 0 THEN
+                            adlchan(c).VibPos = 0
+                        END IF
+                        vspeed = info \ 16
+                        vdepth = info AND 15
+                        value = VibVal(adlchan(c).VibPos, 0) * vdepth \ 32
+                        FMupdate chan, ope, adlchan(c).Period + value, adlchan(c).CurInst, adlchan(c).CurVol
+                        adlchan(c).VibPos = adlchan(c).VibPos + vspeed
+                        adlchan(c).VibEff = 2
+                    END IF
+                    IF notecut = CurTick AND (fmdata.patdelay = fmdata.patdelaymax OR CurTick > 0) THEN
+                        FMnoteoff chan, ope
+                    END IF
+                END IF
+                IF adlchan(c).VibEff = 1 THEN 'Vibrato still obsolete?
+                    adlchan(c).VibEff = 0   'No more vibrato
+                    FMupdate chan, ope, adlchan(c).Period, adlchan(c).CurInst, adlchan(c).CurVol
+                END IF
+            END IF
+        NEXT
+    NEXT
+
+    fmdata.TickPos = fmdata.TickPos - 1
+    FOR x = 0 TO 3
+        fmeff(x).effTickPos = fmeff(x).effTickPos - 1
+    NEXT
+
+    ' If this row is finished, find out where to go next.
+    IF fmdata.TickPos = 0 AND fmdata.patdelay = 0 THEN
+        fmdata.patdelaymax = 0
+        brkord = -1
+        brkrow = -1
+
+        fmdata.CurRow = fmdata.CurRow + 1
+        IF fmdata.CurRow = 64 THEN
+            brkrow = 0
+        END IF
+
+        doloop = FALSE
+        IF fmdata.LoopCount > 0 AND loophere = TRUE THEN
+            fmdata.LoopCount = fmdata.LoopCount - 1
+            IF fmdata.LoopCount = 0 THEN
+                ' SB0 pending.
+                fmdata.LoopBegin = fmdata.CurRow
+            ELSE
+                brkord = fmdata.CurOrd
+                brkrow = fmdata.LoopBegin
+                doloop = TRUE
+            END IF
+        END IF
+
+        IF doloop = FALSE THEN
+            FOR c = 0 TO 8
+                cmd = adlchan(c).c     '1=A, 2=B, and so on... 0=none
+                info = adlchan(c).i
+
+                IF cmd = 2 THEN   'B'
+                    brkord = info
+                    fmdata.LoopBegin = 0
+                END IF
+                IF cmd = 3 THEN   'C'
+                    brkrow = (info \ 16) * 10 + (info AND 15)
+                    fmdata.LoopBegin = 0
+                END IF
+            NEXT
+            IF brkord >= 0 AND brkrow = -1 THEN brkrow = 0
+        END IF
+        IF brkrow >= 0 THEN
+            fmdata.CurOrd = (fmdata.CurOrd + 1) MOD fmdata.ordnum
+            fmdata.NeedPat = TRUE
+            IF brkord >= 0 THEN fmdata.CurOrd = brkord
+            fmdata.SkipRow = brkrow
+        END IF
+    END IF
 
     LOCATE 3, cursorx
     COLOR 7
@@ -980,9 +1000,28 @@ FUNCTION note2period (note, Oct, ins)
 END FUNCTION
 
 SUB ProgramTimerRate (tickspersecond#)
+SHARED timerscale%
+
 CONST BaseFrequency& = 1193181
 
 interval& = BaseFrequency& / tickspersecond#
+
+IF interval& <= 65536 THEN
+  ' NB: 65536 itself is okay, because programming a timer
+  ' reset value of 0 _is_ effectively 65536, giving a
+  ' frequency of about 18.2 Hz.
+  timerscale% = 1
+ELSE
+  ' We need to find an integer multiple that will yield
+  ' a frequency whose interval fits into 16 bits. This
+  ' means a frequency greater than the minimum frequency,
+  ' about 18.2 Hz. In practice, the value needs to be
+  ' strictly larger than the minimum, otherwise interval&
+  ' will be out of range. 18.2 is less than the exact
+  ' value, but 18.21 is larger than it.
+  timerscale% = CEIL(18.21 / tickspersecond#)
+  interval& = BaseFrequency& / (tickspersecond# * timerscale%)
+END IF
 
 OUT &H43, &H36
 OUT &H40, interval&
