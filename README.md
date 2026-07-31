@@ -49,3 +49,7 @@ The C# debugging experience is not as comprehensive in Visual Studio Code as in 
 If you are interested in contributing to QBX, then the first step is to sign up for a GitHub account and _fork_ the repository. Within your fork, you can make branches and commit changes to them however you want. When you have a branch that contains a code change you want to propose, GitHub allows you to open a "pull request".
 
 TL;DR: GitHub PRs welcome. :-)
+
+### License
+
+The QBX project is licensed under the Lesser GPL license. If you make contributions, your contributions also fall under this license. You automatically agree to this when you propose changes.
