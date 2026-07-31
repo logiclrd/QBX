@@ -519,7 +519,7 @@ SUB FMtimer
 
     cursorx = POS(0)
 
-    ' S3M effectT determines how many frames to handle in 24 seconds.
+    ' S3M effectT determines how many frames to handle in 2.5 seconds.
     ' S3M effectA determines, how many frames there are per a row
     ' This function will always process one frame.
 
