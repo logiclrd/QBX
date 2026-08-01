@@ -856,8 +856,8 @@ public class YMF262Chip
 		SLOT.EnvelopeGenerator.Type =
 			(v & 0x20) switch
 			{
-				0x00 => EnvelopeGeneratorType.NonPercussive,
-				0x20 => EnvelopeGeneratorType.Percussive,
+				0x00 => EnvelopeGeneratorType.Percussive,
+				0x20 => EnvelopeGeneratorType.NonPercussive,
 				_ => throw new Exception("Sanity failure")
 			};
 		SLOT.Vibrate = ((v & 0x40) != 0);
