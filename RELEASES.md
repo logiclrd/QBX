@@ -1,5 +1,12 @@
 # QBX Releases
 
+## 1.19.4 - 2026-08-01
+
+### Fixed
+
+- Percussive/non-percussive envelopes in the YMF262 chip emulation are now correctly assigned.
+- The `ADLIBS3M` sample (`FMENGINX.BAS`) now displays its ticking status row at exactly one tick per second regardless of song tempo.
+
 ## 1.19.3 - 2026-08-01
 
 ### Fixed
