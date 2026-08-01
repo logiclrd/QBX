@@ -1,5 +1,11 @@
 # QBX Releases
 
+## 1.19.3 - 2026-08-01
+
+### Fixed
+
+- The `ADLIBS3M` sample (`FMENGINX.BAS`) now correctly computes the frame interval and handles cases where the interval is longer than the maximum interval supported by the 8253 chip.
+
 ## 1.19.2 - 2026-07-30
 
 ### Fixed
