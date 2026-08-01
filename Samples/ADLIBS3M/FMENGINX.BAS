@@ -132,7 +132,7 @@ statuschar$ = "."
 LastTi! = TIMER
 
 DO
-    ThisSecond& = LastTi! * fmdata.effectT / 437 / timerscale%
+    ThisSecond& = LastTi! * (18.2065 * 2.5) / fmdata.effectT / timerscale%
 
     IF ThisSecond& <> LastSecond& THEN
         PRINT statuschar$;
