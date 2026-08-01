@@ -12,15 +12,15 @@ public class YMF262Chip
 	public const int OPLBankSize = 9;
 	public const int OPLChannels = 18;
 
-	public const uint RateBase = 49716u; // It's not a good idea to deviate from this.
+	public const int RateBase = 49716; // It's not a good idea to deviate from this.
 
 	public const int BasePort = 0x388;
 
-	public const uint RateDivisor = 288u;
+	public const int RateDivisor = 288;
 
 	const int FrequencyShift         = 16;  /* 16.16 fixed point (frequency calculations) */
 	const int EnvelopeGeneratorShift = 16;  /* 16.16 fixed point (EG timing)              */
-	const int LFOShift               = 24;  /*  8.24 fixed point (LFO calculations)       */
+	const int LFOShift               = 23;  /*  8.23 fixed point (LFO calculations)       */
 
 	const int FrequencyMask = (1 << FrequencyShift) - 1;
 
@@ -40,8 +40,8 @@ public class YMF262Chip
 
 	struct EnvelopeGeneratorRate
 	{
-		public uint Rate; // Scaled by 2 bits
-		public uint Mask;
+		public int Rate; // Scaled by 2 bits
+		public int Mask;
 		public byte Shift;
 		public byte Select;
 	}
@@ -56,10 +56,10 @@ public class YMF262Chip
 	{
 		public EnvelopeGeneratorType Type;   /* percussive/non-percussive mode */
 		public EnvelopeGeneratorPhase Phase; /* phase type                   */
-		public uint TotalLevel;              /* total level: TL << 2         */
-		public int  TotalLevelAdjusted;      /* adjusted now TL              */
-		public int  Volume;                  /* envelope counter             */
-		public uint SustainLevel;            /* sustain level: sl_tab[SL]    */
+		public int TotalLevel;              /* total level: TL << 2         */
+		public int TotalLevelAdjusted;      /* adjusted now TL              */
+		public int Volume;                  /* envelope counter             */
+		public int SustainLevel;            /* sustain level: sl_tab[SL]    */
 	}
 
 	struct OPL3Slot
@@ -70,10 +70,10 @@ public class YMF262Chip
 		public byte  Multiple;            /* multiple: mul_tab[ML]        */
 
 		/* Phase Generator */
-		public uint  FrequencyTick;       /* frequency counter            */
-		public uint  FrequencyStep;       /* frequency counter step       */
+		public int  FrequencyTick;       /* frequency counter            */
+		public int  FrequencyStep;       /* frequency counter step       */
 		public byte  FeedbackShift;       /* feedback shift value         */
-		public MutableBox<short> OutputSlot;    /* slot output pointer          */
+		public MutableBox<int> OutputSlot;      /* slot output pointer          */
 		public OPLSlotOutArray Operator1Output; /* slot1 output for feedback    */
 		public byte  ConnectionType;      /* connection (algorithm) type  */
 
@@ -87,14 +87,14 @@ public class YMF262Chip
 		public uint Key;        /* 0 = KEY OFF, >0 = KEY ON     */
 
 		/* LFO */
-		public uint  AmplitudeModulationMask;     /* LFO Amplitude Modulation enable mask */
-		public bool  Vibrate;        /* LFO Phase Modulation enable flag (active high)*/
+		public int AmplitudeModulationMask; /* LFO Amplitude Modulation enable mask */
+		public bool Vibrate;                /* LFO Phase Modulation enable flag (active high)*/
 
 		/* waveform select */
 		public byte WaveformNumber;
-		public uint WaveTable;
+		public int WaveTable;
 
-		[InlineArray(128 - 112)] //speedup: pump up the struct size to power of 2
+		[InlineArray(128 - 108)] //speedup: pump up the struct size to power of 2
 		struct Padding { byte _element0; }
 		Padding _reserved;
 	}
@@ -109,10 +109,10 @@ public class YMF262Chip
 	{
 		public OPL3ChannelSlotArray Slot;
 
-		public uint  BlockAndFunctionNumber; /* block+fnum                   */
-		public uint  FrequencyStepBase;      /* Freq. Increment base         */
-		public uint  KeyScaleLevelBase;      /* KeyScaleLevel Base step      */
-		public byte  KeyCode;                /* key code (for key scaling)   */
+		public int  BlockAndFunctionNumber; /* block+fnum                   */
+		public int  FrequencyStepBase;      /* Freq. Increment base         */
+		public int  KeyScaleLevelBase;      /* KeyScaleLevel Base step      */
+		public byte KeyCode;                /* key code (for key scaling)   */
 
 		/*
 			there are 12 2-operator channels which can be combined in pairs
@@ -132,39 +132,41 @@ public class YMF262Chip
 	}
 
 	/* OPL3 state */
-	OPL3Channel[] _channels = new OPL3Channel[18];               /* OPL3 chips have 18 channels  */
+	[InlineArray(length: 18)]
+	struct OPL3ChannelArray { OPL3Channel _element0; }
+	[InlineArray(length: 18 * 4)]
+	struct OutputMasksArray { int _element0; }
+	[InlineArray(length: 18)]
+	struct OutputControlValuesArray { int _element0; }
+	[InlineArray(length: 18)]
+	struct ChannelOutputSlotsArray { MutableBox<int> _element0; }
 
-	short[] _outputMasks = new short[18*4];          /* channels output masks (0xffff = enable); 4 masks per one channel */
-	uint[]  _outputControlValues = new uint[18];     /* output control values 1 per one channel (1 value contains 4 masks) */
+	OPL3ChannelArray _channels;                      /* OPL3 chips have 18 channels  */
 
-	MutableBox<short>[] _channelOutputSlots =
-		new MutableBox<short>[18]
-		{
-			new MutableBox<short>(), new MutableBox<short>(), new MutableBox<short>(),
-			new MutableBox<short>(), new MutableBox<short>(), new MutableBox<short>(),
-			new MutableBox<short>(), new MutableBox<short>(), new MutableBox<short>(),
+	OutputMasksArray _outputMasks;                   /* channels output masks (0xffff = enable); 4 masks per one channel */
+	OutputControlValuesArray _outputControlValues;   /* output control values 1 per one channel (1 value contains 4 masks) */
 
-			new MutableBox<short>(), new MutableBox<short>(), new MutableBox<short>(),
-			new MutableBox<short>(), new MutableBox<short>(), new MutableBox<short>(),
-			new MutableBox<short>(), new MutableBox<short>(), new MutableBox<short>(),
-		};
+	ChannelOutputSlotsArray _channelOutputSlots;     /* filled in the constructor */
 
-	MutableBox<short> _phaseModulation = new MutableBox<short>();   /* phase modulation input (SLOT 2) */
-	MutableBox<short> _phaseModulation2 = new MutableBox<short>();  /* phase modulation input (SLOT 3 in 4 operator channels) */
+	MutableBox<int> _phaseModulation = new MutableBox<int>();   /* phase modulation input (SLOT 2) */
+	MutableBox<int> _phaseModulation2 = new MutableBox<int>();  /* phase modulation input (SLOT 3 in 4 operator channels) */
 
 	internal const int RateSteps = 8;
 
 	struct GlobalEnvelopeGeneratorState
 	{
-		public uint Counter;
-		public uint TimerTick; /* counter works at frequency = chipclock/288 (288=8*36) */
-		public uint TimerStep;
-		public uint TimerOverflow; /* envelope generator timer overflows every 1 sample (on real chip) */
+		public int Counter;
+		public int TimerTick; /* counter works at frequency = chipclock/288 (288=8*36) */
+		public int TimerStep;
+		public int TimerOverflow; /* envelope generator timer overflows every 1 sample (on real chip) */
 	}
 
 	GlobalEnvelopeGeneratorState _globalEnvelopeGenerator = new GlobalEnvelopeGeneratorState();
 
-	uint[] _fnumberTable = new uint[1024];           /* fnumber->increment counter   */
+	[InlineArray(length: 1024)]
+	struct FNumberTableArray { int _element0; }
+
+	FNumberTableArray _fnumberTable;           /* fnumber->increment counter   */
 
 	struct LowFrequencyOscillatorModulatorFields
 	{
@@ -176,13 +178,13 @@ public class YMF262Chip
 		}
 
 		public byte DepthRange;
-		public uint Tick;
-		public uint Step;
+		public int Tick;
+		public int Step;
 	}
 
 	struct LowFrequencyOscillatorFields
 	{
-		public uint CurrentAmplitude;
+		public int CurrentAmplitude;
 		public int CurrentPhase;
 
 		public LowFrequencyOscillatorModulatorFields AmplitudeModulator;
@@ -191,9 +193,9 @@ public class YMF262Chip
 
 	struct NoiseFields
 	{
-		public uint Value;              /* 23 bit noise shift register  */
-		public uint Phase;              /* current noise 'phase'        */
-		public uint Period;             /* current noise period         */
+		public int Value;              /* 23 bit noise shift register  */
+		public int Phase;              /* current noise 'phase'        */
+		public int Period;             /* current noise period         */
 	}
 
 	/* LFO */
@@ -201,9 +203,9 @@ public class YMF262Chip
 
 	NoiseFields _noise;
 
-	bool   _opl3Mode;              /* OPL3 extension enable flag   */
+	bool _opl3Mode;              /* OPL3 extension enable flag   */
 
-	bool   _hasRhythmPart;                 /* Rhythm mode                  */
+	bool _hasRhythmPart;         /* Rhythm mode                  */
 
 	const long BaseTimerTickDuration = 200; // 200 system ticks, which are 100ns each, is 20 μs
 
@@ -234,10 +236,7 @@ public class YMF262Chip
 	}
 
 	[InlineArray(length: 2)]
-	struct Timers
-	{
-		TimerFields _element0;
-	}
+	struct Timers { TimerFields _element0; }
 
 	Timers _timers;
 
@@ -260,9 +259,9 @@ public class YMF262Chip
 
 	byte _noteSelect;
 
-	uint _clock;                   /* master clock  (Hz)           */
-	uint _rate;                    /* sampling rate (Hz)           */
-	double _frequencyBase;              /* frequency base               */
+	int _clock;                   /* master clock  (Hz)           */
+	int _rate;                    /* sampling rate (Hz)           */
+	double _frequencyBase;        /* frequency base               */
 
 	internal const int EnvelopeQuiet = YMF262Tables.TLTableLength >> 4;
 
@@ -274,206 +273,233 @@ public class YMF262Chip
 
 	public YMF262Chip(int mixFrequency)
 	{
-		Initialize(RateBase * RateDivisor, (uint)mixFrequency);
+		for (int i = 0; i < 18; i++)
+			_channelOutputSlots[i] = new MutableBox<int>();
+
+		Initialize(RateBase * RateDivisor, mixFrequency);
 	}
 
 	void AdvanceLowFrequencyOscillator()
 	{
-		byte tmp;
+		unchecked
+		{
+			/* LFO */
+			_lowFrequencyOscillator.AmplitudeModulator.Tick +=
+				_lowFrequencyOscillator.AmplitudeModulator.Step;
 
-		/* LFO */
-		_lowFrequencyOscillator.AmplitudeModulator.Tick +=
-			_lowFrequencyOscillator.AmplitudeModulator.Step;
+			/* LFOAmplitudeModulatorTable is 210 elements long */
+			if (_lowFrequencyOscillator.AmplitudeModulator.Tick >= (YMF262Tables.LFOAmplitudeModulatorTableArray.Length << LFOShift))
+				_lowFrequencyOscillator.AmplitudeModulator.Tick -= (YMF262Tables.LFOAmplitudeModulatorTableArray.Length << LFOShift);
 
-		/* LFOAmplitudeModulatorTable is 210 elements long */
-		if (_lowFrequencyOscillator.AmplitudeModulator.Tick >= ((uint)YMF262Tables.LFOAmplitudeModulatorTable.Length << LFOShift))
-			_lowFrequencyOscillator.AmplitudeModulator.Tick -= ((uint)YMF262Tables.LFOAmplitudeModulatorTable.Length << LFOShift);
+			byte tmp = YMF262Tables.LFOAmplitudeModulatorTable[_lowFrequencyOscillator.AmplitudeModulator.Tick >> LFOShift];
 
-		tmp = YMF262Tables.LFOAmplitudeModulatorTable[_lowFrequencyOscillator.AmplitudeModulator.Tick >> LFOShift ];
+			if (_lowFrequencyOscillator.AmplitudeModulator.Depth)
+				_lowFrequencyOscillator.CurrentAmplitude = tmp;
+			else
+				_lowFrequencyOscillator.CurrentAmplitude = tmp >> 2;
 
-		if (_lowFrequencyOscillator.AmplitudeModulator.Depth)
-			_lowFrequencyOscillator.CurrentAmplitude = tmp;
-		else
-			_lowFrequencyOscillator.CurrentAmplitude = unchecked((uint)tmp) >> 2;
+			_lowFrequencyOscillator.PhaseModulator.Tick += _lowFrequencyOscillator.PhaseModulator.Step;
 
-		_lowFrequencyOscillator.PhaseModulator.Tick += _lowFrequencyOscillator.PhaseModulator.Step;
-
-		_lowFrequencyOscillator.CurrentPhase = unchecked((int)
-			(((_lowFrequencyOscillator.PhaseModulator.Tick >> LFOShift) & 7) | _lowFrequencyOscillator.PhaseModulator.DepthRange));
+			_lowFrequencyOscillator.CurrentPhase =
+				((_lowFrequencyOscillator.PhaseModulator.Tick >> LFOShift) & 7) |
+				_lowFrequencyOscillator.PhaseModulator.DepthRange;
+		}
 	}
 
 	/* advance to next sample */
 	void AdvanceSample()
 	{
-		_globalEnvelopeGenerator.TimerTick += _globalEnvelopeGenerator.TimerStep;
-
-		while (_globalEnvelopeGenerator.TimerTick >= _globalEnvelopeGenerator.TimerOverflow)
+		unchecked
 		{
-			_globalEnvelopeGenerator.TimerTick -= _globalEnvelopeGenerator.TimerOverflow;
-			_globalEnvelopeGenerator.Counter++;
+			_globalEnvelopeGenerator.TimerTick += _globalEnvelopeGenerator.TimerStep;
 
-			for (int i=0; i<9*2*2; i++)
+			while (_globalEnvelopeGenerator.TimerTick >= _globalEnvelopeGenerator.TimerOverflow)
 			{
-				ref var CH  = ref _channels[i / 2];
-				ref var op  = ref CH.Slot[i & 1];
+				_globalEnvelopeGenerator.TimerTick -= _globalEnvelopeGenerator.TimerOverflow;
+				_globalEnvelopeGenerator.Counter++;
 
-				/* Envelope Generator */
-				switch (op.EnvelopeGenerator.Phase)
+				for (int i = 0; i < 9 * 2 * 2; i++)
 				{
-					case EnvelopeGeneratorPhase.Attack:    /* attack phase */
-						if ((_globalEnvelopeGenerator.Counter & op.AttackRate.Mask) == 0)
-						{
-							op.EnvelopeGenerator.Volume += (~op.EnvelopeGenerator.Volume *
-														(YMF262Tables.EnvelopeGeneratorIncrements[op.AttackRate.Select + ((_globalEnvelopeGenerator.Counter >> op.AttackRate.Shift)&7)])
-														) >> 3;
+					ref var CH = ref _channels[i / 2];
+					ref var op = ref CH.Slot[i & 1];
 
-							if (op.EnvelopeGenerator.Volume <= MinAttenuationIndex)
+					/* Envelope Generator */
+					switch (op.EnvelopeGenerator.Phase)
+					{
+						case EnvelopeGeneratorPhase.Attack:    /* attack phase */
+							if ((_globalEnvelopeGenerator.Counter & op.AttackRate.Mask) == 0)
 							{
-								op.EnvelopeGenerator.Volume = MinAttenuationIndex;
-								op.EnvelopeGenerator.Phase = EnvelopeGeneratorPhase.Decay;
+								op.EnvelopeGenerator.Volume += (~op.EnvelopeGenerator.Volume *
+									(YMF262Tables.EnvelopeGeneratorIncrements[
+										op.AttackRate.Select + ((_globalEnvelopeGenerator.Counter >> op.AttackRate.Shift) & 7)])
+									) >> 3;
+
+								if (op.EnvelopeGenerator.Volume <= MinAttenuationIndex)
+								{
+									op.EnvelopeGenerator.Volume = MinAttenuationIndex;
+									op.EnvelopeGenerator.Phase = EnvelopeGeneratorPhase.Decay;
+								}
+
 							}
+							break;
 
-						}
-						break;
+						case EnvelopeGeneratorPhase.Decay:    /* decay phase */
+							if ((_globalEnvelopeGenerator.Counter & op.DecayRate.Mask) == 0)
+							{
+								op.EnvelopeGenerator.Volume += YMF262Tables.EnvelopeGeneratorIncrements[
+									op.DecayRate.Select + ((_globalEnvelopeGenerator.Counter >> op.DecayRate.Shift) & 7)];
 
-					case EnvelopeGeneratorPhase.Decay:    /* decay phase */
-						if ((_globalEnvelopeGenerator.Counter & op.DecayRate.Mask) == 0)
-						{
-							op.EnvelopeGenerator.Volume += YMF262Tables.EnvelopeGeneratorIncrements[op.DecayRate.Select + ((_globalEnvelopeGenerator.Counter >> op.DecayRate.Shift)&7)];
+								if (op.EnvelopeGenerator.Volume >= op.EnvelopeGenerator.SustainLevel)
+									op.EnvelopeGenerator.Phase = EnvelopeGeneratorPhase.Sustain;
 
-							if (op.EnvelopeGenerator.Volume >= op.EnvelopeGenerator.SustainLevel)
-								op.EnvelopeGenerator.Phase = EnvelopeGeneratorPhase.Sustain;
+							}
+							break;
 
-						}
-						break;
+						case EnvelopeGeneratorPhase.Sustain:    /* sustain phase */
 
-					case EnvelopeGeneratorPhase.Sustain:    /* sustain phase */
+							/* this is important behaviour:
+							one can change percusive/non-percussive modes on the fly and
+							the chip will remain in sustain phase - verified on real YM3812 */
 
-						/* this is important behaviour:
-						one can change percusive/non-percussive modes on the fly and
-						the chip will remain in sustain phase - verified on real YM3812 */
+							if (op.EnvelopeGenerator.Type == EnvelopeGeneratorType.Percussive)
+							{
+								/* during sustain phase chip adds Release Rate (in percussive mode) */
+								if ((_globalEnvelopeGenerator.Counter & op.ReleaseRate.Mask) == 0)
+								{
+									op.EnvelopeGenerator.Volume += YMF262Tables.EnvelopeGeneratorIncrements[
+										op.ReleaseRate.Select + ((_globalEnvelopeGenerator.Counter >> op.ReleaseRate.Shift) & 7)];
 
-						if (op.EnvelopeGenerator.Type == EnvelopeGeneratorType.Percussive)
-						{
-							/* during sustain phase chip adds Release Rate (in percussive mode) */
+									if (op.EnvelopeGenerator.Volume >= MaxAttenuationIndex)
+										op.EnvelopeGenerator.Volume = MaxAttenuationIndex;
+								}
+								/* else do nothing in sustain phase */
+							}
+							break;
+
+						case EnvelopeGeneratorPhase.Release:    /* release phase */
 							if ((_globalEnvelopeGenerator.Counter & op.ReleaseRate.Mask) == 0)
 							{
-								op.EnvelopeGenerator.Volume += YMF262Tables.EnvelopeGeneratorIncrements[op.ReleaseRate.Select + ((_globalEnvelopeGenerator.Counter >> op.ReleaseRate.Shift)&7)];
+								op.EnvelopeGenerator.Volume += YMF262Tables.EnvelopeGeneratorIncrements[
+									op.ReleaseRate.Select + ((_globalEnvelopeGenerator.Counter >> op.ReleaseRate.Shift) & 7)];
 
 								if (op.EnvelopeGenerator.Volume >= MaxAttenuationIndex)
+								{
 									op.EnvelopeGenerator.Volume = MaxAttenuationIndex;
+									op.EnvelopeGenerator.Phase = EnvelopeGeneratorPhase.Off;
+								}
+
 							}
-							/* else do nothing in sustain phase */
-						}
-						break;
-
-					case EnvelopeGeneratorPhase.Release:    /* release phase */
-						if ((_globalEnvelopeGenerator.Counter & op.ReleaseRate.Mask) == 0)
-						{
-							op.EnvelopeGenerator.Volume += YMF262Tables.EnvelopeGeneratorIncrements[op.ReleaseRate.Select + ((_globalEnvelopeGenerator.Counter >> op.ReleaseRate.Shift)&7)];
-
-							if ( op.EnvelopeGenerator.Volume >= MaxAttenuationIndex)
-							{
-								op.EnvelopeGenerator.Volume = MaxAttenuationIndex;
-								op.EnvelopeGenerator.Phase = EnvelopeGeneratorPhase.Off;
-							}
-
-						}
-						break;
+							break;
+					}
 				}
 			}
-		}
 
-		for (int i=0; i<9*2*2; i++)
-		{
-			ref var CH  = ref _channels[i / 2];
-			ref var op  = ref CH.Slot[i & 1];
-
-			/* Phase Generator */
-			if (op.Vibrate)
+			for (int i = 0; i < 9 * 2 * 2; i++)
 			{
-				byte block;
-				uint block_fnum = CH.BlockAndFunctionNumber;
+				ref var CH = ref _channels[i / 2];
+				ref var op = ref CH.Slot[i & 1];
 
-				uint fnum_lfo   = (block_fnum&0x0380) >> 7;
-
-				int lfo_fn_table_index_offset = YMF262Tables.LFOPhaseModulatorTable[_lowFrequencyOscillator.CurrentPhase + 16*fnum_lfo ];
-
-				if (lfo_fn_table_index_offset != 0)  /* LFO phase modulation active */
+				/* Phase Generator */
+				if (op.Vibrate)
 				{
-					block_fnum = unchecked((uint)(block_fnum + lfo_fn_table_index_offset));
-					block = unchecked((byte)((block_fnum & 0x1c00) >> 10));
-					op.FrequencyTick += (_fnumberTable[block_fnum&0x03ff] >> (7-block)) * op.Multiple;
+					int block_fnum = CH.BlockAndFunctionNumber;
+
+					int fnum_lfo = (block_fnum & 0x0380) >> 7;
+
+					int lfo_fn_table_index_offset = YMF262Tables.LFOPhaseModulatorTable[
+						_lowFrequencyOscillator.CurrentPhase + 16 * fnum_lfo];
+
+					if (lfo_fn_table_index_offset != 0)  /* LFO phase modulation active */
+					{
+						block_fnum += lfo_fn_table_index_offset;
+
+						byte block = unchecked((byte)((block_fnum & 0x1c00) >> 10));
+
+						op.FrequencyTick += (_fnumberTable[block_fnum & 0x03ff] >> (7 - block)) * op.Multiple;
+					}
+					else /* LFO phase modulation  = zero */
+						op.FrequencyTick += op.FrequencyStep;
 				}
-				else    /* LFO phase modulation  = zero */
-				{
+				else /* LFO phase modulation disabled for this operator */
 					op.FrequencyTick += op.FrequencyStep;
-				}
 			}
-			else    /* LFO phase modulation disabled for this operator */
+
+			/*  The Noise Generator of the YM3812 is 23-bit shift register.
+			*   Period is equal to 2^23-2 samples.
+			*   Register works at sampling frequency of the chip, so output
+			*   can change on every sample.
+			*
+			*   Output of the register and input to the bit 22 is:
+			*   bit0 XOR bit14 XOR bit15 XOR bit22
+			*
+			*   Simply use bit 22 as the noise output.
+			*/
+
+			_noise.Phase += _noise.Period;
+			int ii = _noise.Phase >> FrequencyShift; /* number of events (shifts of the shift register) */
+			_noise.Phase &= FrequencyMask;
+			while (ii != 0)
 			{
-				op.FrequencyTick += op.FrequencyStep;
+				/*
+				uint j;
+				j = ( (noise_rng) ^ (noise_rng>>14) ^ (noise_rng>>15) ^ (noise_rng>>22) ) & 1;
+				noise_rng = (j<<22) | (noise_rng>>1);
+				*/
+
+				/*
+						Instead of doing all the logic operations above, we
+						use a trick here (and use bit 0 as the noise output).
+						The difference is only that the noise bit changes one
+						step ahead. This doesn't matter since we don't know
+						what is real state of the noise_rng after the reset.
+				*/
+
+				if ((_noise.Value & 1) != 0)
+					_noise.Value ^= 0x800302;
+
+				_noise.Value >>= 1;
+
+				ii--;
 			}
 		}
+	}
 
-		/*  The Noise Generator of the YM3812 is 23-bit shift register.
-		*   Period is equal to 2^23-2 samples.
-		*   Register works at sampling frequency of the chip, so output
-		*   can change on every sample.
-		*
-		*   Output of the register and input to the bit 22 is:
-		*   bit0 XOR bit14 XOR bit15 XOR bit22
-		*
-		*   Simply use bit 22 as the noise output.
-		*/
+	int CalculateOperator(int phase, int env, int pm, int waveTable)
+	{
+		phase += pm << 16;
+		phase &= ~FrequencyMask;
 
-		_noise.Phase += _noise.Period;
-		uint ii = _noise.Phase >> FrequencyShift;       /* number of events (shifts of the shift register) */
-		_noise.Phase &= FrequencyMask;
-		while (ii != 0)
+		int waveOffset = (phase >> FrequencyShift) & YMF262Tables.SineMask;
+
+		int p = (env << 4) + YMF262Tables.SineTable[waveTable + waveOffset];
+
+		if (p >= YMF262Tables.TLTableLength)
+			return 0;
+		return YMF262Tables.TLTable[p];
+	}
+
+	int CalculateOperator1(int phase, int env, int pmPreshifted, int waveTable)
+	{
+		unchecked
 		{
-			/*
-			uint j;
-			j = ( (noise_rng) ^ (noise_rng>>14) ^ (noise_rng>>15) ^ (noise_rng>>22) ) & 1;
-			noise_rng = (j<<22) | (noise_rng>>1);
-			*/
+			phase += pmPreshifted;
+			phase &= ~FrequencyMask;
 
-			/*
-					Instead of doing all the logic operations above, we
-					use a trick here (and use bit 0 as the noise output).
-					The difference is only that the noise bit changes one
-					step ahead. This doesn't matter since we don't know
-					what is real state of the noise_rng after the reset.
-			*/
+			int waveOffset = (phase >> FrequencyShift) & YMF262Tables.SineMask;
 
-			if ((_noise.Value & 1) != 0)
-				_noise.Value ^= 0x800302;
+			int p = (env << 4) + YMF262Tables.SineTable[waveTable + waveOffset];
 
-			_noise.Value >>= 1;
-
-			ii--;
+			if (p >= YMF262Tables.TLTableLength)
+				return 0;
+			return YMF262Tables.TLTable[p];
 		}
 	}
 
-	short CalculateOperator(uint phase, uint env, int pm, uint wave_tab)
-	{
-		uint p = (env<<4) + YMF262Tables.SineTable[wave_tab + ((((int)((phase & ~FrequencyMask) + (pm << 16))) >> FrequencyShift) & YMF262Tables.SineMask)];
-
-		if (p >= YMF262Tables.TLTableLength)
-			return 0;
-		return YMF262Tables.TLTable[p];
-	}
-
-	short CalculateOperator1(uint phase, uint env, int pm, uint wave_tab)
-	{
-		uint p = (env<<4) + YMF262Tables.SineTable[wave_tab + ((((int)((phase & ~FrequencyMask) + pm)) >> FrequencyShift) & YMF262Tables.SineMask)];
-
-		if (p >= YMF262Tables.TLTableLength)
-			return 0;
-		return YMF262Tables.TLTable[p];
-	}
-
-	uint CalculateVolume(ref OPL3Slot OP) => unchecked((uint)OP.EnvelopeGenerator.TotalLevelAdjusted) + ((uint)OP.EnvelopeGenerator.Volume) + (_lowFrequencyOscillator.CurrentAmplitude & OP.AmplitudeModulationMask);
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	int CalculateVolume(ref OPL3Slot OP) => unchecked(
+		OP.EnvelopeGenerator.TotalLevelAdjusted +
+		OP.EnvelopeGenerator.Volume +
+		(_lowFrequencyOscillator.CurrentAmplitude & OP.AmplitudeModulationMask));
 
 	/* calculate output of a standard 2 operator channel
 	(or 1st part of a 4-op channel) */
@@ -485,8 +511,8 @@ public class YMF262Chip
 		/* SLOT 1 */
 		{
 			ref var SLOT = ref CH.Slot[Slot1];
-			uint env  = CalculateVolume(ref SLOT);
-			int @out  = SLOT.Operator1Output[0] + SLOT.Operator1Output[1];
+			int env  = CalculateVolume(ref SLOT);
+			int @out = SLOT.Operator1Output[0] + SLOT.Operator1Output[1];
 			SLOT.Operator1Output[0] = SLOT.Operator1Output[1];
 			SLOT.Operator1Output[1] = 0;
 			if (env < EnvelopeQuiet)
@@ -501,7 +527,7 @@ public class YMF262Chip
 		/* SLOT 2 */
 		{
 			ref var SLOT = ref CH.Slot[Slot2];
-			uint env = CalculateVolume(ref SLOT);
+			int env = CalculateVolume(ref SLOT);
 			if (env < EnvelopeQuiet)
 				SLOT.OutputSlot.Value += CalculateOperator(SLOT.FrequencyTick, env, _phaseModulation.Value, SLOT.WaveTable);
 		}
@@ -515,7 +541,7 @@ public class YMF262Chip
 		/* SLOT 1 */
 		{
 			ref var SLOT = ref CH.Slot[Slot1];
-			uint env  = CalculateVolume(ref SLOT);
+			int env = CalculateVolume(ref SLOT);
 			if (env < EnvelopeQuiet)
 				SLOT.OutputSlot.Value += CalculateOperator(SLOT.FrequencyTick, env, _phaseModulation2.Value, SLOT.WaveTable );
 		}
@@ -523,7 +549,7 @@ public class YMF262Chip
 		/* SLOT 2 */
 		{
 			ref var SLOT = ref CH.Slot[Slot2];
-			uint env = CalculateVolume(ref SLOT);
+			int env = CalculateVolume(ref SLOT);
 			if (env < EnvelopeQuiet)
 				SLOT.OutputSlot.Value += CalculateOperator(SLOT.FrequencyTick, env, _phaseModulation.Value, SLOT.WaveTable);
 		}
@@ -564,7 +590,7 @@ public class YMF262Chip
 
 	*/
 
-	void CalculateRhythm(OPL3Channel[] CH, bool noise)
+	void CalculateRhythm(bool noise)
 	{
 		/* Bass Drum (verified on real YM3812):
 			- depends on the channel 6 'connect' register:
@@ -579,8 +605,8 @@ public class YMF262Chip
 
 		/* SLOT 1 */
 		{
-			ref var SLOT = ref CH[6].Slot[Slot1];
-			uint env = CalculateVolume(ref SLOT);
+			ref var SLOT = ref _channels[6].Slot[Slot1];
+			int env = CalculateVolume(ref SLOT);
 
 			@out = SLOT.Operator1Output[0] + SLOT.Operator1Output[1];
 			SLOT.Operator1Output[0] = SLOT.Operator1Output[1];
@@ -600,10 +626,10 @@ public class YMF262Chip
 
 		/* SLOT 2 */
 		{
-			ref var SLOT = ref CH[6].Slot[Slot2];
-			uint env = CalculateVolume(ref SLOT);
+			ref var SLOT = ref _channels[6].Slot[Slot2];
+			int env = CalculateVolume(ref SLOT);
 			if (env < EnvelopeQuiet)
-				_channelOutputSlots[6].Value += unchecked((short)(CalculateOperator(SLOT.FrequencyTick, env, _phaseModulation.Value, SLOT.WaveTable) * 2));
+				_channelOutputSlots[6].Value += CalculateOperator(SLOT.FrequencyTick, env, _phaseModulation.Value, SLOT.WaveTable) * 2;
 		}
 
 		/* Phase generation is based on: */
@@ -625,7 +651,7 @@ public class YMF262Chip
 
 		{
 			/* High Hat (verified on real YM3812) */
-			uint env = CalculateVolume(ref Slot7_1);
+			int env = CalculateVolume(ref Slot7_1);
 			if (env < EnvelopeQuiet)
 			{
 				/* high hat phase generation:
@@ -634,50 +660,43 @@ public class YMF262Chip
 				*/
 
 				/* base frequency derived from operator 1 in channel 7 */
-				uint bit7 = ((Slot7_1.FrequencyTick >> FrequencyShift) >> 7) & 1;
-				uint bit3 = ((Slot7_1.FrequencyTick >> FrequencyShift) >> 3) & 1;
-				uint bit2 = ((Slot7_1.FrequencyTick >> FrequencyShift) >> 2) & 1;
+				int bit7 = ((Slot7_1.FrequencyTick >> FrequencyShift) >> 7) & 1;
+				int bit3 = ((Slot7_1.FrequencyTick >> FrequencyShift) >> 3) & 1;
+				int bit2 = ((Slot7_1.FrequencyTick >> FrequencyShift) >> 2) & 1;
 
-				uint res1 = (bit2 ^ bit7) | bit3;
+				int res1 = (bit2 ^ bit7) | bit3;
 
 				/* when res1 = 0 phase = 0x000 | 0xd0; */
 				/* when res1 = 1 phase = 0x200 | (0xd0 >> 2); */
-				uint phase = (res1 != 0) ? (0x200u | (0xd0 >> 2)) : 0xd0;
+				int phase = (res1 != 0) ? (0x200 | (0xd0 >> 2)) : 0xd0;
 
 				/* enable gate based on frequency of operator 2 in channel 8 */
-				uint bit5e= ((Slot8_2.FrequencyTick >> FrequencyShift) >> 5) & 1;
-				uint bit3e= ((Slot8_2.FrequencyTick >> FrequencyShift) >> 3) & 1;
+				int bit5e = ((Slot8_2.FrequencyTick >> FrequencyShift) >> 5) & 1;
+				int bit3e = ((Slot8_2.FrequencyTick >> FrequencyShift) >> 3) & 1;
 
-				uint res2 = (bit3e ^ bit5e);
+				int res2 = (bit3e ^ bit5e);
 
 				/* when res2 = 0 pass the phase from calculation above (res1); */
 				/* when res2 = 1 pha != 0se = 0x200 | (0xd0>>2); */
 				if (res2 != 0)
-					phase = (0x200|(0xd0>>2));
+					phase = (0x200 | (0xd0 >> 2));
 
-
-				/* when phase & 0x200 is set and noise=1 then phase = 0x200|0xd0 */
-				/* when phase & 0x200 is set and noise=0 then phase = 0x200|(0xd0>>2), ie no change */
-				if ((phase & 0x200) != 0)
+				/* when noise=0 then no change, otherwise... */
+				if (noise)
 				{
-					if (noise)
-						phase = 0x200|0xd0;
-				}
-				else
-				/* when phase & 0x200 is clear and noise=1 then phase = 0xd0>>2 */
-				/* when phase & 0x200 is clear and noise=0 then phase = 0xd0, ie no change */
-				{
-					if (noise)
-						phase = 0xd0>>2;
+					if ((phase & 0x200) != 0) /* when phase & 0x200 is set and noise=1 then phase = 0x200|0xd0 */
+						phase = 0x200 | 0xd0;
+					else /* when phase & 0x200 is clear and noise=1 then phase = 0xd0>>2 */
+						phase = 0xd0 >> 2;
 				}
 
-				_channelOutputSlots[7].Value += unchecked((short)(CalculateOperator(phase<<FrequencyShift, env, 0, Slot7_1.WaveTable) * 2));
+				_channelOutputSlots[7].Value += CalculateOperator(phase<<FrequencyShift, env, 0, Slot7_1.WaveTable) * 2;
 			}
 		}
 
 		{
 			/* Snare Drum (verified on real YM3812) */
-			uint env = CalculateVolume(ref Slot7_2);
+			int env = CalculateVolume(ref Slot7_2);
 			if (env < EnvelopeQuiet)
 			{
 				/* base frequency derived from operator 1 in channel 7 */
@@ -685,7 +704,7 @@ public class YMF262Chip
 
 				/* when bit8 = 0 phase = 0x100; */
 				/* when bit8 = 1 phase = 0x200; */
-				uint phase = bit8 ? 0x200u : 0x100;
+				int phase = bit8 ? 0x200 : 0x100;
 
 				/* Noise bit XOR'es phase by 0x100 */
 				/* when noisebit = 0 pass the phase from calculation above */
@@ -694,54 +713,49 @@ public class YMF262Chip
 				if (noise)
 					phase ^= 0x100;
 
-				_channelOutputSlots[7].Value += unchecked((short)(CalculateOperator(phase << FrequencyShift, env, 0, Slot7_2.WaveTable) * 2));
+				_channelOutputSlots[7].Value += CalculateOperator(phase << FrequencyShift, env, 0, Slot7_2.WaveTable) * 2;
 			}
 		}
 
 		{
 			/* Tom Tom (verified on real YM3812) */
-			uint env = CalculateVolume(ref Slot8_1);
+			int env = CalculateVolume(ref Slot8_1);
 			if (env < EnvelopeQuiet)
-				_channelOutputSlots[8].Value += unchecked((short)(CalculateOperator(Slot8_1.FrequencyTick, env, 0, Slot8_1.WaveTable) * 2));
+				_channelOutputSlots[8].Value += CalculateOperator(Slot8_1.FrequencyTick, env, 0, Slot8_1.WaveTable) * 2;
 		}
 
 		{
 			/* Top Cymbal (verified on real YM3812) */
-			uint env = CalculateVolume(ref Slot8_2);
+			int env = CalculateVolume(ref Slot8_2);
 			if (env < EnvelopeQuiet)
 			{
 				/* base frequency derived from operator 1 in channel 7 */
-				uint bit7 = ((Slot7_1.FrequencyTick>>FrequencyShift)>>7) & 1;
-				uint bit3 = ((Slot7_1.FrequencyTick>>FrequencyShift)>>3) & 1;
-				uint bit2 = ((Slot7_1.FrequencyTick>>FrequencyShift)>>2) & 1;
+				int bit7 = ((Slot7_1.FrequencyTick>>FrequencyShift)>>7) & 1;
+				int bit3 = ((Slot7_1.FrequencyTick>>FrequencyShift)>>3) & 1;
+				int bit2 = ((Slot7_1.FrequencyTick>>FrequencyShift)>>2) & 1;
 
-				uint res1 = (bit2 ^ bit7) | bit3;
+				int res1 = (bit2 ^ bit7) | bit3;
 
 				/* when res1 = 0 phase = 0x000 | 0x100; */
 				/* when res1 = 1 phase = 0x200 | 0x100; */
-				uint phase = (res1 != 0) ? 0x300u : 0x100;
+				int phase = (res1 != 0) ? 0x300 : 0x100;
 
 				/* enable gate based on frequency of operator 2 in channel 8 */
-				uint bit5e= ((Slot8_2.FrequencyTick>>FrequencyShift)>>5) & 1;
-				uint bit3e= ((Slot8_2.FrequencyTick>>FrequencyShift)>>3) & 1;
+				int bit5e = ((Slot8_2.FrequencyTick>>FrequencyShift)>>5) & 1;
+				int bit3e = ((Slot8_2.FrequencyTick>>FrequencyShift)>>3) & 1;
 
-				uint res2 = (bit3e ^ bit5e);
+				int res2 = (bit3e ^ bit5e);
 				/* when res2 = 0 pass the phase from calculation above (res1); */
 				/* when res2 = 1 phase = 0x200 | 0x100; */
 				if (res2 != 0)
 					phase = 0x300;
 
-				_channelOutputSlots[8].Value += unchecked((short)(CalculateOperator(phase << FrequencyShift, env, 0, Slot8_2.WaveTable) * 2));
+				_channelOutputSlots[8].Value += CalculateOperator(phase << FrequencyShift, env, 0, Slot8_2.WaveTable) * 2;
 			}
 		}
 	}
 
-	static void OPLCloseTable()
-	{
-		// lalala
-	}
-
-	void InitializeGlobalTables()
+	void InitializeTiming()
 	{
 		/* frequency base */
 		_frequencyBase  = (_rate != 0) ? ((double)_clock / (8.0*36)) / _rate  : 0;
@@ -750,20 +764,20 @@ public class YMF262Chip
 		for (int i = 0; i < 1024; i++)
 		{
 			/* opn phase increment counter = 20bit */
-			_fnumberTable[i] = (uint)( (double)i * 64 * _frequencyBase * (1<<(FrequencyShift-10)) ); /* -10 because chip works with 10.10 fixed point, while we use 16.16 */
+			_fnumberTable[i] = (int)( (double)i * 64 * _frequencyBase * (1<<(FrequencyShift-10)) ); /* -10 because chip works with 10.10 fixed point, while we use 16.16 */
 		}
 
 		/* Amplitude modulation: 27 output levels (triangle waveform); 1 level takes one of: 192, 256 or 448 samples */
 		/* One entry from LFO_AM_TABLE lasts for 64 samples */
-		_lowFrequencyOscillator.AmplitudeModulator.Step = (uint)((1.0 / 64.0 ) * (1<<LFOShift) * _frequencyBase);
+		_lowFrequencyOscillator.AmplitudeModulator.Step = (int)((1.0 / 64.0 ) * (1<<LFOShift) * _frequencyBase);
 
 		/* Vibrato: 8 output levels (triangle waveform); 1 level takes 1024 samples */
-		_lowFrequencyOscillator.PhaseModulator.Step = (uint)((1.0 / 1024.0) * (1<<LFOShift) * _frequencyBase);
+		_lowFrequencyOscillator.PhaseModulator.Step = (int)((1.0 / 1024.0) * (1<<LFOShift) * _frequencyBase);
 
 		/* Noise generator: a step takes 1 sample */
-		_noise.Period = (uint)((1.0 / 1.0) * (1<<FrequencyShift) * _frequencyBase);
+		_noise.Period = (int)((1 << FrequencyShift) * _frequencyBase);
 
-		_globalEnvelopeGenerator.TimerStep = (uint)((1<<EnvelopeGeneratorShift)  * _frequencyBase);
+		_globalEnvelopeGenerator.TimerStep = (int)((1<<EnvelopeGeneratorShift)  * _frequencyBase);
 		_globalEnvelopeGenerator.TimerOverflow = 1 << EnvelopeGeneratorShift;
 	}
 
@@ -811,20 +825,20 @@ public class YMF262Chip
 			if ((SLOT.AttackRate.Rate + SLOT.KeyScaleRate) < 16+60)
 			{
 				SLOT.AttackRate.Shift  = YMF262Tables.EnvelopeGeneratorRateShift [SLOT.AttackRate.Rate + SLOT.KeyScaleRate ];
-				SLOT.AttackRate.Mask   = (1u << SLOT.AttackRate.Shift) - 1;
+				SLOT.AttackRate.Mask   = (1 << SLOT.AttackRate.Shift) - 1;
 				SLOT.AttackRate.Select = YMF262Tables.EnvelopeGeneratorRateSelect[SLOT.AttackRate.Rate + SLOT.KeyScaleRate ];
 			}
 			else
 			{
 				SLOT.AttackRate.Shift  = 0;
-				SLOT.AttackRate.Mask   = (1u << SLOT.AttackRate.Shift) - 1;
+				SLOT.AttackRate.Mask   = (1 << SLOT.AttackRate.Shift) - 1;
 				SLOT.AttackRate.Select = 13 * RateSteps;
 			}
 			SLOT.DecayRate.Shift = YMF262Tables.EnvelopeGeneratorRateShift  [SLOT.DecayRate.Rate + SLOT.KeyScaleRate];
-			SLOT.DecayRate.Mask = (1u << SLOT.DecayRate.Shift) - 1;
+			SLOT.DecayRate.Mask = (1 << SLOT.DecayRate.Shift) - 1;
 			SLOT.DecayRate.Select = YMF262Tables.EnvelopeGeneratorRateSelect[SLOT.DecayRate.Rate + SLOT.KeyScaleRate];
 			SLOT.ReleaseRate.Shift  = YMF262Tables.EnvelopeGeneratorRateShift [SLOT.ReleaseRate.Rate + SLOT.KeyScaleRate];
-			SLOT.ReleaseRate.Mask   = (1u << SLOT.ReleaseRate.Shift) - 1;
+			SLOT.ReleaseRate.Mask   = (1 << SLOT.ReleaseRate.Shift) - 1;
 			SLOT.ReleaseRate.Select = YMF262Tables.EnvelopeGeneratorRateSelect[SLOT.ReleaseRate.Rate + SLOT.KeyScaleRate];
 		}
 	}
@@ -847,7 +861,7 @@ public class YMF262Chip
 				_ => throw new Exception("Sanity failure")
 			};
 		SLOT.Vibrate = ((v & 0x40) != 0);
-		SLOT.AmplitudeModulationMask = ((v & 0x80) != 0) ? unchecked((byte)~0) : (byte)0;
+		SLOT.AmplitudeModulationMask = ((v & 0x80) != 0) ? 0xFF : 0x00;
 
 		if (_opl3Mode)
 		{
@@ -866,28 +880,19 @@ public class YMF262Chip
 			{
 				case 0: case 1: case 2:
 				case 9: case 10: case 11:
-					if (CH.IsExtended)
-					{
-						/* normal */
-						CalculateFrequencyControl(ref CH,ref SLOT);
-					}
-					else
-					{
-						/* normal */
-						CalculateFrequencyControl(ref CH,ref SLOT);
-					}
+					CalculateFrequencyControl(ref CH, ref SLOT);
 					break;
 				case 3: case 4: case 5:
 				case 12: case 13: case 14:
 					if (_channels[CHslot - 3].IsExtended)
 					{
 						/* update this SLOT using frequency data for 1st channel of a pair */
-						CalculateFrequencyControl(ref _channels[CHslot - 3],ref SLOT);
+						CalculateFrequencyControl(ref _channels[CHslot - 3], ref SLOT);
 					}
 					else
 					{
 						/* normal */
-						CalculateFrequencyControl(ref CH,ref SLOT);
+						CalculateFrequencyControl(ref CH, ref SLOT);
 					}
 					break;
 				default:
@@ -912,7 +917,7 @@ public class YMF262Chip
 		SLOT.KeyScaleLevel = YMF262Tables.KeyScaleLevelShift[v >> 6];
 
 		/* 7 bits TL (bit 6 = always 0) */
-		SLOT.EnvelopeGenerator.TotalLevel = unchecked((uint)((v & 0x3f) << (EnvelopeBits - 1 - 7)));
+		SLOT.EnvelopeGenerator.TotalLevel = (v & 0x3f) << (EnvelopeBits - 1 - 7);
 
 		if (_opl3Mode)
 		{
@@ -931,40 +936,31 @@ public class YMF262Chip
 			{
 				case 0: case 1: case 2:
 				case 9: case 10: case 11:
-					if (CH.IsExtended)
-					{
-						/* normal */
-						SLOT.EnvelopeGenerator.TotalLevelAdjusted = unchecked((int)(SLOT.EnvelopeGenerator.TotalLevel + (CH.KeyScaleLevelBase >> SLOT.KeyScaleLevel)));
-					}
-					else
-					{
-						/* normal */
-						SLOT.EnvelopeGenerator.TotalLevelAdjusted = unchecked((int)(SLOT.EnvelopeGenerator.TotalLevel + (CH.KeyScaleLevelBase >> SLOT.KeyScaleLevel)));
-					}
+					SLOT.EnvelopeGenerator.TotalLevelAdjusted = SLOT.EnvelopeGenerator.TotalLevel + (CH.KeyScaleLevelBase >> SLOT.KeyScaleLevel);
 					break;
 				case 3: case 4: case 5:
 				case 12: case 13: case 14:
 					if (_channels[chan_no - 3].IsExtended)
 					{
 						/* update this SLOT using frequency data for 1st channel of a pair */
-						SLOT.EnvelopeGenerator.TotalLevelAdjusted = unchecked((int)(SLOT.EnvelopeGenerator.TotalLevel + (_channels[chan_no - 3].KeyScaleLevelBase >> SLOT.KeyScaleLevel)));
+						SLOT.EnvelopeGenerator.TotalLevelAdjusted = SLOT.EnvelopeGenerator.TotalLevel + (_channels[chan_no - 3].KeyScaleLevelBase >> SLOT.KeyScaleLevel);
 					}
 					else
 					{
 						/* normal */
-						SLOT.EnvelopeGenerator.TotalLevelAdjusted = unchecked((int)(SLOT.EnvelopeGenerator.TotalLevel + (CH.KeyScaleLevelBase >> SLOT.KeyScaleLevel)));
+						SLOT.EnvelopeGenerator.TotalLevelAdjusted = SLOT.EnvelopeGenerator.TotalLevel + (CH.KeyScaleLevelBase >> SLOT.KeyScaleLevel);
 					}
 					break;
 				default:
 					/* normal */
-					SLOT.EnvelopeGenerator.TotalLevelAdjusted = unchecked((int)(SLOT.EnvelopeGenerator.TotalLevel + (CH.KeyScaleLevelBase >> SLOT.KeyScaleLevel)));
+					SLOT.EnvelopeGenerator.TotalLevelAdjusted = SLOT.EnvelopeGenerator.TotalLevel + (CH.KeyScaleLevelBase >> SLOT.KeyScaleLevel);
 					break;
 			}
 		}
 		else
 		{
 			/* in OPL2 mode */
-			SLOT.EnvelopeGenerator.TotalLevelAdjusted = unchecked((int)(SLOT.EnvelopeGenerator.TotalLevel + (CH.KeyScaleLevelBase>>SLOT.KeyScaleLevel)));
+			SLOT.EnvelopeGenerator.TotalLevelAdjusted = SLOT.EnvelopeGenerator.TotalLevel + (CH.KeyScaleLevelBase >> SLOT.KeyScaleLevel);
 		}
 
 	}
@@ -972,28 +968,31 @@ public class YMF262Chip
 	/* set attack rate & decay rate  */
 	void SetAttackAndDecayRates(int slot, int v)
 	{
-		ref var CH   = ref _channels[slot / 2];
-		ref var SLOT = ref CH.Slot[slot & 1];
-
-		SLOT.AttackRate.Rate = ((v>>4) != 0) ? unchecked((uint)(16 + ((v>>4) << 2))) : 0u;
-
-		if ((SLOT.AttackRate.Rate + SLOT.KeyScaleRate) < 16+60) /* verified on real YMF262 - all 15 x rates take "zero" time */
+		unchecked
 		{
-			SLOT.AttackRate.Shift  = YMF262Tables.EnvelopeGeneratorRateShift [SLOT.AttackRate.Rate + SLOT.KeyScaleRate ];
-			SLOT.AttackRate.Mask   = unchecked((uint)((1 << SLOT.AttackRate.Shift) - 1));
-			SLOT.AttackRate.Select = YMF262Tables.EnvelopeGeneratorRateSelect[SLOT.AttackRate.Rate + SLOT.KeyScaleRate ];
-		}
-		else
-		{
-			SLOT.AttackRate.Shift  = 0;
-			SLOT.AttackRate.Mask      = unchecked((uint)((1 << SLOT.AttackRate.Shift) - 1));
-			SLOT.AttackRate.Select = 13 * RateSteps;
-		}
+			ref var CH = ref _channels[slot / 2];
+			ref var SLOT = ref CH.Slot[slot & 1];
 
-		SLOT.DecayRate.Rate    = ((v & 0x0f) != 0) ? unchecked((uint)(16 + ((v & 0x0f) << 2))) : 0u;
-		SLOT.DecayRate.Shift  = YMF262Tables.EnvelopeGeneratorRateShift [SLOT.DecayRate.Rate + SLOT.KeyScaleRate ];
-		SLOT.DecayRate.Mask   = unchecked((uint)((1 << SLOT.DecayRate.Shift) - 1));
-		SLOT.DecayRate.Select = YMF262Tables.EnvelopeGeneratorRateSelect[SLOT.DecayRate.Rate + SLOT.KeyScaleRate ];
+			SLOT.AttackRate.Rate = ((v >> 4) != 0) ? (16 + ((v >> 4) << 2)) : 0;
+
+			if ((SLOT.AttackRate.Rate + SLOT.KeyScaleRate) < 16 + 60) /* verified on real YMF262 - all 15 x rates take "zero" time */
+			{
+				SLOT.AttackRate.Shift = YMF262Tables.EnvelopeGeneratorRateShift[SLOT.AttackRate.Rate + SLOT.KeyScaleRate];
+				SLOT.AttackRate.Mask = (1 << SLOT.AttackRate.Shift) - 1;
+				SLOT.AttackRate.Select = YMF262Tables.EnvelopeGeneratorRateSelect[SLOT.AttackRate.Rate + SLOT.KeyScaleRate];
+			}
+			else
+			{
+				SLOT.AttackRate.Shift = 0;
+				SLOT.AttackRate.Mask = (1 << SLOT.AttackRate.Shift) - 1;
+				SLOT.AttackRate.Select = 13 * RateSteps;
+			}
+
+			SLOT.DecayRate.Rate = ((v & 0x0f) != 0) ? (16 + ((v & 0x0f) << 2)) : 0;
+			SLOT.DecayRate.Shift = YMF262Tables.EnvelopeGeneratorRateShift[SLOT.DecayRate.Rate + SLOT.KeyScaleRate];
+			SLOT.DecayRate.Mask = (1 << SLOT.DecayRate.Shift) - 1;
+			SLOT.DecayRate.Select = YMF262Tables.EnvelopeGeneratorRateSelect[SLOT.DecayRate.Rate + SLOT.KeyScaleRate];
+		}
 	}
 
 	/* set sustain level & release rate */
@@ -1002,11 +1001,11 @@ public class YMF262Chip
 		ref var CH   = ref _channels[slot / 2];
 		ref var SLOT = ref CH.Slot[slot & 1];
 
-		SLOT.EnvelopeGenerator.SustainLevel  = YMF262Tables.SustainLevels[v >> 4];
+		SLOT.EnvelopeGenerator.SustainLevel = YMF262Tables.SustainLevels[v >> 4];
 
-		SLOT.ReleaseRate.Rate  = ((v & 0x0f) != 0) ? unchecked((uint)(16 + ((v & 0x0f) << 2))) : 0u;
-		SLOT.ReleaseRate.Shift  = YMF262Tables.EnvelopeGeneratorRateShift [SLOT.ReleaseRate.Rate + SLOT.KeyScaleRate ];
-		SLOT.ReleaseRate.Mask   = unchecked((uint)((1 << SLOT.ReleaseRate.Shift) - 1));
+		SLOT.ReleaseRate.Rate = ((v & 0x0f) != 0) ? (16 + ((v & 0x0f) << 2)) : 0;
+		SLOT.ReleaseRate.Shift = YMF262Tables.EnvelopeGeneratorRateShift [SLOT.ReleaseRate.Rate + SLOT.KeyScaleRate ];
+		SLOT.ReleaseRate.Mask = (1 << SLOT.ReleaseRate.Shift) - 1;
 		SLOT.ReleaseRate.Select = YMF262Tables.EnvelopeGeneratorRateSelect[SLOT.ReleaseRate.Rate + SLOT.KeyScaleRate ];
 	}
 
@@ -1032,12 +1031,12 @@ public class YMF262Chip
 						CH.IsExtended = ((v >> 0) & 1) != 0;
 					}
 					{
-						ref var CH = ref _channels[1];          /* channel 1 */
+						ref var CH = ref _channels[1];    /* channel 1 */
 						prev = CH.IsExtended;
 						CH.IsExtended = ((v >> 1) & 1) != 0;
 					}
 					{
-						ref var CH = ref _channels[2];          /* channel 2 */
+						ref var CH = ref _channels[2];    /* channel 2 */
 						prev = CH.IsExtended;
 						CH.IsExtended = ((v >> 2) & 1) != 0;
 					}
@@ -1048,12 +1047,12 @@ public class YMF262Chip
 						CH.IsExtended = ((v >> 3) & 1) != 0;
 					}
 					{
-						ref var CH = ref _channels[10];            /* channel 10 */
+						ref var CH = ref _channels[10];    /* channel 10 */
 						prev = CH.IsExtended;
 						CH.IsExtended = ((v >> 4) & 1) != 0;
 					}
 					{
-						ref var CH = ref _channels[11];            /* channel 11 */
+						ref var CH = ref _channels[11];    /* channel 11 */
 						prev = CH.IsExtended;
 						CH.IsExtended = ((v >> 5) & 1) != 0;
 					}
@@ -1177,7 +1176,7 @@ public class YMF262Chip
 			}
 			case 0xa0:
 			{
-				if (r == 0xbd)          /* am depth, vibrato depth, r,bd,sd,tom,tc,hh */
+				if (r == 0xbd) /* am depth, vibrato depth, r,bd,sd,tom,tc,hh */
 				{
 					if (ch_offset != 0) /* 0xbd register is present in set #1 only */
 						return;
@@ -1248,15 +1247,15 @@ public class YMF262Chip
 				int ch_num = (r&0x0f) + ch_offset;
 				ref var CH = ref _channels[ch_num];
 
-				uint block_fnum;
+				int block_fnum;
 
 				if ((r & 0x10) == 0)
 				{   /* a0-a8 */
-					block_fnum  = (CH.BlockAndFunctionNumber & 0x1f00) | unchecked((uint)v);
+					block_fnum  = (CH.BlockAndFunctionNumber & 0x1f00) | v;
 				}
 				else
 				{   /* b0-b8 */
-					block_fnum = ((unchecked((uint)v) & 0x1fu) << 8) | (CH.BlockAndFunctionNumber&0xff);
+					block_fnum = ((v & 0x1f) << 8) | (CH.BlockAndFunctionNumber & 0xff);
 
 					if (_opl3Mode)
 					{
@@ -1362,15 +1361,15 @@ public class YMF262Chip
 				/* update */
 				if (CH.BlockAndFunctionNumber != block_fnum)
 				{
-					byte block  = unchecked((byte)(block_fnum >> 10));
+					byte block = unchecked((byte)(block_fnum >> 10));
 
 					CH.BlockAndFunctionNumber = block_fnum;
 
-					CH.KeyScaleLevelBase = (uint)(YMF262Tables.KeyScaleLevelTable[block_fnum>>6]);
-					CH.FrequencyStepBase       = _fnumberTable[block_fnum&0x03ff] >> (7-block);
+					CH.KeyScaleLevelBase = (int)YMF262Tables.KeyScaleLevelTable[block_fnum >> 6];
+					CH.FrequencyStepBase = _fnumberTable[block_fnum & 0x03ff] >> (7-block);
 
 					/* BLK 2,1,0 bits -> bits 3,2,1 of kcode */
-					CH.KeyCode    = unchecked((byte)((CH.BlockAndFunctionNumber & 0x1c00) >> 9));
+					CH.KeyCode = unchecked((byte)((CH.BlockAndFunctionNumber & 0x1c00) >> 9));
 
 					/* the info below is actually opposite to what is stated in the Manuals (verifed on real YMF262) */
 					/* if notesel == 0 -> lsb of kcode is bit 10 (MSB) of fnum  */
@@ -1401,10 +1400,10 @@ public class YMF262Chip
 								//ALSO update slots of 2nd channel forming up 4-op channel
 
 								/* refresh Total Level in FOUR SLOTs of this channel and channel+3 using data from THIS channel */
-								CH.Slot[Slot1].EnvelopeGenerator.TotalLevelAdjusted = unchecked((int)(CH.Slot[Slot1].EnvelopeGenerator.TotalLevel + (CH.KeyScaleLevelBase>>CH.Slot[Slot1].KeyScaleLevel)));
-								CH.Slot[Slot2].EnvelopeGenerator.TotalLevelAdjusted = unchecked((int)(CH.Slot[Slot2].EnvelopeGenerator.TotalLevel + (CH.KeyScaleLevelBase>>CH.Slot[Slot2].KeyScaleLevel)));
-								_channels[ch_num + 3].Slot[Slot1].EnvelopeGenerator.TotalLevelAdjusted = unchecked((int)(_channels[ch_num + 3].Slot[Slot1].EnvelopeGenerator.TotalLevel + (CH.KeyScaleLevelBase>>_channels[ch_num + 3].Slot[Slot1].KeyScaleLevel)));
-								_channels[ch_num + 3].Slot[Slot2].EnvelopeGenerator.TotalLevelAdjusted = unchecked((int)(_channels[ch_num + 3].Slot[Slot2].EnvelopeGenerator.TotalLevel + (CH.KeyScaleLevelBase>>_channels[ch_num + 3].Slot[Slot2].KeyScaleLevel)));
+								CH.Slot[Slot1].EnvelopeGenerator.TotalLevelAdjusted = CH.Slot[Slot1].EnvelopeGenerator.TotalLevel + (CH.KeyScaleLevelBase>>CH.Slot[Slot1].KeyScaleLevel);
+								CH.Slot[Slot2].EnvelopeGenerator.TotalLevelAdjusted = CH.Slot[Slot2].EnvelopeGenerator.TotalLevel + (CH.KeyScaleLevelBase>>CH.Slot[Slot2].KeyScaleLevel);
+								_channels[ch_num + 3].Slot[Slot1].EnvelopeGenerator.TotalLevelAdjusted = _channels[ch_num + 3].Slot[Slot1].EnvelopeGenerator.TotalLevel + (CH.KeyScaleLevelBase>>_channels[ch_num + 3].Slot[Slot1].KeyScaleLevel);
+								_channels[ch_num + 3].Slot[Slot2].EnvelopeGenerator.TotalLevelAdjusted = _channels[ch_num + 3].Slot[Slot2].EnvelopeGenerator.TotalLevel + (CH.KeyScaleLevelBase>>_channels[ch_num + 3].Slot[Slot2].KeyScaleLevel);
 
 								/* refresh frequency counter in FOUR SLOTs of this channel and channel+3 using data from THIS channel */
 								CalculateFrequencyControl(ref CH, ref CH.Slot[Slot1]);
@@ -1416,8 +1415,8 @@ public class YMF262Chip
 							{
 								//else normal 2 operator function
 								/* refresh Total Level in both SLOTs of this channel */
-								CH.Slot[Slot1].EnvelopeGenerator.TotalLevelAdjusted = unchecked((int)(CH.Slot[Slot1].EnvelopeGenerator.TotalLevel + (CH.KeyScaleLevelBase>>CH.Slot[Slot1].KeyScaleLevel)));
-								CH.Slot[Slot2].EnvelopeGenerator.TotalLevelAdjusted = unchecked((int)(CH.Slot[Slot2].EnvelopeGenerator.TotalLevel + (CH.KeyScaleLevelBase>>CH.Slot[Slot2].KeyScaleLevel)));
+								CH.Slot[Slot1].EnvelopeGenerator.TotalLevelAdjusted = CH.Slot[Slot1].EnvelopeGenerator.TotalLevel + (CH.KeyScaleLevelBase>>CH.Slot[Slot1].KeyScaleLevel);
+								CH.Slot[Slot2].EnvelopeGenerator.TotalLevelAdjusted = CH.Slot[Slot2].EnvelopeGenerator.TotalLevel + (CH.KeyScaleLevelBase >> CH.Slot[Slot2].KeyScaleLevel);
 
 								/* refresh frequency counter in both SLOTs of this channel */
 								CalculateFrequencyControl(ref CH, ref CH.Slot[Slot1]);
@@ -1435,8 +1434,8 @@ public class YMF262Chip
 							{
 								//else normal 2 operator function
 								/* refresh Total Level in both SLOTs of this channel */
-								CH.Slot[Slot1].EnvelopeGenerator.TotalLevelAdjusted = unchecked((int)(CH.Slot[Slot1].EnvelopeGenerator.TotalLevel + (CH.KeyScaleLevelBase>>CH.Slot[Slot1].KeyScaleLevel)));
-								CH.Slot[Slot2].EnvelopeGenerator.TotalLevelAdjusted = unchecked((int)(CH.Slot[Slot2].EnvelopeGenerator.TotalLevel + (CH.KeyScaleLevelBase>>CH.Slot[Slot2].KeyScaleLevel)));
+								CH.Slot[Slot1].EnvelopeGenerator.TotalLevelAdjusted = CH.Slot[Slot1].EnvelopeGenerator.TotalLevel + (CH.KeyScaleLevelBase >> CH.Slot[Slot1].KeyScaleLevel);
+								CH.Slot[Slot2].EnvelopeGenerator.TotalLevelAdjusted = CH.Slot[Slot2].EnvelopeGenerator.TotalLevel + (CH.KeyScaleLevelBase >> CH.Slot[Slot2].KeyScaleLevel);
 
 								/* refresh frequency counter in both SLOTs of this channel */
 								CalculateFrequencyControl(ref CH, ref CH.Slot[Slot1]);
@@ -1446,8 +1445,8 @@ public class YMF262Chip
 
 						default:
 							/* refresh Total Level in both SLOTs of this channel */
-							CH.Slot[Slot1].EnvelopeGenerator.TotalLevelAdjusted = unchecked((int)(CH.Slot[Slot1].EnvelopeGenerator.TotalLevel + (CH.KeyScaleLevelBase>>CH.Slot[Slot1].KeyScaleLevel)));
-							CH.Slot[Slot2].EnvelopeGenerator.TotalLevelAdjusted = unchecked((int)(CH.Slot[Slot2].EnvelopeGenerator.TotalLevel + (CH.KeyScaleLevelBase>>CH.Slot[Slot2].KeyScaleLevel)));
+							CH.Slot[Slot1].EnvelopeGenerator.TotalLevelAdjusted = CH.Slot[Slot1].EnvelopeGenerator.TotalLevel + (CH.KeyScaleLevelBase >> CH.Slot[Slot1].KeyScaleLevel);
+							CH.Slot[Slot2].EnvelopeGenerator.TotalLevelAdjusted = CH.Slot[Slot2].EnvelopeGenerator.TotalLevel + (CH.KeyScaleLevelBase >> CH.Slot[Slot2].KeyScaleLevel);
 
 							/* refresh frequency counter in both SLOTs of this channel */
 							CalculateFrequencyControl(ref CH, ref CH.Slot[Slot1]);
@@ -1460,8 +1459,8 @@ public class YMF262Chip
 						/* in OPL2 mode */
 
 						/* refresh Total Level in both SLOTs of this channel */
-						CH.Slot[Slot1].EnvelopeGenerator.TotalLevelAdjusted = unchecked((int)(CH.Slot[Slot1].EnvelopeGenerator.TotalLevel + (CH.KeyScaleLevelBase>>CH.Slot[Slot1].KeyScaleLevel)));
-						CH.Slot[Slot2].EnvelopeGenerator.TotalLevelAdjusted = unchecked((int)(CH.Slot[Slot2].EnvelopeGenerator.TotalLevel + (CH.KeyScaleLevelBase>>CH.Slot[Slot2].KeyScaleLevel)));
+						CH.Slot[Slot1].EnvelopeGenerator.TotalLevelAdjusted = CH.Slot[Slot1].EnvelopeGenerator.TotalLevel + (CH.KeyScaleLevelBase >> CH.Slot[Slot1].KeyScaleLevel);
+						CH.Slot[Slot2].EnvelopeGenerator.TotalLevelAdjusted = CH.Slot[Slot2].EnvelopeGenerator.TotalLevel + (CH.KeyScaleLevelBase >> CH.Slot[Slot2].KeyScaleLevel);
 
 						/* refresh frequency counter in both SLOTs of this channel */
 						CalculateFrequencyControl(ref CH, ref CH.Slot[Slot1]);
@@ -1503,7 +1502,7 @@ public class YMF262Chip
 					_outputMasks[@base + 3] = ON;      /* ch.D */
 				}
 
-				_outputControlValues[(r & 0xf) + ch_offset] = unchecked((uint)v);    /* store control value for OPL3/OPL2 mode switching on the fly */
+				_outputControlValues[(r & 0xf) + ch_offset] = v;    /* store control value for OPL3/OPL2 mode switching on the fly */
 
 				CH.Slot[Slot1].FeedbackShift = unchecked((byte)((((v >> 1) & 7) != 0) ? ((v >> 1) & 7) + 7 : 0));
 				CH.Slot[Slot1].ConnectionType = unchecked((byte)(v & 1));
@@ -1602,9 +1601,11 @@ public class YMF262Chip
 										CH.Slot[Slot2].OutputSlot = _channelOutputSlots[chan_no];
 										break;
 									case 3:
-										/* 1 ------\
-											2 -> 3 -+- out
-											4 ------/     */
+										/*
+										 * 1 ------\
+										 * 2 -> 3 -+- out
+										 * 4 ------/
+										 */
 										_channels[ch_num - 3].Slot[Slot1].OutputSlot = _channelOutputSlots[chan_no - 3];
 										_channels[ch_num - 3].Slot[Slot2].OutputSlot = _phaseModulation2;
 										CH.Slot[Slot1].OutputSlot = _channelOutputSlots[chan_no];
@@ -1655,7 +1656,7 @@ public class YMF262Chip
 				{
 					v &= 3; /* we're in OPL2 mode */
 				}
-				CH.Slot[slot & 1].WaveTable = unchecked((uint)(v * YMF262Tables.SineLength));
+				CH.Slot[slot & 1].WaveTable = v * YMF262Tables.SineLength;
 				break;
 			}
 		}
@@ -1687,8 +1688,8 @@ public class YMF262Chip
 		_globalEnvelopeGenerator.Counter = 0;
 		_globalEnvelopeGenerator.TimerTick = 0;
 
-		_noise.Value = 1;    /* noise shift register */
-		_noteSelect       = 0;    /* note split */
+		_noise.Value = 1;   /* noise shift register */
+		_noteSelect = 0;    /* note split */
 		_status &= ~(StatusFlags.TimerA | StatusFlags.TimerB);
 
 		/* reset with register write */
@@ -1724,7 +1725,7 @@ public class YMF262Chip
 	/* Create one of virtual YMF262 */
 	/* 'clock' is chip clock in Hz  */
 	/* 'rate'  is sampling rate  */
-	void Initialize(uint clock, uint rate)
+	void Initialize(int clock, int rate)
 	{
 		if (!LockTable())
 			throw new Exception("LockTable failed");
@@ -1733,7 +1734,7 @@ public class YMF262Chip
 		_rate  = rate;
 
 		/* init global tables */
-		InitializeGlobalTables();
+		InitializeTiming();
 
 		ResetChip();
 	}
@@ -1829,27 +1830,27 @@ public class YMF262Chip
 			AdvanceLowFrequencyOscillator();
 
 			/* clear channel outputs */
-			for (int j=0; j < _channelOutputSlots.Length; j++)
+			for (int j=0; j < 18; j++)
 				_channelOutputSlots[j].Value = 0;
 
 			/* register set #1 */
 			UpdateChannel(ref _channels[0]);            /* extended 4op ch#0 part 1 or 2op ch#0 */
 			if (_channels[0].IsExtended)
-				UpdateExtendedChannel(ref _channels[3]);    /* extended 4op ch#0 part 2 */
+				UpdateExtendedChannel(ref _channels[3]);  /* extended 4op ch#0 part 2 */
 			else
-				UpdateChannel(ref _channels[3]);        /* standard 2op ch#3 */
-
+				UpdateChannel(ref _channels[3]);          /* standard 2op ch#3 */
+			
 			UpdateChannel(ref _channels[1]);            /* extended 4op ch#1 part 1 or 2op ch#1 */
 			if (_channels[1].IsExtended)
-				UpdateExtendedChannel(ref _channels[4]);    /* extended 4op ch#1 part 2 */
+				UpdateExtendedChannel(ref _channels[4]);  /* extended 4op ch#1 part 2 */
 			else
-				UpdateChannel(ref _channels[4]);        /* standard 2op ch#4 */
-
+				UpdateChannel(ref _channels[4]);          /* standard 2op ch#4 */
+			
 			UpdateChannel(ref _channels[2]);            /* extended 4op ch#2 part 1 or 2op ch#2 */
 			if (_channels[2].IsExtended)
-				UpdateExtendedChannel(ref _channels[5]);    /* extended 4op ch#2 part 2 */
+				UpdateExtendedChannel(ref _channels[5]);  /* extended 4op ch#2 part 2 */
 			else
-				UpdateChannel(ref _channels[5]);        /* standard 2op ch#5 */
+				UpdateChannel(ref _channels[5]);          /* standard 2op ch#5 */
 
 			if (!_hasRhythmPart)
 			{
@@ -1860,7 +1861,7 @@ public class YMF262Chip
 			else
 			{
 				/* Rhythm part */
-				CalculateRhythm(_channels, (_noise.Value & 1) != 0);
+				CalculateRhythm((_noise.Value & 1) != 0);
 			}
 
 			/* register set #2 */
