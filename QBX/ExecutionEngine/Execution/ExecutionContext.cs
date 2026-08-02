@@ -381,6 +381,8 @@ public class ExecutionContext
 		{
 			handler = new ErrorHandler();
 			handler.StackFrame = stackFrame;
+
+			_localErrorHandlers.Push(handler);
 		}
 
 		handler.Response = response;

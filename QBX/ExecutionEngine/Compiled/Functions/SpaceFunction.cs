@@ -42,6 +42,11 @@ public class SpaceFunction : Function
 			throw RuntimeException.Overflow(Argument.Source);
 		}
 
+		if (numSpaces < 0)
+			throw RuntimeException.IllegalFunctionCall(Source);
+		if (numSpaces > 32767)
+			throw RuntimeException.Overflow(Source);
+
 		var stringValue = StringValue.CreateFixedLength(numSpaces);
 
 		stringValue.AsSpan().Slice(0, numSpaces).Fill((byte)' ');
