@@ -36,6 +36,7 @@ public class Lexer(TextReader input, CompilationElement? element = null, int sta
 		DataStringContentString,
 		Number,
 		NumberAfterDecimal,
+		NumberAfterExponentMaybeSigned,
 		NumberAfterExponent,
 		NumberWithBase, // &H or &O
 		HexNumber,
@@ -109,6 +110,8 @@ public class Lexer(TextReader input, CompilationElement? element = null, int sta
 			do
 			{
 				reparse = false;
+
+				char newTokenChar = '\0';
 
 				switch (mode)
 				{
@@ -351,7 +354,7 @@ public class Lexer(TextReader input, CompilationElement? element = null, int sta
 							 || (ch == 'd') || (ch == 'D'))
 							{
 								buffer.Append(ch);
-								mode = Mode.NumberAfterExponent;
+								mode = Mode.NumberAfterExponentMaybeSigned;
 							}
 							else if (ch == '.')
 							{
@@ -374,34 +377,37 @@ public class Lexer(TextReader input, CompilationElement? element = null, int sta
 							 || (ch == 'd') || (ch == 'D'))
 							{
 								buffer.Append(ch);
-								mode = Mode.NumberAfterExponent;
+								mode = Mode.NumberAfterExponentMaybeSigned;
 							}
 							else
 							{
 								var dataType = DataType.Unspecified;
 
-								switch (ch)
+								if (newTokenChar == '\0')
 								{
-									case '%':
-									case '&':
-									case '!':
-									case '#':
-									case '@':
-										buffer.Append(ch);
+									switch (ch)
+									{
+										case '%':
+										case '&':
+										case '!':
+										case '#':
+										case '@':
+											buffer.Append(ch);
 
-										switch (ch)
-										{
-											case '%': dataType = DataType.INTEGER; break;
-											case '&': dataType = DataType.LONG; break;
-											case '!': dataType = DataType.SINGLE; break;
-											case '#': dataType = DataType.DOUBLE; break;
-											case '@': dataType = DataType.CURRENCY; break;
-										}
+											switch (ch)
+											{
+												case '%': dataType = DataType.INTEGER; break;
+												case '&': dataType = DataType.LONG; break;
+												case '!': dataType = DataType.SINGLE; break;
+												case '#': dataType = DataType.DOUBLE; break;
+												case '@': dataType = DataType.CURRENCY; break;
+											}
 
-										break;
-									default:
-										reparse = true;
-										break;
+											break;
+										default:
+											reparse = true;
+											break;
+									}
 								}
 
 								// To ensure operator precedence in sequences like "A-2*B", we need to always
@@ -418,8 +424,41 @@ public class Lexer(TextReader input, CompilationElement? element = null, int sta
 
 								buffer.Clear();
 								mode = Mode.Any;
+
+								if (newTokenChar != '\0')
+								{
+									// We get here if we started processing a number in scientific notation,
+									// but then the input didn't give us numeric characters for the exponent.
+									// In this case, the 'D' or 'E' character becomes the start of a new
+									// token. We already have _another_ character in ch to reparse as well.
+
+									buffer.Append(newTokenChar);
+									mode = Mode.Word;
+									reparse = true;
+								}
+
 								tokenStartColumn = column;
 							}
+						}
+
+						break;
+					}
+					case Mode.NumberAfterExponentMaybeSigned:
+					{
+						// We've just seen a D or E, next character could be + or -
+						if ((ch == '+') || (ch == '-') || char.IsDigit(ch))
+						{
+							buffer.Append(ch);
+							mode = Mode.NumberAfterExponent;
+						}
+						else
+						{
+							// The number ended before the D or the E.
+							newTokenChar = buffer[buffer.Length - 1];
+
+							buffer.Length--;
+
+							goto case Mode.NumberAfterDecimal;
 						}
 
 						break;
