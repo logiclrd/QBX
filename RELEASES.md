@@ -1,5 +1,30 @@
 # QBX Releases
 
+## 1.20.0 - 2026-08-03
+
+### Fixed
+
+- `ON LOCAL ERROR` handlers are now wired up properly.
+- `SPACE$(n)` now throws the correct errors when the argument value is out of range.
+- Numeric literals in scientific notation with negative exponents are now correctly-parsed.
+- Character sequences that look like they're going to be a scientific notation number but turn out not to be are now correctly handled (`PRINT 12E` => `PRINT 12; E`).
+- Indexing an array with no subscripts in a context other than passing an array parameter is now a runtime error, not a compile-time error.
+- Arrays in `TYPE`s can now be passed into `SUB`s and `FUNCTION`s that take array-type arguments.
+- If the Immediate window has focus when a runtime error occurs, it is no longer repurposed to display the error context in the source code.
+- Direct-mode execution from the Immediate window now restores the current output state before execution and saves it again after, as with F8 to step.
+- `CHAIN` now works in the Immediate window.
+- `TYPE`s used in `DECLARE SUB` and `DECLARE FUNCTION` statements must now be defined before the statements that use them.
+- Parameters and explicitly `DIM`med variables now collide with variables that use the same name with a type declaration character for a different type.
+- Ctrl-Break and requests to close QBX entirely can now interrupt `INPUT` and `LINE INPUT` statements that are blocked on console input.
+- Execution epilogue ("Press any key to continue") is now skipped if the program was terminated by requesting that QBX close.
+- Initializing the mouse driver no longer prevents the text mode cursor from being moved.
+- `SUB` and `DECLARE SUB` no longer accept identifiers with type declaration characters.
+- The graphics library at the end of program execution now remains in effect for the start of the next program execution.
+
+### Added
+
+- Tab and Shift-Tab can now be used to indent/unindent selected blocks of code.
+
 ## 1.19.4 - 2026-08-01
 
 ### Fixed
