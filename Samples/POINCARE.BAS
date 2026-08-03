@@ -17,6 +17,33 @@
 ' http://aleph0.clarku.edu/~djoyce/poincare/PoincareB.html              '
 '-----------------------------------------------------------------------'
 
+TYPE TileParametersType
+  NumPolygonSides AS INTEGER
+  VertexValence AS INTEGER ' the number of polygons that meet at each vertex
+  IsQuasiregular AS INTEGER
+  NumLayers AS INTEGER
+  SkipNumber AS INTEGER
+  DiscColour AS INTEGER
+  FillType AS INTEGER
+  IsOutlined AS INTEGER
+  ColourSetCount AS INTEGER
+END TYPE
+
+TYPE PolygonType
+  NumSides AS INTEGER
+  FirstVertexIndex AS INTEGER
+END TYPE
+
+TYPE PointType
+  XValue AS DOUBLE
+  YValue AS DOUBLE
+END TYPE
+
+TYPE ScreenPointType
+  XValue AS INTEGER
+  YValue AS INTEGER
+END TYPE
+
 DECLARE SUB AllocatePolygon (p AS PolygonType, n%, k%)
 DECLARE SUB ComplexConjugateInPlace (this AS PointType)
 DECLARE SUB ComplexDivide (numerator AS PointType, denominator AS PointType, result AS PointType)
@@ -48,33 +75,6 @@ CONST PI# = 3.14159265358979
 CONST FillTypeUnfilled% = 0
 CONST FillTypeOddEven% = 1
 CONST FillTypeNonzero% = 2
-
-TYPE TileParametersType
-  NumPolygonSides AS INTEGER
-  VertexValence AS INTEGER ' the number of polygons that meet at each vertex
-  IsQuasiregular AS INTEGER
-  NumLayers AS INTEGER
-  SkipNumber AS INTEGER
-  DiscColour AS INTEGER
-  FillType AS INTEGER
-  IsOutlined AS INTEGER
-  ColourSetCount AS INTEGER
-END TYPE
-
-TYPE PolygonType
-  NumSides AS INTEGER
-  FirstVertexIndex AS INTEGER
-END TYPE
-
-TYPE PointType
-  XValue AS DOUBLE
-  YValue AS DOUBLE
-END TYPE
-
-TYPE ScreenPointType
-  XValue AS INTEGER
-  YValue AS INTEGER
-END TYPE
 
 DIM FPvertices(1000) AS ScreenPointType
 DIM FPcrossingx%(200)
@@ -410,10 +410,10 @@ ELSE ' it's a circle
   FOR i% = 1 TO segments%
     t# = i% / segments%
 
-    a# = alpha# + aspan# * t#
+    angle# = alpha# + aspan# * t#
 
-    x2# = c.XValue + radius# * COS(a#)
-    y2# = c.YValue + radius# * SIN(a#)
+    x2# = c.XValue + radius# * COS(angle#)
+    y2# = c.YValue + radius# * SIN(angle#)
 
     PointToScreen x2#, y2#
 
