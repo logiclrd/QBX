@@ -340,12 +340,12 @@ public class Compiler(IdentifierRepository identifierRepository)
 						if (!variableType.IsArray)
 						{
 							moduleMapper.DeclareVariable(hiddenVariableName, variableType, variable.NameToken);
-							mapper.LinkModuleVariable(variable.Name, hiddenVariableName);
+							mapper.LinkModuleVariable(variable.Name, hiddenVariableName, variableType);
 						}
 						else
 						{
 							moduleMapper.DeclareArray(hiddenVariableName, variableType, variable.NameToken);
-							mapper.LinkModuleArray(variable.Name, hiddenVariableName);
+							mapper.LinkModuleArray(variable.Name, hiddenVariableName, variableType);
 						}
 					}
 				}
@@ -3115,7 +3115,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 							rootVariableName = hiddenVariableName;
 						}
 
-						mapper.LinkModuleVariable(declaration.Name, rootVariableName);
+						mapper.LinkModuleVariable(declaration.Name, rootVariableName, variableType);
 					}
 					else
 					{

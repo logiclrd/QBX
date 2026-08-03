@@ -554,18 +554,21 @@ public class Mapper
 		variableInfo.LinkedToCommonBlockVariableIndex = commonBlockVariableIndex;
 	}
 
-	public void LinkModuleVariable(string name)
-		=> LinkModuleVariable(name, name);
+	public void LinkModuleVariable(string name, DataType variableType)
+		=> LinkModuleVariable(name, name, variableType);
 
-	public void LinkModuleVariable(string localName, string moduleName)
+	public void LinkModuleVariable(string localName, string moduleName, DataType variableType)
 	{
 		if (_isFrozen)
 			throw new Exception("The Mapper is frozen");
 		if (_moduleMapper == null)
 			throw new Exception("Cannot link to a module variable from the Module Mapper");
 
-		localName = QualifyIdentifier(localName);
-		moduleName = QualifyIdentifier(moduleName);
+		if (variableType.IsPrimitiveType)
+		{
+			localName = QualifyIdentifier(localName);
+			moduleName = QualifyIdentifier(moduleName);
+		}
 
 		int localIndex = ResolveVariable(localName);
 		int moduleIndex = _moduleMapper.ResolveVariable(moduleName);
@@ -575,7 +578,7 @@ public class Mapper
 		variableInfo.LinkedToModuleVariableIndex = moduleIndex;
 	}
 
-	public void LinkModuleArray(string localName, string moduleName, DataType? arrayType = null)
+	public void LinkModuleArray(string localName, string moduleName, DataType arrayType)
 	{
 		if (_isFrozen)
 			throw new Exception("The Mapper is frozen");
