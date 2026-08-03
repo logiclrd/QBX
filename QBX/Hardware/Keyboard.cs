@@ -142,17 +142,25 @@ public class Keyboard(Machine machine)
 		}
 	}
 
-	public bool WaitForInput(int timeoutMilliseconds = Timeout.Infinite, bool eatReleaseEvents = true)
+	public bool WaitForInput()
+		=> WaitForInput(out _, Timeout.Infinite);
+
+	public bool WaitForInput(out bool interrupted, int timeoutMilliseconds = Timeout.Infinite, bool eatReleaseEvents = true)
 	{
 		if (timeoutMilliseconds != Timeout.Infinite)
-			return WaitForInput(TimeSpan.FromMilliseconds(timeoutMilliseconds));
+			return WaitForInput(out interrupted, TimeSpan.FromMilliseconds(timeoutMilliseconds));
+
+		interrupted = false;
 
 		lock (_sync)
 		{
 			// Prevent entering the loop while other threads are in the process of being
 			// interrupted, otherwise we might eat their interruption notification.
 			if (_interruptCount > 0)
+			{
+				interrupted = true;
 				return false;
+			}
 
 			if (eatReleaseEvents)
 				EatReleaseEvents(_inputQueue);
@@ -166,7 +174,10 @@ public class Keyboard(Machine machine)
 					Monitor.Wait(_sync);
 
 					if (_interruptCount > 0)
-						return true;
+					{
+						interrupted = true;
+						return false;
+					}
 
 					if (eatReleaseEvents)
 						EatReleaseEvents(_inputQueue);
@@ -179,7 +190,7 @@ public class Keyboard(Machine machine)
 					Interlocked.Decrement(ref _interruptCount);
 			}
 
-			return machine.KeepRunning;
+			return false;
 		}
 	}
 
@@ -192,8 +203,10 @@ public class Keyboard(Machine machine)
 		}
 	}
 
-	public bool WaitForInput(TimeSpan timeout, bool eatReleaseEvents = true)
+	public bool WaitForInput(out bool interrupted, TimeSpan timeout, bool eatReleaseEvents = true)
 	{
+		interrupted = false;
+
 		var deadline = DateTime.UtcNow + timeout;
 
 		lock (_sync)
@@ -201,7 +214,10 @@ public class Keyboard(Machine machine)
 			// Prevent entering the loop while other threads are in the process of being
 			// interrupted, otherwise we might eat their interruption notification.
 			if (_interruptCount > 0)
+			{
+				interrupted = true;
 				return false;
+			}
 
 			if (eatReleaseEvents)
 				EatReleaseEvents(_inputQueue);
@@ -220,7 +236,10 @@ public class Keyboard(Machine machine)
 					Monitor.Wait(_sync, remainingTime);
 
 					if (_interruptCount > 0)
+					{
+						interrupted = true;
 						return false;
+					}
 
 					if (eatReleaseEvents)
 						EatReleaseEvents(_inputQueue);
@@ -238,7 +257,12 @@ public class Keyboard(Machine machine)
 	}
 
 	public bool WaitForInput(CancellationToken cancellationToken, bool eatReleaseEvents = true)
+		=> WaitForInput(cancellationToken, out _, eatReleaseEvents);
+
+	public bool WaitForInput(CancellationToken cancellationToken, out bool interrupted, bool eatReleaseEvents = true)
 	{
+		interrupted = false;
+
 		void NotifyWaitLoop()
 		{
 			lock (_sync)
@@ -251,7 +275,10 @@ public class Keyboard(Machine machine)
 			// Prevent entering the loop while other threads are in the process of being
 			// interrupted, otherwise we might eat their interruption notification.
 			if (_interruptCount > 0)
+			{
+				interrupted = true;
 				return false;
+			}
 
 			Interlocked.Increment(ref _waitCount);
 
@@ -265,7 +292,10 @@ public class Keyboard(Machine machine)
 					Monitor.Wait(_sync);
 
 					if (_interruptCount > 0)
+					{
+						interrupted = true;
 						return false;
+					}
 
 					if (eatReleaseEvents)
 						EatReleaseEvents(_inputQueue);

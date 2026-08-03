@@ -663,6 +663,16 @@ public abstract class VisualLibrary : IDisposable
 
 		text?.ShowCursor();
 
+		bool breakExecution = false;
+
+		void InterruptOnBreak()
+		{
+			breakExecution = true;
+			input.InterruptWait();
+		}
+
+		input.Break += InterruptOnBreak;
+
 		try
 		{
 			var buffer = new StringBuilder();
@@ -675,11 +685,16 @@ public abstract class VisualLibrary : IDisposable
 			{
 				ShowCursor(x, y);
 
-				input.WaitForInput();
+				input.WaitForInput(out bool interrupted);
 
 				var evt = input.GetNextEvent();
 
 				HideCursor();
+
+				if (breakExecution)
+					throw new BreakExecution();
+				if (interrupted)
+					break;
 
 				if ((evt == null) || evt.IsRelease)
 					continue;
@@ -782,6 +797,8 @@ public abstract class VisualLibrary : IDisposable
 		}
 		finally
 		{
+			input.Break -= InterruptOnBreak;
+
 			text?.HideCursor();
 
 			if (savedLastPoint.HasValue)
