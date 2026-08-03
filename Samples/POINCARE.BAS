@@ -13,6 +13,8 @@
 '   Date:   April, 1987.  Pascal version for tektronix terminal         '
 '           December, 2002.  Java applet version (PoincareDisk.java)    '
 '           August, 2026.  Translated to QuickBASIC                     '
+'                                                                       '
+' http://aleph0.clarku.edu/~djoyce/poincare/PoincareB.html              '
 '-----------------------------------------------------------------------'
 
 DECLARE SUB AllocatePolygon (p AS PolygonType, n%, k%)
