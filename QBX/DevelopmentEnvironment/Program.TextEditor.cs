@@ -906,6 +906,195 @@ public partial class Program
 
 					break;
 				}
+				case ScanCode.Tab:
+				{
+					var element = FocusedViewport.EditableElement;
+
+					if (element == null)
+						break; // ?
+
+					if (!input.Modifiers.ShiftKey)
+					{
+						// Tab:
+						// - If no block selection, insert spaces until CursorX is a multiple of 8.
+						// - If block selection, indent all selected lines by the tab size.
+
+						try
+						{
+							if (FocusedViewport.CurrentLineEdited)
+								FocusedViewport.CommitCurrentLine();
+						}
+						catch { }
+
+						if (!FocusedViewport.SelectionManager.HasMultilineSelection)
+						{
+							var buffer = currentLine.Value;
+
+							int spacesToAdd = 0;
+							int insertionPoint = FocusedViewport.CursorX;
+
+							if (insertionPoint > buffer.Length)
+							{
+								spacesToAdd = insertionPoint - buffer.Length;
+								insertionPoint = buffer.Length;
+							}
+
+							spacesToAdd += ((FocusedViewport.CursorX - 1) & 7) + 1;
+
+							Span<char> spaces = stackalloc char[spacesToAdd];
+
+							spaces.Fill(' ');
+
+							buffer.Insert(insertionPoint, spaces);
+
+							newCursorX += spacesToAdd;
+						}
+						else
+						{
+							var range = FocusedViewport.SelectionManager.GetSelectionRange();
+
+							int y1 = Math.Min(range.StartY, range.EndY);
+							int y2 = Math.Max(range.StartY, range.EndY);
+
+							if (y2 > element.Lines.Count)
+								y2 = element.Lines.Count;
+
+							var buffer = new StringBuilder();
+							var bufferWriter = new StringWriter(buffer);
+
+							Span<char> spaces = stackalloc char[Configuration.TabSize];
+
+							spaces.Fill(' ');
+
+							buffer.Append(spaces);
+
+							for (int y = y1; y < y2; y++)
+							{
+								var line = element.Lines[y];
+
+								buffer.Length = Configuration.TabSize;
+								line.Render(bufferWriter);
+
+								element.ReplaceLine(y, element.ConstructLine(buffer));
+							}
+
+							// Stay selected
+							select = true;
+						}
+					}
+					else
+					{
+						// Shift-tab:
+						// - If no block selection, punt over to backspace from start of line.
+						// - If block selection, then:
+						//   * If the cursor is on the first line, OR the first line's indent level
+						//     matches the least indented line in the block, then deindent all selected
+						//     lines so that the first line's indent level matches the preceding indent
+						//     level.
+						//   * Otherwise, deindent all the lines by the difference between the first
+						//     line and the least indented line in the block.
+
+						if (!FocusedViewport.SelectionManager.HasMultilineSelection)
+						{
+							newCursorX = FocusedViewport.CursorX = FocusedViewport.GetLineIndentation(FocusedViewport.CursorY);
+							goto case ScanCode.Backspace;
+						}
+
+						try
+						{
+							if (FocusedViewport.CurrentLineEdited)
+								FocusedViewport.CommitCurrentLine();
+						}
+						catch { }
+
+						var range = FocusedViewport.SelectionManager.GetSelectionRange();
+
+						int y1 = Math.Min(range.StartY, range.EndY);
+						int y2 = Math.Max(range.StartY, range.EndY);
+
+						if (y2 > element.Lines.Count)
+							y2 = element.Lines.Count;
+
+						int firstLineIndentation = FocusedViewport.GetLineIndentation(y1, out _);
+
+						bool usePreviousIndentation = (FocusedViewport.CursorY == y1);
+
+						int indentationDelta = 0;
+
+						if (!usePreviousIndentation)
+						{
+							int blockMinimumIndentation = firstLineIndentation;
+
+							for (int y = y1 + 1; y < y2; y++)
+							{
+								int indentation = FocusedViewport.GetLineIndentation(y);
+
+								if (indentation < blockMinimumIndentation)
+									blockMinimumIndentation = indentation;
+
+								if (blockMinimumIndentation == 0)
+									break;
+							}
+
+							if (firstLineIndentation == blockMinimumIndentation)
+								usePreviousIndentation = true;
+							else
+								indentationDelta = firstLineIndentation - blockMinimumIndentation;
+						}
+
+						if (usePreviousIndentation && (firstLineIndentation > 0))
+						{
+							// Find preceding indentation level.
+							int previousIndentation = 0;
+
+							for (int i = y1 - 1; i >= 0; i--)
+							{
+								int lineIndent = FocusedViewport.GetLineIndentation(i, out var isEmpty);
+
+								if (isEmpty)
+									continue;
+
+								if (lineIndent < firstLineIndentation)
+								{
+									previousIndentation = lineIndent;
+									break;
+								}
+							}
+
+							indentationDelta = firstLineIndentation - previousIndentation;
+						}
+
+						if (indentationDelta > 0)
+						{
+							// Now try to remove indentationDelta spaces from every line in the selection.
+							var buffer = new StringBuilder();
+							var bufferWriter = new StringWriter(buffer);
+
+							for (int y = y1; y < y2; y++)
+							{
+								buffer.Length = 0;
+
+								element.Lines[y].Render(bufferWriter);
+
+								int thisLineIndentLevel = 0;
+
+								while ((thisLineIndentLevel < buffer.Length) && (buffer[thisLineIndentLevel] == ' '))
+									thisLineIndentLevel++;
+
+								int thisLineSpacesToRemove = Math.Min(thisLineIndentLevel, indentationDelta);
+
+								buffer.Remove(0, thisLineSpacesToRemove);
+
+								element.ReplaceLine(y, element.ConstructLine(buffer));
+							}
+
+							// Stay selected
+							select = true;
+						}
+					}
+
+					break;
+				}
 			}
 		}
 
