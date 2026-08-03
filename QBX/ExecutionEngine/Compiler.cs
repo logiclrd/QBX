@@ -3690,6 +3690,9 @@ public class Compiler(IdentifierRepository identifierRepository)
 						mapper.GetVariableType(variableIndex));
 				}
 
+				if (callOrIndexExpression.Arguments.Count == 0) // passing the array itself in
+					return subject;
+
 				var translatedArrayElementExpression = new ArrayElementExpression(subject, subject.Type.MakeElementType());
 
 				foreach (var subscript in callOrIndexExpression.Arguments.Expressions)

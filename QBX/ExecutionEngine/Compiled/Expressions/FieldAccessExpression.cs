@@ -65,7 +65,12 @@ public class FieldAccessExpression(Evaluable expression, int fieldIndex, DataTyp
 		if (expression == null)
 			throw new Exception("FieldAccessExpression has no expression");
 
-		var structure = (UserDataTypeVariable)expression.Evaluate(context, stackFrame);
+		var subject = expression.Evaluate(context, stackFrame);
+
+		if (subject is ArrayVariable)
+			throw RuntimeException.SubscriptOutOfRange(Source);
+
+		var structure = (UserDataTypeVariable)subject;
 
 		return structure.Fields[FieldIndex];
 	}
