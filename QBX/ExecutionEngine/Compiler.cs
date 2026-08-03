@@ -3440,32 +3440,40 @@ public class Compiler(IdentifierRepository identifierRepository)
 					}
 				}
 
-				if (parseIdentifiersAsArrays)
+				try
 				{
-					int variableIndex = mapper.ResolveArray(identifier.Identifier, out _);
-					var variableType = mapper.GetVariableType(variableIndex);
-
-					if (variableIndex < 0)
-						throw CompilerException.ArrayNotDefined(identifier.Token);
-
-					return new IdentifierExpression(variableIndex, variableType);
-				}
-				else
-				{
-					int variableIndex = mapper.ResolveVariable(identifier.Identifier);
-
-					if (variableIndex < 0)
+					if (parseIdentifiersAsArrays)
 					{
-						var type = mapper.GetTypeForIdentifier(identifier.Identifier);
-
-						return LiteralValue.Construct(0, type, identifier.Token);
-					}
-					else
-					{
+						int variableIndex = mapper.ResolveArray(identifier.Identifier, out _);
 						var variableType = mapper.GetVariableType(variableIndex);
+
+						if (variableIndex < 0)
+							throw CompilerException.ArrayNotDefined(identifier.Token);
 
 						return new IdentifierExpression(variableIndex, variableType);
 					}
+					else
+					{
+						int variableIndex = mapper.ResolveVariable(identifier.Identifier);
+
+						if (variableIndex < 0)
+						{
+							var type = mapper.GetTypeForIdentifier(identifier.Identifier);
+
+							return LiteralValue.Construct(0, type, identifier.Token);
+						}
+						else
+						{
+							var variableType = mapper.GetVariableType(variableIndex);
+
+							return new IdentifierExpression(variableIndex, variableType);
+						}
+					}
+				}
+				catch (CompilerException error)
+				{
+					error.AddContext(identifier);
+					throw;
 				}
 			}
 
