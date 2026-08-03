@@ -66,6 +66,7 @@ public class ChainStatement(CodeModel.Statements.ChainStatement source) : Execut
 			var reader = new StreamReader(regularFileDescriptor.UnderlyingStream);
 			string actualFilePath = regularFileDescriptor.PhysicalPath;
 
+			context.SetChainExecution();
 			context.LoadReplacement(reader, actualFilePath);
 
 			throw new ChainExecution();

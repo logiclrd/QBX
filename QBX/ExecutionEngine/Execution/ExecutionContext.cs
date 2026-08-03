@@ -240,6 +240,11 @@ public class ExecutionContext
 		_commonBlockStorage = commonBlockStorage ?? new Dictionary<Identifier, CommonBlockStorage>();
 	}
 
+	public void SetChainExecution()
+	{
+		_executionState.SetChainExecution();
+	}
+
 	public event EventHandler<ChainArguments>? ReplaceProgram;
 
 	public void LoadReplacement(TextReader reader, string filePath)
@@ -462,7 +467,7 @@ public class ExecutionContext
 			{
 				Call(entrypoint, _rootFrame);
 			}
-			catch (ChainExecution) { throw; }
+			catch (ChainExecution) { return -1; }
 			catch (EndProgram) { }
 
 			int exitCode = _rootFrame.Variables[0].CoerceToInt(context: null);
@@ -473,11 +478,6 @@ public class ExecutionContext
 		{
 			Debugger.Break();
 			throw new Exception("Internal error: GoTo was thrown with a TargetFrame that didn't match anything");
-		}
-		catch (ChainExecution)
-		{
-			_executionState.SetChainExecution();
-			return -1;
 		}
 		catch (TerminatedException)
 		{

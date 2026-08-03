@@ -353,35 +353,45 @@ public partial class Program
 
 	void UnpauseExecution(Action action)
 	{
+		// During chain execution, when the new module is loaded, the current
+		// execution state is completely cleared. We still needa reference to
+		// that object, though.
+		var executionContext = _executionContext!;
+
 		do
 		{
-			if (_executionContext!.ExecutionState.ChainExecution)
-				Restart();
+			if (executionContext.ExecutionState.ChainExecution)
+			{
+				if (!Restart())
+					break;
 
-			lock (_executionContext!.Controls.Sync)
+				executionContext = _executionContext;
+			}
+
+			lock (executionContext.Controls.Sync)
 			{
 				if (ClearNextStatement())
-					_executionContext.Controls.IgnoreExplicitBreakFromNextStatement();
+					executionContext.Controls.IgnoreExplicitBreakFromNextStatement();
 
 				action();
 
 				using (Machine.DOS.EnableBreak())
-					_executionContext.Controls.WaitForInterruption();
+					executionContext.Controls.WaitForInterruption();
 			}
-		} while (_executionContext.ExecutionState.ChainExecution);
+		} while (executionContext.ExecutionState.ChainExecution);
 
 		// Purge input buffer
 		while (Machine.Keyboard.GetNextEvent() is not null)
 			;
 
-		if (AbortOnBreak || (_executionContext.ExitAutoRunToSystem && AutoRun))
+		if (AbortOnBreak || (executionContext.ExitAutoRunToSystem && AutoRun))
 			Machine.KeepRunning = false;
 		else
 		{
 			// Having entered break mode, SYSTEM should no longer exit to system.
 			AutoRun = false;
 
-			if (_executionContext.ExecutionState.IsTerminated)
+			if (executionContext.ExecutionState.IsTerminated)
 				ExecutionEpilogue();
 			else
 			{
@@ -390,8 +400,8 @@ public partial class Program
 
 				UpdateAfterBreak();
 
-				if (_executionContext.ExecutionState.CurrentError != null)
-					PresentError(_executionContext.ExecutionState.CurrentError);
+				if (executionContext.ExecutionState.CurrentError != null)
+					PresentError(executionContext.ExecutionState.CurrentError);
 			}
 		}
 	}
@@ -416,7 +426,7 @@ public partial class Program
 		else
 			RestoreOutput();
 
-		if (_executionContext.ExecutionState.IsTerminated)
+		if (_executionContext.ExecutionState.IsTerminated && !_executionContext.ExecutionState.ChainExecution)
 		{
 			if (AbortOnBreak || (_executionContext.ExitAutoRunToSystem && AutoRun))
 				Machine.KeepRunning = false;

@@ -210,7 +210,7 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 
 	public void ExitRoutine()
 	{
-		if (_isTerminated)
+		if (_isTerminated && !_chainExecution)
 			throw new TerminatedException();
 
 		_stack.Pop();
