@@ -463,7 +463,7 @@ public partial class Program
 		if (_executionContext == null)
 			return; // ??
 
-		if (!Machine.KeepRunning)
+		if (!Machine.KeepRunning || _closeRequested)
 			return;
 
 		_executionContext.CloseAllFiles();
