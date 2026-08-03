@@ -162,11 +162,6 @@ public class TextLibrary : VisualLibrary
 
 	protected override void MoveCursorHandlePhysicalCursor()
 	{
-		// Check if the mouse driver has hijacked the cursor.
-		if ((Machine.MouseDriver.TextPointerEnableSoftware == false)
-		 && Machine.MouseDriver.PointerVisible)
-			return;
-
 		if (MovePhysicalCursor)
 			UpdatePhysicalCursor();
 	}
