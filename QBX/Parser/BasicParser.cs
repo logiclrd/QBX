@@ -3654,6 +3654,10 @@ public class BasicParser(IdentifierRepository identifierRepository)
 					allowTypeCharacter: statement is FunctionStatement,
 					out statement.NameToken);
 
+				if ((token.Type == TokenType.SUB)
+				 && TypeCharacter.TryParse(statement.Name.Value.Last(), out _))
+					throw new SyntaxErrorException(statement.NameToken, "Identifier cannot end with %, &, !, #, $ or @");
+
 				if (tokenHandler.NextTokenIs(TokenType.OpenParenthesis))
 				{
 					var parameterListTokens = tokenHandler.ExpectParenthesizedTokens();
