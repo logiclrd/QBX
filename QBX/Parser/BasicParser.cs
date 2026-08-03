@@ -913,6 +913,10 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 				var name = tokenHandler.ExpectIdentifier(allowTypeCharacter: true, out var nameToken);
 
+				if ((declarationType.Type == TokenType.SUB)
+				 && TypeCharacter.TryParse(name.Value.Last(), out _))
+					throw new SyntaxErrorException(nameToken, "Identifier cannot end with %, &, !, #, $ or @");
+
 				ParameterList? parameters = null;
 
 				bool isCDecl = false;
