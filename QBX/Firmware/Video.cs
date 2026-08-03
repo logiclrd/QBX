@@ -19,7 +19,7 @@ public partial class Video(Machine machine)
 
 	internal void SetVisualLibrary(VisualLibrary newVisualLibrary)
 	{
-		_visualLibrary?.Dispose();
+		_visualLibrary?.DetachMouseEvents();
 
 		_visualLibrary = newVisualLibrary;
 		_visualLibrary.AttachMouseEvents();

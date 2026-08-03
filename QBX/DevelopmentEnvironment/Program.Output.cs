@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
+using QBX.Firmware;
 using QBX.Hardware;
 
 namespace QBX.DevelopmentEnvironment;
@@ -9,7 +10,10 @@ public partial class Program
 {
 	byte[] _savedOutput = new byte[262144];
 	byte[] _savedVideoFirmwareState = Array.Empty<byte>();
+
+	VisualLibrary? _savedVisualLibrary;
 	int _savedActivePageNumber;
+	int _savedCursorX, _savedCursorY;
 
 	void SetIDEVideoMode()
 	{
@@ -32,7 +36,12 @@ public partial class Program
 
 		Machine.VideoFirmware.SaveState(_savedVideoFirmwareState);
 
-		_savedActivePageNumber = Machine.VideoFirmware.VisualLibrary.ActivePageNumber;
+		_savedVisualLibrary = Machine.VideoFirmware.VisualLibrary;
+
+		_savedActivePageNumber = _savedVisualLibrary.ActivePageNumber;
+
+		_savedCursorX = _savedVisualLibrary.CursorX;
+		_savedCursorY = _savedVisualLibrary.CursorY;
 	}
 
 	void RestoreOutput()
@@ -43,10 +52,15 @@ public partial class Program
 
 			_savedOutput.CopyTo(Machine.GraphicsArray.VRAM);
 
-			Machine.VideoFirmware.VisualLibrary.ActivePageNumber = _savedActivePageNumber;
-			Machine.VideoFirmware.VisualLibrary.RefreshParameters();
+			// Just in case.
+			_savedVisualLibrary ??= Machine.VideoFirmware.VisualLibrary;
 
-			Machine.VideoFirmware.VisualLibrary.AttachMouseEvents();
+			_savedVisualLibrary.ActivePageNumber = _savedActivePageNumber;
+			_savedVisualLibrary.RefreshParameters();
+
+			_savedVisualLibrary.MoveCursor(_savedCursorX, _savedCursorY);
+
+			Machine.VideoFirmware.SetVisualLibrary(_savedVisualLibrary);
 		}
 	}
 }
