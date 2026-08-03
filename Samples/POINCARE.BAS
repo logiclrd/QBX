@@ -268,7 +268,7 @@ FOR i% = 0 TO par.NumPolygonSides - 1
 NEXT i%
 END SUB
 
-SUB CountPolygons% (par AS TileParametersType, totalPolygons%, innerPolygons%)
+SUB CountPolygons (par AS TileParametersType, totalPolygons%, innerPolygons%)
 ' Determine
 '   totalPolygons:  the number of polygons there are through that many layers
 '   innerPolygons:  the number through one less layer
