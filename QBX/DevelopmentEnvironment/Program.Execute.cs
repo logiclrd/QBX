@@ -324,10 +324,28 @@ public partial class Program
 				return false;
 			}
 
-			using (Machine.DOS.EnableBreak())
-				_executionContext.Controls.ExecuteDirect(sequence);
+			RestoreOutput();
 
-			EvaluateWatches(out _);
+			try
+			{
+				using (Machine.DOS.EnableBreak())
+					_executionContext.Controls.ExecuteDirect(sequence);
+			}
+			finally
+			{
+				SaveOutput();
+				SetIDEVideoMode();
+			}
+
+			if (_executionContext.ExecutionState.ChainExecution)
+				Continue();
+			else
+			{
+				UpdateAfterBreak();
+
+				if (_executionContext.ExecutionState.CurrentError != null)
+					PresentError(_executionContext.ExecutionState.CurrentError);
+			}
 		}
 
 		return true;

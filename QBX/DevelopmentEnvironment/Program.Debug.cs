@@ -42,7 +42,8 @@ public partial class Program
 			else if (SplitViewport?.EditableElement == element)
 				FocusedViewport = SplitViewport;
 
-			if (FocusedViewport == HelpViewport)
+			if ((FocusedViewport == HelpViewport)
+			 || (FocusedViewport == ImmediateViewport))
 				FocusedViewport = PrimaryViewport;
 
 			if (FocusedViewport.EditableElement != element)
