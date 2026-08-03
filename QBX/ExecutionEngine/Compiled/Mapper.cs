@@ -113,6 +113,7 @@ public class Mapper
 	PrimitiveDataType[] _identifierTypes = new PrimitiveDataType[26];
 
 	Dictionary<string, DataType> _typeFacadeByName = new(StringComparer.OrdinalIgnoreCase);
+	HashSet<string> _hiddenTypeFacades = new();
 
 	// Slugs: avoid conflicts to do with dotted variable names.
 	//
@@ -929,6 +930,19 @@ public class Mapper
 		_typeFacadeByName.Add(udtFacade.Name, new DataType(udtFacade));
 	}
 
+	public void HideTypeFacades()
+	{
+		_hiddenTypeFacades.UnionWith(_typeFacadeByName.Keys);
+	}
+
+	public void UnhideTypeFacade(Identifier name)
+		=> UnhideTypeFacade(name.Value);
+
+	public void UnhideTypeFacade(string name)
+	{
+		_hiddenTypeFacades.Remove(name);
+	}
+
 	public DataType ResolveType(string userType, Token? context = null)
 		=> ResolveType(CodeModel.DataType.UserDataType, userType, fixedStringLength: 0, isArray: false, context);
 
@@ -948,7 +962,8 @@ public class Mapper
 			return _moduleMapper.ResolveType(primitiveType, userTypeName, fixedStringLength, isArray, context);
 		else
 		{
-			if (_typeFacadeByName.TryGetValue(userTypeName, out var type))
+			if (_typeFacadeByName.TryGetValue(userTypeName, out var type)
+			 && !_hiddenTypeFacades.Contains(userTypeName))
 				return type;
 
 			throw CompilerException.TypeNotDefined(context);

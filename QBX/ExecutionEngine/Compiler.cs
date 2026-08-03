@@ -219,6 +219,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 			// Fifth pass: Collect constants and then translate statements.
 			// => CONST definitions inside DEF FN are local to the DEF FN and are not processed here
 			unit.ResetArrayBase();
+			moduleMapper.HideTypeFacades();
 
 			foreach (var routine in routines)
 			{
@@ -3037,7 +3038,10 @@ public class Compiler(IdentifierRepository identifierRepository)
 					throw CompilerException.IllegalInSubFunctionOrDefFn(statement);
 
 				// Types are gathered in a separate pass, since they need to be known before
-				// SUB and FUNCTION parameters are processed. Here, we just skip over them.
+				// SUB and FUNCTION parameters are processed. Here, we just skip over them,
+				// after marking them as being visible now.
+
+				mapper.UnhideTypeFacade(typeStatement.Name);
 
 				while (iterator.Advance())
 				{
