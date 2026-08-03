@@ -579,7 +579,11 @@ public class ExecutionContext
 					}
 					catch (BreakExecution bex)
 					{
-						if (!_executionState.IgnoreBreakFromNextStatement)
+						bool ignoreBreak =
+							_executionState.IgnoreExplicitBreakFromNextStatement &&
+							bex.IsExplicitBreak;
+
+						if (!ignoreBreak)
 						{
 							if (executable.CanBreak)
 							{
@@ -617,7 +621,7 @@ public class ExecutionContext
 					}
 					finally
 					{
-						_executionState.IgnoreBreakFromNextStatement = false;
+						_executionState.IgnoreExplicitBreakFromNextStatement = false;
 					}
 				} while (retryStatement);
 			}

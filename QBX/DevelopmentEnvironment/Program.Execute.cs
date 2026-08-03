@@ -361,7 +361,7 @@ public partial class Program
 			lock (_executionContext!.Controls.Sync)
 			{
 				if (ClearNextStatement())
-					_executionContext.Controls.IgnoreBreakFromNextStatement();
+					_executionContext.Controls.IgnoreExplicitBreakFromNextStatement();
 
 				action();
 

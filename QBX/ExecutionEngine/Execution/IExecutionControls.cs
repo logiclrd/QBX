@@ -14,7 +14,7 @@ public interface IExecutionControls
 
 	void ExecuteDirect(Sequence sequence);
 
-	void IgnoreBreakFromNextStatement();
+	void IgnoreExplicitBreakFromNextStatement();
 
 	void WaitForInterruption();
 	void WaitForStartUp();

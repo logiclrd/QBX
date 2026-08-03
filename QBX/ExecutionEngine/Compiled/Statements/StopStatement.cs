@@ -10,6 +10,6 @@ public class StopStatement(CodeModel.Statements.StopStatement source) : Executab
 		// if you specify a different error level."
 		context.SetExitCode(0);
 
-		throw new BreakExecution();
+		throw new BreakExecution() { IsExplicitBreak = true };
 	}
 }

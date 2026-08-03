@@ -5,4 +5,5 @@ namespace QBX.ExecutionEngine.Execution;
 public class BreakExecution : Exception
 {
 	public bool RetryStatement = true;
+	public bool IsExplicitBreak = false;
 }
