@@ -1610,10 +1610,17 @@ public partial class Program
 
 	void PromptTerminateToCommitEdit(bool willMakeChanges, Action proceedAction)
 	{
-		bool actualChanges = willMakeChanges || FocusedViewport.RerenderCurrentLineAndCheckForActualChanges();
+		bool actualChanges;
 
-		if (!actualChanges && FocusedViewport.CurrentLineEdited)
-			FocusedViewport.CancelEdit();
+		if (FocusedViewport == ImmediateViewport)
+			actualChanges = false;
+		else
+		{
+			actualChanges = willMakeChanges || FocusedViewport.RerenderCurrentLineAndCheckForActualChanges();
+
+			if (!actualChanges && FocusedViewport.CurrentLineEdited)
+				FocusedViewport.CancelEdit();
+		}
 
 		if (!actualChanges || (_executionContext == null))
 			proceedAction();
