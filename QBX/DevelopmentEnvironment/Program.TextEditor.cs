@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 
 using QBX.CodeModel;
 using QBX.CodeModel.Statements;
@@ -18,6 +19,7 @@ public partial class Program
 {
 	bool _alreadyPresentedError = false;
 	TextEditorChordType _inTextEditorChord = TextEditorChordType.None;
+	bool _performCutAfterRender;
 
 	enum TextEditorChordType
 	{
@@ -86,6 +88,9 @@ public partial class Program
 	{
 		if (input.IsRelease)
 			return;
+
+		if (_performCutAfterRender)
+			TextEditorAfterRender();
 
 		int newCursorX, newCursorY;
 		int newScrollX, newScrollY;
@@ -1088,13 +1093,41 @@ public partial class Program
 			}
 			case TextEditorAction.CutCurrent:
 			{
-				// TODO
+				if (FocusedViewport.IsEditable && (newCursorY + 1 < FocusedViewport.EditableElement?.Lines.Count))
+				{
+					PromptTerminateToCommitEdit(
+						() =>
+						{
+							FocusedViewport.SelectionManager.CancelSelection();
+							FocusedViewport.SelectionManager.StartSelection(0, newCursorY + 1);
+							FocusedViewport.SelectionManager.ExtendSelection(0, newCursorY);
+
+							_performCutAfterRender = true;
+						});
+
+					return; // Prevent default cursor movement & selection handling
+				}
 
 				break;
 			}
 			case TextEditorAction.CutToEOL:
 			{
-				// TODO
+				if (FocusedViewport.IsEditable)
+				{
+					var buffer = FocusedViewport.EditCurrentLine();
+
+					PromptTerminateToCommitEdit(
+						() =>
+						{
+							FocusedViewport.SelectionManager.CancelSelection();
+							FocusedViewport.SelectionManager.StartSelection(buffer.Length, newCursorY);
+							FocusedViewport.SelectionManager.ExtendSelection(newCursorX, newCursorY);
+
+							_performCutAfterRender = true;
+						});
+
+					return; // Prevent default cursor movement & selection handling
+				}
 
 				break;
 			}
@@ -1500,6 +1533,22 @@ public partial class Program
 			else
 				FocusedViewport.SelectionManager.ExtendSelection(FocusedViewport.CursorX, FocusedViewport.CursorY);
 		}
+	}
+
+	bool TextEditorAfterRender()
+	{
+		if (_performCutAfterRender)
+		{
+			_performCutAfterRender = false;
+
+			Thread.Sleep(20);
+
+			FocusedViewport.SelectionManager.Cut();
+
+			return true;
+		}
+
+		return false;
 	}
 
 	void PromptTerminateToCommitEdit(Action proceedAction)

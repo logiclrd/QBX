@@ -117,8 +117,10 @@ public class SelectionManager(Viewport owner, Clipboard clipboard)
 
 			if (!retain)
 			{
-				_owner.CursorX = 0;
+				_owner.CursorX = _owner.GetLineIndentation(effectiveStartY);
 				_owner.CursorY = effectiveStartY;
+
+				CancelSelection();
 			}
 		}
 		else if (effectiveStartX != effectiveEndX)

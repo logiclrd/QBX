@@ -19,6 +19,13 @@ public partial class Program
 
 	void Render()
 	{
+		do
+			RenderFrame();
+		while (TextEditorAfterRender());
+	}
+
+	void RenderFrame()
+	{
 		if (_spaces.Length < TextLibrary.Width)
 			_spaces = new string(' ', TextLibrary.Width);
 		if (_horizontalRule.Length < TextLibrary.Width)
