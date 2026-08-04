@@ -8,6 +8,7 @@ using System.Threading;
 using QBX.CodeModel;
 using QBX.CodeModel.Statements;
 using QBX.DevelopmentEnvironment.Dialogs;
+using QBX.Firmware.Fonts;
 using QBX.Hardware;
 using QBX.LexicalAnalysis;
 using QBX.Parser;
@@ -210,13 +211,35 @@ public partial class Program
 			return true;
 		}
 
+		static bool IsWordCharacter(char ch)
+		{
+			switch (ch)
+			{
+				case '!':
+				case '#':
+				case '$':
+				case '%':
+				case '&':
+				case '.':
+				case '/':
+				case '@':
+					return true;
+				default:
+					byte v = CP437Encoding.GetByteSemantic(ch);
+
+					return CP437Encoding.IsLetterOrDigit(v);
+			}
+		}
+
 		bool NewCharacterIsWordCharacter()
 		{
 			var buffer = currentLine.Value;
 
-			return
-				(newCursorX >= 0) && (newCursorX < buffer.Length) &&
-				(char.IsLetterOrDigit(buffer[newCursorX]) || buffer[newCursorX] == '.');
+			if ((newCursorX < 0)
+			 || (newCursorX >= buffer.Length))
+				return false;
+
+			return IsWordCharacter(buffer[newCursorX]);
 		}
 
 		void FindPreviousWord()
@@ -1308,7 +1331,38 @@ public partial class Program
 			}
 			case TextEditorAction.DelWord:
 			{
-				// TODO
+				if (FocusedViewport.IsEditable)
+				{
+					var buffer = FocusedViewport.EditCurrentLine();
+
+					if ((newCursorX >= 0) && (newCursorX < buffer.Length))
+					{
+						// Default to delete a single character (symbol)
+						int removeEnd = newCursorX + 1;
+
+						if (buffer[newCursorX] == ' ')
+						{
+							// Delete contiguous spaces
+							while ((removeEnd < buffer.Length) && (buffer[removeEnd] == ' '))
+								removeEnd++;
+						}
+						else if (IsWordCharacter(buffer[newCursorX]))
+						{
+							// Delete contiguous word characters
+							while ((removeEnd < buffer.Length) && IsWordCharacter(buffer[removeEnd]))
+								removeEnd++;
+						}
+
+						int removeCount = removeEnd - newCursorX;
+
+						buffer.Remove(newCursorX, removeCount);
+
+						FocusedViewport.CurrentLineEdited = true;
+						FocusedViewport.CurrentLineBuffer = buffer;
+
+						_alreadyPresentedError = false;
+					}
+				}
 
 				break;
 			}

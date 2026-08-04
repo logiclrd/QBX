@@ -676,6 +676,12 @@ public class CP437Encoding : Encoding
 		}
 	}
 
+	public static bool IsLetter(byte v)
+		=> IsAsciiLetter(v) || IsExtendedAsciiLetter(v);
+	public static bool IsLetterOrDigit(byte v)
+		=> IsLetter(v) || IsDigit(v);
+	public static bool IsDigit(byte v)
+		=> (v >= (byte)'0') && (v <= (byte)'9');
 
 	public static bool IsAsciiLetterOrDigit(byte v)
 		=> IsAsciiLetter(v) || IsDigit(v);
@@ -685,8 +691,66 @@ public class CP437Encoding : Encoding
 		=> (v >= (byte)'A') && (v <= (byte)'Z');
 	public static bool IsAsciiLetterLower(byte v)
 		=> (v >= (byte)'a') && (v <= (byte)'z');
-	public static bool IsDigit(byte v)
-		=> (v >= (byte)'0') && (v <= (byte)'9');
+
+	public static bool IsExtendedAsciiLetterOrDigit(byte v)
+		=> IsExtendedAsciiLetter(v) || IsDigit(v);
+	public static bool IsExtendedAsciiLetter(byte v)
+		=> IsExtendedAsciiLetterLower(v) || IsExtendedAsciiLetterUpper(v);
+
+	public static bool IsExtendedAsciiLetterUpper(byte v)
+	{
+		switch (v)
+		{
+			case 128: // Ç
+			case 142: // Ä
+			case 143: // Å
+			case 144: // É
+			case 146: // Æ
+			case 153: // Ö
+			case 154: // Ü
+			case 165: // Ñ
+				return true;
+		}
+
+		return false;
+	}
+
+	public static bool IsExtendedAsciiLetterLower(byte v)
+	{
+		switch (v)
+		{
+			case 129: // ü
+			case 130: // é
+			case 131: // â
+			case 132: // ä
+			case 133: // à
+			case 134: // å
+			case 135: // ç
+			case 136: // ê
+			case 137: // ë
+			case 138: // è
+			case 139: // ï
+			case 140: // î
+			case 141: // ì
+			case 145: // æ
+			case 147: // ô
+			case 148: // ö
+			case 149: // ò
+			case 150: // û
+			case 151: // ù
+			case 152: // ÿ
+			case 160: // á
+			case 161: // í
+			case 162: // ó
+			case 163: // ú
+			case 164: // ñ
+			case 166: // ª
+			case 167: // º
+				return true;
+		}
+
+		return false;
+	}
 
 	public static byte ToUpper(byte v)
 		=> IsAsciiLetterLower(v) ? unchecked((byte)(v & ~0x20)) : v;
