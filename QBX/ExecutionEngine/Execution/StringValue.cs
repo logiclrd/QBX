@@ -77,7 +77,7 @@ public class StringValue : IComparable<StringValue>, IEquatable<StringValue>
 				throw new Exception("Cannot change the length of a fixed-length StringValue");
 
 			if (_bytes.Count > value)
-				_bytes.RemoveRange(value, _bytes.Count);
+				_bytes.RemoveRange(value, _bytes.Count - value);
 			else if (_bytes.Count < value)
 			{
 				if (_bytes.Capacity < value)

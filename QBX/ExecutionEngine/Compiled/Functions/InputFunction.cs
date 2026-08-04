@@ -171,8 +171,10 @@ public class FileInputFunction(Evaluable numBytesArgument, Evaluable fileNumberA
 					openFile.FileHandle,
 					buffer.AsSpan());
 
-				if (numRead < buffer.Length)
-					throw RuntimeException.InputPastEndOfFile(Source);
+				if (numRead < 0)
+					throw RuntimeException.DeviceIOError(Source);
+
+				buffer.Length = numRead;
 			}
 		}
 

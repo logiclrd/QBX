@@ -266,6 +266,8 @@ public class RuntimeException : Exception
 		=> ForErrorNumber(55, statement);
 	public static RuntimeException DeviceIOError(CodeModel.Statements.Statement? statement)
 		=> ForErrorNumber(57, statement);
+	public static RuntimeException DeviceIOError(CodeModel.Expressions.Expression? expression)
+		=> ForErrorNumber(57, expression);
 	public static RuntimeException FileAlreadyExists(CodeModel.Statements.Statement? statement)
 		=> ForErrorNumber(58, statement);
 	public static RuntimeException BadRecordLength(CodeModel.Statements.Statement? statement)

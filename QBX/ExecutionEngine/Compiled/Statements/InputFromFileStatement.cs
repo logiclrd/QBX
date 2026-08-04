@@ -20,6 +20,10 @@ public class InputFromFileStatement(CodeModel.Statements.InputStatement source) 
 		if (!context.Files.TryGetValue(fileNumber, out var openFile))
 			throw RuntimeException.BadFileNameOrNumber(Source);
 
+		if ((openFile.IOMode == OpenFileIOMode.Binary)
+		 || (openFile.IOMode == OpenFileIOMode.Output))
+			throw RuntimeException.BadFileMode(Source);
+
 		if (openFile.DataParser == null)
 		{
 			openFile.DataParser = new DataParser();

@@ -17,6 +17,10 @@ public class LineInputFromFileStatement(CodeModel.Statements.LineInputStatement 
 
 		try
 		{
+			if ((_openFile.IOMode == OpenFileIOMode.Binary)
+			 || (_openFile.IOMode == OpenFileIOMode.Output))
+				throw RuntimeException.BadFileMode(Source);
+
 			if (_openFile.DataParser != null)
 			{
 				if (_openFile.DataParser.IsAtEnd)
