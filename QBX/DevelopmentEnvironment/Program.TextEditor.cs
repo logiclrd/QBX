@@ -323,12 +323,12 @@ public partial class Program
 			{
 				case TextEditorChordType.CtrlK:
 				{
-					switch (input.ScanCode)
+					switch (input.TextCharacter)
 					{
-						case ScanCode._0: action = TextEditorAction.SetBookMark0; break;
-						case ScanCode._1: action = TextEditorAction.SetBookMark1; break;
-						case ScanCode._2: action = TextEditorAction.SetBookMark2; break;
-						case ScanCode._3: action = TextEditorAction.SetBookMark3; break;
+						case '0': action = TextEditorAction.SetBookMark0; break;
+						case '1': action = TextEditorAction.SetBookMark1; break;
+						case '2': action = TextEditorAction.SetBookMark2; break;
+						case '3': action = TextEditorAction.SetBookMark3; break;
 					}
 
 					break;
@@ -406,20 +406,11 @@ public partial class Program
 							case (char)('S' - 64): action = TextEditorAction.BegLine; break;
 							case (char)('X' - 64): action = TextEditorAction.EndScn; break;
 							case (char)('Y' - 64): action = TextEditorAction.CutToEOL; break;
-						}
-					}
-					else
-					{
-						switch (input.ScanCode)
-						{
-							case ScanCode._0: action = TextEditorAction.GotoBookMark0; break;
-							case ScanCode._1: action = TextEditorAction.GotoBookMark1; break;
-							case ScanCode._2: action = TextEditorAction.GotoBookMark2; break;
-							case ScanCode._3: action = TextEditorAction.GotoBookMark3; break;
 
-							default:
-								_inTextEditorChord = wasInChord;
-								break;
+							case '0': action = TextEditorAction.GotoBookMark0; break;
+							case '1': action = TextEditorAction.GotoBookMark1; break;
+							case '2': action = TextEditorAction.GotoBookMark2; break;
+							case '3': action = TextEditorAction.GotoBookMark3; break;
 						}
 					}
 
@@ -812,12 +803,43 @@ public partial class Program
 			case TextEditorAction.GotoBookMark1:
 			case TextEditorAction.GotoBookMark2:
 			case TextEditorAction.GotoBookMark3:
+			{
+				int id =
+					action switch
+					{
+						TextEditorAction.GotoBookMark0 => 0,
+						TextEditorAction.GotoBookMark1 => 1,
+						TextEditorAction.GotoBookMark2 => 2,
+						TextEditorAction.GotoBookMark3 => 3,
+
+						_ => throw new Exception("Sanity failure")
+					};
+
+				NavigateToBookMark(id);
+
+				return; // Skip cursor movement processing, as the navigation has jumped elsewhere.
+			}
+
 			case TextEditorAction.SetBookMark0:
 			case TextEditorAction.SetBookMark1:
 			case TextEditorAction.SetBookMark2:
 			case TextEditorAction.SetBookMark3:
-				// TODO
+			{
+				int id =
+					action switch
+					{
+						TextEditorAction.SetBookMark0 => 0,
+						TextEditorAction.SetBookMark1 => 1,
+						TextEditorAction.SetBookMark2 => 2,
+						TextEditorAction.SetBookMark3 => 3,
+
+						_ => throw new Exception("Sanity failure")
+					};
+
+				CaptureBookMark(id);
+
 				break;
+			}
 
 			case TextEditorAction.NewLine:
 			case TextEditorAction.SplitLine:
@@ -1900,6 +1922,42 @@ public partial class Program
 
 		SplitViewport = AttachViewport(new Viewport(Clipboard));
 
+		SplitViewport.Height = PrimaryViewport.Height / 2;
+
+		PrimaryViewport.Height -= SplitViewport.Height;
+
+		int reclaimLines = 0;
+
+		if (PrimaryViewport.Height < 1)
+		{
+			reclaimLines += 1 - PrimaryViewport.Height;
+			PrimaryViewport.Height = 1;
+		}
+
+		if (SplitViewport.Height < 1)
+		{
+			reclaimLines += 1 - SplitViewport.Height;
+			SplitViewport.Height = 1;
+		}
+
+		if (reclaimLines > 0)
+		{
+			while ((ImmediateViewport.Height > 1) && (reclaimLines > 0))
+			{
+				ImmediateViewport.Height--;
+				reclaimLines--;
+			}
+
+			if ((reclaimLines > 0) && (HelpViewport != null))
+			{
+				while ((HelpViewport.Height > 1) && (reclaimLines > 0))
+				{
+					HelpViewport.Height--;
+					reclaimLines--;
+				}
+			}
+		}
+
 		if (FocusedViewport.EditableElement is IEditableElement element)
 			SplitViewport.SwitchTo(element);
 	}
@@ -2079,7 +2137,7 @@ public partial class Program
 		}
 	}
 
-	public void NavigateTo(CompilationElement element, int lineNumber, int column)
+	public void NavigateTo(IEditableElement element, int lineNumber, int column)
 	{
 		Viewport viewport;
 
