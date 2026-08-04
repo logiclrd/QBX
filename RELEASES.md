@@ -1,5 +1,12 @@
 # QBX Releases
 
+## 1.20.1 - 2026-08-03
+
+### Fixed
+
+- `INPUT$` no longer raises an error when it tries to read past the end of the file. Instead, it simply returns a shorter string than requested.
+- `INPUT #` and `LINE INPUT #` now raise a Bad File Mode error if used on a file opened with `BINARY` or `OUTPUT` mode.
+
 ## 1.20.0 - 2026-08-03
 
 ### Fixed
