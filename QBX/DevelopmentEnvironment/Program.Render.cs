@@ -803,6 +803,19 @@ public partial class Program
 		_statusCharBuffer.AsSpan().Fill(32);
 
 		_statusCharBuffer[0] = CP437Encoding.GetByteGraphic('│');
+
+		if (_inTextEditorChord != TextEditorChordType.None)
+		{
+			_statusCharBuffer[2] = (byte)'^';
+
+			switch (_inTextEditorChord)
+			{
+				case TextEditorChordType.CtrlK: _statusCharBuffer[3] = (byte)'K'; break;
+				case TextEditorChordType.CtrlP: _statusCharBuffer[3] = (byte)'P'; break;
+				case TextEditorChordType.CtrlQ: _statusCharBuffer[3] = (byte)'Q'; break;
+			}
+		}
+
 		_statusCharBuffer[5] = Machine.SystemMemory.KeyboardStatus.CapsLock ? (byte)'C' : (byte)' ';
 		_statusCharBuffer[6] = Machine.SystemMemory.KeyboardStatus.NumLock ? (byte)'N' : (byte)' ';
 
