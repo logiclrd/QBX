@@ -13,7 +13,20 @@ public class EndScopeStatement : Statement
 
 	protected override void RenderImplementation(TextWriter writer)
 	{
-		switch (ScopeType)
+		var scopeType = this.ScopeType;
+
+		var compilationElement = this.CodeLine?.CompilationElement;
+
+		if (compilationElement != null)
+		{
+			switch (compilationElement.Type)
+			{
+				case CompilationElementType.Sub: scopeType = ScopeType.Sub; break;
+				case CompilationElementType.Function: scopeType = ScopeType.Function; break;
+			}
+		}
+
+		switch (scopeType)
 		{
 			case ScopeType.Sub: writer.Write("END SUB"); break;
 			case ScopeType.Function: writer.Write("END FUNCTION"); break;

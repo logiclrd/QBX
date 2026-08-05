@@ -275,8 +275,9 @@ public class Viewport
 					// one applies to the current CompilationElement. Otherwise, treat this as a request
 					// to create a new SUB/FUNCTION.
 
-					IEditableElement? existingCodeElement = null;
+					CompilationElement? existingCodeElement = null;
 					CodeLine? existingOpeningLine = null;
+					ProperSubroutineOpeningStatement? existingOpeningStatement = null;
 
 					bool isSubOrFunction =
 						(compilationElement.Type == CompilationElementType.Sub) ||
@@ -284,10 +285,12 @@ public class Viewport
 
 					if (isSubOrFunction)
 					{
-						existingCodeElement = GetElementByName?.Invoke(startScopeStatement.Name);
+						existingCodeElement = (CompilationElement?)GetElementByName?.Invoke(startScopeStatement.Name);
 
 						existingOpeningLine = compilationElement.Lines.FirstOrDefault(
-							line => line.Statements.OfType<SubroutineOpeningStatement>().Any());
+							line => line.Statements.OfType<ProperSubroutineOpeningStatement>().Any());
+
+						existingOpeningStatement = existingOpeningLine?.Statements.OfType<ProperSubroutineOpeningStatement>().FirstOrDefault();
 					}
 
 					TryGetLineAt(CursorY, out var currentLine);
@@ -304,6 +307,70 @@ public class Viewport
 						compilationElement.Name = startScopeStatement.Name;
 
 						UpdateHeading();
+
+						// If the user changes SUB<->FUNCTION in the opening
+						// statement, update the end scope statement to match.
+						if ((startScopeStatement.ScopeType != existingOpeningStatement?.ScopeType)
+						 && (existingCodeElement != null))
+						{
+							switch (startScopeStatement.ScopeType)
+							{
+								case ScopeType.Sub: existingCodeElement.Type = CompilationElementType.Sub; break;
+								case ScopeType.Function: existingCodeElement.Type = CompilationElementType.Function; break;
+							}
+
+							for (int i = existingCodeElement.Lines.Count - 1; i >= 0; i--)
+							{
+								if (existingCodeElement.Lines[i] is CodeLine line)
+								{
+									bool reparseLine = false;
+
+									foreach (var statement in line.AllStatements)
+									{
+										if ((statement is EndScopeStatement endScopeStatement)
+										 && (endScopeStatement.ScopeType != startScopeStatement.ScopeType))
+										{
+											reparseLine = true;
+											break;
+										}
+
+										if ((statement is ExitScopeStatement exitScopeStatement)
+										 && (exitScopeStatement.ScopeType != startScopeStatement.ScopeType))
+										{
+											if ((exitScopeStatement.ScopeType == ScopeType.Sub)
+											 || (exitScopeStatement.ScopeType == ScopeType.Function))
+											{
+												reparseLine = true;
+												break;
+											}
+										}
+									}
+
+									if (reparseLine)
+									{
+										var thisLineBuffer = new StringBuilder();
+
+										var writer = new StringWriter(thisLineBuffer);
+
+										line.Render(writer);
+
+										lexer = new Lexer(new StringBuilderReader(thisLineBuffer), EditableElement as CompilationElement, startingLineNumber: i);
+
+										try
+										{
+											var reparsedLine = parser.ParseCodeLines(lexer).SingleOrDefault();
+
+											if (reparsedLine != null)
+												existingCodeElement.ReplaceLine(i, reparsedLine);
+										}
+										catch
+										{
+											existingCodeElement.ReplaceLine(i, (CodeLine)existingCodeElement.ConstructLine(thisLineBuffer));
+										}
+									}
+								}
+							}
+						}
 					}
 					else
 					{
