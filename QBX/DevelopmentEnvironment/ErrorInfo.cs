@@ -8,4 +8,5 @@ public class ErrorInfo
 	public int? Number;
 	public Token? Context;
 	public ErrorSource Source;
+	public string? HelpContextString;
 }

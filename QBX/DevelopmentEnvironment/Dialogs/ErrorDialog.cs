@@ -5,21 +5,26 @@ namespace QBX.DevelopmentEnvironment.Dialogs;
 
 public class ErrorDialog : Dialog
 {
-	public ErrorDialog(Machine machine, Configuration configuration, string errorMessage, int? errorNumber, ErrorSource source)
+	public ErrorDialog(Machine machine, Configuration configuration, string errorMessage, string? helpContextString = null)
+		: this(machine, configuration, errorMessage)
+	{
+		HelpContextString = helpContextString ?? "-121"; // "Translation momentarily stopped" (syntax error)
+	}
+
+	public ErrorDialog(Machine machine, Configuration configuration, string errorMessage, int errorNumber, ErrorSource source)
+		: this(machine, configuration, errorMessage)
+	{
+		int errorNumberForSource = errorNumber;
+
+		if (source == ErrorSource.DevelopmentEnvironment)
+			errorNumberForSource += 2000;
+
+		HelpContextString = (-errorNumberForSource).ToString();
+	}
+
+	ErrorDialog(Machine machine, Configuration configuration, string errorMessage)
 		: base(machine, configuration)
 	{
-		if (errorNumber.HasValue)
-		{
-			int errorNumberForSource = errorNumber.Value;
-
-			if (source == ErrorSource.DevelopmentEnvironment)
-				errorNumberForSource += 2000;
-
-			HelpContextString = (-errorNumberForSource).ToString();
-		}
-		else
-			HelpContextString = "-121"; // Syntax Error
-
 		if (errorMessage.Length > 65)
 			errorMessage = errorMessage.Substring(0, 65) + "...";
 

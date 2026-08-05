@@ -48,50 +48,28 @@ Key File Not Found Dialog: "-323" => not sure how you specify a key file name, c
 Identifier Too Long Dialog: "-114"
 Invalid Identifier Character Dialog: "-115" => specifying a DEF FN with non-letter or FUNCTION or SUB that start with a digit or contain a type character
 Identifier Cannot End With Dialog: "-116" => specifing a SUB procedure name or a COMMON declaration including a type character
-Cannot Contain Period Dialog: "-117" => a dotted identifier with a disallowed slug
 Out Of Space Dialog: "-118"
-Illegal Number Dialog: "-119" => inappropriate number for context, such as a mismatched type character ("10.5%") or an invalid fixed string length (DIM x AS STRING * 0)
-Not Constant Dialog: "-120" => non-constant expression used to initialize a constant variable
 Not ASCII Dialog: "-123" => BASICA binary format not supported when compiling
 Unsupported Statements Warning Dialog: "-124" => could be useful for unimplemented statements
 Illegal Outside of Routine Dialog: "-149" => Exit Scope statement used outside of any scope
-Illegal Outside of SUB/FUNCTION Dialog: "-150" => SHARED or STATIC used in module level or DEF FN
-Illegal Inside of SUB/FUNCTION Dialog: "-151" => not sure what off the top of my head
 Invalid Statement Preceding SUB/FUNCTION Dialog: "-152" => statement other than REM, DEFtype, EVENT ON and EVENT OFF encountered in the prologue of a SUB/FUNCTION
 SUB/FUNCTION without END SUB/END FUNCTION Dialog: "-153"
 END DEF without DEF Dialog: "-154"
-No Such Field Dialog: "-155"
-Type Not Defined (Parameter) Dialog: "-156" => SUB/FUNCTION parameter 'AS undefinedtype'
 Must Be First Statement On Line Dialog: "-157" => IF/ELSEIF/ELSE/END IF and SELECT CASE/END SELECT
-Cannot Add Code After End Of Routine: "-158"
-TYPE without END TYPE Dialog: "-159"
 END TYPE without TYPE Dialog: "-160"
-Invalid Statement Inside TYPE Dialog: "-161"
 SUBs/FUNCTIONs Not Allowed In Include Files Dialog: "-162"
 Cannot Name SUB/FUNCTION FNxxx Dialog: "-163"
 Cannot Load/Save With Non-Disk Device Dialog: "-164"
-Metacommand Syntax Error Dialog: "-165"
 Breakpoints On First CASE Statement Not Allowed Dialog: "-166"
-Array Already Dimensioned Dialog: "-167" => static array DIMmed twice or dynamic array DIMmed a second time with no ERASE or OPTION BASE used after array already dimensioned
 COMMON And DECLARE Must Precede Executable Statements Dialog: "-168"
-END IF without IF Dialog: "-169"
-IF without END IF Dialog: "-170"
-ELSE without IF Dialog: "-171"
-EXIT FOR outside of FOR Dialog: "-173"
-EXIT DO outside of DO Dialog: "-172"
-DO without LOOP: "-174"
-LOOP without DO: "-175"
-SELECT CASE without END SELECT: "-176"
 CASE without SELECT CASE: "-177"
 END SELECT without SELECT CASE: "-178"
 Cannot Use Fixed-Length String As Parameter: "-179"
 Cannot Pass User-Define Type with CALL: "-180"
 Multi-line DEF FN without END DEF: "-181"
-SUB or FUNCTION Parameter Type Does Not Match DECLARE: "-182"
 SUB or FUNCTION Name Matches QuickLibrary Export: "-183"
 AS Clause Required On First Declaration: "-184" => DIM, REDIM, SHARED or COMMON references an array initially declared with no AS using an AS clause
 AS Clause Required: "-185" => DIM, REDIM, SHARED or COMMON references an array initially declared with AS clause without one
-Statements and Labels Illegal Between SELECT CASE and CASE => "-186"
 Numeric Array Illegal: "-187" => VARPTR$ used on a non-string
 Type Member Outside of TYPE: "-188"
 Too Many COMMON Variables: "-189" => not sure what triggers this
@@ -107,12 +85,9 @@ Executable Statements Not Allowed Before SUB/FUNCTION: "-152"
 Unsupported Statement: "MSG_UnsupStatement"
 Too Many Local Strings: "-195" or "h.pg$" => a procedure can only have up to 255 local strings
 
-Runtime Error 1 "NEXT without FOR": "-1" or "-2001"
 Runtime Error 2 "Syntax Error": "-2" or "-2002"
 Runtime Error 3 "RETURN without GOSUB": "-3" or "-2003"
 Runtime Error 4 "Out of DATA": "-4" or "-2004"
-Runtime Error 5 "Illegal function call": "-5" or "-2005"
-Runtime Error 6 "Overflow": "-6" or "-2006"
 
 // If error 17 results from the IDE ascertaining that it can't continue, "-2017"
 // If error 17 bubbles up from the program, "-17"

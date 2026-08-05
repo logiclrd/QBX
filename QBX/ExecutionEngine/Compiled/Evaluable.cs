@@ -47,7 +47,7 @@ public abstract class Evaluable
 	public virtual bool IsConstant
 		=> false;
 	public virtual LiteralValue EvaluateConstant()
-		=> throw CompilerException.ValueIsNotConstant(Source);
+		=> throw CompilerException.InvalidConstant(Source);
 
 	public virtual bool IsAssignable => false;
 

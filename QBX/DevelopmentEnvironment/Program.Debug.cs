@@ -107,20 +107,20 @@ public partial class Program
 
 	public void PresentError(CompilerException error)
 	{
-		PresentError(error.Message, error.Context, avoidContext: true);
+		PresentError(error.Message, error.Context, error.HelpContextString, avoidContext: true);
 	}
 
 	public void PresentError(RuntimeException error, ErrorSource source = ErrorSource.Program)
 	{
-		PresentError(error.Message, error.ErrorNumber, error.Context, source, avoidContext: true);
+		PresentError(error.Message, error.ErrorNumber, error.Context, source, null, avoidContext: true);
 	}
 
-	public void PresentError(string errorMessage, Token? context = null, bool avoidContext = false)
+	public void PresentError(string errorMessage, Token? context = null, string? helpContextString = null, bool avoidContext = false)
 	{
-		PresentError(errorMessage, errorNumber: null, context, ErrorSource.Program, avoidContext);
+		PresentError(errorMessage, errorNumber: null, context, ErrorSource.Program, helpContextString, avoidContext);
 	}
 
-	public void PresentError(string errorMessage, int? errorNumber, Token? context, ErrorSource source, bool avoidContext)
+	public void PresentError(string errorMessage, int? errorNumber, Token? context, ErrorSource source, string? helpContextString, bool avoidContext)
 	{
 		var errorInfo = new ErrorInfo();
 
@@ -128,6 +128,7 @@ public partial class Program
 		errorInfo.Number = errorNumber;
 		errorInfo.Context = context;
 		errorInfo.Source = source;
+		errorInfo.HelpContextString = helpContextString;
 
 		Error?.Invoke(errorInfo);
 
@@ -145,7 +146,10 @@ public partial class Program
 
 		_errorToken = context;
 
-		var dialog = ShowDialog(new ErrorDialog(Machine, Configuration, errorMessage, errorNumber, source));
+		var dialog = ShowDialog(
+			errorNumber.HasValue
+			? new ErrorDialog(Machine, Configuration, errorMessage, errorNumber.Value, source)
+			: new ErrorDialog(Machine, Configuration, errorMessage, helpContextString));
 
 		if (avoidContext)
 		{
@@ -222,7 +226,7 @@ public partial class Program
 		}
 		catch
 		{
-			PresentError("Invalid expression for Instant Watch", 315, context: null, ErrorSource.Program, avoidContext: false);
+			PresentError("Invalid expression for Instant Watch", 315, context: null, ErrorSource.Program, helpContextString: null, avoidContext: false);
 		}
 	}
 

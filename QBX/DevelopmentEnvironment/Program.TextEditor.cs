@@ -2097,7 +2097,7 @@ public partial class Program
 		if (isValid)
 			ShowInstantWatch(_nextStatementRoutine?.Mapper, subject);
 		else
-			PresentError("Invalid expression for Instant Watch", 315, context: null, ErrorSource.Program, avoidContext: false);
+			PresentError("Invalid expression for Instant Watch", 315, context: null, ErrorSource.Program, helpContextString: null, avoidContext: false);
 	}
 
 	void FindIdentifierExtent(StringBuilder buffer, ref int startIndex, out int endIndex)

@@ -52,7 +52,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 				var statements = line.Statements;
 
 				while (statementIndex < statements.Count)
-					TranslateStatement(context.Source, statements, ref statementIndex, sequence, context, compilation, module);
+					TranslateStatement(context.Source, statements, ref statementIndex, new ScopeState(), sequence, context, compilation, module);
 			}
 
 			mapper.Freeze();
@@ -165,7 +165,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 							break;
 
 						default:
-							throw new CompilerException(statement, "Statement illegal in TYPE block");
+							throw CompilerException.StatementIllegalInTypeBlock(statement);
 					}
 				}
 			}
@@ -307,8 +307,18 @@ public class Compiler(IdentifierRepository identifierRepository)
 					}
 				}
 
+				var scopeState =
+					routine.Source.Type switch
+					{
+						CodeModel.CompilationElementType.Main => ScopeState.BeginMainModule(),
+						CodeModel.CompilationElementType.Sub => ScopeState.BeginSub(),
+						CodeModel.CompilationElementType.Function => ScopeState.BeginFunction(),
+
+						_ => throw new Exception("Internal error")
+					};
+
 				while (lineIndex < element.Lines.Count)
-					TranslateStatement(element, ref lineIndex, ref statementIndex, routine, routine, compilation, module);
+					TranslateStatement(element, ref lineIndex, ref statementIndex, scopeState, routine, routine, compilation, module);
 
 				// If the SUB or FUNCTION declaration contains the STATIC keyword, then all
 				// local variables are implicitly STATIC, as though they'd all been listed
@@ -486,7 +496,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 		mapper.RegisterTypeFacade(udtFacade);
 	}
 
-	void TranslateStatement(CodeModel.CompilationElement element, ref int lineIndexRef, ref int statementIndexRef, Sequence container, Routine routine, Compilation compilation, Module module)
+	void TranslateStatement(CodeModel.CompilationElement element, ref int lineIndexRef, ref int statementIndexRef, ScopeState scopeState, Sequence container, Routine routine, Compilation compilation, Module module)
 	{
 		int lineIndex = lineIndexRef;
 		int statementIndex = statementIndexRef;
@@ -565,7 +575,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 					statement = newStatement;
 				};
 
-			TranslateStatement(element, ref statement, iterator, container, routine, compilation, module, out var nextStatementInfo);
+			TranslateStatement(element, ref statement, iterator, scopeState, container, routine, compilation, module, out var nextStatementInfo);
 
 			lineIndex = iterator.LineIndex;
 			statementIndex = iterator.StatementIndex;
@@ -583,7 +593,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 		}
 	}
 
-	void TranslateStatement(CodeModel.CompilationElement element, IReadOnlyList<CodeModel.Statements.Statement> statements, ref int statementIndexRef, Sequence container, Routine routine, Compilation compilation, Module module)
+	void TranslateStatement(CodeModel.CompilationElement element, IReadOnlyList<CodeModel.Statements.Statement> statements, ref int statementIndexRef, ScopeState scopeState, Sequence container, Routine routine, Compilation compilation, Module module)
 	{
 		int statementIndex = statementIndexRef;
 
@@ -602,7 +612,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 					statement = newStatement;
 				};
 
-			TranslateStatement(element, ref statement, iterator, container, routine, compilation, module, out var nextStatementInfo);
+			TranslateStatement(element, ref statement, iterator, scopeState, container, routine, compilation, module, out var nextStatementInfo);
 
 			statementIndex = iterator.StatementIndex;
 
@@ -624,7 +634,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 		public int LoopsMatched = 0;
 	}
 
-	void TranslateStatement(CodeModel.CompilationElement element, ref CodeModel.Statements.Statement statement, StatementIterator iterator, Sequence container, Routine routine, Compilation compilation, Module module, out NextStatementInfo? nextStatementInfo)
+	void TranslateStatement(CodeModel.CompilationElement element, ref CodeModel.Statements.Statement statement, StatementIterator iterator, ScopeState scopeState, Sequence container, Routine routine, Compilation compilation, Module module, out NextStatementInfo? nextStatementInfo)
 	{
 		var mapper = routine.Mapper;
 
@@ -732,7 +742,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 					if (nativeProcedure.ParameterTypes == null)
 					{
-						TranslateCallArguments(callStatement.Arguments, translatedCallStatement, matchFacades: false, container, mapper, compilation, module);
+						TranslateCallArguments(callStatement.Arguments, parameterDefinitions: null, translatedCallStatement, matchFacades: false, container, mapper, compilation, module);
 
 						translatedCallStatement.LocalThunk = nativeProcedure.BuildThunk(
 							translatedCallStatement.Arguments.Select(arg => arg.Type).ToList(),
@@ -746,7 +756,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 						if (callArgumentCount != targetArgumentCount)
 							throw CompilerException.ArgumentCountMismatch(callStatement.FirstToken);
 
-						TranslateCallArguments(callStatement.Arguments, translatedCallStatement, matchFacades: false, container, mapper, compilation, module);
+						TranslateCallArguments(callStatement.Arguments, parameterDefinitions: null, translatedCallStatement, matchFacades: false, container, mapper, compilation, module);
 					}
 
 					container.Append(translatedCallStatement);
@@ -791,7 +801,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 					else
 						implicitForwardReference = true;
 
-					TranslateCallArguments(callStatement.Arguments, translatedCallStatement, matchFacades, container, mapper, compilation, module);
+					TranslateCallArguments(callStatement.Arguments, parameterDefinitions, translatedCallStatement, matchFacades, container, mapper, compilation, module);
 
 					if (implicitForwardReference)
 					{
@@ -1199,6 +1209,8 @@ public class Compiler(IdentifierRepository identifierRepository)
 						iterator.Advance();
 						iterator.ProcessLabels(module.DataParser, defFnRoutine);
 
+						var defScope = ScopeState.BeginDef();
+
 						while (iterator.HaveCurrentStatement)
 						{
 							if (statement is CodeModel.Statements.EndDefStatement)
@@ -1207,7 +1219,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 							if (statement is CodeModel.Statements.DefFnStatement)
 								throw CompilerException.IllegalInSubFunctionOrDefFn(statement);
 
-							TranslateStatement(element, ref statement, iterator, defFnRoutine, defFnRoutine, compilation, module, out nextStatementInfo);
+							TranslateStatement(element, ref statement, iterator, defScope, defFnRoutine, defFnRoutine, compilation, module, out nextStatementInfo);
 
 							if (nextStatementInfo != null)
 							{
@@ -1435,7 +1447,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 						break;
 					}
 
-					TranslateStatement(element, ref statement, iterator, body, routine, compilation, module, out nextStatementInfo);
+					TranslateStatement(element, ref statement, iterator, scopeState.EnterDo(), body, routine, compilation, module, out nextStatementInfo);
 
 					iterator.ProcessLabels(module.DataParser, body);
 				}
@@ -1488,7 +1500,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 			}
 			case CodeModel.Statements.ElseStatement: // these are normally subsumed by IfStatement parsing
 			case CodeModel.Statements.ElseIfStatement:
-				throw new RuntimeException(statement, "ELSE without IF");
+				throw CompilerException.ElseWithoutIf(statement);
 			case CodeModel.Statements.EmptyStatement:
 				break;
 			case CodeModel.Statements.EndScopeStatement endScopeStatement:
@@ -1529,6 +1541,8 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 				break;
 			}
+			case CodeModel.Statements.EndIfStatement:
+				throw CompilerException.EndIfWithoutBlockIf(statement);
 			case CodeModel.Statements.EraseStatement eraseStatement:
 			{
 				var translatedEraseStatement = new EraseStatement(eraseStatement);
@@ -1612,12 +1626,26 @@ public class Compiler(IdentifierRepository identifierRepository)
 			}
 			case CodeModel.Statements.ExitScopeStatement exitScopeStatement:
 			{
-				// TODO: validation
-				// => EXIT DEF only inside DEF FN
-				// => EXIT SUB only if the current routine is a SUB
-				// => EXIT FUNCTION only if the current routine is a FUNCTION
-				// => EXIT DO only if we are locally inside a DO loop
-				// => EXIT FOR only if we are locally inside a FOR loop
+				switch (exitScopeStatement.ScopeType)
+				{
+					case CodeModel.Statements.ScopeType.Def:
+					case CodeModel.Statements.ScopeType.Sub:
+					case CodeModel.Statements.ScopeType.Function:
+						// When this statement renders, the user will see the scope type of
+						// the enclosing scope. We can't throw an error if it doesn't match
+						// because the user will see an error that doesn't make sense. So,
+						// just make it work. :-)
+						exitScopeStatement.ScopeType = scopeState.RootScope;
+						break;
+					case CodeModel.Statements.ScopeType.Do:
+						if (!scopeState.InDoLoop)
+							throw CompilerException.ExitDoNotWithinDoLoop(statement);
+						break;
+					case CodeModel.Statements.ScopeType.For:
+						if (!scopeState.InForNext)
+							throw CompilerException.ExitForNotWithinForNext(statement);
+						break;
+				}
 
 				var translatedExitScopeStatement = new ExitScopeStatement(exitScopeStatement);
 
@@ -1735,7 +1763,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 						break;
 					}
 
-					TranslateStatement(element, ref statement, iterator, body, routine, compilation, module, out nextStatementInfo);
+					TranslateStatement(element, ref statement, iterator, scopeState.EnterFor(), body, routine, compilation, module, out nextStatementInfo);
 
 					iterator.ProcessLabels(module.DataParser, body);
 
@@ -1979,7 +2007,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 									int idx = 0;
 
 									while (idx < elseIfStatement.ThenBody.Count)
-										TranslateStatement(element, elseIfStatement.ThenBody, ref idx, subsequence, routine, compilation, module);
+										TranslateStatement(element, elseIfStatement.ThenBody, ref idx, scopeState, subsequence, routine, compilation, module);
 								}
 
 								if (!iterator.Advance())
@@ -1992,7 +2020,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 							default:
 							{
-								TranslateStatement(element, ref statement, iterator, subsequence, routine, compilation, module, out nextStatementInfo);
+								TranslateStatement(element, ref statement, iterator, scopeState, subsequence, routine, compilation, module, out nextStatementInfo);
 
 								if (nextStatementInfo != null)
 								{
@@ -2017,7 +2045,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 					int idx = 0;
 
 					while (idx < ifStatement.ThenBody.Count)
-						TranslateStatement(element, ifStatement.ThenBody, ref idx, thenBody, routine, compilation, module);
+						TranslateStatement(element, ifStatement.ThenBody, ref idx, scopeState, thenBody, routine, compilation, module);
 
 					translatedIfStatement.ThenBody = thenBody;
 					thenBody.OwnerExecutable = translatedIfStatement;
@@ -2029,7 +2057,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 						idx = 0;
 
 						while (idx < ifStatement.ElseBody.Count)
-							TranslateStatement(element, ifStatement.ElseBody, ref idx, elseBody, routine, compilation, module);
+							TranslateStatement(element, ifStatement.ElseBody, ref idx, scopeState, elseBody, routine, compilation, module);
 
 						translatedIfStatement.ElseBody = elseBody;
 						elseBody.OwnerExecutable = translatedIfStatement;
@@ -2891,7 +2919,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 						if (block == null)
 							throw CompilerException.StatementsAndLabelsIllegalBetweenSelectCaseAndCase(statement);
 
-						TranslateStatement(element, ref statement, iterator, block, routine, compilation, module, out nextStatementInfo);
+						TranslateStatement(element, ref statement, iterator, scopeState, block, routine, compilation, module, out nextStatementInfo);
 
 						if (nextStatementInfo != null)
 						{
@@ -3187,7 +3215,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 						break;
 					}
 
-					TranslateStatement(element, ref statement, iterator, body, routine, compilation, module, out nextStatementInfo);
+					TranslateStatement(element, ref statement, iterator, scopeState, body, routine, compilation, module, out nextStatementInfo);
 
 					iterator.ProcessLabels(module.DataParser, body);
 				}
@@ -3284,7 +3312,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 				else
 					throw RuntimeException.TypeMismatch(firstArgumentExpression.Source);
 
-				TranslateStatement(element, ref statement, iterator, container, routine, compilation, module, out nextStatementInfo);
+				TranslateStatement(element, ref statement, iterator, scopeState, container, routine, compilation, module, out nextStatementInfo);
 
 				// The recursive TranslateStatement has already advanced the iterator.
 				return;
@@ -3319,7 +3347,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 		return true;
 	}
 
-	void TranslateCallArguments(CodeModel.Expressions.ExpressionList? arguments, IHasTypedParameters translated, bool matchFacades, Sequence? container, Mapper mapper, Compilation compilation, Module module)
+	void TranslateCallArguments(CodeModel.Expressions.ExpressionList? arguments, IReadOnlyList<ParameterDefinition>? parameterDefinitions, IHasTypedParameters translated, bool matchFacades, Sequence? container, Mapper mapper, Compilation compilation, Module module)
 	{
 		if (arguments != null)
 		{
@@ -3559,7 +3587,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 						if (nativeProcedure.ParameterTypes == null)
 						{
-							TranslateCallArguments(callOrIndexExpression.Arguments, translatedCallExpression, matchFacades: false, container, mapper, compilation, module);
+							TranslateCallArguments(callOrIndexExpression.Arguments, parameterDefinitions: null, translatedCallExpression, matchFacades: false, container, mapper, compilation, module);
 
 							translatedCallExpression.LocalThunk = nativeProcedure.BuildThunk(
 								translatedCallExpression.Arguments.Select(arg => arg.Type).ToList(),
@@ -3575,7 +3603,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 							translatedCallExpression.Target = nativeProcedure;
 
-							TranslateCallArguments(callOrIndexExpression.Arguments, translatedCallExpression, matchFacades: false, container, mapper, compilation, module);
+							TranslateCallArguments(callOrIndexExpression.Arguments, parameterDefinitions: null, translatedCallExpression, matchFacades: false, container, mapper, compilation, module);
 						}
 
 						translatedCallExpression.TargetToken = callOrIndexExpression.Subject.Token;
