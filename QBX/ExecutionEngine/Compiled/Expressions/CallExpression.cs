@@ -52,13 +52,13 @@ public class CallExpression : Evaluable, IHasTypedParameters, IUnresolvedCall
 		if (Target == null)
 			throw new Exception("Internal error: EnsureParameterTypes called with no Target");
 
-		if (Arguments.Count != Target.ParameterTypes.Count)
+		if (Arguments.Count != Target.ParameterDefinitions.Count)
 			throw new Exception("Internal error: CallExpression configured with wrong number of arguments for the target routine");
 
 		for (int i = 0; i < Arguments.Count; i++)
 		{
 			var argument = Arguments[i];
-			var parameterType = Target.ParameterTypes[i];
+			var parameterType = Target.ParameterDefinitions[i].Type;
 
 			if ((argument is IdentifierExpression)
 			 || (argument is FieldAccessExpression)

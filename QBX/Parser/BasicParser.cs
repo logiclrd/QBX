@@ -542,7 +542,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 				{
 					var argumentTokens = tokenHandler.ExpectParenthesizedTokens();
 
-					arguments = ParseExpressionList(argumentTokens, tokenHandler.PreviousToken);
+					arguments = ParseExpressionList(argumentTokens, tokenHandler.PreviousToken, allowRepresentationSpecifiers: true);
 				}
 
 				tokenHandler.ExpectEndOfTokens();
@@ -994,7 +994,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 					{
 						var parameterListTokens = tokenHandler.ExpectParenthesizedTokens();
 
-						defFn.Parameters = ParseParameterList(parameterListTokens, allowByVal: false, allowArray: false);
+						defFn.Parameters = ParseParameterList(parameterListTokens, AllowRepresentationSpecifiers.None, allowArray: false);
 					}
 
 					if (tokenHandler.HasMoreTokens && (tokenHandler.NextToken.Type == TokenType.Equals))
@@ -3666,7 +3666,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 				{
 					var parameterListTokens = tokenHandler.ExpectParenthesizedTokens();
 
-					statement.Parameters = ParseParameterList(parameterListTokens, allowByVal: true);
+					statement.Parameters = ParseParameterList(parameterListTokens, AllowRepresentationSpecifiers.ByVal);
 				}
 
 				if (tokenHandler.HasMoreTokens)
@@ -4253,7 +4253,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 				ExpressionList? arguments = null;
 
 				if (tokenHandler.HasMoreTokens)
-					arguments = ParseExpressionList(tokenHandler.RemainingTokens, tokenHandler.EndToken);
+					arguments = ParseExpressionList(tokenHandler.RemainingTokens, tokenHandler.EndToken, allowRepresentationSpecifiers: true);
 
 				var call = new CallStatement(CallStatementType.Implicit, targetName, arguments);
 
@@ -4484,20 +4484,30 @@ public class BasicParser(IdentifierRepository identifierRepository)
 		return subscript;
 	}
 
-	ParameterList ParseParameterList(ListRange<Token> tokens, bool allowByVal = true, bool allowArray = true)
+	enum AllowRepresentationSpecifiers
+	{
+		None,
+		ByVal,
+		ByValAndSeg,
+	}
+
+	ParameterList ParseParameterList(
+		ListRange<Token> tokens,
+		AllowRepresentationSpecifiers allowRepresentationSpecifiers = AllowRepresentationSpecifiers.ByValAndSeg,
+		bool allowArray = true)
 	{
 		var list = new ParameterList();
 
 		if (tokens.Any())
 		{
 			foreach (var range in SplitCommaDelimitedList(tokens))
-				list.Parameters.Add(ParseParameterDefinition(range, allowByVal, allowArray));
+				list.Parameters.Add(ParseParameterDefinition(range, allowRepresentationSpecifiers, allowArray));
 		}
 
 		return list;
 	}
 
-	ParameterDefinition ParseParameterDefinition(ListRange<Token> tokens, bool allowByVal, bool allowArray)
+	ParameterDefinition ParseParameterDefinition(ListRange<Token> tokens, AllowRepresentationSpecifiers allowRepresentationSpecifiers, bool allowArray)
 	{
 		var param = new ParameterDefinition();
 
@@ -4505,13 +4515,29 @@ public class BasicParser(IdentifierRepository identifierRepository)
 		{
 			int tokenIndex = 0;
 
-			if (tokens[tokenIndex].Type == TokenType.BYVAL)
+			switch (allowRepresentationSpecifiers)
 			{
-				if (!allowByVal)
-					throw new SyntaxErrorException(tokens[tokenIndex], "BYVAL is not permitted in this context");
+				case AllowRepresentationSpecifiers.ByValAndSeg:
+				{
+					if (tokens[tokenIndex].Type == TokenType.SEG)
+					{
+						param.Representation = ParameterRepresentation.SEG;
+						tokenIndex++;
+						break;
+					}
 
-				param.IsByVal = true;
-				tokenIndex++;
+					goto case AllowRepresentationSpecifiers.ByVal;
+				}
+				case AllowRepresentationSpecifiers.ByVal:
+				{
+					if (tokens[tokenIndex].Type == TokenType.BYVAL)
+					{
+						param.Representation = ParameterRepresentation.BYVAL;
+						tokenIndex++;
+					}
+
+					break;
+				}
 			}
 
 			var nameToken = tokens[tokenIndex];
@@ -4651,7 +4677,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 		return caseExpression;
 	}
 
-	ExpressionList ParseExpressionList(ListRange<Token> tokens, Token endToken, int minCount = 0, int maxCount = int.MaxValue, int fileNumberParameterIndex = -1)
+	ExpressionList ParseExpressionList(ListRange<Token> tokens, Token endToken, int minCount = 0, int maxCount = int.MaxValue, int fileNumberParameterIndex = -1, bool allowRepresentationSpecifiers = false)
 	{
 		var list = new ExpressionList();
 
@@ -4675,28 +4701,49 @@ public class BasicParser(IdentifierRepository identifierRepository)
 					}
 				}
 
-				var expression = ParseExpression(range, endTokenRef.Token ?? endToken);
+				ParameterRepresentation representation = ParameterRepresentation.Standard;
+
+				if (allowRepresentationSpecifiers && (range.Count > 0))
+				{
+					if (range[0].Type == TokenType.BYVAL)
+					{
+						representation = ParameterRepresentation.BYVAL;
+						range = range.Slice(1);
+					}
+					else if (range[0].Type == TokenType.SEG)
+					{
+						representation = ParameterRepresentation.SEG;
+						range = range.Slice(1);
+					}
+				}
+
+				bool allowArrayArguments = (representation == ParameterRepresentation.Standard);
+
+				var expression = ParseExpression(range, endTokenRef.Token ?? endToken, allowArrayArguments);
 
 				expression.IsFileNumberArgument = isFileNumberArgument;
 
 				list.Expressions.Add(expression);
 
+				if (representation != ParameterRepresentation.Standard)
+					list.SetRepresentation(index, representation);
+
 				if ((list.Expressions.Count == maxCount)
 				 && (endTokenRef.Token != null))
 					throw new SyntaxErrorException(endTokenRef.Token, "Expected: )");
 			}
-
-			if (list.Expressions.Count < minCount)
-				throw new SyntaxErrorException(endToken, "Expected: ,");
 		}
+
+		if (list.Expressions.Count < minCount)
+			throw new SyntaxErrorException(endToken, "Expected: ,");
 
 		return list;
 	}
 
 	Expression ParseExpressionForStatement(Statement statement, ListRange<Token> tokens, Token endToken)
-		=> ParseExpression(tokens, endToken).ClaimTokens(statement);
+		=> ParseExpression(tokens, endToken, allowArrayArguments: false).ClaimTokens(statement);
 
-	internal Expression ParseExpression(ListRange<Token> tokens, Token endToken)
+	internal Expression ParseExpression(ListRange<Token> tokens, Token endToken, bool allowArrayArguments = true)
 	{
 		if (tokens.Count == 0)
 			throw new SyntaxErrorException(endToken, "Expected: expression");
@@ -4745,10 +4792,19 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 				if ((subjectExpression != null) && subjectExpression.IsValidIndexSubject())
 				{
+					int minCount = allowArrayArguments ? 0 : 1;
+
+					var expressionList = ParseExpressionList(
+						tokens.Slice(openParenthesisIndex + 1,
+						tokens.Count - openParenthesisIndex - 2),
+						tokens.Last(),
+						minCount,
+						allowRepresentationSpecifiers: true);
+
 					return new CallOrIndexExpression(
 						tokens[openParenthesisIndex],
 						subjectExpression,
-						ParseExpressionList(tokens.Slice(openParenthesisIndex + 1, tokens.Count - openParenthesisIndex - 2), tokens.Last()));
+						expressionList);
 				}
 			}
 		}

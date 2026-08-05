@@ -39,13 +39,13 @@ public class CallStatement(CodeModel.Statements.CallStatement source) : Executab
 		if (Target == null)
 			return;
 
-		if (Arguments.Count != Target.ParameterTypes.Count)
+		if (Arguments.Count != Target.ParameterDefinitions.Count)
 			throw new Exception("Internal error: CallStatement configured with wrong number of arguments for the target routine");
 
 		for (int i = 0; i < Arguments.Count; i++)
 		{
 			var argument = Arguments[i];
-			var parameterType = Target.ParameterTypes[i];
+			var parameterType = Target.ParameterDefinitions[i].Type;
 
 			if ((argument is IdentifierExpression)
 			 || (argument is FieldAccessExpression)

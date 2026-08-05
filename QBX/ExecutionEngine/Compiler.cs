@@ -190,11 +190,11 @@ public class Compiler(IdentifierRepository identifierRepository)
 				if (module.UnresolvedReferences.TryGetDeclaration(unqualifiedName, out var forwardReference))
 				{
 					routine.ValidateDeclaration(
-						forwardReference.ParameterTypes,
+						forwardReference.ParameterDefinitions,
 						forwardReference.ReturnType,
 						routine.OpeningStatement,
 						routine.OpeningStatement?.NameToken,
-						getBlameParameterType: i => routine.OpeningStatement?.Parameters?.Parameters[i].TypeToken);
+						getBlameParameterName: i => routine.OpeningStatement?.Parameters?.Parameters[i].NameToken);
 				}
 			}
 
@@ -326,7 +326,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 				if ((routine.OpeningStatement != null)
 				 && routine.OpeningStatement.IsStatic)
 				{
-					int parameterCount = routine.ParameterTypes.Count;
+					int parameterCount = routine.ParameterDefinitions.Count;
 
 					if (routine.ReturnType is not null)
 						parameterCount++;
@@ -767,6 +767,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 					bool matchFacades = false;
 					bool implicitForwardReference = false;
+					IReadOnlyList<ParameterDefinition>? parameterDefinitions = null;
 
 					if (module.TryGetSubFacade(callStatement.TargetName, out var subFacade))
 					{
@@ -774,19 +775,23 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 						int callArgumentCount = callStatement.Arguments?.Count ?? 0;
 
-						if (callArgumentCount != subFacade.ParameterTypes.Count)
+						if (callArgumentCount != subFacade.ParameterDefinitions.Count)
 							throw CompilerException.ArgumentCountMismatch(callStatement.FirstToken);
 
 						translatedCallStatement.Target = subFacade.Routine;
+
+						parameterDefinitions = subFacade.ParameterDefinitions;
 					}
 					else if (compilation.TryGetSub(callStatement.TargetName, out var sub))
 					{
 						int callArgumentCount = callStatement.Arguments?.Count ?? 0;
 
-						if (callArgumentCount != sub.ParameterTypes.Count)
+						if (callArgumentCount != sub.ParameterDefinitions.Count)
 							throw CompilerException.ArgumentCountMismatch(callStatement.FirstToken);
 
 						translatedCallStatement.Target = sub;
+
+						parameterDefinitions = sub.ParameterDefinitions;
 					}
 					else if (compilation.TryGetFunction(callStatement.TargetName, out var function))
 						throw CompilerException.DuplicateDefinition(callStatement);
@@ -801,6 +806,29 @@ public class Compiler(IdentifierRepository identifierRepository)
 					else
 						implicitForwardReference = true;
 
+					if (parameterDefinitions != null)
+					{
+						var callArguments = callStatement.Arguments ?? throw new Exception("Internal error");
+
+						for (int i = 0; i < callArguments.Count; i++)
+						{
+							var suppliedRepresentation = callArguments.GetRepresentation(i).ToExecutionEngineType();
+							var receivedRepresentation = parameterDefinitions[i].Representation;
+
+							// CALL:      SUB takes: BYREF    BYVAL   SEG
+							// BYREF                 Yes      Yes     No
+							// BYVAL                 Yes      Yes     Yes
+							// SEG                   No       No      Yes
+
+							bool suppliedFarPointer = suppliedRepresentation == ParameterRepresentation.FarPointer;
+							bool receivedFarPointer = receivedRepresentation == ParameterRepresentation.FarPointer;
+
+							if ((suppliedRepresentation != ParameterRepresentation.Value)
+							 && (suppliedFarPointer != receivedFarPointer))
+								throw CompilerException.ParameterTypeMismatch(callArguments[0].Token);
+						}
+					}
+
 					TranslateCallArguments(callStatement.Arguments, parameterDefinitions, translatedCallStatement, matchFacades, container, mapper, compilation, module);
 
 					if (implicitForwardReference)
@@ -808,17 +836,22 @@ public class Compiler(IdentifierRepository identifierRepository)
 						if (translatedCallStatement.Target != null)
 							throw new Exception("Internal error: implicit forward reference flag set but call statement has a target");
 
-						var parameterTypes = new DataType[translatedCallStatement.Arguments.Count];
+						var implicitParameterDefinitions = new ParameterDefinition[translatedCallStatement.Arguments.Count];
 
-						for (int i=0; i < parameterTypes.Length; i++)
-							parameterTypes[i] = translatedCallStatement.Arguments[i].Type;
+						for (int i = 0; i < implicitParameterDefinitions.Length; i++)
+						{
+							implicitParameterDefinitions[i] = new ParameterDefinition(
+								callStatement.Arguments?.GetRepresentation(i).ToExecutionEngineType()
+									?? ParameterRepresentation.Pointer,
+								translatedCallStatement.Arguments[i].Type);
+						}
 
 						var forwardReference = module.UnresolvedReferences.DeclareSymbol(
 							callStatement.TargetName,
 							mapper,
 							null,
 							RoutineType.Sub,
-							parameterTypes,
+							implicitParameterDefinitions,
 							returnType: null);
 
 						translatedCallStatement.UnresolvedTargetName = callStatement.TargetName;
@@ -1088,8 +1121,10 @@ public class Compiler(IdentifierRepository identifierRepository)
 				}
 				else
 				{
-					var parameterTypes = declareStatement.Parameters?.Parameters
-						.Select(parameterDefinition => mapper.ResolveType(parameterDefinition))
+					var parameterDefinitions = declareStatement.Parameters?.Parameters
+						.Select(parameterDefinition => new ParameterDefinition(
+							parameterDefinition,
+							mapper.ResolveType(parameterDefinition)))
 						.ToList();
 
 					DataType? returnType = null;
@@ -1111,6 +1146,8 @@ public class Compiler(IdentifierRepository identifierRepository)
 						if (nativeProcedure.ParameterTypes != null)
 							throw CompilerException.DuplicateDefinition(declareStatement);
 
+						var parameterTypes = parameterDefinitions?.Select(def => def.Type);
+
 						nativeProcedure.ParameterTypes = parameterTypes?.ToArray() ?? System.Array.Empty<DataType>();
 						nativeProcedure.ReturnType = returnType;
 
@@ -1119,18 +1156,18 @@ public class Compiler(IdentifierRepository identifierRepository)
 					else if (compilation.TryGetRoutine(unqualifiedName, out var declaredRoutine))
 					{
 						declaredRoutine.ValidateDeclaration(
-							parameterTypes,
+							parameterDefinitions,
 							returnType,
 							blameStatement: declareStatement,
 							blameName: declareStatement.NameToken,
-							getBlameParameterType:
-								i => declareStatement.Parameters?.Parameters[i].TypeToken
+							getBlameParameterName:
+								i => declareStatement.Parameters?.Parameters[i].NameToken
 								  ?? declareStatement.Parameters?.Parameters[i].NameToken);
 
 						var facade = new RoutineFacade(declaredRoutine);
 
-						if (parameterTypes != null)
-							facade.ParameterTypes.AddRange(parameterTypes);
+						if (parameterDefinitions != null)
+							facade.ParameterDefinitions.AddRange(parameterDefinitions);
 
 						switch (declareStatement.DeclarationType.Type)
 						{
@@ -1151,7 +1188,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 								_ => throw new Exception("Unrecognized DeclarationType " + declareStatement.DeclarationType)
 							},
-							parameterTypes?.ToArray() ?? System.Array.Empty<DataType>(),
+							parameterDefinitions?.ToArray() ?? System.Array.Empty<ParameterDefinition>(),
 							returnType);
 					}
 				}
@@ -3353,14 +3390,23 @@ public class Compiler(IdentifierRepository identifierRepository)
 		{
 			var translatedArguments = translated.Arguments;
 
-			foreach (var argument in arguments.Expressions)
+			for (int i=0; i < arguments.Count; i++)
 			{
+				var argument = arguments[i];
+
+				var parameterDefinition = (parameterDefinitions != null)
+					? parameterDefinitions[i]
+					: null;
+
 				var translatedExpression = TranslateExpression(argument, container, mapper, compilation, module);
 
 				if (translatedExpression == null)
 					throw new Exception("Call argument translated to null");
 
-				if (IsUnintentionalAlias(argument, translatedExpression))
+				if ((arguments.GetRepresentation(i) == CodeModel.ParameterRepresentation.BYVAL)
+				 || (parameterDefinition?.Representation == ParameterRepresentation.Value))
+					translatedExpression = new ByValueExpression(translatedExpression);
+				else if (IsUnintentionalAlias(argument, translatedExpression))
 					translatedExpression = new DetachExpression(translatedExpression);
 
 				translatedArguments.Add(translatedExpression);
@@ -3457,7 +3503,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 					{
 						var returnType = function.ReturnType ?? throw new Exception("Internal error: function with no return type");
 
-						if (function.ParameterTypes.Count > 0)
+						if (function.ParameterDefinitions.Count > 0)
 							throw CompilerException.ArgumentCountMismatch(expression.Token);
 
 						var call = new CallExpression();
@@ -3624,11 +3670,13 @@ public class Compiler(IdentifierRepository identifierRepository)
 						Routine? function;
 						bool matchFacades = false;
 						bool implicitForwardReference = false;
+						IReadOnlyList<ParameterDefinition>? parameterDefinitions = null;
 
 						if (module.TryGetFunctionFacade(unqualifiedIdentifier, out var functionFacade))
 						{
 							matchFacades = true;
 							function = functionFacade.Routine;
+							parameterDefinitions = functionFacade.ParameterDefinitions;
 						}
 						else if (!compilation.Functions.TryGetValue(unqualifiedIdentifier, out function))
 						{
@@ -3642,8 +3690,10 @@ public class Compiler(IdentifierRepository identifierRepository)
 						{
 							implicitForwardReference = true;
 
-							if (callOrIndexExpression.Arguments.Count != function.ParameterTypes.Count)
+							if (callOrIndexExpression.Arguments.Count != function.ParameterDefinitions.Count)
 								throw CompilerException.ArgumentCountMismatch(callOrIndexExpression.Subject.Token);
+
+							parameterDefinitions = function.ParameterDefinitions;
 						}
 
 						var translatedCallExpression = new CallExpression();
@@ -3654,17 +3704,21 @@ public class Compiler(IdentifierRepository identifierRepository)
 						{
 							if (implicitForwardReference)
 							{
-								var parameterTypes = new DataType[translatedCallExpression.Arguments.Count];
+								var implicitParameterDefinitions = new ParameterDefinition[translatedCallExpression.Arguments.Count];
 
-								for (int i=0; i < parameterTypes.Length; i++)
-									parameterTypes[i] = translatedCallExpression.Arguments[i].Type;
+								for (int i = 0; i < implicitParameterDefinitions.Length; i++)
+								{
+									implicitParameterDefinitions[i] = new ParameterDefinition(
+										callOrIndexExpression.Arguments.GetRepresentation(i).ToExecutionEngineType(),
+										translatedCallExpression.Arguments[i].Type);
+								}
 
 								forwardReference = module.UnresolvedReferences.DeclareSymbol(
 									unqualifiedIdentifier,
 									mapper,
 									null,
 									RoutineType.Function,
-									parameterTypes,
+									implicitParameterDefinitions,
 									returnType: DataType.ForPrimitiveDataType(mapper.GetTypeForIdentifier(identifier)));
 							}
 
@@ -3675,7 +3729,38 @@ public class Compiler(IdentifierRepository identifierRepository)
 							forwardReference!.UnresolvedCalls.Add(translatedCallExpression);
 						}
 
-						TranslateCallArguments(callOrIndexExpression.Arguments, translatedCallExpression, matchFacades, container, mapper, compilation, module);
+						if (parameterDefinitions != null)
+						{
+							var callArguments = callOrIndexExpression.Arguments ?? throw new Exception("Internal error");
+
+							for (int i = 0; i < callArguments.Count; i++)
+							{
+								var suppliedRepresentation = callArguments.GetRepresentation(i).ToExecutionEngineType();
+								var receivedRepresentation = parameterDefinitions[i].Representation;
+
+								// CALL:      FUNCTION takes: BYREF    BYVAL   SEG
+								// BYREF                      Yes      Yes     No
+								// BYVAL                      Yes      Yes     Yes
+								// SEG                        No       No      Yes
+
+								bool suppliedPointer = suppliedRepresentation == ParameterRepresentation.Pointer;
+								bool suppliedFarPointer = suppliedRepresentation == ParameterRepresentation.FarPointer;
+								bool receivedFarPointer = receivedRepresentation == ParameterRepresentation.FarPointer;
+
+								bool validCombination;
+
+								switch (suppliedRepresentation)
+								{
+									case ParameterRepresentation.Value: validCombination = true; break;
+									default: validCombination = (suppliedFarPointer == receivedFarPointer); break;
+								}
+
+								if (!validCombination)
+									throw CompilerException.ParameterTypeMismatch(callArguments[0].Token);
+							}
+						}
+
+						TranslateCallArguments(callOrIndexExpression.Arguments, parameterDefinitions, translatedCallExpression, matchFacades, container, mapper, compilation, module);
 
 						return translatedCallExpression;
 					}
@@ -3735,8 +3820,13 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 				var translatedArrayElementExpression = new ArrayElementExpression(subject, subject.Type.MakeElementType());
 
-				foreach (var subscript in callOrIndexExpression.Arguments.Expressions)
+				for (int i=0; i < callOrIndexExpression.Arguments.Count; i++)
 				{
+					if (callOrIndexExpression.Arguments.GetRepresentation(i) != CodeModel.ParameterRepresentation.Standard)
+						throw RuntimeException.TypeMismatch(callOrIndexExpression.Subject);
+
+					var subscript = callOrIndexExpression.Arguments[i];
+
 					var translatedArgument = TranslateExpression(subscript, container, mapper, compilation, module);
 
 					if (translatedArgument == null)

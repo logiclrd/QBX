@@ -7,7 +7,7 @@ namespace QBX.CodeModel;
 
 public class ParameterDefinition : IRenderableCode
 {
-	public bool IsByVal { get; set; }
+	public ParameterRepresentation Representation { get; set; }
 	public Identifier Name { get; set; } = Identifier.Empty;
 	public bool IsArray { get; set; }
 	public DataType Type { get; set; } = DataType.Unspecified;
@@ -19,8 +19,11 @@ public class ParameterDefinition : IRenderableCode
 
 	public void Render(TextWriter writer)
 	{
-		if (IsByVal)
-			writer.Write("BYVAL ");
+		switch (Representation)
+		{
+			case ParameterRepresentation.BYVAL: writer.Write("BYVAL "); break;
+			case ParameterRepresentation.SEG: writer.Write("SEG "); break;
+		}
 
 		writer.Write(Name);
 

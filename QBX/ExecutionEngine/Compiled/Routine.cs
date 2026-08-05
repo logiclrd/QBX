@@ -17,7 +17,7 @@ public class Routine : Sequence
 
 	public Identifier Name;
 	public SubroutineOpeningStatement? OpeningStatement;
-	public List<DataType> ParameterTypes = new List<DataType>();
+	public List<ParameterDefinition> ParameterDefinitions = new List<ParameterDefinition>();
 	public List<DataType> VariableTypes = new List<DataType>();
 	public List<CommonVariableLinkGroup> CommonVariableLinkGroups = new List<CommonVariableLinkGroup>();
 	public List<VariableLink> LinkedVariables = new List<VariableLink>();
@@ -200,7 +200,7 @@ public class Routine : Sequence
 
 				var paramType = mapper.ResolveType(param);
 
-				ParameterTypes.Add(paramType);
+				ParameterDefinitions.Add(new ParameterDefinition(param, paramType));
 
 				Identifier name = param.Name;
 				Identifier nameWithoutTypeCharacter = name;
@@ -249,19 +249,24 @@ public class Routine : Sequence
 		return StaticArrays.Any(dimStatement => dimStatement.VariableIndex == variableIndex);
 	}
 
-	public void ValidateDeclaration(IReadOnlyList<DataType>? declaredParameterTypes, DataType? declaredReturnType, Statement? blameStatement, Token? blameName, Func<int, Token?> getBlameParameterType)
+	public void ValidateDeclaration(
+		IReadOnlyList<ParameterDefinition>? declaredParameterTypes,
+		DataType? declaredReturnType,
+		Statement? blameStatement,
+		Token? blameName,
+		Func<int, Token?> getBlameParameterName)
 	{
 		int parameterCount = declaredParameterTypes?.Count ?? 0;
 
-		if (parameterCount != ParameterTypes.Count)
+		if (parameterCount != ParameterDefinitions.Count)
 			throw CompilerException.ArgumentCountMismatch(blameStatement);
 
 		if (declaredParameterTypes != null)
 		{
 			for (int i = 0; i < parameterCount; i++)
 			{
-				if (!declaredParameterTypes[i].Equals(ParameterTypes[i]))
-					throw CompilerException.TypeMismatch(getBlameParameterType(i));
+				if (!declaredParameterTypes[i].Equals(ParameterDefinitions[i]))
+					throw CompilerException.TypeMismatch(getBlameParameterName(i));
 			}
 		}
 

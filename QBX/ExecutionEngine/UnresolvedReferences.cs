@@ -15,7 +15,7 @@ public class UnresolvedReferences(Compilation compilation, Module module)
 	public bool TryGetDeclaration(Identifier identifier, [NotNullWhen(true)] out ForwardReferenceList? forwardReference)
 		=> ForwardReferences.TryGetValue(identifier, out forwardReference);
 
-	public ForwardReferenceList DeclareSymbol(Identifier identifier, Mapper mapper, CodeModel.Statements.Statement? statement, RoutineType routineType, DataType[] parameterTypes, DataType? returnType)
+	public ForwardReferenceList DeclareSymbol(Identifier identifier, Mapper mapper, CodeModel.Statements.Statement? statement, RoutineType routineType, ParameterDefinition[] parameterDefinitions, DataType? returnType)
 	{
 		if (ForwardReferences.ContainsKey(identifier)
 		 || module.IsRegistered(identifier))
@@ -24,7 +24,7 @@ public class UnresolvedReferences(Compilation compilation, Module module)
 		var forwardReference = new ForwardReferenceList(
 			identifier,
 			routineType,
-			parameterTypes,
+			parameterDefinitions,
 			returnType);
 
 		ForwardReferences[identifier] = forwardReference;
