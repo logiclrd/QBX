@@ -660,16 +660,6 @@ public partial class Program : HostedProgram, IOvertypeFlag
 
 	public bool TryShowHelpTopicForTokenUnderCursor()
 	{
-		try
-		{
-			FocusedViewport.CommitCurrentLine();
-		}
-		catch (Exception exception)
-		{
-			PresentError(exception, ErrorSource.DevelopmentEnvironment);
-			return false;
-		}
-
 		FocusedViewport.EditCurrentLine();
 
 		var buffer = FocusedViewport.CurrentLineBuffer;
