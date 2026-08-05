@@ -28,7 +28,7 @@
 
 180 AP = 1
 190 VP = 0
-200 SCREEN 7,,AP,VP
+200 SCREEN 7, , AP, VP
 
 210 ' Draw the first frame
 220 GOTO 270
@@ -50,7 +50,7 @@
 340 ' Erase the active (hidden) page.
 350 ' LINE is used instead of CLS because GW-BASIC
 360 ' CLS does not reliably respect the page selection.
-370 LINE (0,0)-(319,199),0,BF
+370 LINE (0, 0)-(319, 199), 0, BF
 
 380 ' Transform the original geometry.
 390 ' GX/GY/GZ are never modified.
@@ -71,27 +71,27 @@
 
 530 ' Draw cube
 540 FOR I = 1 TO 3
-550   LINE (SX(I),SY(I))-(SX(I+1),SY(I+1)),10
+550   LINE (SX(I), SY(I))-(SX(I + 1), SY(I + 1)), 10
 560 NEXT I
-570 LINE (SX(4),SY(4))-(SX(1),SY(1)),10
+570 LINE (SX(4), SY(4))-(SX(1), SY(1)), 10
 
 580 FOR I = 5 TO 7
-590   LINE (SX(I),SY(I))-(SX(I+1),SY(I+1)),10
+590   LINE (SX(I), SY(I))-(SX(I + 1), SY(I + 1)), 10
 600 NEXT I
-610 LINE (SX(8),SY(8))-(SX(5),SY(5)),10
+610 LINE (SX(8), SY(8))-(SX(5), SY(5)), 10
 
 620 FOR I = 1 TO 4
-630   LINE (SX(I),SY(I))-(SX(I+4),SY(I+4)),10
+630   LINE (SX(I), SY(I))-(SX(I + 4), SY(I + 4)), 10
 640 NEXT I
 
 650 ' Draw pyramid
 660 FOR I = 10 TO 12
-670   LINE (SX(I),SY(I))-(SX(I+1),SY(I+1)),10
+670   LINE (SX(I), SY(I))-(SX(I + 1), SY(I + 1)), 10
 680 NEXT I
-690 LINE (SX(13),SY(13))-(SX(10),SY(10)),10
+690 LINE (SX(13), SY(13))-(SX(10), SY(10)), 10
 
 700 FOR I = 10 TO 13
-710   LINE (SX(9),SY(9))-(SX(I),SY(I)),10
+710   LINE (SX(9), SY(9))-(SX(I), SY(I)), 10
 720 NEXT I
 
 730 ' Exit on any keypress
@@ -101,6 +101,6 @@
 760 T = AP
 770 AP = VP
 780 VP = T
-790 SCREEN 7,,AP,VP
+790 SCREEN 7, , AP, VP
 
 800 GOTO 270
