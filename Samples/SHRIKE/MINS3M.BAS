@@ -1,11 +1,5 @@
 '$STATIC
 
-DECLARE SUB S3MLoadPattern (filenum%, ignorechannel%(), samples() AS SampleType, mastervolume!, notes() AS NoteType, rownotes%(), numnotes%, numrows%, order%, jumptoorder%, jumptorow%)
-DECLARE SUB S3MLoadSample (filenum%, sample AS SampleType, signedsampledata%, nextfreedramaddress&, mastervolume!, visualize%)
-DECLARE SUB S3MMeasurePattern (filenum%, ignorechannel%(), numnotes%, numrows%, order%, jumptoorder%, jumptorow%)
-DECLARE SUB S3MPlayNote (samples() AS SampleType, note AS NoteType, channellastsample%(), globalvolume!)
-DECLARE SUB S3MPlayNextRow (samples() AS SampleType, notes() AS NoteType, rownotes%(), nextrow%, nextnote%, channellastsample%(), globalvolume!)
-
 TYPE SampleType
   StartAddress AS LONG
   EndAddress AS LONG
@@ -28,6 +22,12 @@ TYPE NoteType
   NoteFrequency AS LONG ' or note number for jump
   Volume AS SINGLE
 END TYPE
+
+DECLARE SUB S3MLoadPattern (filenum%, ignorechannel%(), samples() AS SampleType, mastervolume!, notes() AS NoteType, rownotes%(), numnotes%, numrows%, order%, jumptoorder%, jumptorow%)
+DECLARE SUB S3MLoadSample (filenum%, sample AS SampleType, signedsampledata%, nextfreedramaddress&, mastervolume!, visualize%)
+DECLARE SUB S3MMeasurePattern (filenum%, ignorechannel%(), numnotes%, numrows%, order%, jumptoorder%, jumptorow%)
+DECLARE SUB S3MPlayNote (samples() AS SampleType, note AS NoteType, channellastsample%(), globalvolume!)
+DECLARE SUB S3MPlayNextRow (samples() AS SampleType, notes() AS NoteType, rownotes%(), nextrow%, nextnote%, channellastsample%(), globalvolume!)
 
 CONST NoteActionStartNote% = 0 ' plus sample number
 CONST NoteActionStartNoteLast% = 255
