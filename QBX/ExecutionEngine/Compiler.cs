@@ -808,7 +808,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 					else
 						implicitForwardReference = true;
 
-					if (parameterDefinitions != null)
+					if ((parameterDefinitions != null) && parameterDefinitions.Any())
 					{
 						var callArguments = callStatement.Arguments ?? throw new Exception("Internal error");
 
@@ -3747,7 +3747,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 							forwardReference!.UnresolvedCalls.Add(translatedCallExpression);
 						}
 
-						if (parameterDefinitions != null)
+						if ((parameterDefinitions != null) && parameterDefinitions.Any())
 						{
 							var callArguments = callOrIndexExpression.Arguments ?? throw new Exception("Internal error");
 
