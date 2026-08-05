@@ -694,7 +694,7 @@ public class Mapper
 
 	public void UnhideConstant(string name)
 	{
-		_hiddenConstants.Remove(name);
+		_hiddenConstants.Remove(UnqualifyIdentifier(name));
 	}
 
 	public bool TryResolveConstant(Identifier name, [NotNullWhen(true)] out LiteralValue? literalValue)
