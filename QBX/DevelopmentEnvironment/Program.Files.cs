@@ -70,9 +70,9 @@ namespace QBX.DevelopmentEnvironment
 
 		public void Load(TextReader reader, string filePath, bool replaceExistingProgram, Action<int>? lineCountCallback = null)
 		{
-			if (!replaceExistingProgram)
-				Terminate();
-			else
+			Terminate();
+
+			if (replaceExistingProgram)
 			{
 				LoadedFiles.Clear();
 

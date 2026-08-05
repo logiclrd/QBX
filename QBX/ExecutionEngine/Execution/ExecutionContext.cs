@@ -551,6 +551,9 @@ public class ExecutionContext
 						{
 							debugInstruction = _executionState.NextStatement(executable.Source);
 
+							if (_executionState.IsTerminated)
+								throw new TerminatedException();
+
 							if (debugInstruction == DebugInstruction.ExecuteDirect)
 							{
 								_executionState.Unbreak();

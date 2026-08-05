@@ -31,6 +31,10 @@ public class InputStatement(string promptString, CodeModel.Statements.InputState
 
 				break;
 			}
+			catch (BreakExecution)
+			{
+				throw;
+			}
 			catch
 			{
 				context.VisualLibrary.NewLine();
