@@ -1,5 +1,30 @@
 # QBX Releases
 
+## 1.21.0 - 2026-08-05
+
+### Fixed
+
+- Running commands in the Immediate window with a program running no longer prompts to terminate the program because of the Immediate window changes being seen as changes to the program.
+- When activating the Split Viewport function, the Primary Viewport's lines are now split equally between the two viewports.
+- Changing a `SUB` to a `FUNCTION` or vice versa now immediately rewrites `EXIT SUB`/`EXIT FUNCTION` and `END SUB`/`END FUNCTION`.
+- The correct errors are now raised for Parameter Type Mismatch (mismatched near/far pointer types), Invalid Constant, END IF without Block IF, ELSE without IF, EXIT DO not within DO/LOOP, EXIT FOR not within FOR/NEXT, NEXT without FOR, CASE without SELECT and END SELECT without SELECT.
+- The current line being edited is no longer committed when contextual help is opened (F1).
+- `CONST` visibility is now restricted to the statements that come after the `CONST` statement. Referring to a `CONST` before it is declared is actually an implicit declaration of a variable with which the `CONST` will now conflict.
+- Forced termination of the running program now works properly again.
+- If the current program is running, it is now properly terminated when opening another program file.
+- Ctrl-Break interruption of `INPUT` now exits the outer retry loop as well.
+
+### Added
+
+- All aliases for keyboard shortcuts should now be implemented. For instance, Ctrl-Left moves one word to the left, and now Ctrl-A does as well.
+- Chorded keyboard shortcuts are now implemented. For instance, Ctrl-Q, D does the same action as the End key, and Ctrl-P, Ctrl-A inputs a literal character 1 (smiley face in code page 437).
+- The alternative Cut operations Ctrl-Y (Cut Current Line) and Ctrl-Q, Y (Cut to End Of Line) are implemented.
+- Ctrl-T to delete the word starting at the cursor is implemented.
+- Bookmarks are now implemented (Ctrl-K, 0-3 to set, Ctrl-Q, 0-3 to go to).
+- Errors that arise during the "compile" phase now include Help context strings. (This allows Help to be viewed from the Error dialog.)
+- `SUB`s and `FUNCTION`s now support parameters being marked `BYVAL`, and calls can specify `BYVAL` even if the underlying parameter is not `BYVAL`.
+- `DECLARE SUB` and `DECLARE FUNCTION` now support parameters being marked `SEG`, and calls specifying `SEG` explicitly on arguments parse.
+
 ## 1.20.1 - 2026-08-03
 
 ### Fixed
