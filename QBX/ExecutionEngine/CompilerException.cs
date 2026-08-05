@@ -88,6 +88,8 @@ public class CompilerException : Exception
 		=> new CompilerException(context, "Subprogram not defined", "-2035");
 	public static CompilerException ForWithoutNext(CodeModel.Statements.Statement? statement)
 		=> new CompilerException(statement, "FOR without NEXT", "-2026");
+	public static CompilerException NextWithoutFor(CodeModel.Statements.Statement? statement)
+		=> new CompilerException(statement, "NEXT without FOR", "-2001");
 	public static CompilerException NextWithoutFor(Token? context)
 		=> new CompilerException(context, "NEXT without FOR", "-2001");
 	public static CompilerException IllegalNumber(CodeModel.Expressions.Expression? expression)
@@ -126,6 +128,10 @@ public class CompilerException : Exception
 		=> new CompilerException(statement, "Duplicate label", "-2033");
 	public static CompilerException SelectWithoutEndSelect(CodeModel.Statements.Statement? statement)
 		=> new CompilerException(statement, "SELECT without END SELECT", "-176");
+	public static CompilerException CaseWithoutSelect(CodeModel.Statements.Statement? statement)
+		=> new CompilerException(statement, "CASE without SELECT", "-177");
+	public static CompilerException EndSelectWithoutSelect(CodeModel.Statements.Statement? statement)
+		=> new CompilerException(statement, "END SELECT without SELECT", "-178");
 	public static CompilerException StatementsAndLabelsIllegalBetweenSelectCaseAndCase(CodeModel.Statements.Statement? statement)
 		=> new CompilerException(statement, "Statements/labels illegal between SELECT CASE and CASE", "-186");
 	public static CompilerException WhileWithoutWEnd(CodeModel.Statements.Statement? statement)

@@ -863,6 +863,8 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 				break;
 			}
+			case CodeModel.Statements.CaseStatement: // these are normally subsumed by SelectCaseStatement parsing
+				throw CompilerException.CaseWithoutSelect(statement);
 			case CodeModel.Statements.ChainStatement chainStatement:
 			{
 				var translatedChainStatement = new ChainStatement(chainStatement);
@@ -1580,6 +1582,8 @@ public class Compiler(IdentifierRepository identifierRepository)
 			}
 			case CodeModel.Statements.EndIfStatement:
 				throw CompilerException.EndIfWithoutBlockIf(statement);
+			case CodeModel.Statements.EndSelectStatement: // these are normally subsumed by SelectCaseStatement parsing
+				throw CompilerException.EndSelectWithoutSelect(statement);
 			case CodeModel.Statements.EraseStatement eraseStatement:
 			{
 				var translatedEraseStatement = new EraseStatement(eraseStatement);
@@ -2306,6 +2310,8 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 				break;
 			}
+			case CodeModel.Statements.NextStatement nextStatement:
+				throw CompilerException.NextWithoutFor(nextStatement);
 			case CodeModel.Statements.OnErrorStatement onErrorStatement:
 			{
 				Executable translatedOnErrorStatement;
@@ -3226,7 +3232,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 				break;
 			}
-			case CodeModel.Statements.WEndStatement:
+			case CodeModel.Statements.WEndStatement: // these are normally subsumed by WhileStatement parsing
 				throw CompilerException.WEndWithoutWhile(statement);
 			case CodeModel.Statements.WhileStatement whileStatement:
 			{
