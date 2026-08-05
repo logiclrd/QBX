@@ -3709,15 +3709,15 @@ public class BasicParser(IdentifierRepository identifierRepository)
 					return new SystemStatement();
 				else
 				{
-					var end =
+					var system =
 						new SystemStatement()
 						{
 							ExitCodeExpression = ParseExpression(tokenHandler.RemainingTokens, tokenHandler.EndToken)
 						};
 
-					end.ExitCodeExpression.ClaimTokens(end);
+					system.ExitCodeExpression.ClaimTokens(system);
 
-					return end;
+					return system;
 				}
 			}
 
