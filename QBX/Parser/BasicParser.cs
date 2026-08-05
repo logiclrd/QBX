@@ -882,7 +882,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 					 || (binarySyntax.Left is not IdentifierExpression identifierSyntax))
 						throw new SyntaxErrorException(syntax.Token ?? tokenHandler.NextToken, "Expected: name = value");
 
-					definitions.Add(new ConstDefinition(identifierSyntax.Identifier, binarySyntax.Right));
+					definitions.Add(new ConstDefinition(identifierSyntax.Identifier, binarySyntax.Right, identifierSyntax.Token));
 				}
 
 				return new ConstStatement(definitions);

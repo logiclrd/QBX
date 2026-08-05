@@ -284,6 +284,8 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 				mapper.PopIdentifierTypes();
 
+				mapper.HideConstants();
+
 				int lineIndex = 0;
 				int statementIndex = 0;
 
@@ -1085,7 +1087,17 @@ public class Compiler(IdentifierRepository identifierRepository)
 			}
 			case CodeModel.Statements.ConstStatement constStatement:
 			{
-				// Gathered centrally before main translation begins.
+				// These are gathered centrally before main translation begins, but
+				// that process doesn't track the creation of variables that could
+				// mean that the constant's name is invalid.
+				foreach (var constDefinition in constStatement.Definitions)
+				{
+					if (mapper.IsDeclaredVariableOrArray(constDefinition.Identifier))
+						throw CompilerException.DuplicateDefinition(constDefinition.IdentifierToken);
+
+					mapper.UnhideConstant(constDefinition.Identifier);
+				}
+
 				break;
 			}
 			case CodeModel.Statements.DataStatement dataStatement:

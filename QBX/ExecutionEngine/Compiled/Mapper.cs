@@ -98,6 +98,7 @@ public class Mapper
 	}
 
 	Dictionary<string, LiteralValue> _constantValueByName = new(StringComparer.OrdinalIgnoreCase);
+	HashSet<string> _hiddenConstants = new();
 
 	List<VariableInfo> _variables = new List<VariableInfo>();
 
@@ -683,9 +684,23 @@ public class Mapper
 		_constantValueByName.Clear();
 	}
 
+	public void HideConstants()
+	{
+		_hiddenConstants.UnionWith(_constantValueByName.Keys);
+	}
+
+	public void UnhideConstant(Identifier name)
+		=> UnhideConstant(name.Value);
+
+	public void UnhideConstant(string name)
+	{
+		_hiddenConstants.Remove(name);
+	}
+
 	public bool TryResolveConstant(Identifier name, [NotNullWhen(true)] out LiteralValue? literalValue)
 	{
-		if (_constantValueByName.TryGetValue(name, out literalValue))
+		if (_constantValueByName.TryGetValue(name, out literalValue)
+		 && !_hiddenConstants.Contains(name.Value))
 			return true;
 		else if (_moduleMapper != null)
 			return _moduleMapper.TryResolveConstant(name, out literalValue);
@@ -744,7 +759,8 @@ public class Mapper
 		var qualifiedName = QualifyIdentifier(name, dataType);
 		var unqualifiedName = UnqualifyIdentifier(name);
 
-		if (_constantValueByName.TryGetValue(unqualifiedName, out _))
+		if (_constantValueByName.TryGetValue(unqualifiedName, out _)
+		 && !_hiddenConstants.Contains(unqualifiedName))
 			throw CompilerException.DuplicateDefinition(token);
 		if ((_moduleMapper != null)
 		 && _moduleMapper._constantValueByName.TryGetValue(unqualifiedName, out _))
@@ -880,6 +896,44 @@ public class Mapper
 		}
 
 		return DeclareArray(name, arrayType, nameToken);
+	}
+
+	public bool IsDeclaredVariableOrArray(Identifier identifier)
+		=> IsDeclaredVariableOrArray(identifier.Value);
+
+	public bool IsDeclaredVariableOrArray(string name)
+	{
+		var qualifiedName = QualifyIdentifier(name);
+
+		// Variable
+
+		if ((_semiscopeOverlay != null)
+		 && _semiscopeOverlay.TryGetValue(name, out _))
+			return true;
+		if (_variableIndexByName.TryGetValue(name, out _))
+			return true;
+
+		if (qualifiedName != name)
+		{
+			if ((_semiscopeOverlay != null)
+				&& _semiscopeOverlay.TryGetValue(qualifiedName, out _))
+				return true;
+			if (_variableIndexByName.TryGetValue(qualifiedName, out _))
+				return true;
+		}
+
+		// Array
+
+		if (_arrayIndexByName.TryGetValue(name, out _))
+			return true;
+
+		if (qualifiedName != name)
+		{
+			if (_arrayIndexByName.TryGetValue(qualifiedName, out _))
+				return true;
+		}
+
+		return false;
 	}
 
 	public IEnumerable<VariableName> GetVariableNames() =>
