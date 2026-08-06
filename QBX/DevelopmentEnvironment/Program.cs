@@ -44,6 +44,7 @@ public partial class Program : HostedProgram, IOvertypeFlag
 	public ReferenceBarAction[]? ReferenceBarActions;
 	public int SelectedReferenceBarAction = -1;
 	public string? ReferenceBarText;
+	public bool ReferenceBarTextHighlighted;
 
 	// TODO: disable Utility menu, Options menu and Help menu (and help subsystem)
 	// => error message when accessing a removed feature: "Feature removed"
@@ -134,6 +135,8 @@ public partial class Program : HostedProgram, IOvertypeFlag
 		ImmediateViewport.SwitchTo(ImmediateTextElement);
 
 		FocusedViewport = PrimaryViewport;
+
+		InitializeReferenceBarActions();
 
 		Mode = UIMode.TextEditor;
 
@@ -622,6 +625,32 @@ public partial class Program : HostedProgram, IOvertypeFlag
 		}
 	}
 
+	public void SwitchToNextViewport()
+	{
+		// Forward
+		if (FocusedViewport == HelpViewport)
+			FocusedViewport = PrimaryViewport;
+		else if (FocusedViewport == PrimaryViewport)
+			FocusedViewport = SplitViewport ?? ImmediateViewport;
+		else if (FocusedViewport == SplitViewport)
+			FocusedViewport = ImmediateViewport;
+		else if (FocusedViewport == ImmediateViewport)
+			FocusedViewport = HelpViewport ?? PrimaryViewport;
+	}
+
+	public void SwitchToPreviousViewport()
+	{
+		// Backward
+		if (FocusedViewport == HelpViewport)
+			FocusedViewport = ImmediateViewport;
+		else if (FocusedViewport == PrimaryViewport)
+			FocusedViewport = HelpViewport ?? ImmediateViewport;
+		else if (FocusedViewport == SplitViewport)
+			FocusedViewport = PrimaryViewport;
+		else if (FocusedViewport == ImmediateViewport)
+			FocusedViewport = SplitViewport ?? PrimaryViewport;
+	}
+
 	public TDialog ShowDialog<TDialog>(TDialog dialog)
 		where TDialog : Dialog
 	{
@@ -656,7 +685,47 @@ public partial class Program : HostedProgram, IOvertypeFlag
 		return dialog;
 	}
 
+	class ReferenceBarTextScope : IDisposable
+	{
+		Program _owner;
+		ReferenceBarAction[]? _savedActions;
+		string? _savedText;
+		bool _savedTextHighlighted;
+		bool _isDisposed;
+
+		public ReferenceBarTextScope(Program owner, string text, bool highlighted)
+		{
+			_savedActions = owner.ReferenceBarActions;
+			_savedText = owner.ReferenceBarText;
+			_savedTextHighlighted = owner.ReferenceBarTextHighlighted;
+
+			_owner = owner;
+			_owner.ReferenceBarActions = null;
+			_owner.ReferenceBarText = text;
+			_owner.ReferenceBarTextHighlighted = highlighted;
+		}
+
+		public void Dispose()
+		{
+			if (!_isDisposed)
+			{
+				_owner.ReferenceBarActions = _savedActions;
+				_owner.ReferenceBarText = _savedText;
+				_owner.ReferenceBarTextHighlighted = _savedTextHighlighted;
+				_isDisposed = true;
+			}
+		}
+	}
+
+	public IDisposable ShowReferenceBarTextForOperation(string text, bool highlighted)
+		=> new ReferenceBarTextScope(this, text, highlighted);
+
 	List<HelpDatabaseTopic> _helpHistory = new List<HelpDatabaseTopic>();
+
+	public void ShowUsingHelpTopic()
+	{
+		ShowHelpTopic("bas7qck.hlp!h.default");
+	}
 
 	public bool TryShowHelpTopicForTokenUnderCursor()
 	{
@@ -694,6 +763,8 @@ public partial class Program : HostedProgram, IOvertypeFlag
 		{
 			if (_helpHistory.Count < 2)
 				return false;
+
+			// TODO: keep bread crumbs to allow Ctrl+F1 to go back forward
 
 			// Get the second-to-last entry, because the last entry is the one currently visible.
 			topic = _helpHistory[_helpHistory.Count - 2];
@@ -793,6 +864,22 @@ public partial class Program : HostedProgram, IOvertypeFlag
 	public void ShowHelpTopicPopup(HelpDatabaseTopic topic)
 	{
 		ShowDialog(new HelpPopupDialog(Machine, Configuration, topic));
+	}
+
+	public void HideHelpViewport()
+		=> HideHelpViewport(out _);
+
+	public void HideHelpViewport(out bool switchedViewports)
+	{
+		switchedViewports = false;
+
+		if (FocusedViewport == HelpViewport)
+		{
+			FocusedViewport = PrimaryViewport;
+			switchedViewports = true;
+		}
+
+		HelpViewport = null;
 	}
 
 	// Comes from another thread

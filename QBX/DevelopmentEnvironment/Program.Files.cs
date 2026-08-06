@@ -260,15 +260,18 @@ namespace QBX.DevelopmentEnvironment
 							FocusedViewport.Heading = Path.GetFileName(resolvedPath);
 							Render();
 
-							LoadFile(
-								resolvedPath,
-								replaceExistingProgram: false,
-								lineCountCallback:
-									lineCount =>
-									{
-										TextLibrary.MoveCursor(0, TextLibrary.Height - 1);
-										RenderReferenceBar(overrideLineNumber: lineCount);
-									});
+							using (ShowReferenceBarTextForOperation("Loading and parsing", highlighted: true))
+							{
+								LoadFile(
+									resolvedPath,
+									replaceExistingProgram: false,
+									lineCountCallback:
+										lineCount =>
+										{
+											TextLibrary.MoveCursor(0, TextLibrary.Height - 1);
+											RenderReferenceBar(overrideLineNumber: lineCount);
+										});
+							}
 
 							success = true;
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 
@@ -106,6 +107,8 @@ public partial class Program
 			row += RenderViewport(row, ImmediateViewport, connectUp: true);
 
 			TextLibrary.MoveCursor(0, TextLibrary.Height - 1);
+
+			UpdateReferenceBarActions();
 
 			RenderReferenceBar();
 
@@ -748,19 +751,132 @@ public partial class Program
 		return (left, selected, right);
 	}
 
+	ReferenceBarAction[] MenuBarReferenceBarActions;
+	ReferenceBarAction[] MenuReferenceBarActions;
+	ReferenceBarAction[] DialogReferenceBarActions;
+	ReferenceBarAction[] HelpReferenceBarActions;
+	ReferenceBarAction[] ImmediateReferenceBarActions;
+	ReferenceBarAction[] EditorNotRunningReferenceBarActions;
+	ReferenceBarAction[] EditorRunningReferenceBarActions;
+
+	[MemberNotNull(nameof(MenuBarReferenceBarActions))]
+	[MemberNotNull(nameof(MenuReferenceBarActions))]
+	[MemberNotNull(nameof(DialogReferenceBarActions))]
+	[MemberNotNull(nameof(HelpReferenceBarActions))]
+	[MemberNotNull(nameof(ImmediateReferenceBarActions))]
+	[MemberNotNull(nameof(EditorNotRunningReferenceBarActions))]
+	[MemberNotNull(nameof(EditorRunningReferenceBarActions))]
+	void InitializeReferenceBarActions()
+	{
+		MenuBarReferenceBarActions =
+			[
+				"F1=Help  ",
+				"Enter=Display Menu  ",
+				"Esc=Cancel  ",
+				"Arrow=Next Item  ",
+			];
+
+		MenuReferenceBarActions =
+			[
+				"F1=Help",
+			];
+
+		DialogReferenceBarActions =
+			[
+				"F1=Help  ",
+				"Enter=Execute  ",
+				"Esc=Cancel  ",
+				"Tab=Next Field  ",
+				"Arrow=Next Item  ",
+			];
+
+		HelpReferenceBarActions =
+			[
+				("<Shift+F1=Help>", ShowUsingHelpTopic),
+				("<F6=Window>", SwitchToNextViewport),
+				("<Esc=Cancel>", HideHelpViewport),
+				"<Ctrl+F1=Next>", // TODO: navigate forward
+				"<Alt+F1=Back>", // TODO: navigate backward
+			];
+
+		ImmediateReferenceBarActions =
+			[
+				("<Shift+F1=Help>", ShowUsingHelpTopic),
+				("<F6=Window>", SwitchToNextViewport),
+				"<Enter=Cancel>", // TODO: execute line
+			];
+
+		EditorNotRunningReferenceBarActions =
+			[
+				("<Shift+F1=Help>", ShowUsingHelpTopic),
+				("<F6=Window>", SwitchToNextViewport),
+				("<F2=Subs>", ShowSubsDialog),
+				("<F5=Run>", CommitAndRun),
+				("<F8=Step>", CommitAndStep),
+			];
+
+		EditorRunningReferenceBarActions =
+			[
+				("<Shift+F1=Help>", ShowUsingHelpTopic),
+				("<F5=Continue>", CommitAndContinue),
+				("<F9=Toggle Bkpt>", ToggleBreakpoint),
+				("<F8=Step>", CommitAndStep),
+			];
+	}
+
+	void UpdateReferenceBarActions()
+	{
+		if (Mode == UIMode.MenuBar)
+			ReferenceBarActions = MenuBarReferenceBarActions;
+		else if (Dialogs.Count > 0)
+			ReferenceBarActions = DialogReferenceBarActions;
+		else if (FocusedViewport == HelpViewport)
+			ReferenceBarActions = HelpReferenceBarActions;
+		else if (FocusedViewport == ImmediateViewport)
+			ReferenceBarActions = ImmediateReferenceBarActions;
+		else if (_executionContext != null)
+			ReferenceBarActions = EditorRunningReferenceBarActions;
+		else
+			ReferenceBarActions = EditorNotRunningReferenceBarActions;
+
+		ReferenceBarText = null;
+		ReferenceBarTextHighlighted = false;
+
+		if (Mode == UIMode.Menu)
+		{
+			ReferenceBarActions = MenuReferenceBarActions;
+
+			if ((SelectedMenu >= 0) && (SelectedMenu < MenuBar.Count))
+			{
+				var menu = MenuBar[SelectedMenu];
+
+				if ((SelectedMenuItem >= 0) && (SelectedMenuItem < menu.Count))
+					ReferenceBarText = menu.Items[SelectedMenuItem].ReferenceText;
+			}
+		}
+	}
+
 	static byte[]? _statusCharBuffer;
 
 	void RenderReferenceBar(int? overrideLineNumber = null)
 	{
+		bool inMenu = (Mode == UIMode.MenuBar) || (Mode == UIMode.Menu);
+
+		bool showStatus = (Dialogs.Count == 0) || inMenu || overrideLineNumber.HasValue;
+		bool showCursorPosition = showStatus && (inMenu || (FocusedViewport != HelpViewport));
+
 		int cursorX = (FocusedViewport?.CursorX ?? 0) + 1;
 		int cursorY = (FocusedViewport?.CursorY ?? 0) + 1;
 
 		if (overrideLineNumber.HasValue)
 			cursorY = overrideLineNumber.Value;
 
-		int referenceBarRemainingChars = TextLibrary.Width
-			- 10 // cursor position
-			- 8; // status indicators
+		int referenceBarRemainingChars = TextLibrary.Width;
+
+		if (showStatus)
+			referenceBarRemainingChars -= 8; // status indicators
+		if (showCursorPosition)
+			referenceBarRemainingChars -= 10; // cursor position
 
 		Configuration.DisplayAttributes.ReferenceBarNormalText.Set(TextLibrary);
 		TextLibrary.WriteText(' ');
@@ -770,21 +886,40 @@ public partial class Program
 		{
 			for (int i = 0; i < ReferenceBarActions.Length; i++)
 			{
+				string label = ReferenceBarActions[i].Label;
+
+				int numChars = Math.Min(label.Length, referenceBarRemainingChars);
+
 				if (i == SelectedReferenceBarAction)
 					Configuration.DisplayAttributes.ReferenceBarNormalText.SetInverted(TextLibrary);
 
-				TextLibrary.WriteText('<');
-				TextLibrary.WriteText(ReferenceBarActions[i].Label);
-				TextLibrary.WriteText('>');
-
-				referenceBarRemainingChars -= 2 + ReferenceBarActions[i].Label.Length;
+				TextLibrary.WriteText(label, 0, numChars);
+				referenceBarRemainingChars -= numChars;
 
 				if (i == SelectedReferenceBarAction)
 					Configuration.DisplayAttributes.ReferenceBarNormalText.Set(TextLibrary);
+
+				if (referenceBarRemainingChars > 0)
+				{
+					TextLibrary.WriteText(' ');
+					referenceBarRemainingChars--;
+				}
 			}
 
-			TextLibrary.WriteText(' ');
-			referenceBarRemainingChars--;
+			if (ReferenceBarText != null)
+			{
+				if (referenceBarRemainingChars > 0)
+				{
+					TextLibrary.WriteText('│');
+					referenceBarRemainingChars--;
+				}
+
+				if (referenceBarRemainingChars > 0)
+				{
+					TextLibrary.WriteText(' ');
+					referenceBarRemainingChars--;
+				}
+			}
 		}
 
 		if (ReferenceBarText != null)
@@ -792,53 +927,80 @@ public partial class Program
 			int textChars = ReferenceBarText.Length;
 
 			if (textChars > referenceBarRemainingChars)
-				textChars = referenceBarRemainingChars;
+			{
+				// Hide status area if ReferenceBarText is cut off by it.
+
+				if (showStatus)
+				{
+					referenceBarRemainingChars += 8;
+					showStatus = false;
+				}
+
+				if (showCursorPosition)
+				{
+					referenceBarRemainingChars += 10;
+					showCursorPosition = false;
+				}
+
+				if (textChars > referenceBarRemainingChars)
+					textChars = referenceBarRemainingChars;
+			}
+
+			if (ReferenceBarTextHighlighted)
+				Configuration.DisplayAttributes.ReferenceBarHighlightedText.Set(TextLibrary);
 
 			TextLibrary.WriteText(ReferenceBarText, 0, textChars);
+
+			if (ReferenceBarTextHighlighted)
+				Configuration.DisplayAttributes.ReferenceBarNormalText.Set(TextLibrary);
 
 			referenceBarRemainingChars -= textChars;
 		}
 
 		if (referenceBarRemainingChars > 0)
-		{
 			TextLibrary.WriteText(_spaces, 0, referenceBarRemainingChars);
-		}
 
-		if ((_statusCharBuffer == null) || (_statusCharBuffer.Length < 8))
-			_statusCharBuffer = new byte[8];
-
-		_statusCharBuffer.AsSpan().Fill(32);
-
-		_statusCharBuffer[0] = CP437Encoding.GetByteGraphic('│');
-
-		if (_inTextEditorChord != TextEditorChordType.None)
+		if (showStatus)
 		{
-			_statusCharBuffer[2] = (byte)'^';
+			if ((_statusCharBuffer == null) || (_statusCharBuffer.Length < 8))
+				_statusCharBuffer = new byte[8];
 
-			switch (_inTextEditorChord)
+			_statusCharBuffer.AsSpan().Fill(32);
+
+			_statusCharBuffer[0] = CP437Encoding.GetByteGraphic('│');
+
+			if (_inTextEditorChord != TextEditorChordType.None)
 			{
-				case TextEditorChordType.CtrlK: _statusCharBuffer[3] = (byte)'K'; break;
-				case TextEditorChordType.CtrlP: _statusCharBuffer[3] = (byte)'P'; break;
-				case TextEditorChordType.CtrlQ: _statusCharBuffer[3] = (byte)'Q'; break;
+				_statusCharBuffer[2] = (byte)'^';
+
+				switch (_inTextEditorChord)
+				{
+					case TextEditorChordType.CtrlK: _statusCharBuffer[3] = (byte)'K'; break;
+					case TextEditorChordType.CtrlP: _statusCharBuffer[3] = (byte)'P'; break;
+					case TextEditorChordType.CtrlQ: _statusCharBuffer[3] = (byte)'Q'; break;
+				}
 			}
+
+			_statusCharBuffer[5] = Machine.SystemMemory.KeyboardStatus.CapsLock ? (byte)'C' : (byte)' ';
+			_statusCharBuffer[6] = Machine.SystemMemory.KeyboardStatus.NumLock ? (byte)'N' : (byte)' ';
+
+			Configuration.DisplayAttributes.ReferenceBarStatusIndicators.Set(TextLibrary);
+			TextLibrary.WriteText(_statusCharBuffer, 0, 8);
 		}
 
-		_statusCharBuffer[5] = Machine.SystemMemory.KeyboardStatus.CapsLock ? (byte)'C' : (byte)' ';
-		_statusCharBuffer[6] = Machine.SystemMemory.KeyboardStatus.NumLock ? (byte)'N' : (byte)' ';
+		if (showCursorPosition)
+		{
+			if (cursorX > 999)
+				cursorX = 999;
+			if (cursorY > 99999)
+				cursorY = 99999;
 
-		Configuration.DisplayAttributes.ReferenceBarStatusIndicators.Set(TextLibrary);
-		TextLibrary.WriteText(_statusCharBuffer, 0, 8);
-
-		if (cursorX > 999)
-			cursorX = 999;
-		if (cursorY > 99999)
-			cursorY = 99999;
-
-		Configuration.DisplayAttributes.ReferenceBarNormalText.Set(TextLibrary);
-		TextLibrary.WriteNumber(cursorY, 5);
-		TextLibrary.WriteText(':');
-		TextLibrary.WriteNumber(cursorX, 3);
-		TextLibrary.WriteText(' ');
+			Configuration.DisplayAttributes.ReferenceBarNormalText.Set(TextLibrary);
+			TextLibrary.WriteNumber(cursorY, 5);
+			TextLibrary.WriteText(':');
+			TextLibrary.WriteNumber(cursorX, 3);
+			TextLibrary.WriteText(' ');
+		}
 	}
 
 	void RenderOpenMenu()

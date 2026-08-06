@@ -71,6 +71,8 @@ public partial class Program
 		Ignore,
 	}
 
+	const string CallsMenuItemReferenceBarText = "Display next statement to be executed in module or procedure";
+
 	[MemberNotNull(
 		nameof(MenuBar),
 		nameof(mnuFile),
@@ -115,91 +117,91 @@ public partial class Program
 		mnuFile =
 			new Menu("&File", 16, "m.f")
 			{
-				(mnuFileNew = new MenuItem("&New Program", "-324")),
-				(mnuFileOpenProgram = new MenuItem("&Open Program...", "-325")),
-				new MenuItem("&Merge...", "-326"),
-				(mnuFileSave = new MenuItem("&Save", "-327")),
-				(mnuFileSaveAs = new MenuItem("Save &As...", "-328")),
-				(mnuFileSaveAll = new MenuItem("Sa&ve All", "-329")),
+				(mnuFileNew = new MenuItem("&New Program", "Remove currently loaded program from memory", "-324")),
+				(mnuFileOpenProgram = new MenuItem("&Open Program...", "Load new program into memory", "-325")),
+				new MenuItem("&Merge...", "Insert specified file into current module", "-326"),
+				(mnuFileSave = new MenuItem("&Save", "Write current module to file on disk", "-327")),
+				(mnuFileSaveAs = new MenuItem("Save &As...", "Save current module with specified name and format", "-328")),
+				(mnuFileSaveAll = new MenuItem("Sa&ve All", "Write all currently loaded modules to files on disk", "-329")),
 				MenuItem.Separator,
-				(mnuFileCreateFile = new MenuItem("&Create File...", "-330")),
-				(mnuFileLoadFile = new MenuItem("&Load File...", "-331")),
-				new MenuItem("&Unload File...", "-332"),
+				(mnuFileCreateFile = new MenuItem("&Create File...", "Create a module, include file, or document; retain loaded modules", "-330")),
+				(mnuFileLoadFile = new MenuItem("&Load File...", "Load a module, include file, or document; retain loaded modules", "-331")),
+				new MenuItem("&Unload File...", "Remove a loaded module, include file, or document from memory", "-332"),
 				MenuItem.Separator,
-				new MenuItem("&Print...", "-333"),
-				new MenuItem("&DOS Shell", "-334"),
+				new MenuItem("&Print...", "Send specified text or module to printer or file", "-333"),
+				new MenuItem("&DOS Shell", "Temporary suspend QBX and invoke DOS shell", "-334"),
 				MenuItem.Separator,
-				(mnuFileExit = new MenuItem("E&xit", "-335")),
+				(mnuFileExit = new MenuItem("E&xit", "Exit QBX and return to DOS", "-335")),
 			};
 
 		mnuEdit =
 			new Menu("&Edit", 17, "m.e")
 			{
-				new MenuItem("&Undo     Alt+Bksp", "-336") { IsEnabled = false },
-				new MenuItem("&Redo    Ctrl+Bksp", "-337") { IsEnabled = false },
-				new MenuItem("Cu&t     Shift+Del", "-338") { IsEnabled = false },
-				new MenuItem("&Copy     Ctrl+Ins", "-339") { IsEnabled = false },
-				new MenuItem("&Paste   Shift+Ins", "-341") { IsEnabled = false },
-				new MenuItem("Cl&ear         Del", "-340") { IsEnabled = false },
+				new MenuItem("&Undo     Alt+Bksp", "Undo last edit action", "-336") { IsEnabled = false },
+				new MenuItem("&Redo    Ctrl+Bksp", "Redo last edit action that was undone", "-337") { IsEnabled = false },
+				new MenuItem("Cu&t     Shift+Del", "Delete selected text and copy it to buffer", "-338") { IsEnabled = false },
+				new MenuItem("&Copy     Ctrl+Ins", "Copy selected text to buffer", "-339") { IsEnabled = false },
+				new MenuItem("&Paste   Shift+Ins", "Insert text from buffer at current location", "-341") { IsEnabled = false },
+				new MenuItem("Cl&ear         Del", "Delete selected text without copying it to buffer", "-340") { IsEnabled = false },
 				MenuItem.Separator,
-				new MenuItem("New &SUB...", "-342"),
-				new MenuItem("New &FUNCTION...", "-343"),
+				new MenuItem("New &SUB...", "Open a window for a new SUB", "-342"),
+				new MenuItem("New &FUNCTION...", "Open a window for a new FUNCTION procedure", "-343"),
 			};
 
 		mnuView =
 			new Menu("&View", 21, "m.v")
 			{
-				new MenuItem("&SUBs...            F2", "-344"),
-				new MenuItem("N&ext SUB     Shift+F2", "-345"),
-				(mnuViewSplit = new MenuItem("S&plit", "-346")),
+				new MenuItem("&SUBs...            F2", "Display a loaded SUB, FUNCTION, module, include file, or document", "-344"),
+				new MenuItem("N&ext SUB     Shift+F2", "Display next SUB or FUNCTION procedure in the active window", "-345"),
+				(mnuViewSplit = new MenuItem("S&plit", "Divide screen into two View windows", "-346")),
 				MenuItem.Separator,
-				new MenuItem("&Next Statement", "-347"),
-				new MenuItem("O&utput Screen      F4", "-348"),
+				new MenuItem("&Next Statement", "Display next statement to be executed", "-347"),
+				new MenuItem("O&utput Screen      F4", "Display output screen", "-348"),
 				MenuItem.Separator,
-				new MenuItem("&Included File", "-349") { IsEnabled = false },
-				new MenuItem("Included &Lines", "-350"),
+				new MenuItem("&Included File", "Display include file for editing", "-349") { IsEnabled = false },
+				new MenuItem("Included &Lines", "Display include file for viewing only (not for editing)", "-350"),
 			};
 
 		mnuSearch =
 			new Menu("&Search", 24, "m.s")
 			{
-				new MenuItem("&Find...", "-351"),
-				new MenuItem("&Selected Text     Ctrl+\\", "-352"),
-				new MenuItem("&Repeat Last Find      F3", "-353"),
-				new MenuItem("&Change...", "-354"),
-				new MenuItem("&Label...", "-355"),
+				new MenuItem("&Find...", "Find specified text", "-351"),
+				new MenuItem("&Selected Text     Ctrl+\\", "Find selected text", "-352"),
+				new MenuItem("&Repeat Last Find      F3", "Repeat last find", "-353"),
+				new MenuItem("&Change...", "Find and change specified text", "-354"),
+				new MenuItem("&Label...", "Find specified line label", "-355"),
 			};
 
 		mnuRun =
 			new Menu("&Run", 19, "m.r")
 			{
-				(mnuRunStart = new MenuItem("&Start      Shift+F5", "-356")),
-				(mnuRunRestart = new MenuItem("&Restart", "-357")),
-				(mnuRunContinue = new MenuItem("Co&ntinue         F5", "-358")),
-				(mnuRunModifyCommandLine = new MenuItem("Modify &COMMAND$...", "-359")),
+				(mnuRunStart = new MenuItem("&Start      Shift+F5", "Run current program", "-356")),
+				(mnuRunRestart = new MenuItem("&Restart", "Clear variables in preparation for restarting single stepping", "-357")),
+				(mnuRunContinue = new MenuItem("Co&ntinue         F5", "Continue execution after a break", "-358")),
+				(mnuRunModifyCommandLine = new MenuItem("Modify &COMMAND$...", "Set string returned by COMMAND$ function", "-359")),
 				MenuItem.Separator,
-				new MenuItem("Make E&XE File...", "-360") { IsEnabled = false },
-				new MenuItem("Make &Library...", "-361") { IsEnabled = false },
+				new MenuItem("Make E&XE File...", "Create executable file on disk", "-360") { IsEnabled = false },
+				new MenuItem("Make &Library...", "Create Quick Library and stand-alone library (.LIB) on disk", "-361") { IsEnabled = false },
 				MenuItem.Separator,
-				(mnuRunSetMainModule = new MenuItem("Set &Main Module...", "-362")),
+				(mnuRunSetMainModule = new MenuItem("Set &Main Module...", "Make the specified module the main module", "-362")),
 			};
 
 		mnuDebug =
 			new Menu("&Debug", 27, "m.d")
 			{
-				(mnuDebugAddWatch = new MenuItem("&Add Watch...", "-363")),
-				(mnuDebugInstantWatch = new MenuItem("&Instant Watch...   Shift+F9", "-364")),
-				(mnuDebugWatchpoint = new MenuItem("&Watchpoint...", "-365")),
-				(mnuDebugDeleteWatch = new MenuItem("&Delete Watch...", "-366") { IsEnabled = false }),
-				(mnuDebugDeleteAllWatch = new MenuItem("De&lete All Watch", "-367") { IsEnabled = false }),
+				(mnuDebugAddWatch = new MenuItem("&Add Watch...", "Add specified expression to the Watch window", "-363")),
+				(mnuDebugInstantWatch = new MenuItem("&Instant Watch...   Shift+F9", "Display the value of a variable or expression", "-364")),
+				(mnuDebugWatchpoint = new MenuItem("&Watchpoint...", "Cause program to stop when specified expression is TRUE", "-365")),
+				(mnuDebugDeleteWatch = new MenuItem("&Delete Watch...", "Delete specified entry from Watch window", "-366") { IsEnabled = false }),
+				(mnuDebugDeleteAllWatch = new MenuItem("De&lete All Watch", "Delete all Watch window entries", "-367") { IsEnabled = false }),
 				MenuItem.Separator,
-				new MenuItem("&Trace On", "-368"),
-				new MenuItem("&History On", "-369"),
+				new MenuItem("&Trace On", "Highlight statement that is executing", "-368"),
+				new MenuItem("&History On", "Record order of statement execution", "-369"),
 				MenuItem.Separator,
-				new MenuItem("Toggle &Breakpoint        F9", "-370"),
-				new MenuItem("&Clear All Breakpoints", "-371"),
-				new MenuItem("Break on &Errors", "-372"),
-				new MenuItem("&Set Next Statement", "-373") { IsEnabled = false },
+				new MenuItem("Toggle &Breakpoint        F9", "Set or clear breakpoint at cursor location", "-370"),
+				new MenuItem("&Clear All Breakpoints", "Remove all breakpoints", "-371"),
+				new MenuItem("Break on &Errors", "Stop execution at first statement in error handler", "-372"),
+				new MenuItem("&Set Next Statement", "Indicate next statement to be executed", "-373") { IsEnabled = false },
 			};
 
 		mnuCalls =
@@ -211,30 +213,31 @@ public partial class Program
 		mnuUtility =
 			new Menu("&Utility", 18, "m.u")
 			{
-				new MenuItem("&Run DOS Command...", "-374"),
-				new MenuItem("&Customize Menu...", "-375"),
+				new MenuItem("&Run DOS Command...", "Enter and run a DOS command", "-374"),
+				new MenuItem("&Customize Menu...", "Create or edit a Utility menu command", "-375"),
 			};
 
 		mnuOptions =
 			new Menu("&Options", 22, "m.o")
 			{
-				(mnuOptionsDisplay = new MenuItem("&Display...", "-384")),
-				new MenuItem("Set &Paths...", "-385"),
-				new MenuItem("Right &Mouse...", "-386"),
-				new MenuItem("&Syntax Checking", "-387") { IsChecked = true },
-				(mnuOptionsDetectDelayLoops = new MenuItem("Detect Delay &Loops") { IsChecked = DetectDelayLoops }),
+				(mnuOptionsDisplay = new MenuItem("&Display...", "Change display attributes", "-384")),
+				new MenuItem("Set &Paths...", "Set default search paths", "-385"),
+				new MenuItem("Right &Mouse...", "Change action of right mouse click", "-386"),
+				new MenuItem("&Syntax Checking", "Turn syntax checking on or off", "-387") { IsChecked = true },
+				(mnuOptionsDetectDelayLoops = new MenuItem("Detect Delay &Loops", "QBX: Sleep thread for empty FOR loops") { IsChecked = DetectDelayLoops }),
 				MenuItem.Separator,
-				(mnuOptionsEventsEveryStatement = new MenuItem("Events Every S&tatement") { IsChecked = (EventCheckGranularity == EventCheckGranularity.EveryStatement) }),
-				(mnuOptionsEventsOnLabels = new MenuItem("Events On &Labels") { IsChecked = (EventCheckGranularity == EventCheckGranularity.EveryLabel) }),
+				(mnuOptionsEventsEveryStatement = new MenuItem("Events Every S&tatement", "QBX: Check for events after every statement") { IsChecked = (EventCheckGranularity == EventCheckGranularity.EveryStatement) }),
+				(mnuOptionsEventsOnLabels = new MenuItem("Events On &Labels", "QBX: Check for events at labels") { IsChecked = (EventCheckGranularity == EventCheckGranularity.EveryLabel) }),
 			};
 
 		mnuHelp =
 			new Menu("&Help", 25, "m.h")
 			{
-				(mnuHelpIndex = new MenuItem("&Index", "-389")),
-				(mnuHelpContents = new MenuItem("&Contents", "-390")),
-				(mnuHelpTopic = new MenuItem("&Topic:                 F1", "-391") { IsEnabled = false }),
-				(mnuHelpUsingHelp = new MenuItem("Using &Help       Shift+F1", "-392")),
+				(mnuHelpIndex = new MenuItem("&Index", "Display index for online Help", "-389")),
+				(mnuHelpContents = new MenuItem("&Contents", "Display table of contents for online Help", "-390")),
+				// TODO: Topic should update dynamically when the menu is opened
+				(mnuHelpTopic = new MenuItem("&Topic:                 F1", "Display information about the BASIC keyword the cursor is on", "-391") { IsEnabled = false }),
+				(mnuHelpUsingHelp = new MenuItem("Using &Help       Shift+F1", "Display information about online Help", "-392")),
 			};
 
 		MenuBar =
@@ -446,7 +449,7 @@ public partial class Program
 
 	private void mnuHelpUsingHelp_Clicked()
 	{
-		ShowHelpTopic("bas7qck.hlp!h.default");
+		ShowUsingHelpTopic();
 	}
 
 	bool ActivateMenuItem(MenuItem item)
@@ -708,7 +711,7 @@ public partial class Program
 
 		mnuCalls.Insert(
 			0,
-			new MenuItem("&" + routineName) // TODO: handling for duplicate access keys
+			new MenuItem("&" + routineName, CallsMenuItemReferenceBarText) // TODO: handling for duplicate access keys
 			{
 				Clicked =
 					() =>

@@ -545,19 +545,15 @@ public partial class Program
 						{
 							Machine.Keyboard.SuppressNextEventIf(isRelease: true, ScanCode.F5);
 
-							PromptTerminateToCommitEdit(
-								() =>
-								{
-									if (CommitViewportsOrPresentError())
-									{
-										if (input.Modifiers.ShiftKey)
-											Run();
-										else
-											Continue();
+							bool stepped;
 
-										ReloadViewportParameters();
-									}
-								});
+							if (input.Modifiers.ShiftKey)
+								CommitAndRun(out stepped);
+							else
+								CommitAndContinue(out stepped);
+
+							if (stepped)
+								ReloadViewportParameters();
 
 							break;
 						}
@@ -576,29 +572,9 @@ public partial class Program
 									catch { }
 
 									if (input.Modifiers.ShiftKey == false)
-									{
-										// Forward
-										if (FocusedViewport == HelpViewport)
-											FocusedViewport = PrimaryViewport;
-										else if (FocusedViewport == PrimaryViewport)
-											FocusedViewport = SplitViewport ?? ImmediateViewport;
-										else if (FocusedViewport == SplitViewport)
-											FocusedViewport = ImmediateViewport;
-										else if (FocusedViewport == ImmediateViewport)
-											FocusedViewport = HelpViewport ?? PrimaryViewport;
-									}
+										SwitchToNextViewport();
 									else
-									{
-										// Backward
-										if (FocusedViewport == HelpViewport)
-											FocusedViewport = ImmediateViewport;
-										else if (FocusedViewport == PrimaryViewport)
-											FocusedViewport = HelpViewport ?? ImmediateViewport;
-										else if (FocusedViewport == SplitViewport)
-											FocusedViewport = PrimaryViewport;
-										else if (FocusedViewport == ImmediateViewport)
-											FocusedViewport = SplitViewport ?? PrimaryViewport;
-									}
+										SwitchToPreviousViewport();
 
 									ReloadViewportParameters();
 								});
@@ -609,16 +585,10 @@ public partial class Program
 						{
 							Machine.Keyboard.SuppressNextEventIf(isRelease: true, ScanCode.F8);
 
-							PromptTerminateToCommitEdit(
-								() =>
-								{
-									if (CommitViewportsOrPresentError())
-									{
-										Step();
+							CommitAndStep(out bool stepped);
 
-										ReloadViewportParameters();
-									}
-								});
+							if (stepped)
+								ReloadViewportParameters();
 
 							break;
 						}
@@ -631,10 +601,7 @@ public partial class Program
 							if (input.Modifiers.ShiftKey)
 								InstantWatchAtCurrentCursorLocation();
 							else
-							{
-								if (FocusedViewport.TryGetCodeLineAt(FocusedViewport.CursorY, out var currentCodeLine))
-									ToggleBreakpoint(currentCodeLine);
-							}
+								ToggleBreakpoint();
 
 							break;
 						}
@@ -1058,13 +1025,10 @@ public partial class Program
 			}
 			case TextEditorAction.Cancel:
 			{
-				if (FocusedViewport == HelpViewport)
-				{
-					FocusedViewport = PrimaryViewport;
-					ReloadViewportParameters();
-				}
+				HideHelpViewport(out var switchedViewports);
 
-				HelpViewport = null;
+				if (switchedViewports)
+					ReloadViewportParameters();
 
 				FocusedViewport.SelectionManager.CancelSelection();
 
@@ -1718,6 +1682,75 @@ public partial class Program
 		}
 
 		return false;
+	}
+
+	void CommitAndRun()
+		=> CommitAndRun(out _);
+
+	void CommitAndRun(out bool stepped)
+	{
+		bool steppedLocal = false;
+
+		PromptTerminateToCommitEdit(
+			() =>
+			{
+				if (CommitViewportsOrPresentError())
+				{
+					Run();
+
+					steppedLocal = true;
+				}
+			});
+
+		stepped = steppedLocal;
+	}
+
+	void CommitAndContinue()
+		=> CommitAndContinue(out _);
+
+	void CommitAndContinue(out bool stepped)
+	{
+		bool steppedLocal = false;
+
+		PromptTerminateToCommitEdit(
+			() =>
+			{
+				if (CommitViewportsOrPresentError())
+				{
+					Continue();
+
+					steppedLocal = true;
+				}
+			});
+
+		stepped = steppedLocal;
+	}
+
+	void CommitAndStep()
+		=> CommitAndStep(out _);
+
+	void CommitAndStep(out bool stepped)
+	{
+		bool steppedLocal = false;
+
+		PromptTerminateToCommitEdit(
+			() =>
+			{
+				if (CommitViewportsOrPresentError())
+				{
+					Step();
+
+					steppedLocal = true;
+				}
+			});
+
+		stepped = steppedLocal;
+	}
+
+	public void ToggleBreakpoint()
+	{
+		if (FocusedViewport.TryGetCodeLineAt(FocusedViewport.CursorY, out var currentCodeLine))
+			ToggleBreakpoint(currentCodeLine);
 	}
 
 	private void SwitchToNextElement()

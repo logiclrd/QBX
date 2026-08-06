@@ -158,15 +158,18 @@ namespace QBX.DevelopmentEnvironment
 
 						Render();
 
-						LoadFile(
-							filePath,
-							replaceExistingProgram,
-							lineCountCallback:
-								lineCount =>
-								{
-									TextLibrary.MoveCursor(0, TextLibrary.Height - 1);
-									RenderReferenceBar(overrideLineNumber: lineCount);
-								});
+						using (ShowReferenceBarTextForOperation("Loading and parsing", highlighted: true))
+						{
+							LoadFile(
+								filePath,
+								replaceExistingProgram,
+								lineCountCallback:
+									lineCount =>
+									{
+										TextLibrary.MoveCursor(0, TextLibrary.Height - 1);
+										RenderReferenceBar(overrideLineNumber: lineCount);
+									});
+						}
 
 						dialog.Close();
 					}

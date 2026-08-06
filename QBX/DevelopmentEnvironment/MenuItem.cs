@@ -2,14 +2,15 @@
 
 namespace QBX.DevelopmentEnvironment;
 
-public class MenuItem(string label, string? helpContextString = null)
+public class MenuItem(string label, string? referenceText, string? helpContextString = null)
 {
 	public string Label = label;
 	public bool IsChecked;
 	public Action? Clicked;
 	public bool IsEnabled = true;
 	public bool IsSeparator;
+	public string? ReferenceText = referenceText;
 	public string? HelpContextString = helpContextString;
 
-	public static MenuItem Separator => new MenuItem("---") { IsSeparator = true };
+	public static MenuItem Separator => new MenuItem("---", null) { IsSeparator = true };
 }
