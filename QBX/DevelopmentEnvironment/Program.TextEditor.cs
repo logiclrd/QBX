@@ -725,10 +725,10 @@ public partial class Program
 			}
 
 			case TextEditorAction.Find:
-				// TODO: activate find dialog
+				ShowFindDialog();
 				break;
 			case TextEditorAction.Change:
-				// TODO: activate find/replace dialog
+				ShowChangeDialog();
 				break;
 
 			case TextEditorAction.ToggleInsertMode: 
@@ -1572,6 +1572,8 @@ public partial class Program
 				FocusedViewport.SelectionManager.StartSelection(FocusedViewport.CursorX, FocusedViewport.CursorY);
 			else
 				FocusedViewport.SelectionManager.ExtendSelection(FocusedViewport.CursorX, FocusedViewport.CursorY);
+
+			UpdateSearchMenu();
 		}
 	}
 
@@ -1581,9 +1583,12 @@ public partial class Program
 		{
 			_performCutAfterRender = false;
 
+			// Allow the selection to briefly flash on the screen.
 			Thread.Sleep(20);
 
 			FocusedViewport.SelectionManager.Cut();
+
+			UpdateSearchMenu();
 
 			return true;
 		}
@@ -2131,6 +2136,25 @@ public partial class Program
 			ShowInstantWatch(_nextStatementRoutine?.Mapper, subject);
 		else
 			PresentError("Invalid expression for Instant Watch", 315, context: null, ErrorSource.Program, helpContextString: null, avoidContext: false);
+	}
+
+	string GetTokenUnderCursor()
+	{
+		FocusedViewport.EditCurrentLine();
+
+		var buffer = FocusedViewport.CurrentLineBuffer;
+
+		if (buffer == null)
+			return "";
+
+		int startIndex = FocusedViewport.CursorX;
+
+		FindIdentifierExtent(buffer, ref startIndex, out var endIndex);
+
+		if ((startIndex < 0) || (startIndex > endIndex))
+			return "";
+
+		return buffer.ToString(startIndex, endIndex - startIndex + 1);
 	}
 
 	void FindIdentifierExtent(StringBuilder buffer, ref int startIndex, out int endIndex)

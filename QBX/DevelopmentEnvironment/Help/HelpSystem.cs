@@ -2,13 +2,14 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace QBX.DevelopmentEnvironment.Help;
 
 public class HelpSystem
 {
-	Dictionary<string, HelpDatabase> _helpFiles = new Dictionary<string, HelpDatabase>(StringComparer.OrdinalIgnoreCase);
+	OrderedDictionary<string, HelpDatabase> _helpFiles = new(StringComparer.OrdinalIgnoreCase);
 	Dictionary<string, HelpDatabaseTopic> _contextStrings = new Dictionary<string, HelpDatabaseTopic>();
 
 	bool _haveCaseInsensitiveContextStrings = false;
@@ -115,6 +116,33 @@ public class HelpSystem
 			foreach (var contextString in helpFile.GlobalContextStrings)
 				_contextStrings[contextString.ToLowerInvariant()] = helpFile.TopicByContextString[contextString];
 		}
+	}
+
+	public HelpDatabaseTopic? GetFirstTopic()
+	{
+		var database = _helpFiles.Values.FirstOrDefault();
+
+		return database?.GetFirstTopic();
+	}
+
+	public HelpDatabaseTopic? GetNextTopic(HelpDatabaseTopic current)
+	{
+		var next = current.Database.GetNextTopic(current);
+
+		if (next != null)
+			return next;
+
+		bool foundDatabase = false;
+
+		foreach (var database in _helpFiles.Values.Where(database => database.Topics.Count > 0))
+		{
+			if (foundDatabase)
+				return database.GetFirstTopic();
+			else if (database == current.Database)
+				foundDatabase = true;
+		}
+
+		return GetFirstTopic();
 	}
 
 	public bool TryGetTopic(HelpDatabase? currentDatabase, string contextString, [NotNullWhen(true)] out HelpDatabaseTopic? topic)

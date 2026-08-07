@@ -13,11 +13,11 @@ public class FindDialog : SearchDialogBase
 	Button cmdCancel;
 	Button cmdHelp;
 
-	public Action<StringValue>? Find;
+	public Action<StringValue, SearchScope>? Find;
 
 #pragma warning disable CS8618
-	public FindDialog(Machine machine, Configuration configuration)
-		: base(width: 59, machine, configuration)
+	public FindDialog(SearchScopeMode searchScopeMode, Machine machine, Configuration configuration)
+		: base(width: 59, searchScopeMode, machine, configuration)
 	{
 		HelpContextString = "-908";
 	}
@@ -80,7 +80,7 @@ public class FindDialog : SearchDialogBase
 	private void cmdOK_Activated()
 	{
 		Close();
-		Find?.Invoke(FindWhat);
+		Find?.Invoke(FindWhat, SearchScope);
 	}
 
 	private void cmdCancel_Activated()

@@ -11,6 +11,8 @@ public class HelpDatabaseTopic(HelpDatabase database)
 
 	public HelpDatabase Database => database;
 
+	public int TopicIndex;
+
 	public List<string> Statements = new List<string>();
 	public List<HelpDatabaseTopicLine> Lines = new List<HelpDatabaseTopicLine>();
 

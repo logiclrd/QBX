@@ -21,6 +21,8 @@ public class HelpDatabase(bool caseSensitive)
 
 	public void AddTopic(HelpDatabaseTopic topic, IEnumerable<string> contextStrings)
 	{
+		topic.TopicIndex = Topics.Count;
+
 		Topics.Add(topic);
 
 		foreach (var contextString in contextStrings)
@@ -39,6 +41,24 @@ public class HelpDatabase(bool caseSensitive)
 
 		topic = null;
 		return false;
+	}
+
+	public HelpDatabaseTopic? GetFirstTopic()
+	{
+		if (Topics.Count > 0)
+			return Topics[0];
+		else
+			return null;
+	}
+
+	public HelpDatabaseTopic? GetNextTopic(HelpDatabaseTopic current)
+	{
+		int nextIndex = current.TopicIndex + 1;
+
+		if (nextIndex < Topics.Count)
+			return Topics[nextIndex];
+		else
+			return null;
 	}
 
 	public bool TryGetTopic(string contextString, [NotNullWhen(true)] out HelpDatabaseTopic? topic)

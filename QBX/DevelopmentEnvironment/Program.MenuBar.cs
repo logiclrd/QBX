@@ -304,6 +304,26 @@ public partial class Program
 		mnuHelpUsingHelp.Clicked = mnuHelpUsingHelp_Clicked;
 	}
 
+	void UpdateSearchMenu()
+	{
+		if (FocusedViewport == ImmediateViewport)
+		{
+			mnuSearchFind.IsEnabled = false;
+			mnuSearchSelectedText.IsEnabled = false;
+			mnuSearchRepeatLastFind.IsEnabled = false;
+			mnuSearchChange.IsEnabled = false;
+			mnuSearchLabel.IsEnabled = false;
+		}
+		else
+		{
+			mnuSearchFind.IsEnabled = true;
+			mnuSearchSelectedText.IsEnabled = FocusedViewport.SelectionManager.HasSelection;
+			mnuSearchRepeatLastFind.IsEnabled = (_lastFindWhat != null);
+			mnuSearchChange.IsEnabled = FocusedViewport.IsEditable;
+			mnuSearchLabel.IsEnabled = FocusedViewport != HelpViewport;
+		}
+	}
+
 	private void mnuFileNew_Clicked()
 	{
 		CommitViewportsAndSwallowError();
@@ -364,7 +384,7 @@ public partial class Program
 
 	private void mnuSearchFind_Clicked()
 	{
-		ShowDialog(new FindDialog(Machine, Configuration));
+		ShowFindDialog();
 	}
 
 	private void mnuSearchSelectedText_Clicked()
@@ -377,7 +397,7 @@ public partial class Program
 
 	private void mnuSearchChange_Clicked()
 	{
-		ShowDialog(new ChangeDialog(Machine, Configuration));
+		ShowChangeDialog();
 	}
 
 	private void mnuSearchLabel_Clicked()

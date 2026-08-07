@@ -32,6 +32,8 @@ public abstract class SearchDialogBase : Dialog
 	protected Label lblSearchCurrentModuleLabel;
 	protected RadioButton optSearchAllModules;
 	protected Label lblSearchAllModulesLabel;
+	protected RadioButton optSearchHelpFile;
+	protected Label lblSearchHelpFileLabel;
 
 	public StringValue FindWhat
 	{
@@ -45,6 +47,12 @@ public abstract class SearchDialogBase : Dialog
 		set => txtChangeTo.Text = value;
 	}
 
+	public SearchScopeMode SearchScopeMode
+	{
+		get;
+		init;
+	}
+
 	public SearchScope SearchScope
 	{
 		get
@@ -55,20 +63,40 @@ public abstract class SearchDialogBase : Dialog
 				return SearchScope.CurrentModule;
 			if (optSearchAllModules.IsSelected)
 				return SearchScope.AllModules;
+			if (optSearchHelpFile.IsSelected)
+				return SearchScope.HelpFile;
 
 			return SearchScope.ActiveWindow;
 		}
 		set
 		{
-			optSearchActiveWindow.IsSelected = (value == SearchScope.ActiveWindow);
-			optSearchCurrentModule.IsSelected = (value == SearchScope.CurrentModule);
-			optSearchAllModules.IsSelected = (value == SearchScope.AllModules);
+			var newScope = value;
+
+			switch (newScope)
+			{
+				case SearchScope.CurrentModule:
+				case SearchScope.AllModules:
+					if (SearchScopeMode == SearchScopeMode.HelpFile)
+						newScope = SearchScope.HelpFile;
+					break;
+				case SearchScope.HelpFile:
+					if (SearchScopeMode == SearchScopeMode.TextEditor)
+						newScope = SearchScope.CurrentModule;
+					break;
+			}
+
+			optSearchActiveWindow.IsSelected = (newScope == SearchScope.ActiveWindow);
+			optSearchCurrentModule.IsSelected = (newScope == SearchScope.CurrentModule);
+			optSearchAllModules.IsSelected = (newScope == SearchScope.AllModules);
+			optSearchHelpFile.IsSelected = (newScope == SearchScope.HelpFile);
 		}
 	}
 
-	public SearchDialogBase(int width, Machine machine, Configuration configuration)
+	public SearchDialogBase(int width, SearchScopeMode searchScopeMode, Machine machine, Configuration configuration)
 		: base(machine, configuration)
 	{
+		SearchScopeMode = searchScopeMode;
+
 		InitializeComponent(width);
 	}
 
@@ -94,6 +122,8 @@ public abstract class SearchDialogBase : Dialog
 	[MemberNotNull(nameof(lblSearchCurrentModuleLabel))]
 	[MemberNotNull(nameof(optSearchAllModules))]
 	[MemberNotNull(nameof(lblSearchAllModulesLabel))]
+	[MemberNotNull(nameof(optSearchHelpFile))]
+	[MemberNotNull(nameof(lblSearchHelpFileLabel))]
 	void InitializeComponent(int width)
 	{
 		Width = width;
@@ -117,6 +147,8 @@ public abstract class SearchDialogBase : Dialog
 		lblSearchCurrentModuleLabel = new Label();
 		optSearchAllModules = new RadioButton();
 		lblSearchAllModulesLabel = new Label();
+		optSearchHelpFile = new RadioButton();
+		lblSearchHelpFileLabel = new Label();
 
 		var scopeGroup = new RadioButtonGroup() { optSearchActiveWindow, optSearchCurrentModule, optSearchAllModules };
 
@@ -184,12 +216,23 @@ public abstract class SearchDialogBase : Dialog
 		cnvSearch.Y = 8;
 		cnvSearch.Width = 23;
 		cnvSearch.Height = 3;
-		cnvSearch.Children.Add(optSearchActiveWindow);
-		cnvSearch.Children.Add(lblSearchActiveWindowLabel);
-		cnvSearch.Children.Add(optSearchCurrentModule);
-		cnvSearch.Children.Add(lblSearchCurrentModuleLabel);
-		cnvSearch.Children.Add(optSearchAllModules);
-		cnvSearch.Children.Add(lblSearchAllModulesLabel);
+
+		if (SearchScopeMode == SearchScopeMode.TextEditor)
+		{
+			cnvSearch.Children.Add(optSearchActiveWindow);
+			cnvSearch.Children.Add(lblSearchActiveWindowLabel);
+			cnvSearch.Children.Add(optSearchCurrentModule);
+			cnvSearch.Children.Add(lblSearchCurrentModuleLabel);
+			cnvSearch.Children.Add(optSearchAllModules);
+			cnvSearch.Children.Add(lblSearchAllModulesLabel);
+		}
+		else
+		{
+			cnvSearch.Children.Add(optSearchActiveWindow);
+			cnvSearch.Children.Add(lblSearchActiveWindowLabel);
+			cnvSearch.Children.Add(optSearchHelpFile);
+			cnvSearch.Children.Add(lblSearchHelpFileLabel);
+		}
 
 		optSearchActiveWindow.X = searchFrameX + 2;
 		optSearchActiveWindow.Y = 8;
@@ -223,6 +266,17 @@ public abstract class SearchDialogBase : Dialog
 		lblSearchAllModulesLabel.AccessKeyIndex = 0;
 		lblSearchAllModulesLabel.FocusTarget = optSearchAllModules;
 		lblSearchAllModulesLabel.AutoSize();
+
+		optSearchHelpFile.X = searchFrameX + 2;
+		optSearchHelpFile.Y = 9;
+		optSearchHelpFile.RadioButtonGroup = scopeGroup;
+
+		lblSearchHelpFileLabel.X = searchFrameX + 6;
+		lblSearchHelpFileLabel.Y = 9;
+		lblSearchHelpFileLabel.Text = "2. Help File";
+		lblSearchHelpFileLabel.AccessKeyIndex = 0;
+		lblSearchHelpFileLabel.FocusTarget = optSearchHelpFile;
+		lblSearchHelpFileLabel.AutoSize();
 
 		var widgets = new List<Widget>();
 

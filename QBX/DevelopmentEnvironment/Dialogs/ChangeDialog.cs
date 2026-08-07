@@ -14,16 +14,16 @@ public class ChangeDialog : SearchDialogBase
 	Button cmdCancel;
 	Button cmdHelp;
 
+	public Action<StringValue, StringValue, SearchScope>? Change;
+	public Action<StringValue, StringValue, SearchScope>? ChangeAll;
+
 #pragma warning disable CS8618
-	public ChangeDialog(Machine machine, Configuration configuration)
-		: base(width: 58, machine, configuration)
+	public ChangeDialog(SearchScopeMode searchScopeMode, Machine machine, Configuration configuration)
+		: base(width: 58, searchScopeMode, machine, configuration)
 	{
 		HelpContextString = "-907";
 	}
 #pragma warning restore
-
-	public Action<StringValue, StringValue>? Change;
-	public Action<StringValue, StringValue>? ChangeAll;
 
 	protected override void AddDialogButtons(List<Widget> widgets)
 	{
@@ -72,13 +72,13 @@ public class ChangeDialog : SearchDialogBase
 
 	private void cmdFindAndVerify_Activated()
 	{
-		Change?.Invoke(FindWhat, ChangeTo);
+		Change?.Invoke(FindWhat, ChangeTo, SearchScope);
 	}
 
 	private void cmdChangeAll_Activated()
 	{
 		Close();
-		ChangeAll?.Invoke(FindWhat, ChangeTo);
+		ChangeAll?.Invoke(FindWhat, ChangeTo, SearchScope);
 	}
 
 	private void cmdCancel_Activated()

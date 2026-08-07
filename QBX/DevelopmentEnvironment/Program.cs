@@ -636,6 +636,8 @@ public partial class Program : HostedProgram, IOvertypeFlag
 			FocusedViewport = ImmediateViewport;
 		else if (FocusedViewport == ImmediateViewport)
 			FocusedViewport = HelpViewport ?? PrimaryViewport;
+
+		UpdateSearchMenu();
 	}
 
 	public void SwitchToPreviousViewport()
@@ -649,6 +651,8 @@ public partial class Program : HostedProgram, IOvertypeFlag
 			FocusedViewport = PrimaryViewport;
 		else if (FocusedViewport == ImmediateViewport)
 			FocusedViewport = SplitViewport ?? PrimaryViewport;
+
+		UpdateSearchMenu();
 	}
 
 	public TDialog ShowDialog<TDialog>(TDialog dialog)
@@ -729,23 +733,7 @@ public partial class Program : HostedProgram, IOvertypeFlag
 
 	public bool TryShowHelpTopicForTokenUnderCursor()
 	{
-		FocusedViewport.EditCurrentLine();
-
-		var buffer = FocusedViewport.CurrentLineBuffer;
-
-		if (buffer == null)
-			return false;
-
-		int startIndex = FocusedViewport.CursorX;
-
-		FindIdentifierExtent(buffer, ref startIndex, out var endIndex);
-
-		if ((startIndex < 0) || (startIndex > endIndex))
-			return false;
-
-		string token = buffer.ToString(startIndex, endIndex - startIndex + 1);
-
-		string contextString = QuickHelpFilePrefix + token;
+		string contextString = QuickHelpFilePrefix + GetTokenUnderCursor();
 
 		if (!TryFindHelpTopic(contextString, out var topic))
 			return false;
