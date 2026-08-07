@@ -211,6 +211,9 @@ public abstract class Dialog(Machine machine, Configuration configuration) : IFo
 
 	public void NotifyShown()
 	{
+		if (FocusedWidget != null)
+			FocusedWidget.NotifyGotFocus(this);
+
 		IsVisible = true;
 		OnShown();
 	}

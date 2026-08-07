@@ -731,7 +731,7 @@ public partial class Program
 				ShowChangeDialog();
 				break;
 
-			case TextEditorAction.ToggleInsertMode: 
+			case TextEditorAction.ToggleInsertMode:
 			{
 				EnableOvertype = !EnableOvertype;
 				break;

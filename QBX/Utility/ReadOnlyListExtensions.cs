@@ -22,6 +22,8 @@ public static class ReadOnlyListExtensions
 		{
 			if (t.IsPrimitive)
 				bitwiseEquatable = true;
+			else if (t.IsAbstract)
+				bitwiseEquatable = false;
 			else
 			{
 				var equalsMethod = t.GetMethod("Equals", BindingFlags.Public | BindingFlags.Instance, binder: null, [typeof(object)], modifiers: null)!;
