@@ -7,15 +7,21 @@ using QBX.Hardware;
 
 namespace QBX.DevelopmentEnvironment.Dialogs;
 
-public class FindDialog(Machine machine, Configuration configuration) : SearchDialogBase(width: 59, machine, configuration)
+public class FindDialog : SearchDialogBase
 {
-#pragma warning disable CS8618
 	Button cmdOK;
 	Button cmdCancel;
 	Button cmdHelp;
-#pragma warning restore
 
 	public Action<StringValue>? Find;
+
+#pragma warning disable CS8618
+	public FindDialog(Machine machine, Configuration configuration)
+		: base(width: 59, machine, configuration)
+	{
+		HelpContextString = "-908";
+	}
+#pragma warning restore
 
 	protected override void ConfigureDialog(List<Widget> widgets)
 	{

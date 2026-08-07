@@ -7,13 +7,19 @@ using QBX.Hardware;
 
 namespace QBX.DevelopmentEnvironment.Dialogs;
 
-public class ChangeDialog(Machine machine, Configuration configuration) : SearchDialogBase(width: 58, machine, configuration)
+public class ChangeDialog : SearchDialogBase
 {
-#pragma warning disable CS8618
 	Button cmdFindAndVerify;
 	Button cmdChangeAll;
 	Button cmdCancel;
 	Button cmdHelp;
+
+#pragma warning disable CS8618
+	public ChangeDialog(Machine machine, Configuration configuration)
+		: base(width: 58, machine, configuration)
+	{
+		HelpContextString = "-907";
+	}
 #pragma warning restore
 
 	public Action<StringValue, StringValue>? Change;
