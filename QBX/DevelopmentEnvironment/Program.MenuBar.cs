@@ -28,6 +28,11 @@ public partial class Program
 	MenuItem mnuViewSplit;
 
 	Menu mnuSearch;
+	MenuItem mnuSearchFind;
+	MenuItem mnuSearchSelectedText;
+	MenuItem mnuSearchRepeatLastFind;
+	MenuItem mnuSearchChange;
+	MenuItem mnuSearchLabel;
 
 	Menu mnuRun;
 	MenuItem mnuRunStart;
@@ -88,6 +93,11 @@ public partial class Program
 		nameof(mnuView),
 		nameof(mnuViewSplit),
 		nameof(mnuSearch),
+		nameof(mnuSearchFind),
+		nameof(mnuSearchSelectedText),
+		nameof(mnuSearchRepeatLastFind),
+		nameof(mnuSearchChange),
+		nameof(mnuSearchLabel),
 		nameof(mnuRun),
 		nameof(mnuRunStart),
 		nameof(mnuRunRestart),
@@ -165,11 +175,11 @@ public partial class Program
 		mnuSearch =
 			new Menu("&Search", 24, "m.s")
 			{
-				new MenuItem("&Find...", "Find specified text", "-351"),
-				new MenuItem("&Selected Text     Ctrl+\\", "Find selected text", "-352"),
-				new MenuItem("&Repeat Last Find      F3", "Repeat last find", "-353"),
-				new MenuItem("&Change...", "Find and change specified text", "-354"),
-				new MenuItem("&Label...", "Find specified line label", "-355"),
+				(mnuSearchFind = new MenuItem("&Find...", "Find specified text", "-351")),
+				(mnuSearchSelectedText = new MenuItem("&Selected Text     Ctrl+\\", "Find selected text", "-352")),
+				(mnuSearchRepeatLastFind = new MenuItem("&Repeat Last Find      F3", "Repeat last find", "-353")),
+				(mnuSearchChange = new MenuItem("&Change...", "Find and change specified text", "-354")),
+				(mnuSearchLabel = new MenuItem("&Label...", "Find specified line label", "-355")),
 			};
 
 		mnuRun =
@@ -266,6 +276,12 @@ public partial class Program
 
 		mnuViewSplit.Clicked += mnuViewSplit_Clicked;
 
+		mnuSearchFind.Clicked += mnuSearchFind_Clicked;
+		mnuSearchSelectedText.Clicked += mnuSearchSelectedText_Clicked;
+		mnuSearchRepeatLastFind.Clicked += mnuSearchRepeatLastFind_Clicked;
+		mnuSearchChange.Clicked += mnuSearchChange_Clicked;
+		mnuSearchLabel.Clicked += mnuSearchLabel_Clicked;
+
 		mnuRunStart.Clicked += mnuRunStart_Clicked;
 		mnuRunRestart.Clicked += mnuRunRestart_Clicked;
 		mnuRunContinue.Clicked += mnuRunContinue_Clicked;
@@ -344,6 +360,28 @@ public partial class Program
 	private void mnuViewSplit_Clicked()
 	{
 		ShowSplitViewport();
+	}
+
+	private void mnuSearchFind_Clicked()
+	{
+		ShowDialog(new FindDialog(Machine, Configuration));
+	}
+
+	private void mnuSearchSelectedText_Clicked()
+	{
+	}
+
+	private void mnuSearchRepeatLastFind_Clicked()
+	{
+	}
+
+	private void mnuSearchChange_Clicked()
+	{
+		ShowDialog(new ChangeDialog(Machine, Configuration));
+	}
+
+	private void mnuSearchLabel_Clicked()
+	{
 	}
 
 	private void mnuRunStart_Clicked()
