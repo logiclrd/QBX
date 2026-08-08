@@ -1,8 +1,5 @@
 Print Dialog: "-904"
 New Procedure Dialog: "-912"
-Find Dialog: "-908"
-Change Dialog: "-907"
-Change Match Dialog: "-909"
 Make EXE File Dialog: "-905"
 Make Library Dialog: "-906"
 Delete Watch Dialog: "-910"
@@ -30,7 +27,6 @@ DATA Moved To Module Level Dialog: "-242" => not sure what triggers this, maybe 
 File Name Conflict Dialog: "-243" => trying to Save As with a module name that is already in use
 Add Watchpoint Dialog: "-245"
 Must Specify Search String Dialog: "-253" => accepting Find or Change dialog with an empty Find What field
-Not Found Dialog: "-254" => find didn't find it
 Replace All Finished Dialog: "-255" => after completion of Replace All, cursor has been returned to the starting point
 Wrong Item Type Dialog: "-265" => activating the "Move" button with a module selected in the SUBs dialog (F2)
 Swap Floppy Disk Dialog: "-267" => performing an action which accesses A: or B: when a common drive has been renamed to the other one

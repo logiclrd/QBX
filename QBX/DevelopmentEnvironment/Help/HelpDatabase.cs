@@ -65,5 +65,8 @@ public class HelpDatabase(bool caseSensitive)
 	{
 		return TopicByContextString.TryGetValue(contextString, out topic);
 	}
+
+	public bool ContainsTopic(HelpDatabaseTopic topic)
+		=> Topics.Contains(topic);
 }
 

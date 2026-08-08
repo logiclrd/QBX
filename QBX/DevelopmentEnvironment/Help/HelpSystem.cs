@@ -118,6 +118,14 @@ public class HelpSystem
 		}
 	}
 
+	public bool ContainsTopic(HelpDatabaseTopic topic)
+	{
+		if (!_helpFiles.Values.Contains(topic.Database))
+			return false;
+
+		return topic.Database.ContainsTopic(topic);
+	}
+
 	public HelpDatabaseTopic? GetFirstTopic()
 	{
 		var database = _helpFiles.Values.FirstOrDefault();
