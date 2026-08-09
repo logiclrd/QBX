@@ -227,7 +227,7 @@ public class Viewport
 			{
 				// Add empty line(s) if CursorY is past the end of the document.
 				while (CursorY >= EditableElement.Lines.Count)
-					EditableElement.AddLine(EditableElement.ConstructLine(CurrentLineBuffer));
+					EditableElement.AddLine(EditableElement.ConstructLine(Program.EmptyBuffer));
 			}
 
 			RenderLine(CursorY, writer);

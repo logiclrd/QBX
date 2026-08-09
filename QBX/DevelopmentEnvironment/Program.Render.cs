@@ -297,7 +297,7 @@ public partial class Program
 
 	ResettableStringWriter _lineRenderBuffer = new ResettableStringWriter();
 
-	static readonly StringBuilder EmptyBuffer = new StringBuilder();
+	internal static readonly StringBuilder EmptyBuffer = new StringBuilder();
 
 	int RenderViewport(int row, Viewport viewport, bool connectUp, bool verticalScrollBar = true)
 	{
