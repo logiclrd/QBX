@@ -637,9 +637,13 @@ public partial class Program
 			state.Origin.AdvanceCharacterOffset(state.ChangeToString.Length - state.FindWhatString.Length);
 		}
 
-		if ((FocusedViewport.EditableElement != element)
-		 || (FocusedViewport.CursorY != result.LineIndex))
-			element.ReplaceLine(result.LineIndex, element.ConstructLine(buffer));
+		if (FocusedViewport.EditableElement != element)
+		{
+			FocusedViewport.SelectionManager.CancelSelection();
+
+			if (FocusedViewport.CursorY != result.LineIndex)
+				element.ReplaceLine(result.LineIndex, element.ConstructLine(buffer));
+		}
 	}
 
 	void ShowChangeMatchDialog(SearchPosition result, SearchState state, Action findNext)
