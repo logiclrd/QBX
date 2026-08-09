@@ -14,6 +14,7 @@ public partial class Program
 	VisualLibrary? _savedVisualLibrary;
 	int _savedActivePageNumber;
 	int _savedCursorX, _savedCursorY;
+	int _savedCharacterLineWindowStart, _savedCharacterLineWindowEnd;
 
 	void SetIDEVideoMode()
 	{
@@ -42,6 +43,9 @@ public partial class Program
 
 		_savedCursorX = _savedVisualLibrary.CursorX;
 		_savedCursorY = _savedVisualLibrary.CursorY;
+
+		_savedCharacterLineWindowStart = _savedVisualLibrary.CharacterLineWindowStart;
+		_savedCharacterLineWindowEnd = _savedVisualLibrary.CharacterLineWindowEnd;
 	}
 
 	void RestoreOutput()
@@ -58,6 +62,7 @@ public partial class Program
 			_savedVisualLibrary.ActivePageNumber = _savedActivePageNumber;
 			_savedVisualLibrary.RefreshParameters();
 
+			_savedVisualLibrary.UpdateCharacterLineWindow(_savedCharacterLineWindowStart, _savedCharacterLineWindowEnd);
 			_savedVisualLibrary.MoveCursor(_savedCursorX, _savedCursorY);
 
 			Machine.VideoFirmware.SetVisualLibrary(_savedVisualLibrary);
