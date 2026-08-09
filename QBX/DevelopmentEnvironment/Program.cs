@@ -46,6 +46,8 @@ public partial class Program : HostedProgram, IOvertypeFlag
 	public string? ReferenceBarText;
 	public bool ReferenceBarTextHighlighted;
 
+	int _characterRows;
+
 	// TODO: disable Utility menu, Options menu and Help menu (and help subsystem)
 	// => error message when accessing a removed feature: "Feature removed"
 	public bool NoFrillsMode;
@@ -102,6 +104,13 @@ public partial class Program : HostedProgram, IOvertypeFlag
 		InitializeMenuBar();
 
 		SaveOutput();
+
+		_characterRows = Machine.VideoFirmware.VisualLibrary.CharacterHeight;
+
+		if ((_characterRows != 25)
+		 && (_characterRows != 43)
+		 && (_characterRows != 50))
+			_characterRows = 25;
 
 		SetIDEVideoMode();
 
@@ -241,8 +250,11 @@ public partial class Program : HostedProgram, IOvertypeFlag
 			else if (argument.Equals("/H", StringComparison.OrdinalIgnoreCase))
 			{
 				// Use the highest text resolution available
-				Machine.VideoFirmware.SetCharacterRows(50);
+				_characterRows = 50;
+
+				Machine.VideoFirmware.SetCharacterRows(_characterRows);
 				TextLibrary.RefreshParameters();
+				TextLibrary.ResetCharacterLineWindow();
 			}
 			else if (argument.StartsWith("/K:", StringComparison.OrdinalIgnoreCase))
 			{

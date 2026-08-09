@@ -18,7 +18,23 @@ public partial class Program
 
 	void SetIDEVideoMode()
 	{
+		int characterBoxHeight =
+			_characterRows switch
+			{
+				50 => 8,
+				43 => 14,
+				25 => 16,
+
+				_ => 16,
+			};
+
+		bool wasCompatibleTextMode =
+			(Machine.GraphicsArray.Graphics.DisableText == false) &&
+			(Machine.GraphicsArray.CRTController.CharacterHeight == characterBoxHeight);
+
 		Machine.VideoFirmware.SetMode(3);
+
+		Machine.VideoFirmware.SetCharacterRows(_characterRows);
 
 		Machine.VideoFirmware.DisableBlink();
 
@@ -27,6 +43,17 @@ public partial class Program
 
 		// We use our own dedicated TextLibrary.
 		Machine.VideoFirmware.VisualLibrary.DetachMouseEvents();
+
+		// If the running view is in a compatible text mode, use its font.
+		if (wasCompatibleTextMode)
+		{
+			const int PlaneSize = 65536;
+
+			var savedPlane2 = _savedOutput.AsSpan().Slice(2 * PlaneSize, PlaneSize);
+			var idePlane2 = Machine.GraphicsArray.VRAM.AsSpan().Slice(2 * PlaneSize, PlaneSize);
+
+			savedPlane2.CopyTo(idePlane2);
+		}
 	}
 
 	void SaveOutput()
