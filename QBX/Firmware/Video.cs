@@ -1007,8 +1007,10 @@ public partial class Video(Machine machine)
 		Span<byte> map = machine.GraphicsArray.VRAM.AsSpan()
 			.Slice(FontPlane + fontBlockIndex * 8192, 8192);
 
-		for (int ch = 0; ch < 256; ch++)
+		for (int i = 0; i < font.Length; i++)
 		{
+			int ch = firstCharacter + i;
+
 			int baseOffset = ch * 32;
 
 			Span<byte> glyph = font[ch];
