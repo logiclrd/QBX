@@ -1983,9 +1983,16 @@ public partial class Program
 
 		SplitViewport = AttachViewport(new Viewport(Clipboard));
 
-		SplitViewport.Height = PrimaryViewport.Height / 2;
+		// Height does not include the top frame line.
+		int totalPrimaryHeight = PrimaryViewport.Height + 1;
 
-		PrimaryViewport.Height -= SplitViewport.Height;
+		int totalSplitHeight = totalPrimaryHeight / 2;
+
+		totalPrimaryHeight -= totalSplitHeight;
+
+		// Height does not include the top frame line.
+		PrimaryViewport.Height = totalPrimaryHeight - 1;
+		SplitViewport.Height = totalSplitHeight - 1;
 
 		int reclaimLines = 0;
 
