@@ -97,7 +97,7 @@ public partial class Program
 						newScrollX: 0,
 						newScrollY: bookMark.CursorY - 4,
 						ViewportPositioningPriority.Cursor,
-						viewportWidth: 78,
+						viewportWidth: TextLibrary.Width - 2,
 						terminateToCommitEdit: null);
 				}
 
@@ -111,7 +111,7 @@ public partial class Program
 					newScrollX: 0,
 					newScrollY: bookMark.CursorY - 4,
 					ViewportPositioningPriority.Cursor,
-					viewportWidth: 78,
+					viewportWidth: TextLibrary.Width - 2,
 					terminateToCommitEdit: null);
 
 				return true;
