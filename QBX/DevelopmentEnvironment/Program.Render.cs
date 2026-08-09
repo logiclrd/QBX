@@ -49,9 +49,6 @@ public partial class Program
 
 		if (SplitViewport != null)
 		{
-			if (Configuration.ShowScrollBars)
-				height--; // horizontal scrollbar
-
 			int maxSplitViewport = height - 1/*primary title*/ - 1/* split title*/;
 
 			if (SplitViewport.Height > maxSplitViewport)
