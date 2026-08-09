@@ -26,7 +26,7 @@ public abstract class VariableAddressFunction : Function
 	protected virtual bool Validate(Variable variable)
 	{
 		// Maybe in the future we generate simulated string descriptors?
-		if (variable.DataType.IsString)
+		if (variable.DataType.IsString && (variable.DataType.ByteSize == 0))
 			throw RuntimeException.IllegalFunctionCall(Source);
 
 		return true;
