@@ -128,6 +128,9 @@ public class Viewport
 	}
 
 	public void RenderLine(int y, TextWriter writer)
+		=> RenderLine(y, EditableLineState.Committed, writer);
+
+	public void RenderLine(int y, EditableLineState lineState, TextWriter writer)
 	{
 		if (HelpTopic != null)
 		{
@@ -136,7 +139,9 @@ public class Viewport
 		}
 		else if (EditableElement != null)
 		{
-			if ((y >= 0) && (y < EditableElement.Lines.Count))
+			if ((lineState == EditableLineState.Uncommitted) && (y == CursorY) && (CurrentLineBuffer != null))
+				writer.Write(CurrentLineBuffer);
+			else if ((y >= 0) && (y < EditableElement.Lines.Count))
 				EditableElement.Lines[y].Render(writer, includeCRLF: false);
 		}
 	}
@@ -216,9 +221,16 @@ public class Viewport
 		{
 			var writer = new StringWriter();
 
-			RenderLine(CursorY, writer);
-
 			CurrentLineBuffer = writer.GetStringBuilder();
+
+			if (EditableElement != null)
+			{
+				// Add empty line(s) if CursorY is past the end of the document.
+				while (CursorY >= EditableElement.Lines.Count)
+					EditableElement.AddLine(EditableElement.ConstructLine(CurrentLineBuffer));
+			}
+
+			RenderLine(CursorY, writer);
 		}
 
 		return CurrentLineBuffer;
