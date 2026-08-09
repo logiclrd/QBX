@@ -22,7 +22,7 @@ public class CharacterArrayWriter : TextWriter
 	void ExpandBuffer(int count = 1)
 	{
 		int bufferLength = _buffer.Length;
-		int minimumBufferLength = bufferLength + count;
+		int minimumBufferLength = _length + count;
 
 		while (bufferLength < minimumBufferLength)
 			bufferLength = bufferLength + (bufferLength >> 1);
