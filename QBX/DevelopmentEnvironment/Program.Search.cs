@@ -20,6 +20,9 @@ public partial class Program
 		if (FocusedViewport == ImmediateViewport)
 			return;
 
+		// Commit any changes immediately. The current element might be visible in both viewports.
+		CommitViewportsAndSwallowError();
+
 		if ((initialFindWhat?.Length == 1)
 		 && !IsWordCharacter(initialFindWhat[0]))
 			initialFindWhat = null;
@@ -61,6 +64,9 @@ public partial class Program
 	{
 		if (FocusedViewport == ImmediateViewport)
 			return;
+
+		// Commit any changes immediately. The current element might be visible in both viewports.
+		CommitViewportsAndSwallowError();
 
 		if ((initialFindWhat?.Length == 1)
 		 && !IsWordCharacter(initialFindWhat[0]))
@@ -622,6 +628,13 @@ public partial class Program
 		buffer.Remove(result.CharacterOffset, result.Length);
 		buffer.Insert(result.CharacterOffset, state.ChangeToString);
 
+		if (state.Origin.IsSameLineAs(state.Index)
+		 && (state.Origin.CharacterOffset > state.Index.CharacterOffset + state.ChangeToString.Length))
+		{
+			// We've just bumped the origin by editing the start of the line it's on.
+			state.Origin.AdvanceCharacterOffset(state.ChangeToString.Length - state.FindWhatString.Length);
+		}
+
 		// The regular loop will advance by FindWhatString.Length. If the
 		// current occurrence is skipped then the FindWhat string is what's
 		// there. But if we came down this path, we've changed it to
@@ -630,16 +643,16 @@ public partial class Program
 		// advancement.
 		state.AdvanceCharacterOffset(state.ChangeToString.Length - state.FindWhatString.Length);
 
-		if (state.Origin.IsSameLineAs(state.Index)
-		 && (state.Origin > state.Index))
-		{
-			// We've just bumped the origin by editing the start of the line it's on.
-			state.Origin.AdvanceCharacterOffset(state.ChangeToString.Length - state.FindWhatString.Length);
-		}
-
-		if (FocusedViewport.EditableElement != element)
+		if (FocusedViewport.EditableElement == element)
 		{
 			FocusedViewport.SelectionManager.CancelSelection();
+
+			// Commit any changes immediately. The current element might be visible in both viewports.
+			try
+			{
+				FocusedViewport.CommitCurrentLine();
+			}
+			catch { }
 
 			if (FocusedViewport.CursorY != result.LineIndex)
 				element.ReplaceLine(result.LineIndex, element.ConstructLine(buffer));
