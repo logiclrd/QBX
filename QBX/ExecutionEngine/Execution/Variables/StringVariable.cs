@@ -238,6 +238,7 @@ public class PinnedStringVariable : StringVariable
 		_length = length;
 
 		PinnedMemoryAddress = memoryAddress;
+		PinnedMemoryOwner = this;
 	}
 
 	public override void SetValue(StringValue value)

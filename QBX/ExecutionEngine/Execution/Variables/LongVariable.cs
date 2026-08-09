@@ -77,6 +77,7 @@ public class PinnedLongVariable : LongVariable
 		_machine = machine;
 
 		PinnedMemoryAddress = memoryAddress;
+		PinnedMemoryOwner = this;
 
 		Value = ValueSpan[0];
 	}

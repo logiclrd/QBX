@@ -71,6 +71,7 @@ public class PinnedSingleVariable : SingleVariable
 		_machine = machine;
 
 		PinnedMemoryAddress = memoryAddress;
+		PinnedMemoryOwner = this;
 
 		Value = ValueSpan[0];
 	}

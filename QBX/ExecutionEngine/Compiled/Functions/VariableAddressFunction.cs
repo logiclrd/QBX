@@ -46,7 +46,7 @@ public abstract class VariableAddressFunction : Function
 
 		var memoryOwner = variable;
 
-		while (memoryOwner.PinnedMemoryOwner != null)
+		while ((memoryOwner.PinnedMemoryOwner != null) && (memoryOwner.PinnedMemoryOwner != memoryOwner))
 			memoryOwner = memoryOwner.PinnedMemoryOwner;
 
 		if (!memoryOwner.IsPinned)

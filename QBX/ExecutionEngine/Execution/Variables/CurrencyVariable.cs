@@ -75,6 +75,7 @@ public class PinnedCurrencyVariable : CurrencyVariable
 		_machine = machine;
 
 		PinnedMemoryAddress = memoryAddress;
+		PinnedMemoryOwner = this;
 
 		ReadPinnedData();
 	}
