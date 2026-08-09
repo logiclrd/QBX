@@ -181,6 +181,7 @@ public class SaveFileDialog : DialogWithDirectoryList
 		cmdOK.Width = 6;
 		cmdOK.Height = 1;
 		cmdOK.Text = "OK";
+		cmdOK.IsDefault = true;
 		cmdOK.Activated = cmdOK_Activated;
 
 		cmdCancel.X = 20;

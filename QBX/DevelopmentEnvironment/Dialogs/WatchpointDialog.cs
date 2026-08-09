@@ -63,6 +63,7 @@ public class WatchpointDialog : Dialog
 		cmdOK.Width = 6;
 		cmdOK.Height = 1;
 		cmdOK.Text = "OK";
+		cmdOK.IsDefault = true;
 		cmdOK.Activated += cmdOK_Activated;
 
 		cmdCancel.X = 22;
@@ -86,11 +87,6 @@ public class WatchpointDialog : Dialog
 		Widgets.Add(cmdHelp);
 
 		SetFocus(bdrExpression);
-	}
-
-	protected override void OnActivated()
-	{
-		cmdOK_Activated();
 	}
 
 	void cmdOK_Activated()

@@ -127,7 +127,7 @@ public class OpenFileDialog : DialogWithDirectoryList
 		cmdOK.Width = 6;
 		cmdOK.Height = 1;
 		cmdOK.Text = "OK";
-		cmdOK.Activated = cmdOK_Activated;
+		cmdOK.IsDefault = true;
 
 		cmdCancel.X = 27;
 		cmdCancel.Y = 18;

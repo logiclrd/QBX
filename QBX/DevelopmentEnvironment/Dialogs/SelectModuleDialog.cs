@@ -101,7 +101,7 @@ public class SelectModuleDialog : Dialog
 		cmdOK.Y = 13;
 		cmdOK.Width = 6;
 		cmdOK.Text = "OK";
-		cmdOK.Activated = cmdOK_Activated;
+		cmdOK.IsDefault = true;
 
 		cmdCancel.X = 10;
 		cmdCancel.Y = 13;
@@ -133,12 +133,6 @@ public class SelectModuleDialog : Dialog
 	private void lstItems_LostFocus()
 	{
 		cmdOK.IsDefault = false;
-	}
-
-	private void cmdOK_Activated()
-	{
-		ModuleSelected?.Invoke();
-		Close();
 	}
 
 	private void cmdCancel_Activated()

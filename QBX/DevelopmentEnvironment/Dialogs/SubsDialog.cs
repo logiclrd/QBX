@@ -139,6 +139,7 @@ public class SubsDialog : Dialog
 		cmdEditInActive.Width = 18;
 		cmdEditInActive.Text = "Edit in Active";
 		cmdEditInActive.AccessKeyIndex = 8;
+		cmdEditInActive.IsDefault = true;
 		cmdEditInActive.Activated = cmdEditInActive_Activated;
 
 		cmdEditInSplit.X = 32;
@@ -378,11 +379,5 @@ public class SubsDialog : Dialog
 	private void cmdHelp_Activated()
 	{
 		OnShowHelpPopup();
-	}
-
-	protected override void OnActivated()
-	{
-		EditInActive?.Invoke();
-		Close();
 	}
 }

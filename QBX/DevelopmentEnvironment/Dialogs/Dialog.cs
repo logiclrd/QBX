@@ -224,5 +224,8 @@ public abstract class Dialog(Machine machine, Configuration configuration) : IFo
 
 	protected virtual void OnActivated()
 	{
+		foreach (var button in EnumerateAllWidgets().OfType<Button>())
+			if (button.IsDefault)
+				button.Activate();
 	}
 }
