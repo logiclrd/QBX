@@ -1,3 +1,5 @@
+using System;
+
 using QBX.DevelopmentEnvironment.Help;
 
 namespace QBX.DevelopmentEnvironment;
@@ -13,6 +15,8 @@ public class SearchPosition
 	public int LineIndex;
 	public int CharacterOffset;
 
+	public int Length;
+
 	public SearchPosition Clone()
 	{
 		var ret = new SearchPosition();
@@ -26,7 +30,14 @@ public class SearchPosition
 		ret.LineIndex = LineIndex;
 		ret.CharacterOffset = CharacterOffset;
 
+		ret.Length = Length;
+
 		return ret;
+	}
+
+	public void AdvanceCharacterOffset(int count = 1)
+	{
+		CharacterOffset += count;
 	}
 }
 

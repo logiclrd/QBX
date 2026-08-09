@@ -47,6 +47,18 @@ public abstract class SearchDialogBase : Dialog
 		set => txtChangeTo.Text = value;
 	}
 
+	public bool MatchUpperLowercase
+	{
+		get => chkMatchUpperLowercase.IsChecked;
+		set => chkMatchUpperLowercase.IsChecked = value;
+	}
+
+	public bool WholeWord
+	{
+		get => chkWholeWord.IsChecked;
+		set => chkWholeWord.IsChecked = value;
+	}
+
 	public SearchScopeMode SearchScopeMode
 	{
 		get;
@@ -98,6 +110,16 @@ public abstract class SearchDialogBase : Dialog
 		SearchScopeMode = searchScopeMode;
 
 		InitializeComponent(width);
+
+		switch (searchScopeMode)
+		{
+			case SearchScopeMode.TextEditor:
+				SearchScope = SearchScope.CurrentModule;
+				break;
+			case SearchScopeMode.HelpFile:
+				SearchScope = SearchScope.HelpFile;
+				break;
+		}
 	}
 
 	protected abstract void AddDialogButtons(List<Widget> widgets);
@@ -150,7 +172,14 @@ public abstract class SearchDialogBase : Dialog
 		optSearchHelpFile = new RadioButton();
 		lblSearchHelpFileLabel = new Label();
 
-		var scopeGroup = new RadioButtonGroup() { optSearchActiveWindow, optSearchCurrentModule, optSearchAllModules };
+		var scopeGroup =
+			new RadioButtonGroup()
+			{
+				optSearchActiveWindow,
+				optSearchCurrentModule,
+				optSearchAllModules,
+				optSearchHelpFile,
+			};
 
 		lblFindWhat.X = 1;
 		lblFindWhat.Y = 1;
@@ -307,5 +336,18 @@ public abstract class SearchDialogBase : Dialog
 	private void txtChangeTo_GotFocus()
 	{
 		txtChangeTo.SelectAll();
+	}
+
+	protected SearchParameters BuildSearchParameters()
+	{
+		var searchParameters = new SearchParameters();
+
+		searchParameters.FindWhatString = FindWhat.ToString();
+		searchParameters.ChangeToString = ChangeTo.ToString(); // might not be attached to UI, that's okay
+		searchParameters.MatchUpperLowercase = MatchUpperLowercase;
+		searchParameters.WholeWord = WholeWord;
+		searchParameters.SearchScope = SearchScope;
+
+		return searchParameters;
 	}
 }

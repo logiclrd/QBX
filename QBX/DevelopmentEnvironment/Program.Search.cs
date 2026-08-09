@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Text;
 
 using QBX.DevelopmentEnvironment.Dialogs;
 using QBX.DevelopmentEnvironment.Help;
@@ -19,6 +20,10 @@ public partial class Program
 		if (FocusedViewport == ImmediateViewport)
 			return;
 
+		if ((initialFindWhat?.Length == 1)
+		 && !IsWordCharacter(initialFindWhat[0]))
+			initialFindWhat = null;
+
 		var searchScopeMode =
 			FocusedViewport == HelpViewport
 			? SearchScopeMode.HelpFile
@@ -26,18 +31,24 @@ public partial class Program
 
 		var dialog = new FindDialog(searchScopeMode, Machine, Configuration);
 
-		dialog.FindWhat =
-			initialFindWhat != null
-			? new StringValue(initialFindWhat)
-			: (_lastFindWhat ?? new StringValue());
+		if (_lastSearchParameters != null)
+		{
+			dialog.FindWhat = new StringValue(_lastSearchParameters.FindWhatString);
+			dialog.MatchUpperLowercase = _lastSearchParameters.MatchUpperLowercase;
+			dialog.WholeWord = _lastSearchParameters.WholeWord;
+			dialog.SearchScope = _lastSearchParameters.SearchScope;
+		}
+
+		if (initialFindWhat != null)
+			dialog.FindWhat = new StringValue(initialFindWhat);
 
 		dialog.Find +=
-			(findWhat, searchScope) =>
+			(searchParameters) =>
 			{
 				var origin = GetOriginFromCurrentCursorLocation();
 
 				if (origin != null)
-					PerformFind(findWhat, searchScope, origin);
+					Find(searchParameters, origin);
 			};
 
 		ShowDialog(dialog);
@@ -51,6 +62,10 @@ public partial class Program
 		if (FocusedViewport == ImmediateViewport)
 			return;
 
+		if ((initialFindWhat?.Length == 1)
+		 && !IsWordCharacter(initialFindWhat[0]))
+			initialFindWhat = null;
+
 		var searchScopeMode =
 			FocusedViewport == HelpViewport
 			? SearchScopeMode.HelpFile
@@ -58,40 +73,37 @@ public partial class Program
 
 		var dialog = new ChangeDialog(searchScopeMode, Machine, Configuration);
 
-		dialog.FindWhat =
-			initialFindWhat != null
-			? new StringValue(initialFindWhat)
-			: (_lastFindWhat ?? new StringValue());
-
-		dialog.ChangeTo =
-			initialChangeTo != null
-			? new StringValue(initialChangeTo)
-			: (_lastChangeTo ?? new StringValue());
+		if (_lastSearchParameters != null)
+		{
+			dialog.FindWhat = new StringValue(initialFindWhat ?? _lastSearchParameters.FindWhatString);
+			dialog.ChangeTo = new StringValue(initialChangeTo ?? _lastSearchParameters.ChangeToString);
+			dialog.MatchUpperLowercase = _lastSearchParameters.MatchUpperLowercase;
+			dialog.WholeWord = _lastSearchParameters.WholeWord;
+			dialog.SearchScope = _lastSearchParameters.SearchScope;
+		}
 
 		dialog.Change +=
-			(findWhat, changeTo, searchScope) =>
+			(searchParameters) =>
 			{
 				var origin = GetOriginFromCurrentCursorLocation();
 
 				if (origin != null)
-					PerformChange(findWhat, changeTo, searchScope, origin, showPrompt: true);
+					Change(searchParameters, origin, showPrompt: true);
 			};
 
 		dialog.ChangeAll +=
-			(findWhat, changeTo, searchScope) =>
+			(searchParameters) =>
 			{
 				var origin = GetOriginFromCurrentCursorLocation();
 
 				if (origin != null)
-					PerformChange(findWhat, changeTo, searchScope, origin, showPrompt: false);
+					Change(searchParameters, origin, showPrompt: false);
 			};
 
 		ShowDialog(dialog);
 	}
 
-	StringValue? _lastFindWhat;
-	StringValue? _lastChangeTo;
-	SearchScope _lastSearchScope = SearchScope.CurrentModule;
+	SearchParameters? _lastSearchParameters;
 	SearchPosition? _lastFindResult;
 
 	[MemberNotNullWhen(true, nameof(_lastFindResult))]
@@ -129,11 +141,14 @@ public partial class Program
 
 			index.LineIndex = index.LineIndex.Clamp(0, element.Lines.Count - 1);
 
-			var line = element.Lines[index.LineIndex];
-
 			var buffer = new StringWriter();
 
-			line.Render(buffer);
+			if (PrimaryViewport.EditableElement == element)
+				PrimaryViewport.RenderLine(index.LineIndex, EditableLineState.Uncommitted, buffer);
+			else if (SplitViewport?.EditableElement == element)
+				SplitViewport?.RenderLine(index.LineIndex, EditableLineState.Uncommitted, buffer);
+			else
+				element.Lines[index.LineIndex].Render(buffer);
 
 			index.CharacterOffset = index.CharacterOffset.Clamp(0, buffer.GetStringBuilder().Length - 1);
 		}
@@ -157,6 +172,7 @@ public partial class Program
 		}
 
 		origin.LineIndex = FocusedViewport.CursorY;
+		origin.CharacterOffset = FocusedViewport.CursorX;
 
 		return origin;
 	}
@@ -166,7 +182,7 @@ public partial class Program
 		if (FocusedViewport == ImmediateViewport)
 			return;
 
-		if (_lastFindWhat != null)
+		if (_lastSearchParameters != null)
 		{
 			SearchPositionIndex? origin = null;
 
@@ -178,7 +194,17 @@ public partial class Program
 				if (lastFindInHelp != thisFindInHelp)
 					ForgetLastFindResult();
 				else
-					origin = RebuildIndex(_lastFindResult, thisFindInHelp ? SearchScopeMode.HelpFile : SearchScopeMode.TextEditor);
+				{
+					// If we're sitting right on the last search result, start searching after it.
+					// If we're not, then start searching from where the cursor is now.
+					if ((_lastFindResult.Element == FocusedViewport.EditableElement)
+					 && (_lastFindResult.LineIndex == FocusedViewport.CursorY)
+					 && (_lastFindResult.CharacterOffset == FocusedViewport.CursorX))
+					{
+						origin = RebuildIndex(_lastFindResult, thisFindInHelp ? SearchScopeMode.HelpFile : SearchScopeMode.TextEditor);
+						origin?.AdvanceCharacterOffset(_lastSearchParameters.FindWhatString.Length);
+					}
+				}
 			}
 
 			if (origin == null)
@@ -188,15 +214,23 @@ public partial class Program
 			}
 
 			if (origin != null)
-				PerformFind(_lastFindWhat, _lastSearchScope, origin);
+				Find(_lastSearchParameters, origin);
 		}
 	}
 
-	class SearchState(SearchPositionIndex index, SearchPosition position)
+	class SearchState(SearchPositionIndex index, SearchPosition position) : SearchParameters
 	{
+		public SearchPositionIndex Origin = index.Clone();
+
 		public SearchPositionIndex Index = index;
 		public SearchPosition Position = position;
 		public bool IsWrapped;
+
+		public void AdvanceCharacterOffset(int count = 1)
+		{
+			Index.AdvanceCharacterOffset(count);
+			Position.AdvanceCharacterOffset(count);
+		}
 	}
 
 	SearchPositionIndex? RebuildIndex(SearchPosition position, SearchScopeMode scopeMode)
@@ -230,6 +264,8 @@ public partial class Program
 				origin.LineIndex = position.LineIndex;
 		}
 
+		origin.CharacterOffset = position.CharacterOffset;
+
 		return origin;
 	}
 
@@ -258,7 +294,7 @@ public partial class Program
 		position.LineIndex = index.LineIndex;
 		position.CharacterOffset = index.CharacterOffset;
 
-		return new SearchState(index, position);
+		return new SearchState(index.Clone(), position);
 	}
 
 	void AdvanceSearchState(SearchState state)
@@ -274,7 +310,27 @@ public partial class Program
 			if (state.Index.LineIndex >= state.Position.HelpTopic.Lines.Count)
 			{
 				state.Index.LineIndex = 0;
-				state.Position.HelpTopic = HelpSystem.GetNextTopic(state.Position.HelpTopic);
+				state.Position.LineIndex = 0;
+
+				switch (state.SearchScope)
+				{
+					case SearchScope.ActiveWindow:
+						state.IsWrapped = true;
+						break;
+					case SearchScope.HelpFile:
+						var thisTopic = state.Position.HelpTopic;
+
+						var database = thisTopic.Database;
+
+						var nextTopic = database.GetNextTopic(thisTopic);
+
+						if (nextTopic?.TopicIndex < thisTopic.TopicIndex)
+							state.IsWrapped = true;
+
+						state.Position.HelpTopic = nextTopic;
+
+						break;
+				}
 			}
 		}
 		else
@@ -288,24 +344,35 @@ public partial class Program
 				state.Index.LineIndex = 0;
 				state.Position.LineIndex = 0;
 
-				state.Index.ElementIndex++;
-				state.Position.Element = null;
-
-				if (state.Index.ElementIndex >= state.Position.Unit.Elements.Count)
+				if (state.SearchScope == SearchScope.ActiveWindow)
+					state.IsWrapped = true;
+				else
 				{
-					state.Index.ElementIndex = 0;
-					state.Position.Unit = null;
+					state.Index.ElementIndex++;
+					state.Position.Element = null;
 
-					state.Index.LoadedFileIndex++;
-
-					if (state.Index.LoadedFileIndex >= LoadedFiles.Count)
+					if (state.Index.ElementIndex >= state.Position.Unit.Elements.Count)
 					{
-						state.Index.LoadedFileIndex = 0;
-						state.IsWrapped = true;
-					}
+						state.Index.ElementIndex = 0;
 
-					if (state.Index.LoadedFileIndex < LoadedFiles.Count)
-						state.Position.Unit = LoadedFiles[state.Index.LoadedFileIndex];
+						if (state.SearchScope == SearchScope.CurrentModule)
+							state.IsWrapped = true;
+						else
+						{
+							state.Position.Unit = null;
+
+							state.Index.LoadedFileIndex++;
+
+							if (state.Index.LoadedFileIndex >= LoadedFiles.Count)
+							{
+								state.Index.LoadedFileIndex = 0;
+								state.IsWrapped = true;
+							}
+
+							if (state.Index.LoadedFileIndex < LoadedFiles.Count)
+								state.Position.Unit = LoadedFiles[state.Index.LoadedFileIndex];
+						}
+					}
 				}
 
 				if ((state.Position.Unit != null)
@@ -326,25 +393,45 @@ public partial class Program
 			if (position.LineIndex < position.HelpTopic.Lines.Count)
 				position.HelpTopic.Lines[position.LineIndex].RenderPlainText(writer);
 		}
+		else if (PrimaryViewport.EditableElement == position.Element)
+			PrimaryViewport.RenderLine(position.LineIndex, EditableLineState.Uncommitted, writer);
+		else if (SplitViewport?.EditableElement == position.Element)
+			SplitViewport?.RenderLine(position.LineIndex, EditableLineState.Uncommitted, writer);
 		else if (position.Line != null)
 			position.Line.Render(writer);
 	}
 
-
-	public void PerformFind(StringValue findWhat, SearchScope searchScope, SearchPositionIndex origin)
+	enum SearchAction
 	{
-		_lastFindWhat = findWhat;
-		_lastSearchScope = searchScope;
+		Continue,
+		Exit,
+	}
+
+	void PerformSearch(SearchParameters searchParameters, SearchPositionIndex origin, Func<SearchPosition, SearchState, SearchAction> onMatch)
+	{
+		_lastSearchParameters = searchParameters;
 
 		UpdateSearchMenu();
 
 		ClampSearchPosition(origin);
 
-		var searchState = InitializeSearchState(origin.Clone());
+		var searchState = InitializeSearchState(origin);
 
-		string findWhatString = findWhat.ToString();
+		searchParameters.CopyTo(searchState);
+
+		searchState.InitializeComparer();
+
+		ContinueSearch(searchState, onMatch);
+	}
+
+	void ContinueSearch(SearchState searchState, Func<SearchPosition, SearchState, SearchAction> onMatch)
+	{
+		if (searchState.FindWhatString.Length == 0)
+			return; // just in case
 
 		var writer = new CharacterArrayWriter();
+
+		ForgetLastFindResult();
 
 		do
 		{
@@ -354,49 +441,261 @@ public partial class Program
 
 			var lineSpan = writer.GetBuffer();
 
+			bool findWhatStartIsWord = IsWordCharacter(searchState.FindWhatString[0]);
+			bool findWhatEndIsWord = IsWordCharacter(searchState.FindWhatString[searchState.FindWhatString.Length - 1]);
+
 			if (searchState.Position.CharacterOffset > 0)
-				lineSpan = lineSpan.Slice(searchState.Position.CharacterOffset);
-
-			int matchIndex = lineSpan.IndexOf(findWhatString);
-
-			if (matchIndex >= 0)
 			{
-				matchIndex += searchState.Position.CharacterOffset;
+				if (searchState.WholeWord)
+				{
+					// Skip forward until we find a word boundary. With the current architecture,
+					// we can't peek backwards, so if we do a search and find a match at
+					// matchIndex == 0, then unless we set up this invariant, we're in a pickle;
+					// we don't know whether the start of the match is a word boundary.
 
-				var result = searchState.Position.Clone();
+					while (searchState.Position.CharacterOffset < lineSpan.Length)
+					{
+						bool precedingCharacterIsWord = IsWordCharacter(lineSpan[searchState.Position.CharacterOffset - 1]);
 
-				NavigateToSearchResult(result);
+						bool startIsCandidate = (precedingCharacterIsWord != findWhatStartIsWord);
 
-				break;
+						if (startIsCandidate)
+							break;
+
+						searchState.AdvanceCharacterOffset();
+					}
+				}
+
+				lineSpan = lineSpan.Slice(searchState.Position.CharacterOffset);
 			}
 
-			AdvanceSearchState(searchState);
-		}
-		while ((searchState.IsWrapped == false) || (searchState.Index < origin));
+			int matchIndex = -1;
 
-		ShowDialog(new MatchNotFoundDialog(Machine, Configuration));
+			while (lineSpan.Length >= searchState.FindWhatString.Length)
+			{
+				matchIndex = lineSpan.IndexOf(searchState.FindWhatString, searchState.Comparer);
+
+				if (!searchState.WholeWord)
+					break;
+
+				if (matchIndex < 0)
+					break;
+
+				if (matchIndex > 0) // we have already ruled out index 0
+				{
+					// Whole Word is enabled and there are characters before and after the current match.
+					// Make sure the start and end of the current match are word boundaries.
+
+					bool haveNextCharacter = (matchIndex + searchState.FindWhatString.Length < lineSpan.Length);
+
+					bool precedingCharacterIsWord = IsWordCharacter(lineSpan[matchIndex - 1]);
+					bool nextCharacterIsWord =
+						haveNextCharacter
+						? IsWordCharacter(lineSpan[matchIndex + searchState.FindWhatString.Length])
+						: !findWhatEndIsWord; // short circuit to success at end of string
+
+					// Only keep this match if the start & end of the match are a word boundaries.
+					if ((precedingCharacterIsWord != findWhatStartIsWord)
+					 && (nextCharacterIsWord != findWhatEndIsWord))
+						break;
+				}
+
+				// There's an algorithm for figuring out how many characters we can skip
+				// (more than one in a go), but it requires a bunch of set-up. :-P
+				lineSpan = lineSpan.Slice(matchIndex + 1);
+				searchState.AdvanceCharacterOffset(matchIndex + 1);
+
+				matchIndex = -1; // discard this match
+			}
+
+			if (matchIndex < 0)
+				AdvanceSearchState(searchState); // next line
+			else
+			{
+				searchState.Position.CharacterOffset += matchIndex;
+				searchState.Index.CharacterOffset += matchIndex;
+
+				_lastFindResult = searchState.Position.Clone();
+				_lastFindResult.Length = searchState.FindWhatString.Length;
+
+				var action = onMatch(_lastFindResult, searchState);
+
+				if (action == SearchAction.Exit)
+					break;
+			}
+		}
+		while ((searchState.IsWrapped == false) || (searchState.Index < searchState.Origin));
+
+		if (_lastFindResult == null)
+			ShowDialog(new MatchNotFoundDialog(Machine, Configuration));
 	}
 
-	public void PerformChange(StringValue findWhat, StringValue changeTo, SearchScope searchScope, SearchPositionIndex origin, bool showPrompt)
+	public void Find(SearchParameters searchParameters, SearchPositionIndex origin)
 	{
-		_lastFindWhat = findWhat;
-		_lastChangeTo = changeTo;
-		_lastSearchScope = searchScope;
+		SearchAction OnMatch(SearchPosition result, SearchState state)
+		{
+			NavigateToSearchResult(result);
 
-		UpdateSearchMenu();
+			return SearchAction.Exit;
+		}
 
-		// TODO:
-		// if (showPrompt)
-		//   show change result dialog, repeat until finished or cancelled
-		// else
-		//   just do them all
+		PerformSearch(searchParameters, origin, OnMatch);
+	}
+
+	public void Change(SearchParameters searchParameters, SearchPositionIndex origin, bool showPrompt)
+	{
+		SearchAction OnMatch(SearchPosition result, SearchState searchState)
+		{
+			if (showPrompt)
+			{
+				NavigateToSearchResult(result);
+
+				ShowChangeMatchDialog(
+					result,
+					searchState,
+					findNext:
+						() =>
+						{
+							searchState.AdvanceCharacterOffset(searchState.FindWhatString.Length);
+							ContinueSearch(searchState, OnMatch);
+						});
+
+				return SearchAction.Exit;
+			}
+			else
+			{
+				ApplyChange(result, searchState);
+
+				return SearchAction.Continue;
+			}
+		}
+
+		PerformSearch(searchParameters, origin, OnMatch);
+
+		if (_lastFindResult == null)
+			ShowDialog(new MatchNotFoundDialog(Machine, Configuration));
+	}
+
+	void ApplyChange(SearchPosition result, SearchState state)
+	{
+		if ((result == null)
+		 || (result.Element is not IEditableElement element)
+		 || (result.Line is not IEditableLine line))
+			return;
+
+		StringBuilder buffer;
+
+		try
+		{
+			PrimaryViewport.CommitCurrentLine();
+		}
+		catch { }
+
+		try
+		{
+			SplitViewport?.CommitCurrentLine();
+		}
+		catch { }
+
+		if (FocusedViewport.EditableElement == element)
+		{
+			if (result.LineIndex == FocusedViewport.CursorY)
+			{
+				buffer = FocusedViewport.EditCurrentLine();
+
+				FocusedViewport.CurrentLineEdited = true;
+			}
+			else
+			{
+				buffer = new StringBuilder();
+
+				FocusedViewport.RenderLine(result.LineIndex, EditableLineState.Uncommitted, new StringWriter(buffer));
+			}
+		}
+		else
+		{
+			buffer = new StringBuilder();
+
+			line.Render(new StringWriter(buffer), includeCRLF: false);
+		}
+
+		buffer.Remove(result.CharacterOffset, result.Length);
+		buffer.Insert(result.CharacterOffset, state.ChangeToString);
+
+		// The regular loop will advance by FindWhatString.Length. If the
+		// current occurrence is skipped then the FindWhat string is what's
+		// there. But if we came down this path, we've changed it to
+		// ChangeToString. We ultimately want to advance by ChangeToString.Length
+		// but we need to cancel out the main loop's FindWhatString.Length
+		// advancement.
+		state.AdvanceCharacterOffset(state.ChangeToString.Length - state.FindWhatString.Length);
+
+		if (state.Origin.IsSameLineAs(state.Index)
+		 && (state.Origin > state.Index))
+		{
+			// We've just bumped the origin by editing the start of the line it's on.
+			state.Origin.AdvanceCharacterOffset(state.ChangeToString.Length - state.FindWhatString.Length);
+		}
+
+		if ((FocusedViewport.EditableElement != element)
+		 || (FocusedViewport.CursorY != result.LineIndex))
+			element.ReplaceLine(result.LineIndex, element.ConstructLine(buffer));
+	}
+
+	void ShowChangeMatchDialog(SearchPosition result, SearchState state, Action findNext)
+	{
+		var dialog = new ChangeMatchDialog(Machine, Configuration);
+
+		dialog.PerformChange += () => ApplyChange(result, state);
+		dialog.FindNext += findNext;
+
+		ShowDialog(dialog);
 	}
 
 	public void NavigateToSearchResult(SearchPosition result)
 	{
+		void ScrollSearchResultIntoView(Viewport viewport)
+		{
+			viewport.ScrollCursorIntoView(
+				newCursorX: result.CharacterOffset,
+				newCursorY: result.LineIndex,
+				newScrollX: viewport.ScrollX,
+				newScrollY: viewport.ScrollY,
+				ViewportPositioningPriority.Cursor,
+				viewportWidth: TextLibrary.Width - 2,
+				terminateToCommitEdit: null);
+
+			viewport.SelectionManager.StartSelection(
+				viewport.CursorX, viewport.CursorY);
+			viewport.SelectionManager.ExtendSelection(
+				viewport.CursorX + result.Length, viewport.CursorY);
+		}
+
 		if (result.HelpTopic != null)
 		{
+			ShowHelpTopic(result.HelpTopic);
+
+			if (HelpViewport != null)
+			{
+				HelpViewport.CancelEdit();
+				ScrollSearchResultIntoView(HelpViewport);
+			}
+		}
+		else if (result.Element != null)
+		{
+			try
+			{
+				FocusedViewport?.CommitCurrentLine();
+			}
+			catch { }
+
+			NavigateTo(
+				result.Element,
+				result.LineIndex,
+				result.CharacterOffset);
+
+			if (FocusedViewport != null)
+				ScrollSearchResultIntoView(FocusedViewport);
 		}
 	}
 }
-

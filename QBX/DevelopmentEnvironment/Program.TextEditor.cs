@@ -211,26 +211,6 @@ public partial class Program
 			return true;
 		}
 
-		static bool IsWordCharacter(char ch)
-		{
-			switch (ch)
-			{
-				case '!':
-				case '#':
-				case '$':
-				case '%':
-				case '&':
-				case '.':
-				case '/':
-				case '@':
-					return true;
-				default:
-					byte v = CP437Encoding.GetByteSemantic(ch);
-
-					return CP437Encoding.IsLetterOrDigit(v);
-			}
-		}
-
 		bool NewCharacterIsWordCharacter()
 		{
 			var buffer = currentLine.Value;
@@ -455,6 +435,8 @@ public partial class Program
 
 				if (FocusedViewport.IsEditable)
 				{
+					FocusedViewport.EditCurrentLine();
+
 					if (FocusedViewport.SelectionManager.HasSelection)
 					{
 						FocusedViewport.SelectionManager.Delete();
@@ -527,6 +509,19 @@ public partial class Program
 										else
 											ShowSubsDialog();
 									});
+							}
+
+							break;
+						}
+						case ScanCode.F3:
+						{
+							if (!input.Modifiers.CtrlKey
+							 && !input.Modifiers.AltKey
+							 && !input.Modifiers.ShiftKey
+							 && !input.Modifiers.AltGrKey)
+							{
+								RepeatFind();
+								return; // Let RepeatFind position the cursor
 							}
 
 							break;
@@ -1609,7 +1604,7 @@ public partial class Program
 		{
 			actualChanges = willMakeChanges || FocusedViewport.RerenderCurrentLineAndCheckForActualChanges();
 
-			if (!actualChanges && FocusedViewport.CurrentLineEdited)
+			if (!actualChanges)
 				FocusedViewport.CancelEdit();
 		}
 
@@ -1627,6 +1622,26 @@ public partial class Program
 				};
 
 			ShowDialog(dialog);
+		}
+	}
+
+	static bool IsWordCharacter(char ch)
+	{
+		switch (ch)
+		{
+			case '!':
+			case '#':
+			case '$':
+			case '%':
+			case '&':
+			case '.':
+			case '/':
+			case '@':
+				return true;
+			default:
+				byte v = CP437Encoding.GetByteSemantic(ch);
+
+				return CP437Encoding.IsLetterOrDigit(v);
 		}
 	}
 

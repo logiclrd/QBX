@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 
 using QBX.DevelopmentEnvironment.Dialogs.Widgets;
-using QBX.ExecutionEngine.Execution;
 using QBX.Hardware;
 
 namespace QBX.DevelopmentEnvironment.Dialogs;
@@ -14,8 +13,8 @@ public class ChangeDialog : SearchDialogBase
 	Button cmdCancel;
 	Button cmdHelp;
 
-	public Action<StringValue, StringValue, SearchScope>? Change;
-	public Action<StringValue, StringValue, SearchScope>? ChangeAll;
+	public Action<SearchParameters>? Change;
+	public Action<SearchParameters>? ChangeAll;
 
 #pragma warning disable CS8618
 	public ChangeDialog(SearchScopeMode searchScopeMode, Machine machine, Configuration configuration)
@@ -72,13 +71,14 @@ public class ChangeDialog : SearchDialogBase
 
 	private void cmdFindAndVerify_Activated()
 	{
-		Change?.Invoke(FindWhat, ChangeTo, SearchScope);
+		Close();
+		Change?.Invoke(BuildSearchParameters());
 	}
 
 	private void cmdChangeAll_Activated()
 	{
 		Close();
-		ChangeAll?.Invoke(FindWhat, ChangeTo, SearchScope);
+		ChangeAll?.Invoke(BuildSearchParameters());
 	}
 
 	private void cmdCancel_Activated()

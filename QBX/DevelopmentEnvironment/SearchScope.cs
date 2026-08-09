@@ -1,4 +1,4 @@
-namespace QBX.DevelopmentEnvironment.Dialogs;
+namespace QBX.DevelopmentEnvironment;
 
 public enum SearchScope
 {

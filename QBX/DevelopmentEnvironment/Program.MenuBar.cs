@@ -318,7 +318,7 @@ public partial class Program
 		{
 			mnuSearchFind.IsEnabled = true;
 			mnuSearchSelectedText.IsEnabled = FocusedViewport.SelectionManager.HasSelection;
-			mnuSearchRepeatLastFind.IsEnabled = (_lastFindWhat != null);
+			mnuSearchRepeatLastFind.IsEnabled = _lastSearchParameters != null;
 			mnuSearchChange.IsEnabled = FocusedViewport.IsEditable;
 			mnuSearchLabel.IsEnabled = FocusedViewport != HelpViewport;
 		}

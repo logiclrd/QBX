@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 
 using QBX.DevelopmentEnvironment.Dialogs.Widgets;
-using QBX.ExecutionEngine.Execution;
 using QBX.Hardware;
 
 namespace QBX.DevelopmentEnvironment.Dialogs;
@@ -13,7 +12,7 @@ public class FindDialog : SearchDialogBase
 	Button cmdCancel;
 	Button cmdHelp;
 
-	public Action<StringValue, SearchScope>? Find;
+	public Action<SearchParameters>? Find;
 
 #pragma warning disable CS8618
 	public FindDialog(SearchScopeMode searchScopeMode, Machine machine, Configuration configuration)
@@ -80,7 +79,7 @@ public class FindDialog : SearchDialogBase
 	private void cmdOK_Activated()
 	{
 		Close();
-		Find?.Invoke(FindWhat, SearchScope);
+		Find?.Invoke(BuildSearchParameters());
 	}
 
 	private void cmdCancel_Activated()

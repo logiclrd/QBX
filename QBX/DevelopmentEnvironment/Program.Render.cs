@@ -693,8 +693,8 @@ public partial class Program
 
 		var (startX, startY, endX, endY) = selectionManager.GetSelectionRange();
 
-		// When a dialog is active, error context is rendered as selection.
-		if (Dialogs.Count != 0)
+		// When an error dialog is active, error context is rendered as selection.
+		if (Dialogs.OfType<ErrorDialog>().Any())
 		{
 			if ((_errorToken == null) || (_errorToken.OwnerElement != compilationElement))
 				return (chars, 0, 0);

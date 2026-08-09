@@ -87,12 +87,16 @@ public class ChangeMatchDialog : Dialog
 
 	void cmdChange_Activated()
 	{
+		Close();
+
 		OnPerformChange();
 		OnFindNext();
 	}
 
 	void cmdSkip_Activated()
 	{
+		Close();
+
 		OnFindNext();
 	}
 
