@@ -829,10 +829,18 @@ public partial class Program
 						{
 							FocusedViewport.CommitCurrentLine();
 
-							newCursorX = 0;
+							if (FocusedViewport.CursorY >= ImmediateTextElement.Lines.Count)
+							{
+								while (FocusedViewport.CursorY >= ImmediateTextElement.Lines.Count)
+									ImmediateTextElement.AddLine(ImmediateTextElement.ConstructLine(EmptyBuffer));
+							}
+							else
+							{
+								newCursorX = 0;
 
-							if (ParseAndExecuteDirect(ImmediateTextElement.Lines[FocusedViewport.CursorY].Read()))
-								newCursorY++;
+								if (ParseAndExecuteDirect(ImmediateTextElement.Lines[FocusedViewport.CursorY].Read()))
+									newCursorY++;
+							}
 						}
 						catch (Exception ex)
 						{
