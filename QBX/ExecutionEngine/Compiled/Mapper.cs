@@ -770,9 +770,17 @@ public class Mapper
 		// existing ones for DEF FN parameters.
 		if (_semiscopeMode != SemiscopeMode.Setup)
 		{
-			if (_variableIndexByName.ContainsKey(qualifiedName)
-			 || _variableIndexByName.ContainsKey(unqualifiedName))
+			if (_variableIndexByName.ContainsKey(qualifiedName))
 				throw CompilerException.DuplicateDefinition(token);
+
+			var unqualifiedType = GetTypeForIdentifier(unqualifiedName);
+			var qualifiedType = GetTypeForIdentifier(qualifiedName);
+
+			if (unqualifiedName == qualifiedName)
+			{
+				if (_variableIndexByName.ContainsKey(unqualifiedName))
+					throw CompilerException.DuplicateDefinition(token);
+			}
 		}
 
 		int index = _variables.Count;
