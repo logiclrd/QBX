@@ -1142,7 +1142,7 @@ public class Interrupt0x10(Machine machine) : InterruptHandler
 			}
 		}
 
-		throw new NotImplementedException();
+		return result;
 	}
 
 	static void Grayscale(ref byte r, ref byte g, ref byte b)
