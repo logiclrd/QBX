@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 
@@ -753,10 +754,66 @@ public class CP437Encoding : Encoding
 	}
 
 	public static byte ToUpper(byte v)
-		=> IsAsciiLetterLower(v) ? unchecked((byte)(v & ~0x20)) : v;
+		=> IsAsciiLetterLower(v) ? unchecked((byte)(v & ~0x20)) : ToExtendedAsciiUpper(v);
 	public static byte ToLower(byte v)
-		=> IsAsciiLetterUpper(v) ? unchecked((byte)(v | 0x20)) : v;
+		=> IsAsciiLetterUpper(v) ? unchecked((byte)(v | 0x20)) : ToExtendedAsciiLower(v);
+
+	public static byte ToExtendedAsciiUpper(byte v)
+	{
+		switch (v)
+		{
+			case 135: return 128; // Ç
+			case 132: return 142; // Ä
+			case 134: return 143; // Å
+			case 130: return 144; // É
+			case 145: return 146; // Æ
+			case 148: return 153; // Ö
+			case 129: return 154; // Ü
+			case 164: return 165; // Ñ
+			default: return v;
+		}
+	}
+
+	public static byte ToExtendedAsciiLower(byte v)
+	{
+		switch (v)
+		{
+			case 128: return 135; // ç
+			case 142: return 132; // ä
+			case 143: return 134; // å
+			case 144: return 130; // é
+			case 146: return 145; // æ
+			case 153: return 148; // ö
+			case 154: return 129; // ü
+			case 165: return 164; // ñ
+			default: return v;
+		}
+	}
 
 	public static int DigitValue(byte v)
 		=> (int)(v - (byte)'0');
+
+	public static IEqualityComparer<char> OrdinalComparer => EqualityComparer<char>.Default;
+
+	public static IEqualityComparer<char> IgnoreCaseComparer => _ignoreCaseComparer;
+
+	static readonly CP437IgnoreCaseComparer _ignoreCaseComparer = new CP437IgnoreCaseComparer();
+
+	class CP437IgnoreCaseComparer : IEqualityComparer<char>
+	{
+		public bool Equals(char x, char y)
+		{
+			byte bx = CP437Encoding.GetByteSemantic(x);
+			byte by = CP437Encoding.GetByteSemantic(y);
+
+			return ToLower(bx) == ToLower(by);
+		}
+
+		public int GetHashCode([DisallowNull] char ch)
+		{
+			byte b = CP437Encoding.GetByteSemantic(ch);
+
+			return ToLower(b).GetHashCode();
+		}
+	}
 }
