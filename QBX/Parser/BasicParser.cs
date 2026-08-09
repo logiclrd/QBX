@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 
 using QBX.CodeModel;
 using QBX.CodeModel.Expressions;
@@ -251,9 +252,58 @@ public class BasicParser(IdentifierRepository identifierRepository)
 							lineConsumed = true;
 						}
 
+						IEnumerable<Token> ConsumeTokensToEndOfLineOrEndOfLineComment()
+						{
+							Token? whitespaceToken = null;
+							StringBuilder? endOfLine = null;
+
+							foreach (var t in ConsumeTokensToEndOfLine())
+							{
+								if (endOfLine != null)
+									endOfLine.Append(t.Value);
+								else
+								{
+									if (t.Type == TokenType.Whitespace)
+									{
+										if (whitespaceToken != null) // ?
+											yield return whitespaceToken;
+
+										whitespaceToken = t;
+									}
+									else if ((t.Type == TokenType.Comment) && (t.Value != null) && t.Value.StartsWith("'"))
+									{
+										endOfLine = new StringBuilder();
+										endOfLine.Append(whitespaceToken?.Value);
+										endOfLine.Append(t.Value);
+									}
+									else
+									{
+										if (whitespaceToken != null) // ?
+										{
+											yield return whitespaceToken;
+											whitespaceToken = null;
+										}
+
+										yield return t;
+									}
+								}
+							}
+
+							if (whitespaceToken != null)
+							{
+								if (endOfLine != null)
+									endOfLine.Append(whitespaceToken.Value);
+								else
+									yield return whitespaceToken;
+							}
+
+							if (endOfLine != null)
+								line.EndOfLineComment = endOfLine.ToString();
+						}
+
 						var parsedStatement = ParseStatementWithIndentation(
 							buffer,
-							ConsumeTokensToEndOfLine,
+							ConsumeTokensToEndOfLineOrEndOfLineComment,
 							isNested: false,
 							precedingWhitespaceToken ?? token,
 							ignoreErrors);
