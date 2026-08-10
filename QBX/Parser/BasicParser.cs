@@ -3229,6 +3229,10 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 							tokenHandler.Advance(endOfArgument);
 						}
+						catch (QBX.ExecutionEngine.CompilerException) // "Illegal number" lives here
+						{
+							throw;
+						}
 						catch
 						{
 							bool successOnPartialParse = false;
