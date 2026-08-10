@@ -518,6 +518,8 @@ public partial class Program
 
 		outputLibrary.SetActivePage(Machine.VideoFirmware.VisiblePageNumber);
 
+		/* Did I observe it QuickBASIC doing this at one point??
+		 *
 		var (savedCursorX, savedCursorY) = (outputLibrary.CursorX, outputLibrary.CursorY);
 
 		if (outputLibrary is TextLibrary outputTextLibrary)
@@ -534,6 +536,7 @@ public partial class Program
 		}
 
 		outputLibrary.MoveCursor(savedCursorX, savedCursorY);
+		*/
 
 		SaveOutput();
 
