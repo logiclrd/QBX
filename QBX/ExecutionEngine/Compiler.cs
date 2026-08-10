@@ -1051,12 +1051,14 @@ public class Compiler(IdentifierRepository identifierRepository)
 					}
 					else
 					{
-						// A previously-dimensioned array can be referenced by a COMMON statement.
-
 						variableIndex = mapper.ResolveArray(
 							declaration.Name,
 							variableTypes[i],
+							out bool createdImplicitly,
 							declaration.NameToken);
+
+						if (createdImplicitly)
+							mapper.AllowArrayRedeclaration(declaration.Name, variableTypes[i]);
 					}
 
 					mapper.LinkCommonVariable(variableIndex, block, startIndex + i);
@@ -1380,10 +1382,10 @@ public class Compiler(IdentifierRepository identifierRepository)
 						bool isNewArrayVariable = true;
 
 						if (dimStatement.AlwaysDeclareArrays)
-							variableIndex = mapper.DeclareArray(declaration.Name, dataType);
+							variableIndex = mapper.DeclareArray(declaration.Name, dataType, declaration.NameToken);
 						else
 						{
-							variableIndex = mapper.ResolveArray(declaration.Name, out isNewArrayVariable, dataType);
+							variableIndex = mapper.ResolveArray(declaration.Name, dataType, out isNewArrayVariable, declaration.NameToken);
 
 							if (routine.IsStaticArray(variableIndex))
 								throw CompilerException.ArrayAlreadyDimensioned(declaration.NameToken);
@@ -2561,10 +2563,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 						// PALETTE USING arrayName%
 						var translated = new PaletteUsingArrayStatement(paletteStatement);
 
-						translated.ArrayVariableIndex = mapper.ResolveArray(identifierExpression.Identifier.ToString());
-
-						if (translated.ArrayVariableIndex < 0)
-							throw CompilerException.ArrayNotDefined(identifierExpression.Token);
+						translated.ArrayVariableIndex = mapper.ResolveArray(identifierExpression.Identifier.ToString(), arrayType: null, out _);
 
 						translatedPaletteUsingStatement = translated;
 					}
@@ -2573,10 +2572,10 @@ public class Compiler(IdentifierRepository identifierRepository)
 						// PALETTE USING arrayName%(index%)
 
 						var expression =
-							TranslateExpression(paletteStatement.ArrayExpression, container, mapper, compilation, module, routine, createImplicitArray: false);
+							TranslateExpression(paletteStatement.ArrayExpression, container, mapper, compilation, module, routine);
 
 						if (expression is not ArrayElementExpression arrayElementExpression)
-							throw CompilerException.ArrayNotDefined(paletteStatement.ArrayExpression);
+							throw CompilerException.ExpectedVariable(paletteStatement.ArrayExpression);
 
 						var translated = new PaletteUsingArrayElementStatement(paletteStatement);
 
@@ -3552,7 +3551,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 				{
 					if (parseIdentifiersAsArrays)
 					{
-						int variableIndex = mapper.ResolveArray(identifier.Identifier, out _);
+						int variableIndex = mapper.ResolveArray(identifier.Identifier, arrayType: null, out _);
 						var variableType = mapper.GetVariableType(variableIndex);
 
 						if (variableIndex < 0)
@@ -3824,7 +3823,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 				}
 				else
 				{
-					var variableIndex = mapper.ResolveArray(identifier, out bool implicitlyCreated);
+					var variableIndex = mapper.ResolveArray(identifier, arrayType: null, out bool implicitlyCreated);
 
 					if (variableIndex < 0)
 					{

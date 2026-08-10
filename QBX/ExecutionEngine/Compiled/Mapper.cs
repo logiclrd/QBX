@@ -105,6 +105,7 @@ public class Mapper
 	Dictionary<string, int> _variableIndexByName = new(StringComparer.OrdinalIgnoreCase);
 	Dictionary<string, int> _arrayIndexByName = new(StringComparer.OrdinalIgnoreCase);
 	HashSet<string> _disallowedSlugs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+	HashSet<int> _predeclaredArrayIndices = new HashSet<int>();
 
 	HashSet<string> _globalVariableNames = new HashSet<string>();
 	HashSet<string> _globalArrayNames = new HashSet<string>();
@@ -236,11 +237,11 @@ public class Mapper
 
 		foreach (var name in _moduleMapper._globalArrayNames)
 		{
-			int moduleIndex = _moduleMapper.ResolveArray(name, out _);
+			int moduleIndex = _moduleMapper.ResolveArray(name, arrayType: null, implicitlyCreated: out _);
 
 			var arrayType = _moduleMapper.GetVariableType(moduleIndex);
 
-			int localIndex = ResolveArray(name, out _, arrayType);
+			int localIndex = ResolveArray(name, arrayType, out _);
 
 			var info = _variables[localIndex];
 
@@ -842,6 +843,18 @@ public class Mapper
 		return DeclareVariable(name, dataType ?? DataType.ForPrimitiveDataType(GetTypeForIdentifier(name)));
 	}
 
+	public void AllowArrayRedeclaration(string name, DataType dataType)
+	{
+		var qualifiedName = QualifyIdentifier(name, dataType);
+
+		if (!_arrayIndexByName.TryGetValue(name, out var nameIndex)
+		 || !_arrayIndexByName.TryGetValue(qualifiedName, out var qualifiedNameIndex)
+		 || (nameIndex != qualifiedNameIndex))
+			throw new Exception("Internal error");
+
+		_predeclaredArrayIndices.Add(nameIndex);
+	}
+
 	public int DeclareArray(string name, DataType dataType, Token? token = null)
 	{
 		if (_isFrozen)
@@ -849,16 +862,20 @@ public class Mapper
 
 		var qualifiedName = QualifyIdentifier(name, dataType);
 
-		if (_arrayIndexByName.TryGetValue(name, out var index)
-		 || _arrayIndexByName.TryGetValue(qualifiedName, out index))
+		if (!_arrayIndexByName.TryGetValue(qualifiedName, out var index))
+			index = -1;
+		if (!_arrayIndexByName.TryGetValue(qualifiedName, out var qualifiedNameIndex))
+			qualifiedNameIndex = -1;
+
+		if ((index >= 0)
+		 || (qualifiedNameIndex >= 0))
 		{
-			if (IsStaticArray(index))
+			if ((index != qualifiedNameIndex)
+			 || !_predeclaredArrayIndices.Remove(index))
 				throw CompilerException.DuplicateDefinition(token);
-
-			return index;
 		}
-
-		index = _variables.Count;
+		else
+			index = _variables.Count;
 
 		var info = new VariableInfo(qualifiedName, token, index);
 
@@ -875,26 +892,32 @@ public class Mapper
 	}
 
 	public int ResolveArray(string name, DataType? arrayType = null, Token? nameToken = null)
-		=> ResolveArray(name, createImplicitly: false, out _, arrayType, nameToken);
+		=> ResolveArray(name, arrayType, createImplicitly: false, out _, nameToken);
 
-	public int ResolveArray(string name, out bool implicitlyCreated, DataType? arrayType = null, Token? nameToken = null)
-		=> ResolveArray(name, createImplicitly: true, out implicitlyCreated, arrayType, nameToken);
+	public int ResolveArray(string name, DataType? arrayType, out bool implicitlyCreated, Token? nameToken = null)
+		=> ResolveArray(name, arrayType, createImplicitly: true, out implicitlyCreated, nameToken);
 
-	int ResolveArray(string name, bool createImplicitly, out bool implicitlyCreated, DataType? arrayType = null, Token? nameToken = null)
+	int ResolveArray(string name, DataType? arrayType, bool createImplicitly, out bool implicitlyCreated, Token? nameToken = null)
 	{
 		implicitlyCreated = false;
 
 		int index;
 
 		if (_arrayIndexByName.TryGetValue(name, out index))
+		{
+			_predeclaredArrayIndices.Remove(index);
 			return index;
+		}
 
 		var qualifiedName = arrayType != null
 			? QualifyIdentifier(name, arrayType)
 			: QualifyIdentifier(name);
 
 		if (_arrayIndexByName.TryGetValue(qualifiedName, out index))
+		{
+			_predeclaredArrayIndices.Remove(index);
 			return index;
+		}
 
 		if (_isFrozen)
 			return -1;
