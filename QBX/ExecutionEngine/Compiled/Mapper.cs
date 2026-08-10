@@ -776,7 +776,7 @@ public class Mapper
 			var unqualifiedType = GetTypeForIdentifier(unqualifiedName);
 			var qualifiedType = GetTypeForIdentifier(qualifiedName);
 
-			if (unqualifiedName == qualifiedName)
+			if (unqualifiedType == qualifiedType)
 			{
 				if (_variableIndexByName.ContainsKey(unqualifiedName))
 					throw CompilerException.DuplicateDefinition(token);
