@@ -769,6 +769,7 @@ SUB DrawTRex (trex AS TRexType, imageidx%)
 IF trex.IsDucking AND (trex.TRexStatus = TRexStatusCRASHED%) THEN
   ' Crashed whilst ducking. Trex is standing up so needs adjustment.
   trex.XPos = trex.XPos + 1
+  trex.IsDucking = 0
 END IF
 
 PutImage trex.XPos, trex.YPos, imageidx%
@@ -1670,7 +1671,10 @@ hasobstacles%, ShowNightMode%)
 UpdateHorizonLine runner, horizonline, deltatime#
 UpdateNightMode runner, nightmode, ShowNightMode%, loopstate.IsPaused OR loopstate.InitialFreeze
 UpdateClouds clouds(), deltatime#, runner.CurrentSpeed
-UpdateObstacles obstacles(), firstactiveobstacle%, nextinactiveobstacle%, deltatime#, runner.CurrentSpeed
+
+IF hasobstacles% THEN
+  UpdateObstacles obstacles(), firstactiveobstacle%, nextinactiveobstacle%, deltatime#, runner.CurrentSpeed
+END IF
 END SUB
 
 SUB UpdateHorizonLine (runner AS RunnerType, horizonline AS HorizonLineType, deltatime#)
