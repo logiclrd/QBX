@@ -121,7 +121,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 					{
 						foreach (var definition in constStatement.Definitions)
 						{
-							var constValueExpression = TranslateExpression(definition.Value, container: null, moduleMapper, compilation, module);
+							var constValueExpression = TranslateExpression(definition.Value, container: null, moduleMapper, compilation, module, routine: null);
 
 							if (definition.Identifier is QualifiedIdentifier qualifiedIdentifier)
 							{
@@ -256,7 +256,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 							{
 								foreach (var definition in constStatement.Definitions)
 								{
-									var constValueExpression = TranslateExpression(definition.Value, container: null, mapper, compilation, module);
+									var constValueExpression = TranslateExpression(definition.Value, container: null, mapper, compilation, module, routine);
 
 									if (definition.Identifier is QualifiedIdentifier qualifiedIdentifier)
 									{
@@ -396,8 +396,11 @@ public class Compiler(IdentifierRepository identifierRepository)
 		}
 	}
 
-	public Evaluable CompileExpression(CodeModel.Expressions.Expression expression, Mapper mapper, Compilation compilation, Module module)
+	public Evaluable CompileExpression(CodeModel.Expressions.Expression expression, Routine routine, Compilation compilation)
 	{
+		var mapper = routine.Mapper;
+		var module = routine.Module;
+
 		using (new CultureScope(BasicCulture.Instance))
 		{
 			var dummyContainer = new Sequence();
@@ -408,7 +411,8 @@ public class Compiler(IdentifierRepository identifierRepository)
 				dummyContainer,
 				mapper,
 				compilation,
-				module);
+				module,
+				routine);
 		}
 	}
 
@@ -462,8 +466,8 @@ public class Compiler(IdentifierRepository identifierRepository)
 				{
 					var translatedSubscript = new ArraySubscript();
 
-					var translatedBound1 = TranslateExpression(subscript.Bound1, container: null, mapper, compilation, module);
-					var translatedBound2 = TranslateExpression(subscript.Bound2, container: null, mapper, compilation, module);
+					var translatedBound1 = TranslateExpression(subscript.Bound1, container: null, mapper, compilation, module, routine: null);
+					var translatedBound2 = TranslateExpression(subscript.Bound2, container: null, mapper, compilation, module, routine: null);
 
 					if (translatedBound1 == null)
 						throw new Exception("Internal error: Array subscript missing bound");
@@ -648,7 +652,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 		{
 			if (expression != null)
 			{
-				target = TranslateExpression(expression, container, mapper, compilation, module);
+				target = TranslateExpression(expression, container, mapper, compilation, module, routine);
 
 				if (!target.Type.IsNumeric)
 					throw CompilerException.TypeMismatch(expression?.Token);
@@ -659,7 +663,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 		{
 			if (expression != null)
 			{
-				target = TranslateExpression(expression, container, mapper, compilation, module);
+				target = TranslateExpression(expression, container, mapper, compilation, module, routine);
 
 				if (!target.Type.IsString)
 					throw CompilerException.TypeMismatch(expression?.Token);
@@ -670,8 +674,8 @@ public class Compiler(IdentifierRepository identifierRepository)
 		{
 			case CodeModel.Statements.AssignmentStatement assignmentStatement:
 			{
-				var targetExpression = TranslateExpression(assignmentStatement.TargetExpression, forAssignment: true, container, mapper, compilation, module);
-				var valueExpression = TranslateExpression(assignmentStatement.ValueExpression, container, mapper, compilation, module);
+				var targetExpression = TranslateExpression(assignmentStatement.TargetExpression, forAssignment: true, container, mapper, compilation, module, routine);
+				var valueExpression = TranslateExpression(assignmentStatement.ValueExpression, container, mapper, compilation, module, routine);
 
 				if (targetExpression == null)
 					throw new BadModelException("AssignmentStatement with no TargetExpression");
@@ -744,7 +748,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 					if (nativeProcedure.ParameterTypes == null)
 					{
-						TranslateCallArguments(callStatement.Arguments, parameterDefinitions: null, translatedCallStatement, matchFacades: false, container, mapper, compilation, module);
+						TranslateCallArguments(callStatement.Arguments, parameterDefinitions: null, translatedCallStatement, matchFacades: false, container, mapper, compilation, module, routine);
 
 						translatedCallStatement.LocalThunk = nativeProcedure.BuildThunk(
 							translatedCallStatement.Arguments.Select(arg => arg.Type).ToList(),
@@ -758,7 +762,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 						if (callArgumentCount != targetArgumentCount)
 							throw CompilerException.ArgumentCountMismatch(callStatement.FirstToken);
 
-						TranslateCallArguments(callStatement.Arguments, parameterDefinitions: null, translatedCallStatement, matchFacades: false, container, mapper, compilation, module);
+						TranslateCallArguments(callStatement.Arguments, parameterDefinitions: null, translatedCallStatement, matchFacades: false, container, mapper, compilation, module, routine);
 					}
 
 					container.Append(translatedCallStatement);
@@ -831,7 +835,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 						}
 					}
 
-					TranslateCallArguments(callStatement.Arguments, parameterDefinitions, translatedCallStatement, matchFacades, container, mapper, compilation, module);
+					TranslateCallArguments(callStatement.Arguments, parameterDefinitions, translatedCallStatement, matchFacades, container, mapper, compilation, module, routine);
 
 					if (implicitForwardReference)
 					{
@@ -989,9 +993,9 @@ public class Compiler(IdentifierRepository identifierRepository)
 				var argument2 = colorStatement.Arguments.Count > 1 ? colorStatement.Arguments[1] : null;
 				var argument3 = colorStatement.Arguments.Count > 2 ? colorStatement.Arguments[2] : null;
 
-				translatedColorStatement.Argument1Expression = TranslateExpression(argument1, container, mapper, compilation, module);
-				translatedColorStatement.Argument2Expression = TranslateExpression(argument2, container, mapper, compilation, module);
-				translatedColorStatement.Argument3Expression = TranslateExpression(argument3, container, mapper, compilation, module);
+				translatedColorStatement.Argument1Expression = TranslateExpression(argument1, container, mapper, compilation, module, routine);
+				translatedColorStatement.Argument2Expression = TranslateExpression(argument2, container, mapper, compilation, module, routine);
+				translatedColorStatement.Argument3Expression = TranslateExpression(argument3, container, mapper, compilation, module, routine);
 
 				container.Append(translatedColorStatement);
 
@@ -1252,7 +1256,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 									new IdentifierExpression(defFnRoutine.ReturnValueVariableIndex, defFnRoutine.ReturnType),
 
 								ValueExpression =
-									TranslateExpression(defFnStatement.ExpressionBody, container, mapper, compilation, module),
+									TranslateExpression(defFnStatement.ExpressionBody, container, mapper, compilation, module, routine),
 							});
 					}
 					else
@@ -1299,7 +1303,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 				var translatedDefSegStatement = new DefSegStatement(defSegStatement);
 
 				translatedDefSegStatement.SegmentExpression =
-					TranslateExpression(defSegStatement.SegmentExpression, container, mapper, compilation, module);
+					TranslateExpression(defSegStatement.SegmentExpression, container, mapper, compilation, module, routine);
 
 				container.Append(translatedDefSegStatement);
 
@@ -1400,8 +1404,8 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 							foreach (var subscript in declaration.Subscripts.Subscripts)
 							{
-								var bound1 = TranslateExpression(subscript.Bound1, container, mapper, compilation, module);
-								var bound2 = TranslateExpression(subscript.Bound2, container, mapper, compilation, module);
+								var bound1 = TranslateExpression(subscript.Bound1, container, mapper, compilation, module, routine);
+								var bound2 = TranslateExpression(subscript.Bound2, container, mapper, compilation, module, routine);
 
 								if (bound1 == null)
 									throw new Exception("Must specify the first bound for an array subscript");
@@ -1456,7 +1460,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 				if (doStatement.ConditionType != CodeModel.Statements.DoConditionType.None)
 				{
-					preCondition = TranslateExpression(doStatement.Expression, container, mapper, compilation, module);
+					preCondition = TranslateExpression(doStatement.Expression, container, mapper, compilation, module, routine);
 
 					if (preCondition == null)
 						throw new Exception("DoStatement with no Condition but specifying a ConditionType");
@@ -1483,7 +1487,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 					{
 						if (loopStatement.ConditionType != CodeModel.Statements.DoConditionType.None)
 						{
-							postCondition = TranslateExpression(loopStatement.Expression, container, mapper, compilation, module);
+							postCondition = TranslateExpression(loopStatement.Expression, container, mapper, compilation, module, routine);
 
 							if (postCondition == null)
 								throw new Exception("LoopStatement with no Condition but specifying a ConditionType");
@@ -1608,6 +1612,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 						mapper,
 						compilation,
 						module,
+						routine,
 						parseIdentifiersAsArrays: true);
 
 					if (!translatedArrayExpression.Type.IsArray)
@@ -1776,9 +1781,9 @@ public class Compiler(IdentifierRepository identifierRepository)
 				if (!iteratorVariableType.IsNumeric)
 					throw CompilerException.TypeMismatch(forStatement.CounterVariableToken);
 
-				var fromExpression = TranslateExpression(forStatement.StartExpression, container, mapper, compilation, module);
-				var toExpression = TranslateExpression(forStatement.EndExpression, container, mapper, compilation, module);
-				var stepExpression = TranslateExpression(forStatement.StepExpression, container, mapper, compilation, module);
+				var fromExpression = TranslateExpression(forStatement.StartExpression, container, mapper, compilation, module, routine);
+				var toExpression = TranslateExpression(forStatement.EndExpression, container, mapper, compilation, module, routine);
+				var stepExpression = TranslateExpression(forStatement.StepExpression, container, mapper, compilation, module, routine);
 
 				if (fromExpression == null)
 					throw new Exception("ForStatement with no StartExpression");
@@ -1876,7 +1881,8 @@ public class Compiler(IdentifierRepository identifierRepository)
 						container,
 						mapper,
 						compilation,
-						module);
+						module,
+						routine);
 
 					translatedGetStatement = getToTargetStatement;
 				}
@@ -1914,6 +1920,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 					mapper,
 					compilation,
 					module,
+					routine,
 					parseIdentifiersAsArrays: true);
 
 				container.Append(translatedGetStatement);
@@ -1982,7 +1989,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 			{
 				var translatedIfStatement = new IfStatement(ifStatement);
 
-				translatedIfStatement.Condition = TranslateExpression(ifStatement.ConditionExpression, container, mapper, compilation, module);
+				translatedIfStatement.Condition = TranslateExpression(ifStatement.ConditionExpression, container, mapper, compilation, module, routine);
 
 				if (ifStatement.ThenBody == null)
 				{
@@ -2044,7 +2051,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 								elseBody.OwnerExecutable = block;
 
 								block = new IfStatement(elseIfStatement);
-								block.Condition = TranslateExpression(elseIfStatement.ConditionExpression, container, mapper, compilation, module);
+								block.Condition = TranslateExpression(elseIfStatement.ConditionExpression, container, mapper, compilation, module, routine);
 
 								elseBody.Append(block);
 
@@ -2141,7 +2148,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 					foreach (var target in inputStatement.Targets)
 					{
-						var translatedTarget = TranslateExpression(target, container, mapper, compilation, module);
+						var translatedTarget = TranslateExpression(target, container, mapper, compilation, module, routine);
 
 						translatedInputStatement.TargetExpressions.Add(translatedTarget);
 					}
@@ -2160,7 +2167,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 					foreach (var target in inputStatement.Targets)
 					{
-						var translatedTarget = TranslateExpression(target, container, mapper, compilation, module);
+						var translatedTarget = TranslateExpression(target, container, mapper, compilation, module, routine);
 
 						translatedInputStatement.TargetExpressions.Add(translatedTarget);
 					}
@@ -2251,7 +2258,8 @@ public class Compiler(IdentifierRepository identifierRepository)
 						container,
 						mapper,
 						compilation,
-						module);
+						module,
+						routine);
 
 					if (translatedLineInputStatement.TargetExpression is Function)
 						throw new Exception();
@@ -2497,11 +2505,11 @@ public class Compiler(IdentifierRepository identifierRepository)
 			}
 			case CodeModel.Statements.PaintStatement paintStatement:
 			{
-				var xExpression = TranslateExpression(paintStatement.XExpression, container, mapper, compilation, module);
-				var yExpression = TranslateExpression(paintStatement.YExpression, container, mapper, compilation, module);
-				var paintExpression = TranslateExpression(paintStatement.PaintExpression, container, mapper, compilation, module);
-				var borderColourExpression = TranslateExpression(paintStatement.BorderColourExpression, container, mapper, compilation, module);
-				var backgroundExpression = TranslateExpression(paintStatement.BackgroundExpression, container, mapper, compilation, module);
+				var xExpression = TranslateExpression(paintStatement.XExpression, container, mapper, compilation, module, routine);
+				var yExpression = TranslateExpression(paintStatement.YExpression, container, mapper, compilation, module, routine);
+				var paintExpression = TranslateExpression(paintStatement.PaintExpression, container, mapper, compilation, module, routine);
+				var borderColourExpression = TranslateExpression(paintStatement.BorderColourExpression, container, mapper, compilation, module, routine);
+				var backgroundExpression = TranslateExpression(paintStatement.BackgroundExpression, container, mapper, compilation, module, routine);
 
 				if (xExpression == null)
 					throw new Exception("PaintStatement with no XExpression");
@@ -2561,7 +2569,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 						// PALETTE USING arrayName%(index%)
 
 						var expression =
-							TranslateExpression(paletteStatement.ArrayExpression, container, mapper, compilation, module, createImplicitArray: false);
+							TranslateExpression(paletteStatement.ArrayExpression, container, mapper, compilation, module, routine, createImplicitArray: false);
 
 						if (expression is not ArrayElementExpression arrayElementExpression)
 							throw CompilerException.ArrayNotDefined(paletteStatement.ArrayExpression);
@@ -2583,9 +2591,9 @@ public class Compiler(IdentifierRepository identifierRepository)
 				var translatedPixelSetStatement = new PixelSetStatement(pixelSetStatement);
 
 				translatedPixelSetStatement.StepCoordinates = pixelSetStatement.StepCoordinates;
-				translatedPixelSetStatement.XExpression = TranslateExpression(pixelSetStatement.XExpression, container, mapper, compilation, module);
-				translatedPixelSetStatement.YExpression = TranslateExpression(pixelSetStatement.YExpression, container, mapper, compilation, module);
-				translatedPixelSetStatement.ColourExpression = TranslateExpression(pixelSetStatement.ColourExpression, container, mapper, compilation, module);
+				translatedPixelSetStatement.XExpression = TranslateExpression(pixelSetStatement.XExpression, container, mapper, compilation, module, routine);
+				translatedPixelSetStatement.YExpression = TranslateExpression(pixelSetStatement.YExpression, container, mapper, compilation, module, routine);
+				translatedPixelSetStatement.ColourExpression = TranslateExpression(pixelSetStatement.ColourExpression, container, mapper, compilation, module, routine);
 				translatedPixelSetStatement.UseForegroundColour =
 					(pixelSetStatement.DefaultColour == CodeModel.Statements.PixelSetDefaultColour.Foreground);
 
@@ -2609,8 +2617,8 @@ public class Compiler(IdentifierRepository identifierRepository)
 			{
 				var translatedPokeStatement = new PokeStatement(pokeStatement);
 
-				translatedPokeStatement.AddressExpression = TranslateExpression(pokeStatement.AddressExpression, container, mapper, compilation, module);
-				translatedPokeStatement.ValueExpression = TranslateExpression(pokeStatement.ValueExpression, container, mapper, compilation, module);
+				translatedPokeStatement.AddressExpression = TranslateExpression(pokeStatement.AddressExpression, container, mapper, compilation, module, routine);
+				translatedPokeStatement.ValueExpression = TranslateExpression(pokeStatement.ValueExpression, container, mapper, compilation, module, routine);
 
 				container.Append(translatedPokeStatement);
 
@@ -2631,7 +2639,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 							_ => throw new Exception("Internal error: Unrecognized PrintArgument ExpressionType")
 						};
 
-					translatedArgument.Expression = TranslateExpression(argument.Expression, container, mapper, compilation, module);
+					translatedArgument.Expression = TranslateExpression(argument.Expression, container, mapper, compilation, module, routine);
 
 					translatedArgument.CursorAction =
 						argument.CursorAction switch
@@ -2686,7 +2694,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 						translatedPrintStatement = printToFileStatement;
 					}
 
-					translatedPrintStatement.Format = TranslateExpression(printStatement.UsingExpression, container, mapper, compilation, module);
+					translatedPrintStatement.Format = TranslateExpression(printStatement.UsingExpression, container, mapper, compilation, module, routine);
 
 					if (printStatement.Arguments.Count > 0)
 					{
@@ -2720,7 +2728,8 @@ public class Compiler(IdentifierRepository identifierRepository)
 						container,
 						mapper,
 						compilation,
-						module);
+						module,
+						routine);
 
 					translatedPutStatement = putFromTargetStatement;
 				}
@@ -2751,6 +2760,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 					mapper,
 					compilation,
 					module,
+					routine,
 					parseIdentifiersAsArrays: true);
 
 				translatedPutStatement.ActionVerb =
@@ -2774,7 +2784,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 				var translatedRandomizeStatement = new RandomizeStatement(randomizeStatement);
 
 				translatedRandomizeStatement.ArgumentExpression =
-					TranslateExpression(randomizeStatement.ArgumentExpression, container, mapper, compilation, module);
+					TranslateExpression(randomizeStatement.ArgumentExpression, container, mapper, compilation, module, routine);
 
 				container.Append(translatedRandomizeStatement);
 
@@ -2786,7 +2796,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 				foreach (var target in readStatement.Targets)
 				{
-					var translatedTarget = TranslateExpression(target, container, mapper, compilation, module);
+					var translatedTarget = TranslateExpression(target, container, mapper, compilation, module, routine);
 
 					translatedReadStatement.TargetExpressions.Add(translatedTarget);
 				}
@@ -2843,10 +2853,10 @@ public class Compiler(IdentifierRepository identifierRepository)
 			{
 				var translatedScreenStatement = new ScreenStatement(screenStatement);
 
-				translatedScreenStatement.ModeExpression = TranslateExpression(screenStatement.ModeExpression, container, mapper, compilation, module);
-				translatedScreenStatement.ColourSwitchExpression = TranslateExpression(screenStatement.ColourSwitchExpression, container, mapper, compilation, module);
-				translatedScreenStatement.ActivePageExpression = TranslateExpression(screenStatement.ActivePageExpression, container, mapper, compilation, module);
-				translatedScreenStatement.VisiblePageExpression = TranslateExpression(screenStatement.VisiblePageExpression, container, mapper, compilation, module);
+				translatedScreenStatement.ModeExpression = TranslateExpression(screenStatement.ModeExpression, container, mapper, compilation, module, routine);
+				translatedScreenStatement.ColourSwitchExpression = TranslateExpression(screenStatement.ColourSwitchExpression, container, mapper, compilation, module, routine);
+				translatedScreenStatement.ActivePageExpression = TranslateExpression(screenStatement.ActivePageExpression, container, mapper, compilation, module, routine);
+				translatedScreenStatement.VisiblePageExpression = TranslateExpression(screenStatement.VisiblePageExpression, container, mapper, compilation, module, routine);
 
 				container.Append(translatedScreenStatement);
 
@@ -2882,7 +2892,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 			{
 				var translatedSelectCaseStatement = new SelectCaseStatement(selectCaseStatement);
 
-				translatedSelectCaseStatement.TestExpression = TranslateExpression(selectCaseStatement.Expression, container, mapper, compilation, module);
+				translatedSelectCaseStatement.TestExpression = TranslateExpression(selectCaseStatement.Expression, container, mapper, compilation, module, routine);
 
 				if (translatedSelectCaseStatement.TestExpression == null)
 					throw new Exception("SelectCaseStatement expression translated to null");
@@ -2927,11 +2937,11 @@ public class Compiler(IdentifierRepository identifierRepository)
 							foreach (var caseExpression in caseStatement.Expressions.Expressions)
 							{
 								var expression = Conversion.Construct(
-									TranslateExpression(caseExpression.Expression, container, mapper, compilation, module),
+									TranslateExpression(caseExpression.Expression, container, mapper, compilation, module, routine),
 									testExpressionType) ?? throw new Exception("Case expression translated to null");
 
 								var rangeEndExpression = Conversion.Construct(
-									TranslateExpression(caseExpression.RangeEndExpression, container, mapper, compilation, module),
+									TranslateExpression(caseExpression.RangeEndExpression, container, mapper, compilation, module, routine),
 									testExpressionType);
 
 								if (expression.IsConstant)
@@ -3024,9 +3034,9 @@ public class Compiler(IdentifierRepository identifierRepository)
 				var translatedSoftKeyConfigStatement = new KeyConfigStatement(softKeyConfigStatement);
 
 				translatedSoftKeyConfigStatement.KeyExpression =
-					TranslateExpression(softKeyConfigStatement.KeyExpression, container, mapper, compilation, module);
+					TranslateExpression(softKeyConfigStatement.KeyExpression, container, mapper, compilation, module, routine);
 				translatedSoftKeyConfigStatement.ArgumentExpression =
-					TranslateExpression(softKeyConfigStatement.MacroExpression, container, mapper, compilation, module);
+					TranslateExpression(softKeyConfigStatement.MacroExpression, container, mapper, compilation, module, routine);
 
 				container.Append(translatedSoftKeyConfigStatement);
 
@@ -3072,14 +3082,16 @@ public class Compiler(IdentifierRepository identifierRepository)
 					container,
 					mapper,
 					compilation,
-					module);
+					module,
+					routine);
 
 				translatedSwapStatement.Variable2Expression = TranslateExpression(
 					swapStatement.Variable2Expression,
 					container,
 					mapper,
 					compilation,
-					module);
+					module,
+					routine);
 
 				if (translatedSwapStatement.Variable1Expression is null)
 					throw new Exception("SwapStatement is missing Variable1Expression");
@@ -3106,9 +3118,9 @@ public class Compiler(IdentifierRepository identifierRepository)
 				var translatedTextViewportStatement = new TextViewportStatement(textViewportStatement);
 
 				translatedTextViewportStatement.WindowStartExpression =
-					TranslateExpression(textViewportStatement.TopExpression, container, mapper, compilation, module);
+					TranslateExpression(textViewportStatement.TopExpression, container, mapper, compilation, module, routine);
 				translatedTextViewportStatement.WindowEndExpression =
-					TranslateExpression(textViewportStatement.BottomExpression, container, mapper, compilation, module);
+					TranslateExpression(textViewportStatement.BottomExpression, container, mapper, compilation, module, routine);
 
 				container.Append(translatedTextViewportStatement);
 
@@ -3252,7 +3264,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 					throw new Exception("WhileStatement with no Condition");
 
 				Evaluable condition =
-					TranslateExpression(whileStatement.Condition, container, mapper, compilation, module);
+					TranslateExpression(whileStatement.Condition, container, mapper, compilation, module, routine);
 
 				var body = new Sequence();
 
@@ -3330,7 +3342,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 				foreach (var argumentExpression in writeStatement.Arguments)
 				{
 					translatedWriteStatement.Arguments.Add(
-						TranslateExpression(argumentExpression, container, mapper, compilation, module));
+						TranslateExpression(argumentExpression, container, mapper, compilation, module, routine));
 				}
 
 				container.Append(translatedWriteStatement);
@@ -3352,7 +3364,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 					throw new Exception("UnresolvedWidthStatement without Expression1");
 
 				var firstArgumentExpression =
-					TranslateExpression(unresolvedWidthStatement.Expression1, container, mapper, compilation, module);
+					TranslateExpression(unresolvedWidthStatement.Expression1, container, mapper, compilation, module, routine);
 
 				if (firstArgumentExpression.Type.IsString)
 				{
@@ -3402,7 +3414,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 		return true;
 	}
 
-	void TranslateCallArguments(CodeModel.Expressions.ExpressionList? arguments, IReadOnlyList<ParameterDefinition>? parameterDefinitions, IHasTypedParameters translated, bool matchFacades, Sequence? container, Mapper mapper, Compilation compilation, Module module)
+	void TranslateCallArguments(CodeModel.Expressions.ExpressionList? arguments, IReadOnlyList<ParameterDefinition>? parameterDefinitions, IHasTypedParameters translated, bool matchFacades, Sequence? container, Mapper mapper, Compilation compilation, Module module, Routine routine)
 	{
 		if (arguments != null)
 		{
@@ -3416,7 +3428,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 					? parameterDefinitions[i]
 					: null;
 
-				var translatedExpression = TranslateExpression(argument, container, mapper, compilation, module);
+				var translatedExpression = TranslateExpression(argument, container, mapper, compilation, module, routine);
 
 				if (translatedExpression == null)
 					throw new Exception("Call argument translated to null");
@@ -3435,18 +3447,18 @@ public class Compiler(IdentifierRepository identifierRepository)
 	}
 
 	[return: NotNullIfNotNull(nameof(expression))]
-	private Evaluable? TranslateExpression(CodeModel.Expressions.Expression? expression, Sequence? container, Mapper mapper, Compilation compilation, Module module, bool createImplicitArray = false, bool parseIdentifiersAsArrays = false)
+	private Evaluable? TranslateExpression(CodeModel.Expressions.Expression? expression, Sequence? container, Mapper mapper, Compilation compilation, Module module, Routine? routine, bool createImplicitArray = false, bool parseIdentifiersAsArrays = false)
 	{
-		return TranslateExpression(expression, forAssignment: false, container, mapper, compilation, module, createImplicitArray, parseIdentifiersAsArrays);
+		return TranslateExpression(expression, forAssignment: false, container, mapper, compilation, module, routine, createImplicitArray, parseIdentifiersAsArrays);
 	}
 
 	[return: NotNullIfNotNull(nameof(expression))]
-	private Evaluable? TranslateExpression(CodeModel.Expressions.Expression? expression, bool forAssignment, Sequence? container, Mapper mapper, Compilation compilation, Module module, bool createImplicitArray = false, bool parseIdentifiersAsArrays = false)
+	private Evaluable? TranslateExpression(CodeModel.Expressions.Expression? expression, bool forAssignment, Sequence? container, Mapper mapper, Compilation compilation, Module module, Routine? routine, bool createImplicitArray = false, bool parseIdentifiersAsArrays = false)
 	{
 		if (expression == null)
 			return null;
 
-		var translatedExpression = TranslateExpressionUncollapsed(expression, forAssignment, container, mapper, compilation, module, createImplicitArray, parseIdentifiersAsArrays: parseIdentifiersAsArrays);
+		var translatedExpression = TranslateExpressionUncollapsed(expression, forAssignment, container, mapper, compilation, module, routine, createImplicitArray, parseIdentifiersAsArrays: parseIdentifiersAsArrays);
 
 		translatedExpression.Source = expression;
 
@@ -3455,7 +3467,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 		return translatedExpression;
 	}
 
-	private Evaluable TranslateExpressionUncollapsed(CodeModel.Expressions.Expression expression, bool forAssignment, Sequence? container, Mapper mapper, Compilation compilation, Module module, bool constantValue = false, bool createImplicitArray = false, bool parseIdentifiersAsArrays = false)
+	private Evaluable TranslateExpressionUncollapsed(CodeModel.Expressions.Expression expression, bool forAssignment, Sequence? container, Mapper mapper, Compilation compilation, Module module, Routine? routine, bool constantValue = false, bool createImplicitArray = false, bool parseIdentifiersAsArrays = false)
 	{
 		MutableBox<int> BlameLineNumber(Token? token)
 			=> token?.LineNumberBox ?? new MutableBox<int>(-1);
@@ -3469,7 +3481,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 				if (forAssignment)
 					throw CompilerException.ExpectedStatement(parenthesized.Token);
 
-				return TranslateExpressionUncollapsed(parenthesized.Child, forAssignment: false, container, mapper, compilation, module, constantValue);
+				return TranslateExpressionUncollapsed(parenthesized.Child, forAssignment: false, container, mapper, compilation, module, routine, constantValue);
 
 			case CodeModel.Expressions.LiteralExpression literal:
 				if (forAssignment)
@@ -3651,7 +3663,10 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 						if (nativeProcedure.ParameterTypes == null)
 						{
-							TranslateCallArguments(callOrIndexExpression.Arguments, parameterDefinitions: null, translatedCallExpression, matchFacades: false, container, mapper, compilation, module);
+							if (routine == null)
+								throw CompilerException.InvalidConstant(callOrIndexExpression);
+
+							TranslateCallArguments(callOrIndexExpression.Arguments, parameterDefinitions: null, translatedCallExpression, matchFacades: false, container, mapper, compilation, module, routine);
 
 							translatedCallExpression.LocalThunk = nativeProcedure.BuildThunk(
 								translatedCallExpression.Arguments.Select(arg => arg.Type).ToList(),
@@ -3667,7 +3682,10 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 							translatedCallExpression.Target = nativeProcedure;
 
-							TranslateCallArguments(callOrIndexExpression.Arguments, parameterDefinitions: null, translatedCallExpression, matchFacades: false, container, mapper, compilation, module);
+							if (routine == null)
+								throw CompilerException.InvalidConstant(callOrIndexExpression);
+
+							TranslateCallArguments(callOrIndexExpression.Arguments, parameterDefinitions: null, translatedCallExpression, matchFacades: false, container, mapper, compilation, module, routine);
 						}
 
 						translatedCallExpression.TargetToken = callOrIndexExpression.Subject.Token;
@@ -3778,7 +3796,10 @@ public class Compiler(IdentifierRepository identifierRepository)
 							}
 						}
 
-						TranslateCallArguments(callOrIndexExpression.Arguments, parameterDefinitions, translatedCallExpression, matchFacades, container, mapper, compilation, module);
+						if (routine == null)
+							throw CompilerException.InvalidConstant(callOrIndexExpression);
+
+						TranslateCallArguments(callOrIndexExpression.Arguments, parameterDefinitions, translatedCallExpression, matchFacades, container, mapper, compilation, module, routine);
 
 						return translatedCallExpression;
 					}
@@ -3794,7 +3815,8 @@ public class Compiler(IdentifierRepository identifierRepository)
 						container,
 						mapper,
 						compilation,
-						module);
+						module,
+						routine);
 				}
 				else
 				{
@@ -3809,6 +3831,9 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 					if (implicitlyCreated)
 					{
+						if (routine == null) // Calls without a Routine are in a context that must be constant
+							throw CompilerException.InvalidConstant(callOrIndexExpression);
+
 						if (container == null)
 							throw new Exception("TranslateExpression needs to create an implicit array but no container was specified");
 
@@ -3825,7 +3850,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 								new IntegerLiteralValue(10));
 						}
 
-						container.Inject(implicitDimStatement);
+						routine.StaticArrays.Add(implicitDimStatement);
 					}
 
 					subject = new IdentifierExpression(
@@ -3845,7 +3870,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 					var subscript = callOrIndexExpression.Arguments[i];
 
-					var translatedArgument = TranslateExpression(subscript, container, mapper, compilation, module);
+					var translatedArgument = TranslateExpression(subscript, container, mapper, compilation, module, routine);
 
 					if (translatedArgument == null)
 						throw new Exception("Internal error: call argument translated to null");
@@ -3875,7 +3900,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 					arguments =
 						keywordFunction.Arguments!.Expressions.Select((expr, idx) =>
-							TranslateExpression(expr, container, mapper, compilation, module, parseIdentifiersAsArrays: idx == arrayArgumentIndex)
+							TranslateExpression(expr, container, mapper, compilation, module, routine, parseIdentifiersAsArrays: idx == arrayArgumentIndex)
 								?? throw new Exception("Argument expression translated to null"));
 				}
 
@@ -3988,7 +4013,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 				if (forAssignment)
 					throw CompilerException.ExpectedStatement(unaryExpression.Token);
 
-				var right = TranslateExpression(unaryExpression.Child, container, mapper, compilation, module, constantValue);
+				var right = TranslateExpression(unaryExpression.Child, container, mapper, compilation, module, routine, constantValue);
 
 				if (right == null)
 					throw new Exception("Internal error: Unary expression operand translated to null");
@@ -4043,7 +4068,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 					}
 					else
 					{
-						var subjectExpression = TranslateExpression(binaryExpression.Left, container, mapper, compilation, module, constantValue);
+						var subjectExpression = TranslateExpression(binaryExpression.Left, container, mapper, compilation, module, routine, constantValue);
 
 						if (constantValue)
 							throw CompilerException.InvalidConstant(binaryExpression?.Token);
@@ -4082,8 +4107,8 @@ public class Compiler(IdentifierRepository identifierRepository)
 					throw CompilerException.ExpectedStatement(leftest.Token);
 				}
 
-				var left = TranslateExpression(binaryExpression.Left, container, mapper, compilation, module, constantValue);
-				var right = TranslateExpression(binaryExpression.Right, container, mapper, compilation, module, constantValue);
+				var left = TranslateExpression(binaryExpression.Left, container, mapper, compilation, module, routine, constantValue);
+				var right = TranslateExpression(binaryExpression.Right, container, mapper, compilation, module, routine, constantValue);
 
 				if ((left == null) || (right == null))
 					throw new Exception("Internal error: Binary expression operand translated to null");
