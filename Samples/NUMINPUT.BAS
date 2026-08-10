@@ -13,7 +13,8 @@ DO
       CASE 48 TO 57
         e% = c% - 48
         IF d% = 1 AND accum& = 0 THEN
-          PRINT CHR$(8); a$;
+          IF POS(0) > 1 THEN LOCATE , POS(0) - 1
+          PRINT a$;
           accum& = e%
         ELSEIF (e% > 0 OR d% = 0 OR accum& <> 0) AND (d% < 9 OR (d% = 9 AND (accum& < 214748364 OR (accum& = 214748364 AND e% < 8)))) THEN
           d% = d% + 1
@@ -26,7 +27,10 @@ DO
         IF d% > 0 THEN
           accum& = accum& \ 10
           d% = d% - 1
-          PRINT a$; " "; a$; ' caveat: won't return to previous line
+          ' caveat: won't return to previous line
+          IF POS(0) > 1 THEN LOCATE , POS(0) - 1
+          PRINT " ";
+          IF POS(0) > 1 THEN LOCATE , POS(0) - 1
         END IF
       CASE 13:
         EXIT DO
@@ -35,11 +39,17 @@ DO
     END SELECT
 
     IF reject% THEN
+      x% = POS(0): y% = CSRLIN
+
       COLOR , 4
-      PRINT " "; CHR$(8);
+      PRINT a$;
+      LOCATE y%, x%
+
       st! = TIMER: WHILE st! = TIMER: WEND
+
       COLOR , 0
-      PRINT " "; CHR$(8);
+      PRINT " ";
+      LOCATE y%, x%
     END IF
   END IF
 LOOP
