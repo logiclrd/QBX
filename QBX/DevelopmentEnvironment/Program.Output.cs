@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 using QBX.Firmware;
 using QBX.Hardware;
@@ -56,6 +57,7 @@ public partial class Program
 		}
 	}
 
+	[MemberNotNull(nameof(_savedVisualLibrary))]
 	void ResetOutput()
 	{
 		Machine.VideoFirmware.SetMode(3);
@@ -77,6 +79,7 @@ public partial class Program
 		}
 	}
 
+	[MemberNotNull(nameof(_savedVisualLibrary))]
 	void SaveOutput()
 	{
 		Machine.GraphicsArray.VRAM.CopyTo(_savedOutput);
