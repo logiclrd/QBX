@@ -1,6 +1,5 @@
 using QBX.ExecutionEngine.Execution;
 using QBX.Firmware;
-using QBX.Utility;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
@@ -16,5 +15,7 @@ public class ResetGraphicsViewportStatement(CodeModel.Statements.GraphicsViewpor
 		visual.CoordinateSystem.ResetViewport();
 
 		visual.LastPoint = visual.CoordinateSystem.ViewportCentre;
+
+		context.RuntimeState.HaveGraphicsViewport = false;
 	}
 }

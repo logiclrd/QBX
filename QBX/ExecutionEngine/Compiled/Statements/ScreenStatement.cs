@@ -29,6 +29,7 @@ public class ScreenStatement(CodeModel.Statements.ScreenStatement source) : Exec
 					throw RuntimeException.IllegalFunctionCall(ModeExpression.Source);
 
 				context.RuntimeState.LastScreenMode = qbMode;
+				context.RuntimeState.HaveGraphicsViewport = false;
 
 				context.VisualLibrary = context.Machine.VideoFirmware.VisualLibrary;
 

@@ -9,6 +9,7 @@ public class RuntimeState
 	public int SegmentBase;
 	public int LastScreenMode = 0;
 	public bool TextCursorVisible = false;
+	public bool HaveGraphicsViewport = false;
 	public PaletteMode PaletteMode = PaletteMode.Attribute;
 	public int MaximumAttribute = 15;
 	public int MaximumColour = 63;
@@ -17,23 +18,31 @@ public class RuntimeState
 
 	public void RenderSoftKeyMacroLine(VisualLibrary visualLibrary)
 	{
-		if (DisplaySoftKeyMacroLine)
+		int savedWindowStart = visualLibrary.CharacterLineWindowStart;
+		int savedWindowEnd = visualLibrary.CharacterLineWindowEnd;
+		int savedCursorX = visualLibrary.CursorX;
+		int savedCursorY = visualLibrary.CursorY;
+
+		try
 		{
-			int savedWindowStart = visualLibrary.CharacterLineWindowStart;
-			int savedWindowEnd = visualLibrary.CharacterLineWindowEnd;
-			int savedCursorX = visualLibrary.CursorX;
-			int savedCursorY = visualLibrary.CursorY;
+			var textLibrary = visualLibrary as TextLibrary;
+			var graphicsLibrary = visualLibrary as GraphicsLibrary;
 
-			try
+			// In graphics mode, if a viewport is defined, we don't render the macro line,
+			// and if the macro line is disabled, we don't clear the pixels for it.
+			if ((graphicsLibrary != null)
+			 && (HaveGraphicsViewport || !DisplaySoftKeyMacroLine))
+				return;
+
+			// In text mode, we clear the row whether or not the macro line is enabled.
+			visualLibrary.UpdateCharacterLineWindow(
+				visualLibrary.CharacterHeight - 1,
+				visualLibrary.CharacterHeight - 1);
+
+			visualLibrary.ClearCharacterLineWindow();
+
+			if (DisplaySoftKeyMacroLine)
 			{
-				var textLibrary = visualLibrary as TextLibrary;
-
-				visualLibrary.UpdateCharacterLineWindow(
-					visualLibrary.CharacterHeight - 1,
-					visualLibrary.CharacterHeight - 1);
-
-				visualLibrary.ClearCharacterLineWindow();
-
 				for (int x = 0, i = 0; x < visualLibrary.CharacterWidth; x += 8, i++)
 				{
 					int n = i + 1;
@@ -98,11 +107,11 @@ public class RuntimeState
 				if (savedWindowEnd + 1 >= visualLibrary.Height)
 					savedWindowEnd--;
 			}
-			finally
-			{
-				visualLibrary.UpdateCharacterLineWindow(savedWindowStart, savedWindowEnd);
-				visualLibrary.MoveCursor(savedCursorX, savedCursorY);
-			}
+		}
+		finally
+		{
+			visualLibrary.UpdateCharacterLineWindow(savedWindowStart, savedWindowEnd);
+			visualLibrary.MoveCursor(savedCursorX, savedCursorY);
 		}
 	}
 

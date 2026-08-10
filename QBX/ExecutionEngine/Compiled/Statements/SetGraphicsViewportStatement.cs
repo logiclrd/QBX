@@ -58,6 +58,8 @@ public class SetGraphicsViewportStatement(CodeModel.Statements.GraphicsViewportS
 			? CoordinateType.Screen
 			: CoordinateType.Viewport);
 
+		context.RuntimeState.HaveGraphicsViewport = true;
+
 		if ((FillColourExpression != null)
 		 || (BorderColourExpression != null))
 		{
