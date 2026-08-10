@@ -124,6 +124,8 @@ public class CompilerException : Exception
 
 	public static CompilerException IdentifierCannotIncludePeriod(Token? context)
 		=> new CompilerException(context, "Identifier cannot include period", "-117");
+	public static CompilerException IllegalNumber(Token? context)
+		=> new CompilerException(context, "Illegal number", "-119");
 	public static CompilerException IllegalNumber(CodeModel.Expressions.Expression? expression)
 		=> new CompilerException(expression, "Illegal number", "-119");
 	public static CompilerException InvalidConstant(CodeModel.Statements.Statement? statement)

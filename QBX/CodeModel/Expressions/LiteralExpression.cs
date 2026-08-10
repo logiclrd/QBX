@@ -20,6 +20,12 @@ public class LiteralExpression : Expression
 		if ((!NumberParser.TryAsInteger(token.Value, out _, out octalOverflow) && octalOverflow)
 		 || (!NumberParser.TryAsLong(token.Value, out _, out octalOverflow) && octalOverflow))
 			throw CompilerException.Overflow(token);
+
+		bool isIntegerType = token.Value.ContainsAny('%', '&');
+		bool containsDecimal = token.Value.Contains('.');
+
+		if (isIntegerType && containsDecimal)
+			throw CompilerException.IllegalNumber(token);
 	}
 
 	public bool TryAsInteger(out short value)
