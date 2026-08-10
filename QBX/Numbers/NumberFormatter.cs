@@ -285,7 +285,7 @@ public class NumberFormatter
 			if (str.IndexOf('.') >= 0)
 				digits--;
 
-			if (digits <= 7)
+			if (qualify || (digits <= 7))
 				str += '#';
 		}
 
