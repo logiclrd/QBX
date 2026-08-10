@@ -655,6 +655,11 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 		if ((x > Clip.X2) || (y > Clip.Y2))
 			return;
 
+		if (x + maxW > Clip.X2)
+			maxW = Clip.X2 - x + 1;
+		if (y + maxH > Clip.Y2)
+			maxH = Clip.Y2 - y + 1;
+
 		using (HidePointerForOperationIfPointerAware(x, y, x + maxW - 1, y + maxH - 1))
 		{
 			var vramSpan = Array.VRAM.AsSpan();
@@ -717,6 +722,11 @@ public class GraphicsLibrary_4bppPlanar : GraphicsLibrary
 			int lastByteMask = unchecked((byte)~(255 >> lastOutputBytePixels));
 
 			int subByteAlignment = 0;
+
+			if (andW > maxW)
+				andW = maxW;
+			if (xorW > maxW)
+				xorW = maxW;
 
 			int loopW = Math.Max(andW, xorW);
 

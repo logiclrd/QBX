@@ -22,8 +22,12 @@ rin.AX = 1
 CALL InterruptX(&H33, rin, rout)
 
 DO
-  PSET (RND * 320, RND * 200), RND * 250
+  PSET (RND * 640, RND * 480), RND * 250
+  PSET (RND * 640, RND * 480), RND * 250
+  PSET (RND * 640, RND * 480), RND * 250
+  PSET (RND * 640, RND * 480), RND * 250
+  PSET (RND * 640, RND * 480), RND * 250
   st# = TIMER
   WHILE st# = TIMER: WEND
-LOOP
+LOOP WHILE INKEY$ = ""
 
