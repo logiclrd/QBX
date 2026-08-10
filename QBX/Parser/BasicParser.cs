@@ -3271,7 +3271,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 							}
 
 							if (!successOnPartialParse)
-								throw;
+								throw new SyntaxErrorException(expressionTokens[0], "Expected: , or ; or end of statement");
 						}
 					}
 
@@ -4179,7 +4179,36 @@ public class BasicParser(IdentifierRepository identifierRepository)
 				tokenHandler.Advance(equalsSign);
 				tokenHandler.Expect(TokenType.Equals);
 
-				assignment.ValueExpression = ParseExpressionForStatement(assignment, tokenHandler.RemainingTokens, tokenHandler.EndToken);
+				try
+				{
+					assignment.ValueExpression = ParseExpressionForStatement(assignment, tokenHandler.RemainingTokens, tokenHandler.EndToken);
+				}
+				catch
+				{
+					// Check if there's a token up to which we _can_ parse the string.
+					var partialTokens = tokenHandler.RemainingTokens;
+
+					while (partialTokens.Count > 0)
+					{
+						var blameToken = partialTokens[partialTokens.Count - 1];
+
+						partialTokens = partialTokens.Slice(0, partialTokens.Count - 1);
+
+						try
+						{
+							ParseExpressionForStatement(assignment, partialTokens, tokenHandler.EndToken);
+						}
+						catch
+						{
+							continue;
+						}
+
+						// The expression parsed successfully without blameToken.
+						throw new SyntaxErrorException(blameToken, "Expected: end of statement");
+					}
+
+					throw;
+				}
 
 				return assignment;
 			}
