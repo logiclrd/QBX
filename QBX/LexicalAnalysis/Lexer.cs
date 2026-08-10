@@ -469,31 +469,12 @@ public class Lexer(TextReader input, CompilationElement? element = null, int sta
 							buffer.Append(ch);
 						else
 						{
-							var dataType = DataType.Unspecified;
+							reparse = true;
 
-							switch (ch)
-							{
-								case '%':
-								case '&':
-								case '!':
-								case '#':
-								case '@':
-									buffer.Append(ch);
-
-									switch (ch)
-									{
-										case '%': dataType = DataType.INTEGER; break;
-										case '&': dataType = DataType.LONG; break;
-										case '!': dataType = DataType.SINGLE; break;
-										case '#': dataType = DataType.DOUBLE; break;
-										case '@': dataType = DataType.CURRENCY; break;
-									}
-
-									break;
-								default:
-									reparse = true;
-									break;
-							}
+							var dataType =
+								(buffer.IndexOf('d', caseSensitive: false) >= 0)
+								? DataType.DOUBLE
+								: DataType.SINGLE;
 
 							// To ensure operator precedence in sequences like "A-2*B", we need to always
 							// yield the minus sign as an operator. The parser can put the parts back
