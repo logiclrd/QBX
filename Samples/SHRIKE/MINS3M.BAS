@@ -876,6 +876,12 @@ OUT &H40, interval&
 OUT &H40, interval& \ 256
 END SUB
 
+SUB S3MResetTimerRate
+OUT &H43, &H36
+OUT &H40, 0
+OUT &H40, 0
+END SUB
+
 SUB S3MRowUpdateCheck (rowticks%, lastrowtick&, tickbase&, samples() AS SampleType, notes() AS NoteType, rownotes%(), nextrow%, nextnote%, channellastsample%(), globalvolume!)
 tick& = INT(TIMER * TicksPerTIMERUnit# + .5) + tickbase&
 

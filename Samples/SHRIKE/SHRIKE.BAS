@@ -555,7 +555,7 @@ BootLog ""
 BootLog "Welcome to SHRIKE, pilot!"
 
 ' Ensure default timer rate initially
-S3MProgramTimerRate 18.2065
+S3MResetTimerRate
 
 st# = TIMER
 
@@ -968,8 +968,7 @@ DO
   END IF
 LOOP
 
-' Reset timer rate
-S3MProgramTimerRate 18.2065
+S3MResetTimerRate
 
 GUSReset
 

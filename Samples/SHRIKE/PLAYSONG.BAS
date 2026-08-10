@@ -1,26 +1,5 @@
 '$DYNAMIC
 
-DECLARE FUNCTION SelectFile$ ()
-DECLARE FUNCTION SelectSong% (numsongs%, numrows%, songs() AS SongType, notes() AS NoteType, rownotes%(), rowticks%, tickfrequency%)
-
-DECLARE SUB InitializeVisualization (songnotes() AS NoteType, numnotes%, chan1line%)
-DECLARE SUB UpdateVisualization (chan1line%, channelvisage%(), channelvisx%(), songsamples() AS SampleType, songnotes() AS NoteType, songrownotes%(), nextrow%, lastrow%, lastnote%, rowspersecond!)
-
-filename$ = SelectFile$
-
-IF filename$ = "" THEN END
-
-CLS
-
-LOCATE 1, 79 - LEN(filename$)
-PRINT filename$;
-
-OPEN filename$ FOR BINARY AS #1
-
-S3MMeasure 1, numsamples%, numsongs%, numnotes%, numrows%
-
-SEEK #1, 1
-
 TYPE SampleType
   StartAddress AS LONG
   EndAddress AS LONG
@@ -43,6 +22,27 @@ TYPE NoteType
   NoteFrequency AS LONG ' or note number for jump
   Volume AS SINGLE
 END TYPE
+
+DECLARE FUNCTION SelectFile$ ()
+DECLARE FUNCTION SelectSong% (numsongs%, numrows%, songs() AS SongType, notes() AS NoteType, rownotes%(), rowticks%, tickfrequency%)
+
+DECLARE SUB InitializeVisualization (songnotes() AS NoteType, numnotes%, chan1line%)
+DECLARE SUB UpdateVisualization (chan1line%, channelvisage%(), channelvisx%(), songsamples() AS SampleType, songnotes() AS NoteType, songrownotes%(), nextrow%, lastrow%, lastnote%, rowspersecond!)
+
+filename$ = SelectFile$
+
+IF filename$ = "" THEN END
+
+CLS
+
+LOCATE 1, 79 - LEN(filename$)
+PRINT filename$;
+
+OPEN filename$ FOR BINARY AS #1
+
+S3MMeasure 1, numsamples%, numsongs%, numnotes%, numrows%
+
+SEEK #1, 1
 
 CONST NoteActionStartNote% = 0 ' plus sample number
 CONST NoteActionStartNoteLast% = 255
@@ -111,7 +111,7 @@ DO
     GUSStopNote i%
   NEXT i%
 
-  S3MProgramTimerRate 18.20645
+  S3MResetTimerRate
 LOOP
 
 GUSReset

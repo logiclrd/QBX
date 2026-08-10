@@ -187,6 +187,7 @@ DECLARE SUB ResetDistanceMeter (distancemeter AS DistanceMeterType)
 DECLARE SUB ResetHorizon (runner AS RunnerType, horizonline AS HorizonLineType, nightmode AS NightModeType, firstactiveobstacle%, nextinactiveobstacle%)
 DECLARE SUB ResetHorizonLine (horizonline AS HorizonLineType)
 DECLARE SUB ResetNightMode (runner AS RunnerType, nightmode AS NightModeType)
+DECLARE SUB ResetTimerRate ()
 DECLARE SUB ResetTRex (trex AS TRexType)
 DECLARE SUB RestartGame (runner AS RunnerType, loopstate AS LoopStateType, distancemeter AS DistanceMeterType, horizonline AS HorizonLineType, nightmode AS NightModeType, clouds() AS CloudType, obstacles() AS ObstacleType, firstactiveobstacle%,  _
 nextinactiveobstacle%, trex AS TRexType)
@@ -533,6 +534,8 @@ DO
     KeyStates%(ks% AND 127) = ((ks% AND 128) = 0)
   LOOP WHILE TIMER = framestarttime!
 LOOP WHILE KeyStates%(1) = 0 ' Exit on ESC.
+
+ResetTimerRate
 
 SUB AddCloud (clouds() AS CloudType)
 FOR i% = 0 TO MaxClouds% - 1
@@ -1283,6 +1286,12 @@ SUB ResetNightMode (runner AS RunnerType, nightmode AS NightModeType)
 nightmode.CurrentPhase = 0
 nightmode.Opacity = 0
 UpdateNightMode runner, nightmode, 0, -1
+END SUB
+
+SUB ResetTimerRate
+OUT &H43, &H36
+OUT &H40, 0
+OUT &H40, 0
 END SUB
 
 ' Reset the t-rex to running.

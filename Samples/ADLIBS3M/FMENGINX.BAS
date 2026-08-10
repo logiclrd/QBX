@@ -17,6 +17,7 @@ DECLARE FUNCTION note2period (note, Oct, ins)
 DECLARE FUNCTION VibVal (ind, mode)
 DECLARE SUB ConfigureTimerForSongTempo (tempo%)
 DECLARE SUB ProgramTimerRate (tickspersecond#)
+DECLARE SUB ResetTimerRate ()
 DECLARE FUNCTION CEIL# (x#)
 
 '***FM PLAYER BEGIN***
@@ -175,6 +176,8 @@ DO
         IF NOT ispaused THEN FMtimer
     END IF
 LOOP
+
+ResetTimerRate
 
 CALL FMend
 
@@ -1028,6 +1031,14 @@ OUT &H40, interval&
 OUT &H40, interval& \ 256
 END SUB
 
+DEFSNG A-Z
+SUB ResetTimerRate
+OUT &H43, &H36
+OUT &H40, 0
+OUT &H40, 0
+END SUB
+
+DEFINT A-Z
 FUNCTION VibVal (ind, mode)
     '
     ' The variable pointed by "ind" is MODIFIED in this function
