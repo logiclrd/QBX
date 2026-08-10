@@ -369,6 +369,7 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 			var plane = vramSpan.Slice(StartAddress);
 
 			int bytesPerScan = (w + 7) / 8;
+			int lastByteOffset = bytesPerScan - 1;
 
 			int headerBytes = 4;
 			int dataBytes = bytesPerScan * h;
@@ -399,38 +400,55 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 
 			int bitsForNextPixel = 0;
 
-			int lastByteMask = unchecked((byte)(255 << (w & 7)));
+			int lastByteMask = unchecked((byte)(0x7F80 >> ((w - 1) & 7)));
 
 			for (int yy = 0; yy < h; yy++)
 			{
 				int o = (y + yy) * _stride + (x >> 3);
 				int p = yy * bytesPerScan;
 
-				if (rightPixelMask != 0)
+				if (leftPixelShift == 0)
+				{
+					// Input and output bytes are aligned
+					plane.Slice(o, bytesPerScan).CopyTo(data.Slice(p));
+
+					data[p + lastByteOffset] = unchecked((byte)(data[p + lastByteOffset] & lastByteMask));
+				}
+				else
 				{
 					// Input and output bytes are not aligned, and the offset o has only
 					// some of the bits for the first output byte.
-					int sample = plane[o];
+					{
+						int sample = plane[o];
 
-					bitsForNextPixel = (sample & rightPixelMask) << rightPixelShift;
+						bitsForNextPixel = (sample & rightPixelMask) << rightPixelShift;
 
-					o++;
+						o++;
+					}
+
+					// Enter the loop once for every byte that gets shifted back to supply
+					// some bits to a preceding output index.
+					for (int xx = 8 - rightPixelShift; xx < w; xx += 8, o++, p++)
+					{
+						int sample = plane[o];
+
+						data[p] = unchecked((byte)(
+							bitsForNextPixel | ((sample & leftPixelMask) >> leftPixelShift)));
+
+						bitsForNextPixel = (sample & rightPixelMask) << rightPixelShift;
+					}
+
+					// If the final output byte only uses tail bits from the last
+					// input byte, then the loop hasn't processed it. It only
+					// processes output bytes that require pulling head bits from
+					// the next input byte.
+
+					if ((((x + w) & 7) == 0)
+					 || (((w - 1) & 7) < (7 - rightPixelShift)))
+						data[p] = unchecked((byte)(bitsForNextPixel & lastByteMask));
+					else
+						data[p - 1] = unchecked((byte)(data[p - 1] & lastByteMask));
 				}
-
-				for (int xx = 0; xx < w; xx += 8, o++, p++)
-				{
-					int sample = plane[o];
-
-					data[p] = unchecked((byte)(
-						bitsForNextPixel | ((sample & leftPixelMask) >> leftPixelShift)));
-
-					bitsForNextPixel = (sample & rightPixelMask) << rightPixelShift;
-				}
-
-				data[p - 1] = unchecked((byte)(data[p - 1] & lastByteMask));
-
-				if (rightPixelShift != 0)
-					bitsForNextPixel = (plane[o++] & rightPixelMask) << rightPixelShift;
 			}
 		}
 	}
