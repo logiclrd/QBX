@@ -349,6 +349,14 @@ public class Mapper
 			return PrimitiveDataType.Long;
 		else
 		{
+			if (first == '<') // persistent storage for static variable
+			{
+				int end = name.IndexOf('>');
+
+				if (end + 1 < name.Length)
+					first = char.ToUpperInvariant(name[end + 1]); // fails gracefully if IndexOf doesn't find anything
+			}
+
 			int index = (first - 'A');
 
 			return _identifierTypes[index];
