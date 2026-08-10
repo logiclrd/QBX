@@ -555,7 +555,7 @@ public partial class Program
 				int unhighlightedRight;
 
 				if (highlightStart >= 0)
-					unhighlightedLeft = highlightStart;
+					unhighlightedLeft = Math.Min(highlightStart, viewportContentWidth);
 				else
 				{
 					unhighlightedLeft = 0;
