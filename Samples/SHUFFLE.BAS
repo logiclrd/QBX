@@ -34,6 +34,7 @@ ESC$ = CHR$(27)
 
 LOCATE 10, 1
 PRINT "Broken"
+PRINT "(space to switch, esc to exit)"
 
 DO
   FOR i% = 1 TO 50
