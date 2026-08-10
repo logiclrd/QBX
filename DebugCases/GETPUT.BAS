@@ -4,16 +4,13 @@ colours% = (mode% <> 2) AND (mode% <> 10)
 
 SCREEN mode%
 
-c% = 1
-
 FOR i% = 1 TO 15
-  IF colours% THEN c% = i%
   LINE (0, 0)-(i% * 15, 15), i%
 NEXT i%
 
 DIM a%(500)
 
-IF colours% THEN c% = 4
+IF colours% THEN c% = 4 ELSE c% = 1
 
 FOR i% = 0 TO 20
   FOR j% = 1 TO 20
