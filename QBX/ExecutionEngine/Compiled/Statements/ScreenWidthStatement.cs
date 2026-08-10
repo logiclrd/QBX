@@ -71,5 +71,15 @@ public class ScreenWidthStatement(CodeModel.Statements.ScreenWidthStatement sour
 				throw RuntimeException.IllegalFunctionCall(HeightExpression?.Source);
 			}
 		}
+
+		{
+			if (context.VisualLibrary is TextLibrary textLibrary)
+			{
+				if (context.RuntimeState.TextCursorVisible)
+					textLibrary.ShowCursor();
+				else
+					textLibrary.HideCursor();
+			}
+		}
 	}
 }

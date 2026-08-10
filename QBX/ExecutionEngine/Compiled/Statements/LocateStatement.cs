@@ -45,6 +45,8 @@ public class LocateStatement(CodeModel.Statements.LocateStatement source) : Exec
 				case 0: textLibrary?.HideCursor(); break;
 				default: throw RuntimeException.IllegalFunctionCall(Source);
 			}
+
+			context.RuntimeState.TextCursorVisible = (cursorVisibility == 1);
 		}
 
 		if ((CursorStartExpression != null) || (CursorEndExpression != null))

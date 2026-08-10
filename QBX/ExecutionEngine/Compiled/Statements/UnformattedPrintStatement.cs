@@ -18,6 +18,14 @@ public class UnformattedPrintStatement(CodeModel.Statements.PrintStatement sourc
 
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
+		if (context.VisualLibrary is TextLibrary textLibrary)
+		{
+			if (context.RuntimeState.TextCursorVisible)
+				textLibrary.ShowCursor();
+			else
+				textLibrary.HideCursor();
+		}
+
 		using (context.VisualLibrary.SetBackspaceCharacterModeForOperation(BackspaceCharacterMode.Glyph))
 		{
 			var emitter = CreateEmitter(context, stackFrame);

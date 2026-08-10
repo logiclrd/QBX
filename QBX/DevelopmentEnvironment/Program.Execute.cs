@@ -85,16 +85,18 @@ public partial class Program
 
 	public void ResetProgramScreen()
 	{
-		if ((_savedLastScreenMode != 0)
-		 || (_savedVisualLibrary?.CharacterWidth != 80)
-		 || (_savedVisualLibrary?.CharacterHeight != 25))
+		if ((_savedLastScreenMode == 0)
+		 && (_savedVisualLibrary?.CharacterWidth == 80)
+		 && (_savedVisualLibrary?.CharacterHeight == 25))
+			ShowTextCursorInSavedOutput();
+		else
 		{
 			_savedLastScreenMode = 0;
 
 			ResetOutput();
-
-			SetIDEVideoMode();
 		}
+
+		SetIDEVideoMode();
 	}
 
 	[MemberNotNullWhen(true, nameof(_executionContext))]

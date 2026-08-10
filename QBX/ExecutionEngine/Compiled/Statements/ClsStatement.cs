@@ -74,5 +74,13 @@ public class ClsStatement(CodeModel.Statements.ClsStatement source) : Executable
 			default:
 				throw RuntimeException.IllegalFunctionCall(Source);
 		}
+
+		if (context.VisualLibrary is TextLibrary textLibrary)
+		{
+			if (context.RuntimeState.TextCursorVisible)
+				textLibrary.ShowCursor();
+			else
+				textLibrary.HideCursor();
+		}
 	}
 }

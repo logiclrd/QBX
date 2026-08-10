@@ -95,6 +95,9 @@ public class Machine
 
 		VideoFirmware.SetMode(3);
 
+		if (VideoFirmware.VisualLibrary is TextLibrary textLibrary)
+			textLibrary.ShowCursor();
+
 		DOS = new DOS(this);
 	}
 

@@ -67,6 +67,16 @@ public partial class Program
 		SaveOutput();
 	}
 
+	void ShowTextCursorInSavedOutput()
+	{
+		if (_savedVisualLibrary is TextLibrary textLibrary)
+		{
+			RestoreOutput();
+			textLibrary.ShowCursor();
+			SaveOutput();
+		}
+	}
+
 	void SaveOutput()
 	{
 		Machine.GraphicsArray.VRAM.CopyTo(_savedOutput);

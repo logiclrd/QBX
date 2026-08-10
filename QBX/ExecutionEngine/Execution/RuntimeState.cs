@@ -8,6 +8,7 @@ public class RuntimeState
 {
 	public int SegmentBase;
 	public int LastScreenMode = 0;
+	public bool TextCursorVisible = false;
 	public PaletteMode PaletteMode = PaletteMode.Attribute;
 	public int MaximumAttribute = 15;
 	public int MaximumColour = 63;
