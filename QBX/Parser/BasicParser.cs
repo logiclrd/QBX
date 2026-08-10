@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -315,6 +316,43 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 						line.AppendStatement(parsedStatement);
 						buffer.Clear();
+
+						if (lineConsumed && (line.EndOfLineComment != null))
+						{
+							// Some statements naturally emit trailing spaces, like CLS.
+							// If the final statement in the line does this, then we
+							// need to remove the corresponding spaces from the
+							// EndOfLineComment otherwise they're accounted for multiple
+							// times.
+
+							string endOfLineComment = line.EndOfLineComment;
+
+							var lastStatement = line.AllStatements.Last();
+
+							var trailingSpaceTestBuffer = new StringBuilder();
+
+							lastStatement.Render(new StringWriter(trailingSpaceTestBuffer));
+
+							int trailingSpaces = 0;
+
+							while (trailingSpaceTestBuffer[trailingSpaceTestBuffer.Length - 1] == ' ')
+							{
+								trailingSpaces++;
+								trailingSpaceTestBuffer.Length--;
+							}
+
+							if (trailingSpaces > 0)
+							{
+								int commentIndentation = 0;
+
+								while ((commentIndentation < endOfLineComment.Length) && (endOfLineComment[commentIndentation] == ' '))
+									commentIndentation++;
+
+								int removeDoubleCountedSpaces = Math.Min(commentIndentation, trailingSpaces);
+
+								line.EndOfLineComment = endOfLineComment.Substring(removeDoubleCountedSpaces);
+							}
+						}
 					}
 
 					precedingWhitespaceToken = null;
