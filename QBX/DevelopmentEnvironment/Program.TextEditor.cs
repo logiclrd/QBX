@@ -219,7 +219,7 @@ public partial class Program
 			 || (newCursorX >= buffer.Length))
 				return false;
 
-			return IsWordCharacter(buffer[newCursorX]);
+			return buffer[newCursorX].IsWordCharacter();
 		}
 
 		void FindPreviousWord()
@@ -1335,10 +1335,10 @@ public partial class Program
 							while ((removeEnd < buffer.Length) && (buffer[removeEnd] == ' '))
 								removeEnd++;
 						}
-						else if (IsWordCharacter(buffer[newCursorX]))
+						else if (buffer[newCursorX].IsWordCharacter())
 						{
 							// Delete contiguous word characters
-							while ((removeEnd < buffer.Length) && IsWordCharacter(buffer[removeEnd]))
+							while ((removeEnd < buffer.Length) && buffer[removeEnd].IsWordCharacter())
 								removeEnd++;
 						}
 
@@ -1630,26 +1630,6 @@ public partial class Program
 				};
 
 			ShowDialog(dialog);
-		}
-	}
-
-	static bool IsWordCharacter(char ch)
-	{
-		switch (ch)
-		{
-			case '!':
-			case '#':
-			case '$':
-			case '%':
-			case '&':
-			case '.':
-			case '/':
-			case '@':
-				return true;
-			default:
-				byte v = CP437Encoding.GetByteSemantic(ch);
-
-				return CP437Encoding.IsLetterOrDigit(v);
 		}
 	}
 

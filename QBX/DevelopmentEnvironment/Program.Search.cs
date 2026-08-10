@@ -24,7 +24,7 @@ public partial class Program
 		CommitViewportsAndSwallowError();
 
 		if ((initialFindWhat?.Length == 1)
-		 && !IsWordCharacter(initialFindWhat[0]))
+		 && !initialFindWhat[0].IsWordCharacter())
 			initialFindWhat = null;
 
 		var searchScopeMode =
@@ -69,7 +69,7 @@ public partial class Program
 		CommitViewportsAndSwallowError();
 
 		if ((initialFindWhat?.Length == 1)
-		 && !IsWordCharacter(initialFindWhat[0]))
+		 && !initialFindWhat[0].IsWordCharacter())
 			initialFindWhat = null;
 
 		var searchScopeMode =
@@ -447,8 +447,8 @@ public partial class Program
 
 			var lineSpan = writer.GetBuffer();
 
-			bool findWhatStartIsWord = IsWordCharacter(searchState.FindWhatString[0]);
-			bool findWhatEndIsWord = IsWordCharacter(searchState.FindWhatString[searchState.FindWhatString.Length - 1]);
+			bool findWhatStartIsWord = searchState.FindWhatString[0].IsWordCharacter();
+			bool findWhatEndIsWord = searchState.FindWhatString[searchState.FindWhatString.Length - 1].IsWordCharacter();
 
 			if (searchState.Position.CharacterOffset > 0)
 			{
@@ -461,7 +461,7 @@ public partial class Program
 
 					while (searchState.Position.CharacterOffset < lineSpan.Length)
 					{
-						bool precedingCharacterIsWord = IsWordCharacter(lineSpan[searchState.Position.CharacterOffset - 1]);
+						bool precedingCharacterIsWord = lineSpan[searchState.Position.CharacterOffset - 1].IsWordCharacter();
 
 						bool startIsCandidate = (precedingCharacterIsWord != findWhatStartIsWord);
 
@@ -494,10 +494,10 @@ public partial class Program
 
 					bool haveNextCharacter = (matchIndex + searchState.FindWhatString.Length < lineSpan.Length);
 
-					bool precedingCharacterIsWord = IsWordCharacter(lineSpan[matchIndex - 1]);
+					bool precedingCharacterIsWord = lineSpan[matchIndex - 1].IsWordCharacter();
 					bool nextCharacterIsWord =
 						haveNextCharacter
-						? IsWordCharacter(lineSpan[matchIndex + searchState.FindWhatString.Length])
+						? lineSpan[matchIndex + searchState.FindWhatString.Length].IsWordCharacter()
 						: !findWhatEndIsWord; // short circuit to success at end of string
 
 					// Only keep this match if the start & end of the match are a word boundaries.

@@ -128,16 +128,13 @@ public class TextInput : Widget
 		return true;
 	}
 
-	bool IsWordCharacter(byte ch)
-		=> (ch == (byte)'.') || CP437Encoding.IsAsciiLetterOrDigit(ch);
-
 	void WordLeft()
 	{
 		if (CursorX > 0)
 		{
 			CursorX--;
 
-			while ((CursorX > 0) && IsWordCharacter(Text[CursorX - 1]))
+			while ((CursorX > 0) && Text[CursorX - 1].IsWordCharacter())
 				CursorX--;
 		}
 	}
@@ -148,9 +145,9 @@ public class TextInput : Widget
 		{
 			CursorX++;
 
-			while ((CursorX < Text.Length) && IsWordCharacter(Text[CursorX]))
+			while ((CursorX < Text.Length) && Text[CursorX].IsWordCharacter())
 				CursorX++;
-			while ((CursorX < Text.Length) && !IsWordCharacter(Text[CursorX]))
+			while ((CursorX < Text.Length) && !Text[CursorX].IsWordCharacter())
 				CursorX++;
 		}
 	}

@@ -44,7 +44,7 @@ public class LineSplittingTextWriter(TextWriter wrapped, int lineLength) : TextW
 				_wordBuffer.Append(ch);
 				_inString = true;
 			}
-			else if ((ch != ' ') && (ch != '\r') && (ch != '\n'))
+			else if (ch.IsWordCharacter())
 				_wordBuffer.Append(ch);
 			else
 			{
