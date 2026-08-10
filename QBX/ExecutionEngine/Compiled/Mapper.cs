@@ -781,15 +781,8 @@ public class Mapper
 		{
 			if (_variableIndexByName.ContainsKey(qualifiedName))
 				throw CompilerException.DuplicateDefinition(token);
-
-			var unqualifiedType = GetTypeForIdentifier(unqualifiedName);
-			var qualifiedType = GetTypeForIdentifier(qualifiedName);
-
-			if (unqualifiedType == qualifiedType)
-			{
-				if (_variableIndexByName.ContainsKey(unqualifiedName))
-					throw CompilerException.DuplicateDefinition(token);
-			}
+			if (_variableIndexByName.ContainsKey(unqualifiedName))
+				throw CompilerException.DuplicateDefinition(token);
 		}
 
 		int index = _variables.Count;
@@ -820,27 +813,30 @@ public class Mapper
 	{
 		int index;
 
+		// Try to resolve what we're given first; it won't be qualified
+		// if its type is a UDT.
 		if ((_semiscopeOverlay != null)
 		 && _semiscopeOverlay.TryGetValue(name, out index))
 			return index;
 		if (_variableIndexByName.TryGetValue(name, out index))
 			return index;
 
-		if (dataType == null)
-		{
-			var qualifiedName = QualifyIdentifier(name);
+		// Next try qualifying it. If it's not UDT-typed, then the primary
+		// declaration is the qualified one.
+		var qualifiedName = (dataType == null)
+			? QualifyIdentifier(name)
+			: QualifyIdentifier(name, dataType);
 
-			if ((_semiscopeOverlay != null)
-			 && _semiscopeOverlay.TryGetValue(qualifiedName, out index))
-				return index;
-			if (_variableIndexByName.TryGetValue(qualifiedName, out index))
-				return index;
-		}
+		if ((_semiscopeOverlay != null)
+			&& _semiscopeOverlay.TryGetValue(qualifiedName, out index))
+			return index;
+		if (_variableIndexByName.TryGetValue(qualifiedName, out index))
+			return index;
 
 		if (_isFrozen)
 			return -1;
 
-		return DeclareVariable(name, dataType ?? DataType.ForPrimitiveDataType(GetTypeForIdentifier(name)));
+		return DeclareVariable(qualifiedName, dataType ?? DataType.ForPrimitiveDataType(GetTypeForIdentifier(name)));
 	}
 
 	public void AllowArrayRedeclaration(string name, DataType dataType)
@@ -864,14 +860,10 @@ public class Mapper
 
 		if (!_arrayIndexByName.TryGetValue(qualifiedName, out var index))
 			index = -1;
-		if (!_arrayIndexByName.TryGetValue(qualifiedName, out var qualifiedNameIndex))
-			qualifiedNameIndex = -1;
 
-		if ((index >= 0)
-		 || (qualifiedNameIndex >= 0))
+		if (index >= 0)
 		{
-			if ((index != qualifiedNameIndex)
-			 || !_predeclaredArrayIndices.Remove(index))
+			if (!_predeclaredArrayIndices.Remove(index))
 				throw CompilerException.DuplicateDefinition(token);
 		}
 		else
@@ -903,15 +895,19 @@ public class Mapper
 
 		int index;
 
+		// Try to resolve what we're given first; it won't be qualified
+		// if its type is a UDT.
 		if (_arrayIndexByName.TryGetValue(name, out index))
 		{
 			_predeclaredArrayIndices.Remove(index);
 			return index;
 		}
 
-		var qualifiedName = arrayType != null
-			? QualifyIdentifier(name, arrayType)
-			: QualifyIdentifier(name);
+		// Next try qualifying it. If it's not UDT-typed, then the primary
+		// declaration is the qualified one.
+		var qualifiedName = (arrayType == null)
+			? QualifyIdentifier(name)
+			: QualifyIdentifier(name, arrayType);
 
 		if (_arrayIndexByName.TryGetValue(qualifiedName, out index))
 		{
@@ -934,7 +930,7 @@ public class Mapper
 			arrayType = elementType.MakeArrayType();
 		}
 
-		return DeclareArray(name, arrayType, nameToken);
+		return DeclareArray(qualifiedName, arrayType, nameToken);
 	}
 
 	public bool IsDeclaredVariableOrArray(Identifier identifier)
