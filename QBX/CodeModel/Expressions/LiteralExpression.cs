@@ -187,15 +187,15 @@ public class LiteralExpression : Expression
 				}
 			}
 			else if (NumberParser.TryAsInteger(str, out var integerValue))
-				writer.Write(NumberFormatter.Format(integerValue).AsSpan().Slice(offset));
+				writer.Write(NumberFormatter.Format(integerValue, qualify: false).AsSpan().Slice(offset));
 			else if (NumberParser.TryAsLong(str, out var longValue))
-				writer.Write(NumberFormatter.Format(longValue).AsSpan().Slice(offset));
+				writer.Write(NumberFormatter.Format(longValue, qualify: false).AsSpan().Slice(offset));
 			else if (NumberParser.TryAsSingle(str, out var singleValue))
-				writer.Write(NumberFormatter.Format(singleValue).AsSpan().Slice(offset));
+				writer.Write(NumberFormatter.Format(singleValue, qualify: false).AsSpan().Slice(offset));
 			else if (NumberParser.TryAsDouble(str, out var doubleValue))
-				writer.Write(NumberFormatter.Format(doubleValue).AsSpan().Slice(offset));
+				writer.Write(NumberFormatter.Format(doubleValue, qualify: false).AsSpan().Slice(offset));
 			else if (NumberParser.TryAsCurrency(str, out var currencyValue))
-				writer.Write(NumberFormatter.Format(currencyValue).AsSpan().Slice(offset));
+				writer.Write(NumberFormatter.Format(currencyValue, qualify: false).AsSpan().Slice(offset));
 			else
 			{
 				writer.Write(chars);
