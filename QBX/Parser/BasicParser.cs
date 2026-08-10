@@ -171,37 +171,6 @@ public class BasicParser(IdentifierRepository identifierRepository)
 					 && (parsedStatement.Indentation == ""))
 						parsedStatement.Indentation = " ";
 
-					// Special case: DATA just grabs everything it sees, which can include end-of-line comments.
-					if (parsedStatement is DataStatement dataStatement)
-					{
-						string dataText = dataStatement.RawString ?? "";
-
-						bool inString = false;
-
-						for (int i = 0; i < dataText.Length; i++)
-						{
-							if (inString)
-								inString = (dataText[i] != '"');
-							else
-							{
-								inString = (dataText[i] == '"');
-
-								if (dataText[i] == '\'')
-								{
-									// Subsume spaces
-									while ((i > 0) && (dataText[i - 1] == ' '))
-										i--;
-
-									// Transfer end-of-line comment out of the DATA string.
-									line.EndOfLineComment = dataText.Substring(i);
-									dataStatement.RawString = dataText.Substring(0, i);
-
-									break;
-								}
-							}
-						}
-					}
-
 					line.AppendStatement(parsedStatement);
 				}
 
