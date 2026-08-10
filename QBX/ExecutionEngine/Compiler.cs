@@ -218,7 +218,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 			// Fifth pass: Collect constants and then translate statements.
 			// => CONST definitions inside DEF FN are local to the DEF FN and are not processed here
-			unit.ResetArrayBase();
+			module.ResetArrayBase();
 			moduleMapper.HideTypeFacades();
 
 			foreach (var routine in routines)
@@ -1319,9 +1319,9 @@ public class Compiler(IdentifierRepository identifierRepository)
 				if (dimStatement.Shared && (element.Type != CodeModel.CompilationElementType.Main))
 					throw CompilerException.IllegalInSubFunctionOrDefFn(statement);
 
-				element.Owner.LockArrayBase();
+				module.LockArrayBase();
 
-				short arrayBase = element.Owner.ArrayBase;
+				short arrayBase = module.ArrayBase;
 
 				foreach (var declaration in dimStatement.Declarations)
 				{
@@ -2468,7 +2468,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 				try
 				{
-					element.Owner.ArrayBase = optionBaseStatement.ArrayBase;
+					module.ArrayBase = optionBaseStatement.ArrayBase;
 				}
 				catch
 				{
@@ -3837,6 +3837,10 @@ public class Compiler(IdentifierRepository identifierRepository)
 						if (container == null)
 							throw new Exception("TranslateExpression needs to create an implicit array but no container was specified");
 
+						module.LockArrayBase();
+
+						short arrayBase = module.ArrayBase;
+
 						var implicitDimStatement = new DimensionArrayStatement(null);
 
 						implicitDimStatement.CanBreak = false;
@@ -3846,7 +3850,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 						for (int i = 0; i < callOrIndexExpression.Arguments.Expressions.Count; i++)
 						{
 							implicitDimStatement.Subscripts.Add(
-								new IntegerLiteralValue(0),
+								new IntegerLiteralValue(arrayBase),
 								new IntegerLiteralValue(10));
 						}
 
