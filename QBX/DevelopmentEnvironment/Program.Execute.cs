@@ -25,6 +25,8 @@ public partial class Program
 	ExecutionContext? _executionContext;
 	Compilation? _compilation;
 
+	int _savedLastScreenMode;
+
 	public EventHub EventHub;
 
 	public List<QuickLibrary> QLBs = new List<QuickLibrary>();
@@ -65,6 +67,8 @@ public partial class Program
 
 			if (_executionContext != null)
 			{
+				_savedLastScreenMode = _executionContext.RuntimeState.LastScreenMode;
+
 				_executionContext.Controls.Terminate();
 				_executionContext.CloseAllFiles();
 			}
@@ -72,9 +76,25 @@ public partial class Program
 			_executionContext = null;
 			_executionThread = null;
 
+			ResetProgramScreen();
+
 			ClearNextStatement();
 		}
 		catch { }
+	}
+
+	public void ResetProgramScreen()
+	{
+		if ((_savedLastScreenMode != 0)
+		 || (_savedVisualLibrary?.CharacterWidth != 80)
+		 || (_savedVisualLibrary?.CharacterHeight != 25))
+		{
+			_savedLastScreenMode = 0;
+
+			ResetOutput();
+
+			SetIDEVideoMode();
+		}
 	}
 
 	[MemberNotNullWhen(true, nameof(_executionContext))]
@@ -96,7 +116,10 @@ public partial class Program
 			if (chainExecution)
 				_compilation.CommonBlocks = _executionContext.CommonBlocks;
 			else
+			{
+				_savedLastScreenMode = _executionContext.RuntimeState.LastScreenMode;
 				_executionContext = null; // Disconnect from previous context
+			}
 		}
 
 		try
@@ -142,6 +165,7 @@ public partial class Program
 		var drawProcessor = _executionContext?.DrawProcessor ?? new DrawProcessor();
 
 		_executionContext = new ExecutionContext(Machine, PlayProcessor, drawProcessor, EventHub, _compilation.CommonBlocks, _executionContext?.CommonBlockStorage);
+		_executionContext.RuntimeState.LastScreenMode = _savedLastScreenMode;
 		_executionContext.EventCheckGranularity = EventCheckGranularity;
 		_executionContext.CommandLine.Set(ProgramCommandLine.ToUpperInvariant());
 		_executionContext.Controls.Break();
@@ -518,6 +542,7 @@ public partial class Program
 
 		SetIDEVideoMode();
 
+		_savedLastScreenMode = _executionContext.RuntimeState.LastScreenMode;
 		_executionContext = null;
 	}
 }

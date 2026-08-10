@@ -74,7 +74,7 @@ namespace QBX.DevelopmentEnvironment
 
 			if (replaceExistingProgram)
 			{
-				LoadedFiles.Clear();
+				ClearProgram();
 
 				string makeFileName = Path.ChangeExtension(filePath, ".MAK");
 

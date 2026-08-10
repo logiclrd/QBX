@@ -56,6 +56,17 @@ public partial class Program
 		}
 	}
 
+	void ResetOutput()
+	{
+		Machine.VideoFirmware.SetMode(3);
+		Machine.VideoFirmware.SetCharacterRows(25);
+
+		if (Machine.VideoFirmware.VisualLibrary is TextLibrary textLibrary)
+			textLibrary.ShowCursor();
+
+		SaveOutput();
+	}
+
 	void SaveOutput()
 	{
 		Machine.GraphicsArray.VRAM.CopyTo(_savedOutput);
