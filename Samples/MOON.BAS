@@ -148,7 +148,7 @@ DO WHILE frameoffset% < framesize%
   keytype% = ReadBits&(d$, idx%, keysize%, byte%, shift%, sublen%)
 
   IF keytype% <> clearkey% THEN
-    IF keytype% = stopkey% OR keytype% = &H1000 THEN EXIT FOR
+    IF keytype% = stopkey% OR keytype% = &H1000 THEN EXIT DO
 
     IF ret% THEN keysize% = keysize% + 1
 
