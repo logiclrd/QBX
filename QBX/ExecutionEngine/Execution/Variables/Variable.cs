@@ -6,6 +6,8 @@ namespace QBX.ExecutionEngine.Execution.Variables;
 
 public abstract class Variable
 {
+	public Variable? PinnedVariable;
+
 	public SurfacedVariable? SurfacedVariable;
 	public SurfacedVariableDescriptor SurfacedVariableDescriptor;
 

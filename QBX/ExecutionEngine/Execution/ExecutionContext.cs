@@ -727,6 +727,8 @@ public class ExecutionContext
 		finally
 		{
 			ClearLocalErrorHandler(frame, source: null);
+
+			BackPropagateFrame(frame, routine.Module, routine);
 		}
 	}
 
@@ -828,7 +830,17 @@ public class ExecutionContext
 			var moduleFrame = module.ModuleFrame ?? throw new Exception("Internal: Module should already have ModuleFrame");
 
 			foreach (var link in linkedVariables)
-				variables[link.LocalIndex] = moduleFrame.Variables[link.RemoteIndex];
+			{
+				var variable = moduleFrame.Variables[link.RemoteIndex];
+
+				if (variable.PinnedVariable != null)
+				{
+					variable = variable.PinnedVariable;
+					moduleFrame.Variables[link.RemoteIndex] = variable;
+				}
+
+				variables[link.LocalIndex] = variable;
+			}
 		}
 		else
 		{
@@ -841,7 +853,17 @@ public class ExecutionContext
 					throw new Exception("Internal error: Couldn't find common block /" + linkGroup.CommonBlockName + "/");
 
 				foreach (var link in linkGroup.LinkedVariables)
-					variables[link.LocalIndex] = commonBlock.Variables[link.RemoteIndex];
+				{
+					var variable = commonBlock.Variables[link.RemoteIndex];
+
+					if (variable.PinnedVariable != null)
+					{
+						variable = variable.PinnedVariable;
+						commonBlock.Variables[link.RemoteIndex] = variable;
+					}
+
+					variables[link.LocalIndex] = variable;
+				}
 			}
 		}
 
@@ -869,6 +891,14 @@ public class ExecutionContext
 		stackFrame.StaticArrayInitializers = routine.StaticArrays;
 
 		return stackFrame;
+	}
+
+	void BackPropagateFrame(StackFrame stackFrame, Module module, Routine routine)
+	{
+		// If any variables were pinned, we need to switch our frame over to them.
+		for (int i = 0; i < stackFrame.Variables.Length; i++)
+			if (stackFrame.Variables[i].PinnedVariable is Variable replacementVariable)
+				stackFrame.Variables[i] = replacementVariable;
 	}
 
 	public void Reset()
