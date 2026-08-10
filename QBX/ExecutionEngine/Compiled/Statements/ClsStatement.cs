@@ -10,11 +10,14 @@ public class ClsStatement(CodeModel.Statements.ClsStatement source) : Executable
 	public override void Execute(ExecutionContext context, StackFrame stackFrame)
 	{
 		int mode;
+		bool redrawSoftKeyMacroLine = false;
 
 		if (ArgumentExpression != null)
 			mode = ArgumentExpression.EvaluateAndCoerceToInt(context, stackFrame);
 		else
 		{
+			redrawSoftKeyMacroLine = true;
+
 			if (context.VisualLibrary is TextLibrary)
 				mode = 2;
 			else
@@ -26,8 +29,12 @@ public class ClsStatement(CodeModel.Statements.ClsStatement source) : Executable
 			case 0:
 			{
 				// In graphics modes, clear all pixels.
-				// In text modes, clear everything but the last row.
+				//
+				// In text modes, clear everything. (Documentation says except the last row,
+				// but that doesn't seem to be correct empirically.)
+				//
 				// Return the cursor to the top-left of the character line window.
+
 				if (context.VisualLibrary is GraphicsLibrary)
 					context.VisualLibrary.Clear();
 				else
@@ -37,7 +44,7 @@ public class ClsStatement(CodeModel.Statements.ClsStatement source) : Executable
 
 					context.VisualLibrary.UpdateCharacterLineWindow(
 						0,
-						context.VisualLibrary.CharacterHeight - 2);
+						context.VisualLibrary.CharacterHeight - 1);
 
 					context.VisualLibrary.ClearCharacterLineWindow();
 
@@ -74,6 +81,9 @@ public class ClsStatement(CodeModel.Statements.ClsStatement source) : Executable
 			default:
 				throw RuntimeException.IllegalFunctionCall(Source);
 		}
+
+		if (redrawSoftKeyMacroLine)
+			context.RuntimeState.RenderSoftKeyMacroLine(context.VisualLibrary);
 
 		if (context.VisualLibrary is TextLibrary textLibrary)
 		{
