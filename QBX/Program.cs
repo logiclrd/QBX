@@ -245,6 +245,12 @@ class Program
 							program.RequestClose();
 							break;
 
+						case SDL.EventType.WindowPixelSizeChanged:
+							machine.Mouse.NotifyPhysicalSizeChanged(
+								physicalWidth: evt.Window.Data1,
+								physicalHeight: evt.Window.Data2);
+							break;
+
 						case SDL.EventType.KeymapChanged:
 							program.NotifyKeyboardLayoutChanged();
 							break;
@@ -285,8 +291,6 @@ class Program
 					SDL.SetTextureScaleMode(texture, SDL.ScaleMode.Nearest);
 
 					SDL.SetWindowSize(window, physicalWidth, physicalHeight);
-
-					machine.Mouse.NotifyPhysicalSizeChanged(physicalWidth, physicalHeight);
 				}
 
 				machine.Display.Render(texture);
