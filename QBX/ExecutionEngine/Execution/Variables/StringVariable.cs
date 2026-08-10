@@ -231,7 +231,9 @@ public class PinnedStringVariable : StringVariable
 	public override StringValue Value => new StringValue(ValueSpan);
 	public override Span<byte> ValueSpan => _machine.SystemMemory.AsSpan().Slice(PinnedMemoryAddress, _length);
 
-	public PinnedStringVariable(Machine machine, int memoryAddress, int length)
+	public readonly bool IsFixedLength;
+
+	public PinnedStringVariable(Machine machine, int memoryAddress, int length, bool isFixedLength)
 		: base(fixedStringLength: -1)
 	{
 		_machine = machine;
@@ -239,6 +241,7 @@ public class PinnedStringVariable : StringVariable
 
 		PinnedMemoryAddress = memoryAddress;
 		PinnedMemoryOwner = this;
+		IsFixedLength = isFixedLength;
 	}
 
 	public override void SetValue(StringValue value)
@@ -256,7 +259,7 @@ public class PinnedStringVariable : StringVariable
 
 	public override StringVariable Substring(int start, int length)
 	{
-		var pinnedSubstring = new PinnedStringVariable(Machine, PinnedMemoryAddress + start, length);
+		var pinnedSubstring = new PinnedStringVariable(Machine, PinnedMemoryAddress + start, length, isFixedLength: true);
 
 		pinnedSubstring.PinnedMemoryOwner = PinnedMemoryOwner;
 

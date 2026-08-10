@@ -172,6 +172,8 @@ public class CompilerException : Exception
 		=> new CompilerException(statement, "CASE without SELECT", "-177");
 	public static CompilerException EndSelectWithoutSelect(CodeModel.Statements.Statement? statement)
 		=> new CompilerException(statement, "END SELECT without SELECT", "-178");
+	public static CompilerException FixedLengthStringIllegal(CodeModel.Expressions.Expression? expression)
+		=> new CompilerException(expression, "Fixed-length string illegal", "-179");
 	public static CompilerException ParameterTypeMismatch(Token? context)
 		=> new CompilerException(context, "Parameter type mismatch", "-182");
 	public static CompilerException StatementsAndLabelsIllegalBetweenSelectCaseAndCase(CodeModel.Statements.Statement? statement)

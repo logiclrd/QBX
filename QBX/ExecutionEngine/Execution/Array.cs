@@ -150,7 +150,7 @@ public class Array
 		Variable variable;
 
 		if ((FixedStringLength >= 0) && ElementType.IsString)
-			variable = new PinnedStringVariable(PinnedToMachine!, PinnedToMemoryAddress + offset, FixedStringLength);
+			variable = new PinnedStringVariable(PinnedToMachine!, PinnedToMemoryAddress + offset, FixedStringLength, isFixedLength: true);
 		else
 			variable = Variable.ConstructPinned(ElementType, PinnedMemoryOwner!.PinnedMemoryContext!, PinnedToMemoryAddress + offset, ElementType.ByteSize);
 

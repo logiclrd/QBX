@@ -122,7 +122,7 @@ public class UserDataTypeVariable : Variable
 			if (arraySubscripts == null)
 			{
 				if (field.Type.IsString) // strings in UDTs are fixed length
-					Fields[i] = new PinnedStringVariable(machine, memoryAddress, length: field.Type.ByteSize);
+					Fields[i] = new PinnedStringVariable(machine, memoryAddress, length: field.Type.ByteSize, isFixedLength: true);
 				else
 					Fields[i] = Variable.ConstructPinned(field.Type, context, memoryAddress, field.Type.ByteSize);
 

@@ -63,7 +63,7 @@ public abstract class Evaluable
 			context.UnlinkFieldVariable(stringVariable);
 
 		if ((targetVariable is PinnedStringVariable pinnedStringVariable)
-		 && (targetVariable.PinnedMemoryOwner == null))
+		 && !pinnedStringVariable.IsFixedLength)
 		{
 			if (this is not IdentifierExpression identifierExpression)
 				throw new Exception("Internal error: Somehow landed on assignment to a stand-alone pinned string value that's not through an IdentifierExpression");
