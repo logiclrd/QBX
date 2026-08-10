@@ -7,7 +7,10 @@ public abstract class StringAddressFunction : VariableAddressFunction
 	protected override void SetArgument(int index, Evaluable value)
 	{
 		if (!value.Type.IsString)
-			throw CompilerException.TypeMismatch(Source);
+			throw CompilerException.TypeMismatch(value.Source);
+
+		if (value.Type.ByteSize != 0)
+			throw CompilerException.FixedLengthStringIllegal(value.Source);
 
 		base.SetArgument(index, value);
 	}
