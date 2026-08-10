@@ -103,6 +103,8 @@ public class MouseDriver
 		machine.VideoFirmware.ModeChanged +=
 			_ =>
 			{
+				_pointerVisible = -1;
+
 				int xShift = machine.GraphicsArray.Sequencer.DotDoubling ? 1 : 0;
 				int yShift = machine.GraphicsArray.CRTController.ScanDoubling ? 1 : 0;
 
