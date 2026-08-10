@@ -48,27 +48,51 @@ DO WHILE gameover = 0
     CLS
     ' 1. Teclado
     k$ = INKEY$
-    IF k$ = kUP$ AND pDY <> 1 THEN
-        pDX = 0
-        pDY = -1
-    END IF
-    IF k$ = kDOWN$ AND pDY <> -1 THEN
-        pDX = 0
-        pDY = 1
-    END IF
-    IF k$ = kLEFT$ AND pDX <> 1 THEN
-        pDX = -1
-        pDY = 0
-    END IF
-    IF k$ = kRIGHT$ AND pDX <> -1 THEN
-        pDX = 1
-        pDY = 0
+    WHILE k$ <> ""
+        IF k$ <> lastk$ AND turb < 3 THEN turb = 0: lastk$ = k$
+
+        IF k$ = kUP$ THEN queuenext$ = "U"
+        IF k$ = kDOWN$ THEN queuenext$ = "D"
+        IF k$ = kLEFT$ THEN queuenext$ = "L"
+        IF k$ = kRIGHT$ THEN queuenext$ = "R"
+
+        IF queuenext$ <> queuelast$ THEN
+            queue$ = queue$ + queuenext$
+            queuelast$ = queuenext$
+        END IF
+
+        k$ = INKEY$
+    WEND
+
+    IF LEN(queue$) THEN
+        k$ = LEFT$(queue$, 1)
+        queue$ = MID$(queue$, 2)
+
+        IF k$ = "U" AND pDY <> 1 THEN
+            pDX = 0
+            pDY = -1
+        END IF
+        IF k$ = "D" AND pDY <> -1 THEN
+            pDX = 0
+            pDY = 1
+        END IF
+        IF k$ = "L" AND pDX <> 1 THEN
+            pDX = -1
+            pDY = 0
+        END IF
+        IF k$ = "R" AND pDX <> -1 THEN
+            pDX = 1
+            pDY = 0
+        END IF
     END IF
     ' 2. Turbo e Movimento Player
     movs = 1
-    IF (INP(&H60) AND 1) = 1 AND pLen > 5 THEN
-        movs = 2
+    IF (INP(&H60) AND 128) = 0 AND pLen > 5 THEN
+        IF turb < 3 THEN turb = turb + 1
+    ELSE
+        turb = 0
     END IF
+    IF turb = 3 THEN movs = 2
     FOR m = 1 TO movs
         FOR i = pLen TO 1 STEP -1
             pX(i) = pX(i - 1)
