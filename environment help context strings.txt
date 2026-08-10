@@ -58,9 +58,6 @@ Cannot Name SUB/FUNCTION FNxxx Dialog: "-163"
 Cannot Load/Save With Non-Disk Device Dialog: "-164"
 Breakpoints On First CASE Statement Not Allowed Dialog: "-166"
 COMMON And DECLARE Must Precede Executable Statements Dialog: "-168"
-CASE without SELECT CASE: "-177"
-END SELECT without SELECT CASE: "-178"
-Cannot Use Fixed-Length String As Parameter: "-179"
 Cannot Pass User-Define Type with CALL: "-180"
 Multi-line DEF FN without END DEF: "-181"
 SUB or FUNCTION Name Matches QuickLibrary Export: "-183"
@@ -81,7 +78,6 @@ Executable Statements Not Allowed Before SUB/FUNCTION: "-152"
 Unsupported Statement: "MSG_UnsupStatement"
 Too Many Local Strings: "-195" or "h.pg$" => a procedure can only have up to 255 local strings
 
-Runtime Error 2 "Syntax Error": "-2" or "-2002"
 Runtime Error 3 "RETURN without GOSUB": "-3" or "-2003"
 Runtime Error 4 "Out of DATA": "-4" or "-2004"
 
