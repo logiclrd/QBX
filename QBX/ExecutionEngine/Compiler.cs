@@ -164,6 +164,10 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 							break;
 
+						case CodeModel.Statements.EmptyStatement:
+							// Nothing burgers are okay. :-)
+							break;
+
 						default:
 							throw CompilerException.StatementIllegalInTypeBlock(statement);
 					}
