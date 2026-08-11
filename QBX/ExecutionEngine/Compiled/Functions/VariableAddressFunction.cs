@@ -44,6 +44,9 @@ public abstract class VariableAddressFunction : Function
 		if (!Validate(variable))
 			return CreateResult(SegmentedAddress.Zero);
 
+		if (variable.PinnedVariable != null)
+			return variable.PinnedVariable;
+
 		var memoryOwner = variable;
 
 		while ((memoryOwner.PinnedMemoryOwner != null) && (memoryOwner.PinnedMemoryOwner != memoryOwner))
