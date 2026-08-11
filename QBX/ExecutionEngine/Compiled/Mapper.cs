@@ -228,7 +228,7 @@ public class Mapper
 
 			var variableType = _moduleMapper.GetVariableType(moduleIndex);
 
-			int localIndex = ResolveVariable(name, variableType);
+			int localIndex = DeclareVariable(name, variableType ?? DataType.ForPrimitiveDataType(GetTypeForIdentifier(name)));
 
 			var info = _variables[localIndex];
 
@@ -241,7 +241,7 @@ public class Mapper
 
 			var arrayType = _moduleMapper.GetVariableType(moduleIndex);
 
-			int localIndex = ResolveArray(name, arrayType, out _);
+			int localIndex = DeclareArray(name, arrayType);
 
 			var info = _variables[localIndex];
 
