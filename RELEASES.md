@@ -1,5 +1,50 @@
 # QBX Releases
 
+## 1.22.0 - 2026-08-10
+
+### Fixed
+
+- Several dialogs that did not highlight their accept button now do.
+- Word boundaries for Word Left/Word Right (Ctrl-Left and Ctrl-Right), Find and Change with Whole Word enabled, and  selecting line continuation split points now matches the specific character subset used by QuickBASIC.
+- Viewport heights are now calculated correctly when the Split viewport is displayed.
+- Pressing Enter on a line past the committed end of the document backing the Immediate window no longer causes a crash.
+- The character line window is now preserved in the program output data
+- If the program modifies the VGA text font, the changes are now used to display the IDE as well.
+- The use of multiple variables with the same name but different type declaration characters is now more reliable and consistent with respect to parameters and explicitly `DIM`med variables.
+- Interrupt 10h functions now function. It appears they were previously blocked by a "not implemented" line that should have been removed. Oops!
+- `IF` statements with multiple `:`-separated statements in their `THEN` or `ELSE` body can now have end-of-line comments (`'`).
+- Variables which have been "pinned" to memory (by means of `VARSEG`/`VARPTR` or `SSEG`/`SADD`/`SSEGADD`) in a child stack frame now work properly in other stack frames.
+- `VARSEG` and `VARPTR` now work properly on fixed-length strings.
+- `VARSEG` and `VARPTR` now raise an error if used on variable-length strings. (QBX still does not emulate string descriptors, though the data of variable-length strings can be pinned to memory with `SSEG`/`SADD`/`SSEGADD`.)
+- `OPTION BASE` is respected for implicit arrays.
+- An attempt to qualify a number with a decimal point with `%` or `&` now correctly raises an error.
+- An attempt to qualify a number in scientific notation with any type-declaration character now correctly parses the type-declaration character as a separate token.
+- Literals with the `#` type-declaration character (`DOUBLE`) no longer elide the character, even when the number presents with enough decimals that it can only be double-precision.
+- Numeric literals with too many digits of precision for single-precision now automatically add the `#` type-declaration character.
+- Errors generated when extraneous characters that can't be parsed are found in `PRINT` statements and assignment statements are more correct.
+- `STATIC` variables no longer trigger an internal error when the ambient types for their names are being looked up.
+- If a line ends in a statement that emits trailing space(s) followed by an end-of-line comment with some level of indentation, the trailing spaces are no longer double-represented in the comment indentation as well.
+- Bugs in `GET` (graphics) for bit-packed graphics modes (like `SCREENs` 2, 10, 12, for instance) have been fixed.
+- Bugs in the clipping applied by masked sprite put routine used for mouse cursors in bit-packed graphics modes have been fixed.
+- Mouse position is now correctly-translated, taking the scale of the physical window into account (whenever it is modified from the default 1:1, e.g. when maximized or full screen).
+- The running state is now correctly cleared before each program run and when loading files.
+- The mouse cursor is now correctly marked hidden when the video mode changes.
+- A bug introduced by a previous change that caused empty lines between `TYPE` and `END TYPE` to be incorrectly identified as executable statements (causing a compilation error) has been fixed.
+- The text mode cursor is now correctly shown when the program state is reset, but also correctly hidden the first time a `PRINT`, `LOCATE` or `CLS` statement is executed, up until it is explicitly shown with `LOCATE`.
+- The execution epilogue no longer incorrectly scrolls the window up when the cursor is on the last row.
+- The `CLS` statement now matches the specific quirks of the QuickBASIC implementation, clearing row 25 regardless of the character line window when run with no argument.
+- The `WIDTH` statement now correctly clears the last line of the screen buffer in text modes.
+- The IDE no longer writes too many characters on a line containing the active statement when the statement in scrolled entirely off the right edge of the viewport.
+- `PALETTE USING` can now implicitly declare arrays. This quirk isn't technically useful, since implicitly-dimensioned arrays aren't large enough to be used with `PALETTE USING`, but the behaviour matches QuickBASIC.
+- `COMMON` statements can now specify arrays that have not yet been declared.
+- Various minor bug fixes and improvements have been made to Samples files. Of note, several samples provide better feedback, `SLITHER.BAS` has improved input logic, `TREX.BAS` has some core logic fixes (translation mistakes) and all samples that alter the 8253 chip frequency now restore it on exit.
+
+### Added
+
+- Reference bar text is now contextual and updates as focus moves between viewports and menus.
+- Find and Change (Search menu) functions.
+- A folder `FONTS` with a handful of VGA text mode fonts, with a program `LOADFONT.BAS` that you can use to switch fonts. You can the use the IDE with the font of your choice!
+
 ## 1.21.0 - 2026-08-05
 
 ### Fixed
