@@ -92,7 +92,7 @@ END SUB
 
 SUB rotatex (y!, z!, a!)
 'rule of rotating around x axis: x value never changes
-sintheta! = SIN(a! / 57.295779): costheta! = COS(a! / 57.295779)
+sintheta! = SIN(a! / 57.295779#): costheta! = COS(a! / 57.295779#)
 FOR i% = 1 TO numpoints%
  ny! = y! + (points(i%).y - y!) * costheta! - (points(i%).z - z!) * sintheta!
  points(i%).z = z! + (points(i%).y - y!) * sintheta! + (points(i%).z - z!) * costheta!
@@ -102,7 +102,7 @@ END SUB
 
 SUB rotatey (x!, z!, a!)
 'rule of rotating around y axis: y value never changes
-sintheta! = SIN(a! / 57.295779): costheta! = COS(a! / 57.295779)
+sintheta! = SIN(a! / 57.295779#): costheta! = COS(a! / 57.295779#)
 FOR i% = 1 TO numpoints%
  nx! = x! + (points(i%).x - x!) * costheta! - (points(i%).z - z!) * sintheta!
  points(i%).z = z! + (points(i%).x - x!) * sintheta! + (points(i%).z - z!) * costheta!
@@ -112,7 +112,7 @@ END SUB
 
 SUB rotatez (x!, y!, a!)
 'rule of rotating around z axis: z value never changes
-sintheta! = SIN(a! / 57.295779): costheta! = COS(a! / 57.295779)
+sintheta! = SIN(a! / 57.295779#): costheta! = COS(a! / 57.295779#)
 FOR i% = 1 TO numpoints%
  nx! = x! + (points(i%).x - x!) * costheta! - (points(i%).y - y!) * sintheta!
  points(i%).y = y! + (points(i%).x - x!) * sintheta! + (points(i%).y - y!) * costheta!
@@ -201,3 +201,4 @@ FOR i% = 1 TO numpoints%
  points(i%).y = points(i%).y + t!
 NEXT i%
 END SUB
+

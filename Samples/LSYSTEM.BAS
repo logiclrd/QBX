@@ -62,8 +62,8 @@ DO WHILE i% <= LEN(t$)
 
         DrawLSystem rules$(c%), rules$(), x#, y#, d#, angle#, angledelta#, nextdepth%, charcount&
       ELSE
-        nx# = x# + d# * COS(angle# / 57.295779)
-        ny# = y# - d# * SIN(angle# / 57.295779)
+        nx# = x# + d# * COS(angle# / 57.295779#)
+        ny# = y# - d# * SIN(angle# / 57.295779#)
 
         LINE (x#, y#)-(nx#, ny#)
 
@@ -118,3 +118,4 @@ FOR i% = 1 TO levels%
   SLEEP
 NEXT i%
 END SUB
+

@@ -1,6 +1,6 @@
 ' Based on julia.bas sample from micro(A)
 
-CONST PI = 3.14159265
+CONST PI = 3.14159265#
 
 SCREEN 12
 
@@ -49,3 +49,4 @@ DO
 
   rc = rc + .001
 LOOP WHILE INKEY$ = ""
+

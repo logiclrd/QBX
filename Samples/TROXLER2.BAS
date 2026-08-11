@@ -4,7 +4,7 @@ CONST DotCount% = 12
 CONST CrossHairSize% = 4
 CONST FrameDuration! = .2
 
-CONST PI# = 3.14159265358979
+CONST PI# = 3.14159265358979#
 
 SCREEN 13
 

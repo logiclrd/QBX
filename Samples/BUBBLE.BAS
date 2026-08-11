@@ -1,4 +1,4 @@
-CONST PI# = 3.14159265358979
+CONST PI# = 3.14159265358979#
 
 CONST RR# = 2 * PI# / 235
 
@@ -126,3 +126,4 @@ FOR j% = 0 TO 65
   d%(j%) = v# * ys# + yc#
 NEXT j%
 END SUB
+

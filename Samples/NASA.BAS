@@ -22,36 +22,36 @@ COLOR 4
 ' NASAWorm.svg
 
 ' Curve 1
-MoveTo 49.604729, 312.00587
-DrawVerticalTo 203.99759
+MoveTo 49.604729#, 312.00587#
+DrawVerticalTo 203.99759#
 DrawBezierCurve 0, -15.22331, 1.976073, -21.82086, 9.695206, -29.54212
-DrawBezierCurve 5.561097, -5.56216, 15.823479, -9.86547, 28.781281, -9.86547
-DrawBezierCurve 10.467758, 0, 20.484324, 3.46584, 26.872244, 9.8644
+DrawBezierCurve 5.561097, -5.56216, 15.823479#, -9.86547, 28.781281#, -9.86547
+DrawBezierCurve 10.467758#, 0, 20.484324#, 3.46584, 26.872244#, 9.8644
 DrawBezierCurve 5.60047, 5.61111, 8.67685, 11.37439, 13.48454, 29.54426
 DrawLine 19.05628, 72.00375
 DrawBezierCurve 1.67706, 6.34322, 4.38312, 8.79602, 9.16528, 8.79602
 DrawBezierCurve 4.95774, 0, 7.55738, -2.97848, 7.55738, -8.79602
-DrawVerticalTo 167.99519
+DrawVerticalTo 167.99519#
 DrawHorizontal 31.05531
-DrawVertical 108.00722
+DrawVertical 108.00722#
 DrawBezierCurve 0, 15.22437, -1.97501, 21.82086, -9.69414, 29.54212
 DrawBezierCurve -5.56323, 5.56429, -15.82454, 9.86547, -28.78128, 9.86547
 DrawBezierCurve -10.46776, 0, -20.48433, -3.46478, -26.87225, -9.8644
 DrawBezierCurve -5.60047, -5.61111, -8.67684, -11.37439, -13.48454, -29.54426
-DrawLineTo 97.383761, 203.99759
+DrawLineTo 97.383761#, 203.99759#
 DrawBezierCurve -1.678118, -6.34322, -4.383114, -8.79496, -9.165274, -8.79496
 DrawBezierCurve -4.958803, 0, -7.558451, 2.97742, -7.558451, 8.79496
-DrawVertical 108.00828
-DrawLineTo 49.604729, 312.00587
+DrawVertical 108.00828#
+DrawLineTo 49.604729#, 312.00587#
 
 ' Curve 2
-MoveTo 223.40548, 312.00474
-DrawLine 35.86514, -112.19772
+MoveTo 223.40548#, 312.00474#
+DrawLine 35.86514, -112.19772#
 DrawBezierCurve .39585, -1.23864, .76935, -2.28999, 1.34398, -2.99125
 DrawBezierCurve .98538, -1.19926, 2.34958, -1.82922, 4.18306, -1.82922
 DrawBezierCurve 1.83348, 0, 3.19662, .62996, 4.18306, 1.82922
 DrawBezierCurve .57462, .70019, .94813, 1.75155, 1.34292, 2.99125
-DrawLine 35.86513, 112.19772
+DrawLine 35.86513, 112.19772#
 DrawHorizontal 93.38194
 DrawVertical .001
 DrawBezierCurve 20.34599, 0, 30.26999, -4.32245, 38.11043, -12.11927
@@ -81,27 +81,27 @@ DrawBezierCurve -2.04098, -6.38472, -4.9588, -11.80536, -8.66088, -15.41698
 DrawBezierCurve -6.35387, -6.19425, -13.84102, -9.43663, -25.65596, -9.43663
 DrawBezierCurve -11.81493, 0, -19.30315, 3.24238, -25.65383, 9.43556
 DrawBezierCurve -3.70314, 3.61269, -6.61989, 9.03226, -8.66088, 15.41699
-DrawLine -39.17561, 122.56226
-DrawLineTo 223.40548, 312.00474
+DrawLine -39.17561, 122.56226#
+DrawLineTo 223.40548#, 312.00474#
 
 ' Curve 3
-MoveTo 443.41143, 312.00587
-DrawLine 39.17562, -122.56226
+MoveTo 443.41143#, 312.00587#
+DrawLine 39.17562, -122.56226#
 DrawHorizontal .5 ' HAX: Without this, the Bezier spline ends up making the final 'A' look like it has a helmet :-P
 DrawBezierCurve 2.04098, -6.38472, 4.9588, -11.80536, 8.66088, -15.41698
 DrawBezierCurve 6.35386, -6.19425, 13.84102, -9.43663, 25.65595, -9.43663
 DrawBezierCurve 11.81494, 0, 19.30316, 3.24238, 25.6549, 9.43556
 DrawBezierCurve 3.70207, 3.61269, 6.61989, 9.03226, 8.66194, 15.41699
-DrawLine 39.17455, 122.56226
+DrawLine 39.17455, 122.56226#
 DrawHorizontalTo 558.295
 DrawVertical .001
-DrawLineTo 522.42986, 199.80815
+DrawLineTo 522.42986#, 199.80815#
 DrawBezierCurve -.39585, -1.23864, -.76936, -2.28999, -1.34398, -2.99124
 DrawBezierCurve -.98538, -1.19927, -2.34852, -1.82923, -4.18306, -1.82923
 DrawBezierCurve -1.83348, 0, -3.19662, .62996, -4.18306, 1.82923
 DrawBezierCurve -.57356, .70019, -.94813, 1.75154, -1.34292, 2.99124
-DrawLine -35.86407, 112.19772
-DrawLineTo 443.41143, 312.00587
+DrawLine -35.86407, 112.19772#
+DrawLineTo 443.41143#, 312.00587#
 
 ' Fill them in! (Comment these out for outlines.)
 PAINT (51, 311), 4, 4
@@ -207,3 +207,4 @@ SUB MoveTo (x!, y!)
 DrawX! = x!
 DrawY! = y!
 END SUB
+

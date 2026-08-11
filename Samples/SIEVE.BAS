@@ -9,7 +9,7 @@ OUT &H3C9, 0  ' Blue
 CONST Interval% = 9
 CONST DotSize% = 3
 
-CONST PI# = 3.14159265358979
+CONST PI# = 3.14159265358979#
 
 DIM sieve%(640 \ Interval% + 1)
 
@@ -60,3 +60,4 @@ FOR i% = 0 TO 639
     END IF
   NEXT j%
 NEXT i%
+

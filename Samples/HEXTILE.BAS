@@ -152,7 +152,7 @@ SUB ComputePathParameters (r!, p%, CentreX!, CentreY!, radius!)
 ' The radius of the circle is the distance to the midpoint of
 ' either one of those edges.
 
-CONST WEDGERADIANS! = 60 / 57.295779
+CONST WEDGERADIANS! = 60 / 57.295779#
 
 IF (p% AND 1) = 0 THEN
   ' This path is joining two edges spaced out by another edge.
@@ -347,3 +347,4 @@ END SUB
 SUB SetTileColour (tilex%, tiley%)
 BackColour% = 20 + 3 * ((tilex% + 3 - (tiley% AND 1)) MOD 3)
 END SUB
+

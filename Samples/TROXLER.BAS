@@ -7,7 +7,7 @@ CONST FadeDotSize! = 1
 CONST VanishingDotRadius! = 60
 CONST RotationPerFrame! = .05
 
-CONST PI# = 3.14159265358979
+CONST PI# = 3.14159265358979#
 
 SCREEN 7, , 1, 0
 

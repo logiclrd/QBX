@@ -24,7 +24,7 @@ FOR i% = 0 TO 127
   OUT &H3C9, i% * 2
 NEXT i%
 
-CONST PI# = 3.14159265358979
+CONST PI# = 3.14159265358979#
 
 hw% = 160
 hh% = 100
@@ -110,3 +110,4 @@ DO
   IF tb# >= 2 * PI# THEN tb# = 0
   t# = t# + dt#
 LOOP WHILE INKEY$ = ""
+

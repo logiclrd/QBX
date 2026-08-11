@@ -70,7 +70,7 @@ DECLARE FUNCTION ComplexNormalizedSquared# (this AS PointType)
 DECLARE FUNCTION GCD% (m%, n%)
 DECLARE FUNCTION RandomColour% (avoid%)
 
-CONST PI# = 3.14159265358979
+CONST PI# = 3.14159265358979#
 
 CONST FillTypeUnfilled% = 0
 CONST FillTypeOddEven% = 1
@@ -914,3 +914,4 @@ ELSEIF ub% > lb% THEN
   Sort keys%(), values%(), pivoti% + 1, ub%
 END IF
 END SUB
+

@@ -1,6 +1,6 @@
 '$DYNAMIC
 
-CONST PI# = 3.14159265358979
+CONST PI# = 3.14159265358979#
 
 DIM pattern%(1, 1)
 
@@ -189,3 +189,4 @@ DATA .x.x.x.x.x.x.
 DATA .xxx.x.x.xxx.
 DATA .....x.x.....
 DATA xxxxxx.xxxxxxx
+
