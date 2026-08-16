@@ -1639,7 +1639,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 		if ((Clip.X1 > 0) || (Clip.X2 + 1 < width))
 		{
-			for (int yy = Clip.Y1; y < Clip.Y2; y++)
+			for (int yy = Clip.Y1; yy < Clip.Y2; yy++)
 				processed.Add((yy + 1) * width + Clip.X1 - 1, yy * width + Clip.X2 + 1);
 		}
 
