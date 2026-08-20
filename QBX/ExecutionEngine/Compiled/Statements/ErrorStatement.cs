@@ -8,7 +8,7 @@ public class ErrorStatement(CodeModel.Statements.ErrorStatement source) : Execut
 {
 	public Evaluable? ErrorNumberExpression;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (ErrorNumberExpression == null)
 			throw new Exception("ErrorStatement with no ErrorNumberExpression");

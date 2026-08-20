@@ -8,7 +8,7 @@ namespace QBX.ExecutionEngine.Compiled.Statements;
 public class ResumeLineStatement(Identifier target, CodeModel.Statements.ResumeStatement source)
 	: JumpStatement(target, source)
 {
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (TargetPath == null)
 			throw new Exception("Internal error: Executing an unresolved ResumeLineStatement");

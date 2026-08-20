@@ -15,7 +15,7 @@ public class BSaveStatement(CodeModel.Statements.BSaveStatement source) : BlockI
 
 	public Evaluable? LengthExpression;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (OffsetExpression == null)
 			throw new Exception(GetType().Name + " with no OffsetExpression");

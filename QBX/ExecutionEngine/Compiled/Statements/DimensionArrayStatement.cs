@@ -11,7 +11,7 @@ public class DimensionArrayStatement(CodeModel.Statements.DimStatement? source) 
 	public bool IsRedimension;
 	public bool PreserveData;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		var subscripts = Subscripts.Evaluate(context, stackFrame);
 

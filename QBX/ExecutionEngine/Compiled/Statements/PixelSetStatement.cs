@@ -12,7 +12,7 @@ public class PixelSetStatement(CodeModel.Statements.PixelSetStatement source) : 
 	public Evaluable? ColourExpression;
 	public bool UseForegroundColour;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (context.VisualLibrary is not GraphicsLibrary graphicsLibrary)
 			throw RuntimeException.IllegalFunctionCall(XExpression?.Source);

@@ -7,7 +7,7 @@ public class ClsStatement(CodeModel.Statements.ClsStatement source) : Executable
 {
 	public Evaluable? ArgumentExpression;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		int mode;
 		bool redrawSoftKeyMacroLine = false;

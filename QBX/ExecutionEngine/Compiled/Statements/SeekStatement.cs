@@ -11,7 +11,7 @@ public class SeekStatement(CodeModel.Statements.SeekStatement source) : Executab
 	public Evaluable? FileNumberExpression;
 	public Evaluable? PositionExpression;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (FileNumberExpression == null)
 			throw new Exception($"SeekStatement with no FileNumberExpression");

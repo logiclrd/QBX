@@ -37,7 +37,7 @@ public class LineInputFromFileStatement(CodeModel.Statements.LineInputStatement 
 		}
 	}
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (FileNumberExpression is null)
 			throw new Exception("LineInputFromFileStatement with no FileNumberExpression");

@@ -11,7 +11,7 @@ public class KillStatement(CodeModel.Statements.KillStatement source) : Executab
 {
 	public Evaluable? FilePatternExpression;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (FilePatternExpression == null)
 			throw new Exception("KillStatement with no FilePatternExpression");

@@ -79,7 +79,7 @@ public class CallStatement(CodeModel.Statements.CallStatement source) : Executab
 		}
 	}
 
-	public override void Execute(Execution.ExecutionContext context, Execution.StackFrame stackFrame)
+	protected override void ExecuteImplementation(Execution.ExecutionContext context, Execution.StackFrame stackFrame)
 	{
 		if (UnresolvedTargetName != null)
 			throw CompilerException.SubprogramNotDefined(Source);

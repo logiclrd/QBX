@@ -11,7 +11,7 @@ public class ScreenWidthStatement(CodeModel.Statements.ScreenWidthStatement sour
 	public Evaluable? WidthExpression;
 	public Evaluable? HeightExpression;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if ((WidthExpression == null) && (HeightExpression == null))
 			throw new Exception("ScreenWidthStatement with no argument expressions");

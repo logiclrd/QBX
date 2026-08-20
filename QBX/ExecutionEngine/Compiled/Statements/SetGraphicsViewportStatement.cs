@@ -18,7 +18,7 @@ public class SetGraphicsViewportStatement(CodeModel.Statements.GraphicsViewportS
 	public Evaluable? FillColourExpression;
 	public Evaluable? BorderColourExpression;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (context.VisualLibrary is not GraphicsLibrary visual)
 			throw RuntimeException.IllegalFunctionCall(Source);

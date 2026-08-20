@@ -9,7 +9,7 @@ public class CloseStatement(CodeModel.Statements.CloseStatement source) : Execut
 {
 	public List<Evaluable> FileNumberExpressions = new List<Evaluable>();
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		foreach (var fileNumberExpression in FileNumberExpressions)
 		{

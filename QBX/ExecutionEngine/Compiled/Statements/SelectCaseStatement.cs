@@ -27,7 +27,7 @@ public class SelectCaseStatement(CodeModel.Statements.SelectCaseStatement source
 
 	public override Sequence? GetSequenceByIndex(int sequenceIndex) => Cases[sequenceIndex];
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (TestExpression == null)
 			throw new Exception("SelectCaseStatement with no TestExpression");

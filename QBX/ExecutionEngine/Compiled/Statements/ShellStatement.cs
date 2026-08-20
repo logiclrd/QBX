@@ -41,7 +41,7 @@ public partial class ShellStatement(CodeModel.Statements.ShellStatement source) 
 		arguments = commandString == "" ? [] : [commandSwitch, commandString];
 	}
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		string commandString = "";
 

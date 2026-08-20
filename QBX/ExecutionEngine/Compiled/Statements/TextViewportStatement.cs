@@ -9,7 +9,7 @@ public class TextViewportStatement(CodeModel.Statements.TextViewportStatement so
 	public Evaluable? WindowStartExpression;
 	public Evaluable? WindowEndExpression;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if ((WindowStartExpression == null) && (WindowEndExpression == null))
 			context.VisualLibrary.ResetCharacterLineWindow();

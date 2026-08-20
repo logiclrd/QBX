@@ -12,7 +12,7 @@ public class NameStatement(CodeModel.Statements.NameStatement source) : Executab
 	public Evaluable? OldFileSpecExpression;
 	public Evaluable? NewFileSpecExpression;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (OldFileSpecExpression == null)
 			throw new Exception("KillStatement with no OldFileSpecExpression");

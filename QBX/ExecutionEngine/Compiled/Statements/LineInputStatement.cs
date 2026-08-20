@@ -12,7 +12,7 @@ public abstract class LineInputStatement(CodeModel.Statements.LineInputStatement
 	protected virtual void EmitPrompt(ExecutionContext context) { }
 	protected abstract StringValue ReadLine(ExecutionContext context);
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (TargetExpression == null)
 			throw new Exception("LineInputStatement with no TargetExpression");

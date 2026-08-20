@@ -64,7 +64,7 @@ public abstract class LoopStatement(CodeModel.Statements.LoopStructureStatement 
 			throw new Exception("Internal error: Sequence is not owned by this statement");
 		}
 
-		public override void Execute(ExecutionContext context, StackFrame stackFrame)
+		protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 		{
 			StatementPath? dummyGoToPath = null;
 
@@ -178,7 +178,7 @@ public abstract class ConditionalLoopStatement : LoopStatement
 
 	protected abstract void DispatchImplementation(int statementIndex, ExecutionContext context, StackFrame stackFrame);
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		DispatchImplementation(0, context, stackFrame);
 	}
@@ -188,7 +188,7 @@ public abstract class ConditionalLoopStatement : LoopStatement
 	{
 		public bool ConditionValue;
 
-		public override void Execute(ExecutionContext context, StackFrame stackFrame)
+		protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 		{
 			ConditionValue = condition.EvaluateAndCoerceToInt(context, stackFrame) != 0;
 		}
@@ -278,7 +278,7 @@ public abstract class ConditionalLoopStatement : LoopStatement
 
 	class TimingLoopDelayStatement() : Executable(source: null)
 	{
-		public override void Execute(ExecutionContext context, StackFrame stackFrame)
+		protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 		{
 			var delay = context.Machine.Timer.TimeToNextTick;
 

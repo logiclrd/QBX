@@ -10,7 +10,7 @@ public class InputFromFileStatement(CodeModel.Statements.InputStatement source) 
 	public Evaluable? FileNumberExpression;
 	public List<Evaluable> TargetExpressions = new List<Evaluable>();
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (FileNumberExpression is null)
 			throw new Exception("InputFromFileStatement with no FileNumberExpression");

@@ -21,7 +21,7 @@ public class FormattedPrintStatement(CodeModel.Statements.PrintStatement source)
 	protected virtual PrintEmitter CreateEmitter(ExecutionContext context, StackFrame stackFrame)
 		=> new VisualPrintEmitter(context.VisualLibrary);
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (Format == null)
 			throw new Exception("FormattedPrintStatement does not have a Format expression");

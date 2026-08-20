@@ -10,7 +10,7 @@ public class OutStatement(CodeModel.Statements.OutStatement source)
 	public Evaluable? PortExpression;
 	public Evaluable? DataExpression;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (PortExpression == null)
 			throw new Exception("OutStatement with no PortExpression");

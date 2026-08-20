@@ -11,7 +11,7 @@ public class LocateStatement(CodeModel.Statements.LocateStatement source) : Exec
 	public Evaluable? CursorStartExpression;
 	public Evaluable? CursorEndExpression;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if ((RowExpression != null) || (ColumnExpression != null))
 		{

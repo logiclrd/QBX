@@ -11,7 +11,7 @@ public class ChDriveStatement(CodeModel.Statements.ChDriveStatement source) : Ex
 {
 	public Evaluable? DriveLetterExpression;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (DriveLetterExpression == null)
 			throw new Exception("ChDriveStatement with no DriveLetterExpression");

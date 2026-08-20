@@ -49,7 +49,7 @@ public class NativeProcedureCallStatement(CodeModel.Statements.CallStatement? so
 		}
 	}
 
-	public override void Execute(Execution.ExecutionContext context, Execution.StackFrame stackFrame)
+	protected override void ExecuteImplementation(Execution.ExecutionContext context, Execution.StackFrame stackFrame)
 	{
 		if (Target == null)
 			throw new Exception("NativeProcedureCallStatement has no Target");

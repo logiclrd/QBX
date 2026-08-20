@@ -13,7 +13,7 @@ public abstract class LockUnlockStatement(CodeModel.Statements.FileByteRangeStat
 
 	protected abstract void LockUnlock(DOS dos, int fileHandle, uint start, uint length);
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (FileNumberExpression == null)
 			throw new Exception($"{GetType().Name} with no FileNumberExpression");

@@ -9,7 +9,7 @@ public class FileWidthStatement(CodeModel.Statements.FileWidthStatement source) 
 	public Evaluable? FileNumberExpression;
 	public Evaluable? WidthExpression;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (FileNumberExpression == null)
 			throw new Exception("FileNumberWidthStatement with no FileNumberExpression");

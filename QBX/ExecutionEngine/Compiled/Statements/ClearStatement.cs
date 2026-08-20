@@ -8,7 +8,7 @@ public class ClearStatement(CodeModel.Statements.ClearStatement source) : Execut
 	public Evaluable? MaximumMemoryAddressExpression;
 	public Evaluable? StackSpaceExpression;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		// CLEAR [, , stack&]
 		//

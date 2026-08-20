@@ -13,7 +13,7 @@ public abstract class PaletteUsingStatement(CodeModel.Statements.PaletteStatemen
 {
 	protected abstract void GetArrayAndIndex(ExecutionContext context, StackFrame stackFrame, out Array array, out int index);
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		GetArrayAndIndex(context, stackFrame, out var array, out var index);
 

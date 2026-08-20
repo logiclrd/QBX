@@ -9,7 +9,7 @@ public class AssignmentStatement(CodeModel.Statements.Statement? source) : Execu
 	public Evaluable? TargetExpression;
 	public Evaluable? ValueExpression;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (TargetExpression == null)
 			throw new Exception("AssignmentStatement with no TargetExpression");

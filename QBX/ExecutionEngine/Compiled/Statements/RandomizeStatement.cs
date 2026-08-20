@@ -8,7 +8,7 @@ public class RandomizeStatement(CodeModel.Statements.RandomizeStatement source) 
 {
 	public Evaluable? ArgumentExpression;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		object seedValue;
 

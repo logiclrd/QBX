@@ -8,7 +8,7 @@ public class SleepStatement(CodeModel.Statements.SleepStatement source) : Execut
 {
 	public Evaluable? SecondsExpression;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		int seconds = 0;
 

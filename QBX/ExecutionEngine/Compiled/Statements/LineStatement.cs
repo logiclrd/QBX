@@ -20,7 +20,7 @@ public class LineStatement(CodeModel.Statements.LineStatement source) : Executab
 	public LineDrawStyle DrawStyle = LineDrawStyle.Line;
 	public Evaluable? StyleExpression;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (context.VisualLibrary is not GraphicsLibrary visual)
 			throw RuntimeException.IllegalFunctionCall(Source);

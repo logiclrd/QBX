@@ -77,7 +77,7 @@ public abstract class PaintStatement(CodeModel.Statements.PaintStatement source)
 
 public class PaintSolidFill(CodeModel.Statements.PaintStatement source) : PaintStatement(source)
 {
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (XExpression == null)
 			throw new Exception("PaintStatement with no XExpression");
@@ -117,7 +117,7 @@ public class PaintSolidFill(CodeModel.Statements.PaintStatement source) : PaintS
 
 public class PaintPatternFillStatement(CodeModel.Statements.PaintStatement source) : PaintStatement(source)
 {
-	public sealed override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected sealed override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (XExpression == null)
 			throw new Exception($"{GetType().Name} with no XExpression");

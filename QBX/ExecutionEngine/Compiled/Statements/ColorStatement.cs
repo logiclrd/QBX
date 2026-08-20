@@ -11,7 +11,7 @@ public class ColorStatement(CodeModel.Statements.ColorStatement source) : Execut
 	public Evaluable? Argument2Expression;
 	public Evaluable? Argument3Expression;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		// COLOR modes:
 		//

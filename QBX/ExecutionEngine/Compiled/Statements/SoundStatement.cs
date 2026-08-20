@@ -11,7 +11,7 @@ public class SoundStatement(CodeModel.Statements.SoundStatement source)
 	public Evaluable? FrequencyExpression;
 	public Evaluable? DurationExpression;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (FrequencyExpression == null)
 			throw new Exception("SoundStatement with no FrequencyExpression");

@@ -4,7 +4,7 @@ namespace QBX.ExecutionEngine.Compiled.Statements;
 
 public class OnErrorResumeNextStatement(bool local, CodeModel.Statements.OnErrorStatement source) : Executable(source)
 {
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (!local)
 			stackFrame.Module.SetErrorHandler(ErrorResponse.SkipStatement);

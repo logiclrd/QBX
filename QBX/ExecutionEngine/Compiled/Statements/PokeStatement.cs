@@ -9,7 +9,7 @@ public class PokeStatement(CodeModel.Statements.PokeStatement source) : Executab
 	public Evaluable? AddressExpression;
 	public Evaluable? ValueExpression;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (AddressExpression is null)
 			throw new Exception("PokeStatement has no AddressExpression");

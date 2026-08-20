@@ -7,7 +7,7 @@ namespace QBX.ExecutionEngine.Compiled.Statements;
 // code element.
 public class EndOfRoutineStatement(CodeModel.Statements.EndScopeStatement source) : Executable(source)
 {
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 	}
 }

@@ -32,7 +32,7 @@ public class IfStatement(CodeModel.Statements.IfStatement source) : Executable(s
 		throw new IndexOutOfRangeException();
 	}
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (Condition == null)
 			throw new Exception("IfStatement with no Condition");

@@ -11,7 +11,7 @@ public class PlayStatement(CodeModel.Statements.PlayStatement source)
 	public Evaluable? CommandStringExpression;
 	public Evaluable? DurationExpression;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (CommandStringExpression == null)
 			throw new Exception("PlayStatement with no CommandStringExpression");

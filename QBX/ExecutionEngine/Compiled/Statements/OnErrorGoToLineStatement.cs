@@ -10,7 +10,7 @@ public class OnErrorGoToLineStatement(Identifier target, bool local, CodeModel.S
 {
 	public override bool TargetIsInMainModule => !local;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (TargetPath == null)
 			throw new Exception("Internal error: Executing an unresolved OnErrorGoToLineStatement");

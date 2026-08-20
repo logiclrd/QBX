@@ -10,7 +10,7 @@ public class LabelStatement(Identifier labelName, CodeModel.Statements.Statement
 	public override bool CanBreak { get => false; set { } }
 	public override bool IsLabel => true;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 	}
 }

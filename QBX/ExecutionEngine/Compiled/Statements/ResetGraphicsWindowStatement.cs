@@ -5,7 +5,7 @@ namespace QBX.ExecutionEngine.Compiled.Statements;
 
 public class ResetGraphicsWindowStatement(CodeModel.Statements.WindowStatement source) : GraphicsWindowStatement(source)
 {
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (context.VisualLibrary is not GraphicsLibrary visual)
 			throw RuntimeException.IllegalFunctionCall(Source);

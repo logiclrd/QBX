@@ -15,7 +15,7 @@ public class ChainStatement(CodeModel.Statements.ChainStatement source) : Execut
 {
 	public Evaluable? FileNameExpression;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (FileNameExpression == null)
 			throw new Exception("ChainStatement with no FileNameExpression");

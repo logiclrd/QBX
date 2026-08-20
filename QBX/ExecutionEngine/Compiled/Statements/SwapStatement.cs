@@ -10,7 +10,7 @@ public class SwapStatement(CodeModel.Statements.SwapStatement source)
 	public Evaluable? Variable1Expression;
 	public Evaluable? Variable2Expression;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (Variable1Expression == null)
 			throw new Exception("SwapStatement with no Variable1Expression");

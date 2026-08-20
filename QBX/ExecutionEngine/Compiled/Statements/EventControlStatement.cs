@@ -11,7 +11,7 @@ public class EventControlStatement(CodeModel.Statements.EventControlStatement so
 	public Evaluable? SourceExpression;
 	public EventEnabledState EnabledState;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		Lazy<int> source = new Lazy<int>(
 			() =>

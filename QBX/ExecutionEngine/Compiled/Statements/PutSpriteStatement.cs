@@ -19,7 +19,7 @@ public class PutSpriteStatement(CodeModel.Statements.PutSpriteStatement source) 
 
 	public PutSpriteAction ActionVerb;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (context.VisualLibrary is not GraphicsLibrary visual)
 			throw RuntimeException.IllegalFunctionCall(Source);

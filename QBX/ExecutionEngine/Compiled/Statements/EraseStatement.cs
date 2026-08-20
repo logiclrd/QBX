@@ -9,7 +9,7 @@ public class EraseStatement(CodeModel.Statements.EraseStatement source) : Execut
 {
 	public List<Evaluable> ArrayExpressions = new List<Evaluable>();
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		foreach (var arrayExpression in ArrayExpressions)
 		{

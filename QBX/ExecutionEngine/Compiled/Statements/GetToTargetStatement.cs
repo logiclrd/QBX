@@ -22,7 +22,7 @@ public class GetToTargetStatement(CodeModel.Statements.GetStatement source) : Ge
 		return s_buffer.AsSpan().Slice(0, size);
 	}
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (FileNumberExpression is null)
 			throw new Exception("GetToTargetStatement with no FileNumberExpression");

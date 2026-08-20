@@ -12,7 +12,7 @@ public class KeyConfigStatement(CodeModel.Statements.SoftKeyConfigStatement sour
 	public Evaluable? KeyExpression;
 	public Evaluable? ArgumentExpression;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (KeyExpression == null)
 			throw new Exception("KeyConfigStatement with no KeyExpression");

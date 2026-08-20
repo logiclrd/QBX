@@ -17,7 +17,7 @@ public class CircleStatement(CodeModel.Statements.CircleStatement source) : Exec
 	public Evaluable? EndExpression;
 	public Evaluable? AspectExpression;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (XExpression == null)
 			throw new Exception("CircleStatement with no XExpression");

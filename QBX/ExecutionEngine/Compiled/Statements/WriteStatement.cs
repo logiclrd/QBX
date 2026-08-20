@@ -12,7 +12,7 @@ public class WriteStatement(CodeModel.Statements.WriteStatement source) : Execut
 	public Evaluable? FileNumberExpression;
 	public List<Evaluable> Arguments = new List<Evaluable>();
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (FileNumberExpression is null)
 			throw new Exception("WriteStatement with no FileNumberExpression");

@@ -12,7 +12,7 @@ public class FieldStatement(CodeModel.Statements.FieldStatement source) : Execut
 	public Evaluable? FileNumberExpression;
 	public List<FieldMapping> FieldMappings = new List<FieldMapping>();
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (FileNumberExpression == null)
 			throw new Exception($"SeekStatement with no FileNumberExpression");

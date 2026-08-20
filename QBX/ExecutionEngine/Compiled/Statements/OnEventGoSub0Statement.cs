@@ -16,7 +16,7 @@ public class OnEventGoSub0Statement(CodeModel.Statements.OnEventStatement source
 		=> SourceExpression = sourceExpression;
 	Executable IOnEventStatementConfigurator.AsExecutable() => this;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		int source = Event.NoSource;
 

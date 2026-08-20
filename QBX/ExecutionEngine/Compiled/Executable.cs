@@ -48,7 +48,24 @@ public abstract class Executable
 
 	public virtual bool IsLabel => false;
 
-	public abstract void Execute(ExecutionContext context, StackFrame stackFrame);
+	static int s_gcIntervalCounter;
+
+	public void Execute(ExecutionContext context, StackFrame stackFrame)
+	{
+		s_gcIntervalCounter++;
+
+		if (s_gcIntervalCounter > 100000)
+		{
+			s_gcIntervalCounter = 0;
+
+			GC.Collect(0, GCCollectionMode.Optimized, blocking: true);
+			GC.WaitForPendingFinalizers();
+		}
+
+		ExecuteImplementation(context, stackFrame);
+	}
+
+	protected abstract void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame);
 
 	public virtual bool SelfSequenceDispatch => false;
 

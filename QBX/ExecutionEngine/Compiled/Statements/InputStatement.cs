@@ -9,7 +9,7 @@ public class InputStatement(string promptString, CodeModel.Statements.InputState
 {
 	public List<Evaluable> TargetExpressions = new List<Evaluable>();
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		while (true)
 		{

@@ -16,7 +16,7 @@ public class UnformattedPrintStatement(CodeModel.Statements.PrintStatement sourc
 	[ThreadStatic]
 	static byte[]? s_spaces;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (context.VisualLibrary is TextLibrary textLibrary)
 		{

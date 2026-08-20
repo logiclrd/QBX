@@ -8,7 +8,7 @@ public class BeepStatement(CodeModel.Statements.BeepStatement source) : Executab
 {
 	public Evaluable? ExitCodeExpression;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		context.Machine.DOS.Beep();
 	}

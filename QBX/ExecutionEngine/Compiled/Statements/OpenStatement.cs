@@ -31,7 +31,7 @@ public class OpenStatement(CodeModel.Statements.OpenStatement source) : Executab
 	static readonly IEnumerable<OSOpenMode> Attempt_ReadWrite_Write_Read =
 		[OSOpenMode.Access_ReadWrite, OSOpenMode.Access_WriteOnly, OSOpenMode.Access_ReadOnly];
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (FileNameExpression == null)
 			throw new Exception("OpenStatement with no FileNameExpression");

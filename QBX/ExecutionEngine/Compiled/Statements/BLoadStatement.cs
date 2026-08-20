@@ -13,7 +13,7 @@ namespace QBX.ExecutionEngine.Compiled.Statements;
 
 public class BLoadStatement(CodeModel.Statements.BLoadStatement source) : BlockIOStatement(source)
 {
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		ExecuteCommon(
 			context,

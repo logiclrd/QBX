@@ -8,7 +8,7 @@ public class ReadStatement(Module module, CodeModel.Statements.ReadStatement sou
 {
 	public List<Evaluable> TargetExpressions = new List<Evaluable>();
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		module.DataParser.ReadDataItems(TargetExpressions, context, stackFrame, source);
 	}

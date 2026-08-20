@@ -10,7 +10,7 @@ public class PutFromFieldsStatement(CodeModel.Statements.PutStatement source) : 
 	[ThreadStatic]
 	static byte[]? s_buffer;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (FileNumberExpression is null)
 			throw new Exception("PutFromFieldsStatement with no FileNumberExpression");

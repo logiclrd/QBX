@@ -12,7 +12,7 @@ public abstract class JumpStatement(Identifier targetLabelName, CodeModel.Statem
 
 	public virtual bool TargetIsInMainModule => false;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (TargetPath == null)
 			throw new Exception("Internal error: Executing an unresolved JumpStatement");

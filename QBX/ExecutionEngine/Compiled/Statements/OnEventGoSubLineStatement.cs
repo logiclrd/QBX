@@ -20,7 +20,7 @@ public class OnEventGoSubLineStatement(Identifier target, CodeModel.Statements.O
 		=> SourceExpression = sourceExpression;
 	Executable IOnEventStatementConfigurator.AsExecutable() => this;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (TargetPath == null)
 			throw new Exception("Internal error: Executing an unresolved OnErrorGoSubLineStatement");

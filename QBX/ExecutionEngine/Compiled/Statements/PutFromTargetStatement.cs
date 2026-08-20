@@ -23,7 +23,7 @@ public class PutFromTargetStatement(CodeModel.Statements.PutStatement source) : 
 		return s_buffer.AsSpan().Slice(0, size);
 	}
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (FileNumberExpression is null)
 			throw new Exception("PutFromTargetStatement with no FileNumberExpression");

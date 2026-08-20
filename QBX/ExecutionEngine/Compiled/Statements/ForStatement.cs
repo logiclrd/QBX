@@ -203,7 +203,7 @@ public abstract class ForStatement : Executable
 
 		public long DispatcherIndex => _nextIndex;
 
-		public override void Execute(ExecutionContext context, StackFrame stackFrame)
+		protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 		{
 			stackFrame.NextStatements[_nextIndex].Execute(context, stackFrame);
 		}
@@ -218,7 +218,7 @@ public class IntegerForStatement(CodeModel.Statements.ForStatement sourceForStat
 	public Evaluable? StepExpression;
 	public CodeModel.Statements.NextStatement SourceNextStatement = sourceNextStatement;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		var iteratorVariable = stackFrame.Variables[IteratorVariableIndex] as IntegerVariable;
 
@@ -318,7 +318,7 @@ public class IntegerForStatement(CodeModel.Statements.ForStatement sourceForStat
 			iteratorVariable.WritePinnedData();
 		}
 
-		public override void Execute(ExecutionContext context, StackFrame stackFrame)
+		protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 		{
 			try
 			{
@@ -346,7 +346,7 @@ public class LongForStatement(CodeModel.Statements.ForStatement sourceForStateme
 	public Evaluable? StepExpression;
 	public CodeModel.Statements.NextStatement SourceNextStatement = sourceNextStatement;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		var iteratorVariable = stackFrame.Variables[IteratorVariableIndex] as LongVariable;
 
@@ -446,7 +446,7 @@ public class LongForStatement(CodeModel.Statements.ForStatement sourceForStateme
 			iteratorVariable.WritePinnedData();
 		}
 
-		public override void Execute(ExecutionContext context, StackFrame stackFrame)
+		protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 		{
 			try
 			{
@@ -474,7 +474,7 @@ public class SingleForStatement(CodeModel.Statements.ForStatement sourceForState
 	public Evaluable? StepExpression;
 	public CodeModel.Statements.NextStatement SourceNextStatement = sourceNextStatement;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		var iteratorVariable = stackFrame.Variables[IteratorVariableIndex] as SingleVariable;
 
@@ -574,7 +574,7 @@ public class SingleForStatement(CodeModel.Statements.ForStatement sourceForState
 			iteratorVariable.WritePinnedData();
 		}
 
-		public override void Execute(ExecutionContext context, StackFrame stackFrame)
+		protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 		{
 			try
 			{
@@ -602,7 +602,7 @@ public class DoubleForStatement(CodeModel.Statements.ForStatement sourceForState
 	public Evaluable? StepExpression;
 	public CodeModel.Statements.NextStatement SourceNextStatement = sourceNextStatement;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		var iteratorVariable = stackFrame.Variables[IteratorVariableIndex] as DoubleVariable;
 
@@ -702,7 +702,7 @@ public class DoubleForStatement(CodeModel.Statements.ForStatement sourceForState
 			iteratorVariable.WritePinnedData();
 		}
 
-		public override void Execute(ExecutionContext context, StackFrame stackFrame)
+		protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 		{
 			try
 			{
@@ -730,7 +730,7 @@ public class CurrencyForStatement(CodeModel.Statements.ForStatement sourceForSta
 	public Evaluable? StepExpression;
 	public CodeModel.Statements.NextStatement SourceNextStatement = sourceNextStatement;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		var iteratorVariable = stackFrame.Variables[IteratorVariableIndex] as CurrencyVariable;
 
@@ -830,7 +830,7 @@ public class CurrencyForStatement(CodeModel.Statements.ForStatement sourceForSta
 			iteratorVariable.WritePinnedData();
 		}
 
-		public override void Execute(ExecutionContext context, StackFrame stackFrame)
+		protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 		{
 			try
 			{
@@ -861,7 +861,7 @@ public class DelayLoopForStatement(CodeModel.Statements.ForStatement sourceForSt
 	public Evaluable? StepExpression;
 	public double Multiplier;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		var iteratorVariable = stackFrame.Variables[IteratorVariableIndex];
 

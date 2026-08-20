@@ -8,7 +8,7 @@ public class ExitScopeStatement(CodeModel.Statements.ExitScopeStatement source) 
 {
 	public ExitScope? ScopeExitThrowable;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		throw ScopeExitThrowable ?? new Exception("Internal error: ExitScopeStatement with no throwable");
 	}

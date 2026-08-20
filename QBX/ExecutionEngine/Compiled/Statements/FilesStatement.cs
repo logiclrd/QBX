@@ -33,7 +33,7 @@ public partial class FilesStatement(CodeModel.Statements.FilesStatement source) 
 		dos.DiskTransferAddressOffset = segmentedAddress.Offset;
 	}
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		string pattern = "*.*";
 

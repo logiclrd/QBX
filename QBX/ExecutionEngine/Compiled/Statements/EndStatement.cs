@@ -8,7 +8,7 @@ public class EndStatement(CodeModel.Statements.EndStatement source) : Executable
 
 	public bool ExitAutoRunToSystem;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		int exitCode = ExitCodeExpression?.EvaluateAndCoerceToInt(context, stackFrame) ?? 0;
 

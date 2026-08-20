@@ -10,7 +10,7 @@ public class WaitStatement(CodeModel.Statements.WaitStatement source) : Executab
 	public Evaluable? AndExpression;
 	public Evaluable? XOrExpression;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (PortExpression == null)
 			throw new Exception("OutStatement with no PortExpression");

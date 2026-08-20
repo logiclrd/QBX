@@ -9,7 +9,7 @@ public class PageCopyStatement(CodeModel.Statements.PageCopyStatement source) : 
 	public Evaluable? SourcePageExpression;
 	public Evaluable? DestinationPageExpression;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (SourcePageExpression == null)
 			throw new Exception("PageCopyStatement with no SourcePageExpression");

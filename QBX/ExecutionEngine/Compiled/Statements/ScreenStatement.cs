@@ -13,7 +13,7 @@ public class ScreenStatement(CodeModel.Statements.ScreenStatement source) : Exec
 	public Evaluable? ActivePageExpression;
 	public Evaluable? VisiblePageExpression;
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (ModeExpression != null)
 		{

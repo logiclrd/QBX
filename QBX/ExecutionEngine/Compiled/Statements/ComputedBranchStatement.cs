@@ -12,7 +12,7 @@ public abstract class ComputedBranchStatement(CodeModel.Statements.ComputedBranc
 
 	protected abstract void ExecuteBranch(ComputedBranchTarget target, StackFrame stackFrame);
 
-	public override void Execute(ExecutionContext context, StackFrame stackFrame)
+	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (Expression == null)
 			throw new Exception("Internal error: ComputedBranchStatement with no Expression");
