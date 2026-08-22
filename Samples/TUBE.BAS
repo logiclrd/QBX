@@ -1,6 +1,6 @@
-SCREEN 13
+SCREEN 12
 
-WINDOW (-2, -1)-(2, 1)
+WINDOW (-2, -1.2)-(2, 1.2)
 
 PI2 = 6.283185
 CAMDIST = 6
