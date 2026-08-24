@@ -716,7 +716,7 @@ DEFINT A-Z
 SUB CreateGradientPalette
 OUT &H3C8, 1
 FOR I = 1 TO 15
-  C = I * 35 \ 15 + 28
+  C = I * 55 \ 15 + 8
   OUT &H3C9, C
   OUT &H3C9, C
   OUT &H3C9, C
