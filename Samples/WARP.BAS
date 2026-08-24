@@ -8,8 +8,8 @@ DECLARE SUB Normalize (X, Y, Z)
 DECLARE FUNCTION CalculateWarpField# (X, Y)
 
 CONST PI = 3.14159265358979#
-CONST BUBBLERADIUS = 6.5
-CONST BUBBLESIGMA = 3 ' Thickness / steepness of the bubble wall
+CONST BUBBLERADIUS = 5.5
+CONST BUBBLESIGMA = 2.5 ' Thickness / steepness of the bubble wall
 CONST SHADINGSCALE = .8
 CONST GRIDZSCALE = 24
 CONST GRIDSIZE = 60
@@ -779,6 +779,30 @@ SUB DrawMesh
 GRIDEXTENT = .5 * GRIDSIZE
 COORDINATESCALE = 10 / GRIDEXTENT ' CalculateWarpField expects [-10, 10]
 
+' Calculate the leading edge for clipping purposes.
+DIM CLIPTOY(0 TO 639)
+
+X = -GRIDEXTENT
+Y = -GRIDEXTENT
+
+DO
+  SX = INT(SCREENCX + (X + Y) * 5)
+  SY = INT(SCREENCY - (X - Y) * 2 - Z * 5)
+
+  IF PX <> 0 THEN
+    FOR XX = PX TO SX
+      YY = (XX - PX) * (SY - PY) / (SX - PX) + PY
+      CLIPTOY(XX) = YY
+    NEXT XX
+  END IF
+
+  PX = SX
+  PY = SY
+
+  IF Y < GRIDEXTENT THEN Y = Y + .5 ELSE X = X + .5
+LOOP UNTIL X > GRIDEXTENT
+
+' Now walk the mesh and draw it
 OX = GRIDEXTENT
 OY = -GRIDEXTENT
 
@@ -808,7 +832,7 @@ DO
     ELSE
       FOR XX = PX + 1 TO SX
         YY = (XX - PX) * (SY - PY) / (SX - PX) + PY
-        LINE (XX, YY)-(XX, 479), 0
+        LINE (XX, YY)-(XX, CLIPTOY(XX)), 0
       NEXT XX
 
       C = 1 + ABS(Z) * SHADINGSCALE
