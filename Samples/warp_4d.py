@@ -36,7 +36,7 @@ def calculate_field():
 
 
 # 4. Initialize the Interactive Plotter Window
-plotter = pv.Plotter(title="Real-Time 120^3 Voxel Field Visualizer")
+plotter = pv.Plotter(title="Alcubierre Warp Field")
 plotter.add_axes()
 plotter.set_background("black")  # High contrast for translucent voxels
 
