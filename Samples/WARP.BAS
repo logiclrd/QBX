@@ -1,10 +1,11 @@
-DECLARE SUB DrawLine (X1%, Y1%, X2%, Y2%, C%, MASK%())
-DECLARE SUB DrawModel (PRESERVEGRID, AMBIENTLIGHT, LIGHTINTENSITY)
-DECLARE SUB Normalize (X, Y, Z)
-DECLARE SUB DrawEnterprise ()
-DECLARE FUNCTION CalculateWarpField# (X, Y)
 DECLARE SUB CreateGradientPalette ()
+DECLARE SUB DrawEnterprise ()
+DECLARE SUB DrawLine (X1%, Y1%, X2%, Y2%, C%, MASK%())
 DECLARE SUB DrawMesh ()
+DECLARE SUB DrawModel (PRESERVEGRID, AMBIENTLIGHT, LIGHTINTENSITY)
+DECLARE SUB DrawTriangle3D (X1, Y1, Z1, X2, Y2, Z2, X3, Y3, Z3, COLOUR AS INTEGER, MASK() AS INTEGER)
+DECLARE SUB Normalize (X, Y, Z)
+DECLARE FUNCTION CalculateWarpField# (X, Y)
 
 CONST PI = 3.14159265358979#
 CONST BUBBLERADIUS = 6.5
@@ -15,6 +16,9 @@ CONST GRIDSIZE = 60
 CONST MODELSCALE = 1
 CONST SCREENWIDTH = 640
 CONST SCREENHEIGHT = 480
+CONST SCREENCX = SCREENWIDTH \ 2
+CONST SCREENCY = SCREENHEIGHT \ 2
+CONST MODELCOARSENESS = 1
 
 SCREEN 12
 
@@ -722,10 +726,10 @@ END SUB
 DEFSNG A-Z
 SUB DrawEnterprise
 RESTORE EnterpriseBottom
-DrawModel -1, .1, .3   ' Preserve grid lines, draw darker as though surface is partly opaque
+DrawModel -1, .1, .2   ' Preserve grid lines, draw darker as though surface is partly opaque
 
 RESTORE EnterpriseTop
-DrawModel 0, .2, .6   ' Don't preserve grid lines, draw lighter
+DrawModel 0, .3, .6   ' Don't preserve grid lines, draw lighter
 END SUB
 
 DEFINT A-Z
@@ -772,9 +776,6 @@ END SUB
 
 DEFSNG A-Z
 SUB DrawMesh
-CX = .5 * SCREENWIDTH
-CY = .5 * SCREENHEIGHT
-
 GRIDEXTENT = .5 * GRIDSIZE
 COORDINATESCALE = 10 / GRIDEXTENT ' CalculateWarpField expects [-10, 10]
 
@@ -799,8 +800,8 @@ DO
   DO
     Z = CalculateWarpField(X * COORDINATESCALE, Y * COORDINATESCALE)
 
-    SX = INT(CX + (X + Y) * 5)
-    SY = INT(CY - (X - Y) * 2 - Z * 5)
+    SX = INT(SCREENCX + (X + Y) * 5)
+    SY = INT(SCREENCY - (X - Y) * 2 - Z * 5)
 
     IF FIRST THEN
       FIRST = 0
@@ -903,11 +904,6 @@ VIEWZ = 1
 
 Normalize VIEWX, VIEWY, VIEWZ
 
-DIM SX(0 TO 2) AS INTEGER, SY(0 TO 2) AS INTEGER
-
-SCREENCX = .5 * SCREENWIDTH
-SCREENCY = .5 * SCREENHEIGHT
-
 DIM COLOUR AS INTEGER
 
 FOR I = 0 TO NUMPOINTS - 1 STEP 3
@@ -933,15 +929,19 @@ FOR I = 0 TO NUMPOINTS - 1 STEP 3
 
   DIFFUSE = 2 * (NX * TLX + NY * TLY + NZ * TLZ)
 
-  RX = NX * DIFFUSE - VIEWX
-  RY = NY * DIFFUSE - VIEWY
-  RZ = NZ * DIFFUSE - VIEWZ
+  RX = NX * DIFFUSE - TLX
+  RY = NY * DIFFUSE - TLY
+  RZ = NZ * DIFFUSE - TLZ
+
+  DIFFUSE = DIFFUSE * .5
+  IF DIFFUSE < 0 THEN DIFFUSE = 0
 
   Normalize RX, RY, RZ
 
   SPECULAR = RX * VIEWX + RY * VIEWY + RZ * VIEWZ
-
   IF SPECULAR < 0 THEN SPECULAR = 0
+
+  SPECULAR = SPECULAR ^ 16
 
   LIGHT = AMBIENTLIGHT + LIGHTINTENSITY * (DIFFUSE + SPECULAR)
 
@@ -949,16 +949,44 @@ FOR I = 0 TO NUMPOINTS - 1 STEP 3
   IF COLOUR < 1 THEN COLOUR = 1
   IF COLOUR > 15 THEN COLOUR = 15
 
-  FOR J = 0 TO 2
-    K = I + J
-    SX(J) = INT(SCREENCX + (X(K) + Y(K)) * 5)
-    SY(J) = INT(SCREENCY - (X(K) - Y(K)) * 2 - Z(K) * 5)
-  NEXT J
-
-  DrawLine SX(0), SY(0), SX(1), SY(1), (COLOUR), MASK()
-  DrawLine SX(0), SY(0), SX(2), SY(2), (COLOUR), MASK()
-  DrawLine SX(1), SY(1), SX(1), SY(1), (COLOUR), MASK()
+  DrawTriangle3D X(I), Y(I), Z(I), X(I + 1), Y(I + 1), Z(I + 1), X(I + 2), Y(I + 2), Z(I + 2), (COLOUR), MASK()
 NEXT I
+END SUB
+
+SUB DrawTriangle3D (X1, Y1, Z1, X2, Y2, Z2, X3, Y3, Z3, COLOUR AS INTEGER, MASK() AS INTEGER)
+DIM SX1 AS INTEGER, SY1 AS INTEGER, SZ1 AS INTEGER
+DIM SX2 AS INTEGER, SY2 AS INTEGER, SZ2 AS INTEGER
+DIM SX3 AS INTEGER, SY3 AS INTEGER, SZ3 AS INTEGER
+
+D1 = SQR((X2 - X1) ^ 2 + (Y2 - Y1) ^ 2 + (Z2 - Z1) ^ 2)
+D2 = SQR((X3 - X2) ^ 2 + (Y3 - Y2) ^ 2 + (Z3 - Z2) ^ 2)
+D3 = SQR((X1 - X3) ^ 2 + (Y1 - Y3) ^ 2 + (Z1 - Z3) ^ 2)
+
+PERIMETER = D1 + D2 + D3
+
+IF PERIMETER <= MODELCOARSENESS THEN
+  SX1 = INT(SCREENCX + (X1 + Y1) * 5)
+  SY1 = INT(SCREENCY - (X1 - Y1) * 2 - Z1 * 5)
+
+  SX2 = INT(SCREENCX + (X2 + Y2) * 5)
+  SY2 = INT(SCREENCY - (X2 - Y2) * 2 - Z2 * 5)
+
+  SX3 = INT(SCREENCX + (X3 + Y3) * 5)
+  SY3 = INT(SCREENCY - (X3 - Y3) * 2 - Z3 * 5)
+
+  DrawLine SX1, SY1, SX2, SY2, COLOUR, MASK()
+  DrawLine SX1, SY1, SX3, SY3, COLOUR, MASK()
+  DrawLine SX2, SY2, SX3, SY3, COLOUR, MASK()
+ELSE
+  ' Subdivide the triangle for a bit of extra density
+  MX1 = (X2 + X3) * .5: MY1 = (Y2 + Y3) * .5: MZ1 = (Z2 + Z3) * .5
+  MX2 = (X3 + X1) * .5: MY2 = (Y3 + Y1) * .5: MZ2 = (Z3 + Z1) * .5
+  MX3 = (X1 + X2) * .5: MY3 = (Y1 + Y2) * .5: MZ3 = (Z1 + Z2) * .5
+
+  DrawTriangle3D X1, Y1, Z1, MX2, MY2, MZ2, MX3, MY3, MZ3, COLOUR, MASK()
+  DrawTriangle3D X2, Y2, Z2, MX3, MY3, MZ3, MX1, MY1, MZ1, COLOUR, MASK()
+  DrawTriangle3D X3, Y3, Z3, MX1, MY1, MZ1, MX2, MY2, MZ2, COLOUR, MASK()
+END IF
 END SUB
 
 SUB Normalize (X, Y, Z)
