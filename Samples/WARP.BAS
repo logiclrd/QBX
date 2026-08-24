@@ -764,7 +764,14 @@ DO
     MASKI = O \ 16
     MASKBIT = O AND 15
 
-    IF (MASK(MASKI) AND MASKBIT) = 0 THEN PSET (X, Y), C
+    CC = C
+
+    IF (MASK(MASKI) AND MASKBIT) <> 0 THEN
+      CC = CC - 2
+      IF CC < 1 THEN CC = 1
+    END IF
+
+    PSET (X, Y), CC
   END IF
 
   E2 = E + E
