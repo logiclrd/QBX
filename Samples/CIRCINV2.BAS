@@ -1,6 +1,5 @@
 ' Recreation of an image by Xah Lee
-' http://xahlee.org/SpecialPlaneCurves_dir/InversionGallery_dir/InversionGallery.html
-' (may need to use the Wayback Machine!)
+' http://xahlee.info/SpecialPlaneCurves_dir/InversionGallery_dir/InversionGallery.html
 ' Expressed in QuickBASIC by Jonathan Gilbert 2026-08-26
 
 TYPE CircleType
@@ -29,6 +28,8 @@ SCREEN 12
 SetPalette
 
 DrawFigure
+
+SLEEP
 
 SUB DrawFigure
 scale! = 240 / 2.2
