@@ -8,7 +8,6 @@ using System.Threading;
 using QBX.CodeModel;
 using QBX.CodeModel.Statements;
 using QBX.DevelopmentEnvironment.Dialogs;
-using QBX.Firmware.Fonts;
 using QBX.Hardware;
 using QBX.LexicalAnalysis;
 using QBX.Parser;
@@ -879,8 +878,6 @@ public partial class Program
 									}
 
 									// Step 1: Try to commit left part
-									bool commitRightPart = false;
-
 									try
 									{
 										bool reloadViewport = FocusedViewport.CommitCurrentLine();
@@ -888,7 +885,6 @@ public partial class Program
 										if (reloadViewport)
 										{
 											ReloadViewportParameters();
-											commitRightPart = true;
 
 											if (newLine.Length == 0)
 											{
@@ -926,14 +922,12 @@ public partial class Program
 									FocusedViewport.CurrentLineBuffer = newLine;
 									FocusedViewport.CurrentLineEdited = true;
 
-									if (commitRightPart)
+									// Immediately commit the new partial line, ignoring errors.
+									try
 									{
-										try
-										{
-											FocusedViewport.CommitCurrentLine();
-										}
-										catch { }
+										FocusedViewport.CommitCurrentLine();
 									}
+									catch { }
 								});
 
 						return;
@@ -1214,7 +1208,7 @@ public partial class Program
 
 								newCursorY = newCursorY - 1;
 
-								ApplyCursorMovement();
+								ApplyCursorMovement(ignoreErrors: true);
 
 								FocusedViewport.CurrentLineBuffer = null;
 
@@ -1222,13 +1216,20 @@ public partial class Program
 
 								newCursorX = buffer.Length;
 
-								ApplyCursorMovement();
+								ApplyCursorMovement(ignoreErrors: true);
 
 								buffer.Append(lineToCollapse);
 
 								FocusedViewport.DeleteLine(FocusedViewport.CursorY);
 								FocusedViewport.CurrentLineBuffer = buffer;
 								FocusedViewport.CurrentLineEdited = true;
+
+								// Immediately commit the new combined line, ignoring errors.
+								try
+								{
+									FocusedViewport.CommitCurrentLine();
+								}
+								catch { }
 							});
 
 						return;
@@ -1553,7 +1554,7 @@ public partial class Program
 
 		ApplyCursorMovement();
 
-		void ApplyCursorMovement()
+		void ApplyCursorMovement(bool ignoreErrors = false)
 		{
 			try
 			{
@@ -1563,7 +1564,7 @@ public partial class Program
 					priority,
 					viewportWidth,
 					PromptTerminateToCommitEdit,
-					ignoreErrors: _alreadyPresentedError || !Configuration.EnableSyntaxChecking);
+					ignoreErrors: ignoreErrors || _alreadyPresentedError || !Configuration.EnableSyntaxChecking);
 			}
 			catch (Exception exception)
 			{
