@@ -794,13 +794,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 					}
 					else if (compilation.TryGetSub(callStatement.TargetName, out var sub))
 					{
-						int callArgumentCount = callStatement.Arguments?.Count ?? 0;
-
-						if (callArgumentCount != sub.ParameterDefinitions.Count)
-							throw CompilerException.ArgumentCountMismatch(callStatement.FirstToken);
-
 						translatedCallStatement.Target = sub;
-
 						parameterDefinitions = sub.ParameterDefinitions;
 					}
 					else if (compilation.TryGetFunction(callStatement.TargetName, out var function))
@@ -819,6 +813,9 @@ public class Compiler(IdentifierRepository identifierRepository)
 					if ((parameterDefinitions != null) && parameterDefinitions.Any())
 					{
 						var callArguments = callStatement.Arguments ?? throw new Exception("Internal error");
+
+						if (callArguments.Count != parameterDefinitions.Count)
+							throw CompilerException.ArgumentCountMismatch(callStatement.FirstToken);
 
 						for (int i = 0; i < callArguments.Count; i++)
 						{
@@ -3728,10 +3725,6 @@ public class Compiler(IdentifierRepository identifierRepository)
 						else
 						{
 							implicitForwardReference = true;
-
-							if (callOrIndexExpression.Arguments.Count != function.ParameterDefinitions.Count)
-								throw CompilerException.ArgumentCountMismatch(callOrIndexExpression.Subject.Token);
-
 							parameterDefinitions = function.ParameterDefinitions;
 						}
 
@@ -3768,8 +3761,14 @@ public class Compiler(IdentifierRepository identifierRepository)
 							forwardReference!.UnresolvedCalls.Add(translatedCallExpression);
 						}
 
-						if ((parameterDefinitions != null) && parameterDefinitions.Any())
+						if (routine == null)
+							throw CompilerException.InvalidConstant(callOrIndexExpression);
+
+						if (parameterDefinitions != null)
 						{
+							if (callOrIndexExpression.Arguments.Count != parameterDefinitions.Count)
+								throw CompilerException.ArgumentCountMismatch(callOrIndexExpression.Subject.Token);
+
 							var callArguments = callOrIndexExpression.Arguments ?? throw new Exception("Internal error");
 
 							for (int i = 0; i < callArguments.Count; i++)
@@ -3798,9 +3797,6 @@ public class Compiler(IdentifierRepository identifierRepository)
 									throw CompilerException.ParameterTypeMismatch(callArguments[0].Token);
 							}
 						}
-
-						if (routine == null)
-							throw CompilerException.InvalidConstant(callOrIndexExpression);
 
 						TranslateCallArguments(callOrIndexExpression.Arguments, parameterDefinitions, translatedCallExpression, matchFacades, container, mapper, compilation, module, routine);
 
