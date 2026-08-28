@@ -452,8 +452,12 @@ public class ExecutionContext
 		{
 			if (module.ModuleFrame?.StaticArrayInitializers != null)
 			{
+				_executionState.EnterRoutine(module.MainRoutine!, module.ModuleFrame);
+
 				foreach (var staticArrayInitializer in module.ModuleFrame.StaticArrayInitializers)
 					Dispatch(staticArrayInitializer, module.ModuleFrame);
+
+				_executionState.ExitRoutine();
 
 				module.ModuleFrame.StaticArrayInitializers = null;
 			}
