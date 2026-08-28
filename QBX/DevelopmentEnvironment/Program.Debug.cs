@@ -165,6 +165,41 @@ public partial class Program
 			};
 	}
 
+	public void RebuildCallsMenu()
+	{
+		if (_executionContext == null)
+			ResetCallsMenu();
+		else
+		{
+			ClearCallsMenu();
+
+			foreach (var frame in _executionContext.ExecutionState.Stack)
+			{
+				string name =
+					frame.Routine.IsMainRoutine
+					? frame.Routine.Source.Owner.Name
+					: frame.Routine.Name;
+
+				int lineNumber = 0;
+
+				if ((frame.CurrentStatement is Statement sourceStatement)
+					&& (sourceStatement.CodeLine is CodeLine line))
+				{
+					lineNumber = line.SourceLineIndex.Value;
+
+					// QuickBASIC bug: Line number is off-by-one
+					lineNumber++;
+				}
+
+				AppendCall(
+					name,
+					frame.Routine.Source,
+					lineNumber,
+					column: 0);
+			}
+		}
+	}
+
 	public void ToggleBreakpoint(CodeLine codeLine)
 	{
 		if (!_breakpoints.Contains(codeLine))

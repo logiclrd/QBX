@@ -444,7 +444,7 @@ public class ExecutionContext
 
 		_rootFrame = entrypoint.Module.ModuleFrame!;
 
-		_executionState.StartExecution(_rootFrame);
+		_executionState.StartExecution();
 
 		_rootFrameEstablished.Set();
 

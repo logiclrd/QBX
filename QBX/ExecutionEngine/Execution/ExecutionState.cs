@@ -144,10 +144,9 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 	}
 
 	// Controller:
-	public void StartExecution(StackFrame rootFrame)
+	public void StartExecution()
 	{
 		_chainExecution = false;
-		_stack.Push(rootFrame);
 
 		DebugOut("PROGRAM: EnterExecution");
 

@@ -441,6 +441,8 @@ public partial class Program
 		if (_executionContext == null)
 			throw new Exception("Internal error: UpdateAfterBreak called with no execution context");
 
+		RebuildCallsMenu();
+
 		EvaluateWatches(out _);
 
 		ShowNextStatement(_executionContext.ExecutionState.Stack);

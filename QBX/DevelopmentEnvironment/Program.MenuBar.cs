@@ -729,15 +729,20 @@ public partial class Program
 		}
 	}
 
-	void ResetCallsMenu()
+	void ClearCallsMenu()
 	{
 		mnuCalls.Items.Clear();
+	}
+
+	void ResetCallsMenu()
+	{
+		ClearCallsMenu();
 
 		foreach (var editable in LoadedFiles)
 		{
 			if (editable is CompilationUnit unit)
 			{
-				PushCall(
+				AppendCall(
 					unit.Name,
 					unit.Elements[0],
 					lineNumber: 0,
@@ -748,7 +753,7 @@ public partial class Program
 		}
 	}
 
-	void PushCall(string routineName, CodeModel.CompilationElement element, int lineNumber, int column)
+	void AppendCall(string routineName, CodeModel.CompilationElement element, int lineNumber, int column)
 	{
 		int availableChars = mnuCalls.Width;
 
@@ -767,8 +772,7 @@ public partial class Program
 				routineName.Substring(routineName.Length - right);
 		}
 
-		mnuCalls.Insert(
-			0,
+		mnuCalls.Add(
 			new MenuItem("&" + routineName, CallsMenuItemReferenceBarText) // TODO: handling for duplicate access keys
 			{
 				Clicked =
@@ -777,11 +781,5 @@ public partial class Program
 						NavigateTo(element, lineNumber, column);
 					}
 			});
-	}
-
-	void PopCall()
-	{
-		if (mnuCalls.Count > 1)
-			mnuCalls.RemoveAt(0);
 	}
 }
