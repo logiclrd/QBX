@@ -43,48 +43,57 @@ radius# = 95
 offsetx# = -.2
 offsety# = 0
 
-FOR y% = 0 TO 199
-  y# = (y% - 99.5) / radius#
+usereal% = -1
 
-  IF ABS(y#) <= 1 THEN
-    xr# = SQR(1 - y# * y#) * radius#
+DO
+  FOR y% = 0 TO 199
+    y# = (y% - 99.5) / radius#
 
-    LINE (160 - xr#, y%)-(159 + xr#, y%), 15
+    IF ABS(y#) <= 1 THEN
+      xr# = SQR(1 - y# * y#) * radius#
 
-    FOR x% = 159.5 - xr# TO 159.5 + xr#
-      x# = (x% - 159.5) / radius#
+      LINE (160 - xr#, y%)-(159 + xr#, y%), 15
 
-      ' Translation
-      numr# = x# - offsetx#
-      numi# = y# - offsety#
+      FOR x% = 159.5 - xr# TO 159.5 + xr#
+        x# = (x% - 159.5) / radius#
 
-      denr# = 1 - offsetx# * x# - offsety# * y#
-      deni# = offsety# * x# - offsetx# * y#
+        ' Translation
+        numr# = x# - offsetx#
+        numi# = y# - offsety#
 
-      ComplexDivide numr#, numi#, denr#, deni#, tx#, ty#
+        denr# = 1 - offsetx# * x# - offsety# * y#
+        deni# = offsety# * x# - offsetx# * y#
 
-      IF DiskToUpperHalf(tx#, ty#, taur#, taui#) THEN
-        KleinJ taur#, taui#, jr#, ji#
+        ComplexDivide numr#, numi#, denr#, deni#, tx#, ty#
 
-        IF jr# > 0 THEN
-          d# = jr# * jr# + ji# * ji#
-          IF d# > 1D+115 THEN
-            c% = 255
+        IF DiskToUpperHalf(tx#, ty#, taur#, taui#) THEN
+          KleinJ taur#, taui#, jr#, ji#
+
+          IF usereal% THEN test# = jr# ELSE test# = ji#
+
+          IF test# > 0 THEN
+            d# = jr# * jr# + ji# * ji#
+            IF d# > 1D+115 THEN
+              c% = 255
+            ELSE
+              c% = LOG(d#) + 12
+              IF c% < 1 THEN c% = 1
+              IF c% > 255 THEN c% = 255
+            END IF
+            PSET (x%, y%), c%
           ELSE
-            c% = LOG(d#) + 12
-            IF c% < 1 THEN c% = 1
-            IF c% > 255 THEN c% = 255
+            PSET (x%, y%), 0
           END IF
-          PSET (x%, y%), c%
-        ELSE
-          PSET (x%, y%), 0
         END IF
-      END IF
-    NEXT x%
-  END IF
-NEXT y%
+      NEXT x%
+    END IF
+  NEXT y%
 
-SLEEP
+  SLEEP 5
+
+  usereal% = NOT usereal%
+LOOP WHILE INKEY$ = ""
+
 
 SUB ComplexDivide (BYVAL ar#, BYVAL ai#, BYVAL br#, BYVAL bi#, cr#, ci#)
 id# = 1# / (br# * br# + bi# * bi#)
