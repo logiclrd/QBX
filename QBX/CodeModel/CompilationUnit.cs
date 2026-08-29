@@ -171,19 +171,26 @@ public class CompilationUnit : IRenderableCode, IEditableUnit
 				declarationTokenType,
 				declarationTokenType.ToString());
 
-			var qualifiedName = displayName;
+			var qualifiedName = element.Name ?? displayName;
 
 			if (element.Type == CompilationElementType.Function)
 			{
-				var typeMap = CompilationElement.MakeDefaultDefTypeMap();
+				string nameValue = qualifiedName.Value;
 
-				element.ApplyDefTypeStatements(typeMap, stopAtSubroutineOpeningStatement: true);
+				if (TypeCharacter.TryParse(nameValue[nameValue.Length - 1], out var returnTypeCharacter))
+					qualifiedName = displayName;
+				else
+				{
+					var typeMap = CompilationElement.MakeDefaultDefTypeMap();
 
-				int identifierTypeIndex = char.ToUpperInvariant(displayName.Value[0]) - 'A';
+					element.ApplyDefTypeStatements(typeMap, stopAtSubroutineOpeningStatement: true);
 
-				var returnType = typeMap[identifierTypeIndex];
+					int identifierTypeIndex = char.ToUpperInvariant(displayName.Value[0]) - 'A';
 
-				var returnTypeCharacter = new TypeCharacter(returnType);
+					var returnType = typeMap[identifierTypeIndex];
+
+					returnTypeCharacter = new TypeCharacter(returnType);
+				}
 
 				qualifiedName = new QualifiedIdentifier(qualifiedName, returnTypeCharacter);
 			}
