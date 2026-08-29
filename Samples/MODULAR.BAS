@@ -82,7 +82,7 @@ FOR y% = 0 TO 199
         END IF
 
         IF di# > 0 THEN
-          PSET (x% + 160, y%), c%
+          PSET (320 - x%, y%), c%
         END IF
       END IF
     NEXT x%
