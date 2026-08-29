@@ -7,8 +7,9 @@
 ' - Points within the unit circle are identified.
 ' - They are interpreted as complex number tau directly.
 ' - The Klein J-invariant g_2^3 / delta is then computed.
-' - The graph is drawn wherever the real value is positive and the colour
+' - The graph is drawn wherever a component of the value is positive and the colour
 '   drawn is based on the magnitude of the value.
+'   => Each redraw alternates between the real and imaginary components.
 
 DECLARE SUB KleinJ (BYVAL tr#, BYVAL ti#, jr#, ji#)
 DECLARE SUB ComplexDivide (BYVAL ar#, BYVAL ai#, BYVAL br#, BYVAL bi#, cr#, ci#)
