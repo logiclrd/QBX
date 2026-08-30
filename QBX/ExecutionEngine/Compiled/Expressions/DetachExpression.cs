@@ -18,6 +18,7 @@ public class DetachExpression : Evaluable
 	public DetachExpression(Evaluable? expression)
 	{
 		Expression = expression;
+		Source = expression?.Source;
 	}
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
