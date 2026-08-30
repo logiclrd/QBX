@@ -35,7 +35,7 @@ public class PlainTextUnit : IEditableUnit
 	public void RemoveElement(IEditableElement element)
 		=> throw new NotSupportedException();
 
-	public void PrepareForWrite() { }
+	public void PrepareForWrite(IEnumerable<IEditableElement> allElements ) { }
 	public void SortElements() { }
 
 	public void Write(TextWriter writer)

@@ -20,7 +20,7 @@ public class CompilationUnitReadWriteEndToEndTests
 			// Act
 			var parsed = CompilationUnit.Read(reader, path, tabSize: 8, ignoreErrors: true);
 
-			parsed.PrepareForWrite();
+			parsed.PrepareForWrite(parsed.Elements);
 			parsed.Write(formattedBuffer);
 
 			var formatted = formattedBuffer.ToString();

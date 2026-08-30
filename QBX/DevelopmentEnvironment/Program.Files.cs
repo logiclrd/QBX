@@ -296,7 +296,7 @@ namespace QBX.DevelopmentEnvironment
 		{
 			EnsureAllCodeIsParsed(presentErrors: false);
 
-			editable.PrepareForWrite();
+			editable.PrepareForWrite(allElements: LoadedFiles.SelectMany(file => file.Elements));
 			editable.Write(writer);
 			editable.IsPristine = true;
 		}

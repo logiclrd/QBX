@@ -105,10 +105,11 @@ public class CompilationUnit : IRenderableCode, IEditableUnit
 			});
 	}
 
-	public void GenerateDeclarations()
+	public void GenerateDeclarations(IEnumerable<CompilationElement> allElements)
 	{
 		// On save, QuickBASIC generates DECLARE SUB/DECLARE FUNCTION lines for every local
-		// SUB/FUNCTION (except for SUBs that aren't referenced in any statement). These are
+		// SUB/FUNCTION (except for SUBs that aren't referenced in any statement), as well as
+		// for all SUBs and FUNCTIONs in other loaded modules that are being called. These are
 		// added only if there is no existing declaration for the same name. DECLARE FUNCTION
 		// declarations include the type declaration character, but the type character is
 		// ignored for the purposes of checking if the function is already declared.
@@ -132,7 +133,7 @@ public class CompilationUnit : IRenderableCode, IEditableUnit
 
 		var newDeclarations = new List<CodeLine>();
 
-		foreach (var element in Elements)
+		foreach (var element in allElements)
 		{
 			var displayName = element.DisplayName;
 
@@ -149,6 +150,8 @@ public class CompilationUnit : IRenderableCode, IEditableUnit
 					break;
 				case CompilationElementType.Function:
 					if (declaredFUNCTIONs.Contains(displayName))
+						continue;
+					if (element.Owner != this)
 						continue;
 					break;
 
@@ -295,10 +298,10 @@ public class CompilationUnit : IRenderableCode, IEditableUnit
 		return unit;
 	}
 
-	public void PrepareForWrite()
+	public void PrepareForWrite(IEnumerable<IEditableElement> allElements)
 	{
 		SortElements();
-		GenerateDeclarations();
+		GenerateDeclarations(allElements.OfType<CompilationElement>());
 	}
 
 	public void Write(TextWriter writer)
