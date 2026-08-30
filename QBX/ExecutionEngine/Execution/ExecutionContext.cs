@@ -719,7 +719,12 @@ public class ExecutionContext
 			frame = routine.Module.ModuleFrame ?? throw new Exception("No module frame");
 
 			for (int i=0; i < arguments.Length; i++)
-				frame.Variables[routine.ParameterVariableIndices[i]] = arguments[i].Detach();
+			{
+				int idx = routine.ParameterVariableIndices[i];
+
+				frame.Variables[idx] = arguments[i].Detach();
+				frame.Variables[idx].IsTransient = false;
+			}
 		}
 		else
 			frame = CreateFrame(routine.Module, routine, arguments);
@@ -886,6 +891,8 @@ public class ExecutionContext
 				}
 				else
 					variables[i] = Variable.Construct(type);
+
+				variables[i].IsTransient = false;
 			}
 		}
 

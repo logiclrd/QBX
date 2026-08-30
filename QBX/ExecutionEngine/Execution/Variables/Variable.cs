@@ -87,6 +87,10 @@ public abstract class Variable
 
 	public DataType DataType { get; }
 
+	public bool IsTransient = true;
+
+	public Variable Detach() => IsTransient ? this : Clone();
+
 	internal Variable? PinnedMemoryOwner;
 	internal int PinnedMemoryAddress = -1;
 	internal ExecutionContext? PinnedMemoryContext = null;
@@ -139,8 +143,6 @@ public abstract class Variable
 	public abstract int CoerceToInt(Evaluable? context);
 	public abstract void SwapValueWith(Variable other);
 	public abstract Variable Clone();
-
-	public virtual Variable Detach() => this;
 
 	public abstract int Serialize(Span<byte> buffer);
 	public abstract int Deserialize(ReadOnlySpan<byte> buffer);

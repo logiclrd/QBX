@@ -18,8 +18,6 @@ public class StringVariable : Variable
 
 	public virtual StringValue CloneValue() => new StringValue(ValueSpan);
 
-	public override Variable Detach() => Clone();
-
 	public int IsMappedFieldCount = 0;
 
 	public bool IsMappedField => (IsMappedFieldCount > 0);
@@ -162,6 +160,8 @@ public class Substring : StringVariable
 	{
 		if (variable is Substring otherSubstring) // a substring of a substring
 			start += otherSubstring.Start;
+
+		IsTransient = variable.IsTransient;
 
 		_start = start;
 		_length = length;
