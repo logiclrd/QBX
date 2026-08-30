@@ -3407,8 +3407,8 @@ public class Compiler(IdentifierRepository identifierRepository)
 		if (sourceExpression is CodeModel.Expressions.IdentifierExpression)
 			return false;
 
-		if (sourceExpression is CodeModel.Expressions.CallOrIndexExpression)
-			return !(translatedExpression is ArrayElementExpression);
+		if (sourceExpression is CodeModel.Expressions.CallOrIndexExpression callOrIndexExpression)
+			return (callOrIndexExpression.Arguments.Count > 0) && !(translatedExpression is ArrayElementExpression);
 
 		if ((sourceExpression is CodeModel.Expressions.BinaryExpression binaryExpression)
 		 && (binaryExpression.Operator == CodeModel.Expressions.Operator.Field))
