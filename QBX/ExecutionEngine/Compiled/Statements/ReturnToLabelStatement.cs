@@ -10,6 +10,6 @@ public class ReturnToLabelStatement(Identifier labelName, CodeModel.Statements.R
 	{
 		stackFrame.PopReturnPath(Source);
 
-		base.Execute(context, stackFrame);
+		base.ExecuteImplementation(context, stackFrame);
 	}
 }

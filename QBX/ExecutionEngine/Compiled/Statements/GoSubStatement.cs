@@ -12,6 +12,6 @@ public class GoSubStatement(Identifier labelName, CodeModel.Statements.GoSubStat
 
 		stackFrame.PushReturnPath(returnPath);
 
-		base.Execute(context, stackFrame);
+		base.ExecuteImplementation(context, stackFrame);
 	}
 }

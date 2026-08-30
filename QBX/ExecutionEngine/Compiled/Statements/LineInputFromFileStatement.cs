@@ -47,6 +47,6 @@ public class LineInputFromFileStatement(CodeModel.Statements.LineInputStatement 
 		if (!context.Files.TryGetValue(fileNumber, out _openFile))
 			throw RuntimeException.BadFileNameOrNumber(Source);
 
-		base.Execute(context, stackFrame);
+		base.ExecuteImplementation(context, stackFrame);
 	}
 }
