@@ -3236,6 +3236,9 @@ public class Compiler(IdentifierRepository identifierRepository)
 						}
 
 						mapper.LinkModuleArray(declaration.Name, rootVariableName, variableType);
+
+						if (createNewVariables)
+							mapper.AllowArrayRedeclaration(declaration.Name, variableType);
 					}
 				}
 
