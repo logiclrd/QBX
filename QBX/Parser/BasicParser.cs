@@ -957,7 +957,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 			case TokenType.CONST:
 			{
-				var declarationSyntax = ParseExpressionList(tokenHandler.RemainingTokens, tokenHandler.EndToken);
+				var declarationSyntax = ParseExpressionList(tokenHandler.RemainingTokens, tokenHandler.EndToken, assignmentList: true);
 
 				var definitions = new List<ConstDefinition>();
 
@@ -4798,7 +4798,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 		return caseExpression;
 	}
 
-	ExpressionList ParseExpressionList(ListRange<Token> tokens, Token endToken, int minCount = 0, int maxCount = int.MaxValue, int fileNumberParameterIndex = -1, bool allowRepresentationSpecifiers = false)
+	ExpressionList ParseExpressionList(ListRange<Token> tokens, Token endToken, int minCount = 0, int maxCount = int.MaxValue, int fileNumberParameterIndex = -1, bool allowRepresentationSpecifiers = false, bool assignmentList = false)
 	{
 		var list = new ExpressionList();
 
@@ -4840,9 +4840,29 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 				bool allowArrayArguments = (representation == ParameterRepresentation.Standard);
 
-				var expression = ParseExpression(range, endTokenRef.Token ?? endToken, allowArrayArguments);
+				Expression expression;
 
-				expression.IsFileNumberArgument = isFileNumberArgument;
+				if (assignmentList)
+				{
+					if ((range.Count < 1) || (range[0].Type != TokenType.Identifier))
+						throw new SyntaxErrorException(endTokenRef.Token ?? endToken, "Expected: identifier");
+					if ((range.Count < 2) || (range[1].Type != TokenType.Equals))
+						throw new SyntaxErrorException(endTokenRef.Token ?? endToken, "Expected: =");
+
+					var identifier = ParseExpression(range.Slice(0, 1), range[1], allowArrayArguments: false);
+
+					expression = ParseExpression(range.Slice(2), endTokenRef.Token ?? endToken, allowArrayArguments: false);
+
+					expression = new BinaryExpression(
+						left: identifier,
+						operatorToken: range[1],
+						right: expression);
+				}
+				else
+				{
+					expression = ParseExpression(range, endTokenRef.Token ?? endToken, allowArrayArguments);
+					expression.IsFileNumberArgument = isFileNumberArgument;
+				}
 
 				list.Expressions.Add(expression);
 
