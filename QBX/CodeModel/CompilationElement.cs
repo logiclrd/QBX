@@ -51,7 +51,7 @@ public class CompilationElement : IRenderableCode, IEditableElement
 	public int FirstLineIndex { get; set; }
 	public int CachedCursorLine { get; set; }
 
-	public IEnumerable<Statement> AllStatements => _lines.SelectMany(line => line.Statements);
+	public IEnumerable<Statement> AllStatements => _lines.SelectMany(line => line.AllStatements);
 
 	List<CodeLine> _lines = new List<CodeLine>();
 
