@@ -1,5 +1,28 @@
 # QBX Releases
 
+## 1.23.0 - 2026-08-31
+
+### Fixed
+
+- `PAINT` now correctly handles viewports that don't span the full width of the framebuffer.
+- Certain patterns that would cause finalizer starvation (resulting in memory usage ballooning because objects waiting to be finalized can't be garbage collected yet) should no longer cause problems.
+- Argument count and type validation in `SUB` and `FUNCTION` calls is now processed more reliably and generates meaningful errors.
+- Static array initialization in modules other than the main (startup) module now works properly.
+- Splitting the current line in the source code editor (with Return), and joining two lines (with Backspace at the start of the line) now work reliably and leave the lines in an unparsed but committed state.
+- Generated `DECLARE FUNCTION` statements now specify the correct type-declaration character for the `FUNCTION`s return type.
+- `CONST` expressions no longer fail to parse when they include operators with lower precedence than `=`.
+- `GOSUB`, `LINE INPUT #fn%` and `RETURN label` statements, broken by a recent refactor, now work properly again.
+- Some situations where the IDE failed to jump to the location of an error have been fixed. (Specifically, when an expression is being wrapped to ensure that unintentional aliasing does not occur, the link to the underlying code model objects is now copied into the wrapping expression.)
+- Arrays marked `STATIC` can now be `DIM`med within the scope. (It may be done at most once.)
+- Statements that are nested within other statements (inline `IF`) are now included in the enumeration of all statements. This fixes certain `SUB` and `FUNCTION` calls being missed for the purpose of generating `DECLARE SUB` and `DECLARE FUNCTION` lines.
+- Automatic `DECLARE SUB` and `DECLARE FUNCTION` lines are now generated for calls that cross module boundaries.
+- Unintentional aliasing avoidance now works on variables of types other than `STRING`.
+- The render pipeline has been reworked slightly to antialias the boundaries between pixels while still maintaining discrete pixels in the display. This works around an SDL issue observed on Linux where the exact boundaries between pixels with the nearest neighbour scaling would shift from one part of the window to another.
+
+### Added
+
+- The Calls menu now tracks the stack of the executing program being debugged.
+
 ## 1.22.0 - 2026-08-10
 
 ### Fixed
