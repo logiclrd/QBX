@@ -29,23 +29,28 @@ public class CallStatement(CodeModel.Statements.CallStatement source) : Executab
 		UnresolvedTargetName = null;
 
 		// By definition we're crossing a module boundary; ignore user type facades.
-		EnsureParameterTypes(matchFacades: false);
+		EnsureParameterTypes(parameterDefinitions: default, matchFacades: false);
 	}
 
 	IList<Evaluable> IHasTypedParameters.Arguments => Arguments;
 
-	public void EnsureParameterTypes(bool matchFacades)
+	public void EnsureParameterTypes(IReadOnlyList<ParameterDefinition>? parameterDefinitions, bool matchFacades)
 	{
-		if (Target == null)
-			return;
+		if (parameterDefinitions == null)
+		{
+			if (Target == null)
+				throw new Exception("Internal error: EnsureParameterTypes called with no Target");
 
-		if (Arguments.Count != Target.ParameterDefinitions.Count)
+			parameterDefinitions = Target.ParameterDefinitions;
+		}
+
+		if (Arguments.Count != parameterDefinitions.Count)
 			throw new Exception("Internal error: CallStatement configured with wrong number of arguments for the target routine");
 
 		for (int i = 0; i < Arguments.Count; i++)
 		{
 			var argument = Arguments[i];
-			var parameterType = Target.ParameterDefinitions[i].Type;
+			var parameterType = parameterDefinitions[i].Type;
 
 			if ((argument is IdentifierExpression)
 			 || (argument is FieldAccessExpression)

@@ -5,5 +5,5 @@ namespace QBX.ExecutionEngine.Compiled;
 public interface IHasTypedParameters
 {
 	IList<Evaluable> Arguments { get; }
-	void EnsureParameterTypes(bool matchFacades);
+	void EnsureParameterTypes(IReadOnlyList<ParameterDefinition>? parameterDefinitions, bool matchFacades);
 }

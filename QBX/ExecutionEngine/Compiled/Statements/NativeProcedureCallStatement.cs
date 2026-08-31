@@ -14,8 +14,11 @@ public class NativeProcedureCallStatement(CodeModel.Statements.CallStatement? so
 
 	IList<Evaluable> IHasTypedParameters.Arguments => Arguments;
 
-	public void EnsureParameterTypes(bool matchFacades)
+	public void EnsureParameterTypes(IReadOnlyList<ParameterDefinition>? parameterDefinitions, bool matchFacades)
 	{
+		if (parameterDefinitions != null)
+			throw new Exception("Internal error: EnsureParameterTypes called on NativeProcedureCallStatement with caller-supplied parameterDefinitions");
+
 		if (Target == null)
 			throw new Exception("Internal error: EnsureParameterTypes called with no Target");
 

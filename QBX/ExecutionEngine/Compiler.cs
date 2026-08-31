@@ -806,6 +806,8 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 						translatedCallStatement.UnresolvedTargetName = callStatement.TargetName;
 						forwardReference.UnresolvedCalls.Add(translatedCallStatement);
+
+						parameterDefinitions = forwardReference.ParameterDefinitions;
 					}
 					else
 						implicitForwardReference = true;
@@ -3445,7 +3447,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 				translatedArguments.Add(translatedExpression);
 			}
 
-			translated.EnsureParameterTypes(matchFacades);
+			translated.EnsureParameterTypes(parameterDefinitions, matchFacades);
 		}
 	}
 
@@ -3724,6 +3726,8 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 							if (forwardReference!.RoutineType != RoutineType.Function)
 								throw CompilerException.DuplicateDefinition(expression.Token);
+
+							parameterDefinitions = forwardReference.ParameterDefinitions;
 						}
 						else
 						{
