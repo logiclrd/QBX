@@ -213,11 +213,14 @@ class Program
 
 			machine.MouseDriver.Initialized += engageMouse;
 
-			IntPtr texture = default;
+			IntPtr renderTexture = default;
+			IntPtr scaleTexture = default;
 			int textureWidth = -1;
 			int textureHeight = -1;
 			int physicalWidth = -1;
 			int physicalHeight = -1;
+
+			bool physicalDimensionsChanged = false;
 
 			SDL.SetHint(SDL.Hints.QuitOnLastWindowClose, "0");
 
@@ -246,9 +249,12 @@ class Program
 							break;
 
 						case SDL.EventType.WindowPixelSizeChanged:
+							physicalDimensionsChanged = true;
+
 							machine.Mouse.NotifyPhysicalSizeChanged(
 								physicalWidth: evt.Window.Data1,
 								physicalHeight: evt.Window.Data2);
+
 							break;
 
 						case SDL.EventType.KeymapChanged:
@@ -281,21 +287,49 @@ class Program
 					}
 				}
 
-				if (machine.Display.UpdateResolution(ref textureWidth, ref textureHeight, ref physicalWidth, ref physicalHeight))
+				if (machine.Display.UpdateResolution(ref textureWidth, ref textureHeight, ref physicalWidth, ref physicalHeight)
+				 || physicalDimensionsChanged)
 				{
-					if (texture != default)
-						SDL.DestroyTexture(texture);
+					physicalDimensionsChanged = false;
 
-					texture = SDL.CreateTexture(renderer, SDL.PixelFormat.BGRA8888, SDL.TextureAccess.Streaming, textureWidth, textureHeight);
+					if (SDL.GetWindowFlags(window).HasFlag(SDL.WindowFlags.Fullscreen))
+						SDL.GetWindowSizeInPixels(window, out physicalWidth, out physicalHeight);
 
-					SDL.SetTextureScaleMode(texture, SDL.ScaleMode.Nearest);
+					if (renderTexture != default)
+						SDL.DestroyTexture(renderTexture);
+					if (scaleTexture != default)
+						SDL.DestroyTexture(scaleTexture);
+
+					renderTexture = SDL.CreateTexture(renderer, SDL.PixelFormat.BGRA8888, SDL.TextureAccess.Streaming, textureWidth, textureHeight);
+
+					SDL.SetTextureScaleMode(renderTexture, SDL.ScaleMode.Nearest);
+
+					bool exactMultipleX = (physicalWidth % textureWidth) == 0;
+					bool exactMultipleY = (physicalHeight % textureHeight) == 0;
+
+					if (!(exactMultipleX && exactMultipleY))
+					{
+						scaleTexture = SDL.CreateTexture(renderer, SDL.PixelFormat.BGRA8888, SDL.TextureAccess.Target, textureWidth * 3, textureHeight * 3);
+
+						SDL.SetTextureScaleMode(scaleTexture, SDL.ScaleMode.Linear);
+					}
 
 					SDL.SetWindowSize(window, physicalWidth, physicalHeight);
 				}
 
-				machine.Display.Render(texture);
+				machine.Display.Render(renderTexture);
 
-				SDL.RenderTexture(renderer, texture, default, default);
+				if (scaleTexture == default)
+					SDL.RenderTexture(renderer, renderTexture, default, default);
+				else
+				{
+					SDL.SetRenderTarget(renderer, scaleTexture);
+					SDL.RenderTexture(renderer, renderTexture, default, default);
+
+					SDL.SetRenderTarget(renderer, IntPtr.Zero);
+					SDL.RenderTexture(renderer, scaleTexture, default, default);
+				}
+
 				SDL.RenderPresent(renderer);
 
 				if (driverThread.ThreadState == ThreadState.Unstarted)
