@@ -77,8 +77,9 @@ public abstract class VariableAddressFunction : Function
 
 				variable = Variable.AllocateAndConstructPinned(variable.DataType, byteSize, context);
 				variable.SetData(unpinnedVariable.GetData());
-
 				unpinnedVariable.PinnedVariable = variable;
+
+				variable.IsTransient = false;
 
 				stackFrame.Variables[identifierExpression.VariableIndex] = variable;
 			}

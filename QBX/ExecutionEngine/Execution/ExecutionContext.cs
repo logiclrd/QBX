@@ -829,7 +829,11 @@ public class ExecutionContext
 		int argumentOffset = routine.ReturnType != null ? 1 : 0;
 
 		for (int i = 0; i < arguments.Length; i++)
+		{
+			arguments[i].IsTransient = false;
+
 			variables[i + argumentOffset] = arguments[i];
+		}
 
 		if (!isModuleFrame)
 		{

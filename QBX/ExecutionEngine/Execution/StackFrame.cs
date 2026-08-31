@@ -63,7 +63,10 @@ public class StackFrame(Routine routine, Variable[] variables)
 		Variables.CopyTo(newVariables);
 
 		for (int i = Variables.Length; i < newVariables.Length; i++)
+		{
 			Variables[i] = Variable.Construct(variableTypes[i]);
+			Variables[i].IsTransient = false;
+		}
 
 		Variables = newVariables;
 	}

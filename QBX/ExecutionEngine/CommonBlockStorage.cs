@@ -31,7 +31,10 @@ public class CommonBlockStorage
 			var extendedVariables = new Variable[variableTypeList.Count];
 
 			for (int i = Variables.Length; i < extendedVariables.Length; i++)
+			{
 				extendedVariables[i] = Construct(variableTypeList[i]);
+				extendedVariables[i].IsTransient = false;
+			}
 
 			return new CommonBlockStorage(extendedVariables);
 		}

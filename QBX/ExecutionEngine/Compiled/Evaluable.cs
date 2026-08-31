@@ -69,6 +69,7 @@ public abstract class Evaluable
 				throw new Exception("Internal error: Somehow landed on assignment to a stand-alone pinned string value that's not through an IdentifierExpression");
 
 			targetVariable = new StringVariable(new StringValue(pinnedStringVariable.ValueSpan));
+			targetVariable.IsTransient = false;
 
 			stackFrame.Variables[identifierExpression.VariableIndex] = targetVariable;
 		}
