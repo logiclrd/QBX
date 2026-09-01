@@ -1,13 +1,12 @@
+DECLARE SUB CreatePalette (bc%, n%)
+DECLARE SUB HSV2RGB (h#, s#, v#, r%, g%, b%)
 DECLARE SUB SelectJuliaPoint (cr#, ci#)
+
 SCREEN 12
 
-OUT &H3C8, 0
+basecolour% = 0
 
-FOR i% = 0 TO 15
-  OUT &H3C9, i% * 63 \ 15
-  OUT &H3C9, i% * 63 \ 15
-  OUT &H3C9, 0
-NEXT i%
+CreatePalette basecolour%, 8
 
 w% = 640
 h% = 480
@@ -17,17 +16,15 @@ cy# = (h% - 1) / 2
 
 zoom# = 2 / w%
 
-dmin# = .05
+dmin# = .06
 
 DIM invpixels%(65)
 
-LINE (0, 0)-(7, 15), 15, BF
+LINE (0, 0)-(7, 15), 7, BF
 GET (0, 0)-(7, 15), invpixels%
 
 DO
   SelectJuliaPoint cr#, ci#
-
-  LINE (0, 0)-(639, 479), 8, BF
 
   FOR a% = 0 TO w% \ 2 - 1
     FOR b% = 0 TO h% - 1
@@ -43,8 +40,8 @@ DO
 
         IF u# + v# > 4.8 OR i% > 30 OR d# < dmin# THEN EXIT DO
 
-        zi# = 2 * x# * y# + ci#
-        zr# = u# - v# - cr#
+        zi# = 2 * zr# * zi# + ci#
+        zr# = u# - v# + cr#
 
         i% = i% + 1
 
@@ -54,11 +51,13 @@ DO
       LOOP
 
       IF d# >= dmin# THEN
-        coul% = 0
+        coul% = basecolour%
       ELSE
-        coul% = 15 - INT(250 * d#)
+        coul% = 7 - INT(125 * d#)
         IF coul% < 0 THEN coul% = 0
-        IF coul% > 15 THEN coul% = 15
+        IF coul% > 7 THEN coul% = 7
+
+        coul% = coul% + basecolour%
       END IF
 
       PSET (a%, b%), coul%
@@ -66,8 +65,19 @@ DO
     NEXT b%
   NEXT a%
 
+  COLOR basecolour% + 7
   LOCATE 30, 1
-  PRINT USING "R: ##.############    I:##.############"; cr#; ci#;
+  PRINT USING "R: ##.############    I:##.############    "; cr#; ci#;
+
+  IF basecolour% THEN
+    ' PRINT has used colour 0 for the background, but the black
+    ' for the current figure is colour basecolour%
+    FOR y% = 464 TO 479
+      FOR x% = 0 TO 639
+        IF POINT(x%, y%) = 0 THEN PSET (x%, y%), basecolour%
+      NEXT x%
+    NEXT y%
+  END IF
 
   st# = TIMER
   FOR ticks% = 1 TO 80
@@ -78,7 +88,67 @@ DO
 
     PUT (ticks% * 8 - 8, 464), invpixels%, XOR
   NEXT ticks%
+
+  basecolour% = basecolour% XOR 8
+
+  CreatePalette basecolour%, 8
 LOOP
+
+SUB CreatePalette (bc%, n%)
+OUT &H3C8, bc%
+
+hue# = RND * 360
+saturation# = RND * .25 + .75
+value# = 1
+
+HSV2RGB hue#, saturation#, value#, r%, g%, b%
+
+mc% = n% - 1
+
+FOR i% = 0 TO mc%
+  OUT &H3C9, r% * i% \ mc%
+  OUT &H3C9, g% * i% \ mc%
+  OUT &H3C9, b% * i% \ mc%
+NEXT i%
+END SUB
+
+SUB HSV2RGB (h#, s#, v#, r%, g%, b%)
+' Input: h# in 0..360, s# and v# in 0..1
+' Output: r%, g%, b% in 0..63
+
+' Just in case
+WHILE h# < 0: h# = h# + 360: WEND
+WHILE h# >= 360: h# = h# - 360: WEND
+
+chroma# = s# * v#
+
+x# = h# / 60#
+
+WHILE x# >= 2
+  x# = x# - 2
+WEND
+
+x# = chroma# * (1 - ABS(x# - 1))
+
+SELECT CASE h#
+  CASE 0 TO 60: r# = chroma#: g# = x#: b# = 0
+  CASE 60 TO 120: r# = x#: g# = chroma#: b# = 0
+  CASE 120 TO 180: r# = 0: g# = chroma#: b# = x#
+  CASE 180 TO 240: r# = 0: g# = x#: b# = chroma#
+  CASE 240 TO 300: r# = x#: g# = 0: b# = chroma#
+  CASE 300 TO 360: r# = chroma#: g# = 0: b# = x#
+END SELECT
+
+match# = v# - chroma#
+
+r% = (r# + match#) * 64
+g% = (g# + match#) * 64
+b% = (b# + match#) * 64
+
+IF r% > 63 THEN r% = 63
+IF g% > 63 THEN g% = 63
+IF b% > 63 THEN b% = 63
+END SUB
 
 SUB SelectJuliaPoint (cr#, ci#)
 CONST MaxIters% = 300
@@ -99,7 +169,7 @@ DO
 
     IF zr# * zr# + zi# * zi# > 4 THEN EXIT FOR
   NEXT i%
-LOOP UNTIL i% > 20 AND i% <= MaxIters%
+LOOP UNTIL i% >= 150 AND i% <= MaxIters%
 
 ' cr + i ci is now a promising Julia parameter c!
 END SUB
