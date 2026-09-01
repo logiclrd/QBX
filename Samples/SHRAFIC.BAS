@@ -56,7 +56,7 @@ DO
         coul% = basecolour%
       ELSE
         coul% = 7 - INT(125 * d#)
-        IF coul% < 0 THEN coul% = 0
+        IF coul% < 1 THEN coul% = 1
         IF coul% > 7 THEN coul% = 7
 
         coul% = coul% + basecolour%
@@ -99,19 +99,46 @@ LOOP
 SUB CreatePalette (bc%, n%)
 OUT &H3C8, bc%
 
-hue# = RND * 360
-saturation# = RND * .25 + .75
-value# = 1
-
-HSV2RGB hue#, saturation#, value#, r%, g%, b%
-
 mc% = n% - 1
 
-FOR i% = 0 TO mc%
-  OUT &H3C9, r% * i% \ mc%
-  OUT &H3C9, g% * i% \ mc%
-  OUT &H3C9, b% * i% \ mc%
-NEXT i%
+IF RND < .5 THEN
+  ' From black
+  hue# = RND * 360
+  saturation# = RND * .25 + .75
+  value# = 1
+
+  HSV2RGB hue#, saturation#, value#, r%, g%, b%
+
+  FOR i% = 0 TO mc%
+    OUT &H3C9, r% * i% \ mc%
+    OUT &H3C9, g% * i% \ mc%
+    OUT &H3C9, b% * i% \ mc%
+  NEXT i%
+ELSE
+  ' To white
+  hue# = RND * 360
+  saturation# = RND * .1 + .9
+  value# = RND * .3 + .4
+
+  HSV2RGB hue#, saturation#, value#, r%, g%, b%
+
+  dr% = 63 - r%
+  dg% = 63 - g%
+  db% = 63 - b%
+
+  ' We still need a black
+  OUT &H3C9, 0
+  OUT &H3C9, 0
+  OUT &H3C9, 0
+
+  mc% = mc% - 1
+
+  FOR i% = 0 TO mc%
+    OUT &H3C9, r% + dr% * i% \ mc%
+    OUT &H3C9, g% + dg% * i% \ mc%
+    OUT &H3C9, b% + db% * i% \ mc%
+  NEXT i%
+END IF
 END SUB
 
 SUB HSV2RGB (h#, s#, v#, r%, g%, b%)
