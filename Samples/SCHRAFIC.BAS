@@ -1,4 +1,4 @@
-' Based on the Julia set rendering created by Eric Shraf
+' Based on the Julia set rendering created by Eric Schraf
 
 DECLARE SUB CreatePalette (bc%, n%)
 DECLARE SUB HSV2RGB (h#, s#, v#, r%, g%, b%)
