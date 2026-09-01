@@ -4,6 +4,8 @@ DECLARE SUB CreatePalette (bc%, n%)
 DECLARE SUB HSV2RGB (h#, s#, v#, r%, g%, b%)
 DECLARE SUB SelectJuliaPoint (cr#, ci#)
 
+RANDOMIZE TIMER
+
 SCREEN 12
 
 basecolour% = 0

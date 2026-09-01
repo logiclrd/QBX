@@ -1,8 +1,12 @@
 ' Based on the Julia set rendering created by Eric Schraf
+'
+' Uses a plus sign as its root image
 
 DECLARE SUB CreatePalette (bc%, n%)
 DECLARE SUB HSV2RGB (h#, s#, v#, r%, g%, b%)
 DECLARE SUB SelectJuliaPoint (cr#, ci#)
+
+RANDOMIZE TIMER
 
 SCREEN 12
 
