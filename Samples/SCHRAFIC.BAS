@@ -36,20 +36,22 @@ DO
       i% = 0
       d# = 100
 
-      DO
+      DO WHILE d# >= dmin# AND i% <= 30
         u# = zr# * zr#
         v# = zi# * zi#
 
-        IF u# + v# > 4.8 OR i% > 30 OR d# < dmin# THEN EXIT DO
+        IF u# + v# > 4.8 THEN EXIT DO
 
         zi# = 2 * zr# * zi# + ci#
         zr# = u# - v# + cr#
 
+        IF i% > 0 THEN
+          n# = ABS(u# + v# - 1)
+
+          IF n# < d# THEN d# = n#
+        END IF
+
         i% = i% + 1
-
-        n# = ABS(u# + v# - 1)
-
-        IF n# < d# THEN d# = n#
       LOOP
 
       IF d# >= dmin# THEN
