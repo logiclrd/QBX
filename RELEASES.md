@@ -1,5 +1,11 @@
 # QBX Releases
 
+## 1.23.1 - 2026-09-01
+
+### Fixed
+
+- Cross-module calls to `SUB`s and `FUNCTION`s now correctly handle parameter type validation.
+
 ## 1.23.0 - 2026-08-31
 
 ### Fixed
