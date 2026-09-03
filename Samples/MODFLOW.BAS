@@ -1,3 +1,5 @@
+'$DYNAMIC
+
 CONST EGA% = 0 ' if not EGA then VGA
 
 TYPE LatticePoint
