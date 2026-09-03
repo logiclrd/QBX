@@ -101,6 +101,7 @@ public partial class Program
 		_savedCharacterLineWindowEnd = _savedVisualLibrary.CharacterHeight - 2;
 
 		SetIDEVideoMode();
+		Render();
 	}
 
 	[MemberNotNullWhen(true, nameof(_executionContext))]

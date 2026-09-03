@@ -269,7 +269,7 @@ namespace QBX.DevelopmentEnvironment
 										lineCount =>
 										{
 											TextLibrary.MoveCursor(0, TextLibrary.Height - 1);
-											RenderReferenceBar(overrideLineNumber: lineCount);
+											UpdateReferenceBar(overrideLineNumber: lineCount);
 										});
 							}
 

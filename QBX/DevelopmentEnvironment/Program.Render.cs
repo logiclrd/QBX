@@ -855,6 +855,21 @@ public partial class Program
 
 	static byte[]? _statusCharBuffer;
 
+	void UpdateReferenceBar(int? overrideLineNumber = null)
+	{
+		int savedActivePage = TextLibrary.ActivePageNumber;
+
+		try
+		{
+			TextLibrary.ActivePageNumber = Machine.VideoFirmware.VisiblePageNumber;
+			RenderReferenceBar(overrideLineNumber);
+		}
+		finally
+		{
+			TextLibrary.ActivePageNumber = savedActivePage;
+		}
+	}
+
 	void RenderReferenceBar(int? overrideLineNumber = null)
 	{
 		bool inMenu = (Mode == UIMode.MenuBar) || (Mode == UIMode.Menu);
