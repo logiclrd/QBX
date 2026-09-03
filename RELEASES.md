@@ -1,5 +1,15 @@
 # QBX Releases
 
+## 1.23.2 - 2026-09-03
+
+### Fixed
+
+- Some minor off-by-one errors in text and dialog placement in the IDE are fixed. (A QuickBASIC quirk in the placement of the Display Dialog is not replicated.)
+- The reference bar text and line number feedback during file load, broken by a previous change, now displays properly again.
+- `DIM` in a static context now correctly applies the static array size limit, and `REDIM` always does dynamic array allocation.
+- Automatically-generated `DECLARE SUB` statements that cross module boundaries and reference user-defined types now replace the type name from the foreign module with `ANY`.
+    * _This matches QuickBASIC behaviour. However, it should be noted that QBX does not support `AS ANY` declarations. As no semantic analysis is available during the file save process, it isn't possible to automatically map the type name to an equivalent local type name by inference. Therefore, the user will have to replace `ANY` with an appropriate local type name._
+
 ## 1.23.1 - 2026-09-01
 
 ### Fixed
