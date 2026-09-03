@@ -39,7 +39,7 @@ public static class DialogPaint
 	{
 		int midX = visual.CharacterWidth / 2;
 
-		int x1 = midX - width / 2 - 1;
+		int x1 = midX - (width + 1) / 2;
 		int x2 = x1 + width - 1;
 
 		int y1 = y;
@@ -50,7 +50,7 @@ public static class DialogPaint
 
 		visual.MoveCursor(x1, y1);
 
-		int titleX1 = midX - title.Length / 2 - 1; // Title characters plus flanking spaces
+		int titleX1 = midX - (title.Length + 1) / 2 - 2; // Title characters plus flanking spaces, excluding the frame border
 		int titleX2 = titleX1 + title.Length + 1;
 
 		if (title.Length == 0)
@@ -125,7 +125,7 @@ public static class DialogPaint
 
 		int midX = (x1 + x2) / 2;
 
-		int titleX1 = midX - title.Length / 2 - 1; // Title characters plus flanking spaces
+		int titleX1 = midX - (title.Length + 1) / 2 - 1; // Title characters plus flanking spaces
 		int titleX2 = titleX1 + title.Length + 1;
 
 		if (title.Length == 0)

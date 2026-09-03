@@ -28,7 +28,7 @@ public class ErrorDialog : Dialog
 		if (errorMessage.Length > 65)
 			errorMessage = errorMessage.Substring(0, 65) + "...";
 
-		Width = errorMessage.Length + 8;
+		Width = errorMessage.Length + 6;
 		Height = 7;
 
 		if (Width < 25)
@@ -39,9 +39,9 @@ public class ErrorDialog : Dialog
 		Widgets.Add(
 			new Label()
 			{
-				X = 3,
+				X = (Width - errorMessage.Length) / 2 - 1,
 				Y = 1,
-				Width = Width - 5,
+				Width = errorMessage.Length,
 				Text = errorMessage,
 			});
 
