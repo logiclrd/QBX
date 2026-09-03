@@ -1431,6 +1431,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 							// When the following conditions are met, arrays are configured prior to execution commencing:
 							// - '$STATIC
+							// - It is a DIM statement (not REDIM).
 							// - The DIM statement is not in any sort of conditional compilation clause (IF, FOR, etc.)
 							// - The DIM statement is not inside a SUB, FUNCTION or DEF FN
 							// - All of the bounds expressions are evaluable at compile time
@@ -1438,6 +1439,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 							// - The variable is not part of a COMMON block.
 
 							bool isStatic =
+								(dimStatement is not QBX.CodeModel.Statements.RedimStatement) &&
 								compilation.UseStaticArrays &&
 								(container == routine) && // not in any subsequence
 								routine.IsMainRoutine &&
@@ -1446,9 +1448,23 @@ public class Compiler(IdentifierRepository identifierRepository)
 								!mapper.IsLinkedToCommonBlock(variableIndex);
 
 							if (isStatic)
+							{
+								bool isValidSize = Execution.Array.ValidateArraySize(
+									translatedDimStatement.Subscripts,
+									Execution.Array.CalculateElementSize(dataType),
+									ArrayAllocationType.Static);
+
+								if (!isValidSize)
+									throw CompilerException.SubscriptOutOfRange(declaration.NameToken);
+
+								translatedDimStatement.AllocationType = ArrayAllocationType.Static;
 								routine.AddStaticArray(translatedDimStatement);
+							}
 							else
+							{
+								translatedDimStatement.AllocationType = ArrayAllocationType.Dynamic;
 								container.Append(translatedDimStatement);
+							}
 						}
 					}
 				}

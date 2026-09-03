@@ -24,4 +24,19 @@ public class ArraySubscriptExpressions
 
 		return ret;
 	}
+
+	public ArraySubscript EvaluateConstant()
+	{
+		if (LowerBound == null)
+			throw new Exception("ArraySubscriptExpressions does not have LowerBound");
+		if (UpperBound == null)
+			throw new Exception("ArraySubscriptExpressions does not have UpperBound");
+
+		var ret = new ArraySubscript();
+
+		ret.LowerBound = NumberConverter.ToInteger(LowerBound.EvaluateConstant());
+		ret.UpperBound = NumberConverter.ToInteger(UpperBound.EvaluateConstant());
+
+		return ret;
+	}
 }

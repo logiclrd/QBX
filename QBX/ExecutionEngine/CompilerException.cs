@@ -87,6 +87,8 @@ public class CompilerException : Exception
 		=> new CompilerException(context, "Overflow", "-2006");
 	public static CompilerException LabelNotDefined(Token? context)
 		=> new CompilerException(context, "Label not defined", "-2008");
+	public static CompilerException SubscriptOutOfRange(Token? context)
+		=> new CompilerException(context, "Subscript out of range", "-2009");
 	public static CompilerException DuplicateDefinition(CodeModel.Statements.Statement? statement)
 		=> new CompilerException(statement, "Duplicate definition", "-2010");
 	public static CompilerException DuplicateDefinition(Token? context)

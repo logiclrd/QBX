@@ -10,11 +10,14 @@ namespace QBX.ExecutionEngine.Execution;
 
 public class Array
 {
-	public static int MaximumSize = 65536;
+	public static int MaximumStaticSize = 65536;
+	public static int MaximumDynamicSize = 65536;
 
 	public DataType ElementType;
 	public ArraySubscripts Subscripts;
 	public Variable?[] Elements;
+
+	public readonly ArrayAllocationType AllocationType;
 
 	public Variable? PinnedMemoryOwner;
 
@@ -24,8 +27,6 @@ public class Array
 	public bool IsPinned = false;
 	public Machine? PinnedToMachine;
 	public int PinnedToMemoryAddress;
-
-	public bool IsDynamic = true;
 
 	public Span<byte> PackedData
 	{
@@ -48,7 +49,7 @@ public class Array
 	byte[]? _packedData;
 	bool _packedDataDirty;
 
-	public static readonly Array Uninitialized = new Array(DataType.Integer, new ArraySubscripts());
+	public static readonly Array Uninitialized = new Array(DataType.Integer, new ArraySubscripts(), ArrayAllocationType.Static);
 
 	public bool IsUninitialized => ReferenceEquals(this, Uninitialized);
 
@@ -71,24 +72,53 @@ public class Array
 		_packedDataDirty = true;
 	}
 
-	public Array(DataType elementType, ArraySubscripts subscripts, int fixedStringLength = -1)
+	public static int CalculateElementSize(DataType elementType, int fixedStringLength = -1)
+	{
+		return fixedStringLength < 0 ? elementType.ByteSize : fixedStringLength;
+	}
+
+	public static bool ValidateArraySize(ArraySubscriptsExpressions subscriptsExpressions, int elementSize, ArrayAllocationType allocationType)
+	{
+		var subscripts = new ArraySubscripts();
+
+		foreach (var subscript in subscriptsExpressions.Subscripts)
+			subscripts.Subscripts.Add(subscript.EvaluateConstant());
+
+		return ValidateSize(subscripts, elementSize, allocationType);
+	}
+
+	public static bool ValidateSize(ArraySubscripts subscripts, int elementSize, ArrayAllocationType allocationType)
+	{
+		int maximumSize =
+			allocationType switch
+			{
+				ArrayAllocationType.Static => MaximumStaticSize,
+				ArrayAllocationType.Dynamic => MaximumDynamicSize,
+				_ => throw new Exception("Invalid allocation type value")
+			};
+
+		return (subscripts.ElementCount * elementSize <= maximumSize);
+	}
+
+	public Array(DataType elementType, ArraySubscripts subscripts, ArrayAllocationType allocationType, int fixedStringLength = -1)
 	{
 		ElementType = elementType;
 		Subscripts = subscripts;
+		AllocationType = allocationType;
 		FixedStringLength = fixedStringLength;
 
-		ElementSize = fixedStringLength < 0 ? ElementType.ByteSize : fixedStringLength;
+		ElementSize = CalculateElementSize(ElementType, fixedStringLength);
 
-		if (subscripts.ElementCount * ElementSize > MaximumSize)
-			throw RuntimeException.SubscriptOutOfRange();
+		ValidateSize(subscripts, ElementSize, allocationType);
 
 		Elements = new Variable?[subscripts.ElementCount];
 	}
 
-	Array(DataType elementType, ArraySubscripts subscripts, int fixedStringLength, ExecutionContext context, int memoryAddress)
+	Array(DataType elementType, ArraySubscripts subscripts, ArrayAllocationType allocationType, int fixedStringLength, ExecutionContext context, int memoryAddress)
 	{
 		ElementType = elementType;
 		Subscripts = subscripts;
+		AllocationType = allocationType;
 		FixedStringLength = fixedStringLength;
 
 		IsPinned = true;
@@ -98,8 +128,8 @@ public class Array
 		Elements = System.Array.Empty<Variable?>();
 	}
 
-	public static Array Pinned(DataType elementType, ArraySubscripts subscripts, int fixedStringLength, ExecutionContext context, int memoryAddress)
-		=> new Array(elementType, subscripts, fixedStringLength, context, memoryAddress);
+	public static Array Pinned(DataType elementType, ArraySubscripts subscripts, ArrayAllocationType allocationType, int fixedStringLength, ExecutionContext context, int memoryAddress)
+		=> new Array(elementType, subscripts, allocationType, fixedStringLength, context, memoryAddress);
 
 	public void Pin(ExecutionContext context)
 	{
@@ -175,7 +205,7 @@ public class Array
 		// This copy requires knowing the size of that second-to-last subarray, e.g.
 		// (1 TO 10, 1 TO 5) in the example above.
 
-		if (!IsDynamic)
+		if (AllocationType != ArrayAllocationType.Dynamic)
 			throw RuntimeException.IllegalFunctionCall();
 
 		if (newSubscripts.Dimensions != Subscripts.Dimensions)
@@ -212,7 +242,7 @@ public class Array
 		if (newElementCount != newSubscripts.ElementCount)
 			throw new Exception("Sanity check failed");
 
-		if (newElementCount * ElementType.ByteSize > MaximumSize)
+		if (newElementCount * ElementType.ByteSize > MaximumDynamicSize)
 			throw RuntimeException.SubscriptOutOfRange();
 
 		var newElements = new Variable?[newElementCount];

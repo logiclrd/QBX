@@ -16,16 +16,21 @@ public class ArrayVariable(DataType type, int fixedStringLength = -1) : Variable
 
 	public Array Array = Array.Uninitialized;
 
-	public bool IsDynamic => Array.IsDynamic;
+	public ArrayAllocationType AllocationType => Array.AllocationType;
 
 	public bool IsCommonArray;
 
 	public override void Reset()
 	{
-		if (IsDynamic)
-			Array = Array.Uninitialized;
-		else
-			Array.Reset();
+		switch (AllocationType)
+		{
+			case ArrayAllocationType.Static:
+				Array.Reset();
+				break;
+			case ArrayAllocationType.Dynamic:
+				Array = Array.Uninitialized;
+				break;
+		}
 	}
 
 	public override Variable Clone() => throw RuntimeException.IllegalFunctionCall();
@@ -64,16 +69,15 @@ public class ArrayVariable(DataType type, int fixedStringLength = -1) : Variable
 	public override int Deserialize(System.ReadOnlySpan<byte> buffer)
 		=> Array.Deserialize(buffer);
 
-	internal void InitializeArray(ArraySubscripts subscripts, bool isDynamic = true)
+	internal void InitializeArray(ArraySubscripts subscripts, ArrayAllocationType allocationType)
 	{
-		Array = new Array(ElementType, subscripts, fixedStringLength);
-		Array.IsDynamic = isDynamic;
+		Array = new Array(ElementType, subscripts, allocationType, fixedStringLength);
 		Array.PinnedMemoryOwner = this;
 	}
 
-	internal void InitializePinnedArray(ArraySubscripts subscripts, ExecutionContext context, int memoryAddress)
+	internal void InitializePinnedArray(ArraySubscripts subscripts, ArrayAllocationType allocationType, ExecutionContext context, int memoryAddress)
 	{
-		Array = Array.Pinned(ElementType, subscripts, fixedStringLength, context, memoryAddress);
+		Array = Array.Pinned(ElementType, subscripts, allocationType, fixedStringLength, context, memoryAddress);
 		Array.PinnedMemoryOwner = this;
 	}
 

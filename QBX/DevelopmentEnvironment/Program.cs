@@ -221,7 +221,7 @@ public partial class Program : HostedProgram, IOvertypeFlag
 			if (argument.Equals("/AH", StringComparison.OrdinalIgnoreCase))
 			{
 				// Allow dynamic arrays to exceed 64KB
-				ExecutionEngine.Execution.Array.MaximumSize = int.MaxValue;
+				ExecutionEngine.Execution.Array.MaximumDynamicSize = int.MaxValue;
 			}
 			else if (argument.Equals("/B", StringComparison.OrdinalIgnoreCase))
 			{

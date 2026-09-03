@@ -55,7 +55,7 @@ public class UserDataTypeVariable : Variable
 					? Variable.ConstructArrayOfFixedLengthString(fixedLength: field.Type.ByteSize)
 					: Variable.ConstructArray(field.Type);
 
-				array.InitializeArray(arraySubscripts);
+				array.InitializeArray(arraySubscripts, ArrayAllocationType.Dynamic);
 
 				Fields[i] = array;
 			}
@@ -94,7 +94,7 @@ public class UserDataTypeVariable : Variable
 					? Variable.ConstructArrayOfFixedLengthString(fixedLength: field.Type.ByteSize)
 					: Variable.ConstructArray(field.Type);
 
-				array.InitializeArray(arraySubscripts);
+				array.InitializeArray(arraySubscripts, ArrayAllocationType.Dynamic);
 
 				Fields[i] = array;
 			}
@@ -135,7 +135,7 @@ public class UserDataTypeVariable : Variable
 					? Variable.ConstructArrayOfFixedLengthString(fixedLength: field.Type.ByteSize)
 					: Variable.ConstructArray(field.Type);
 
-				array.InitializePinnedArray(arraySubscripts, context, memoryAddress);
+				array.InitializePinnedArray(arraySubscripts, ArrayAllocationType.Dynamic, context, memoryAddress);
 
 				Fields[i] = array;
 

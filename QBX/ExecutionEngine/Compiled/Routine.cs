@@ -237,7 +237,10 @@ public class Routine : Sequence
 		if (IsStaticArray(dimStatement.VariableIndex))
 			throw new Exception("Internal error: Making the same variable index a static array more than once");
 
-		dimStatement.IsDynamic = false;
+		if (dimStatement.AllocationType != Execution.ArrayAllocationType.Static)
+			throw new Exception("Internal error: AddStaticArray called with a Dynamic DimensionArrayStatement");
+
+		// Assume caller has already validated the size.
 
 		StaticArrays.Add(dimStatement);
 
