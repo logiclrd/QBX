@@ -823,10 +823,10 @@ public partial class Program
 
 	void UpdateReferenceBarActions()
 	{
-		if (Mode == UIMode.MenuBar)
-			ReferenceBarActions = MenuBarReferenceBarActions;
-		else if (Dialogs.Count > 0)
+		if (Dialogs.Count > 0)
 			ReferenceBarActions = DialogReferenceBarActions;
+		else if (Mode == UIMode.MenuBar)
+			ReferenceBarActions = MenuBarReferenceBarActions;
 		else if (FocusedViewport == HelpViewport)
 			ReferenceBarActions = HelpReferenceBarActions;
 		else if (FocusedViewport == ImmediateViewport)
@@ -836,19 +836,20 @@ public partial class Program
 		else
 			ReferenceBarActions = EditorNotRunningReferenceBarActions;
 
-		ReferenceBarText = null;
-		ReferenceBarTextHighlighted = false;
-
-		if (Mode == UIMode.Menu)
+		if (ReferenceBarTextOwner != ReferenceBarTextOwner.ThirdParty)
 		{
-			ReferenceBarActions = MenuReferenceBarActions;
+			ReferenceBarText = null;
+			ReferenceBarTextHighlighted = false;
 
-			if ((SelectedMenu >= 0) && (SelectedMenu < MenuBar.Count))
+			if ((Mode == UIMode.Menu) && (Dialogs.Count == 0))
 			{
-				var menu = MenuBar[SelectedMenu];
+				if ((SelectedMenu >= 0) && (SelectedMenu < MenuBar.Count))
+				{
+					var menu = MenuBar[SelectedMenu];
 
-				if ((SelectedMenuItem >= 0) && (SelectedMenuItem < menu.Count))
-					ReferenceBarText = menu.Items[SelectedMenuItem].ReferenceText;
+					if ((SelectedMenuItem >= 0) && (SelectedMenuItem < menu.Count))
+						ReferenceBarText = menu.Items[SelectedMenuItem].ReferenceText;
+				}
 			}
 		}
 	}
@@ -874,7 +875,7 @@ public partial class Program
 	{
 		bool inMenu = (Mode == UIMode.MenuBar) || (Mode == UIMode.Menu);
 
-		bool showStatus = (Dialogs.Count == 0) || inMenu || overrideLineNumber.HasValue;
+		bool showStatus = (Dialogs.Count == 0) || overrideLineNumber.HasValue;
 		bool showCursorPosition = showStatus && (inMenu || (FocusedViewport != HelpViewport));
 
 		int cursorX = (FocusedViewport?.CursorX ?? 0) + 1;
@@ -894,7 +895,7 @@ public partial class Program
 		TextLibrary.WriteText(' ');
 		referenceBarRemainingChars--;
 
-		if (ReferenceBarActions != null)
+		if ((ReferenceBarActions != null) && (ReferenceBarTextOwner != ReferenceBarTextOwner.ThirdParty))
 		{
 			for (int i = 0; i < ReferenceBarActions.Length; i++)
 			{

@@ -45,6 +45,7 @@ public partial class Program : HostedProgram, IOvertypeFlag
 	public int SelectedReferenceBarAction = -1;
 	public string? ReferenceBarText;
 	public bool ReferenceBarTextHighlighted;
+	public ReferenceBarTextOwner ReferenceBarTextOwner;
 
 	int _characterRows;
 
@@ -707,6 +708,7 @@ public partial class Program : HostedProgram, IOvertypeFlag
 		ReferenceBarAction[]? _savedActions;
 		string? _savedText;
 		bool _savedTextHighlighted;
+		ReferenceBarTextOwner _savedTextOwner;
 		bool _isDisposed;
 
 		public ReferenceBarTextScope(Program owner, string text, bool highlighted)
@@ -714,11 +716,13 @@ public partial class Program : HostedProgram, IOvertypeFlag
 			_savedActions = owner.ReferenceBarActions;
 			_savedText = owner.ReferenceBarText;
 			_savedTextHighlighted = owner.ReferenceBarTextHighlighted;
+			_savedTextOwner = owner.ReferenceBarTextOwner;
 
 			_owner = owner;
 			_owner.ReferenceBarActions = null;
 			_owner.ReferenceBarText = text;
 			_owner.ReferenceBarTextHighlighted = highlighted;
+			_owner.ReferenceBarTextOwner = ReferenceBarTextOwner.ThirdParty;
 		}
 
 		public void Dispose()
@@ -728,6 +732,7 @@ public partial class Program : HostedProgram, IOvertypeFlag
 				_owner.ReferenceBarActions = _savedActions;
 				_owner.ReferenceBarText = _savedText;
 				_owner.ReferenceBarTextHighlighted = _savedTextHighlighted;
+				_owner.ReferenceBarTextOwner = _savedTextOwner;
 				_isDisposed = true;
 			}
 		}
