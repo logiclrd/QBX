@@ -16,6 +16,8 @@ TYPE abcdef
   bar AS INTEGER
 END TYPE
 
+DECLARE SUB sploof (arg AS abcdef)
+
 DIM zeep AS abcdef
 
 zeep.foo = 42

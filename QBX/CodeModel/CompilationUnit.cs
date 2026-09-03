@@ -206,11 +206,49 @@ public class CompilationUnit : IRenderableCode, IEditableUnit
 
 			var openingStatement = element.AllStatements.OfType<SubroutineOpeningStatement>().FirstOrDefault();
 
+			// If the SUB is in a different module, then any user-defined types it references are out of scope.
+			// We haven't done any of the analysis for this yet, so we don't actually know what local type is
+			// being used in the call. So, we have no choice but to emit AS ANY, which the user will then have
+			// to replace with an actual local name for the TYPE since QBX does not support AS ANY.
+
+			ParameterList? parameters = openingStatement?.Parameters;
+
+			if (element.Owner != this)
+			{
+				if (parameters != null)
+				{
+					var localParameters = new ParameterList();
+
+					foreach (var parameter in parameters.Parameters)
+					{
+						if (parameter.UserType == null)
+							localParameters.Parameters.Add(parameter);
+						else
+						{
+							var localParameter = new ParameterDefinition();
+
+							localParameter.Representation = parameter.Representation;
+							localParameter.Name = parameter.Name;
+							localParameter.IsArray = parameter.IsArray;
+							localParameter.Type = parameter.Type;
+							localParameter.AnyType = true;
+
+							localParameters.Parameters.Add(localParameter);
+						}
+					}
+
+					parameters = localParameters;
+				}
+			}
+
+			if (parameters == null)
+				parameters = new ParameterList();
+
 			var declaration = new DeclareStatement(
 				declarationTypeToken,
 				qualifiedName,
 				nameToken: null,
-				openingStatement?.Parameters ?? new ParameterList());
+				parameters);
 
 			// Format and re-parse the statement to give it its own tokens.
 			var buffer = new StringWriter();
