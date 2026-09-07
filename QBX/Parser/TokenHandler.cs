@@ -204,6 +204,9 @@ public class TokenHandler(ListRange<Token> tokens, IdentifierRepository identifi
 	}
 
 	public int FindNextUnparenthesizedOf(params TokenType[] tokenToFind)
+		=> FindNextUnparenthesizedOf(startIndex: 0, tokenToFind);
+
+	public int FindNextUnparenthesizedOf(int startIndex, params TokenType[] tokenToFind)
 	{
 		int index = 0;
 		int level = 0;
@@ -212,7 +215,7 @@ public class TokenHandler(ListRange<Token> tokens, IdentifierRepository identifi
 
 		while (_tokenIndex + index < _tokens.Count)
 		{
-			if ((level == 0) && findSet.Contains(_tokens[_tokenIndex + index].Type))
+			if ((level == 0) && (index >= startIndex) && findSet.Contains(_tokens[_tokenIndex + index].Type))
 				return index;
 
 			switch (_tokens[_tokenIndex + index].Type)

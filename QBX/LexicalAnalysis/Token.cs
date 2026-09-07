@@ -123,7 +123,7 @@ public class Token(MutableBox<int> line, int column, TokenType type, string valu
 	{
 		if (s_keywordTokens.TryGetValue(keyword, out token))
 		{
-			token = token.Emplace(line, column);
+			token = token.Emplace(line, column, keyword);
 			return true;
 		}
 

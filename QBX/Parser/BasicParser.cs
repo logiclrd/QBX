@@ -523,6 +523,108 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 		var tokenHandler = new TokenHandler(tokens, identifierRepository);
 
+		int asTokenIndex = tokenHandler.FindNextUnparenthesizedOf(startIndex: 1, TokenType.AS);
+
+		if ((asTokenIndex == 1)
+		 || ((asTokenIndex > 1)
+		  && (tokenHandler[1].Type == TokenType.OpenParenthesis)
+		  && (tokenHandler[asTokenIndex - 1].Type == TokenType.CloseParenthesis)))
+		{
+			var typeElement = new TypeElementStatement();
+
+			if (tokenHandler.NextToken.IsKeyword())
+			{
+				// Type elements are allowed to be named after keywords.
+				var nameToken = tokenHandler.NextToken.AsIdentifier();
+
+				typeElement.Name = identifierRepository.UpdateCanonicalIdentifier(nameToken.Value);
+
+				tokenHandler.Advance(1);
+			}
+			else
+				typeElement.Name = tokenHandler.ExpectIdentifier(allowTypeCharacter: false);
+
+			if (tokenHandler.NextTokenIs(TokenType.OpenParenthesis))
+			{
+				typeElement.Subscripts = new VariableDeclarationSubscriptList();
+
+				var subscriptTokens = tokenHandler.ExpectParenthesizedTokens();
+
+				var endTokenRef = new TokenRef();
+
+				foreach (var subscript in SplitCommaDelimitedList(subscriptTokens, endTokenRef))
+				{
+					typeElement.Subscripts.Add(ParseVariableDeclarationSubscript(
+						subscript,
+						endTokenRef.Token ??
+						(tokenHandler.HasMoreTokens ? tokenHandler.NextToken : tokenHandler.EndToken)));
+				}
+
+				if (!typeElement.Subscripts.Any())
+					throw new SyntaxErrorException(tokenHandler.PreviousToken, "Expected: expression");
+			}
+
+			var asToken = tokenHandler.Expect(TokenType.AS);
+
+			typeElement.AlignmentWhitespace = asToken.PrecedingWhitespace;
+
+			switch (tokenHandler.NextToken.Type)
+			{
+				case TokenType.INTEGER:
+				case TokenType.LONG:
+				case TokenType.SINGLE:
+				case TokenType.DOUBLE:
+				case TokenType.STRING:
+				case TokenType.CURRENCY:
+				{
+					switch (tokenHandler.NextToken.Type)
+					{
+						case TokenType.INTEGER: typeElement.ElementType = DataType.INTEGER; break;
+						case TokenType.LONG: typeElement.ElementType = DataType.LONG; break;
+						case TokenType.SINGLE: typeElement.ElementType = DataType.SINGLE; break;
+						case TokenType.DOUBLE: typeElement.ElementType = DataType.DOUBLE; break;
+						case TokenType.STRING: typeElement.ElementType = DataType.STRING; break;
+						case TokenType.CURRENCY: typeElement.ElementType = DataType.CURRENCY; break;
+					}
+
+					tokenHandler.Advance();
+
+					if (typeElement.ElementType == DataType.STRING)
+					{
+						tokenHandler.Expect(TokenType.Asterisk);
+
+						var fixedStringLength = tokenHandler.Expect(TokenType.Number);
+
+						if (fixedStringLength.Value.StartsWith("-"))
+						{
+							throw new SyntaxErrorException(
+								new Token(
+									fixedStringLength.LineNumberBox,
+									fixedStringLength.Column,
+									TokenType.Minus,
+									"-"),
+								"Syntax error");
+						}
+
+						if (!NumberParser.TryAsInteger(fixedStringLength.Value, out var fixedStringLengthValue))
+							throw new SyntaxErrorException(fixedStringLength, "Invalid constant");
+
+						typeElement.FixedStringLength = fixedStringLengthValue;
+					}
+
+					break;
+				}
+
+				default:
+					typeElement.ElementUserType = tokenHandler.ExpectIdentifier(allowTypeCharacter: false);
+					break;
+			}
+
+			tokenHandler.ExpectEndOfTokens();
+
+			return typeElement;
+		}
+
 		var token = tokenHandler.NextToken;
 
 		tokenHandler.Advance();
@@ -4259,129 +4361,35 @@ public class BasicParser(IdentifierRepository identifierRepository)
 		{
 			tokenHandler.Reset();
 
-			int asTokenIndex = tokenHandler.FindNextUnparenthesizedOf(TokenType.AS);
+			// Nothing else matches, so this must be a naked call statement.
+			// But, if identifier has a type character, then the desired
+			// error message is one that assumes this is actually an
+			// assignment statement missing its equals sign.
+			Identifier targetName;
 
-			if ((asTokenIndex == 1)
-			 || ((asTokenIndex > 1)
-			  && (tokenHandler[1].Type == TokenType.OpenParenthesis)
-			  && (tokenHandler[asTokenIndex - 1].Type == TokenType.CloseParenthesis)))
+			try
 			{
-				var typeElement = new TypeElementStatement();
-
-				typeElement.Name = tokenHandler.ExpectIdentifier(allowTypeCharacter: false);
-
-				if (tokenHandler.NextTokenIs(TokenType.OpenParenthesis))
-				{
-					typeElement.Subscripts = new VariableDeclarationSubscriptList();
-
-					var subscriptTokens = tokenHandler.ExpectParenthesizedTokens();
-
-					var endTokenRef = new TokenRef();
-
-					foreach (var subscript in SplitCommaDelimitedList(subscriptTokens, endTokenRef))
-					{
-						typeElement.Subscripts.Add(ParseVariableDeclarationSubscript(
-							subscript,
-							endTokenRef.Token ??
-							(tokenHandler.HasMoreTokens ? tokenHandler.NextToken : tokenHandler.EndToken)));
-					}
-
-					if (!typeElement.Subscripts.Any())
-						throw new SyntaxErrorException(tokenHandler.PreviousToken, "Expected: expression");
-				}
-
-				var asToken = tokenHandler.Expect(TokenType.AS);
-
-				typeElement.AlignmentWhitespace = asToken.PrecedingWhitespace;
-
-				switch (tokenHandler.NextToken.Type)
-				{
-					case TokenType.INTEGER:
-					case TokenType.LONG:
-					case TokenType.SINGLE:
-					case TokenType.DOUBLE:
-					case TokenType.STRING:
-					case TokenType.CURRENCY:
-					{
-						switch (tokenHandler.NextToken.Type)
-						{
-							case TokenType.INTEGER: typeElement.ElementType = DataType.INTEGER; break;
-							case TokenType.LONG: typeElement.ElementType = DataType.LONG; break;
-							case TokenType.SINGLE: typeElement.ElementType = DataType.SINGLE; break;
-							case TokenType.DOUBLE: typeElement.ElementType = DataType.DOUBLE; break;
-							case TokenType.STRING: typeElement.ElementType = DataType.STRING; break;
-							case TokenType.CURRENCY: typeElement.ElementType = DataType.CURRENCY; break;
-						}
-
-						tokenHandler.Advance();
-
-						if (typeElement.ElementType == DataType.STRING)
-						{
-							tokenHandler.Expect(TokenType.Asterisk);
-
-							var fixedStringLength = tokenHandler.Expect(TokenType.Number);
-
-							if (fixedStringLength.Value.StartsWith("-"))
-							{
-								throw new SyntaxErrorException(
-									new Token(
-										fixedStringLength.LineNumberBox,
-										fixedStringLength.Column,
-										TokenType.Minus,
-										"-"),
-									"Syntax error");
-							}
-
-							if (!NumberParser.TryAsInteger(fixedStringLength.Value, out var fixedStringLengthValue))
-								throw new SyntaxErrorException(fixedStringLength, "Invalid constant");
-
-							typeElement.FixedStringLength = fixedStringLengthValue;
-						}
-
-						break;
-					}
-
-					default:
-						typeElement.ElementUserType = tokenHandler.ExpectIdentifier(allowTypeCharacter: false);
-						break;
-				}
-
-				tokenHandler.ExpectEndOfTokens();
-
-				return typeElement;
+				targetName = tokenHandler.ExpectIdentifier(allowTypeCharacter: false);
 			}
-			else
+			catch (SyntaxErrorException)
 			{
-				// Nothing else matches, so this must be a naked call statement.
-				// But, if identifier has a type character, then the desired
-				// error message is one that assumes this is actually an
-				// assignment statement missing its equals sign.
-				Identifier targetName;
+				if (tokenHandler.NextTokenIs(TokenType.Identifier)
+					&& char.IsSymbol(tokenHandler.NextToken.Value.Last()))
+					throw new SyntaxErrorException(tokenHandler.NextToken, "Expected: variable=expression");
 
-				try
-				{
-					targetName = tokenHandler.ExpectIdentifier(allowTypeCharacter: false);
-				}
-				catch (SyntaxErrorException)
-				{
-					if (tokenHandler.NextTokenIs(TokenType.Identifier)
-					 && char.IsSymbol(tokenHandler.NextToken.Value.Last()))
-						throw new SyntaxErrorException(tokenHandler.NextToken, "Expected: variable=expression");
-
-					throw;
-				}
-
-				ExpressionList? arguments = null;
-
-				if (tokenHandler.HasMoreTokens)
-					arguments = ParseExpressionList(tokenHandler.RemainingTokens, tokenHandler.EndToken, allowRepresentationSpecifiers: true);
-
-				var call = new CallStatement(CallStatementType.Implicit, targetName, arguments);
-
-				arguments?.ClaimTokens(call);
-
-				return call;
+				throw;
 			}
+
+			ExpressionList? arguments = null;
+
+			if (tokenHandler.HasMoreTokens)
+				arguments = ParseExpressionList(tokenHandler.RemainingTokens, tokenHandler.EndToken, allowRepresentationSpecifiers: true);
+
+			var call = new CallStatement(CallStatementType.Implicit, targetName, arguments);
+
+			arguments?.ClaimTokens(call);
+
+			return call;
 		}
 
 		throw new SyntaxErrorException(tokens[0], "Syntax error");

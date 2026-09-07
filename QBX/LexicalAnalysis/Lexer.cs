@@ -46,6 +46,7 @@ public class Lexer(TextReader input, CompilationElement? element = null, int sta
 		MaybeOrEquals, // seen a '<' or '>', don't know if it'll be a "<=" or ">="
 		MaybeCrLf, // seen a '\r', don't know if it'll be a "\r\n"
 		Word,
+		Identifier, // seen a '.' followed by a word char, parse any word as an identifier even if it looks like a keyword (except DATA)
 		ContinueLine,
 		ContinueLineMaybeCrLf,
 	}
@@ -307,7 +308,11 @@ public class Lexer(TextReader input, CompilationElement? element = null, int sta
 						{
 							yield return Token.ForCharacter(line, tokenStartColumn, '.');
 							buffer.Clear();
-							mode = Mode.Any;
+
+							if (atEOF)
+								break;
+
+							mode = Mode.Identifier;
 							reparse = true;
 							tokenStartColumn = column;
 						}
@@ -636,6 +641,7 @@ public class Lexer(TextReader input, CompilationElement? element = null, int sta
 						break;
 					}
 					case Mode.Word:
+					case Mode.Identifier:
 					{
 						if (char.IsAsciiLetterOrDigit(ch))
 							buffer.Append(ch);
@@ -670,43 +676,52 @@ public class Lexer(TextReader input, CompilationElement? element = null, int sta
 							string word = buffer.ToString();
 							string qualifiedWord = word;
 
-							switch (ch)
+							if (mode == Mode.Identifier)
 							{
-								case '%':
-								case '&':
-								case '!':
-								case '#':
-								case '@':
-									qualifiedWord = word + ch;
+								// In Identifier mode, we recognize only bare identifiers, no keywords or type-declaration
+								// characters. We always reparse the character we're on (which is the first non-word char.)
+								reparse = true;
+							}
+							else
+							{
+								switch (ch)
+								{
+									case '%':
+									case '&':
+									case '!':
+									case '#':
+									case '@':
+										qualifiedWord = word + ch;
 
-									if (!Token.TryForKeyword(line, tokenStartColumn, qualifiedWord, out keyword)
-									 && Token.TryForKeyword(line, tokenStartColumn, word, out var keywordFollowedBySymbol))
-									{
-										keyword = keywordFollowedBySymbol;
-										reparse = true;
-									}
-									else
-									{
-										switch (ch)
+										if (!Token.TryForKeyword(line, tokenStartColumn, qualifiedWord, out keyword)
+										 && Token.TryForKeyword(line, tokenStartColumn, word, out var keywordFollowedBySymbol))
 										{
-											case '%': dataType = DataType.INTEGER; break;
-											case '&': dataType = DataType.LONG; break;
-											case '!': dataType = DataType.SINGLE; break;
-											case '#': dataType = DataType.DOUBLE; break;
-											case '@': dataType = DataType.CURRENCY; break;
+											keyword = keywordFollowedBySymbol;
+											reparse = true;
 										}
-									}
+										else
+										{
+											switch (ch)
+											{
+												case '%': dataType = DataType.INTEGER; break;
+												case '&': dataType = DataType.LONG; break;
+												case '!': dataType = DataType.SINGLE; break;
+												case '#': dataType = DataType.DOUBLE; break;
+												case '@': dataType = DataType.CURRENCY; break;
+											}
+										}
 
-									break;
-								case '$':
-									qualifiedWord = word + ch;
-									Token.TryForKeyword(line, tokenStartColumn, qualifiedWord, out keyword);
-									dataType = DataType.STRING;
-									break;
-								default:
-									Token.TryForKeyword(line, tokenStartColumn, word, out keyword);
-									reparse = true;
-									break;
+										break;
+									case '$':
+										qualifiedWord = word + ch;
+										Token.TryForKeyword(line, tokenStartColumn, qualifiedWord, out keyword);
+										dataType = DataType.STRING;
+										break;
+									default:
+										Token.TryForKeyword(line, tokenStartColumn, word, out keyword);
+										reparse = true;
+										break;
+								}
 							}
 
 							if (word.Equals("REM", StringComparison.OrdinalIgnoreCase))
