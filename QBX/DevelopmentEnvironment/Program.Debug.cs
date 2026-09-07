@@ -37,17 +37,22 @@ public partial class Program
 	{
 		if (FocusedViewport.EditableElement != element)
 		{
-			if (PrimaryViewport.EditableElement == element)
-				FocusedViewport = PrimaryViewport;
-			else if (SplitViewport?.EditableElement == element)
-				FocusedViewport = SplitViewport;
+			if (element.Name == ImmediateRoutineName)
+				FocusedViewport = ImmediateViewport;
+			else
+			{
+				if (PrimaryViewport.EditableElement == element)
+					FocusedViewport = PrimaryViewport;
+				else if (SplitViewport?.EditableElement == element)
+					FocusedViewport = SplitViewport;
 
-			if ((FocusedViewport == HelpViewport)
-			 || (FocusedViewport == ImmediateViewport))
-				FocusedViewport = PrimaryViewport;
+				if ((FocusedViewport == HelpViewport)
+				 || (FocusedViewport == ImmediateViewport))
+					FocusedViewport = PrimaryViewport;
 
-			if (FocusedViewport.EditableElement != element)
-				FocusedViewport.SwitchTo(element);
+				if (FocusedViewport.EditableElement != element)
+					FocusedViewport.SwitchTo(element);
+			}
 		}
 	}
 

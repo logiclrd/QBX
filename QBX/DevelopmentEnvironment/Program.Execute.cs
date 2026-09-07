@@ -224,13 +224,15 @@ public partial class Program
 		return true;
 	}
 
+	static readonly Identifier ImmediateRoutineName = Identifier.Standalone("@Immediate");
+
 	bool ParseAndExecuteDirect(TextReader directCodeTextReader)
 	{
 		var immediateUnit = new CompilationUnit();
 		var immediateElement = new CompilationElement(immediateUnit);
 
 		immediateElement.Type = CompilationElementType.Main;
-		immediateElement.Name = Routine.MainRoutineName;
+		immediateElement.Name = ImmediateRoutineName;
 
 		immediateUnit.AddElement(immediateElement);
 

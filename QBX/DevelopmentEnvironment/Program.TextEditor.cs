@@ -2209,7 +2209,9 @@ public partial class Program
 	{
 		Viewport viewport;
 
-		if (PrimaryViewport.EditableElement == element)
+		if (element.Name == ImmediateRoutineName)
+			viewport = ImmediateViewport;
+		else if (PrimaryViewport.EditableElement == element)
 			viewport = PrimaryViewport;
 		else if (SplitViewport?.EditableElement == element)
 			viewport = SplitViewport;
@@ -2218,7 +2220,8 @@ public partial class Program
 
 		FocusedViewport = viewport;
 
-		FocusedViewport.SwitchTo(element);
+		if (FocusedViewport.EditableElement != element)
+			FocusedViewport.SwitchTo(element);
 
 		if (lineNumber >= element.Lines.Count)
 			lineNumber = element.Lines.Count - 1;
