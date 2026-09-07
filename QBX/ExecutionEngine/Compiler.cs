@@ -686,6 +686,9 @@ public class Compiler(IdentifierRepository identifierRepository)
 				if (valueExpression == null)
 					throw new BadModelException("AssignmentStatement with no ValueExpression");
 
+				if (!targetExpression.IsAssignable)
+					throw CompilerException.ExpectedStatement(assignmentStatement.FirstToken);
+
 				if (!targetExpression.Type.Equals(valueExpression.Type))
 				{
 					if (targetExpression.Type.IsString != valueExpression.Type.IsString)

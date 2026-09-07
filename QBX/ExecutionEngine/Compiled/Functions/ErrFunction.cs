@@ -14,4 +14,11 @@ public class ErrFunction : Function
 	{
 		return context.ErrVariable;
 	}
+
+	public override bool IsAssignable => true;
+
+	public override void EvaluateAndAssignTo(ExecutionContext context, StackFrame stackFrame, Variable newValue)
+	{
+		context.ErrVariable.SetData(newValue.GetData());
+	}
 }
