@@ -56,7 +56,7 @@ public partial class Program
 			Continue();
 	}
 
-	public void Terminate()
+	public void Terminate(bool keepOutput = false)
 	{
 		try
 		{
@@ -75,7 +75,8 @@ public partial class Program
 			_executionContext = null;
 			_executionThread = null;
 
-			ResetProgramScreen();
+			if (!keepOutput)
+				ResetProgramScreen();
 
 			ClearNextStatement();
 		}
@@ -104,9 +105,9 @@ public partial class Program
 	}
 
 	[MemberNotNullWhen(true, nameof(_executionContext))]
-	public bool Restart(Action<Compilation>? configureCompilation = null, StatementPath? startingLineNumber = null)
+	public bool Restart(Action<Compilation>? configureCompilation = null, StatementPath? startingLineNumber = null, bool keepOutput = false)
 	{
-		Terminate();
+		Terminate(keepOutput);
 
 		if (!EnsureAllCodeIsParsed())
 			return false;
@@ -164,7 +165,8 @@ public partial class Program
 
 		AssociateWatches(_compilation);
 
-		RestoreOutput();
+		if (!keepOutput)
+			RestoreOutput();
 
 		if (Machine.VideoFirmware.LastModeNumber != 3)
 			Machine.VideoFirmware.SetMode(3);
@@ -396,7 +398,7 @@ public partial class Program
 		{
 			if (executionContext.ExecutionState.ReplaceRunningProgram)
 			{
-				if (!Restart(startingLineNumber: executionContext.ExecutionState.StartingLineNumber))
+				if (!Restart(startingLineNumber: executionContext.ExecutionState.StartingLineNumber, keepOutput: true))
 					break;
 
 				executionContext = _executionContext;
