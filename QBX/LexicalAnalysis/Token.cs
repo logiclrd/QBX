@@ -117,6 +117,10 @@ public class Token(MutableBox<int> line, int column, TokenType type, string valu
 
 	public static bool IsKeyword(string keyword) => s_keywordTokens.ContainsKey(keyword);
 
+	public static bool IsKeyword(TokenType tokenType) => s_keywordByTokenType.ContainsKey(tokenType);
+
+	public bool IsKeyword() => IsKeyword(Type);
+
 	public static Token ForKeyword(MutableBox<int> line, int column, string keyword) => s_keywordTokens[keyword].Emplace(line, column, keyword);
 
 	public static bool TryForKeyword(MutableBox<int> line, int column, string keyword, [NotNullWhen(true)] out Token? token)
@@ -140,6 +144,9 @@ public class Token(MutableBox<int> line, int column, TokenType type, string valu
 
 	public static Token ForIdentifier(MutableBox<int> line, int column, string identifier, DataType dataType)
 		=> new Token(line, column, TokenType.Identifier, identifier, dataType);
+
+	public Token AsIdentifier()
+		=> ForIdentifier(line, column, value, DataType.Unspecified);
 
 	public static Token ForCharacter(MutableBox<int> line, int column, char ch) => s_characterTokens[ch].Emplace(line, column);
 

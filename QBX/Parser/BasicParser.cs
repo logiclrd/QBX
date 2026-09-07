@@ -181,11 +181,11 @@ public class BasicParser(IdentifierRepository identifierRepository)
 				startsWithDATA = false;
 				lineConsumed = false;
 			}
-			else if ((token.Type == TokenType.Number) &&
-			         (line.LineNumber == null) &&
-			         (line.Label == null) &&
-			         !line.Statements.Any() &&
-			         !buffer.Any())
+			else if ((token.Type == TokenType.Number)
+			      && (line.LineNumber == null)
+			      && (line.Label == null)
+			      && !line.Statements.Any()
+			      && !buffer.Any())
 			{
 				if (precedingWhitespaceToken != null)
 				{
@@ -196,7 +196,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 				if (line.LineNumber != null)
 					throw new SyntaxErrorException(token, "Expected: statement");
 
-				line.LineNumber = identifierRepository.UpdateCanonicalIdentifier(token.Value);
+				line.LineNumber = identifierRepository.UpdateCanonicalIdentifier(TrimLineNumber(token.Value));
 
 				precedingWhitespaceToken = null;
 			}
@@ -1794,7 +1794,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 				switch (tokenHandler.NextToken.Type)
 				{
 					case TokenType.Number:
-						statement.TargetLineNumber = identifierRepository.UpdateCanonicalIdentifier(tokenHandler.NextToken.Value);
+						statement.TargetLineNumber = identifierRepository.UpdateCanonicalIdentifier(TrimLineNumber(tokenHandler.NextToken.Value));
 						break;
 
 					case TokenType.Identifier:
@@ -1875,7 +1875,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 							var statement = new BareLineNumberGoToStatement();
 
-							statement.TargetLineNumber = identifierRepository.UpdateCanonicalIdentifier(tokens[0].Value);
+							statement.TargetLineNumber = identifierRepository.UpdateCanonicalIdentifier(TrimLineNumber(tokens[0].Value));
 
 							list.Add(statement);
 						}
@@ -2615,7 +2615,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 								 && (parsedLineNumber == 0))
 									onError.Action = OnErrorAction.DoNotHandle;
 								else
-									onError.TargetLineNumber = identifierRepository.UpdateCanonicalIdentifier(tokenHandler.NextToken.Value);
+									onError.TargetLineNumber = identifierRepository.UpdateCanonicalIdentifier(TrimLineNumber(tokenHandler.NextToken.Value));
 
 								break;
 
@@ -2746,7 +2746,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 									 || target[0].Value.Contains('d'))
 										throw new SyntaxErrorException(target[0], "Expected: label or line number");
 
-									var lineNumber = identifierRepository.UpdateCanonicalIdentifier(target[0].Value);
+									var lineNumber = identifierRepository.UpdateCanonicalIdentifier(TrimLineNumber(target[0].Value));
 
 									computedBranch.Targets.Add(new ComputedBranchTarget(lineNumber, target[0]));
 
@@ -3563,7 +3563,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 							break;
 
 						case TokenType.Number:
-							resume.TargetLineNumber = identifierRepository.UpdateCanonicalIdentifier(tokenHandler.NextToken.Value);
+							resume.TargetLineNumber = identifierRepository.UpdateCanonicalIdentifier(TrimLineNumber(tokenHandler.NextToken.Value));
 							break;
 
 						case TokenType.Identifier:
@@ -5157,5 +5157,16 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 		op = default;
 		return false;
+	}
+
+	string TrimLineNumber(string lineNumber)
+	{
+		// QuickBASIC seems to treat line number tokens as numbers when their value is in the range 0..65529.
+		if (int.TryParse(lineNumber, out var numericValue)
+		 && (numericValue >= 0)
+		 && (numericValue < 65530))
+			return numericValue.ToString();
+		else
+			return lineNumber;
 	}
 }
