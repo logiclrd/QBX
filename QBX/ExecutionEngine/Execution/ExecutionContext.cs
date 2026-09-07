@@ -410,6 +410,9 @@ public class ExecutionContext
 			_localErrorHandlers.Pop();
 	}
 
+	public void SetStartingLineNumber(StatementPath startingLineNumber)
+		=> _executionState.SetStartingLineNumber(startingLineNumber);
+
 	public bool WaitForRootFrame()
 		=> _rootFrameEstablished.WaitOne(TimeSpan.FromSeconds(5));
 
@@ -467,11 +470,21 @@ public class ExecutionContext
 		{
 			AttachEvents();
 
+			if (_executionState.StartingLineNumber != null)
+			{
+				_goTo = _executionState.StartingLineNumber;
+				_executionState.StartingLineNumber = null;
+			}
+
 			try
 			{
 				Call(entrypoint, _rootFrame);
 			}
-			catch (ChainExecution) { return -1; }
+			catch (ReplaceRunningProgram replacement)
+			{
+				_executionState.SetReplaceRunningProgram(replacement.StartingLineNumber);
+				return -1;
+			}
 			catch (EndProgram) { }
 
 			int exitCode = _rootFrame.Variables[0].CoerceToInt(context: null);

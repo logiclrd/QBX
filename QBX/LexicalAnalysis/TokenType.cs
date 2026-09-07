@@ -246,6 +246,7 @@ public enum TokenType
 	[KeywordToken] ROLLBACK,
 	[KeywordFunction]
 	[KeywordToken("RTRIM$")] RTRIM,
+	[KeywordToken] RUN,
 	[KeywordFunction(requiresLValue: true)]
 	[KeywordToken] SADD,
 	[KeywordFunction(parameterCount: 0)]

@@ -2870,6 +2870,31 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 				break;
 			}
+			case CodeModel.Statements.RunStatement runStatement:
+			{
+				Executable translatedRunStatement;
+
+				if (runStatement.FileNameExpression == null)
+				{
+					if (runStatement.StartingLineNumber != null)
+						translatedRunStatement = new RestartExecutionFromLineStatement(runStatement.StartingLineNumber, runStatement);
+					else
+						translatedRunStatement = new RestartExecutionStatement(runStatement);
+				}
+				else
+				{
+					var replaceRunningProgramStatement = new ReplaceRunningProgramStatement(runStatement);
+
+					TranslateStringArgumentExpression(
+						ref replaceRunningProgramStatement.FileNameExpression, runStatement.FileNameExpression);
+
+					translatedRunStatement = replaceRunningProgramStatement;
+				}
+
+				container.Append(translatedRunStatement);
+
+				break;
+			}
 			case CodeModel.Statements.ScreenStatement screenStatement:
 			{
 				var translatedScreenStatement = new ScreenStatement(screenStatement);

@@ -9,7 +9,6 @@ using QBX.ExecutionEngine;
 using QBX.ExecutionEngine.Compiled;
 using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Events;
-using QBX.Firmware;
 using QBX.LexicalAnalysis;
 using QBX.Parser;
 using QBX.QuickLibraries;
@@ -105,7 +104,7 @@ public partial class Program
 	}
 
 	[MemberNotNullWhen(true, nameof(_executionContext))]
-	public bool Restart(Action<Compilation>? configureCompilation = null)
+	public bool Restart(Action<Compilation>? configureCompilation = null, StatementPath? startingLineNumber = null)
 	{
 		Terminate();
 
@@ -119,6 +118,7 @@ public partial class Program
 		if (_executionContext != null)
 		{
 			chainExecution = _executionContext.ExecutionState.ChainExecution;
+			startingLineNumber = _executionContext.ExecutionState.StartingLineNumber;
 
 			if (chainExecution)
 				_compilation.CommonBlocks = _executionContext.CommonBlocks;
@@ -179,6 +179,9 @@ public partial class Program
 
 		foreach (var qlb in QLBs)
 			qlb.ExecutionContext = _executionContext;
+
+		if (startingLineNumber != null)
+			_executionContext.SetStartingLineNumber(startingLineNumber);
 
 		_executionContext.ReplaceProgram +=
 			(_, args) =>
@@ -368,7 +371,7 @@ public partial class Program
 				SetIDEVideoMode();
 			}
 
-			if (_executionContext.ExecutionState.ChainExecution)
+			if (_executionContext.ExecutionState.ReplaceRunningProgram)
 				Continue();
 			else
 			{
@@ -391,9 +394,9 @@ public partial class Program
 
 		do
 		{
-			if (executionContext.ExecutionState.ChainExecution)
+			if (executionContext.ExecutionState.ReplaceRunningProgram)
 			{
-				if (!Restart())
+				if (!Restart(startingLineNumber: executionContext.ExecutionState.StartingLineNumber))
 					break;
 
 				executionContext = _executionContext;
@@ -409,7 +412,7 @@ public partial class Program
 				using (Machine.DOS.EnableBreak())
 					executionContext.Controls.WaitForInterruption();
 			}
-		} while (executionContext.ExecutionState.ChainExecution);
+		} while (executionContext.ExecutionState.ReplaceRunningProgram);
 
 		// Purge input buffer
 		while (Machine.Keyboard.GetNextEvent() is not null)
@@ -459,7 +462,7 @@ public partial class Program
 		else
 			RestoreOutput();
 
-		if (_executionContext.ExecutionState.IsTerminated && !_executionContext.ExecutionState.ChainExecution)
+		if (_executionContext.ExecutionState.IsTerminated && !_executionContext.ExecutionState.ReplaceRunningProgram)
 		{
 			if (AbortOnBreak || (_executionContext.ExitAutoRunToSystem && AutoRun))
 				Machine.KeepRunning = false;

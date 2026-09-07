@@ -15,6 +15,9 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 	public bool IgnoreExplicitBreakFromNextStatement { get; set; }
 	public RuntimeException? CurrentError => _currentError;
 	public bool ChainExecution => _chainExecution;
+	public bool ReplaceRunningProgram => _replaceRunningProgram;
+	public StatementPath? StartingLineNumber { get => _startingLineNumber; set => _startingLineNumber = value; }
+
 	public bool IsTerminated => _isTerminated;
 
 	public event Action? EnterExecution;
@@ -25,6 +28,8 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 	Stack<StackFrame> _stack = new Stack<StackFrame>();
 	RuntimeException? _currentError = null;
 	bool _chainExecution;
+	bool _replaceRunningProgram;
+	StatementPath? _startingLineNumber;
 	bool _isTerminated;
 
 	Sequence? _directSequence = null;
@@ -233,6 +238,17 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 	public void SetChainExecution()
 	{
 		_chainExecution = true;
+	}
+
+	public void SetStartingLineNumber(StatementPath startingLineNumber)
+	{
+		_startingLineNumber = startingLineNumber;
+	}
+
+	public void SetReplaceRunningProgram(StatementPath? startingLineNumber)
+	{
+		_replaceRunningProgram = true;
+		_startingLineNumber = startingLineNumber;
 	}
 
 	public void EndExecution()

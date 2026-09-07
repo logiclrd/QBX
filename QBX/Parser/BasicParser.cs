@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -3586,6 +3587,41 @@ public class BasicParser(IdentifierRepository identifierRepository)
 				}
 
 				return resume;
+			}
+
+			case TokenType.RUN:
+			{
+				var run = new RunStatement();
+
+				if (tokenHandler.HasMoreTokens)
+				{
+					static bool ContainsOnlyDigits([NotNullWhen(true)] string? tokenValue)
+					{
+						if ((tokenValue == null)
+						 || (tokenValue.Length == 0))
+							return false;
+
+						for (int i=0; i < tokenValue.Length; i++)
+						{
+							char ch = tokenValue[i];
+
+							if ((ch < '0') || (ch > '9'))
+								return false;
+						}
+
+						return true;
+					}
+
+					var argumentExpression = ParseExpressionForStatement(run, tokenHandler.RemainingTokens, tokenHandler.EndToken);
+
+					if ((argumentExpression is LiteralExpression literal)
+					 && ContainsOnlyDigits(literal.Token?.Value))
+						run.StartingLineNumber = identifierRepository.UpdateCanonicalIdentifier(TrimLineNumber(literal.Token.Value));
+					else
+						run.FileNameExpression = argumentExpression;
+				}
+
+				return run;
 			}
 
 			case TokenType.SCREEN:

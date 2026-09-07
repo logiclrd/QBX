@@ -96,6 +96,7 @@ public enum StatementType
 	Reset,
 	Restore,
 	Return,
+	Run,
 	Screen,
 	ScreenWidth,
 	SelectCase,
