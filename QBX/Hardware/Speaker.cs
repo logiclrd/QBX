@@ -80,10 +80,7 @@ public class Speaker(Machine machine)
 	{
 		lock (_sync)
 		{
-			if (_soundChanges.Count == 0)
-				return;
-
-			while (true)
+			while (_soundChanges.Count > 0)
 			{
 				var waitUntil = _queueMaxChangeAtTime - threshold;
 

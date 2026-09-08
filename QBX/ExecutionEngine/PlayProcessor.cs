@@ -280,15 +280,17 @@ public class PlayProcessor : ProcessorCommon
 					break;
 				}
 
-				case P: // pause for n quarter notes
+				case P: // pause for note length n, divisor as with L -- 64 == 1/64 note
 				{
 					AdvanceAndSkipWhitespace(ref input);
 
-					int numQuarterNotes = ExpectIntegerInRange(ref input, 1, 64, executionContext);
+					int restLengthDivisor = ExpectIntegerInRange(ref input, 1, 64, executionContext);
 
-					var quarterNoteDuration = TimeSpan.FromMinutes(1) / _tempo;
+					UpdateNoteDurations();
 
-					PlayRest(quarterNoteDuration * numQuarterNotes);
+					CalculateNoteDurations(restLengthDivisor, out var on, out var off);
+
+					PlayRest(on + off);
 
 					break;
 				}
