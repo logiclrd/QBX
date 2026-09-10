@@ -304,6 +304,10 @@ public partial class Program
 		//   Yes => Compile the direct statement to a Sequence and execute it in
 		//          the context of the current next line
 
+		// TODO: figure out how to make GOTO, GOSUB and RUN work in direct mode (the element in the
+		//       last viewport needs to be full compiled, and its cached labels need to be what the
+		//       compiled direct mode code references
+
 		if ((_executionContext == null) || (_compilation == null) || (_nextStatementRoutine == null))
 		{
 			// Dedicated execution
