@@ -98,7 +98,7 @@ public class CompilationElement : IRenderableCode, IEditableElement
 	void ReindexLines(int startIndex)
 	{
 		for (int lineIndex = startIndex; lineIndex < _lines.Count; lineIndex++)
-			_lines[lineIndex].SourceLineIndex.Value = lineIndex;
+			_lines[lineIndex].SourceLineIndex.Value = lineIndex + FirstLineIndex;
 	}
 
 	void IEditableElement.AddLine(IEditableLine line) => AddLine((CodeLine)line);
@@ -106,7 +106,7 @@ public class CompilationElement : IRenderableCode, IEditableElement
 	public void AddLine(CodeLine line)
 	{
 		line.CompilationElement = this;
-		line.SourceLineIndex.Value = _lines.Count;
+		line.SourceLineIndex.Value = _lines.Count + FirstLineIndex;
 
 		_lines.Add(line);
 	}
