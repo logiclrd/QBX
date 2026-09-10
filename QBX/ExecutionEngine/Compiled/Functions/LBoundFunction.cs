@@ -57,7 +57,7 @@ public class LBoundFunction : Function
 		if (DimensionExpression != null)
 			dimension = DimensionExpression.EvaluateAndCoerceToInt(context, stackFrame);
 
-		if ((dimension < 1) || (dimension > array.Subscripts.Dimensions))
+		if ((dimension < 1) || (dimension > array.NumberOfDimensions))
 			throw RuntimeException.SubscriptOutOfRange(Source);
 
 		int bound = array.Subscripts[dimension - 1].LowerBound;

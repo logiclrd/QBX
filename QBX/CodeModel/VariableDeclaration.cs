@@ -15,6 +15,8 @@ public class VariableDeclaration : IRenderableCode
 	public Identifier? FixedStringLength { get; set; }
 	public Identifier? UserType { get; set; }
 
+	public int NumberOfDimensions => Subscripts?.Count ?? 0;
+
 	public Token? NameToken;
 	public Token? TypeToken;
 	public Token? FixedStringLengthToken;

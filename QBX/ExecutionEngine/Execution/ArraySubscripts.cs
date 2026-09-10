@@ -8,23 +8,13 @@ using QBX.Utility;
 
 namespace QBX.ExecutionEngine.Execution;
 
-public class ArraySubscripts : IEquatable<ArraySubscripts>
+public class ArraySubscripts : List<ArraySubscript>, IEquatable<ArraySubscripts>
 {
-	public List<ArraySubscript> Subscripts { get; } = new List<ArraySubscript>();
-
-	public int Dimensions => Subscripts.Count;
-
-	public ArraySubscript this[int index]
-	{
-		get => Subscripts[index];
-		set => Subscripts[index] = value;
-	}
-
-	public int ElementCount => Subscripts.Select(subscript => subscript.ElementCount).Product();
+	public int ElementCount => this.Select(subscript => subscript.ElementCount).Product();
 
 	public int GetElementIndex(int[] subscriptValues, IList<Evaluable>? subscriptExpressions = null)
 	{
-		if (Subscripts.Count == 0)
+		if (Count == 0)
 			throw RuntimeException.SubscriptOutOfRange();
 
 		int index = 0;
@@ -34,17 +24,17 @@ public class ArraySubscripts : IEquatable<ArraySubscripts>
 		// can simply be copied because their layout doesn't change, only the number of repetitions
 		// changes.
 
-		for (int i = Subscripts.Count - 1; i >= 0; i--)
+		for (int i = Count - 1; i >= 0; i--)
 		{
-			int lowerBound = Subscripts[i].LowerBound;
-			int upperBound = Subscripts[i].UpperBound;
+			int lowerBound = this[i].LowerBound;
+			int upperBound = this[i].UpperBound;
 
 			int subscript = subscriptValues[i];
 
 			if ((subscript < lowerBound) || (subscript > upperBound))
 				throw RuntimeException.SubscriptOutOfRange(subscriptExpressions?[i]?.Source);
 
-			index = index * Subscripts[i].ElementCount + subscriptValues[i] - Subscripts[i].LowerBound;
+			index = index * this[i].ElementCount + subscriptValues[i] - this[i].LowerBound;
 		}
 
 		return index;
@@ -68,8 +58,8 @@ public class ArraySubscripts : IEquatable<ArraySubscripts>
 
 		int size = 1;
 
-		for (int i = Subscripts.Count - 2; i >= 0; i--)
-			size *= Subscripts[i].ElementCount;
+		for (int i = Count - 2; i >= 0; i--)
+			size *= this[i].ElementCount;
 
 		return size;
 	}
@@ -94,13 +84,13 @@ public class ArraySubscripts : IEquatable<ArraySubscripts>
 	public bool Equals(ArraySubscripts? other)
 	{
 		if (other == null)
-			return (Subscripts.Count == 0);
+			return (Count == 0);
 
-		if (Subscripts.Count != other.Subscripts.Count)
+		if (Count != other.Count)
 			return false;
 
-		for (int i = 0; i < Subscripts.Count; i++)
-			if (!Subscripts[i].Equals(other.Subscripts[i]))
+		for (int i = 0; i < Count; i++)
+			if (!this[i].Equals(other[i]))
 				return false;
 
 		return true;
@@ -110,10 +100,10 @@ public class ArraySubscripts : IEquatable<ArraySubscripts>
 	{
 		int hashCode = 0;
 
-		for (int i = 0; i < Subscripts.Count; i++)
+		for (int i = 0; i < Count; i++)
 		{
 			hashCode = unchecked((hashCode * 1049) ^ (hashCode >> 24));
-			hashCode ^= Subscripts[i].GetHashCode();
+			hashCode ^= this[i].GetHashCode();
 		}
 
 		return hashCode;

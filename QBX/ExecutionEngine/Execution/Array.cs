@@ -21,6 +21,8 @@ public class Array
 
 	public Variable? PinnedMemoryOwner;
 
+	public int NumberOfDimensions => Subscripts.Count;
+
 	public int FixedStringLength = -1;
 	public int ElementSize;
 
@@ -82,7 +84,7 @@ public class Array
 		var subscripts = new ArraySubscripts();
 
 		foreach (var subscript in subscriptsExpressions.Subscripts)
-			subscripts.Subscripts.Add(subscript.EvaluateConstant());
+			subscripts.Add(subscript.EvaluateConstant());
 
 		return ValidateSize(subscripts, elementSize, allocationType);
 	}
@@ -208,13 +210,13 @@ public class Array
 		if (AllocationType != ArrayAllocationType.Dynamic)
 			throw RuntimeException.IllegalFunctionCall();
 
-		if (newSubscripts.Dimensions != Subscripts.Dimensions)
+		if (newSubscripts.Count != Subscripts.Count)
 			throw new Exception("Internal error: RedimensionPreservingData called with an ArraySubscripts with a different number of dimensions");
 
 		if (IsPinned)
 			Unpin();
 
-		for (int i = 0; i < Subscripts.Dimensions - 1; i++)
+		for (int i = 0; i < Subscripts.Count - 1; i++)
 		{
 			var oldSubscript = Subscripts[i];
 			var newSubscript = newSubscripts[i];
@@ -224,8 +226,8 @@ public class Array
 				throw RuntimeException.SubscriptOutOfRange();
 		}
 
-		var oldLastSubscript = Subscripts[Subscripts.Dimensions - 1];
-		var newLastSubscript = newSubscripts[newSubscripts.Dimensions - 1];
+		var oldLastSubscript = Subscripts[Subscripts.Count - 1];
+		var newLastSubscript = newSubscripts[newSubscripts.Count - 1];
 
 		if (oldLastSubscript.LowerBound != newLastSubscript.LowerBound)
 			throw RuntimeException.SubscriptOutOfRange();

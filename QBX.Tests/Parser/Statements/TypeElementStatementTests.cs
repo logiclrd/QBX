@@ -45,11 +45,11 @@ public class TypeElementStatementTests
 		else
 		{
 			typeElementResult.Subscripts.Should().NotBeNull();
-			typeElementResult.Subscripts.Subscripts.Should().HaveCount(expectedSubscripts.Length / 2);
+			typeElementResult.Subscripts.Should().HaveCount(expectedSubscripts.Length / 2);
 
 			for (int i = 0; i < expectedSubscripts.Length; i += 2)
 			{
-				var subscript = typeElementResult.Subscripts.Subscripts[i / 2];
+				var subscript = typeElementResult.Subscripts[i / 2];
 
 				subscript.Bound1.Should().BeOfType<LiteralExpression>();
 				subscript.Bound1.Token!.Value.Should().Be(expectedSubscripts[i].ToString());

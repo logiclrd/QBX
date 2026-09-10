@@ -53,11 +53,11 @@ public class DimStatementTests
 		else
 		{
 			dimResult.Declarations[0].Subscripts.Should().NotBeNull();
-			dimResult.Declarations[0].Subscripts!.Subscripts.Should().HaveCount(lowerBounds.Length);
+			dimResult.Declarations[0].Subscripts.Should().HaveCount(lowerBounds.Length);
 
 			for (int i = 0; i < lowerBounds.Length; i++)
 			{
-				var subscript = dimResult.Declarations[0].Subscripts!.Subscripts[i];
+				var subscript = dimResult.Declarations[0].Subscripts![i];
 
 				if (subscript == null)
 					subscript.Should().NotBeNull();
@@ -82,11 +82,11 @@ public class DimStatementTests
 			if (upperBounds2.Length > 0)
 			{
 				dimResult.Declarations[1].Subscripts.Should().NotBeNull();
-				dimResult.Declarations[1].Subscripts!.Subscripts.Should().HaveCount(upperBounds2.Length);
+				dimResult.Declarations[1].Subscripts.Should().HaveCount(upperBounds2.Length);
 
 				for (int i = 0; i < upperBounds2.Length; i++)
 				{
-					var subscript = dimResult.Declarations[1].Subscripts!.Subscripts[i];
+					var subscript = dimResult.Declarations[1].Subscripts![i];
 
 					if (subscript == null)
 						subscript.Should().NotBeNull();

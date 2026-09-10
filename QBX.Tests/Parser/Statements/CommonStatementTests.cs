@@ -69,7 +69,7 @@ public class CommonStatementTests
 		else
 		{
 			commonResult.Declarations[0].Subscripts.Should().NotBeNull();
-			commonResult.Declarations[0].Subscripts!.Subscripts.Should().HaveCount(0);
+			commonResult.Declarations[0].Subscripts.Should().HaveCount(0);
 		}
 
 		if (variable1Type != null)
@@ -84,7 +84,7 @@ public class CommonStatementTests
 			else
 			{
 				commonResult.Declarations[1].Subscripts.Should().NotBeNull();
-				commonResult.Declarations[1].Subscripts!.Subscripts.Should().HaveCount(0);
+				commonResult.Declarations[1].Subscripts.Should().HaveCount(0);
 			}
 		}
 	}

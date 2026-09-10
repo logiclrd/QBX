@@ -44,7 +44,7 @@ public class UserDataType : IEquatable<UserDataType>
 
 			if (thisSubscripts == null)
 			{
-				if ((otherSubscripts != null) && (otherSubscripts.Subscripts.Count > 0))
+				if ((otherSubscripts != null) && (otherSubscripts.Count > 0))
 					return false;
 			}
 			else

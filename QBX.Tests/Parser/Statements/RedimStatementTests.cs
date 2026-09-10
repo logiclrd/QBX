@@ -74,11 +74,11 @@ public class RedimStatementTests
 		else
 		{
 			redimResult.Declarations[0].Subscripts.Should().NotBeNull();
-			redimResult.Declarations[0].Subscripts!.Subscripts.Should().HaveCount(lowerBounds.Length);
+			redimResult.Declarations[0].Subscripts.Should().HaveCount(lowerBounds.Length);
 
 			for (int i = 0; i < lowerBounds.Length; i++)
 			{
-				var subscript = redimResult.Declarations[0].Subscripts!.Subscripts[i];
+				var subscript = redimResult.Declarations[0].Subscripts![i];
 
 				if (subscript == null)
 					subscript.Should().NotBeNull();
@@ -108,11 +108,11 @@ public class RedimStatementTests
 			if (upperBounds2.Length > 0)
 			{
 				redimResult.Declarations[1].Subscripts.Should().NotBeNull();
-				redimResult.Declarations[1].Subscripts!.Subscripts.Should().HaveCount(upperBounds2.Length);
+				redimResult.Declarations[1].Subscripts.Should().HaveCount(upperBounds2.Length);
 
 				for (int i = 0; i < upperBounds2.Length; i++)
 				{
-					var subscript = redimResult.Declarations[1].Subscripts!.Subscripts[i];
+					var subscript = redimResult.Declarations[1].Subscripts![i];
 
 					if (subscript == null)
 						subscript.Should().NotBeNull();

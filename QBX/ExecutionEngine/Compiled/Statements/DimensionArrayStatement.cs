@@ -15,7 +15,7 @@ public class DimensionArrayStatement(CodeModel.Statements.DimStatement? source) 
 	{
 		var subscripts = Subscripts.Evaluate(context, stackFrame);
 
-		foreach (var subscript in subscripts.Subscripts)
+		foreach (var subscript in subscripts)
 			if (subscript.UpperBound < subscript.LowerBound)
 				throw RuntimeException.SubscriptOutOfRange(Source);
 

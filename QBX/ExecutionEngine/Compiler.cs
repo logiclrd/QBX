@@ -466,7 +466,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 				translatedSubscripts = new ArraySubscripts();
 
-				foreach (var subscript in typeElementStatement.Subscripts.Subscripts)
+				foreach (var subscript in typeElementStatement.Subscripts)
 				{
 					var translatedSubscript = new ArraySubscript();
 
@@ -487,7 +487,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 						translatedSubscript.UpperBound = NumberConverter.ToInteger(translatedBound2.EvaluateConstant());
 					}
 
-					translatedSubscripts.Subscripts.Add(translatedSubscript);
+					translatedSubscripts.Add(translatedSubscript);
 				}
 			}
 
@@ -1056,7 +1056,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 						variableIndex = mapper.ResolveArray(
 							declaration.Name,
 							variableTypes[i],
-							numberOfDimensions: declaration.Subscripts.Subscripts.Count,
+							declaration.NumberOfDimensions,
 							out bool createdImplicitly,
 							declaration.NameToken);
 
@@ -1395,10 +1395,10 @@ public class Compiler(IdentifierRepository identifierRepository)
 						bool isNewArrayVariable = true;
 
 						if (dimStatement.AlwaysDeclareArrays)
-							variableIndex = mapper.DeclareArray(declaration.Name, dataType, declaration.Subscripts.Subscripts.Count, declaration.NameToken);
+							variableIndex = mapper.DeclareArray(declaration.Name, dataType, declaration.NumberOfDimensions, declaration.NameToken);
 						else
 						{
-							variableIndex = mapper.ResolveArray(declaration.Name, dataType, declaration.Subscripts.Subscripts.Count, out isNewArrayVariable, declaration.NameToken);
+							variableIndex = mapper.ResolveArray(declaration.Name, dataType, declaration.NumberOfDimensions, out isNewArrayVariable, declaration.NameToken);
 
 							if (routine.IsStaticArray(variableIndex))
 								throw CompilerException.ArrayAlreadyDimensioned(declaration.NameToken);
@@ -1426,7 +1426,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 							bool constantBounds = true;
 
-							foreach (var subscript in declaration.Subscripts.Subscripts)
+							foreach (var subscript in declaration.Subscripts)
 							{
 								var bound1 = TranslateExpression(subscript.Bound1, container, mapper, compilation, module, routine);
 								var bound2 = TranslateExpression(subscript.Bound2, container, mapper, compilation, module, routine);

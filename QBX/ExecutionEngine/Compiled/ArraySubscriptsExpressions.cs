@@ -1,7 +1,7 @@
-﻿using QBX.ExecutionEngine.Compiled.Expressions;
-using QBX.ExecutionEngine.Execution;
-using System;
+﻿using System;
 using System.Collections.Generic;
+
+using QBX.ExecutionEngine.Execution;
 
 namespace QBX.ExecutionEngine.Compiled;
 
@@ -14,7 +14,7 @@ public class ArraySubscriptsExpressions
 		var subscripts = new ArraySubscripts();
 
 		foreach (var subscriptExpressions in Subscripts)
-			subscripts.Subscripts.Add(subscriptExpressions.Evaluate(context, stackFrame));
+			subscripts.Add(subscriptExpressions.Evaluate(context, stackFrame));
 
 		return subscripts;
 	}

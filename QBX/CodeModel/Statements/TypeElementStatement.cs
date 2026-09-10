@@ -25,7 +25,7 @@ public class TypeElementStatement : Statement
 
 		if (Subscripts != null)
 		{
-			if (Subscripts.Subscripts.Count == 0)
+			if (Subscripts.Count == 0)
 				throw new Exception("Internal error: TypeElementStatement with an empty (non-null) Subscripts collection");
 
 			Subscripts.Render(writer);
