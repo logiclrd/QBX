@@ -222,8 +222,14 @@ public class Mapper
 		if (_moduleMapper == null)
 			throw new InvalidOperationException("Cannot call LinkGlobalVariable on the Module Mapper");
 
+		// If a SUB or FUNCTION declares a parameter with the same name as a SHARED variable/array,
+		// then it occludes the link to the global scope.
+
 		foreach (var name in _moduleMapper._globalVariableNames)
 		{
+			if (_variableIndexByName.ContainsKey(name))
+				continue;
+
 			int moduleIndex = _moduleMapper.ResolveVariable(name);
 
 			var variableType = _moduleMapper.GetVariableType(moduleIndex);
@@ -237,6 +243,9 @@ public class Mapper
 
 		foreach (var name in _moduleMapper._globalArrayNames)
 		{
+			if (_arrayIndexByName.ContainsKey(name))
+				continue;
+
 			int moduleIndex = _moduleMapper.ResolveArray(name, arrayType: null, implicitlyCreated: out _);
 
 			var arrayType = _moduleMapper.GetVariableType(moduleIndex);
