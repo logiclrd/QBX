@@ -1068,10 +1068,15 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 					if (commonStatement.Shared)
 					{
+						Identifier name = declaration.Name;
+
+						if (!variableTypes[i].IsUserType)
+							name = mapper.QualifyIdentifier(name);
+
 						if (variableTypes[i].IsArray)
-							mapper.MakeGlobalArray(declaration.Name, variableTypes[i]);
+							mapper.MakeGlobalArray(name, variableTypes[i]);
 						else
-							mapper.MakeGlobalVariable(declaration.Name);
+							mapper.MakeGlobalVariable(name);
 					}
 				}
 
@@ -1376,7 +1381,12 @@ public class Compiler(IdentifierRepository identifierRepository)
 						variableIndex = mapper.DeclareVariable(declaration.Name, dataType);
 
 						if (dimStatement.Shared)
-							mapper.MakeGlobalVariable(declaration.Name);
+						{
+							if (dataType.IsUserType)
+								mapper.MakeGlobalVariable(declaration.Name);
+							else
+								mapper.MakeGlobalVariable(mapper.QualifyIdentifier(declaration.Name));
+						}
 					}
 					else
 					{
@@ -1395,7 +1405,12 @@ public class Compiler(IdentifierRepository identifierRepository)
 						}
 
 						if (dimStatement.Shared)
-							mapper.MakeGlobalArray(declaration.Name, dataType);
+						{
+							if (dataType.IsUserType)
+								mapper.MakeGlobalArray(declaration.Name, dataType);
+							else
+								mapper.MakeGlobalArray(mapper.QualifyIdentifier(declaration.Name), dataType);
+						}
 
 						if (declaration.Subscripts != null)
 						{
