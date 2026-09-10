@@ -182,4 +182,6 @@ public class CompilerException : Exception
 		=> new CompilerException(context, "Parameter type mismatch", "-182");
 	public static CompilerException StatementsAndLabelsIllegalBetweenSelectCaseAndCase(CodeModel.Statements.Statement? statement)
 		=> new CompilerException(statement, "Statements/labels illegal between SELECT CASE and CASE", "-186");
+	public static CompilerException WrongNumberOfDimensions(Token? context)
+		=> new CompilerException(context, "Wrong number of dimensions", "-190");
 }

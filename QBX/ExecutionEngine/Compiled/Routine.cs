@@ -224,7 +224,7 @@ public class Routine : Sequence
 				if (param.IsArray == false)
 					ParameterVariableIndices[i] = mapper.DeclareVariable(name, paramType);
 				else
-					ParameterVariableIndices[i] = mapper.DeclareArray(name, paramType);
+					ParameterVariableIndices[i] = mapper.DeclareArray(name, paramType, numberOfDimensions: -1);
 
 				if (paramType.IsUserType)
 					mapper.AddDisallowedSlug(name.Value);

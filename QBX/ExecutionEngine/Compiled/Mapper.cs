@@ -154,6 +154,7 @@ public class Mapper
 		public DataType Type = DataType.Integer;
 
 		public bool IsStaticArray = false;
+		public int NumberOfArrayDimensions = -1;
 
 		public int LinkedToModuleVariableIndex = -1;
 
@@ -246,11 +247,11 @@ public class Mapper
 			if (_arrayIndexByName.ContainsKey(name))
 				continue;
 
-			int moduleIndex = _moduleMapper.ResolveArray(name, arrayType: null, implicitlyCreated: out _);
+			int moduleIndex = _moduleMapper.ResolveArray(name, arrayType: null, numberOfDimensions: -1, implicitlyCreated: out _);
 
 			var arrayType = _moduleMapper.GetVariableType(moduleIndex);
 
-			int localIndex = DeclareArray(name, arrayType);
+			int localIndex = DeclareArray(name, arrayType, numberOfDimensions: -1);
 
 			var info = _variables[localIndex];
 
@@ -860,7 +861,7 @@ public class Mapper
 		_predeclaredArrayIndices.Add(nameIndex);
 	}
 
-	public int DeclareArray(string name, DataType dataType, Token? token = null)
+	public int DeclareArray(string name, DataType dataType, int numberOfDimensions, Token? token = null)
 	{
 		if (_isFrozen)
 			throw new Exception("The Mapper is frozen");
@@ -881,6 +882,7 @@ public class Mapper
 		var info = new VariableInfo(qualifiedName, token, index);
 
 		info.Type = dataType;
+		info.NumberOfArrayDimensions = numberOfDimensions;
 
 		_variables.Add(info);
 
@@ -892,14 +894,24 @@ public class Mapper
 		return index;
 	}
 
-	public int ResolveArray(string name, DataType? arrayType = null, Token? nameToken = null)
-		=> ResolveArray(name, arrayType, createImplicitly: false, out _, nameToken);
+	public int ResolveArray(string name, DataType? arrayType = null, int numberOfDimensions = -1, Token? nameToken = null)
+		=> ResolveArray(name, arrayType, numberOfDimensions, createImplicitly: false, out _, nameToken);
 
-	public int ResolveArray(string name, DataType? arrayType, out bool implicitlyCreated, Token? nameToken = null)
-		=> ResolveArray(name, arrayType, createImplicitly: true, out implicitlyCreated, nameToken);
+	public int ResolveArray(string name, DataType? arrayType, int numberOfDimensions, out bool implicitlyCreated, Token? nameToken = null)
+		=> ResolveArray(name, arrayType, numberOfDimensions, createImplicitly: true, out implicitlyCreated, nameToken);
 
-	int ResolveArray(string name, DataType? arrayType, bool createImplicitly, out bool implicitlyCreated, Token? nameToken = null)
+	int ResolveArray(string name, DataType? arrayType, int numberOfDimensions, bool createImplicitly, out bool implicitlyCreated, Token? nameToken = null)
 	{
+		void MatchUpNumberOfDimensions(int index)
+		{
+			var variable = _variables[index];
+
+			if (variable.NumberOfArrayDimensions < 0)
+				variable.NumberOfArrayDimensions = numberOfDimensions;
+			else if ((numberOfDimensions > 0) && (numberOfDimensions != variable.NumberOfArrayDimensions))
+				throw CompilerException.WrongNumberOfDimensions(nameToken);
+		}
+
 		implicitlyCreated = false;
 
 		int index;
@@ -908,6 +920,8 @@ public class Mapper
 		// if its type is a UDT.
 		if (_arrayIndexByName.TryGetValue(name, out index))
 		{
+			MatchUpNumberOfDimensions(index);
+
 			_predeclaredArrayIndices.Remove(index);
 			return index;
 		}
@@ -920,6 +934,8 @@ public class Mapper
 
 		if (_arrayIndexByName.TryGetValue(qualifiedName, out index))
 		{
+			MatchUpNumberOfDimensions(index);
+
 			_predeclaredArrayIndices.Remove(index);
 			return index;
 		}
@@ -930,6 +946,9 @@ public class Mapper
 		if (!createImplicitly)
 			return -1;
 
+		if (numberOfDimensions != 1)
+			throw new Exception("Internal error: Implicit array creation with more than 1 dimension");
+
 		implicitlyCreated = true;
 
 		if (arrayType == null)
@@ -939,7 +958,7 @@ public class Mapper
 			arrayType = elementType.MakeArrayType();
 		}
 
-		return DeclareArray(qualifiedName, arrayType, nameToken);
+		return DeclareArray(qualifiedName, arrayType, numberOfDimensions, nameToken);
 	}
 
 	public bool IsDeclaredVariableOrArray(Identifier identifier)

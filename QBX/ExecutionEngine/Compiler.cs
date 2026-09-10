@@ -360,7 +360,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 						}
 						else
 						{
-							moduleMapper.DeclareArray(hiddenVariableName, variableType, variable.NameToken);
+							moduleMapper.DeclareArray(hiddenVariableName, variableType, numberOfDimensions: -1, variable.NameToken);
 							mapper.LinkModuleArray(variable.Name, hiddenVariableName, variableType);
 						}
 					}
@@ -1056,6 +1056,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 						variableIndex = mapper.ResolveArray(
 							declaration.Name,
 							variableTypes[i],
+							numberOfDimensions: declaration.Subscripts.Subscripts.Count,
 							out bool createdImplicitly,
 							declaration.NameToken);
 
@@ -1384,10 +1385,10 @@ public class Compiler(IdentifierRepository identifierRepository)
 						bool isNewArrayVariable = true;
 
 						if (dimStatement.AlwaysDeclareArrays)
-							variableIndex = mapper.DeclareArray(declaration.Name, dataType, declaration.NameToken);
+							variableIndex = mapper.DeclareArray(declaration.Name, dataType, declaration.Subscripts.Subscripts.Count, declaration.NameToken);
 						else
 						{
-							variableIndex = mapper.ResolveArray(declaration.Name, dataType, out isNewArrayVariable, declaration.NameToken);
+							variableIndex = mapper.ResolveArray(declaration.Name, dataType, declaration.Subscripts.Subscripts.Count, out isNewArrayVariable, declaration.NameToken);
 
 							if (routine.IsStaticArray(variableIndex))
 								throw CompilerException.ArrayAlreadyDimensioned(declaration.NameToken);
@@ -2581,7 +2582,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 						// PALETTE USING arrayName%
 						var translated = new PaletteUsingArrayStatement(paletteStatement);
 
-						translated.ArrayVariableIndex = mapper.ResolveArray(identifierExpression.Identifier.ToString(), arrayType: null, out _);
+						translated.ArrayVariableIndex = mapper.ResolveArray(identifierExpression.Identifier.ToString(), arrayType: null, numberOfDimensions: -1, out _);
 
 						translatedPaletteUsingStatement = translated;
 					}
@@ -3267,7 +3268,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 						variableType = variableType.MakeArrayType();
 
-						mapper.DeclareArray(declaration.Name, variableType, declaration.NameToken);
+						mapper.DeclareArray(declaration.Name, variableType, numberOfDimensions: -1, declaration.NameToken);
 
 						var rootVariableName = declaration.Name;
 
@@ -3276,7 +3277,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 							var hiddenVariableName = Identifier.Standalone(
 								"<" + element.Name + ">" + declaration.Name);
 
-							rootMapper.DeclareArray(hiddenVariableName, variableType, declaration.NameToken);
+							rootMapper.DeclareArray(hiddenVariableName, variableType, numberOfDimensions: -1, declaration.NameToken);
 
 							rootVariableName = hiddenVariableName;
 						}
@@ -3597,7 +3598,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 				{
 					if (parseIdentifiersAsArrays)
 					{
-						int variableIndex = mapper.ResolveArray(identifier.Identifier, arrayType: null, out _);
+						int variableIndex = mapper.ResolveArray(identifier.Identifier, arrayType: null, numberOfDimensions: -1, out _);
 						var variableType = mapper.GetVariableType(variableIndex);
 
 						if (variableIndex < 0)
@@ -3870,7 +3871,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 				}
 				else
 				{
-					var variableIndex = mapper.ResolveArray(identifier, arrayType: null, out bool implicitlyCreated);
+					var variableIndex = mapper.ResolveArray(identifier, arrayType: null, callOrIndexExpression.Arguments.Count, out bool implicitlyCreated, identifierToken);
 
 					if (variableIndex < 0)
 					{
