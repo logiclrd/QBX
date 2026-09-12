@@ -400,6 +400,12 @@ public partial class Program
 
 			UnpauseExecution(
 				action: () => _executionContext.Controls.ContinueExecution());
+
+			// Still running? Do a pretend epilogue. :-)
+			if ((_executionContext != null)
+			 && !_executionContext.ExecutionState.IsTerminated
+			 && _executionContext.ExecutionState.CollectDirectSequenceCompletedFlag())
+				PauseOnOutput();
 		}
 
 		return true;
@@ -566,6 +572,24 @@ public partial class Program
 
 		SaveOutput();
 
+		PauseOnOutput();
+
+		DisassociateWatches();
+
+		_savedLastScreenMode = _executionContext.RuntimeState.LastScreenMode;
+		_executionContext = null;
+	}
+
+	void PauseOnOutput()
+	{
+		if (_executionContext == null)
+			return; // ??
+
+		RestoreOutput();
+
+		var outputLibrary = _executionContext.VisualLibrary;
+
+		outputLibrary.SetActivePage(Machine.VideoFirmware.VisiblePageNumber);
 		outputLibrary.MoveCursor(0, outputLibrary.CharacterHeight - 1);
 		outputLibrary.UpdateCharacterLineWindow(outputLibrary.CharacterHeight - 1, outputLibrary.CharacterHeight - 1);
 		outputLibrary.ClearCharacterLineWindow();
@@ -573,11 +597,6 @@ public partial class Program
 
 		WaitForKey();
 
-		DisassociateWatches();
-
 		SetIDEVideoMode();
-
-		_savedLastScreenMode = _executionContext.RuntimeState.LastScreenMode;
-		_executionContext = null;
 	}
 }
