@@ -7,6 +7,8 @@
 - `REM` statements are now permitted inside `TYPE` blocks.
 - `TYPE` fields named `as` no longer delete any indentation.
 - The previous fix for selection being extended when entering break mode inadvertently broke all selection. This has been corrected.
+- The visual library state is now correctly restored when executing statements in direct mode.
+- Typing over a block selection in the editor is now correctly handled (whether the selection was made upward or downward).
 
 ## 1.24.0 - 2026-09-12
 
