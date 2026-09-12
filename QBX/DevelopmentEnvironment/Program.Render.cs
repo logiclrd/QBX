@@ -700,9 +700,6 @@ public partial class Program
 				startX = _errorToken.Column;
 				startY = _errorToken.Line;
 
-				if (compilationElement != null)
-					startY -= compilationElement.FirstLineIndex;
-
 				endX = startX + _errorToken.Length;
 				endY = startY;
 			}
