@@ -1,5 +1,15 @@
 # QBX Releases
 
+## 1.24.3 - 2026-09-12
+
+### Fixed
+
+- Code run from the immediate window now runs without involving the current loaded modules if none of the statements / expressions interact with execution state or require labels.
+- When code run from the immediate window _does_ involve the current loaded modules, any deferred parsing is resolved before attempting to compile.
+- If the containing module, `SUB` or `FUNCTION` providing context for immediate mode execution has a return value, that is now accounted for and variable mappings with the immediate mode code line up.
+- If, in the course of processing a keystroke in the text editor, the focused viewport changes (e.g. to highlight a compile error after pressing Return in the Immediate viewport), the remainder of the key processing is now still done on the original viewport instead of switching over to the new viewport halfway through.
+- A previous changed fixed typing over a block selection but broke typing over an inline single-line selection. Both cases are now handled.
+
 ## 1.24.2 - 2026-09-12
 
 ### Fixed
