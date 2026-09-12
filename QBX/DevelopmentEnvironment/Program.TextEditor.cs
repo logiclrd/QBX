@@ -439,7 +439,13 @@ public partial class Program
 					if (FocusedViewport.SelectionManager.HasSelection)
 					{
 						FocusedViewport.SelectionManager.Delete();
+
 						newCursorX = FocusedViewport.CursorX;
+						newCursorY = FocusedViewport.CursorY;
+
+						FocusedViewport.CancelEdit();
+
+						ResetCurrentLine();
 					}
 
 					inputText ??= input.TextCharacter.ToString();
