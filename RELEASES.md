@@ -1,5 +1,28 @@
 # QBX Releases
 
+## 1.24.0 - 2026-09-12
+
+### Added
+
+- `RUN` statement (including `RUN linenumber`).
+- `GOTO`, `GOSUB`, `RETURN` and `RESUME` (with or without labels) can now be used in direct mode.
+- Output is displayed with the standard "Press any key to continue" method after the completion of a line executed in direct mode.
+
+### Fixed
+
+- `ERR` can now be assigned to.
+- Trying to assign to R-values now consistently generates the correct error.
+- It is now possible to use language keywords as field names in `TYPE`s.
+- Leading zeroes are now trimmed from line numbers, as long as their numeric value is less than 65530.
+- Errors that occur in the immediate viewport now result in the IDE switching to the immediate viewport.
+- The `P` command in `PLAY` strings now calculates the note length correctly. (It was based on incorrect documentation that can be found in the official QuickBASIC help files.)
+- `SUB` and `FUNCTION` parameters can now occlude variables and arrays that are `SHARED` from the main module.
+- The number of dimensions an array has is now a single, fixed value enforced within each code element. Referring to an array multiple times with different dimensionalities generates the appropriate error.
+- Variables and arrays linked via `COMMON` and `DIM SHARED` now properly preserve the type they have in the context where they were defined, instead of incorrectly linking to a different variable because the target for the link has a different defined type for the identifier.
+- Error token highlighting inside `SUB`s and `FUNCTION`s no longer incorrectly treats token line numbers as relative to the file.
+- Having Shift pressed when a program starts (e.g. Shift-F5) no longer results in an immediate block selection if the program execution breaks.
+- When pressing F8 to step over a `STOP` statement, other `STOP` statements that occur in nested statements are no longer ignored.
+
 ## 1.23.2 - 2026-09-03
 
 ### Fixed
