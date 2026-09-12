@@ -481,6 +481,12 @@ public class BasicParser(IdentifierRepository identifierRepository)
 			tokens = tokens.Slice(1);
 		}
 
+		if ((tokens.Count > 0) && !string.IsNullOrEmpty(tokens[0].PrecedingWhitespace))
+		{
+			indentation += tokens[0].PrecedingWhitespace;
+			tokens[0].PrecedingWhitespace = "";
+		}
+
 		try
 		{
 			var statement = ParseStatement(tokens, consumeTokensToEndOfLine, isNested, ignoreErrors);
@@ -539,6 +545,10 @@ public class BasicParser(IdentifierRepository identifierRepository)
 			if (tokenHandler.NextToken.IsKeyword())
 			{
 				// Type elements are allowed to be named after keywords.
+				// (QuickBASIC quirk: except for END.)
+				//
+				// Technically also except for DATA and REM. These are already handled elsewhere.
+
 				var nameToken = tokenHandler.NextToken.AsIdentifier();
 
 				typeElement.Name = identifierRepository.UpdateCanonicalIdentifier(nameToken.Value);

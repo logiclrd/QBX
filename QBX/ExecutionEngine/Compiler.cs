@@ -184,6 +184,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 							break;
 
 						case CodeModel.Statements.EmptyStatement:
+						case CodeModel.Statements.CommentStatement:
 							// Nothing burgers are okay. :-)
 							break;
 
@@ -3229,7 +3230,8 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 				while (iterator.Advance())
 				{
-					if ((statement is CodeModel.Statements.EmptyStatement))
+					if ((statement is CodeModel.Statements.EmptyStatement)
+					 || (statement is CodeModel.Statements.CommentStatement))
 						continue;
 					if (statement is CodeModel.Statements.EndTypeStatement)
 						break;
