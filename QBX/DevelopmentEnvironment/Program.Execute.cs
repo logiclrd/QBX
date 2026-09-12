@@ -110,7 +110,6 @@ public partial class Program
 		_compilation = new Compilation();
 
 		chainExecution = false;
-		startingLineNumber = null;
 
 		if (_executionContext != null)
 		{
