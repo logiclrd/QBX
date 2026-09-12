@@ -1,5 +1,13 @@
 # QBX Releases
 
+## 1.24.1 - 2026-09-12
+
+### Fixed
+
+- `REM` statements are now permitted inside `TYPE` blocks.
+- `TYPE` fields named `as` no longer delete any indentation.
+- The previous fix for selection being extended when entering break mode inadvertently broke all selection. This has been corrected.
+
 ## 1.24.0 - 2026-09-12
 
 ### Added
