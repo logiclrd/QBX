@@ -13,6 +13,8 @@ public abstract class Executable
 
 	public int LineNumberForErrorReporting;
 
+	public virtual bool CanExecuteDirectWithoutEmbedding => false;
+
 	public Executable(CodeModel.Statements.Statement? source)
 	{
 		Source = source?.TrueSource ?? source;

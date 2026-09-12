@@ -6,6 +6,8 @@ namespace QBX.ExecutionEngine.Compiled.Functions;
 
 public class TimerFunction : Function
 {
+	public override bool CanEvaluateDirectWithoutEmbedding => true;
+
 	public override DataType Type => DataType.Single;
 
 	protected override int MinArgumentCount => 0;

@@ -9,6 +9,8 @@ public abstract class TrimFunction : Function
 {
 	public Evaluable? StringExpression;
 
+	public override bool CanEvaluateDirectWithoutEmbedding => StringExpression?.CanEvaluateDirectWithoutEmbedding ?? true;
+
 	protected override int MinArgumentCount => 1;
 	protected override int MaxArgumentCount => 1;
 

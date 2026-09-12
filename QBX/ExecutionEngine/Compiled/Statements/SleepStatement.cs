@@ -8,6 +8,8 @@ public class SleepStatement(CodeModel.Statements.SleepStatement source) : Execut
 {
 	public Evaluable? SecondsExpression;
 
+	public override bool CanExecuteDirectWithoutEmbedding => SecondsExpression?.CanEvaluateDirectWithoutEmbedding ?? true;
+
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		int seconds = 0;

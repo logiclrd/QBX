@@ -4,6 +4,8 @@ namespace QBX.ExecutionEngine.Compiled.Statements;
 
 public class StopStatement(CodeModel.Statements.StopStatement source) : Executable(source)
 {
+	public override bool CanExecuteDirectWithoutEmbedding => true;
+
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		// "In the QBX environment, STOP always returns an error level of 0 even

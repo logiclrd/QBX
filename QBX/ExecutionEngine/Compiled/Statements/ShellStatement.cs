@@ -18,6 +18,8 @@ public partial class ShellStatement(CodeModel.Statements.ShellStatement source) 
 {
 	public Evaluable? CommandStringExpression;
 
+	public override bool CanExecuteDirectWithoutEmbedding => CommandStringExpression?.CanEvaluateDirectWithoutEmbedding ?? true;
+
 	public static void BuildShellExecuteCommand(string commandString, out string shell, out string[] arguments)
 	{
 		string shellEnvironmentVariable;

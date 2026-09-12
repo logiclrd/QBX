@@ -11,6 +11,8 @@ public class KillStatement(CodeModel.Statements.KillStatement source) : Executab
 {
 	public Evaluable? FilePatternExpression;
 
+	public override bool CanExecuteDirectWithoutEmbedding => FilePatternExpression?.CanEvaluateDirectWithoutEmbedding ?? true;
+
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (FilePatternExpression == null)

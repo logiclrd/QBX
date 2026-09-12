@@ -18,6 +18,14 @@ public class SetGraphicsViewportStatement(CodeModel.Statements.GraphicsViewportS
 	public Evaluable? FillColourExpression;
 	public Evaluable? BorderColourExpression;
 
+	public override bool CanExecuteDirectWithoutEmbedding =>
+		(X1Expression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(Y1Expression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(X2Expression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(Y2Expression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(FillColourExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(BorderColourExpression?.CanEvaluateDirectWithoutEmbedding ?? true);
+
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (context.VisualLibrary is not GraphicsLibrary visual)

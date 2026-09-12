@@ -10,6 +10,10 @@ public class StringFunction : Function
 	public Evaluable? LengthExpression;
 	public Evaluable? FillExpression;
 
+	public override bool CanEvaluateDirectWithoutEmbedding =>
+		(LengthExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(FillExpression?.CanEvaluateDirectWithoutEmbedding ?? true);
+
 	protected override int MinArgumentCount => 2;
 	protected override int MaxArgumentCount => 2;
 

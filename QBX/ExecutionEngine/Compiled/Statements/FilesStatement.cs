@@ -14,6 +14,8 @@ public partial class FilesStatement(CodeModel.Statements.FilesStatement source) 
 {
 	public Evaluable? PatternExpression;
 
+	public override bool CanExecuteDirectWithoutEmbedding => PatternExpression?.CanEvaluateDirectWithoutEmbedding ?? true;
+
 	static DOSFileInfo s_fileInfo = new DOSFileInfo();
 
 	static int s_fileInfoBufferAddress;

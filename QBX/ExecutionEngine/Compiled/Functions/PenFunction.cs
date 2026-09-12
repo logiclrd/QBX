@@ -9,6 +9,8 @@ public class PenFunction : Function
 {
 	public Evaluable? FunctionExpression;
 
+	public override bool CanEvaluateDirectWithoutEmbedding => FunctionExpression?.CanEvaluateDirectWithoutEmbedding ?? true;
+
 	protected override void SetArgument(int index, Evaluable value)
 	{
 		FunctionExpression = value;

@@ -11,6 +11,13 @@ public class LocateStatement(CodeModel.Statements.LocateStatement source) : Exec
 	public Evaluable? CursorStartExpression;
 	public Evaluable? CursorEndExpression;
 
+	public override bool CanExecuteDirectWithoutEmbedding =>
+		(RowExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(ColumnExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(CursorVisibilityExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(CursorStartExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(CursorEndExpression?.CanEvaluateDirectWithoutEmbedding ?? true);
+
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if ((RowExpression != null) || (ColumnExpression != null))

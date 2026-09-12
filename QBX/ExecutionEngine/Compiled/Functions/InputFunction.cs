@@ -16,6 +16,8 @@ public abstract class InputFunction : ConstructibleFunction
 
 	public Evaluable? NumBytesExpression => _numBytesExpression;
 
+	public override bool CanEvaluateDirectWithoutEmbedding => _numBytesExpression?.CanEvaluateDirectWithoutEmbedding ?? true;
+
 	protected InputFunction(Evaluable? numBytesExpression)
 	{
 		_numBytesExpression = numBytesExpression;

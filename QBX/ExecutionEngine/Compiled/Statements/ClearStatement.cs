@@ -8,6 +8,11 @@ public class ClearStatement(CodeModel.Statements.ClearStatement source) : Execut
 	public Evaluable? MaximumMemoryAddressExpression;
 	public Evaluable? StackSpaceExpression;
 
+	public override bool CanExecuteDirectWithoutEmbedding =>
+		(StringSpaceExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(MaximumMemoryAddressExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(StackSpaceExpression?.CanEvaluateDirectWithoutEmbedding ?? true);
+
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		// CLEAR [, , stack&]

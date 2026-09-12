@@ -8,6 +8,8 @@ public class RandomizeStatement(CodeModel.Statements.RandomizeStatement source) 
 {
 	public Evaluable? ArgumentExpression;
 
+	public override bool CanExecuteDirectWithoutEmbedding => ArgumentExpression?.CanEvaluateDirectWithoutEmbedding ?? true;
+
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		object seedValue;

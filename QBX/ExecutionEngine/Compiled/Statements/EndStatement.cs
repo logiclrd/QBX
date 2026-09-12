@@ -8,6 +8,8 @@ public class EndStatement(CodeModel.Statements.EndStatement source) : Executable
 
 	public bool ExitAutoRunToSystem;
 
+	public override bool CanExecuteDirectWithoutEmbedding => ExitCodeExpression?.CanEvaluateDirectWithoutEmbedding ?? true;
+
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		int exitCode = ExitCodeExpression?.EvaluateAndCoerceToInt(context, stackFrame) ?? 0;

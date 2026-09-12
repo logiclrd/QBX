@@ -16,6 +16,11 @@ public class InStrFunction : Function
 	protected override int MinArgumentCount => 2;
 	protected override int MaxArgumentCount => 3;
 
+	public override bool CanEvaluateDirectWithoutEmbedding =>
+		(StartExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(StringExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(SearchForExpression?.CanEvaluateDirectWithoutEmbedding ?? true);
+
 	public override void SetArguments(IEnumerable<Evaluable> arguments)
 	{
 		var argList = arguments.ToList();

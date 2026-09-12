@@ -54,6 +54,8 @@ public class Sequence
 		}
 	}
 
+	public virtual bool CanExecuteDirectWithoutEmbedding => AllStatements.All(statement => statement.CanExecuteDirectWithoutEmbedding);
+
 	public Executable this[int index] => _statements[index];
 	public int Count => _statements.Count;
 

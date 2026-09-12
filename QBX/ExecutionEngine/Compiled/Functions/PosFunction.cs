@@ -9,6 +9,8 @@ public class PosFunction : Function
 {
 	public Evaluable? DummyExpression;
 
+	public override bool CanEvaluateDirectWithoutEmbedding => DummyExpression?.CanEvaluateDirectWithoutEmbedding ?? true;
+
 	protected override void SetArgument(int index, Evaluable value)
 	{
 		DummyExpression = value;

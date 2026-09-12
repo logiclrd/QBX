@@ -7,6 +7,8 @@ namespace QBX.ExecutionEngine.Compiled.Statements;
 
 public abstract class CaseExpression
 {
+	public abstract bool CanEvaluateDirectWithoutEmbedding { get; }
+
 	public static CaseExpression Construct(Evaluable expression, Evaluable? rangeEndExpression, RelationalOperator relationToExpression)
 	{
 		if (rangeEndExpression is null)
@@ -47,6 +49,8 @@ public abstract class RelativeCaseExpression(Evaluable expression, RelationalOpe
 {
 	public Evaluable Expression => expression;
 	public RelationalOperator RelationToExpression => relationToExpression;
+
+	public override bool CanEvaluateDirectWithoutEmbedding => Expression.CanEvaluateDirectWithoutEmbedding;
 }
 
 public abstract class IntegerRelativeCaseExpression(Evaluable expression, RelationalOperator relationToExpression) : RelativeCaseExpression(expression, relationToExpression)
@@ -649,6 +653,10 @@ public abstract class RangeCaseExpression(Evaluable rangeStartExpression, Evalua
 
 	public Evaluable RangeStartExpression => rangeStartExpression;
 	public Evaluable RangeEndExpression => rangeEndExpression;
+
+	public override bool CanEvaluateDirectWithoutEmbedding =>
+		rangeStartExpression.CanEvaluateDirectWithoutEmbedding &&
+		rangeEndExpression.CanEvaluateDirectWithoutEmbedding;
 }
 
 public class IntegerRangeCaseExpression(Evaluable rangeStartExpression, Evaluable rangeEndExpression) : RangeCaseExpression(rangeStartExpression, rangeEndExpression)

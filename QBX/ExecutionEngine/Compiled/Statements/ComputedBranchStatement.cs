@@ -10,6 +10,8 @@ public abstract class ComputedBranchStatement(CodeModel.Statements.ComputedBranc
 	public Evaluable? Expression;
 	public List<ComputedBranchTarget> Targets = new List<ComputedBranchTarget>();
 
+	public override bool CanExecuteDirectWithoutEmbedding => Expression?.CanEvaluateDirectWithoutEmbedding ?? true;
+
 	protected abstract void ExecuteBranch(ComputedBranchTarget target, StackFrame stackFrame);
 
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)

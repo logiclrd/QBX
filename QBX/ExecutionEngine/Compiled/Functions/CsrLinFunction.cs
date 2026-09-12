@@ -5,6 +5,8 @@ namespace QBX.ExecutionEngine.Compiled.Functions;
 
 public class CsrLinFunction : Function
 {
+	public override bool CanEvaluateDirectWithoutEmbedding => true;
+
 	public override DataType Type => DataType.Integer;
 
 	protected override int MinArgumentCount => 0;

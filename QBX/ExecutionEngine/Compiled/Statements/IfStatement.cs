@@ -10,6 +10,11 @@ public class IfStatement(CodeModel.Statements.IfStatement source) : Executable(s
 	public Sequence? ThenBody;
 	public Sequence? ElseBody;
 
+	public override bool CanExecuteDirectWithoutEmbedding =>
+		(Condition?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(ThenBody?.CanExecuteDirectWithoutEmbedding ?? true) &&
+		(ElseBody?.CanExecuteDirectWithoutEmbedding ?? true);
+
 	public override int IndexOfSequence(Sequence sequence)
 	{
 		if (sequence == ThenBody)

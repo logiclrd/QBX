@@ -10,6 +10,8 @@ public class CoordinatePointFunction : Function
 {
 	public Evaluable? WhichCoordinateExpression;
 
+	public override bool CanEvaluateDirectWithoutEmbedding => WhichCoordinateExpression?.CanEvaluateDirectWithoutEmbedding ?? true;
+
 	protected override int MinArgumentCount => 1;
 	protected override int MaxArgumentCount => 1;
 

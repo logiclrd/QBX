@@ -98,18 +98,26 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 				if (moduleMapper == null)
 				{
-					if (routine.Name != Routine.MainRoutineName)
+					if ((element.Type == CodeModel.CompilationElementType.Main)
+					 && (routine.Name != Routine.MainRoutineName))
 						throw new Exception("First routine is not the main routine");
 
 					moduleMapper = routine.Mapper;
 				}
 
-				if (embedIn == null)
+				if (embedIn != null)
 				{
-					if (routine.Name == Routine.MainRoutineName)
-						module.MainRoutine = routine;
-					else
+					moduleMapper.Unfreeze();
+
+					// Ensure stack frame compatibility
+					routine.Mapper = moduleMapper;
+				}
+				else
+				{
+					if (routine.IsCallable)
 						routine.Register(compilation);
+					else
+						module.MainRoutine = routine;
 				}
 
 				if (routine.OpeningStatement is not null)
@@ -208,7 +216,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 					if (routine.ReturnType != null)
 						routine.ReturnValueVariableIndex = routine.Mapper.DeclareVariable(routine.Name, routine.ReturnType);
 
-					if (routine.Source.Type != CodeModel.CompilationElementType.Main)
+					if (routine.IsCallable)
 						routine.TranslateParameters(routine.Mapper, compilation);
 
 					var unqualifiedName = Mapper.UnqualifyIdentifier(routine.Name);
@@ -250,7 +258,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 			foreach (var routine in routines)
 			{
-				if (routine.Source.Type != CodeModel.CompilationElementType.Main)
+				if (routine.IsCallable)
 					routine.Mapper.LinkGlobalVariablesAndArrays();
 
 				var element = routine.Source;
@@ -316,8 +324,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 				int lineIndex = 0;
 				int statementIndex = 0;
 
-				if ((routine.Source.Type != CodeModel.CompilationElementType.Main)
-				 && (embedIn == null))
+				if (routine.IsCallable && (embedIn == null))
 				{
 					// Skip to the body of function.
 					while (lineIndex < element.Lines.Count)
@@ -343,6 +350,8 @@ public class Compiler(IdentifierRepository identifierRepository)
 						CodeModel.CompilationElementType.Main => ScopeState.BeginMainModule(),
 						CodeModel.CompilationElementType.Sub => ScopeState.BeginSub(),
 						CodeModel.CompilationElementType.Function => ScopeState.BeginFunction(),
+
+						CodeModel.CompilationElementType.Direct => ScopeState.BeginMainModule(),
 
 						_ => throw new Exception("Internal error")
 					};

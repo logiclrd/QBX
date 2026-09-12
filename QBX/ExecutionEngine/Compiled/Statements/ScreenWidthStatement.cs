@@ -11,6 +11,10 @@ public class ScreenWidthStatement(CodeModel.Statements.ScreenWidthStatement sour
 	public Evaluable? WidthExpression;
 	public Evaluable? HeightExpression;
 
+	public override bool CanExecuteDirectWithoutEmbedding =>
+		(WidthExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(HeightExpression?.CanEvaluateDirectWithoutEmbedding ?? true);
+
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if ((WidthExpression == null) && (HeightExpression == null))

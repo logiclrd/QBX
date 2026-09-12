@@ -8,6 +8,8 @@ namespace QBX.ExecutionEngine.Compiled.Functions;
 
 public class CurDirFunction : Function
 {
+	public override bool CanEvaluateDirectWithoutEmbedding => true;
+
 	protected override int MinArgumentCount => 0;
 	protected override int MaxArgumentCount => 0;
 

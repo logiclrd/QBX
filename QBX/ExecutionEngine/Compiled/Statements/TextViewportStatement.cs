@@ -9,6 +9,10 @@ public class TextViewportStatement(CodeModel.Statements.TextViewportStatement so
 	public Evaluable? WindowStartExpression;
 	public Evaluable? WindowEndExpression;
 
+	public override bool CanExecuteDirectWithoutEmbedding =>
+		(WindowStartExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(WindowEndExpression?.CanEvaluateDirectWithoutEmbedding ?? true);
+
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if ((WindowStartExpression == null) && (WindowEndExpression == null))

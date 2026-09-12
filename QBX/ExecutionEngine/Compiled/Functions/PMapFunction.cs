@@ -12,6 +12,10 @@ public class PMapFunction : Function
 	public Evaluable? CoordinateExpression;
 	public Evaluable? MappingExpression;
 
+	public override bool CanEvaluateDirectWithoutEmbedding =>
+		(CoordinateExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(MappingExpression?.CanEvaluateDirectWithoutEmbedding ?? true);
+
 	protected override int MinArgumentCount => 2;
 	protected override int MaxArgumentCount => 2;
 

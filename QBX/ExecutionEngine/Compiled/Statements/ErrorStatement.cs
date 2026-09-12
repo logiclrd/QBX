@@ -8,6 +8,8 @@ public class ErrorStatement(CodeModel.Statements.ErrorStatement source) : Execut
 {
 	public Evaluable? ErrorNumberExpression;
 
+	public override bool CanExecuteDirectWithoutEmbedding => ErrorNumberExpression?.CanEvaluateDirectWithoutEmbedding ?? true;
+
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (ErrorNumberExpression == null)

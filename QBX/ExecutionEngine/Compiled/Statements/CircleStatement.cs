@@ -17,6 +17,15 @@ public class CircleStatement(CodeModel.Statements.CircleStatement source) : Exec
 	public Evaluable? EndExpression;
 	public Evaluable? AspectExpression;
 
+	public override bool CanExecuteDirectWithoutEmbedding =>
+		(XExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(YExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(RadiusExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(ColourExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(StartExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(EndExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(AspectExpression?.CanEvaluateDirectWithoutEmbedding ?? true);
+
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (XExpression == null)

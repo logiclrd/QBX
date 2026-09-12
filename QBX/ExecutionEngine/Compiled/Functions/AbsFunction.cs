@@ -14,6 +14,8 @@ public abstract class AbsFunction : ConstructibleFunction
 {
 	Evaluable? _argumentExpression;
 
+	public override bool CanEvaluateDirectWithoutEmbedding => _argumentExpression?.CanEvaluateDirectWithoutEmbedding ?? true;
+
 	public Evaluable? ArgumentExpression => _argumentExpression;
 
 	public override bool IsConstant => _argumentExpression?.IsConstant ?? false;

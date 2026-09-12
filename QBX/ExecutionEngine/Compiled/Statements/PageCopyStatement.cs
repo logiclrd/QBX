@@ -9,6 +9,10 @@ public class PageCopyStatement(CodeModel.Statements.PageCopyStatement source) : 
 	public Evaluable? SourcePageExpression;
 	public Evaluable? DestinationPageExpression;
 
+	public override bool CanExecuteDirectWithoutEmbedding =>
+		(SourcePageExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(DestinationPageExpression?.CanEvaluateDirectWithoutEmbedding ?? true);
+
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (SourcePageExpression == null)

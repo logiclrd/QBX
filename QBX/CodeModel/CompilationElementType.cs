@@ -7,4 +7,6 @@ public enum CompilationElementType
 	Main,
 	Sub,
 	Function,
+
+	Direct,
 }

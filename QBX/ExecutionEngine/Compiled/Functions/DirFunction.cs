@@ -10,6 +10,8 @@ public class DirFunction : Function
 {
 	public Evaluable? FileSpec;
 
+	public override bool CanEvaluateDirectWithoutEmbedding => FileSpec?.CanEvaluateDirectWithoutEmbedding ?? true;
+
 	protected override int MinArgumentCount => 0;
 
 	protected override void SetArgument(int index, Evaluable value)

@@ -218,6 +218,12 @@ public class IntegerForStatement(CodeModel.Statements.ForStatement sourceForStat
 	public Evaluable? StepExpression;
 	public CodeModel.Statements.NextStatement SourceNextStatement = sourceNextStatement;
 
+	public override bool CanExecuteDirectWithoutEmbedding =>
+		(FromExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(ToExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(StepExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(Body?.CanExecuteDirectWithoutEmbedding ?? true);
+
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		var iteratorVariable = stackFrame.Variables[IteratorVariableIndex] as IntegerVariable;
@@ -345,6 +351,12 @@ public class LongForStatement(CodeModel.Statements.ForStatement sourceForStateme
 	public Evaluable? ToExpression;
 	public Evaluable? StepExpression;
 	public CodeModel.Statements.NextStatement SourceNextStatement = sourceNextStatement;
+
+	public override bool CanExecuteDirectWithoutEmbedding =>
+		(FromExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(ToExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(StepExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(Body?.CanExecuteDirectWithoutEmbedding ?? true);
 
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
@@ -474,6 +486,12 @@ public class SingleForStatement(CodeModel.Statements.ForStatement sourceForState
 	public Evaluable? StepExpression;
 	public CodeModel.Statements.NextStatement SourceNextStatement = sourceNextStatement;
 
+	public override bool CanExecuteDirectWithoutEmbedding =>
+		(FromExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(ToExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(StepExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(Body?.CanExecuteDirectWithoutEmbedding ?? true);
+
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		var iteratorVariable = stackFrame.Variables[IteratorVariableIndex] as SingleVariable;
@@ -602,6 +620,12 @@ public class DoubleForStatement(CodeModel.Statements.ForStatement sourceForState
 	public Evaluable? StepExpression;
 	public CodeModel.Statements.NextStatement SourceNextStatement = sourceNextStatement;
 
+	public override bool CanExecuteDirectWithoutEmbedding =>
+		(FromExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(ToExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(StepExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(Body?.CanExecuteDirectWithoutEmbedding ?? true);
+
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		var iteratorVariable = stackFrame.Variables[IteratorVariableIndex] as DoubleVariable;
@@ -729,6 +753,12 @@ public class CurrencyForStatement(CodeModel.Statements.ForStatement sourceForSta
 	public Evaluable? ToExpression;
 	public Evaluable? StepExpression;
 	public CodeModel.Statements.NextStatement SourceNextStatement = sourceNextStatement;
+
+	public override bool CanExecuteDirectWithoutEmbedding =>
+		(FromExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(ToExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(StepExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(Body?.CanExecuteDirectWithoutEmbedding ?? true);
 
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
@@ -860,6 +890,11 @@ public class DelayLoopForStatement(CodeModel.Statements.ForStatement sourceForSt
 	public Evaluable? ToExpression;
 	public Evaluable? StepExpression;
 	public double Multiplier;
+
+	public override bool CanExecuteDirectWithoutEmbedding =>
+		(FromExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(ToExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(StepExpression?.CanEvaluateDirectWithoutEmbedding ?? true); // Body is known to be empty
 
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{

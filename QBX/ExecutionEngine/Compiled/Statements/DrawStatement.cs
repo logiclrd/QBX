@@ -9,7 +9,8 @@ public class DrawStatement(CodeModel.Statements.DrawStatement source)
 	: Executable(source)
 {
 	public Evaluable? CommandStringExpression;
-	public Evaluable? DurationExpression;
+
+	public override bool CanExecuteDirectWithoutEmbedding => CommandStringExpression?.CanEvaluateDirectWithoutEmbedding ?? true;
 
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{

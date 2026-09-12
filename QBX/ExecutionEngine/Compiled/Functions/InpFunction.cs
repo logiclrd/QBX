@@ -9,6 +9,8 @@ public class InpFunction : Function
 {
 	public Evaluable? PortExpression;
 
+	public override bool CanEvaluateDirectWithoutEmbedding => PortExpression?.CanEvaluateDirectWithoutEmbedding ?? true;
+
 	protected override void SetArgument(int index, Evaluable value)
 	{
 		PortExpression = value;

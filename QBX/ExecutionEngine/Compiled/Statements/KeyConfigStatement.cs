@@ -12,6 +12,10 @@ public class KeyConfigStatement(CodeModel.Statements.SoftKeyConfigStatement sour
 	public Evaluable? KeyExpression;
 	public Evaluable? ArgumentExpression;
 
+	public override bool CanExecuteDirectWithoutEmbedding =>
+		(KeyExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(ArgumentExpression?.CanEvaluateDirectWithoutEmbedding ?? true);
+
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (KeyExpression == null)

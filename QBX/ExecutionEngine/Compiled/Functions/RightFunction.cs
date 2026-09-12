@@ -10,6 +10,10 @@ public class RightFunction : Function
 	public Evaluable? StringExpression;
 	public Evaluable? LengthExpression;
 
+	public override bool CanEvaluateDirectWithoutEmbedding =>
+		(StringExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(LengthExpression?.CanEvaluateDirectWithoutEmbedding ?? true);
+
 	protected override int MinArgumentCount => 2;
 	protected override int MaxArgumentCount => 2;
 

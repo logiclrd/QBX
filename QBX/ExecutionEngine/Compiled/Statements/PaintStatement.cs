@@ -15,6 +15,12 @@ public abstract class PaintStatement(CodeModel.Statements.PaintStatement source)
 	public Evaluable? PaintExpression;
 	public Evaluable? BorderExpression;
 
+	public override bool CanExecuteDirectWithoutEmbedding =>
+		(XExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(YExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(PaintExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(BorderExpression?.CanEvaluateDirectWithoutEmbedding ?? true);
+
 	public static PaintStatement Construct(CodeModel.Statements.PaintStatement source, bool step, Evaluable xExpression, Evaluable yExpression, Evaluable? paintExpression, Evaluable? borderExpression, Evaluable? backgroundExpression = null)
 	{
 		if (!xExpression.Type.IsNumeric)

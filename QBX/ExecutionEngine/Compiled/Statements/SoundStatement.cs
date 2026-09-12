@@ -11,6 +11,10 @@ public class SoundStatement(CodeModel.Statements.SoundStatement source)
 	public Evaluable? FrequencyExpression;
 	public Evaluable? DurationExpression;
 
+	public override bool CanExecuteDirectWithoutEmbedding =>
+		(FrequencyExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(DurationExpression?.CanEvaluateDirectWithoutEmbedding ?? true);
+
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (FrequencyExpression == null)

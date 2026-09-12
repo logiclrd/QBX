@@ -46,6 +46,8 @@ public abstract class LoopStatement(CodeModel.Statements.LoopStructureStatement 
 	class UnconditionalLoopStatement(Sequence body, CodeModel.Statements.LoopStructureStatement source, bool detectDelayLoops)
 		: LoopStatement(source)
 	{
+		public override bool CanExecuteDirectWithoutEmbedding => body.CanExecuteDirectWithoutEmbedding;
+
 		public override int GetSequenceCount() => 1;
 
 		public override Sequence? GetSequenceByIndex(int sequenceIndex)
@@ -292,6 +294,10 @@ public abstract class ConditionalLoopStatement : LoopStatement
 	class PreConditionLoopStatement(LoopConditionStatement conditionStatement, Sequence body, CodeModel.Statements.LoopStructureStatement source)
 		: ConditionalLoopStatement(conditionStatement, body, source)
 	{
+		public override bool CanExecuteDirectWithoutEmbedding =>
+			conditionStatement.CanExecuteDirectWithoutEmbedding &&
+			body.CanExecuteDirectWithoutEmbedding;
+
 		public override bool CanBreak { get => false; set { } }
 
 		public override Sequence? GetSequenceByIndex(int sequenceIndex)
@@ -347,6 +353,10 @@ public abstract class ConditionalLoopStatement : LoopStatement
 	class PostConditionLoopStatement(LoopConditionStatement conditionStatement, Sequence body, CodeModel.Statements.LoopStructureStatement source)
 		: ConditionalLoopStatement(conditionStatement, body, source)
 	{
+		public override bool CanExecuteDirectWithoutEmbedding =>
+			conditionStatement.CanExecuteDirectWithoutEmbedding &&
+			body.CanExecuteDirectWithoutEmbedding;
+
 		public override Sequence? GetSequenceByIndex(int sequenceIndex)
 		{
 			if (sequenceIndex == 0)

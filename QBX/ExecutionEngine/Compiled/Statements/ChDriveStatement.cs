@@ -11,6 +11,8 @@ public class ChDriveStatement(CodeModel.Statements.ChDriveStatement source) : Ex
 {
 	public Evaluable? DriveLetterExpression;
 
+	public override bool CanExecuteDirectWithoutEmbedding => DriveLetterExpression?.CanEvaluateDirectWithoutEmbedding ?? true;
+
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (DriveLetterExpression == null)

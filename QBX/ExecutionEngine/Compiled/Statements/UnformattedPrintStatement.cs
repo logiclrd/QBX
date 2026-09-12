@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using QBX.ExecutionEngine.Execution;
 using QBX.Firmware;
@@ -9,6 +10,8 @@ namespace QBX.ExecutionEngine.Compiled.Statements;
 public class UnformattedPrintStatement(CodeModel.Statements.PrintStatement source) : Executable(source)
 {
 	public List<PrintArgument> Arguments = new List<PrintArgument>();
+
+	public override bool CanExecuteDirectWithoutEmbedding => Arguments.All(arg => arg.Expression?.CanEvaluateDirectWithoutEmbedding ?? true);
 
 	protected virtual PrintEmitter CreateEmitter(ExecutionContext context, StackFrame stackFrame)
 		=> new VisualPrintEmitter(context.VisualLibrary);

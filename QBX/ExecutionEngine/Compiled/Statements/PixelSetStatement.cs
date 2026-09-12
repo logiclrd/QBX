@@ -12,6 +12,11 @@ public class PixelSetStatement(CodeModel.Statements.PixelSetStatement source) : 
 	public Evaluable? ColourExpression;
 	public bool UseForegroundColour;
 
+	public override bool CanExecuteDirectWithoutEmbedding =>
+		(XExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(YExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(ColourExpression?.CanEvaluateDirectWithoutEmbedding ?? true);
+
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (context.VisualLibrary is not GraphicsLibrary graphicsLibrary)

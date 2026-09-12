@@ -12,6 +12,10 @@ public class PaletteStatement(CodeModel.Statements.PaletteStatement source) : Ex
 	public Evaluable? AttributeExpression;
 	public Evaluable? ColourExpression;
 
+	public override bool CanExecuteDirectWithoutEmbedding =>
+		(AttributeExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(ColourExpression?.CanEvaluateDirectWithoutEmbedding ?? true);
+
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (AttributeExpression == null)

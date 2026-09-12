@@ -8,6 +8,8 @@ namespace QBX.ExecutionEngine.Compiled.Functions;
 
 public class TimeFunction : Function
 {
+	public override bool CanEvaluateDirectWithoutEmbedding => true;
+
 	public override DataType Type => DataType.String;
 
 	protected override int MinArgumentCount => 0;

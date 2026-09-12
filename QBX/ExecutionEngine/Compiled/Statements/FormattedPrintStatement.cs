@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
@@ -14,6 +15,8 @@ public class FormattedPrintStatement(CodeModel.Statements.PrintStatement source)
 	public bool EmitNewLine = true;
 
 	public CodeModel.Statements.PrintStatement? Statement;
+
+	public override bool CanExecuteDirectWithoutEmbedding => Arguments.All(arg => arg.Expression?.CanEvaluateDirectWithoutEmbedding ?? true);
 
 	[ThreadStatic]
 	static byte[]? s_spaces;

@@ -9,6 +9,8 @@ namespace QBX.ExecutionEngine.Compiled.Expressions;
 
 public abstract class LiteralValue : Evaluable
 {
+	public override bool CanEvaluateDirectWithoutEmbedding => true;
+
 	public static Evaluable Construct(object value, DataType type, Token? context)
 	{
 		if (!type.IsPrimitiveType)

@@ -90,6 +90,8 @@ public class ConvertToInteger(Evaluable value) : Conversion(value)
 {
 	public override DataType Type => DataType.Integer;
 
+	public override bool CanEvaluateDirectWithoutEmbedding => value.CanEvaluateDirectWithoutEmbedding;
+
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame) => new IntegerVariable(NumberConverter.ToInteger(Value.Evaluate(context, stackFrame)));
 	public override LiteralValue EvaluateConstant() => new IntegerLiteralValue(NumberConverter.ToInteger(Value.EvaluateConstant()));
 }
@@ -97,6 +99,8 @@ public class ConvertToInteger(Evaluable value) : Conversion(value)
 public class ConvertToLong(Evaluable value) : Conversion(value)
 {
 	public override DataType Type => DataType.Long;
+
+	public override bool CanEvaluateDirectWithoutEmbedding => value.CanEvaluateDirectWithoutEmbedding;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame) => new LongVariable(NumberConverter.ToLong(Value.Evaluate(context, stackFrame)));
 	public override LiteralValue EvaluateConstant() => new LongLiteralValue(NumberConverter.ToLong(Value.EvaluateConstant()));
@@ -106,6 +110,8 @@ public class ConvertToSingle(Evaluable value) : Conversion(value)
 {
 	public override DataType Type => DataType.Single;
 
+	public override bool CanEvaluateDirectWithoutEmbedding => value.CanEvaluateDirectWithoutEmbedding;
+
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame) => new SingleVariable(NumberConverter.ToSingle(Value.Evaluate(context, stackFrame)));
 	public override LiteralValue EvaluateConstant() => new SingleLiteralValue(NumberConverter.ToSingle(Value.EvaluateConstant()));
 }
@@ -113,6 +119,8 @@ public class ConvertToSingle(Evaluable value) : Conversion(value)
 public class ConvertToDouble(Evaluable value) : Conversion(value)
 {
 	public override DataType Type => DataType.Double;
+
+	public override bool CanEvaluateDirectWithoutEmbedding => value.CanEvaluateDirectWithoutEmbedding;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame) => new DoubleVariable(NumberConverter.ToDouble(Value.Evaluate(context, stackFrame)));
 	public override LiteralValue EvaluateConstant() => new DoubleLiteralValue(NumberConverter.ToDouble(Value.EvaluateConstant()));
@@ -122,6 +130,8 @@ public class ConvertToCurrency(Evaluable value) : Conversion(value)
 {
 	public override DataType Type => DataType.Currency;
 
+	public override bool CanEvaluateDirectWithoutEmbedding => value.CanEvaluateDirectWithoutEmbedding;
+
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame) => new CurrencyVariable(NumberConverter.ToCurrency(Value.Evaluate(context, stackFrame)));
 	public override LiteralValue EvaluateConstant() => new CurrencyLiteralValue(NumberConverter.ToCurrency(Value.EvaluateConstant()));
 }
@@ -129,6 +139,8 @@ public class ConvertToCurrency(Evaluable value) : Conversion(value)
 public class ConvertToString(Evaluable value) : Conversion(value)
 {
 	public override DataType Type => DataType.String;
+
+	public override bool CanEvaluateDirectWithoutEmbedding => value.CanEvaluateDirectWithoutEmbedding;
 
 	StringValue ToString(Variable value)
 	{

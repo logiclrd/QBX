@@ -67,6 +67,10 @@ public class IntegerDivision(Evaluable left, Evaluable right) : BinaryExpression
 
 	public override DataType Type => DataType.Integer;
 
+	public override bool CanEvaluateDirectWithoutEmbedding =>
+		left.CanEvaluateDirectWithoutEmbedding &&
+		right.CanEvaluateDirectWithoutEmbedding;
+
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
 		var leftValue = (IntegerVariable)left.Evaluate(context, stackFrame);
@@ -100,6 +104,10 @@ public class IntegerDivision(Evaluable left, Evaluable right) : BinaryExpression
 public class LongDivision(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
 	public override DataType Type => DataType.Long;
+
+	public override bool CanEvaluateDirectWithoutEmbedding =>
+		left.CanEvaluateDirectWithoutEmbedding &&
+		right.CanEvaluateDirectWithoutEmbedding;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
@@ -144,6 +152,10 @@ public class LongDivision(Evaluable left, Evaluable right) : BinaryExpression(le
 public class SingleDivision(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
 	public override DataType Type => DataType.Single;
+
+	public override bool CanEvaluateDirectWithoutEmbedding =>
+		left.CanEvaluateDirectWithoutEmbedding &&
+		right.CanEvaluateDirectWithoutEmbedding;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
@@ -191,6 +203,10 @@ public class DoubleDivision(Evaluable left, Evaluable right) : BinaryExpression(
 {
 	public override DataType Type => DataType.Double;
 
+	public override bool CanEvaluateDirectWithoutEmbedding =>
+		left.CanEvaluateDirectWithoutEmbedding &&
+		right.CanEvaluateDirectWithoutEmbedding;
+
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
 		var leftValue = (DoubleVariable)left.Evaluate(context, stackFrame);
@@ -236,6 +252,10 @@ public class DoubleDivision(Evaluable left, Evaluable right) : BinaryExpression(
 public class CurrencyDivision(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
 	public override DataType Type => DataType.Currency;
+
+	public override bool CanEvaluateDirectWithoutEmbedding =>
+		left.CanEvaluateDirectWithoutEmbedding &&
+		right.CanEvaluateDirectWithoutEmbedding;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{

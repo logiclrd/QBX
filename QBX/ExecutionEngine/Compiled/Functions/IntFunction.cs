@@ -15,6 +15,8 @@ public abstract class IntFunction : ConstructibleFunction
 
 	public Evaluable? ArgumentExpression => _argumentExpression;
 
+	public override bool CanEvaluateDirectWithoutEmbedding => _argumentExpression?.CanEvaluateDirectWithoutEmbedding ?? true;
+
 	public override bool IsConstant => _argumentExpression?.IsConstant ?? false;
 
 	protected IntFunction(Evaluable? argumentExpression)

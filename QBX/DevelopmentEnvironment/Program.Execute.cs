@@ -176,9 +176,14 @@ public partial class Program
 	public bool StartExecution(bool chainExecution, StatementPath? startingLineNumber = null, Routine? embeddedRoutine = null)
 	{
 		if (_compilation == null)
-			throw new Exception("Internat error: Start called with no ambient compilation");
+			throw new Exception("Internal error: Start called with no ambient compilation");
 
-		AssociateWatches(_compilation);
+		return StartExecution(_compilation, chainExecution, startingLineNumber, embeddedRoutine);
+	}
+
+	public bool StartExecution(Compilation compilation, bool chainExecution, StatementPath? startingLineNumber = null, Routine? embeddedRoutine = null)
+	{
+		AssociateWatches(compilation);
 
 		RestoreOutput();
 
@@ -187,7 +192,7 @@ public partial class Program
 
 		var drawProcessor = _executionContext?.DrawProcessor ?? new DrawProcessor();
 
-		_executionContext = new ExecutionContext(Machine, PlayProcessor, drawProcessor, EventHub, _compilation.CommonBlocks, _executionContext?.CommonBlockStorage);
+		_executionContext = new ExecutionContext(Machine, PlayProcessor, drawProcessor, EventHub, compilation.CommonBlocks, _executionContext?.CommonBlockStorage);
 		_executionContext.RuntimeState.LastScreenMode = _savedLastScreenMode;
 		_executionContext.EventCheckGranularity = EventCheckGranularity;
 		_executionContext.CommandLine.Set(ProgramCommandLine.ToUpperInvariant());
@@ -217,7 +222,7 @@ public partial class Program
 				{
 					Thread.CurrentThread.CurrentCulture = BasicCulture.Instance;
 					EventHub.ClearAllEvents();
-					_executionContext.Run(_compilation, chainExecution, embeddedRoutine);
+					_executionContext.Run(compilation, chainExecution, embeddedRoutine);
 				}
 				catch (Exception e)
 				{
@@ -294,6 +299,31 @@ public partial class Program
 		return true;
 	}
 
+	Compilation? CompileDirect(CompilationUnit unit)
+	{
+		var compilation = new Compilation();
+
+		try
+		{
+			var compiler = new Compiler(unit.IdentifierRepository);
+
+			compiler.DetectDelayLoops = DetectDelayLoops;
+
+			compiler.Compile(unit, compilation);
+
+			if (!compilation.ResolveUnresolvedCalls(out var errorModule))
+				return null;
+		}
+		catch
+		{
+			return null;
+		}
+
+		compilation.SetDefaultEntrypoint();
+
+		return compilation;
+	}
+
 	bool ExecuteDirect(CodeLine line, CompilationUnit ephemeralUnit, CompilationElement ephemeralElement)
 	{
 		// Shouldn't ever happen, but just in case (and to satisfy the analyzer) :-)
@@ -315,49 +345,70 @@ public partial class Program
 
 		var unit = line.CompilationElement.Owner;
 
+		Routine? main = null;
+
 		if ((_executionContext == null) || (_compilation == null) || (_nextStatementRoutine == null))
 		{
 			_executionContext = null;
 			_nextStatement = null;
 			_nextStatementRoutine = null;
 
-			StatementPath? ignored = null;
+			// Optimistically try to compile & run the statement with no embedding.
+			ephemeralElement.Type = CompilationElementType.Direct;
 
-			if (!Compile(out bool chainExecution, startingLineNumber: ref ignored))
-				return false;
+			var isolatedCompilation = CompileDirect(ephemeralUnit);
 
-			if (chainExecution)
-				throw new Exception("Internal error: Unexpected chain execution");
-
-			var mainModule = _compilation.Modules[0];
-
-			var main = _compilation.EntrypointRoutine
-				?? throw new Exception("Internal error: Module has no entrypoint routine");
-
-			try
+			if ((isolatedCompilation == null)
+			 || (isolatedCompilation.Modules.Count == 0)
+			 || !isolatedCompilation.Modules[0].Routines.TryGetValue(ephemeralElementName, out var embeddedRoutine)
+			 || !embeddedRoutine.CanExecuteDirectWithoutEmbedding)
 			{
-				var compiler = new Compiler(unit.IdentifierRepository);
+				// We can't execute this line without embedding it into the main/current module. Start over.
 
-				compiler.DetectDelayLoops = DetectDelayLoops;
+				if (!EnsureAllCodeIsParsed())
+					return false;
 
-				compiler.Compile(ephemeralUnit, _compilation, embedIn: main);
+				StatementPath? ignored = null;
+
+				if (!Compile(out bool chainExecution, startingLineNumber: ref ignored))
+					return false;
+
+				if (chainExecution)
+					throw new Exception("Internal error: Unexpected chain execution");
+
+				var mainModule = _compilation.Modules[0];
+
+				main = _compilation.EntrypointRoutine
+					?? throw new Exception("Internal error: Module has no entrypoint routine");
+
+				ephemeralElement.Type = main.Source.Type;
+
+				try
+				{
+					var compiler = new Compiler(unit.IdentifierRepository);
+
+					compiler.DetectDelayLoops = DetectDelayLoops;
+
+					compiler.Compile(ephemeralUnit, _compilation, embedIn: main);
+				}
+				catch (Exception e)
+				{
+					PresentError(e);
+					return false;
+				}
+
+				embeddedRoutine = _compilation.Modules.Last().Routines[ephemeralElementName];
+
+				if (main.HasDuplicateLabels(embeddedRoutine))
+					throw CompilerException.DuplicateLabel(context: null);
 			}
-			catch (Exception e)
-			{
-				PresentError(e);
-				return false;
-			}
-
-			var embeddedRoutine = _compilation.Modules.Last().Routines[ephemeralElementName];
-
-			if (main.HasDuplicateLabels(embeddedRoutine))
-				throw CompilerException.DuplicateLabel(context: null);
 
 			// This is tested here because a collision with an existing line number takes precedence.
 			if ((line.LineNumber != null) || (line.Label != null))
 				throw RuntimeException.IllegalInDirectMode(statement: null);
 
 			bool success = StartExecution(
+				isolatedCompilation ?? _compilation ?? throw new Exception("Internal error"),
 				chainExecution: false,
 				embeddedRoutine: embeddedRoutine);
 
@@ -376,6 +427,8 @@ public partial class Program
 				compiler.DetectDelayLoops = DetectDelayLoops;
 
 				var executingFrame = _executionContext.ExecutionState.Stack.First();
+
+				ephemeralElement.Type = _nextStatementRoutine.Source.Type;
 
 				compiler.CompileDirect(line, _compilation, _nextStatementRoutine, sequence, executingFrame);
 

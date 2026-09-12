@@ -5,6 +5,8 @@ namespace QBX.ExecutionEngine.Compiled.Functions;
 
 public class CommandFunction : Function
 {
+	public override bool CanEvaluateDirectWithoutEmbedding => true;
+
 	public override DataType Type => DataType.String;
 
 	protected override int MinArgumentCount => 0;

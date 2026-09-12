@@ -8,6 +8,8 @@ public class BeepStatement(CodeModel.Statements.BeepStatement source) : Executab
 {
 	public Evaluable? ExitCodeExpression;
 
+	public override bool CanExecuteDirectWithoutEmbedding => true;
+
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		context.Machine.DOS.Beep();

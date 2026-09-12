@@ -9,6 +9,8 @@ public class PeekFunction : Function
 {
 	public Evaluable? AddressExpression;
 
+	public override bool CanEvaluateDirectWithoutEmbedding => AddressExpression?.CanEvaluateDirectWithoutEmbedding ?? true;
+
 	protected override void SetArgument(int index, Evaluable value)
 	{
 		AddressExpression = value;

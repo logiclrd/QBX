@@ -12,6 +12,10 @@ public class NameStatement(CodeModel.Statements.NameStatement source) : Executab
 	public Evaluable? OldFileSpecExpression;
 	public Evaluable? NewFileSpecExpression;
 
+	public override bool CanExecuteDirectWithoutEmbedding =>
+		(OldFileSpecExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(NewFileSpecExpression?.CanEvaluateDirectWithoutEmbedding ?? true);
+
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (OldFileSpecExpression == null)

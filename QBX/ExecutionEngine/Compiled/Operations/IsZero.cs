@@ -8,6 +8,8 @@ public class IsZero(Evaluable right) : Evaluable
 {
 	public override DataType Type => DataType.Integer;
 
+	public override bool CanEvaluateDirectWithoutEmbedding => right.CanEvaluateDirectWithoutEmbedding;
+
 	public override bool IsConstant => right.IsConstant;
 
 	public override void CollapseConstantSubexpressions()

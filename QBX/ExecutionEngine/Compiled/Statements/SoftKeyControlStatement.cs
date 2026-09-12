@@ -6,6 +6,8 @@ public class SoftKeyControlStatement(CodeModel.Statements.SoftKeyControlStatemen
 {
 	public bool Enable;
 
+	public override bool CanExecuteDirectWithoutEmbedding => true;
+
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (context.RuntimeState.DisplaySoftKeyMacroLine != Enable)

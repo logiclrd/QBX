@@ -9,6 +9,8 @@ public class DetachExpression : Evaluable
 {
 	public Evaluable? Expression;
 
+	public override bool CanEvaluateDirectWithoutEmbedding => Expression?.CanEvaluateDirectWithoutEmbedding ?? true;
+
 	public override DataType Type => Expression?.Type ?? throw new Exception("Uninitialized DetachExpression");
 
 	public DetachExpression()

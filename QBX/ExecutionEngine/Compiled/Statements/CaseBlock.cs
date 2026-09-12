@@ -11,6 +11,10 @@ public class CaseBlock : Sequence
 	public List<CaseExpression> Expressions = new List<CaseExpression>();
 	public bool MatchAll;
 
+	public override bool CanExecuteDirectWithoutEmbedding =>
+		Expressions.All(e => e.CanEvaluateDirectWithoutEmbedding) &&
+		base.CanExecuteDirectWithoutEmbedding;
+
 	public bool IsMatch(Variable testValue, ExecutionContext context, StackFrame stackFrame)
 	{
 		if (MatchAll)

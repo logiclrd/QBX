@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using QBX.ExecutionEngine.Execution;
 
@@ -9,6 +10,10 @@ public class SelectCaseStatement(CodeModel.Statements.SelectCaseStatement source
 {
 	public Evaluable? TestExpression;
 	public List<CaseBlock> Cases = new List<CaseBlock>();
+
+	public override bool CanExecuteDirectWithoutEmbedding =>
+		(TestExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		Cases.All(c => c.CanExecuteDirectWithoutEmbedding);
 
 	public override int IndexOfSequence(Sequence sequence)
 	{

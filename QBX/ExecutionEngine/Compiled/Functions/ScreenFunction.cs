@@ -11,6 +11,11 @@ public class ScreenFunction : Function
 	public Evaluable? ColumnExpression;
 	public Evaluable? ColourFlagExpression;
 
+	public override bool CanEvaluateDirectWithoutEmbedding =>
+		(LineExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(ColumnExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(ColourFlagExpression?.CanEvaluateDirectWithoutEmbedding ?? true);
+
 	protected override int MinArgumentCount => 2;
 	protected override int MaxArgumentCount => 3;
 

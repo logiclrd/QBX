@@ -15,6 +15,8 @@ public class ReplaceRunningProgramStatement(CodeModel.Statements.Statement sourc
 {
 	public Evaluable? FileNameExpression;
 
+	public override bool CanExecuteDirectWithoutEmbedding => FileNameExpression?.CanEvaluateDirectWithoutEmbedding ?? true;
+
 	protected virtual void ConfigureContext(ExecutionContext context) { }
 
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)

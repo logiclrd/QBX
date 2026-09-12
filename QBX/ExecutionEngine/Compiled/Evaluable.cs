@@ -14,6 +14,8 @@ public abstract class Evaluable
 
 	public abstract DataType Type { get; }
 
+	public virtual bool CanEvaluateDirectWithoutEmbedding => false;
+
 	public virtual void CollapseConstantSubexpressions()
 	{
 	}

@@ -6,6 +6,8 @@ public class DefSegStatement(CodeModel.Statements.DefSegStatement source) : Exec
 {
 	public Evaluable? SegmentExpression;
 
+	public override bool CanExecuteDirectWithoutEmbedding => SegmentExpression?.CanEvaluateDirectWithoutEmbedding ?? true;
+
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (SegmentExpression == null)

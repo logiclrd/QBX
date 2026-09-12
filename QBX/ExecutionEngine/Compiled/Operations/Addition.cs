@@ -82,6 +82,10 @@ public class IntegerAddition(Evaluable left, Evaluable right) : BinaryExpression
 {
 	public override DataType Type => DataType.Integer;
 
+	public override bool CanEvaluateDirectWithoutEmbedding =>
+		left.CanEvaluateDirectWithoutEmbedding &&
+		right.CanEvaluateDirectWithoutEmbedding;
+
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
 		var leftValue = (IntegerVariable)left.Evaluate(context, stackFrame);
@@ -115,6 +119,10 @@ public class IntegerAddition(Evaluable left, Evaluable right) : BinaryExpression
 public class LongAddition(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
 	public override DataType Type => DataType.Long;
+
+	public override bool CanEvaluateDirectWithoutEmbedding =>
+		left.CanEvaluateDirectWithoutEmbedding &&
+		right.CanEvaluateDirectWithoutEmbedding;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
@@ -153,6 +161,10 @@ public class LongAddition(Evaluable left, Evaluable right) : BinaryExpression(le
 public class SingleAddition(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
 	public override DataType Type => DataType.Single;
+
+	public override bool CanEvaluateDirectWithoutEmbedding =>
+		left.CanEvaluateDirectWithoutEmbedding &&
+		right.CanEvaluateDirectWithoutEmbedding;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
@@ -200,6 +212,10 @@ public class DoubleAddition(Evaluable left, Evaluable right) : BinaryExpression(
 {
 	public override DataType Type => DataType.Double;
 
+	public override bool CanEvaluateDirectWithoutEmbedding =>
+		left.CanEvaluateDirectWithoutEmbedding &&
+		right.CanEvaluateDirectWithoutEmbedding;
+
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
 		var leftValue = (DoubleVariable)left.Evaluate(context, stackFrame);
@@ -246,6 +262,10 @@ public class CurrencyAddition(Evaluable left, Evaluable right) : BinaryExpressio
 {
 	public override DataType Type => DataType.Currency;
 
+	public override bool CanEvaluateDirectWithoutEmbedding =>
+		left.CanEvaluateDirectWithoutEmbedding &&
+		right.CanEvaluateDirectWithoutEmbedding;
+
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
 		var leftValue = (CurrencyVariable)left.Evaluate(context, stackFrame);
@@ -283,6 +303,10 @@ public class CurrencyAddition(Evaluable left, Evaluable right) : BinaryExpressio
 public class StringAddition(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
 	public override DataType Type => DataType.String;
+
+	public override bool CanEvaluateDirectWithoutEmbedding =>
+		left.CanEvaluateDirectWithoutEmbedding &&
+		right.CanEvaluateDirectWithoutEmbedding;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{

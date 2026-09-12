@@ -20,6 +20,14 @@ public class LineStatement(CodeModel.Statements.LineStatement source) : Executab
 	public LineDrawStyle DrawStyle = LineDrawStyle.Line;
 	public Evaluable? StyleExpression;
 
+	public override bool CanExecuteDirectWithoutEmbedding =>
+		(FromXExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(FromYExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(ToXExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(ToYExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(ColourExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(StyleExpression?.CanEvaluateDirectWithoutEmbedding ?? true);
+
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (context.VisualLibrary is not GraphicsLibrary visual)

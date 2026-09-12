@@ -57,7 +57,11 @@ public class Routine : Sequence
 
 	public static readonly Identifier MainRoutineName = Identifier.Standalone("@Main");
 
-	public bool IsMainRoutine => Name.Equals(MainRoutineName);
+	public bool IsMainRoutine => Source.Type == CodeModel.CompilationElementType.Main;
+
+	public bool IsCallable =>
+		(Source.Type == CodeModel.CompilationElementType.Sub) ||
+		(Source.Type == CodeModel.CompilationElementType.Function);
 
 	public bool IsDefFn => (OpeningStatement is DefFnStatement);
 

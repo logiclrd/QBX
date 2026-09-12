@@ -10,6 +10,10 @@ public class OutStatement(CodeModel.Statements.OutStatement source)
 	public Evaluable? PortExpression;
 	public Evaluable? DataExpression;
 
+	public override bool CanExecuteDirectWithoutEmbedding =>
+		(PortExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(DataExpression?.CanEvaluateDirectWithoutEmbedding ?? true);
+
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (PortExpression == null)

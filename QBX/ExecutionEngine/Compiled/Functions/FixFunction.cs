@@ -17,6 +17,8 @@ public abstract class FixFunction : ConstructibleFunction
 
 	public override bool IsConstant => _argumentExpression?.IsConstant ?? false;
 
+	public override bool CanEvaluateDirectWithoutEmbedding => ArgumentExpression?.CanEvaluateDirectWithoutEmbedding ?? true;
+
 	protected FixFunction(Evaluable? argumentExpression)
 	{
 		_argumentExpression = argumentExpression;

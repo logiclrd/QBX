@@ -11,6 +11,11 @@ public class ColorStatement(CodeModel.Statements.ColorStatement source) : Execut
 	public Evaluable? Argument2Expression;
 	public Evaluable? Argument3Expression;
 
+	public override bool CanExecuteDirectWithoutEmbedding =>
+		(Argument1Expression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(Argument2Expression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(Argument3Expression?.CanEvaluateDirectWithoutEmbedding ?? true);
+
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		// COLOR modes:

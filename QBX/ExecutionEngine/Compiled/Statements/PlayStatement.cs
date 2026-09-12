@@ -9,7 +9,6 @@ public class PlayStatement(CodeModel.Statements.PlayStatement source)
 	: Executable(source)
 {
 	public Evaluable? CommandStringExpression;
-	public Evaluable? DurationExpression;
 
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{

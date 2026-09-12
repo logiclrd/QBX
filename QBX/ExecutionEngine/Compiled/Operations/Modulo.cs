@@ -27,6 +27,10 @@ public class IntegerModulo(Evaluable left, Evaluable right) : BinaryExpression(l
 {
 	public override DataType Type => DataType.Integer;
 
+	public override bool CanEvaluateDirectWithoutEmbedding =>
+		left.CanEvaluateDirectWithoutEmbedding &&
+		right.CanEvaluateDirectWithoutEmbedding;
+
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
 		var leftValue = (IntegerVariable)left.Evaluate(context, stackFrame);
@@ -60,6 +64,10 @@ public class IntegerModulo(Evaluable left, Evaluable right) : BinaryExpression(l
 public class LongModulo(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
 	public override DataType Type => DataType.Long;
+
+	public override bool CanEvaluateDirectWithoutEmbedding =>
+		left.CanEvaluateDirectWithoutEmbedding &&
+		right.CanEvaluateDirectWithoutEmbedding;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{

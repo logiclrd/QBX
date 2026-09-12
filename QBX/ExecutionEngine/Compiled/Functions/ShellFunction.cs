@@ -14,6 +14,8 @@ public class ShellFunction : Function
 {
 	public Evaluable? CommandString;
 
+	public override bool CanEvaluateDirectWithoutEmbedding => CommandString?.CanEvaluateDirectWithoutEmbedding ?? true;
+
 	protected override void SetArgument(int index, Evaluable value)
 	{
 		if (!value.Type.IsString)

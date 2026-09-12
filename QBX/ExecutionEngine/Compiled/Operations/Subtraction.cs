@@ -84,6 +84,10 @@ public class IntegerSubtraction(Evaluable left, Evaluable right) : BinaryExpress
 {
 	public override DataType Type => DataType.Integer;
 
+	public override bool CanEvaluateDirectWithoutEmbedding =>
+		left.CanEvaluateDirectWithoutEmbedding &&
+		right.CanEvaluateDirectWithoutEmbedding;
+
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
 		var leftValue = (IntegerVariable)left.Evaluate(context, stackFrame);
@@ -117,6 +121,10 @@ public class IntegerSubtraction(Evaluable left, Evaluable right) : BinaryExpress
 public class LongSubtraction(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
 	public override DataType Type => DataType.Long;
+
+	public override bool CanEvaluateDirectWithoutEmbedding =>
+		left.CanEvaluateDirectWithoutEmbedding &&
+		right.CanEvaluateDirectWithoutEmbedding;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
@@ -155,6 +163,10 @@ public class LongSubtraction(Evaluable left, Evaluable right) : BinaryExpression
 public class SingleSubtraction(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
 	public override DataType Type => DataType.Single;
+
+	public override bool CanEvaluateDirectWithoutEmbedding =>
+		left.CanEvaluateDirectWithoutEmbedding &&
+		right.CanEvaluateDirectWithoutEmbedding;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
@@ -202,6 +214,10 @@ public class DoubleSubtraction(Evaluable left, Evaluable right) : BinaryExpressi
 {
 	public override DataType Type => DataType.Double;
 
+	public override bool CanEvaluateDirectWithoutEmbedding =>
+		left.CanEvaluateDirectWithoutEmbedding &&
+		right.CanEvaluateDirectWithoutEmbedding;
+
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
 		var leftValue = (DoubleVariable)left.Evaluate(context, stackFrame);
@@ -247,6 +263,10 @@ public class DoubleSubtraction(Evaluable left, Evaluable right) : BinaryExpressi
 public class CurrencySubtraction(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
 	public override DataType Type => DataType.Currency;
+
+	public override bool CanEvaluateDirectWithoutEmbedding =>
+		left.CanEvaluateDirectWithoutEmbedding &&
+		right.CanEvaluateDirectWithoutEmbedding;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{

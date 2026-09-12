@@ -9,6 +9,10 @@ public class PokeStatement(CodeModel.Statements.PokeStatement source) : Executab
 	public Evaluable? AddressExpression;
 	public Evaluable? ValueExpression;
 
+	public override bool CanExecuteDirectWithoutEmbedding =>
+		(AddressExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(ValueExpression?.CanEvaluateDirectWithoutEmbedding ?? true);
+
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (AddressExpression is null)

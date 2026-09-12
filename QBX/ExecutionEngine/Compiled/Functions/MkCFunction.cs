@@ -11,6 +11,8 @@ public class MkCFunction : Function
 {
 	public Evaluable? Argument;
 
+	public override bool CanEvaluateDirectWithoutEmbedding => Argument?.CanEvaluateDirectWithoutEmbedding ?? true;
+
 	protected override void SetArgument(int index, Evaluable value)
 	{
 		if (!value.Type.IsNumeric)

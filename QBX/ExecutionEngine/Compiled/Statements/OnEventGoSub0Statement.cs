@@ -10,6 +10,8 @@ public class OnEventGoSub0Statement(CodeModel.Statements.OnEventStatement source
 	public EventType EventType;
 	public Evaluable? SourceExpression;
 
+	public override bool CanExecuteDirectWithoutEmbedding => SourceExpression?.CanEvaluateDirectWithoutEmbedding ?? true;
+
 	void IOnEventStatementConfigurator.SetEventType(EventType eventType)
 		=> EventType = eventType;
 	Evaluable? IOnEventStatementConfigurator.SetSourceExpression(Evaluable? sourceExpression)

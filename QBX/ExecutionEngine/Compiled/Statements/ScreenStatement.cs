@@ -13,6 +13,12 @@ public class ScreenStatement(CodeModel.Statements.ScreenStatement source) : Exec
 	public Evaluable? ActivePageExpression;
 	public Evaluable? VisiblePageExpression;
 
+	public override bool CanExecuteDirectWithoutEmbedding =>
+		(ModeExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(ColourSwitchExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(ActivePageExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(VisiblePageExpression?.CanEvaluateDirectWithoutEmbedding ?? true);
+
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (ModeExpression != null)

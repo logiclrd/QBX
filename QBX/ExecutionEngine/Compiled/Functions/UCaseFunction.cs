@@ -10,6 +10,8 @@ public class UCaseFunction : Function
 {
 	public Evaluable? ArgumentExpression;
 
+	public override bool CanEvaluateDirectWithoutEmbedding => ArgumentExpression?.CanEvaluateDirectWithoutEmbedding ?? true;
+
 	protected override void SetArgument(int index, Evaluable value)
 	{
 		if (!value.Type.IsString)

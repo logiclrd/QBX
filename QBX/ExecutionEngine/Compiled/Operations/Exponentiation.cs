@@ -43,6 +43,10 @@ public class CurrencyExponentiation(Evaluable left, Evaluable right) : BinaryExp
 {
 	public override DataType Type => DataType.Currency;
 
+	public override bool CanEvaluateDirectWithoutEmbedding =>
+		left.CanEvaluateDirectWithoutEmbedding &&
+		right.CanEvaluateDirectWithoutEmbedding;
+
 	static decimal CalculateResult(decimal baseValue, int exponentValue)
 	{
 		decimal result = 1;
@@ -108,6 +112,10 @@ public class CurrencyExponentiation(Evaluable left, Evaluable right) : BinaryExp
 public class DoubleExponentiation(Evaluable left, Evaluable right) : BinaryExpression(left, right)
 {
 	public override DataType Type => DataType.Double;
+
+	public override bool CanEvaluateDirectWithoutEmbedding =>
+		left.CanEvaluateDirectWithoutEmbedding &&
+		right.CanEvaluateDirectWithoutEmbedding;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{

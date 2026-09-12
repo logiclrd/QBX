@@ -5,6 +5,8 @@ namespace QBX.ExecutionEngine.Compiled.Statements;
 
 public class ResetGraphicsViewportStatement(CodeModel.Statements.GraphicsViewportStatement source) : GraphicsViewportStatement(source)
 {
+	public override bool CanExecuteDirectWithoutEmbedding => true;
+
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (context.VisualLibrary is not GraphicsLibrary visual)

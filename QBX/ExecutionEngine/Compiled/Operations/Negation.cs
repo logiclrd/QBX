@@ -34,6 +34,8 @@ public class IntegerNegation(Evaluable right) : UnaryExpression(right)
 {
 	public override DataType Type => DataType.Integer;
 
+	public override bool CanEvaluateDirectWithoutEmbedding => right.CanEvaluateDirectWithoutEmbedding;
+
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
 		var rightValue = (IntegerVariable)right.Evaluate(context, stackFrame);
@@ -61,6 +63,8 @@ public class LongNegation(Evaluable right) : UnaryExpression(right)
 {
 	public override DataType Type => DataType.Long;
 
+	public override bool CanEvaluateDirectWithoutEmbedding => right.CanEvaluateDirectWithoutEmbedding;
+
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
 		var rightValue = (LongVariable)right.Evaluate(context, stackFrame);
@@ -87,6 +91,8 @@ public class LongNegation(Evaluable right) : UnaryExpression(right)
 public class SingleNegation(Evaluable right) : UnaryExpression(right)
 {
 	public override DataType Type => DataType.Single;
+
+	public override bool CanEvaluateDirectWithoutEmbedding => right.CanEvaluateDirectWithoutEmbedding;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
@@ -119,6 +125,8 @@ public class DoubleNegation(Evaluable right) : UnaryExpression(right)
 {
 	public override DataType Type => DataType.Double;
 
+	public override bool CanEvaluateDirectWithoutEmbedding => right.CanEvaluateDirectWithoutEmbedding;
+
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{
 		var rightValue = (DoubleVariable)right.Evaluate(context, stackFrame);
@@ -149,6 +157,8 @@ public class DoubleNegation(Evaluable right) : UnaryExpression(right)
 public class CurrencyNegation(Evaluable right) : UnaryExpression(right)
 {
 	public override DataType Type => DataType.Currency;
+
+	public override bool CanEvaluateDirectWithoutEmbedding => right.CanEvaluateDirectWithoutEmbedding;
 
 	public override Variable Evaluate(ExecutionContext context, StackFrame stackFrame)
 	{

@@ -10,6 +10,11 @@ public class WaitStatement(CodeModel.Statements.WaitStatement source) : Executab
 	public Evaluable? AndExpression;
 	public Evaluable? XOrExpression;
 
+	public override bool CanExecuteDirectWithoutEmbedding =>
+		(PortExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(AndExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(XOrExpression?.CanEvaluateDirectWithoutEmbedding ?? true);
+
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (PortExpression == null)

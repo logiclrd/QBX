@@ -12,6 +12,10 @@ public class PixelPointFunction : Function
 	public Evaluable? XExpression;
 	public Evaluable? YExpression;
 
+	public override bool CanEvaluateDirectWithoutEmbedding =>
+		(XExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(YExpression?.CanEvaluateDirectWithoutEmbedding ?? true);
+
 	protected override int MinArgumentCount => 2;
 	protected override int MaxArgumentCount => 2;
 

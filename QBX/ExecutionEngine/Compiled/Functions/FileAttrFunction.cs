@@ -18,6 +18,10 @@ public class FileAttrFunction : Function
 	public Evaluable? FileNumberExpression;
 	public Evaluable? AttributeExpression;
 
+	public override bool CanEvaluateDirectWithoutEmbedding =>
+		(FileNumberExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(AttributeExpression?.CanEvaluateDirectWithoutEmbedding ?? true);
+
 	const int Attribute_FileMode = 1;
 	const int Attribute_DOSFileHandle = 2;
 

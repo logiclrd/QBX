@@ -11,6 +11,8 @@ public class ChDirStatement(CodeModel.Statements.ChDirStatement source) : Execut
 {
 	public Evaluable? PathExpression;
 
+	public override bool CanExecuteDirectWithoutEmbedding => PathExpression?.CanEvaluateDirectWithoutEmbedding ?? true;
+
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		if (PathExpression == null)

@@ -7,6 +7,8 @@ public class ClsStatement(CodeModel.Statements.ClsStatement source) : Executable
 {
 	public Evaluable? ArgumentExpression;
 
+	public override bool CanExecuteDirectWithoutEmbedding => ArgumentExpression?.CanEvaluateDirectWithoutEmbedding ?? true;
+
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
 		int mode;

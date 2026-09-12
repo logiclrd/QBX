@@ -12,6 +12,11 @@ public class MidFunction : Function
 	public Evaluable? StartExpression;
 	public Evaluable? LengthExpression;
 
+	public override bool CanEvaluateDirectWithoutEmbedding =>
+		(StringExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(StartExpression?.CanEvaluateDirectWithoutEmbedding ?? true) &&
+		(LengthExpression?.CanEvaluateDirectWithoutEmbedding ?? true);
+
 	bool _isAssignable;
 
 	public override bool IsAssignable => _isAssignable;

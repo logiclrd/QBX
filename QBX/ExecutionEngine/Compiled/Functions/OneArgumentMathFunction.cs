@@ -9,6 +9,8 @@ public abstract class OneArgumentMathFunction : ConstructibleFunction
 {
 	public Evaluable? Argument;
 
+	public override bool CanEvaluateDirectWithoutEmbedding => Argument?.CanEvaluateDirectWithoutEmbedding ?? true;
+
 	public void SetArgument(Evaluable value)
 	{
 		if (!value.Type.IsNumeric)
