@@ -1412,7 +1412,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 							if (dataType.IsUserType)
 								mapper.MakeGlobalVariable(declaration.Name);
 							else
-								mapper.MakeGlobalVariable(mapper.QualifyIdentifier(declaration.Name));
+								mapper.MakeGlobalVariable(mapper.QualifyIdentifier(declaration.Name, dataType));
 						}
 					}
 					else
@@ -1436,7 +1436,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 							if (dataType.IsUserType)
 								mapper.MakeGlobalArray(declaration.Name, dataType);
 							else
-								mapper.MakeGlobalArray(mapper.QualifyIdentifier(declaration.Name), dataType);
+								mapper.MakeGlobalArray(mapper.QualifyIdentifier(declaration.Name, dataType), dataType);
 						}
 
 						if (declaration.Subscripts != null)
