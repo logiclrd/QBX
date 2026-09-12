@@ -521,6 +521,9 @@ public class ExecutionContext
 	{
 		if (executable != null)
 		{
+			// If we just resumed a statement, and a nested statement does an explicit break, don't ignore that.
+			_executionState.IgnoreExplicitBreakFromNextStatement = false;
+
 			if (_goTo != null)
 			{
 				int subsequenceIndex = _goTo.Pop();
