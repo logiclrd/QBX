@@ -42,10 +42,16 @@ public class Compiler(IdentifierRepository identifierRepository)
 			// executing frame before we return.
 			mapper.Unfreeze();
 
+			var existingLineNumbersAndLabels = context.CollectLabels().Keys;
+
 			foreach (var statement in line.AllStatements)
 			{
 				if (!statement.IsLegalInDirectMode)
 					throw RuntimeException.IllegalInDirectMode(statement);
+
+				if (((line.LineNumber != null) && existingLineNumbersAndLabels.Contains(line.LineNumber))
+				 || ((line.Label != null) && existingLineNumbersAndLabels.Contains(line.Label.Name)))
+					throw CompilerException.DuplicateLabel(context: null);
 
 				int statementIndex = 0;
 
@@ -62,13 +68,23 @@ public class Compiler(IdentifierRepository identifierRepository)
 		}
 	}
 
-	public Module Compile(CodeModel.CompilationUnit unit, Compilation compilation)
+	public Module Compile(CodeModel.CompilationUnit unit, Compilation compilation, Routine? embedIn = null)
 	{
 		using (new CultureScope(BasicCulture.Instance))
 		{
-			var module = new Module(compilation);
+			Module module;
+			Mapper? moduleMapper;
 
-			Mapper? moduleMapper = null;
+			if (embedIn == null)
+			{
+				module = new Module(compilation);
+				moduleMapper = null;
+			}
+			else
+			{
+				module = embedIn.Module;
+				moduleMapper = embedIn.Mapper;
+			}
 
 			var routines = new List<Routine>();
 
@@ -88,10 +104,13 @@ public class Compiler(IdentifierRepository identifierRepository)
 					moduleMapper = routine.Mapper;
 				}
 
-				if (routine.Name == Routine.MainRoutineName)
-					module.MainRoutine = routine;
-				else
-					routine.Register(compilation);
+				if (embedIn == null)
+				{
+					if (routine.Name == Routine.MainRoutineName)
+						module.MainRoutine = routine;
+					else
+						routine.Register(compilation);
+				}
 
 				if (routine.OpeningStatement is not null)
 				{
@@ -181,24 +200,27 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 			// Third pass: process parameters, which requires that we know all the FUNCTIONs and UDTs.
 			// We can also match up forward references.
-			foreach (var routine in routines)
+			if (embedIn == null)
 			{
-				if (routine.ReturnType != null)
-					routine.ReturnValueVariableIndex = routine.Mapper.DeclareVariable(routine.Name, routine.ReturnType);
-
-				if (routine.Source.Type != CodeModel.CompilationElementType.Main)
-					routine.TranslateParameters(routine.Mapper, compilation);
-
-				var unqualifiedName = Mapper.UnqualifyIdentifier(routine.Name);
-
-				if (module.UnresolvedReferences.TryGetDeclaration(unqualifiedName, out var forwardReference))
+				foreach (var routine in routines)
 				{
-					routine.ValidateDeclaration(
-						forwardReference.ParameterDefinitions,
-						forwardReference.ReturnType,
-						routine.OpeningStatement,
-						routine.OpeningStatement?.NameToken,
-						getBlameParameterName: i => routine.OpeningStatement?.Parameters?.Parameters[i].NameToken);
+					if (routine.ReturnType != null)
+						routine.ReturnValueVariableIndex = routine.Mapper.DeclareVariable(routine.Name, routine.ReturnType);
+
+					if (routine.Source.Type != CodeModel.CompilationElementType.Main)
+						routine.TranslateParameters(routine.Mapper, compilation);
+
+					var unqualifiedName = Mapper.UnqualifyIdentifier(routine.Name);
+
+					if (module.UnresolvedReferences.TryGetDeclaration(unqualifiedName, out var forwardReference))
+					{
+						routine.ValidateDeclaration(
+							forwardReference.ParameterDefinitions,
+							forwardReference.ReturnType,
+							routine.OpeningStatement,
+							routine.OpeningStatement?.NameToken,
+							getBlameParameterName: i => routine.OpeningStatement?.Parameters?.Parameters[i].NameToken);
+					}
 				}
 			}
 
@@ -293,7 +315,8 @@ public class Compiler(IdentifierRepository identifierRepository)
 				int lineIndex = 0;
 				int statementIndex = 0;
 
-				if (routine.Source.Type != CodeModel.CompilationElementType.Main)
+				if ((routine.Source.Type != CodeModel.CompilationElementType.Main)
+				 && (embedIn == null))
 				{
 					// Skip to the body of function.
 					while (lineIndex < element.Lines.Count)
@@ -376,7 +399,10 @@ public class Compiler(IdentifierRepository identifierRepository)
 					routine.LinkedVariables = mapper.GetLinkedVariables();
 				}
 
-				routine.ResolveJumpStatements();
+				if (embedIn != null)
+					embedIn.ResolveJumpStatements(routine);
+				else
+					routine.ResolveJumpStatements();
 
 				foreach (var statement in routine.AllStatements)
 					if (statement is IUnresolvedLineReference unresolvedLineReference)
@@ -394,7 +420,8 @@ public class Compiler(IdentifierRepository identifierRepository)
 				mainRoutine.VariableTypes = mainRoutine.Mapper.GetVariableTypes();
 			}
 
-			compilation.Modules.Add(module);
+			if (embedIn == null)
+				compilation.Modules.Add(module);
 
 			return module;
 		}
@@ -522,7 +549,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 			{
 				var lineNumber = identifierRepository.GetOrAddCanonicalIdentifier(line.LineNumber);
 
-				var labelStatement = new LabelStatement(lineNumber, statement);
+				var labelStatement = new LabelStatement(lineNumber, line.LineNumberToken, statement);
 
 				module.DataParser.AddLabel(labelStatement);
 				container.Append(labelStatement);
@@ -530,7 +557,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 			if (line.Label != null)
 			{
-				var labelStatement = new LabelStatement(line.Label.Name, statement);
+				var labelStatement = new LabelStatement(line.Label.Name, line.LabelToken, statement);
 
 				module.DataParser.AddLabel(labelStatement);
 				container.Append(labelStatement);

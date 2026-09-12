@@ -416,12 +416,18 @@ public class ExecutionContext
 	public bool WaitForRootFrame()
 		=> _rootFrameEstablished.WaitOne(TimeSpan.FromSeconds(5));
 
-	public int Run(Compilation compilation, bool chainExecution = false)
+	public int Run(Compilation compilation, bool chainExecution = false, Routine? embeddedRoutine = null)
 	{
-		var entrypoint = compilation.EntrypointRoutine;
+		Routine entrypoint;
+		Routine? embeddedInRoutine = null;
 
-		if (entrypoint == null)
-			throw new Exception("The Compilation's EntrypointRoutine is not set");
+		if (embeddedRoutine == null)
+			entrypoint = compilation.EntrypointRoutine ?? throw new Exception("The Compilation's EntrypointRoutine is not set");
+		else
+		{
+			entrypoint = embeddedRoutine;
+			embeddedInRoutine = compilation.EntrypointRoutine ?? throw new Exception("The Compilation's EntrypointRoutine is not set");
+		}
 
 		if (!chainExecution)
 			_commonBlockStorage.Clear();
@@ -478,7 +484,7 @@ public class ExecutionContext
 
 			try
 			{
-				Call(entrypoint, _rootFrame);
+				Call(entrypoint, _rootFrame, embeddedInRoutine);
 			}
 			catch (ReplaceRunningProgram replacement)
 			{
@@ -576,13 +582,13 @@ public class ExecutionContext
 
 							if (debugInstruction == DebugInstruction.ExecuteDirect)
 							{
-								_executionState.Unbreak();
-
 								try
 								{
 									var directSequence = _executionState.CollectDirectSequence();
 
 									Dispatch(directSequence, stackFrame);
+
+									_executionState.NotifyDirectSequenceCompleted();
 								}
 								catch (RuntimeException error)
 								{
@@ -757,7 +763,7 @@ public class ExecutionContext
 		}
 	}
 
-	Variable Call(Routine routine, StackFrame frame, bool enterRoutine = true, bool handlingError = false)
+	Variable Call(Routine routine, StackFrame frame, Routine? embeddedInRoutine = null, bool enterRoutine = true, bool handlingError = false)
 	{
 		if (enterRoutine)
 			_executionState.EnterRoutine(routine, frame);
@@ -776,6 +782,14 @@ public class ExecutionContext
 
 				if (goTo.StatementPath == _returnFromEventHandlerSurrogatePath)
 					return s_dummyVariable;
+
+				// A JumpStatement in direct mode actually jumps from an ephemeral Routine to a main Routine
+				// (the ephemeral Routine shares a compatible stack frame).
+				if (embeddedInRoutine != null)
+				{
+					routine = embeddedInRoutine;
+					embeddedInRoutine = null;
+				}
 
 				_goTo = goTo.StatementPath.Clone();
 				goto goTo_;

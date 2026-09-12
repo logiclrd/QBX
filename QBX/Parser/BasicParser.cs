@@ -198,6 +198,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 					throw new SyntaxErrorException(token, "Expected: statement");
 
 				line.LineNumber = identifierRepository.UpdateCanonicalIdentifier(TrimLineNumber(token.Value));
+				line.LineNumberToken = token;
 
 				precedingWhitespaceToken = null;
 			}
@@ -229,6 +230,8 @@ public class BasicParser(IdentifierRepository identifierRepository)
 								Indentation = whitespace,
 								Name = identifierRepository.UpdateCanonicalIdentifier(labelName),
 							};
+
+						line.LabelToken = buffer[labelIndex];
 
 						buffer.Clear();
 					}

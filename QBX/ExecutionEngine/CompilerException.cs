@@ -109,8 +109,8 @@ public class CompilerException : Exception
 		=> new CompilerException(statement, "WHILE without WEND", "-2029");
 	public static CompilerException WEndWithoutWhile(CodeModel.Statements.Statement? statement)
 		=> new CompilerException(statement, "WEND without WHILE", "-2030");
-	public static CompilerException DuplicateLabel(CodeModel.Statements.Statement? statement)
-		=> new CompilerException(statement, "Duplicate label", "-2033");
+	public static CompilerException DuplicateLabel(Token? context)
+		=> new CompilerException(context, "Duplicate label", "-2033");
 	public static CompilerException SubprogramNotDefined(CodeModel.Statements.Statement? statement)
 		=> new CompilerException(statement, "Subprogram not defined", "-2035");
 	public static CompilerException SubprogramNotDefined(Token? context)

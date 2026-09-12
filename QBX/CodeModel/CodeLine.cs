@@ -7,6 +7,7 @@ using System.Text;
 using QBX.CodeModel.Statements;
 using QBX.DevelopmentEnvironment;
 using QBX.Firmware.Fonts;
+using QBX.LexicalAnalysis;
 using QBX.Parser;
 using QBX.Utility;
 
@@ -23,7 +24,9 @@ public class CodeLine : IRenderableCode, IEditableLine
 	// Line number must be numeric in format, but in practice is
 	// parsed as any string ###.### with total length <= 40.
 	public Identifier? LineNumber { get; set; }
+	public Token? LineNumberToken { get; set; }
 	public Label? Label { get; set; }
+	public Token? LabelToken { get; set; }
 	public IReadOnlyList<Statement> Statements => _statements;
 	public string? EndOfLineComment { get; set; }
 
@@ -127,7 +130,9 @@ public class CodeLine : IRenderableCode, IEditableLine
 		clone.CompilationElement = null;
 		clone.SourceLineIndex = SourceLineIndex.Clone();
 		clone.LineNumber = LineNumber;
+		clone.LineNumberToken = LineNumberToken;
 		clone.Label = Label;
+		clone.LabelToken = LabelToken;
 		clone.EndOfLineComment = EndOfLineComment;
 
 		// These statements all have parent references to this. We don't want them

@@ -164,6 +164,12 @@ public class Routine : Sequence
 			if (line.Statements.FirstOrDefault() is ProperSubroutineOpeningStatement subOrFunction)
 				return subOrFunction.Name;
 
+		// For routines embedded an existing compilation (direct mode), allow the caller to override name to avoid conflicts.
+		if ((source.Name != null)
+		 && (source.Name.Value.Length > 0)
+		 && !char.IsAsciiLetter(source.Name.Value[0]))
+			return source.Name;
+
 		return MainRoutineName;
 	}
 
@@ -288,7 +294,7 @@ public class Routine : Sequence
 			foreach (var label in AllStatements.OfType<LabelStatement>())
 			{
 				if (_cachedLabels.ContainsKey(label.LabelName))
-					throw CompilerException.DuplicateLabel(label.Source);
+					throw CompilerException.DuplicateLabel(label.LabelToken);
 
 				_cachedLabels[label.LabelName] = label.GetPathToStatement();
 			}
@@ -297,7 +303,24 @@ public class Routine : Sequence
 		return _cachedLabels;
 	}
 
+	public bool HasDuplicateLabels(Routine embedded)
+	{
+		var containerLabels = CollectLabels();
+		var embeddedLabels = embedded.CollectLabels();
+
+		return embeddedLabels.Keys.Any(containerLabels.ContainsKey);
+	}
+
 	public void ResolveJumpStatements()
+		=> ResolveJumpStatements(this);
+
+	public void ResolveJumpStatements(Sequence statements)
+		=> ResolveJumpStatements(statements.AllStatements);
+
+	public void ResolveJumpStatements(IEnumerable<Executable> statements)
+		=> ResolveJumpStatements(statements.OfType<JumpStatement>());
+
+	public void ResolveJumpStatements(IEnumerable<JumpStatement> jumpStatements)
 	{
 		// By the time we're running, if we're not the main routine, then the
 		// main routine will already have had its own ResolveJumpStatements
@@ -309,7 +332,7 @@ public class Routine : Sequence
 
 		// GOTO and GOSUB
 
-		foreach (var jump in AllStatements.OfType<JumpStatement>())
+		foreach (var jump in jumpStatements)
 		{
 			var labels = jump.TargetIsInMainModule ? rootLabels : localLabels;
 

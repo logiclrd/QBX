@@ -15,4 +15,5 @@ public interface IReadOnlyExecutionState
 	StatementPath? StartingLineNumber { get; }
 	bool IsTerminated { get; }
 	event Func<StackFrame, bool>? CheckWatchpoints;
+	bool CollectDirectSequenceCompletedFlag(); // Because of this, "read-only" applies specifically to the execution state itself.
 }

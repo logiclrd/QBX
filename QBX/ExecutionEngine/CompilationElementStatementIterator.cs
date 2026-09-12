@@ -46,9 +46,9 @@ public class CompilationElementStatementIterator(CompilationElement element, Cod
 			line = element.Lines[lineIndex];
 
 			if (line.LineNumber != null)
-				SetLineNumberStatement(new LabelStatement(line.LineNumber, line.Statements.FirstOrDefault() ?? emptyStatement.Value));
+				SetLineNumberStatement(new LabelStatement(line.LineNumber, line.LineNumberToken, line.Statements.FirstOrDefault() ?? emptyStatement.Value));
 			if (line.Label != null)
-				SetLabelStatement(new LabelStatement(line.Label.Name, line.Statements.FirstOrDefault() ?? emptyStatement.Value));
+				SetLabelStatement(new LabelStatement(line.Label.Name, line.LabelToken, line.Statements.FirstOrDefault() ?? emptyStatement.Value));
 
 			if ((line.LineNumber != null)
 			 || (line.Label != null))

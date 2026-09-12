@@ -72,11 +72,11 @@ public class DataParserTests
 
 		var parser = new DataParser();
 
-		var label1 = new LabelStatement(ID("label1"), dummy);
-		var label2 = new LabelStatement(ID("label2"), dummy);
-		var label3 = new LabelStatement(ID("label3"), dummy);
-		var label4 = new LabelStatement(ID("label4"), dummy);
-		var label5 = new LabelStatement(ID("label5"), dummy);
+		var label1 = new LabelStatement(ID("label1"), null, dummy);
+		var label2 = new LabelStatement(ID("label2"), null, dummy);
+		var label3 = new LabelStatement(ID("label3"), null, dummy);
+		var label4 = new LabelStatement(ID("label4"), null, dummy);
+		var label5 = new LabelStatement(ID("label5"), null, dummy);
 
 		parser.AddLabel(label1);
 		parser.AddDataSource(DS(["foo"]));
@@ -124,7 +124,7 @@ public class DataParserTests
 
 		var parser = new DataParser();
 
-		var label = new LabelStatement(ID("label1"), dummy);
+		var label = new LabelStatement(ID("label1"), null, dummy);
 
 		parser.AddDataSource(DS(["foo"]));
 		parser.AddLabel(label);
@@ -145,11 +145,11 @@ public class DataParserTests
 
 		var parser = new DataParser();
 
-		var label1 = new LabelStatement(ID("label1"), dummy);
-		var label2 = new LabelStatement(ID("label2"), dummy);
-		var label3 = new LabelStatement(ID("label3"), dummy);
-		var label4 = new LabelStatement(ID("label4"), dummy);
-		var label5 = new LabelStatement(ID("label5"), dummy);
+		var label1 = new LabelStatement(ID("label1"), null, dummy);
+		var label2 = new LabelStatement(ID("label2"), null, dummy);
+		var label3 = new LabelStatement(ID("label3"), null, dummy);
+		var label4 = new LabelStatement(ID("label4"), null, dummy);
+		var label5 = new LabelStatement(ID("label5"), null, dummy);
 
 		parser.AddLabel(label1);
 		parser.AddDataSource(DS(["one"]));

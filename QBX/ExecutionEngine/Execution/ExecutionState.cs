@@ -33,6 +33,7 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 	bool _isTerminated;
 
 	Sequence? _directSequence = null;
+	bool _directSequenceCompleted = false;
 
 	int _stepOverNesting;
 
@@ -101,15 +102,13 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 		}
 	}
 
-	public void ExecuteDirect(Sequence directSequence)
+	public void ExecuteDirectOnResume(Sequence directSequence)
 	{
 		if (!_break)
 			throw new InvalidOperationException("Invalid state for ExecuteDirect, program execution must be in break state");
 
 		_directSequence = directSequence;
-
-		ContinueExecution();
-		WaitForInterruption();
+		_directSequenceCompleted = false;
 	}
 
 	public Sequence? CollectDirectSequence()
@@ -121,14 +120,23 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 		return ret;
 	}
 
+	public void NotifyDirectSequenceCompleted()
+	{
+		_directSequenceCompleted = true;
+	}
+
+	public bool CollectDirectSequenceCompletedFlag()
+	{
+		bool value = _directSequenceCompleted;
+
+		_directSequenceCompleted = false;
+
+		return value;
+	}
+
 	public void Break()
 	{
 		_break = true;
-	}
-
-	public void Unbreak()
-	{
-		_break = false;
 	}
 
 	public void Terminate()

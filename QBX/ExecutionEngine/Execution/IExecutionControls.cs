@@ -12,7 +12,7 @@ public interface IExecutionControls
 	void Break();
 	void Terminate();
 
-	void ExecuteDirect(Sequence sequence);
+	void ExecuteDirectOnResume(Sequence sequence);
 
 	void IgnoreExplicitBreakFromNextStatement();
 

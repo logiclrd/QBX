@@ -104,17 +104,13 @@ public partial class Program
 		Render();
 	}
 
-	[MemberNotNullWhen(true, nameof(_executionContext))]
-	public bool Restart(Action<Compilation>? configureCompilation = null, StatementPath? startingLineNumber = null, bool keepOutput = false)
+	[MemberNotNull(nameof(_compilation))]
+	public bool Compile(out bool chainExecution, ref StatementPath? startingLineNumber)
 	{
-		Terminate(keepOutput);
-
-		if (!EnsureAllCodeIsParsed())
-			return false;
-
 		_compilation = new Compilation();
 
-		bool chainExecution = false;
+		chainExecution = false;
+		startingLineNumber = null;
 
 		if (_executionContext != null)
 		{
@@ -161,7 +157,27 @@ public partial class Program
 
 		_compilation.SetDefaultEntrypoint();
 
-		configureCompilation?.Invoke(_compilation);
+		return true;
+	}
+
+	[MemberNotNullWhen(true, nameof(_executionContext))]
+	public bool Restart(bool keepOutput = false, StatementPath? startingLineNumber = null, Routine? embeddedInRoutine = null)
+	{
+		Terminate(keepOutput);
+
+		if (!EnsureAllCodeIsParsed())
+			return false;
+
+		if (!Compile(out bool chainExecution, ref startingLineNumber))
+			return false;
+
+		return StartExecution(chainExecution, startingLineNumber, keepOutput, embeddedInRoutine);
+	}
+
+	public bool StartExecution(bool chainExecution, StatementPath? startingLineNumber = null, bool keepOutput = false, Routine? embeddedRoutine = null)
+	{
+		if (_compilation == null)
+			throw new Exception("Internat error: Start called with no ambient compilation");
 
 		AssociateWatches(_compilation);
 
@@ -203,7 +219,7 @@ public partial class Program
 				{
 					Thread.CurrentThread.CurrentCulture = BasicCulture.Instance;
 					EventHub.ClearAllEvents();
-					_executionContext.Run(_compilation, chainExecution);
+					_executionContext.Run(_compilation, chainExecution, embeddedRoutine);
 				}
 				catch (Exception e)
 				{
@@ -286,6 +302,9 @@ public partial class Program
 		if (line.CompilationElement == null)
 			return true;
 
+		if (ephemeralElement.Name is not Identifier ephemeralElementName)
+			throw new Exception("Internal error: ephemeral unit has no assigned name");
+
 		foreach (var statement in line.Statements)
 		{
 			if (!statement.IsLegalInDirectMode)
@@ -298,43 +317,32 @@ public partial class Program
 
 		var unit = line.CompilationElement.Owner;
 
-		// Is the program currently running?
-		//   No => Compile the entire program, make the direct statement a line
-		//         in a transient SUB and run it.
-		//   Yes => Compile the direct statement to a Sequence and execute it in
-		//          the context of the current next line
-
-		// TODO: figure out how to make GOTO, GOSUB and RUN work in direct mode (the element in the
-		//       last viewport needs to be full compiled, and its cached labels need to be what the
-		//       compiled direct mode code references
-
 		if ((_executionContext == null) || (_compilation == null) || (_nextStatementRoutine == null))
 		{
-			// Dedicated execution
-			bool success = false;
+			_executionContext = null;
+			_nextStatement = null;
+			_nextStatementRoutine = null;
+
+			StatementPath? ignored = null;
+
+			if (!Compile(out bool chainExecution, startingLineNumber: ref ignored))
+				return false;
+
+			if (chainExecution)
+				throw new Exception("Internal error: Unexpected chain execution");
+
+			var mainModule = _compilation.Modules[0];
+
+			var main = _compilation.EntrypointRoutine
+				?? throw new Exception("Internal error: Module has no entrypoint routine");
 
 			try
 			{
-				success = Restart(
-					compilation =>
-					{
-						var module = compilation.Modules[0];
+				var compiler = new Compiler(unit.IdentifierRepository);
 
-						if (module.MainRoutine == null)
-							throw new Exception("Internal error: Module has no main routine");
+				compiler.DetectDelayLoops = DetectDelayLoops;
 
-						var moduleMapper = module.MainRoutine.Mapper;
-
-						var immediateRoutine = new Routine(compilation.Modules[0], moduleMapper, ephemeralElement, detached: true);
-
-						var compiler = new Compiler(unit.IdentifierRepository);
-
-						compiler.DetectDelayLoops = DetectDelayLoops;
-
-						compiler.Compile(ephemeralUnit, compilation);
-
-						compilation.EntrypointRoutine = compilation.Modules.Last().MainRoutine;
-					});
+				compiler.Compile(ephemeralUnit, _compilation, embedIn: main);
 			}
 			catch (Exception e)
 			{
@@ -342,8 +350,22 @@ public partial class Program
 				return false;
 			}
 
+			var embeddedRoutine = _compilation.Modules.Last().Routines[ephemeralElementName];
+
+			if (main.HasDuplicateLabels(embeddedRoutine))
+				throw CompilerException.DuplicateLabel(context: null);
+
+			// This is tested here because a collision with an existing line number takes precedence.
+			if ((line.LineNumber != null) || (line.Label != null))
+				throw RuntimeException.IllegalInDirectMode(statement: null);
+
+			bool success = StartExecution(
+				chainExecution: false,
+				keepOutput: true,
+				embeddedRoutine: embeddedRoutine);
+
 			if (success)
-				Continue();
+				Continue(embeddedInRoutine: main);
 		}
 		else
 		{
@@ -359,6 +381,12 @@ public partial class Program
 				var executingFrame = _executionContext.ExecutionState.Stack.First();
 
 				compiler.CompileDirect(line, _compilation, _nextStatementRoutine, sequence, executingFrame);
+
+				// This is tested here because a collision with an existing line number takes precedence.
+				if ((line.LineNumber != null) || (line.Label != null))
+					throw RuntimeException.IllegalInDirectMode(statement: null);
+
+				_nextStatementRoutine.ResolveJumpStatements(sequence);
 			}
 			catch (Exception e)
 			{
@@ -368,26 +396,10 @@ public partial class Program
 
 			RestoreOutput();
 
-			try
-			{
-				using (Machine.DOS.EnableBreak())
-					_executionContext.Controls.ExecuteDirect(sequence);
-			}
-			finally
-			{
-				SaveOutput();
-				SetIDEVideoMode();
-			}
+			_executionContext.Controls.ExecuteDirectOnResume(sequence);
 
-			if (_executionContext.ExecutionState.ReplaceRunningProgram)
-				Continue();
-			else
-			{
-				UpdateAfterBreak();
-
-				if (_executionContext.ExecutionState.CurrentError != null)
-					PresentError(_executionContext.ExecutionState.CurrentError);
-			}
+			UnpauseExecution(
+				action: () => _executionContext.Controls.ContinueExecution());
 		}
 
 		return true;
@@ -460,11 +472,11 @@ public partial class Program
 		ShowNextStatement(_executionContext.ExecutionState.Stack);
 	}
 
-	public void Continue()
+	public void Continue(Routine? embeddedInRoutine = null)
 	{
 		if (_executionContext == null)
 		{
-			if (!Restart())
+			if (!Restart(embeddedInRoutine: embeddedInRoutine))
 				return;
 		}
 		else
