@@ -122,20 +122,22 @@ public partial class Program
 
 		Lazy<StringBuilder> currentLine;
 
+		var eventSiteViewport = FocusedViewport;
+
 		void ReloadViewportParameters()
 		{
-			newCursorX = FocusedViewport.CursorX;
-			newCursorY = FocusedViewport.CursorY;
-			newScrollX = FocusedViewport.ScrollX;
-			newScrollY = FocusedViewport.ScrollY;
+			newCursorX = eventSiteViewport.CursorX;
+			newCursorY = eventSiteViewport.CursorY;
+			newScrollX = eventSiteViewport.ScrollX;
+			newScrollY = eventSiteViewport.ScrollY;
 
-			contentLineCount = FocusedViewport.GetContentLineCount();
+			contentLineCount = eventSiteViewport.GetContentLineCount();
 
 			viewportWidth = TextLibrary.Width - 2;
-			viewportHeight = FocusedViewport.CachedContentHeight;
+			viewportHeight = eventSiteViewport.CachedContentHeight;
 
 			if (viewportHeight == 0)
-				viewportHeight = FocusedViewport.Height - 2;
+				viewportHeight = eventSiteViewport.Height - 2;
 
 			currentLine = ResetCurrentLine();
 		}
@@ -158,7 +160,7 @@ public partial class Program
 
 				try
 				{
-					FocusedViewport.CommitCurrentLine();
+					eventSiteViewport.CommitCurrentLine();
 				}
 				catch
 				{
@@ -192,7 +194,7 @@ public partial class Program
 
 				try
 				{
-					FocusedViewport.CommitCurrentLine();
+					eventSiteViewport.CommitCurrentLine();
 				}
 				catch
 				{
@@ -223,7 +225,7 @@ public partial class Program
 
 		void FindPreviousWord()
 		{
-			FocusedViewport.CurrentLineBuffer = currentLine.Value;
+			eventSiteViewport.CurrentLineBuffer = currentLine.Value;
 
 			try
 			{
@@ -248,7 +250,7 @@ public partial class Program
 
 		void FindNextWord()
 		{
-			FocusedViewport.CurrentLineBuffer = currentLine.Value;
+			eventSiteViewport.CurrentLineBuffer = currentLine.Value;
 
 			try
 			{
@@ -432,18 +434,18 @@ public partial class Program
 			{
 				select = false;
 
-				if (FocusedViewport.IsEditable)
+				if (eventSiteViewport.IsEditable)
 				{
-					FocusedViewport.EditCurrentLine();
+					eventSiteViewport.EditCurrentLine();
 
-					if (FocusedViewport.SelectionManager.HasSelection)
+					if (eventSiteViewport.SelectionManager.HasSelection)
 					{
-						FocusedViewport.SelectionManager.Delete();
+						eventSiteViewport.SelectionManager.Delete();
 
-						newCursorX = FocusedViewport.CursorX;
-						newCursorY = FocusedViewport.CursorY;
+						newCursorX = eventSiteViewport.CursorX;
+						newCursorY = eventSiteViewport.CursorY;
 
-						FocusedViewport.CancelEdit();
+						eventSiteViewport.CancelEdit();
 
 						ResetCurrentLine();
 					}
@@ -468,8 +470,8 @@ public partial class Program
 					buffer.Insert(newCursorX, inputText);
 					newCursorX += inputText.Length;
 
-					FocusedViewport.CurrentLineEdited = true;
-					FocusedViewport.CurrentLineBuffer = buffer;
+					eventSiteViewport.CurrentLineEdited = true;
+					eventSiteViewport.CurrentLineBuffer = buffer;
 
 					_alreadyPresentedError = false;
 				}
@@ -505,7 +507,7 @@ public partial class Program
 									{
 										try
 										{
-											FocusedViewport.CommitCurrentLine();
+											eventSiteViewport.CommitCurrentLine();
 										}
 										catch { }
 
@@ -567,7 +569,7 @@ public partial class Program
 								{
 									try
 									{
-										FocusedViewport.CommitCurrentLine();
+										eventSiteViewport.CommitCurrentLine();
 									}
 									catch { }
 
@@ -677,11 +679,11 @@ public partial class Program
 						case ScanCode.Delete:
 						case ScanCode.CtrlDelete:
 						{
-							if (FocusedViewport.IsEditable)
+							if (eventSiteViewport.IsEditable)
 							{
-								if (FocusedViewport.SelectionManager.HasSelection)
+								if (eventSiteViewport.SelectionManager.HasSelection)
 								{
-									if (FocusedViewport.IsEditable)
+									if (eventSiteViewport.IsEditable)
 									{
 										if (input.Modifiers.ShiftKey && !input.Modifiers.CtrlKey && !input.Modifiers.AltKey)
 											action = TextEditorAction.CutSelected;
@@ -699,7 +701,7 @@ public partial class Program
 						}
 						case ScanCode.Backspace:
 						{
-							if (FocusedViewport.IsEditable && !input.Modifiers.CtrlKey)
+							if (eventSiteViewport.IsEditable && !input.Modifiers.CtrlKey)
 								action = TextEditorAction.Backspace;
 
 							break;
@@ -815,7 +817,7 @@ public partial class Program
 
 				bool moveCursor = (action != TextEditorAction.SplitLine);
 
-				if (FocusedViewport.IsEditable)
+				if (eventSiteViewport.IsEditable)
 				{
 					bool savedAlreadyPresentedError = _alreadyPresentedError;
 
@@ -828,28 +830,31 @@ public partial class Program
 					if ((indentation == buffer.Length) && (newCursorX > indentation))
 						indentation = newCursorX;
 
-					if ((FocusedViewport == ImmediateViewport) && moveCursor)
+					if ((eventSiteViewport == ImmediateViewport) && moveCursor)
 					{
 						try
 						{
-							FocusedViewport.CommitCurrentLine();
+							eventSiteViewport.CommitCurrentLine();
 
-							if (FocusedViewport.CursorY >= ImmediateTextElement.Lines.Count)
+							if (eventSiteViewport.CursorY >= ImmediateTextElement.Lines.Count)
 							{
-								while (FocusedViewport.CursorY >= ImmediateTextElement.Lines.Count)
+								while (eventSiteViewport.CursorY >= ImmediateTextElement.Lines.Count)
 									ImmediateTextElement.AddLine(ImmediateTextElement.ConstructLine(EmptyBuffer));
 							}
 							else
 							{
 								newCursorX = 0;
+								newCursorY++;
 
-								if (ParseAndExecuteDirect(ImmediateTextElement.Lines[FocusedViewport.CursorY].Read()))
-									newCursorY++;
+								ParseAndExecuteDirect(ImmediateTextElement.Lines[eventSiteViewport.CursorY].Read());
 							}
 						}
 						catch (Exception ex)
 						{
 							PresentError(ex);
+
+							newCursorX = eventSiteViewport.CursorX;
+							newCursorY = eventSiteViewport.CursorY;
 						}
 					}
 					else
@@ -861,32 +866,32 @@ public partial class Program
 								{
 									StringBuilder newLine = new StringBuilder();
 
-									if (FocusedViewport.CursorX < buffer.Length)
+									if (eventSiteViewport.CursorX < buffer.Length)
 									{
 										// Enter mid-line: Split lines
-										newLine = new StringBuilder(capacity: indentation + buffer.Length - FocusedViewport.CursorX);
+										newLine = new StringBuilder(capacity: indentation + buffer.Length - eventSiteViewport.CursorX);
 
 										for (int i = 0; i < indentation; i++)
 											newLine.Append(' ');
 
-										newLine.Append(buffer, FocusedViewport.CursorX, buffer.Length - FocusedViewport.CursorX);
+										newLine.Append(buffer, eventSiteViewport.CursorX, buffer.Length - eventSiteViewport.CursorX);
 
 										while ((newLine.Length > 0) && char.IsWhiteSpace(newLine[newLine.Length - 1]))
 											newLine.Length--;
 
-										buffer.Remove(FocusedViewport.CursorX, buffer.Length - FocusedViewport.CursorX);
+										buffer.Remove(eventSiteViewport.CursorX, buffer.Length - eventSiteViewport.CursorX);
 
-										FocusedViewport.CurrentLineBuffer = buffer;
-										FocusedViewport.CurrentLineEdited = true;
+										eventSiteViewport.CurrentLineBuffer = buffer;
+										eventSiteViewport.CurrentLineEdited = true;
 
-										if (FocusedViewport.CursorX == 0)
+										if (eventSiteViewport.CursorX == 0)
 											_alreadyPresentedError = savedAlreadyPresentedError;
 									}
 
 									// Step 1: Try to commit left part
 									try
 									{
-										bool reloadViewport = FocusedViewport.CommitCurrentLine();
+										bool reloadViewport = eventSiteViewport.CommitCurrentLine();
 
 										if (reloadViewport)
 										{
@@ -894,8 +899,8 @@ public partial class Program
 
 											if (newLine.Length == 0)
 											{
-												FocusedViewport.CursorX = 0;
-												FocusedViewport.CursorY = 1;
+												eventSiteViewport.CursorX = 0;
+												eventSiteViewport.CursorY = 1;
 
 												return;
 											}
@@ -911,6 +916,8 @@ public partial class Program
 										{
 											_alreadyPresentedError = true;
 											PresentError(exception);
+											newCursorX = eventSiteViewport.CursorX;
+											newCursorY = eventSiteViewport.CursorY;
 											return;
 										}
 									}
@@ -921,17 +928,17 @@ public partial class Program
 
 									ApplyCursorMovement();
 
-									FocusedViewport.InsertLine(newCursorY, new CodeLine());
+									eventSiteViewport.InsertLine(newCursorY, new CodeLine());
 
 									contentLineCount++;
 
-									FocusedViewport.CurrentLineBuffer = newLine;
-									FocusedViewport.CurrentLineEdited = true;
+									eventSiteViewport.CurrentLineBuffer = newLine;
+									eventSiteViewport.CurrentLineEdited = true;
 
 									// Immediately commit the new partial line, ignoring errors.
 									try
 									{
-										FocusedViewport.CommitCurrentLine();
+										eventSiteViewport.CommitCurrentLine();
 									}
 									catch { }
 								});
@@ -939,19 +946,19 @@ public partial class Program
 						return;
 					}
 				}
-				else if (FocusedViewport.HelpTopic != null)
+				else if (eventSiteViewport.HelpTopic != null)
 				{
 					if (!moveCursor)
 						goto case TextEditorAction.Beep;
 
 					// Check for a link under the cursor.
-					var lineIndex = FocusedViewport.CursorY;
+					var lineIndex = eventSiteViewport.CursorY;
 
-					if ((lineIndex >= 0) && (lineIndex < FocusedViewport.HelpTopic.Lines.Count))
+					if ((lineIndex >= 0) && (lineIndex < eventSiteViewport.HelpTopic.Lines.Count))
 					{
-						int cursorX = FocusedViewport.CursorX;
+						int cursorX = eventSiteViewport.CursorX;
 
-						var line = FocusedViewport.HelpTopic.Lines[lineIndex];
+						var line = eventSiteViewport.HelpTopic.Lines[lineIndex];
 
 						var link = line.Links?.Find(candidate => (candidate.StartIndex <= cursorX) && (cursorX <= candidate.EndIndex));
 
@@ -961,7 +968,7 @@ public partial class Program
 								ShowHelpTopic(link.TargetContextString);
 							else if (link.TargetTopicIndex >= 0)
 							{
-								var database = FocusedViewport.HelpTopic.Database;
+								var database = eventSiteViewport.HelpTopic.Database;
 
 								if (link.TargetTopicIndex < database.Topics.Count)
 									ShowHelpTopic(database.Topics[link.TargetTopicIndex]);
@@ -988,11 +995,11 @@ public partial class Program
 					{
 						try
 						{
-							FocusedViewport.CommitCurrentLine();
-							FocusedViewport.CursorY = ++newCursorY;
+							eventSiteViewport.CommitCurrentLine();
+							eventSiteViewport.CursorY = ++newCursorY;
 
-							if (newCursorY >= FocusedViewport.GetContentLineCount())
-								FocusedViewport.InsertLine(newCursorY, new CodeLine());
+							if (newCursorY >= eventSiteViewport.GetContentLineCount())
+								eventSiteViewport.InsertLine(newCursorY, new CodeLine());
 
 							currentLine = ResetCurrentLine();
 
@@ -1006,7 +1013,7 @@ public partial class Program
 								}
 
 							newCursorX = indentation;
-							newCursorY = FocusedViewport.CursorY;
+							newCursorY = eventSiteViewport.CursorY;
 
 							if (newCursorX < newScrollX)
 							{
@@ -1021,6 +1028,8 @@ public partial class Program
 						catch (Exception e)
 						{
 							PresentError(e);
+							newCursorX = eventSiteViewport.CursorX;
+							newCursorY = eventSiteViewport.CursorY;
 						}
 					});
 
@@ -1033,35 +1042,35 @@ public partial class Program
 				if (switchedViewports)
 					ReloadViewportParameters();
 
-				FocusedViewport.SelectionManager.CancelSelection();
+				eventSiteViewport.SelectionManager.CancelSelection();
 
 				break;
 			}
 			case TextEditorAction.Copy:
 			{
-				FocusedViewport.SelectionManager.Copy();
+				eventSiteViewport.SelectionManager.Copy();
 				select = true;
 				break;
 			}
 			case TextEditorAction.Paste:
 			{
-				if (FocusedViewport.IsEditable)
+				if (eventSiteViewport.IsEditable)
 				{
 					void PerformPaste()
 					{
-						if (FocusedViewport.SelectionManager.HasSelection)
+						if (eventSiteViewport.SelectionManager.HasSelection)
 						{
-							FocusedViewport.SelectionManager.Delete();
-							newCursorX = FocusedViewport.CursorX;
+							eventSiteViewport.SelectionManager.Delete();
+							newCursorX = eventSiteViewport.CursorX;
 						}
 
-						FocusedViewport.SelectionManager.Paste();
+						eventSiteViewport.SelectionManager.Paste();
 						select = false;
 						_alreadyPresentedError = false;
 					}
 
-					if (FocusedViewport.SelectionManager.HasMultilineSelection
-						|| FocusedViewport.SelectionManager.HasMultilineClipboardContent)
+					if (eventSiteViewport.SelectionManager.HasMultilineSelection
+						|| eventSiteViewport.SelectionManager.HasMultilineClipboardContent)
 					{
 						PromptTerminateToCommitEdit(willMakeChanges: true, PerformPaste);
 						return;
@@ -1078,15 +1087,15 @@ public partial class Program
 
 				void PerformCut()
 				{
-					FocusedViewport.SelectionManager.Cut();
+					eventSiteViewport.SelectionManager.Cut();
 
-					newCursorX = FocusedViewport.CursorX;
-					newCursorY = FocusedViewport.CursorY;
+					newCursorX = eventSiteViewport.CursorX;
+					newCursorY = eventSiteViewport.CursorY;
 
 					_alreadyPresentedError = false;
 				}
 
-				if (FocusedViewport.SelectionManager.HasMultilineSelection)
+				if (eventSiteViewport.SelectionManager.HasMultilineSelection)
 				{
 					PromptTerminateToCommitEdit(
 						willMakeChanges: true,
@@ -1105,14 +1114,14 @@ public partial class Program
 			}
 			case TextEditorAction.CutCurrent:
 			{
-				if (FocusedViewport.IsEditable && (newCursorY + 1 < FocusedViewport.EditableElement?.Lines.Count))
+				if (eventSiteViewport.IsEditable && (newCursorY + 1 < eventSiteViewport.EditableElement?.Lines.Count))
 				{
 					PromptTerminateToCommitEdit(
 						() =>
 						{
-							FocusedViewport.SelectionManager.CancelSelection();
-							FocusedViewport.SelectionManager.StartSelection(0, newCursorY + 1);
-							FocusedViewport.SelectionManager.ExtendSelection(0, newCursorY);
+							eventSiteViewport.SelectionManager.CancelSelection();
+							eventSiteViewport.SelectionManager.StartSelection(0, newCursorY + 1);
+							eventSiteViewport.SelectionManager.ExtendSelection(0, newCursorY);
 
 							_performCutAfterRender = true;
 						});
@@ -1124,16 +1133,16 @@ public partial class Program
 			}
 			case TextEditorAction.CutToEOL:
 			{
-				if (FocusedViewport.IsEditable)
+				if (eventSiteViewport.IsEditable)
 				{
-					var buffer = FocusedViewport.EditCurrentLine();
+					var buffer = eventSiteViewport.EditCurrentLine();
 
 					PromptTerminateToCommitEdit(
 						() =>
 						{
-							FocusedViewport.SelectionManager.CancelSelection();
-							FocusedViewport.SelectionManager.StartSelection(buffer.Length, newCursorY);
-							FocusedViewport.SelectionManager.ExtendSelection(newCursorX, newCursorY);
+							eventSiteViewport.SelectionManager.CancelSelection();
+							eventSiteViewport.SelectionManager.StartSelection(buffer.Length, newCursorY);
+							eventSiteViewport.SelectionManager.ExtendSelection(newCursorX, newCursorY);
 
 							_performCutAfterRender = true;
 						});
@@ -1147,13 +1156,13 @@ public partial class Program
 			{
 				select = false;
 
-				if (FocusedViewport.IsEditable && !input.Modifiers.CtrlKey)
+				if (eventSiteViewport.IsEditable && !input.Modifiers.CtrlKey)
 				{
-					FocusedViewport.SelectionManager.CancelSelection();
+					eventSiteViewport.SelectionManager.CancelSelection();
 
 					var buffer = currentLine.Value;
 
-					if (FocusedViewport.CursorX > 0)
+					if (eventSiteViewport.CursorX > 0)
 					{
 						int thisLineIndentation = 0;
 
@@ -1170,7 +1179,7 @@ public partial class Program
 
 							for (int i = newCursorY - 1; i >= 0; i--)
 							{
-								int lineIndent = FocusedViewport.GetLineIndentation(i, out var isEmpty);
+								int lineIndent = eventSiteViewport.GetLineIndentation(i, out var isEmpty);
 
 								if (isEmpty)
 									continue;
@@ -1200,10 +1209,10 @@ public partial class Program
 								buffer.Remove(newCursorX, 1);
 						}
 
-						FocusedViewport.CurrentLineBuffer = buffer;
-						FocusedViewport.CurrentLineEdited = true;
+						eventSiteViewport.CurrentLineBuffer = buffer;
+						eventSiteViewport.CurrentLineEdited = true;
 					}
-					else if (FocusedViewport.CursorY > 0)
+					else if (eventSiteViewport.CursorY > 0)
 					{
 						PromptTerminateToCommitEdit(
 							willMakeChanges: true,
@@ -1216,9 +1225,9 @@ public partial class Program
 
 								ApplyCursorMovement(ignoreErrors: true);
 
-								FocusedViewport.CurrentLineBuffer = null;
+								eventSiteViewport.CurrentLineBuffer = null;
 
-								buffer = FocusedViewport.EditCurrentLine();
+								buffer = eventSiteViewport.EditCurrentLine();
 
 								newCursorX = buffer.Length;
 
@@ -1226,14 +1235,14 @@ public partial class Program
 
 								buffer.Append(lineToCollapse);
 
-								FocusedViewport.DeleteLine(FocusedViewport.CursorY);
-								FocusedViewport.CurrentLineBuffer = buffer;
-								FocusedViewport.CurrentLineEdited = true;
+								eventSiteViewport.DeleteLine(eventSiteViewport.CursorY);
+								eventSiteViewport.CurrentLineBuffer = buffer;
+								eventSiteViewport.CurrentLineEdited = true;
 
 								// Immediately commit the new combined line, ignoring errors.
 								try
 								{
-									FocusedViewport.CommitCurrentLine();
+									eventSiteViewport.CommitCurrentLine();
 								}
 								catch { }
 							});
@@ -1250,17 +1259,17 @@ public partial class Program
 			{
 				select = false;
 
-				if (FocusedViewport.SelectionManager.HasSelection)
+				if (eventSiteViewport.SelectionManager.HasSelection)
 				{
 					void PerformDelete()
 					{
-						FocusedViewport.SelectionManager.Delete();
+						eventSiteViewport.SelectionManager.Delete();
 
-						newCursorX = FocusedViewport.CursorX;
-						newCursorY = FocusedViewport.CursorY;
+						newCursorX = eventSiteViewport.CursorX;
+						newCursorY = eventSiteViewport.CursorY;
 					}
 
-					if (FocusedViewport.SelectionManager.HasMultilineSelection)
+					if (eventSiteViewport.SelectionManager.HasMultilineSelection)
 					{
 						PromptTerminateToCommitEdit(
 							willMakeChanges: true,
@@ -1279,16 +1288,16 @@ public partial class Program
 				{
 					var buffer = currentLine.Value;
 
-					if (FocusedViewport.CursorX < buffer.Length)
+					if (eventSiteViewport.CursorX < buffer.Length)
 					{
-						buffer.Remove(FocusedViewport.CursorX, 1);
-						FocusedViewport.CurrentLineBuffer = buffer;
-						FocusedViewport.CurrentLineEdited = true;
+						buffer.Remove(eventSiteViewport.CursorX, 1);
+						eventSiteViewport.CurrentLineBuffer = buffer;
+						eventSiteViewport.CurrentLineEdited = true;
 					}
 					else
 					{
 						// Delete at end of line: join lines
-						if (FocusedViewport.CursorY + 1 < contentLineCount)
+						if (eventSiteViewport.CursorY + 1 < contentLineCount)
 						{
 							PromptTerminateToCommitEdit(
 								willMakeChanges: true,
@@ -1296,9 +1305,9 @@ public partial class Program
 								{
 									var nextLine = new StringWriter();
 
-									FocusedViewport.RenderLine(FocusedViewport.CursorY + 1, nextLine);
+									eventSiteViewport.RenderLine(eventSiteViewport.CursorY + 1, nextLine);
 
-									while (buffer.Length < FocusedViewport.CursorX)
+									while (buffer.Length < eventSiteViewport.CursorX)
 										buffer.Append(' ');
 
 									var nextLineBuffer = nextLine.GetStringBuilder();
@@ -1314,10 +1323,10 @@ public partial class Program
 
 									buffer.Append(nextLineBuffer, firstNonSpace, nextLineBuffer.Length - firstNonSpace);
 
-									FocusedViewport.DeleteLine(FocusedViewport.CursorY + 1);
+									eventSiteViewport.DeleteLine(eventSiteViewport.CursorY + 1);
 
-									FocusedViewport.CurrentLineBuffer = buffer;
-									FocusedViewport.CurrentLineEdited = true;
+									eventSiteViewport.CurrentLineBuffer = buffer;
+									eventSiteViewport.CurrentLineEdited = true;
 								});
 						}
 					}
@@ -1327,9 +1336,9 @@ public partial class Program
 			}
 			case TextEditorAction.DelWord:
 			{
-				if (FocusedViewport.IsEditable)
+				if (eventSiteViewport.IsEditable)
 				{
-					var buffer = FocusedViewport.EditCurrentLine();
+					var buffer = eventSiteViewport.EditCurrentLine();
 
 					if ((newCursorX >= 0) && (newCursorX < buffer.Length))
 					{
@@ -1353,8 +1362,8 @@ public partial class Program
 
 						buffer.Remove(newCursorX, removeCount);
 
-						FocusedViewport.CurrentLineEdited = true;
-						FocusedViewport.CurrentLineBuffer = buffer;
+						eventSiteViewport.CurrentLineEdited = true;
+						eventSiteViewport.CurrentLineBuffer = buffer;
 
 						_alreadyPresentedError = false;
 					}
@@ -1370,24 +1379,24 @@ public partial class Program
 					// - If no block selection, insert spaces until CursorX is a multiple of 8.
 					// - If block selection, indent all selected lines by the tab size.
 
-					var element = FocusedViewport.EditableElement;
+					var element = eventSiteViewport.EditableElement;
 
 					if (element == null)
 						break; // ?
 
 					try
 					{
-						if (FocusedViewport.CurrentLineEdited)
-							FocusedViewport.CommitCurrentLine();
+						if (eventSiteViewport.CurrentLineEdited)
+							eventSiteViewport.CommitCurrentLine();
 					}
 					catch { }
 
-					if (!FocusedViewport.SelectionManager.HasMultilineSelection)
+					if (!eventSiteViewport.SelectionManager.HasMultilineSelection)
 					{
 						var buffer = currentLine.Value;
 
 						int spacesToAdd = 0;
-						int insertionPoint = FocusedViewport.CursorX;
+						int insertionPoint = eventSiteViewport.CursorX;
 
 						if (insertionPoint > buffer.Length)
 						{
@@ -1395,7 +1404,7 @@ public partial class Program
 							insertionPoint = buffer.Length;
 						}
 
-						spacesToAdd += ((FocusedViewport.CursorX - 1) & 7) + 1;
+						spacesToAdd += ((eventSiteViewport.CursorX - 1) & 7) + 1;
 
 						Span<char> spaces = stackalloc char[spacesToAdd];
 
@@ -1407,7 +1416,7 @@ public partial class Program
 					}
 					else
 					{
-						var range = FocusedViewport.SelectionManager.GetSelectionRange();
+						var range = eventSiteViewport.SelectionManager.GetSelectionRange();
 
 						int y1 = Math.Min(range.StartY, range.EndY);
 						int y2 = Math.Max(range.StartY, range.EndY);
@@ -1450,25 +1459,25 @@ public partial class Program
 					//   * Otherwise, deindent all the lines by the difference between the first
 					//     line and the least indented line in the block.
 
-					var element = FocusedViewport.EditableElement;
+					var element = eventSiteViewport.EditableElement;
 
 					if (element == null)
 						break; // ?
 
-					if (!FocusedViewport.SelectionManager.HasMultilineSelection)
+					if (!eventSiteViewport.SelectionManager.HasMultilineSelection)
 					{
-						newCursorX = FocusedViewport.CursorX = FocusedViewport.GetLineIndentation(FocusedViewport.CursorY);
+						newCursorX = eventSiteViewport.CursorX = eventSiteViewport.GetLineIndentation(eventSiteViewport.CursorY);
 						goto case TextEditorAction.Backspace;
 					}
 
 					try
 					{
-						if (FocusedViewport.CurrentLineEdited)
-							FocusedViewport.CommitCurrentLine();
+						if (eventSiteViewport.CurrentLineEdited)
+							eventSiteViewport.CommitCurrentLine();
 					}
 					catch { }
 
-					var range = FocusedViewport.SelectionManager.GetSelectionRange();
+					var range = eventSiteViewport.SelectionManager.GetSelectionRange();
 
 					int y1 = Math.Min(range.StartY, range.EndY);
 					int y2 = Math.Max(range.StartY, range.EndY);
@@ -1476,9 +1485,9 @@ public partial class Program
 					if (y2 > element.Lines.Count)
 						y2 = element.Lines.Count;
 
-					int firstLineIndentation = FocusedViewport.GetLineIndentation(y1, out _);
+					int firstLineIndentation = eventSiteViewport.GetLineIndentation(y1, out _);
 
-					bool usePreviousIndentation = (FocusedViewport.CursorY == y1);
+					bool usePreviousIndentation = (eventSiteViewport.CursorY == y1);
 
 					int indentationDelta = 0;
 
@@ -1488,7 +1497,7 @@ public partial class Program
 
 						for (int y = y1 + 1; y < y2; y++)
 						{
-							int indentation = FocusedViewport.GetLineIndentation(y);
+							int indentation = eventSiteViewport.GetLineIndentation(y);
 
 							if (indentation < blockMinimumIndentation)
 								blockMinimumIndentation = indentation;
@@ -1510,7 +1519,7 @@ public partial class Program
 
 						for (int i = y1 - 1; i >= 0; i--)
 						{
-							int lineIndent = FocusedViewport.GetLineIndentation(i, out var isEmpty);
+							int lineIndent = eventSiteViewport.GetLineIndentation(i, out var isEmpty);
 
 							if (isEmpty)
 								continue;
@@ -1564,7 +1573,7 @@ public partial class Program
 		{
 			try
 			{
-				FocusedViewport.ScrollCursorIntoView(
+				eventSiteViewport.ScrollCursorIntoView(
 					newCursorX, newCursorY,
 					newScrollX, newScrollY,
 					priority,
@@ -1579,9 +1588,9 @@ public partial class Program
 			}
 
 			if (!select && !input.IsModifierKey)
-				FocusedViewport.SelectionManager.StartSelection(FocusedViewport.CursorX, FocusedViewport.CursorY);
+				eventSiteViewport.SelectionManager.StartSelection(eventSiteViewport.CursorX, eventSiteViewport.CursorY);
 			else
-				FocusedViewport.SelectionManager.ExtendSelection(FocusedViewport.CursorX, FocusedViewport.CursorY);
+				eventSiteViewport.SelectionManager.ExtendSelection(eventSiteViewport.CursorX, eventSiteViewport.CursorY);
 
 			UpdateSearchMenu();
 		}
