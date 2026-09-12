@@ -84,6 +84,8 @@ public partial class Program
 
 					FocusedViewport.CursorX = _nextStatement.SourceColumn;
 					FocusedViewport.CursorY = line.SourceLineIndex.Value;
+
+					FocusedViewport.SelectionManager.CancelSelection();
 				}
 
 				// We are invoked as part of a key handler in ProcessTextEditorKey.
@@ -147,6 +149,8 @@ public partial class Program
 				ViewportPositioningPriority.Cursor,
 				viewportWidth: TextLibrary.CharacterWidth - 2,
 				PromptTerminateToCommitEdit);
+
+			FocusedViewport.SelectionManager.CancelSelection();
 		}
 
 		_errorToken = context;

@@ -619,7 +619,5 @@ public class Viewport
 					ScrollY = newScrollY;
 				});
 		}
-
-		SelectionManager.CancelSelection();
 	}
 }
