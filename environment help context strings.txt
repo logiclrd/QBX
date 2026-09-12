@@ -66,7 +66,6 @@ AS Clause Required: "-185" => DIM, REDIM, SHARED or COMMON references an array i
 Numeric Array Illegal: "-187" => VARPTR$ used on a non-string
 Type Member Outside of TYPE: "-188"
 Too Many COMMON Variables: "-189" => not sure what triggers this
-Incorrect Number of Dimensions: "-190"
 DEF FN Not Permitted In IF/THEN/ELSE or SELECT CASE: "-191"
 FOR Index Variable Already Used: "-194"
 Illegal Type for ISAM OPEN: "-196"
