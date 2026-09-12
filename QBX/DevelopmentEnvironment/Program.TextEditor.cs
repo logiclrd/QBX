@@ -440,14 +440,19 @@ public partial class Program
 
 					if (eventSiteViewport.SelectionManager.HasSelection)
 					{
+						bool multilineSelection = eventSiteViewport.SelectionManager.HasMultilineSelection;
+
 						eventSiteViewport.SelectionManager.Delete();
 
 						newCursorX = eventSiteViewport.CursorX;
 						newCursorY = eventSiteViewport.CursorY;
 
-						eventSiteViewport.CancelEdit();
+						if (multilineSelection)
+						{
+							eventSiteViewport.CancelEdit();
 
-						ResetCurrentLine();
+							ResetCurrentLine();
+						}
 					}
 
 					inputText ??= input.TextCharacter.ToString();
