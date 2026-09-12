@@ -171,18 +171,17 @@ public partial class Program
 		if (!Compile(out bool chainExecution, ref startingLineNumber))
 			return false;
 
-		return StartExecution(chainExecution, startingLineNumber, keepOutput, embeddedInRoutine);
+		return StartExecution(chainExecution, startingLineNumber, embeddedInRoutine);
 	}
 
-	public bool StartExecution(bool chainExecution, StatementPath? startingLineNumber = null, bool keepOutput = false, Routine? embeddedRoutine = null)
+	public bool StartExecution(bool chainExecution, StatementPath? startingLineNumber = null, Routine? embeddedRoutine = null)
 	{
 		if (_compilation == null)
 			throw new Exception("Internat error: Start called with no ambient compilation");
 
 		AssociateWatches(_compilation);
 
-		if (!keepOutput)
-			RestoreOutput();
+		RestoreOutput();
 
 		if (Machine.VideoFirmware.LastModeNumber != 3)
 			Machine.VideoFirmware.SetMode(3);
@@ -361,7 +360,6 @@ public partial class Program
 
 			bool success = StartExecution(
 				chainExecution: false,
-				keepOutput: true,
 				embeddedRoutine: embeddedRoutine);
 
 			if (success)
