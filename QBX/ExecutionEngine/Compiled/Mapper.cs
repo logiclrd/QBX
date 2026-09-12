@@ -94,7 +94,7 @@ public class Mapper
 	// relevant stack frames are correspondingly updated.
 	public void Unfreeze()
 	{
-		_isFrozen = true;
+		_isFrozen = false;
 	}
 
 	Dictionary<string, LiteralValue> _constantValueByName = new(StringComparer.OrdinalIgnoreCase);
