@@ -1,5 +1,11 @@
 # QBX Releases
 
+## 1.24.2 - 2026-09-12
+
+### Fixed
+
+- `RUN linenumber` now works (broken by a refactoring after previously working).
+
 ## 1.24.1 - 2026-09-12
 
 ### Fixed
