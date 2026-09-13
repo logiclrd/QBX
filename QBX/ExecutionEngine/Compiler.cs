@@ -4072,6 +4072,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 					case TokenType.OCT: function = new OctFunction(); break;
 					case TokenType.PEEK: function = new PeekFunction(); break;
 					case TokenType.PEN: function = new PenFunction(); break;
+					case TokenType.PLAY: function = new PlayFunction(); break;
 					case TokenType.PMAP: function = new PMapFunction(); break;
 					case TokenType.POINT: function = PointFunctionFactory.Construct(keywordFunction); break;
 					case TokenType.POS: function = new PosFunction(); break;
