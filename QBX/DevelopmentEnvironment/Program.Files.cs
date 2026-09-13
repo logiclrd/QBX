@@ -4,12 +4,20 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 
+using Microsoft.Win32.SafeHandles;
+
 using QBX.CodeModel;
 using QBX.DevelopmentEnvironment.Dialogs;
 using QBX.ExecutionEngine;
 using QBX.Firmware.Fonts;
+using QBX.OperatingSystem;
 using QBX.Utility;
 using QBX.Utility.Interop;
+
+using OSFileMode = QBX.OperatingSystem.FileStructures.FileMode;
+using OSOpenMode = QBX.OperatingSystem.FileStructures.OpenMode;
+
+using RegularFileDescriptor = QBX.OperatingSystem.FileDescriptors.RegularFileDescriptor;
 
 namespace QBX.DevelopmentEnvironment
 {
@@ -36,12 +44,17 @@ namespace QBX.DevelopmentEnvironment
 				SplitViewport.SwitchTo(unit.Elements[0]);
 		}
 
-		public void LoadFile(string path, bool replaceExistingProgram, Action<int>? lineCountCallback = null)
+		public void LoadFile(string path, bool replaceExistingProgram, Action<int>? lineCountCallback = null, CodeModel.Statements.Statement? errorContext = null)
+		{
+			using (var reader = DOSOpenFile(path, errorContext))
+				LoadFile(reader, path, replaceExistingProgram, lineCountCallback);
+		}
+
+		public void LoadFile(StreamReader reader, string sourcePath, bool replaceExistingProgram, Action<int>? lineCountCallback = null)
 		{
 			try
 			{
-				using (var reader = new StreamReader(path, new CP437Encoding(ControlCharacterInterpretation.Semantic)))
-					Load(reader, path, replaceExistingProgram, lineCountCallback);
+				Load(reader, sourcePath, replaceExistingProgram, lineCountCallback: lineCountCallback);
 			}
 			catch (IOException e)
 			{
@@ -68,7 +81,7 @@ namespace QBX.DevelopmentEnvironment
 
 		static NameComparer s_nameComparer = new NameComparer();
 
-		public void Load(TextReader reader, string filePath, bool replaceExistingProgram, Action<int>? lineCountCallback = null)
+		public void Load(StreamReader reader, string filePath, bool replaceExistingProgram, bool chainExecution = false, Action<int>? lineCountCallback = null, CodeModel.Statements.Statement? errorContext = null)
 		{
 			Terminate();
 
@@ -78,18 +91,39 @@ namespace QBX.DevelopmentEnvironment
 
 				string makeFileName = Path.ChangeExtension(filePath, ".MAK");
 
-				if (File.Exists(makeFileName) && !FileIdentityUtility.IsSameFile(filePath, makeFileName))
+				StreamReader? makeFileReader = null;
+
+				if (Path.GetExtension(filePath).Equals(".mak", StringComparison.InvariantCultureIgnoreCase))
+					makeFileReader = reader;
+				else
 				{
-					reader.Dispose();
+					try
+					{
+						makeFileReader = DOSOpenFile(makeFileName, errorContext);
+					}
+					catch { }
+				}
 
-					if (!TryLoadMakeFileItems(makeFileName))
-						PresentError(RuntimeException.BadFileName(), ErrorSource.DevelopmentEnvironment);
+				if (makeFileReader != null)
+				{
+					using (makeFileReader)
+					{
+						if (makeFileReader.BaseStream != reader.BaseStream)
+							reader.Dispose();
 
-					return;
+						string makeFileDirectory = Path.GetDirectoryName(makeFileName) ?? ".";
+
+						if (!TryLoadMakeFileItems(makeFileReader, makeFileDirectory, showIDEUIFeedback: !chainExecution))
+							PresentError(RuntimeException.BadFileName(), ErrorSource.DevelopmentEnvironment);
+
+						reader.Dispose(); // Ensure the reference stays alive, in case the same underlying stream is referenced.
+
+						return;
+					}
 				}
 			}
 
-			if (FileIsAlreadyLoaded(filePath))
+			if (FileIsAlreadyLoaded(reader))
 			{
 				ShowDialog(new FilePreviouslyLoadedDialog(Machine, Configuration, filePath));
 				return;
@@ -142,24 +176,54 @@ namespace QBX.DevelopmentEnvironment
 			}
 		}
 
+		private bool FileIsAlreadyLoaded(StreamReader reader)
+		{
+			if (reader.BaseStream is FileStream fileStream)
+			{
+				if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+					return FileIsAlreadyLoaded(fileStream.SafeFileHandle, new FileIndexProvider());
+				else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+					return FileIsAlreadyLoaded(fileStream.SafeFileHandle, new LinuxINodeProvider());
+				else if (RuntimeInformation.IsOSPlatform(OSPlatform.FreeBSD))
+					return FileIsAlreadyLoaded(fileStream.SafeFileHandle, new FreeBSDINodeProvider());
+				else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+					return FileIsAlreadyLoaded(fileStream.SafeFileHandle, new OSXINodeProvider());
+			}
+
+			return false;
+		}
+
 		private bool FileIsAlreadyLoaded<TINode>(string filePath, INodeProvider<TINode> inodeProvider)
 			where TINode : INode<TINode>
 		{
 			if (inodeProvider.TryGetINode(filePath, out var inode))
-			{
-				foreach (var file in LoadedFiles)
-				{
-					if (inodeProvider.TryGetINode(file.FilePath, out var loadedINode)
-					 && (inode == loadedINode))
-						return true;
-				}
-
-				return false;
-			}
+				return FileIsAlreadyLoaded(inode, inodeProvider);
 
 			filePath = Path.GetFullPath(filePath);
 
 			return LoadedFiles.Any(u => u.FilePath.Equals(filePath));
+		}
+
+		private bool FileIsAlreadyLoaded<TINode>(SafeFileHandle fileHandle, INodeProvider<TINode> inodeProvider)
+			where TINode : INode<TINode>
+		{
+			if (inodeProvider.TryGetINode(fileHandle, out var inode))
+				return FileIsAlreadyLoaded(inode, inodeProvider);
+
+			return false;
+		}
+
+		private bool FileIsAlreadyLoaded<TINode>(TINode inode, INodeProvider<TINode> inodeProvider)
+			where TINode : INode<TINode>
+		{
+			foreach (var file in LoadedFiles)
+			{
+				if (inodeProvider.TryGetINode(file.FilePath, out var loadedINode)
+				 && (inode == loadedINode))
+					return true;
+			}
+
+			return false;
 		}
 
 		public void SaveFile(IEditableUnit editable, string filePath, bool saveBackup = true)
@@ -229,7 +293,7 @@ namespace QBX.DevelopmentEnvironment
 			return false;
 		}
 
-		public bool TryLoadMakeFileItems(string makeFilePath)
+		public bool TryLoadMakeFileItems(StreamReader reader, string makeFileDirectory, bool showIDEUIFeedback, CodeModel.Statements.Statement? errorContext = null)
 		{
 			bool success = false;
 
@@ -239,38 +303,52 @@ namespace QBX.DevelopmentEnvironment
 
 				FocusedViewport.SwitchTo(dummyUnit.Elements[0]);
 
-				string makeFileDirectory = Path.GetDirectoryName(Path.GetFullPath(makeFilePath)) ?? ".";
-
-				using (var reader = new StreamReader(makeFilePath))
+				while (true)
 				{
-					while (true)
+					string? relativePath = reader.ReadLine();
+
+					if (relativePath == null)
 					{
-						string? relativePath = reader.ReadLine();
+						FocusedViewport.SwitchTo(LoadedFiles[0].Elements[0]);
+						break;
+					}
 
-						if (relativePath == null)
+					string resolvedPath = ShortPath.Join(makeFileDirectory, relativePath);
+
+					StreamReader? moduleReader = null;
+
+					try
+					{
+						moduleReader = DOSOpenFile(resolvedPath, errorContext);
+					}
+					catch {}
+
+					if (moduleReader != null)
+					{
+						using (moduleReader)
 						{
-							FocusedViewport.SwitchTo(LoadedFiles[0].Elements[0]);
-							break;
-						}
+							Action<int>? lineCountCallback = null;
 
-						string resolvedPath = Path.Combine(makeFileDirectory, relativePath);
+							if (showIDEUIFeedback)
+							{
+								FocusedViewport.Heading = Path.GetFileName(resolvedPath);
+								Render();
 
-						if (File.Exists(resolvedPath))
-						{
-							FocusedViewport.Heading = Path.GetFileName(resolvedPath);
-							Render();
+								lineCountCallback =
+									lineCount =>
+									{
+										TextLibrary.MoveCursor(0, TextLibrary.Height - 1);
+										UpdateReferenceBar(overrideLineNumber: lineCount);
+									};
+							}
 
 							using (ShowReferenceBarTextForOperation("Loading and parsing", highlighted: true))
 							{
 								LoadFile(
+									moduleReader,
 									resolvedPath,
 									replaceExistingProgram: false,
-									lineCountCallback:
-										lineCount =>
-										{
-											TextLibrary.MoveCursor(0, TextLibrary.Height - 1);
-											UpdateReferenceBar(overrideLineNumber: lineCount);
-										});
+									lineCountCallback: lineCountCallback);
 							}
 
 							success = true;
@@ -396,6 +474,60 @@ namespace QBX.DevelopmentEnvironment
 				};
 
 			return ShowDialog(dialog);
+		}
+
+		StreamReader DOSOpenFile(string fileName, CodeModel.Statements.Statement? errorContext)
+		{
+			int fileHandle = -1;
+			bool openSucceeded = false;
+
+			if (Path.GetExtension(fileName) == "")
+			{
+				fileHandle = Machine.DOS.OpenFile(
+					fileName,
+					OSFileMode.Open,
+					OSOpenMode.Access_ReadOnly | OSOpenMode.Share_DenyNone);
+
+				switch (Machine.DOS.LastError)
+				{
+					case DOSError.None: openSucceeded = true; break;
+					case DOSError.FileNotFound: fileName = fileName.TrimEnd('.') + ".BAS"; break;
+					default: throw RuntimeException.ForDOSError(Machine.DOS.LastError, errorContext);
+				}
+			}
+
+			if (!openSucceeded) // try again because we've altered fileName
+			{
+				fileHandle = Machine.DOS.OpenFile(
+					fileName,
+					OSFileMode.Open,
+					OSOpenMode.Access_ReadOnly | OSOpenMode.Share_DenyNone);
+
+				if (Machine.DOS.LastError != DOSError.None)
+					throw RuntimeException.ForDOSError(Machine.DOS.LastError, errorContext);
+			}
+
+			if ((fileHandle < 2) || (fileHandle >= Machine.DOS.Files.Count))
+				throw RuntimeException.ForDOSError(DOSError.InvalidHandle, errorContext);
+
+			var fileDescriptor = Machine.DOS.Files[fileHandle];
+
+			if (fileDescriptor is not RegularFileDescriptor regularFileDescriptor)
+				throw RuntimeException.ForDOSError(DOSError.GeneralFailure, errorContext);
+
+			var reader = new ScopedStreamReader(
+				regularFileDescriptor.UnderlyingStream,
+				new CP437Encoding(ControlCharacterInterpretation.Semantic));
+
+			string actualFilePath = regularFileDescriptor.PhysicalPath;
+
+			reader.Closed +=
+				(_, _) =>
+				{
+					Machine.DOS.CloseFile(fileHandle);
+				};
+
+			return reader;
 		}
 	}
 }

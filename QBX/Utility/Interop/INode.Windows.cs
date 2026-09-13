@@ -88,31 +88,38 @@ public partial class FileIndexProvider : INodeProvider<FileIndex>
 			FlagsAndAttributes.FILE_FLAG_BACKUP_SEMANTICS,
 			hTemplateFile: IntPtr.Zero);
 
-		fileIndex = new FileIndex();
-
 		if (!handle.IsInvalid)
 		{
 			using (handle)
-			{
-				var fileIdInfo = new FILE_ID_INFO();
-
-				bool success = GetFileInformationByHandleEx(
-					handle,
-					FileInfoByHandleClass.FileIdInfo,
-					ref fileIdInfo,
-					dwBufferSize: 24);
-
-				fileIndex.VolumeSerialNumber = fileIdInfo.VolumeSerialNumber;
-
-				var fileIdWords = MemoryMarshal.Cast<byte, ulong>(fileIdInfo.FileId);
-
-				fileIndex.FileIdLow = fileIdWords[0];
-				fileIndex.FileIdHigh = fileIdWords[1];
-
-				return success;
-			}
+				return TryGetINode(handle, out fileIndex);
 		}
+		else
+		{
+			fileIndex = new FileIndex();
 
-		return false;
+			return false;
+		}
+	}
+
+	public override bool TryGetINode(SafeFileHandle handle, out FileIndex fileIndex)
+	{
+		fileIndex = new FileIndex();
+
+		var fileIdInfo = new FILE_ID_INFO();
+
+		bool success = GetFileInformationByHandleEx(
+			handle,
+			FileInfoByHandleClass.FileIdInfo,
+			ref fileIdInfo,
+			dwBufferSize: 24);
+
+		fileIndex.VolumeSerialNumber = fileIdInfo.VolumeSerialNumber;
+
+		var fileIdWords = MemoryMarshal.Cast<byte, ulong>(fileIdInfo.FileId);
+
+		fileIndex.FileIdLow = fileIdWords[0];
+		fileIndex.FileIdHigh = fileIdWords[1];
+
+		return success;
 	}
 }

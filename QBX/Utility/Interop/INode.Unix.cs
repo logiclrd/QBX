@@ -2,6 +2,8 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
+using Microsoft.Win32.SafeHandles;
+
 namespace QBX.Utility.Interop;
 
 public class INode : INode<INode>
@@ -52,15 +54,34 @@ public class LinuxINodeProvider : INodeProvider<INode>
 		public glibc_reserved __glibc_reserved;
 	}
 
-	// Import the stat function from the C standard library (libc)
+	// Import the stat and fstat functions from the C standard library (libc)
 	[DllImport("c", SetLastError = true, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
 	static extern int stat(string path, out stat_ buf);
+	[DllImport("c", SetLastError = true, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+	static extern int fstat(int fd, out stat_ buf);
 
 	public override bool TryGetINode(string path, out INode inode)
 	{
 		inode = new INode();
 
 		if (stat(path, out var stat_structure) == 0)
+		{
+			inode.DeviceID = stat_structure.st_dev;
+			inode.INodeNumber = stat_structure.st_ino;
+
+			return true;
+		}
+		else
+			return false;
+	}
+
+	public override bool TryGetINode(SafeFileHandle fileHandle, out INode inode)
+	{
+		int fd = (int)fileHandle.DangerousGetHandle();
+
+		inode = new INode();
+
+		if (fstat(fd, out var stat_structure) == 0)
 		{
 			inode.DeviceID = stat_structure.st_dev;
 			inode.INodeNumber = stat_structure.st_ino;
@@ -113,12 +134,31 @@ public class FreeBSDINodeProvider : INodeProvider<INode>
 
 	[DllImport("c", SetLastError = true, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
 	static extern int stat(string path, out stat_ buf);
+	[DllImport("c", SetLastError = true, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+	static extern int fstat(int fd, out stat_ buf);
 
 	public override bool TryGetINode(string path, out INode inode)
 	{
 		inode = new INode();
 
 		if (stat(path, out var stat_structure) == 0)
+		{
+			inode.DeviceID = stat_structure.st_dev;
+			inode.INodeNumber = stat_structure.st_ino;
+
+			return true;
+		}
+		else
+			return false;
+	}
+
+	public override bool TryGetINode(SafeFileHandle fileHandle, out INode inode)
+	{
+		int fd = (int)fileHandle.DangerousGetHandle();
+
+		inode = new INode();
+
+		if (fstat(fd, out var stat_structure) == 0)
 		{
 			inode.DeviceID = stat_structure.st_dev;
 			inode.INodeNumber = stat_structure.st_ino;
@@ -164,12 +204,31 @@ public class OSXINodeProvider : INodeProvider<INode>
 
 	[DllImport("c", SetLastError = true, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
 	static extern int stat(string path, out stat_ buf);
+	[DllImport("c", SetLastError = true, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+	static extern int fstat(int fildes, out stat_ buf);
 
 	public override bool TryGetINode(string path, out INode inode)
 	{
 		inode = new INode();
 
 		if (stat(path, out var stat_structure) == 0)
+		{
+			inode.DeviceID = stat_structure.st_dev;
+			inode.INodeNumber = stat_structure.st_ino;
+
+			return true;
+		}
+		else
+			return false;
+	}
+
+	public override bool TryGetINode(SafeFileHandle fileHandle, out INode inode)
+	{
+		int fildes = (int)fileHandle.DangerousGetHandle();
+
+		inode = new INode();
+
+		if (fstat(fildes, out var stat_structure) == 0)
 		{
 			inode.DeviceID = stat_structure.st_dev;
 			inode.INodeNumber = stat_structure.st_ino;
