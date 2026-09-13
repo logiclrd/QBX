@@ -41,6 +41,8 @@ namespace QBX.DevelopmentEnvironment
 				return null;
 			}
 
+			_persistentRuntimeState.PlayProcessor.StopSound();
+
 			var dialog = new PromptToSaveDialog(Machine, Configuration);
 
 			dialog.Save +=
@@ -91,6 +93,8 @@ namespace QBX.DevelopmentEnvironment
 
 		public void InteractiveSaveIfUnitHasNoFilePath(CompilationUnit unit)
 		{
+			_persistentRuntimeState.PlayProcessor.StopSound();
+
 			if (unit.HasName)
 				SaveFile(unit, unit.FilePath);
 			else
@@ -99,6 +103,8 @@ namespace QBX.DevelopmentEnvironment
 
 		public void InteractiveSave(IEditableUnit unit, Action? continuation = null, Action? cancellation = null, SaveFileDialogTitle title = SaveFileDialogTitle.Save)
 		{
+			_persistentRuntimeState.PlayProcessor.StopSound();
+
 			var dialog = new SaveFileDialog(Machine, Configuration, title, unit.FilePath);
 
 			bool cancelled = true;
@@ -131,6 +137,8 @@ namespace QBX.DevelopmentEnvironment
 
 		public void ShowOpenFileDialog(bool replaceExistingProgram)
 		{
+			_persistentRuntimeState.PlayProcessor.StopSound();
+
 			var title = replaceExistingProgram
 				? OpenFileDialogTitle.OpenProgram
 				: OpenFileDialogTitle.LoadFile;
@@ -189,6 +197,8 @@ namespace QBX.DevelopmentEnvironment
 
 		public void ShowCreateFileDialog()
 		{
+			_persistentRuntimeState.PlayProcessor.StopSound();
+
 			var dialog = new CreateFileDialog(Machine, Configuration);
 
 			dialog.CreateFile +=

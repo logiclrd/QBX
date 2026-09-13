@@ -500,6 +500,10 @@ public class ExecutionContext
 			}
 			catch (ReplaceRunningProgram replacement)
 			{
+				// QuickBASIC quirk: This is the one boundary that immediately stops PLAY/SOUND and clears
+				// the queue. END, in fact, does not. :-)
+				_persistentRuntimeState.PlayProcessor.StopSound();
+
 				_executionState.SetReplaceRunningProgram(replacement.ReplacementFilePath, replacement.StartingLineNumber, replacement.ErrorContext);
 				return -1;
 			}
