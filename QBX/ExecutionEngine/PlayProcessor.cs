@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
 
@@ -33,7 +34,9 @@ public class PlayProcessor : ProcessorCommon
 
 	public static readonly TimeSpan TickLength = TimeSpan.FromMicroseconds(TickMicroseconds);
 
-	public int QueueLength => _noteQueue.Count;
+	public int QueueLength =>
+		_noteQueue.Count +
+		(_currentNote != null ? 1 : 0); // Include notes in flight within the processor thread
 
 	public event Action? QueueLengthChanged;
 
@@ -108,6 +111,8 @@ public class PlayProcessor : ProcessorCommon
 		while (input.Length > 0)
 		{
 			byte ch = ToUpper(input[0]);
+
+			Dbg("PLAY: process " + ch);
 
 			switch (ch)
 			{
@@ -263,6 +268,8 @@ public class PlayProcessor : ProcessorCommon
 						case L: _noteStyleFractionOutOf8 = 8; break;
 
 						case F:
+							// QuickBASIC documentation states that PLAY(n) returns 0 when music is running
+							// in the foreground, but empirically it returns 1.
 							_maxNoteQueue = 1;
 							DrainNoteQueue();
 							break;
@@ -329,6 +336,9 @@ public class PlayProcessor : ProcessorCommon
 					throw Fail();
 			}
 		}
+
+		lock (_noteQueueSync)
+			Dbg("PLAY: return, queue length is " + _noteQueue.Count);
 	}
 
 	public void StopSound()
@@ -392,25 +402,44 @@ public class PlayProcessor : ProcessorCommon
 
 	void QueueNote(Note note)
 	{
+		Dbg("QUEUE: obtain lock");
+
 		lock (_noteQueueSync)
 		{
-			while (_noteQueue.Count >= _maxNoteQueue)
-				Monitor.Wait(_noteQueueSync);
+			Dbg("QUEUE: enqueue");
 
 			_noteQueue.Enqueue(note);
 
+			Dbg("QUEUE: queue length is now " + _noteQueue.Count);
+
 			Monitor.PulseAll(_noteQueueSync);
 
+			while (QueueLength > _maxNoteQueue)
+			{
+				Dbg("QUEUE: wait on note process");
+				Monitor.Wait(_noteQueueSync);
+				Dbg("QUEUE: queue length is now " + _noteQueue.Count);
+			}
+
 			QueueLengthChanged?.Invoke();
+
+			Dbg("QUEUE: release lock");
 		}
 	}
 
 	void DrainNoteQueue()
 	{
+		Dbg("DRAIN: obtain lock");
+
 		lock (_noteQueueSync)
 		{
 			while (_noteQueue.Count > 0)
+			{
+				Dbg("DRAIN: wait");
 				Monitor.Wait(_noteQueueSync);
+			}
+
+			Dbg("DRAIN: release lock");
 		}
 	}
 
@@ -422,6 +451,10 @@ public class PlayProcessor : ProcessorCommon
 
 			while (true)
 			{
+				Dbg("PLAYPROC: wait on speaker");
+				_machine.Speaker.WaitWhileQueued(threshold: TimeSpan.FromSeconds(0.05));
+				Dbg("PLAYPROC: speaker ready, obtain lock");
+
 				_currentNote = null;
 
 				lock (_noteQueueSync)
@@ -429,6 +462,7 @@ public class PlayProcessor : ProcessorCommon
 					if ((_noteQueue.Count == 0)
 					 && ((note == null) || (note.Off <= TimeSpan.Zero)))
 					{
+						Dbg("PLAYPROC: queue empty");
 						_machine.Speaker.ChangeSound(
 							enabled: false,
 							invertValue: false,
@@ -438,21 +472,31 @@ public class PlayProcessor : ProcessorCommon
 					}
 
 					while (_noteQueue.Count == 0)
+					{
+						Dbg("PLAYPROC: wait for note");
 						Monitor.Wait(_noteQueueSync);
+					}
 
 					note = _noteQueue.Dequeue();
+
+					Dbg("PLAYPROC: got note");
 
 					_currentNote = note;
 
 					Monitor.PulseAll(_noteQueueSync);
 
 					QueueLengthChanged?.Invoke();
+
+					Dbg("PLAYPROC: release lock");
 				}
 
-				_machine.Speaker.WaitWhileQueued(threshold: TimeSpan.FromSeconds(0.05));
-
 				if (note.IsCancelled)
+				{
+					Dbg("PLAYPROC: note is cancelled");
 					continue;
+				}
+
+				Dbg("PLAYPROC: Speaker.ChangeSound (on)");
 
 				_machine.Speaker.ChangeSound(
 					enabled: !note.IsRest,
@@ -463,6 +507,8 @@ public class PlayProcessor : ProcessorCommon
 
 				if (note.Off > TimeSpan.Zero)
 				{
+					Dbg("PLAYPROC: Speaker.ChangeSound (off)");
+
 					_machine.Speaker.ChangeSound(
 						enabled: false,
 						invertValue: false,
@@ -477,5 +523,11 @@ public class PlayProcessor : ProcessorCommon
 			Thread.Sleep(100);
 			StartProcessingThread();
 		}
+	}
+
+	[Conditional("PLAYDEBUG")]
+	void Dbg(string s)
+	{
+		System.Diagnostics.Debug.WriteLine("[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fffff") + "] " + s);
 	}
 }

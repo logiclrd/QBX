@@ -78,9 +78,12 @@ public class Speaker(Machine machine)
 
 	public void WaitWhileQueued(TimeSpan threshold)
 	{
+		if (_queueMaxChangeAtTime < DateTime.MinValue + threshold)
+			return;
+
 		lock (_sync)
 		{
-			while (_soundChanges.Count > 0)
+			while ((_soundChanges.Count > 0) || (_nextSoundChange != null))
 			{
 				var waitUntil = _queueMaxChangeAtTime - threshold;
 
