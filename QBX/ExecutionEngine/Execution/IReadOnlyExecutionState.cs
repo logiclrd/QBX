@@ -12,6 +12,8 @@ public interface IReadOnlyExecutionState
 	RuntimeException? CurrentError { get; }
 	bool ChainExecution { get; }
 	bool ReplaceRunningProgram { get; }
+	string? ReplacementProgramFilePath { get; }
+	CodeModel.Statements.Statement? ReplaceErrorContext { get; }
 	StatementPath? StartingLineNumber { get; }
 	bool IsTerminated { get; }
 	event Func<StackFrame, bool>? CheckWatchpoints;

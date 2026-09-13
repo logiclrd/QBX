@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Threading;
 
 using QBX.ExecutionEngine.Compiled;
@@ -32,11 +31,12 @@ namespace QBX.ExecutionEngine.Execution;
 public class ExecutionContext
 {
 	public Machine Machine;
-	public PlayProcessor PlayProcessor;
 	public DrawProcessor DrawProcessor;
 	public Dictionary<Identifier, CommonBlock> CommonBlocks;
 	public Dictionary<Identifier, CommonBlockStorage> CommonBlockStorage => _commonBlockStorage;
 	public HashSet<ArrayVariable> InitializedCommonArrayVariables => _initializedCommonArrayVariables;
+
+	public PlayProcessor PlayProcessor => _persistentRuntimeState.PlayProcessor;
 
 	public VisualLibrary VisualLibrary;
 
@@ -45,6 +45,7 @@ public class ExecutionContext
 	public IReadOnlyExecutionState ExecutionState => _executionState;
 	public IExecutionControls Controls => _executionState;
 
+	public PersistentRuntimeState PersistentRuntimeState => _persistentRuntimeState;
 	public RuntimeState RuntimeState => _runtimeState;
 
 	public bool ExitAutoRunToSystem => _exitAutoRunToSystem;
@@ -61,7 +62,8 @@ public class ExecutionContext
 
 	Stack<ErrorHandler> _localErrorHandlers = new Stack<ErrorHandler>();
 
-	RuntimeState _runtimeState = new RuntimeState();
+	PersistentRuntimeState _persistentRuntimeState;
+	RuntimeState _runtimeState;
 
 	bool _exitAutoRunToSystem;
 
@@ -217,17 +219,19 @@ public class ExecutionContext
 		}
 	}
 
-	public ExecutionContext(Machine machine, PlayProcessor playProcessor, DrawProcessor drawProcessor, EventHub eventHub)
-		: this(machine, playProcessor, drawProcessor, eventHub, new(), new())
+	public ExecutionContext(Machine machine, PersistentRuntimeState persistentRuntimeState, DrawProcessor drawProcessor, EventHub eventHub)
+		: this(machine, persistentRuntimeState, drawProcessor, eventHub, new(), new())
 	{
 	}
 
-	public ExecutionContext(Machine machine, PlayProcessor playProcessor, DrawProcessor drawProcessor, EventHub eventHub, Dictionary<Identifier, CommonBlock> commonBlocks, Dictionary<Identifier, CommonBlockStorage>? commonBlockStorage)
+	public ExecutionContext(Machine machine, PersistentRuntimeState persistentRuntimeState, DrawProcessor drawProcessor, EventHub eventHub, Dictionary<Identifier, CommonBlock> commonBlocks, Dictionary<Identifier, CommonBlockStorage>? commonBlockStorage)
 	{
 		_executionState = new ExecutionState();
 
+		_persistentRuntimeState = persistentRuntimeState;
+		_runtimeState = new RuntimeState(persistentRuntimeState);
+
 		Machine = machine;
-		PlayProcessor = playProcessor;
 		DrawProcessor = drawProcessor;
 		EventHub = eventHub;
 		CommonBlocks = commonBlocks;
@@ -245,11 +249,19 @@ public class ExecutionContext
 		_executionState.SetChainExecution();
 	}
 
-	public event EventHandler<ChainArguments>? ReplaceProgram;
-
-	public void LoadReplacement(TextReader reader, string filePath)
+	public void ChainFrom(ExecutionContext chainFromContext)
 	{
-		ReplaceProgram?.Invoke(this, new ChainArguments(reader, filePath));
+		DrawProcessor = chainFromContext.DrawProcessor;
+		VisualLibrary = chainFromContext.VisualLibrary;
+
+		_commonBlockStorage = chainFromContext._commonBlockStorage;
+		_initializedCommonArrayVariables = chainFromContext._initializedCommonArrayVariables;
+
+		foreach (var openFile in chainFromContext.Files)
+			Files[openFile.Key] = openFile.Value;
+
+		// Even DEF SEG is preserved!
+		_runtimeState = chainFromContext._runtimeState;
 	}
 
 	void AttachKeyEventInterceptor()
@@ -273,13 +285,13 @@ public class ExecutionContext
 	void AttachEvents()
 	{
 		Machine.MouseDriver.PositionChanged += MouseDriver_PositionChanged;
-		PlayProcessor.QueueLengthChanged += PlayProcessor_QueueLengthChanged;
+		_persistentRuntimeState.PlayProcessor.QueueLengthChanged += PlayProcessor_QueueLengthChanged;
 	}
 
 	void DetachEvents()
 	{
 		Machine.MouseDriver.PositionChanged -= MouseDriver_PositionChanged;
-		PlayProcessor.QueueLengthChanged -= PlayProcessor_QueueLengthChanged;
+		_persistentRuntimeState.PlayProcessor.QueueLengthChanged -= PlayProcessor_QueueLengthChanged;
 	}
 
 	void MouseDriver_PositionChanged()
@@ -295,7 +307,7 @@ public class ExecutionContext
 	{
 		int triggerLength = EventHub.Configuration.PlayQueueTriggerLength;
 
-		int currentPlayProcessorQueueLength = PlayProcessor.QueueLength;
+		int currentPlayProcessorQueueLength = _persistentRuntimeState.PlayProcessor.QueueLength;
 
 		if ((_lastPlayProcessorQueueLength > triggerLength)
 		 && (currentPlayProcessorQueueLength <= triggerLength))
@@ -488,7 +500,7 @@ public class ExecutionContext
 			}
 			catch (ReplaceRunningProgram replacement)
 			{
-				_executionState.SetReplaceRunningProgram(replacement.StartingLineNumber);
+				_executionState.SetReplaceRunningProgram(replacement.ReplacementFilePath, replacement.StartingLineNumber, replacement.ErrorContext);
 				return -1;
 			}
 			catch (EndProgram) { }

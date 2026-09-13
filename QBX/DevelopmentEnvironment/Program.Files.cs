@@ -23,10 +23,12 @@ namespace QBX.DevelopmentEnvironment
 {
 	partial class Program
 	{
-		void ClearProgram()
+		void ClearProgram(bool chainExecution = false)
 		{
 			LoadedFiles.Clear();
-			Terminate();
+
+			if (!chainExecution)
+				Terminate();
 		}
 
 		public void StartNewProgram()
@@ -83,11 +85,12 @@ namespace QBX.DevelopmentEnvironment
 
 		public void Load(StreamReader reader, string filePath, bool replaceExistingProgram, bool chainExecution = false, Action<int>? lineCountCallback = null, CodeModel.Statements.Statement? errorContext = null)
 		{
-			Terminate();
+			if (!chainExecution)
+				Terminate();
 
 			if (replaceExistingProgram)
 			{
-				ClearProgram();
+				ClearProgram(chainExecution);
 
 				string makeFileName = Path.ChangeExtension(filePath, ".MAK");
 

@@ -23,8 +23,12 @@ public class IntegrationTestHarness
 	}
 
 	[TestCaseSource(nameof(FindAndEnumerateIntegrationTests))]
+	[NonParallelizable] // because of CWD
 	public void RunIntegrationTest(string filePath)
 	{
+		if (Path.GetDirectoryName(filePath) is string containerPath)
+			Environment.CurrentDirectory = containerPath;
+
 		// Guard against hangs
 		using (var hardLimitTimer = new System.Threading.Timer(
 			_ => Environment.Exit(99)))

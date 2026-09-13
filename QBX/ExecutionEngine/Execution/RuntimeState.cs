@@ -13,8 +13,9 @@ public class RuntimeState
 	public PaletteMode PaletteMode = PaletteMode.Attribute;
 	public int MaximumAttribute = 15;
 	public int MaximumColour = 63;
-	public StringValue?[] SoftKeyMacros = new StringValue?[12];
 	public bool DisplaySoftKeyMacroLine = false;
+
+	PersistentRuntimeState _persistentState;
 
 	public void RenderSoftKeyMacroLine(VisualLibrary visualLibrary)
 	{
@@ -62,7 +63,7 @@ public class RuntimeState
 						visualLibrary.WriteText((byte)('0' + n));
 					}
 
-					var macro = SoftKeyMacros[i];
+					var macro = _persistentState.SoftKeyMacros[i];
 
 					if (StringValue.IsNullOrEmpty(macro))
 						visualLibrary.WriteText("        ".AsSpan().Slice(7 - showChars));
@@ -115,9 +116,11 @@ public class RuntimeState
 		}
 	}
 
-	public RuntimeState()
+	public RuntimeState(PersistentRuntimeState persistentState)
 	{
 		SegmentBase = GetDataSegmentBase();
+
+		_persistentState = persistentState;
 	}
 
 	public int GetDataSegmentBase()

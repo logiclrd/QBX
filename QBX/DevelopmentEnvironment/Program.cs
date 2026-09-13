@@ -8,6 +8,7 @@ using System.Threading;
 using QBX.DevelopmentEnvironment.Dialogs;
 using QBX.DevelopmentEnvironment.Help;
 using QBX.ExecutionEngine;
+using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Events;
 using QBX.Firmware;
 using QBX.Hardware;
@@ -64,7 +65,7 @@ public partial class Program : HostedProgram, IOvertypeFlag
 
 	public List<Dialog> Dialogs = new List<Dialog>();
 
-	public PlayProcessor PlayProcessor;
+	public PersistentRuntimeState PersistentRuntimeState => _persistentRuntimeState;
 
 	bool IOvertypeFlag.Value
 	{
@@ -95,10 +96,13 @@ public partial class Program : HostedProgram, IOvertypeFlag
 
 		Machine.DOS.SetUpRunningProgramSegmentPrefix(commandTail);
 
-		PlayProcessor = new PlayProcessor(machine);
-		PlayProcessor.StartProcessingThread();
+		var playProcessor = new PlayProcessor(machine);
+
+		playProcessor.StartProcessingThread();
 
 		EventHub = new EventHub(dispatcher);
+
+		_persistentRuntimeState = new PersistentRuntimeState(playProcessor);
 
 		_qlbManager = new QuickLibraryManager(Machine, EventHub);
 

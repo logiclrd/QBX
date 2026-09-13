@@ -20,7 +20,7 @@ public class SoftKeyListStatement(CodeModel.Statements.SoftKeyListStatement sour
 			else
 				visual.WriteText(' ');
 
-			if (context.RuntimeState.SoftKeyMacros[i - 1] is StringValue macro)
+			if (context.PersistentRuntimeState.SoftKeyMacros[i - 1] is StringValue macro)
 				visual.WriteText(macro.AsSpan());
 
 			visual.NewLine();

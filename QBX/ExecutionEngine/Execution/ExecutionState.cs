@@ -16,6 +16,8 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 	public RuntimeException? CurrentError => _currentError;
 	public bool ChainExecution => _chainExecution;
 	public bool ReplaceRunningProgram => _replaceRunningProgram;
+	public string? ReplacementProgramFilePath => _replacementProgramFilePath;
+	public CodeModel.Statements.Statement? ReplaceErrorContext => _replaceErrorContext;
 	public StatementPath? StartingLineNumber { get => _startingLineNumber; set => _startingLineNumber = value; }
 
 	public bool IsTerminated => _isTerminated;
@@ -29,6 +31,8 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 	RuntimeException? _currentError = null;
 	bool _chainExecution;
 	bool _replaceRunningProgram;
+	string? _replacementProgramFilePath;
+	CodeModel.Statements.Statement? _replaceErrorContext;
 	StatementPath? _startingLineNumber;
 	bool _isTerminated;
 
@@ -253,10 +257,12 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 		_startingLineNumber = startingLineNumber;
 	}
 
-	public void SetReplaceRunningProgram(StatementPath? startingLineNumber)
+	public void SetReplaceRunningProgram(string? replacementFilePath, StatementPath? startingLineNumber, CodeModel.Statements.Statement? errorContext)
 	{
 		_replaceRunningProgram = true;
+		_replacementProgramFilePath = replacementFilePath;
 		_startingLineNumber = startingLineNumber;
+		_replaceErrorContext = errorContext;
 	}
 
 	public void EndExecution()

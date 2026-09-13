@@ -20,6 +20,8 @@ namespace QBX.DevelopmentEnvironment;
 
 public partial class Program
 {
+	PersistentRuntimeState _persistentRuntimeState;
+
 	Thread? _executionThread;
 	ExecutionContext? _executionContext;
 	Compilation? _compilation;
@@ -104,23 +106,27 @@ public partial class Program
 		Render();
 	}
 
+	ExecutionContext? _chainFromContext = null;
+
 	[MemberNotNull(nameof(_compilation))]
-	public bool Compile(out bool chainExecution, ref StatementPath? startingLineNumber)
+	public bool Compile(ExecutionContext? chainFromContext, out bool chainExecution, ref StatementPath? startingLineNumber)
 	{
 		_compilation = new Compilation();
 
 		chainExecution = false;
 
-		if (_executionContext != null)
+		_chainFromContext = chainFromContext ?? _executionContext;
+
+		if (_chainFromContext != null)
 		{
-			chainExecution = _executionContext.ExecutionState.ChainExecution;
-			startingLineNumber = _executionContext.ExecutionState.StartingLineNumber;
+			chainExecution = _chainFromContext.ExecutionState.ChainExecution;
+			startingLineNumber = _chainFromContext.ExecutionState.StartingLineNumber;
 
 			if (chainExecution)
-				_compilation.CommonBlocks = _executionContext.CommonBlocks;
+				_compilation.CommonBlocks = _chainFromContext.CommonBlocks;
 			else
 			{
-				_savedLastScreenMode = _executionContext.RuntimeState.LastScreenMode;
+				_savedLastScreenMode = _chainFromContext.RuntimeState.LastScreenMode;
 				_executionContext = null; // Disconnect from previous context
 			}
 		}
@@ -160,14 +166,14 @@ public partial class Program
 	}
 
 	[MemberNotNullWhen(true, nameof(_executionContext))]
-	public bool Restart(bool keepOutput = false, StatementPath? startingLineNumber = null, Routine? embeddedInRoutine = null)
+	public bool Restart(bool keepOutput = false, StatementPath? startingLineNumber = null, Routine? embeddedInRoutine = null, ExecutionContext? chainFromContext = null)
 	{
 		Terminate(keepOutput);
 
 		if (!EnsureAllCodeIsParsed())
 			return false;
 
-		if (!Compile(out bool chainExecution, ref startingLineNumber))
+		if (!Compile(chainFromContext, out bool chainExecution, ref startingLineNumber))
 			return false;
 
 		return StartExecution(chainExecution, startingLineNumber, embeddedInRoutine);
@@ -187,33 +193,33 @@ public partial class Program
 
 		RestoreOutput();
 
-		if (Machine.VideoFirmware.LastModeNumber != 3)
-			Machine.VideoFirmware.SetMode(3);
+		if (!chainExecution)
+		{
+			if (Machine.VideoFirmware.LastModeNumber != 3)
+				Machine.VideoFirmware.SetMode(3);
+		}
 
 		var drawProcessor = _executionContext?.DrawProcessor ?? new DrawProcessor();
 
-		_executionContext = new ExecutionContext(Machine, PlayProcessor, drawProcessor, EventHub, compilation.CommonBlocks, _executionContext?.CommonBlockStorage);
+		_executionContext = new ExecutionContext(Machine, _persistentRuntimeState, drawProcessor, EventHub, compilation.CommonBlocks, _executionContext?.CommonBlockStorage);
 		_executionContext.RuntimeState.LastScreenMode = _savedLastScreenMode;
 		_executionContext.EventCheckGranularity = EventCheckGranularity;
 		_executionContext.CommandLine.Set(ProgramCommandLine.ToUpperInvariant());
 		_executionContext.Controls.Break();
+
+		if (_chainFromContext != null)
+		{
+			if (chainExecution)
+				_executionContext.ChainFrom(_chainFromContext);
+
+			_chainFromContext = null;
+		}
 
 		foreach (var qlb in QLBs)
 			qlb.ExecutionContext = _executionContext;
 
 		if (startingLineNumber != null)
 			_executionContext.SetStartingLineNumber(startingLineNumber);
-
-		_executionContext.ReplaceProgram +=
-			(_, args) =>
-			{
-				// We're running on a different thread, but the DevelopmentEnvironment thread
-				// is blocked inside a call to _executionContext.Controls.WaitForInterruption.
-				Load(
-					args.Reader,
-					args.FilePath,
-					replaceExistingProgram: true);
-			};
 
 		_executionThread = new Thread(
 			() =>
@@ -370,7 +376,7 @@ public partial class Program
 
 				StatementPath? ignored = null;
 
-				if (!Compile(out bool chainExecution, startingLineNumber: ref ignored))
+				if (!Compile(chainFromContext: null, out bool chainExecution, startingLineNumber: ref ignored))
 					return false;
 
 				if (chainExecution)
@@ -464,7 +470,7 @@ public partial class Program
 	void UnpauseExecution(Action action)
 	{
 		// During chain execution, when the new module is loaded, the current
-		// execution state is completely cleared. We still needa reference to
+		// execution state is completely cleared. We still need a reference to
 		// that object, though.
 		var executionContext = _executionContext!;
 
@@ -472,10 +478,41 @@ public partial class Program
 		{
 			if (executionContext.ExecutionState.ReplaceRunningProgram)
 			{
-				if (!Restart(startingLineNumber: executionContext.ExecutionState.StartingLineNumber, keepOutput: true))
+				if (executionContext.ExecutionState.ReplacementProgramFilePath is string replacementFilePath)
+				{
+					var errorContext = executionContext.ExecutionState.ReplaceErrorContext;
+
+					StreamReader reader;
+
+					try
+					{
+						reader = DOSOpenFile(replacementFilePath, errorContext);
+					}
+					catch (Exception e)
+					{
+						PresentError(e);
+						return;
+					}
+
+					Load(
+						reader,
+						replacementFilePath,
+						replaceExistingProgram: true,
+						chainExecution: true,
+						errorContext: errorContext);
+				}
+
+				SaveOutput();
+
+				bool success = Restart(
+					chainFromContext: executionContext,
+					startingLineNumber: executionContext.ExecutionState.StartingLineNumber,
+					keepOutput: true);
+
+				if (!success)
 					break;
 
-				executionContext = _executionContext;
+				executionContext = _executionContext ?? throw new Exception("Internal error: Restart did not create an ambient execution context");
 			}
 
 			lock (executionContext.Controls.Sync)

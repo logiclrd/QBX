@@ -30,51 +30,9 @@ public class ReplaceRunningProgramStatement(CodeModel.Statements.Statement sourc
 
 		try
 		{
-			int fileHandle = -1;
-			bool openSucceeded = false;
-
-			if (Path.GetExtension(fileName) == "")
-			{
-				fileHandle = context.Machine.DOS.OpenFile(
-					fileName,
-					OSFileMode.Open,
-					OSOpenMode.Access_ReadOnly | OSOpenMode.Share_DenyNone);
-
-				switch (context.Machine.DOS.LastError)
-				{
-					case DOSError.None: openSucceeded = true; break;
-					case DOSError.FileNotFound: fileName = fileName.TrimEnd('.') + ".BAS"; break;
-					default: throw RuntimeException.ForDOSError(context.Machine.DOS.LastError, Source);
-				}
-			}
-
-			if (!openSucceeded) // try again because we've altered fileName
-			{
-				fileHandle = context.Machine.DOS.OpenFile(
-					fileName,
-					OSFileMode.Open,
-					OSOpenMode.Access_ReadOnly | OSOpenMode.Share_DenyNone);
-
-				if (context.Machine.DOS.LastError != DOSError.None)
-					throw RuntimeException.ForDOSError(context.Machine.DOS.LastError, Source);
-			}
-
-			if ((fileHandle < 2) || (fileHandle >= context.Machine.DOS.Files.Count))
-				throw RuntimeException.ForDOSError(DOSError.InvalidHandle, Source);
-
-			var fileDescriptor = context.Machine.DOS.Files[fileHandle];
-
-			if (fileDescriptor is not RegularFileDescriptor regularFileDescriptor)
-				throw RuntimeException.ForDOSError(DOSError.GeneralFailure, Source);
-
-			var reader = new StreamReader(regularFileDescriptor.UnderlyingStream);
-			string actualFilePath = regularFileDescriptor.PhysicalPath;
-
 			ConfigureContext(context);
 
-			context.LoadReplacement(reader, actualFilePath);
-
-			throw new ReplaceRunningProgram();
+			throw new ReplaceRunningProgram(fileName, source);
 		}
 		catch (DOSException ex)
 		{

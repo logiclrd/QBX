@@ -57,7 +57,7 @@ public class KeyConfigStatement(CodeModel.Statements.SoftKeyConfigStatement sour
 					throw RuntimeException.IllegalFunctionCall(KeyExpression.Source);
 			}
 
-			context.RuntimeState.SoftKeyMacros[key - 1] = argument;
+			context.PersistentRuntimeState.SoftKeyMacros[key - 1] = argument;
 		}
 	}
 }
