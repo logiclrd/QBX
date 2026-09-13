@@ -619,13 +619,15 @@ public partial class Program
 
 	void ExecutionEpilogue()
 	{
-		if (_executionContext == null)
+		var executionContext = _executionContext;
+
+		if (executionContext == null)
 			return; // ??
 
 		if (!Machine.KeepRunning || _closeRequested)
 			return;
 
-		_executionContext.CloseAllFiles();
+		executionContext.CloseAllFiles();
 
 		foreach (var watch in _watches)
 		{
@@ -633,7 +635,7 @@ public partial class Program
 			watch.LastValueFormatted = null;
 		}
 
-		var outputLibrary = _executionContext.VisualLibrary;
+		var outputLibrary = executionContext.VisualLibrary;
 
 		outputLibrary.SetActivePage(Machine.VideoFirmware.VisiblePageNumber);
 
@@ -663,7 +665,7 @@ public partial class Program
 
 		DisassociateWatches();
 
-		_savedLastScreenMode = _executionContext.RuntimeState.LastScreenMode;
+		_savedLastScreenMode = executionContext.RuntimeState.LastScreenMode;
 		_executionContext = null;
 	}
 
