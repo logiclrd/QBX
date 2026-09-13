@@ -12,6 +12,6 @@ public class RestartExecutionFromLineStatement(Identifier startingLineNumber, Co
 		if (TargetPath == null)
 			throw RuntimeException.LabelNotDefined(source);
 
-		throw new ReplaceRunningProgram(TargetPath);
+		throw new ReplaceRunningProgram(TargetPath, source);
 	}
 }
