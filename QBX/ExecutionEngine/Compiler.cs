@@ -2265,6 +2265,23 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 				break;
 			}
+			case CodeModel.Statements.LegacyOpenStatement legacyOpenStatement:
+			{
+				var translatedLegacyOpenStatement = new LegacyOpenStatement(legacyOpenStatement);
+
+				TranslateStringArgumentExpression(
+					ref translatedLegacyOpenStatement.ModeExpression, legacyOpenStatement.ModeExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedLegacyOpenStatement.FileNumberExpression, legacyOpenStatement.FileNumberExpression);
+				TranslateStringArgumentExpression(
+					ref translatedLegacyOpenStatement.FileNameExpression, legacyOpenStatement.FileNameExpression);
+				TranslateNumericArgumentExpression(
+					ref translatedLegacyOpenStatement.RecordLengthExpression, legacyOpenStatement.RecordLengthExpression);
+
+				container.Append(translatedLegacyOpenStatement);
+
+				break;
+			}
 			case CodeModel.Statements.LineStatement lineStatement:
 			{
 				var translatedLineStatement = new LineStatement(lineStatement);

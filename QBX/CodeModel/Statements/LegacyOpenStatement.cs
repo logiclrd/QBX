@@ -5,7 +5,7 @@ using QBX.CodeModel.Expressions;
 
 namespace QBX.CodeModel.Statements;
 
-public class LegacyOpenStatement : Statement
+public class LegacyOpenStatement : OpenStatementBase
 {
 	public override StatementType Type => StatementType.OpenLegacy;
 

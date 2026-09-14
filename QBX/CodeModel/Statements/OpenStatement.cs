@@ -5,7 +5,7 @@ using QBX.CodeModel.Expressions;
 
 namespace QBX.CodeModel.Statements;
 
-public class OpenStatement : Statement
+public class OpenStatement : OpenStatementBase
 {
 	public override StatementType Type => StatementType.Open;
 

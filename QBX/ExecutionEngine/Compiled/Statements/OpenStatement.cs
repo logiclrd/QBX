@@ -4,14 +4,13 @@ using System.Linq;
 
 using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Variables;
-using QBX.OperatingSystem;
 using QBX.OperatingSystem.FileStructures;
 
 using OSOpenMode = QBX.OperatingSystem.FileStructures.OpenMode;
 
 namespace QBX.ExecutionEngine.Compiled.Statements;
 
-public class OpenStatement(CodeModel.Statements.OpenStatement source) : Executable(source)
+public class OpenStatement(CodeModel.Statements.OpenStatement source) : OpenStatementBase(source)
 {
 	public OpenMode OpenMode;
 	public AccessMode AccessMode;
@@ -19,17 +18,6 @@ public class OpenStatement(CodeModel.Statements.OpenStatement source) : Executab
 	public Evaluable? FileNameExpression;
 	public Evaluable? FileNumberExpression;
 	public Evaluable? RecordLengthExpression;
-
-	static readonly IEnumerable<OSOpenMode> Attempt_Read =
-		[OSOpenMode.Access_ReadOnly];
-	static readonly IEnumerable<OSOpenMode> Attempt_Write =
-		[OSOpenMode.Access_WriteOnly];
-	static readonly IEnumerable<OSOpenMode> Attempt_ReadWrite =
-		[OSOpenMode.Access_ReadWrite];
-	static readonly IEnumerable<OSOpenMode> Attempt_ReadWrite_Write =
-		[OSOpenMode.Access_ReadWrite, OSOpenMode.Access_WriteOnly];
-	static readonly IEnumerable<OSOpenMode> Attempt_ReadWrite_Write_Read =
-		[OSOpenMode.Access_ReadWrite, OSOpenMode.Access_WriteOnly, OSOpenMode.Access_ReadOnly];
 
 	protected override void ExecuteImplementation(ExecutionContext context, StackFrame stackFrame)
 	{
@@ -53,8 +41,6 @@ public class OpenStatement(CodeModel.Statements.OpenStatement source) : Executab
 		}
 
 		int? recordLength = RecordLengthExpression?.EvaluateAndCoerceToInt(context, stackFrame);
-
-		var openFile = new OpenFile();
 
 		var openMode =
 			OpenMode switch
@@ -129,69 +115,14 @@ public class OpenStatement(CodeModel.Statements.OpenStatement source) : Executab
 			case LockMode.LockReadWrite: shareMode |= OSOpenMode.Share_DenyReadWrite; break;
 		}
 
-		try
-		{
-			DOSError lastError = DOSError.None;
-
-			foreach (var accessMode in attemptAccessModes)
-			{
-				try
-				{
-					openFile.FileHandle = context.Machine.DOS.OpenFile(
-						fileName.Value.ToString(),
-						openMode,
-						accessMode | shareMode);
-
-					lastError = context.Machine.DOS.LastError;
-
-					if (lastError == DOSError.None)
-						break;
-				}
-				catch (DOSException ex)
-				{
-					lastError = ex.ToDOSError();
-				}
-			}
-
-			if (lastError != DOSError.None)
-				throw RuntimeException.ForDOSError(lastError, Source);
-
-			if (OpenMode == OpenMode.Append)
-				context.Machine.DOS.SeekFile(openFile.FileHandle, 0, MoveMethod.FromEnd);
-
-			openFile.IOMode =
-				OpenMode switch
-				{
-					OpenMode.Random => OpenFileIOMode.Random,
-					OpenMode.Binary => OpenFileIOMode.Binary,
-					OpenMode.Input => OpenFileIOMode.Input,
-					OpenMode.Output or OpenMode.Append => OpenFileIOMode.Output,
-
-					_ => throw new Exception("Unrecognized OpenMode value " + OpenMode)
-				};
-
-			openFile.OpenedForAppend = (OpenMode == OpenMode.Append);
-
-			if (recordLength != null)
-			{
-				if (openFile.IOMode == OpenFileIOMode.Random)
-					openFile.RecordLength = recordLength.Value;
-				else
-				{
-					openFile.BufferSize = recordLength.Value;
-
-					context.Machine.DOS.SetFileBufferSize(openFile.FileHandle, openFile.BufferSize);
-				}
-			}
-
-			if (OpenMode == OpenMode.Random)
-				openFile.ConfigureFields(System.Array.Empty<FileRecordField>(), context);
-
-			context.Files[fileNumber] = openFile;
-		}
-		catch (DOSException ex)
-		{
-			throw RuntimeException.ForDOSError(ex.ToDOSError(), Source);
-		}
+		PerformOpen(
+			fileName.ToString(),
+			OpenMode,
+			fileMode: openMode,
+			shareMode,
+			attemptAccessModes,
+			recordLength,
+			fileNumber,
+			context);
 	}
 }
