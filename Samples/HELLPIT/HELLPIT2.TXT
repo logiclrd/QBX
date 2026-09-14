@@ -1,0 +1,37 @@
+        E-MAIL FIG AT: PANTERA55@aol.com
+        VISIT FIG'S NEW WEB SITE AT:
+                http://members.aol.com/PANTERA55
+        
+        HELLPIT II - Into the Lungs of Hell By FIG Inc.
+
+            WEAPONS ARMORS
+
+            X-Stars                         X-Armor   
+            Ravage Stars                    Z-Armor   
+            Hybrid Stars                    Exo-Vest
+            Z -Stars
+            Exo -Stars
+
+        
+        Welcome to HELLPIT II.  I hope you enjoy this RPG.  This was made on 
+QBasic from Mid April '97 to Early June '97.  Personally, I think that this
+game is the best QBasic game that I've ever made.  This game was based on
+HELLPIT I.  To get HELLPIT I, look in AOL for it, or e-mail me and ask for it.
+To get a strategy guide on HELLPIT I and II, e-mail me with comments about the
+game.  I strongly encourage you to pass HELLPIT I before starting this game.
+This game only has one save file, but to make you happy, I have put a "NEW
+GAME " feature, or in other words, a feature that lets you start a new game"
+with previous game stats.  For any explanations of the source code, e-mail me
+with thoughts on the game, and I will be glad to help.  To join FIG Inc.,
+e-mail me with a sample of your work, and tell me what type of games you like
+to program.  I will not reject anyone from entering FIG Inc. 
+        
+        I have many other QBasic games, some not on AOL, but if you e-mail me
+and ask for them, I will send them to you.  None of my games require any
+registration, but some of my games ask for an e-mail about the game, and I
+will give you a personalized copy of the game and/or a better version of the
+game.
+
+        Make SURE that you always use HELLPIT2.bat!!!!!
+
+

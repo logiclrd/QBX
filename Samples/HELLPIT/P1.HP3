@@ -1,0 +1,1078 @@
+DECLARE SUB ndl ()
+DECLARE SUB getthemback ()
+DECLARE SUB boss ()
+DECLARE SUB dead ()
+DECLARE SUB dark ()
+DECLARE SUB lightning ()
+DECLARE SUB restor ()
+DECLARE SUB pain ()
+DECLARE SUB myst ()
+DECLARE SUB remedy ()
+DECLARE SUB delay ()
+DECLARE SUB davidattack ()
+DECLARE SUB setrgb (Nr!, r!, g!, B!)
+DECLARE SUB clearwords ()
+DECLARE SUB bluestar ()
+DECLARE SUB bloodrainorb ()
+DECLARE SUB darkskull ()
+DECLARE SUB fireskull ()
+DECLARE SUB lightskull ()
+DECLARE SUB bborder ()
+DECLARE SUB david ()
+DECLARE SUB border ()
+DECLARE SUB room ()
+DECLARE SUB bump ()
+DECLARE SUB covup ()
+DECLARE SUB map ()
+DECLARE SUB fire ()
+
+RANDOMIZE TIMER
+
+DIM SHARED mx, my
+
+SCREEN 8
+
+CLS
+
+OPEN "data.dat" FOR INPUT AS #1
+        INPUT #1, characters, bro, savefile
+        INPUT #1, dhp, dhpmax, dmp, dmpmax
+        INPUT #1, dlev, dex, dweapon, darmor
+        INPUT #1, nhp, nhpmax, nmp, nmpmax
+        INPUT #1, nlev, nex, nweapon, narmor
+        INPUT #1, thp, thpmax, tmp, tmpmax
+        INPUT #1, tlev, tex, tweapon, tarmor
+        INPUT #1, portal, money
+        CLOSE #1
+
+COLOR 0, 0
+
+map
+
+mx = 79
+my = 20
+
+1
+
+LOCATE my, mx
+COLOR 3
+PRINT ""
+
+GOTO 1.1
+
+1.1
+
+a$ = INKEY$
+IF a$ = CHR$(0) + "H" THEN covup: my = my - 1: GOTO 1.2 ELSE
+IF a$ = CHR$(0) + "P" THEN covup: my = my + 1: GOTO 1.2 ELSE
+IF a$ = CHR$(0) + "K" THEN covup: mx = mx - 1: GOTO 1.2 ELSE
+IF a$ = CHR$(0) + "M" THEN covup: mx = mx + 1: GOTO 1.2 ELSE
+IF a$ = CHR$(13) THEN GOSUB stats
+IF a$ = CHR$(27) THEN GOSUB sure
+GOTO 1.1
+
+1.2
+IF mx < 2 THEN bump: mx = mx + 1
+IF mx > 79 THEN bump: mx = mx - 1
+IF my < 2 THEN bump: my = my + 1
+IF my > 22 THEN bump: my = my - 1
+IF my > 4 THEN IF mx = 69 THEN bump: mx = mx - 1
+IF my > 4 THEN IF mx = 70 THEN bump: mx = mx + 1
+IF my > 4 THEN IF mx = 10 THEN bump: mx = mx - 1
+IF my > 4 THEN IF mx = 11 THEN bump: mx = mx + 1
+IF my < 20 THEN IF mx = 39 THEN bump: mx = mx - 1
+IF my < 20 THEN IF mx = 41 THEN bump: mx = mx + 1
+IF my = 22 THEN IF mx = 79 THEN GOTO 1.5
+IF my = 22 THEN IF mx = 2 THEN GOTO 5
+IF my = 2 THEN IF mx = 40 THEN GOTO 1.75
+IF INT(RND * 20) + 1 = 5 THEN enemy = 1: GOTO 2
+IF INT(RND * 20) + 1 = 7 THEN enemy = 2: GOTO 2
+IF INT(RND * 20) + 1 = 9 THEN enemy = 3: GOTO 2
+
+GOTO 1
+
+1.5
+
+FOR s = 0 TO 63 STEP .05
+setrgb 5, -p, 0, 0
+NEXT s
+
+FOR s = 0 TO 63 STEP .05
+setrgb 5, p, 0, 0
+NEXT s
+
+OPEN "data.dat" FOR OUTPUT AS #1
+        WRITE #1, characters, bro, savefile
+        WRITE #1, dhp, dhpmax, dmp, dmpmax
+        WRITE #1, dlev, dex, dweapon, darmor
+        WRITE #1, nhp, nhpmax, nmp, nmpmax
+        WRITE #1, nlev, nex, nweapon, narmor
+        WRITE #1, thp, thpmax, tmp, tmpmax
+        WRITE #1, tlev, tex, tweapon, tarmor
+        WRITE #1, portal, money
+        CLOSE #1
+
+CHAIN "town.hp3"
+
+
+1.75
+
+CLS
+room
+
+COLOR 15
+LOCATE 7, 34
+PRINT "Welcome, David.  I hoped that you would"
+LOCATE 8, 34
+PRINT "find me.  I am here to inform you of a"
+LOCATE 9, 34
+PRINT "secret.  At the option screen, make the"
+LOCATE 10, 34
+PRINT "diamond go beside NEW GAME, then press"
+LOCATE 11, 34
+PRINT "F6 to reveal some secret FIG info!"
+LOCATE 12, 34
+PRINT "As for now, HP and MP RESTORED!"
+SLEEP
+dhp = dhpmax
+dmp = dmpmax
+CLS
+map
+my = my + 1
+GOTO 1
+
+2
+IF enemy = 1 THEN ehpmax = 450
+IF enemy = 2 THEN ehpmax = 475
+IF enemy = 3 THEN ehpmax = 500
+ehp = ehpmax
+
+
+2.1
+
+CLS
+bborder
+david
+
+IF enemy = 1 THEN lightskull
+IF enemy = 2 THEN darkskull
+IF enemy = 3 THEN fireskull
+
+LOCATE 23, 3
+IF dhp > 0 THEN COLOR 1 ELSE COLOR 4
+PRINT "DAVID HP:"; dhp; "/"; dhpmax; "MP :"; dmp; "/"; dmpmax
+
+LINE (500, 15)-(602, 20), 15, B
+LINE (501, 16)-(500 + ehp / ehpmax * 100, 19), 4, BF
+
+COLOR 15
+LOCATE 8, 23
+PRINT "DAVID:"
+LOCATE 9, 25
+PRINT "(A)ttack"
+LOCATE 10, 25
+PRINT "(B)lood Rain Orb("; bro; ")"
+LOCATE 11, 23
+PRINT "SKILLS:"
+LOCATE 12, 25: PRINT "(R)emedy    (Mp - 2)"
+LOCATE 13, 25: PRINT "(M)yst      (Mp - 3)"
+LOCATE 14, 25: PRINT "(P)ain      (Mp - 4)"
+LOCATE 15, 25: PRINT "R(E)store   (Mp - 6)"
+
+DO
+a$ = INKEY$
+IF UCASE$(a$) = "A" THEN GOTO 2.2
+IF UCASE$(a$) = "B" THEN IF bro > 0 THEN GOTO 2.25
+IF UCASE$(a$) = "R" THEN IF dmp > 1 THEN dmp = dmp - 2: GOTO 2.21
+IF UCASE$(a$) = "M" THEN IF dmp > 2 THEN dmp = dmp - 3: GOTO 2.22
+IF UCASE$(a$) = "P" THEN IF dmp > 3 THEN dmp = dmp - 4: GOTO 2.23
+IF UCASE$(a$) = "E" THEN IF dmp > 5 THEN dmp = dmp - 6: GOTO 2.24
+
+
+LOOP
+
+2.2
+
+clearwords
+davidattack
+
+bluestar
+
+damage = (40 + (3 * dlev) + INT(RND * dlev * dweapon) + 1)
+
+ehp = ehp - damage
+
+FOR s = 0 TO 63 STEP .03: setrgb 0, -s, -s, -s: NEXT s
+
+GOTO 2.29
+
+2.21
+
+clearwords
+remedy
+
+dreg = (6 * dlev + INT(RND * (dlev * 2) + 1))
+
+dhp = dhp + dreg
+
+IF dhp > dhpmax THEN dhp = dhpmax
+
+
+
+GOTO 2.28
+
+2.22
+
+clearwords
+myst
+
+IF enemy = 1 THEN damage = 10 * dlev + INT(RND * 12) + 1
+IF enemy = 2 THEN damage = 10 * dlev + INT(RND * 13) + 1
+IF enemy = 3 THEN damage = 10 * dlev + INT(RND * 12) + 1
+
+ehp = ehp - damage
+
+GOTO 2.29
+
+2.23
+
+clearwords
+pain
+
+FOR s = 0 TO 63 STEP .04: setrgb 1, s, 0, 0: NEXT s
+setrgb 1, 0, 0, 50
+
+IF enemy = 1 THEN damage = 12 * dlev + INT(RND * 14) + 1
+IF enemy = 2 THEN damage = 12 * dlev + INT(RND * 15) + 1
+IF enemy = 3 THEN damage = 12 * dlev + INT(RND * 14) + 1
+
+ehp = ehp - damage
+
+GOTO 2.29
+
+2.24
+
+clearwords
+restor
+
+dreg = (10 * dlev + INT(RND * (dlev * 3) + 1))
+
+dhp = dhp + dreg
+
+IF dhp > dhpmax THEN dhp = dhpmax
+
+GOTO 2.28
+
+2.25
+
+clearwords
+bloodrainorb
+ehp = ehp - 400
+bro = bro - 1
+delay
+damage = 400
+GOTO 2.29
+
+2.28
+
+FOR e = 1 TO dreg STEP 1
+COLOR 14
+LOCATE 16, 15
+PRINT e
+FOR d = 1 TO 40
+NEXT d
+NEXT e
+
+GOTO 2.5
+
+2.29
+
+FOR e = 1 TO damage STEP 1
+
+COLOR 15
+LOCATE 8, 65
+PRINT e
+FOR d = 1 TO 40
+NEXT d
+NEXT e
+
+delay
+
+IF ehp <= 0 THEN GOTO 3
+
+2.5
+
+CLS
+bborder
+david
+
+COLOR 1
+LOCATE 23, 3
+PRINT "DAVID  HP:"; dhp; "/"; dhpmax; "MP :"; dmp; "/"; dmpmax
+
+IF enemy = 1 THEN lightskull
+IF enemy = 2 THEN darkskull
+IF enemy = 3 THEN fireskull
+
+LINE (500, 15)-(602, 20), 15, B
+LINE (501, 16)-(500 + ehp / ehpmax * 100, 19), 4, BF
+
+IF enemy = 1 THEN lightning
+IF enemy = 2 THEN dark
+IF enemy = 3 THEN fire
+
+ddam = 65 - dlev - (enemy * 3) + INT(RND * 5) + 1 - 8: IF ddam <= 0 THEN ddam = 1
+dhp = dhp - ddam
+
+GOTO 2.55
+
+2.55
+FOR e = 1 TO ddam STEP 1
+COLOR 4
+LOCATE 16, 15
+PRINT e
+FOR d = 1 TO 40
+NEXT d
+NEXT e
+ddam = 0
+delay
+IF dhp < 1 THEN dead
+GOTO 2.1
+
+3
+IF enemy = 1 THEN en$ = "FIRESKELETON"
+IF enemy = 2 THEN en$ = "ICESKELETON"
+IF enemy = 3 THEN en$ = "LIGHTSKELETON"
+
+go = 17 + enemy * 4 + INT(RND * enemy * 4) + 1
+e = 15 + enemy * 3 + INT(RND * enemy * 5) + 1
+
+CLS
+border
+COLOR 15, 2
+LOCATE 7, 15
+PRINT "You have been sucessful in defeating the "; en$; "!"
+LOCATE 8, 19
+PRINT "You have also found"; go; "gold and"
+LOCATE 9, 19
+PRINT "gained"; e; "experience points!"
+PLAY "o1l13eegeal27efeefgagbdo2l14eeeeegl33ededfeo4eeeegggo5ggggaaaabbbbb"
+money = money + go
+dex = dex + e
+SLEEP
+COLOR 0, 0
+map
+GOTO 1
+
+5
+ehpmax = 5000
+ehp = 5000
+
+5.1
+
+CLS
+bborder
+david
+
+boss
+
+LOCATE 23, 3
+COLOR 1
+PRINT "DAVID HP:"; dhp; "/"; dhpmax; "MP :"; dmp; "/"; dmpmax
+
+LINE (500, 15)-(602, 20), 15, B
+LINE (501, 16)-(500 + ehp / ehpmax * 100, 19), 4, BF
+
+COLOR 15
+LOCATE 8, 23
+PRINT "DAVID:"
+LOCATE 9, 25
+PRINT "(A)ttack"
+LOCATE 10, 25
+PRINT "(B)lood Rain Orb("; bro; ")"
+LOCATE 11, 23
+PRINT "SKILLS:"
+LOCATE 12, 25: PRINT "(R)emedy    (Mp - 2)"
+LOCATE 13, 25: PRINT "(M)yst      (Mp - 3)"
+LOCATE 14, 25: PRINT "(P)ain      (Mp - 4)"
+LOCATE 15, 25: PRINT "R(E)store   (Mp - 6)"
+
+DO
+a$ = INKEY$
+IF UCASE$(a$) = "A" THEN GOTO 5.2
+IF UCASE$(a$) = "B" THEN IF bro > 0 THEN GOTO 5.25
+IF UCASE$(a$) = "R" THEN IF dmp > 1 THEN dmp = dmp - 2: GOTO 5.21
+IF UCASE$(a$) = "M" THEN IF dmp > 2 THEN dmp = dmp - 3: GOTO 5.22
+IF UCASE$(a$) = "P" THEN IF dmp > 3 THEN dmp = dmp - 4: GOTO 5.23
+IF UCASE$(a$) = "E" THEN IF dmp > 5 THEN dmp = dmp - 6: GOTO 5.24
+LOOP
+
+
+5.2
+
+clearwords
+davidattack
+
+bluestar
+
+damage = (40 + (3 * dlev) + INT(RND * dlev * dweapon) + 1)
+
+ehp = ehp - damage
+
+FOR s = 0 TO 63 STEP .03: setrgb 0, -s, -s, -s: NEXT s
+
+GOTO 5.29
+
+5.21
+
+clearwords
+remedy
+
+dreg = (6 * dlev + INT(RND * (dlev * 2) + 1))
+
+dhp = dhp + dreg
+
+IF dhp > dhpmax THEN dhp = dhpmax
+
+GOTO 5.28
+
+5.22
+
+clearwords
+myst
+
+damage = 10 * dlev + (INT(RND * 20) + 1)
+ehp = ehp - damage
+
+GOTO 5.29
+
+5.23
+
+clearwords
+pain
+
+FOR s = 0 TO 63 STEP .04: setrgb 1, s, 0, 0: NEXT s
+setrgb 1, 0, 0, 50
+
+damage = 12 * dlev + (INT(RND * 20) + 1)
+
+ehp = ehp - damage
+
+GOTO 5.29
+
+5.24
+
+clearwords
+restor
+
+dreg = (10 * dlev + INT(RND * (dlev * 3) + 1))
+
+dhp = dhp + dreg
+
+IF dhp > dhpmax THEN dhp = dhpmax
+
+GOTO 5.28
+
+5.25
+
+clearwords
+bloodrainorb
+ehp = ehp - 400
+bro = bro - 1
+delay
+damage = 750
+GOTO 5.29
+
+
+5.28
+
+FOR e = 1 TO dreg STEP 1
+COLOR 14
+LOCATE 16, 15
+PRINT e
+FOR d = 1 TO 40
+NEXT d
+NEXT e
+
+GOTO 5.5
+
+5.29
+
+FOR e = 1 TO damage STEP 1
+
+COLOR 15
+LOCATE 8, 65
+PRINT e
+FOR d = 1 TO 40
+NEXT d
+NEXT e
+
+delay
+
+IF ehp <= 0 THEN GOTO 6
+
+5.5
+
+CLS
+bborder
+david
+
+COLOR 1
+LOCATE 23, 3
+PRINT "DAVID  HP:"; dhp; "/"; dhpmax; "MP :"; dmp; "/"; dmpmax
+
+boss
+
+LINE (500, 15)-(602, 20), 15, B
+LINE (501, 16)-(500 + ehp / ehpmax * 100, 19), 4, BF
+
+id = INT(RND * 2) + 1
+IF id = 1 THEN dark ELSE fire
+
+ddam = 100 - dlev - (5) + INT(RND * 10) + 1 - 8: IF ddam <= 0 THEN ddam = 1
+dhp = dhp - ddam
+
+GOTO 5.55
+
+5.55
+FOR e = 1 TO ddam STEP 1
+COLOR 4
+LOCATE 16, 15
+PRINT e
+FOR d = 1 TO 40
+NEXT d
+NEXT e
+ddam = 0
+delay
+IF dhp < 1 THEN dead
+GOTO 5.1
+
+6
+
+go = 500
+e = 400
+
+CLS
+border
+COLOR 15, 2
+LOCATE 7, 15
+PRINT "You have been sucessful in defeating the Worm Skull!"
+LOCATE 8, 19
+PRINT "You have also found"; go; "gold and"
+LOCATE 9, 19
+PRINT "gained"; e; "experience points!  You have also "
+LOCATE 10, 19
+PRINT "found the staff of balance!!!"
+PLAY "o1l13eegeal27efeefgagbdo2l14eeeeegl33ededfeo4eeeegggo5ggggaaaabbbbb"
+money = money + go
+dex = dex + e
+SLEEP
+COLOR 0, 0
+CLS
+
+bborder
+COLOR 15
+LOCATE 3, 5
+PRINT "     You have done well, David!  You may have one of these:"
+LOCATE 4, 5
+PRINT "     (M)oney raised by 400"
+LOCATE 5, 5
+PRINT "     (E)ntity Mail (Armor)"
+LOCATE 6, 5
+PRINT "     Entity (S)tars (Weapon)"
+LOCATE 7, 5
+PRINT "     Well?"
+
+DO
+a$ = INKEY$
+IF UCASE$(a$) = "M" THEN money = money + 400: GOTO 6.1
+IF UCASE$(a$) = "E" THEN darmor = 2: GOTO 6.1
+IF UCASE$(a$) = "S" THEN dweapon = 2: GOTO 6.1
+LOOP
+
+6.1
+
+hpup = 17 + INT(RND * 7) + 1
+mpup = 10 + INT(RND * 5) + 1
+
+bborder
+COLOR 15, 0
+LOCATE 4, 5
+PRINT "     David has done an excellent job!  His level has raised by 1 to"
+LOCATE 5, 5
+PRINT "26!  His Hp Max has increased by "; hpup; ", and his Mp max has raised"
+LOCATE 6, 5
+PRINT "by "; mpup; "!"
+PLAY "o2l25eeegadgecagdcgecao3l28eagegago4l30eeeegfegfegfegfegefeg"
+dhpmax = dhpmax + hpup
+dmpmax = dmpmax + mpup
+SLEEP
+
+CLS
+
+hpup = 17 + INT(RND * 7) + 1
+mpup = 10 + INT(RND * 5) + 1
+
+bborder
+COLOR 15, 0
+LOCATE 4, 5
+PRINT "     David has done an excellent job!  His level has raised by 1 to"
+LOCATE 5, 5
+PRINT "27!  His Hp Max has increased by "; hpup; ", and his Mp max has raised"
+LOCATE 6, 5
+PRINT "by "; mpup; "!"
+PLAY "o2l25eeegadgecagdcgecao3l28eagegago4l30eeeegfegfegfegfegefeg"
+dhpmax = dhpmax + hpup
+dmpmax = dmpmax + mpup
+dlev = 27
+SLEEP
+
+getthemback
+
+characters = 3
+portal = 2
+nhpmax = 450: nmpmax = 250
+thpmax = 550: tmpmax = 225
+nhp = nhpmax: thp = thpmax
+nmp = nmpmax: tmp = tmpmax
+nlev = 25: nex = 6000: nweapon = 1: narmor = 1
+tlev = 25: tex = 5000: tweapon = 1: tarmor = 1
+
+
+
+OPEN "data.dat" FOR OUTPUT AS #1
+        WRITE #1, characters, bro, savefile
+        WRITE #1, dhp, dhpmax, dmp, dmpmax
+        WRITE #1, dlev, dex, dweapon, darmor
+        WRITE #1, nhp, nhpmax, nmp, nmpmax
+        WRITE #1, nlev, nex, nweapon, narmor
+        WRITE #1, thp, thpmax, tmp, tmpmax
+        WRITE #1, tlev, tex, tweapon, tarmor
+        WRITE #1, portal, money
+        CLOSE #1
+
+SLEEP
+
+COLOR 0, 0
+
+CHAIN "town.hp3"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+sure:
+COLOR 15
+LOCATE 13, 37
+PRINT "REALLY QUIT?"
+
+DO
+xz$ = INKEY$
+IF UCASE$(xz$) = "Y" THEN CHAIN "bye.hp3"
+IF UCASE$(xz$) = "N" THEN CLS : map: GOTO 1
+LOOP
+
+stats:
+border
+IF dweapon = 1 THEN dwname$ = "EXO-STARS" ELSE dwname$ = "ENTITY STARS"
+IF darmor = 1 THEN daname$ = "EXO-VEST" ELSE daname$ = "ENTITY MAIL"
+
+COLOR 15, 2
+
+LOCATE 2, 5
+PRINT "DAVID   HP:", dhp, "/", dhpmax
+LOCATE 3, 13
+PRINT "MP:", dmp, "/", dmpmax
+LOCATE 4, 5
+PRINT "WEAPON: ", dwname$, " ARMOR: ", daname$
+LOCATE 5, 5
+PRINT "LEVEL:"; dlev; "    EXPERIENCE POINTS:"; dex
+
+LOCATE 15, 5
+PRINT "MONEY:", money
+LOCATE 16, 5
+PRINT "BLOOD RAIN ORBS:", bro
+IF portal > 1 THEN COLOR 14 ELSE COLOR 8
+LOCATE 18, 5
+PRINT "      STAFF OF BALANCE - ô"
+IF portal > 2 THEN COLOR 14 ELSE COLOR 8
+LOCATE 19, 5
+PRINT "      RING OF CHAOS    - o"
+COLOR 8
+LOCATE 20, 5
+PRINT "      ALPHA CHAIN      - à"
+SLEEP
+CLS
+COLOR 0, 0
+map
+GOTO 1
+
+SUB bborder
+CLS
+PAINT (1, 1), 4
+LINE (10, 5)-(630, 195), 12, BF
+LINE (15, 10)-(625, 190), 0, BF
+END SUB
+
+SUB bloodrainorb
+FOR s = 0 TO 63 STEP .1
+CIRCLE (520, 100), s * 2, 4
+setrgb 4, s, 0, s
+SOUND 200 + (s * 3), .04
+NEXT s
+
+FOR s = 63 TO 0 STEP -.1
+CIRCLE (520, 100), s * 2, 4
+setrgb 4, s, 0, 0
+setrgb 0, -s, 0, 0
+SOUND 1000 - INT(RND * s) + 1, .04
+NEXT s
+
+setrgb 4, 50, 0, 0
+END SUB
+
+SUB bluestar
+PCOPY 0, 1
+FOR st = 200 TO 550 STEP 8
+COLOR 1
+LINE (st, 94)-(st - 8, 97)
+LINE -(st, 101)
+LINE -(st + 8, 97)
+LINE -(st, 94)
+PAINT (st, 97), 1
+CIRCLE (st, 97), 3, 4
+PAINT (st, 97), 4
+SOUND 200 + (st / 3), .04
+PCOPY 1, 0
+NEXT st
+END SUB
+
+SUB border
+CLS
+PAINT (1, 1), 4
+LINE (10, 5)-(630, 195), 12, BF
+LINE (15, 10)-(625, 190), 2, BF
+END SUB
+
+SUB boss
+DRAW "bm540,87c15d18f5r35l30g4d9e5r40e8h10l20h3u8h4l20g1"
+PAINT (550, 95), 15
+DRAW "bm540,87c4d18f5r35l30g4d9e5r40e8h10l20h3u8h4l20g1"
+DRAW "bm555,89c1r20e8h2e2r6f2g14l23h2e2"
+PAINT (560, 90), 1
+DRAW "bm539,92c1l25d3r25u3"
+PAINT (530, 93), 1
+DRAW "bm514,89c14d11g4u15r1d14e1u13r1d12"
+DRAW "bm545,84c8u9e1r15f1d4g1l5g1d2g1l8"
+PAINT (550, 80), 8
+DRAW "bm547,77c4d1r5u1l5"
+DRAW "bm580,79c14l40h1r42"
+DRAW "bm545,82c0r4d1l4"
+END SUB
+
+SUB bump
+SOUND 150, .2
+END SUB
+
+SUB clearwords
+LINE (150, 20)-(400, 160), 0, BF
+END SUB
+
+SUB covup
+LOCATE my, mx: COLOR 5: PRINT "Û"
+END SUB
+
+SUB dark
+FOR s = 0 TO 63 STEP .35
+CIRCLE (320, 100), s * 4, 1, , , .25
+CIRCLE (320, 100), s * 2.5, 1, , , .7
+setrgb 1, s, s, s
+setrgb 0, -s, -s, -s
+SOUND 200 - (s * 2), .05
+NEXT s
+END SUB
+
+SUB darkskull
+DRAW "bm510,90c0e3r20f3d5g2l8d5g2l14u13"
+PAINT (530, 95), 0
+DRAW "bm510,90c4e3r20f3d5g2l8d5g2l14u13"
+DRAW "bm515,92c4m525,90m515,96u4"
+PAINT (517, 92), 4
+DRAW "bm527,87c4r52m548,93m600,95m548,97m580,104l55"
+PAINT (550, 94), 4
+END SUB
+
+SUB david
+LINE (73, 142)-(85, 154), 4, BF
+LINE (73, 141)-(85, 132), 1, BF
+LINE (76, 134)-(82, 142), 9, BF
+LINE (76, 143)-(82, 144), 12, BF
+CIRCLE (79, 127), 5, 12, , , .78
+PAINT (79, 127), 12
+LINE (81, 126)-(82, 126), 0, BF
+setrgb 1, 0, 0, 50
+END SUB
+
+SUB davidattack
+LINE (45, 120)-(115, 157), 0, BF
+LINE (183, 102)-(195, 114), 4, BF
+LINE (183, 101)-(195, 92), 1, BF
+LINE (186, 94)-(206, 97), 9, BF
+LINE (206, 94)-(212, 97), 12, BF
+CIRCLE (189, 87), 5, 12, , , .78
+PAINT (189, 87), 12
+LINE (191, 86)-(192, 86), 0, BF
+END SUB
+
+SUB dead
+CLS
+COLOR 1, 4
+LOCATE 8, 20
+PRINT "You have been defeated, but not for good!"
+LOCATE 9, 20
+PRINT "You can't let evil win!  Not this time!!!"
+PLAY "o1l25egadgagcgacegadcgec"
+CHAIN "bye.hp3"
+SLEEP
+END SUB
+
+SUB delay
+FOR d = 1 TO 5000
+NEXT d
+END SUB
+
+SUB fire
+FOR s = 0 TO 126 STEP .25
+LINE (20, 190 - s)-(620, 190 - s), 4
+setrgb 4, s / 2, 0, 0
+SOUND 200 - s, .04
+NEXT s
+END SUB
+
+SUB fireskull
+DRAW "bm510,90c4e3r20f3d5g2l8d5g2l14u13"
+PAINT (530, 95), 4
+DRAW "bm510,90c14e3r20f3d5g2l8d5g2l14u13"
+DRAW "bm515,92c0m525,90m515,96u4"
+PAINT (517, 92), 0
+DRAW "bm527,87c14r52m548,93m600,95m548,97m580,104l55"
+PAINT (550, 94), 14
+END SUB
+
+SUB getthemback
+a = 1
+
+CLS
+
+a1$ = "     DAVID : Wow!  That was tough!  Anyways, it's time to get back to the"
+a2$ = "town, and get prepared for another tough battle all by myself!"
+a3$ = "     NEON  : All by yourself?  What!  You think that I'm lazy!  This time,"
+a4$ = "let's go together!"
+a5$ = "     THESSE: I'm coming, too!  My new spell is amazing!"
+a6$ = "     NEON  : Okay, but first, let's go to the wise man.  I'm sure he can"
+a7$ = "teach us something new now that he's recovered!"
+a8$ = "     The three travel back to town..."
+a9$ = "     The Wise Man teaches the three RAGE!"
+CLS
+
+COLOR 1, 4
+
+DO
+
+IF a = 1 THEN PRINT a1$
+IF a = 2 THEN PRINT a2$
+IF a = 3 THEN PRINT a3$
+IF a = 4 THEN PRINT a4$
+IF a = 5 THEN PRINT a5$
+IF a = 6 THEN PRINT a6$
+IF a = 7 THEN PRINT a7$
+IF a = 8 THEN PRINT a8$
+IF a = 9 THEN PRINT a9$
+
+FOR s = 0 TO 63 STEP .025
+
+setrgb 1, 0, 0, s
+
+NEXT s
+
+ndl
+a = a + 1
+
+LOOP UNTIL a = 10
+
+END SUB
+
+SUB lightning
+FOR s = 0 TO 252 STEP .5
+LINE (520, 100)-(20, 70 + INT(RND * 60) + 1), 1
+setrgb 1, s, s, 0
+SOUND 50 + s, .04
+NEXT s
+setrgb 1, 0, 0, 50
+END SUB
+
+SUB lightskull
+DRAW "bm510,90c14e3r20f3d5g2l8d5g2l14u13"
+PAINT (530, 95), 14
+DRAW "bm510,90c1e3r20f3d5g2l8d5g2l14u13"
+DRAW "bm515,92c4m525,90m515,96u4"
+PAINT (517, 92), 4
+DRAW "bm527,87c1r52m548,93m600,95m548,97m580,104l55"
+PAINT (550, 94), 1
+END SUB
+
+SUB map
+
+CLS
+PAINT (1, 1), 5
+
+FOR x = 1 TO 80
+
+COLOR 8
+
+LOCATE 1, x: PRINT "Û"
+LOCATE 23, x: PRINT "Û"
+NEXT x
+
+FOR y = 1 TO 22
+LOCATE y, 1: PRINT "Û"
+LOCATE y, 80: PRINT "Û"
+
+NEXT y
+
+FOR y = 5 TO 22
+
+LOCATE y, 10: PRINT "Û"
+LOCATE y, 11: PRINT "Û"
+LOCATE y, 70: PRINT "Û"
+LOCATE y, 69: PRINT "Û"
+
+NEXT y
+
+
+FOR y = 1 TO 19
+
+LOCATE y, 39: PRINT "Û"
+LOCATE y, 40: PRINT "Û"
+LOCATE y, 41: PRINT "Û"
+
+NEXT y
+
+LOCATE 22, 79: COLOR 0: PRINT "Û"
+
+LOCATE 22, 2: COLOR 4: PRINT "ô"
+
+LINE (0, 184)-(640, 200), 0, BF
+END SUB
+
+SUB myst
+FOR e = 1 TO 900
+x = INT(RND * 320) + 1 + 300
+y = INT(RND * 190)
+LINE (x, y)-(x + 4, y + 1), 8
+SOUND 200 + e - e, .06
+NEXT e
+
+FOR s = 0 TO 63 STEP .03: setrgb 0, -s, -s, -s: NEXT s
+
+END SUB
+
+SUB ndl
+FOR d = 1 TO 5000
+NEXT d
+END SUB
+
+SUB pain
+FOR e = 1 TO 3
+PCOPY 0, 1
+FOR x = 1 TO 640 STEP 17
+y = INT(RND * 70) + 1 + 60
+LINE (x, y)-(x + 20, y), 8
+LINE (x + 30, y - 20)-(x + 50, y - 20), 8
+LINE (x + 30, y + 20)-(x + 50, y + 20), 8
+SOUND 200, .05
+PCOPY 1, 0
+NEXT x
+NEXT e
+
+FOR s = 1 TO 750
+x = INT(RND * 200) + 1 + 400
+y = INT(RND * 100) + 1 + 50
+LINE (x, y)-(x + 20, y), 1
+SOUND 250, .05
+NEXT s
+
+END SUB
+
+SUB remedy
+up = 160
+0.365
+x = INT(RND * 200) + 1
+y = INT(RND * 20) + 1 + up
+LINE (x, y)-(x, y - 5), 14
+up = up - .5
+SOUND 5000 - (up * 10), .07
+IF up > 20 THEN GOTO 0.365
+
+FOR s = 0 TO 63 STEP .04: setrgb 0, s, s, 0: NEXT s
+FOR s = 63 TO 0 STEP -.04: setrgb 0, s, s, 0: NEXT s
+
+
+END SUB
+
+SUB restor
+FOR e = 1 TO 3
+PCOPY 0, 1
+FOR i = 50 TO 1 STEP -1
+CIRCLE (79, 132), i, 14
+SOUND 3000 + (i * 4), .05
+PCOPY 1, 0
+NEXT i
+NEXT e
+remedy
+END SUB
+
+SUB room
+PAINT (1, 1), 1
+LINE (20, 9)-(620, 191), 0, BF
+COLOR 6
+LINE (20, 120)-(210, 190), , BF
+LINE (20, 110)-(230, 120), , BF
+LINE (60, 109)-(170, 80), 1, BF
+COLOR 0
+LINE (20, 120)-(210, 191), , B
+LINE (20, 110)-(230, 120), , B
+LINE (60, 109)-(170, 80), , B
+LINE (90, 109)-(90, 91)
+LINE (140, 109)-(140, 91)
+CIRCLE (115, 70), 21, 12, , , .54
+PAINT (115, 70), 12
+CIRCLE (111, 67), 3, 1
+CIRCLE (119, 67), 3, 1
+PAINT (111, 67), 1
+PAINT (119, 67), 1
+LINE (111, 76)-(119, 76), 0
+END SUB
+
+SUB setrgb (Nr, r, g, B)
+  OUT &H3C8, Nr
+  OUT &H3C9, r
+  OUT &H3C9, g
+  OUT &H3C9, B
+END SUB
+

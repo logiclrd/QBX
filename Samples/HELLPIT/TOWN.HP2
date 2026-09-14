@@ -1,0 +1,426 @@
+DECLARE SUB border ()
+DECLARE SUB wt ()
+DECLARE SUB bump ()
+DECLARE SUB desk ()
+DECLARE SUB delay ()
+DECLARE SUB castle ()
+DECLARE SUB portal ()
+DECLARE SUB town ()
+
+SCREEN 8
+
+OPEN "savefile.hp2" FOR INPUT AS #1
+        INPUT #1, nhp, nhpmax, nmp, nmpmax
+        INPUT #1, nweapon, narmor
+        INPUT #1, nex, nlev
+        INPUT #1, nskill
+        INPUT #1, dhp, dhpmax, dmp, dmpmax
+        INPUT #1, dweapon, darmor
+        INPUT #1, dex, dlev
+        INPUT #1, dskill
+        INPUT #1, money, crystals
+CLOSE #1
+
+my = 15
+mx = 40
+
+dhp = dhpmax: dmp = dmpmax
+nhp = nhpmax: nmp = nmpmax
+
+
+1
+
+town
+
+LOCATE my, mx
+COLOR 14
+PRINT ""
+
+GOTO 1.1
+
+1.1
+
+a$ = INKEY$
+IF a$ = CHR$(0) + "H" THEN my = my - 1: GOTO 1.2 ELSE
+IF a$ = CHR$(0) + "P" THEN my = my + 1: GOTO 1.2 ELSE
+IF a$ = CHR$(0) + "K" THEN mx = mx - 1: GOTO 1.2 ELSE
+IF a$ = CHR$(0) + "M" THEN mx = mx + 1: GOTO 1.2 ELSE
+IF a$ = CHR$(27) THEN GOSUB sure
+IF a$ = CHR$(13) THEN GOSUB stats
+
+GOTO 1.1
+
+1.2
+IF mx < 3 THEN bump: mx = mx + 1
+IF mx > 78 THEN bump: mx = mx - 1
+IF my < 2 THEN bump: my = my + 1
+IF my > 23 THEN bump: my = my - 1
+IF my = 8 THEN IF mx > 31 THEN IF mx < 37 THEN bump: my = my + 1
+IF my = 8 THEN IF mx < 51 THEN IF mx > 44 THEN bump: my = my + 1
+IF my < 9 THEN IF mx = 31 THEN bump: mx = mx - 1
+IF my < 9 THEN IF mx = 50 THEN bump: mx = mx + 1
+IF my = 20 THEN IF mx < 36 THEN IF mx > 33 THEN GOTO 1.3
+IF my = 14 THEN IF mx < 16 THEN IF mx > 13 THEN GOTO 1.4
+IF my = 13 THEN IF mx < 72 THEN IF mx > 69 THEN GOTO 1.5
+IF my = 8 THEN IF mx > 36 THEN IF mx < 45 THEN GOTO 1.6
+GOTO 1
+
+1.3
+CLS
+desk
+COLOR 15
+LOCATE 3, 50
+PRINT " ROYAL INN "
+LOCATE 5, 46
+PRINT "WOULD YOU LIKE A ROOM?"
+LOCATE 6, 46
+PRINT "IT WILL COST"; nlev * 6; "$"
+LOCATE 7, 46
+PRINT "(Y)es or (N)o ?"
+
+DO
+
+a$ = INKEY$
+
+IF UCASE$(a$) = "Y" THEN IF money >= nlev * 6 THEN LOCATE 10, 46: PRINT "YOU ARE FULLY RECOVERED!": nhp = nhpmax: dhp = dhpmax: nmp = nmpmax: dmp = dmpmax: GOTO 1.31
+IF UCASE$(a$) = "N" THEN LOCATE 10, 46: PRINT "COME BACK SOON!": wt: my = my + 1: GOTO 1
+
+LOOP
+
+1.31
+
+OPEN "savefile.hp2" FOR OUTPUT AS #1
+        WRITE #1, nhp, nhpmax, nmp, nmpmax
+        WRITE #1, nweapon, narmor
+        WRITE #1, nex, nlev
+        WRITE #1, nskill
+        WRITE #1, dhp, dhpmax, dmp, dmpmax
+        WRITE #1, dweapon, darmor
+        WRITE #1, dex, dlev
+        WRITE #1, dskill
+        WRITE #1, money, crystals
+CLOSE #1
+
+LOCATE 11, 46: PRINT "YOUR GAME IS ALSO SAVED!": wt: my = my + 1: money = money - (nlev * 6): GOTO 1
+
+
+1.4
+CLS
+desk
+COLOR 15
+LOCATE 3, 46
+PRINT " WEAPONS AND ARMORS "
+LOCATE 5, 46
+PRINT "WHAT WOULD YOU LIKE?"
+LOCATE 7, 46
+PRINT "(R)avage Stars    $350"
+LOCATE 8, 46
+PRINT "(H)ybrid Stars    $750"
+LOCATE 9, 46
+PRINT "(X) - Armor       $500"
+LOCATE 10, 46
+PRINT "or (N) for Nothing"
+LOCATE 11, 46
+PRINT "WELL, WHAT WILL IT BE?"
+LOCATE 13, 46
+PRINT "(MONEY - "; money; ")"
+DO
+
+a$ = INKEY$
+
+IF UCASE$(a$) = "R" THEN IF money >= 350 THEN GOTO 1.41 ELSE LOCATE 12, 46: PRINT "YOU DON'T HAVE ENOUGH MONEY!": wt: my = my + 1: GOTO 1
+IF UCASE$(a$) = "H" THEN IF money >= 750 THEN GOTO 1.42 ELSE LOCATE 12, 46: PRINT "YOU DON'T HAVE ENOUGH MONEY!": wt: my = my + 1: GOTO 1
+IF UCASE$(a$) = "X" THEN IF money >= 500 THEN GOTO 1.43 ELSE LOCATE 12, 46: PRINT "YOU DON'T HAVE ENOUGH MONEY!": wt: my = my + 1: GOTO 1
+IF UCASE$(a$) = "N" THEN my = my + 1: GOTO 1
+
+LOOP
+
+1.41
+LOCATE 12, 46
+PRINT "WHO WILL TAKE THE RAVAGE STARS?"
+LOCATE 13, 46
+PRINT "(N)eon or (D)avid?"
+
+DO
+
+a$ = INKEY$
+IF UCASE$(a$) = "N" THEN IF nweapon = 1 THEN LOCATE 15, 46: PRINT "GOOD DOING BUSINESS WITH YOU": money = money - 350: nweapon = 2: wt: my = my + 1: GOTO 1 ELSE LOCATE 15, 46: PRINT "HIS WEAPON IS BETTER!": wt: my = my + 1: GOTO 1
+IF UCASE$(a$) = "D" THEN IF dweapon = 1 THEN LOCATE 15, 46: PRINT "GOOD DOING BUSINESS WITH YOU": money = money - 350: dweapon = 2: wt: my = my + 1: GOTO 1 ELSE LOCATE 15, 46: PRINT "HIS WEAPON IS BETTER!": wt: my = my + 1: GOTO 1
+
+LOOP
+
+1.42
+LOCATE 12, 46
+PRINT "WHO WILL TAKE THE HYBRID STARS?"
+LOCATE 13, 46
+PRINT "(N)eon or (D)avid?"
+
+DO
+
+a$ = INKEY$
+IF UCASE$(a$) = "N" THEN IF nweapon < 3 THEN LOCATE 15, 46: PRINT "GOOD DOING BUSINESS WITH YOU": money = money - 750: nweapon = 3: wt: my = my + 1: GOTO 1 ELSE LOCATE 15, 46: PRINT "HIS WEAPON IS BETTER!": wt: my = my + 1: GOTO 1
+IF UCASE$(a$) = "D" THEN IF dweapon < 3 THEN LOCATE 15, 46: PRINT "GOOD DOING BUSINESS WITH YOU": money = money - 750: dweapon = 3: wt: my = my + 1: GOTO 1 ELSE LOCATE 15, 46: PRINT "HIS WEAPON IS BETTER!": wt: my = my + 1: GOTO 1
+
+LOOP
+
+1.43
+LOCATE 12, 46
+PRINT "WHO WILL TAKE THE X - ARMOR?"
+LOCATE 13, 46
+PRINT "(N)eon or (D)avid?"
+
+DO
+
+a$ = INKEY$
+IF UCASE$(a$) = "N" THEN IF narmor = 0 THEN LOCATE 15, 46: PRINT "GOOD DOING BUSINESS WITH YOU": money = money - 500: narmor = 1: wt: my = my + 1: GOTO 1 ELSE LOCATE 15, 46: PRINT "HIS ARMOR IS BETTER!": wt: my = my + 1: GOTO 1
+IF UCASE$(a$) = "D" THEN IF darmor = 0 THEN LOCATE 15, 46: PRINT "GOOD DOING BUSINESS WITH YOU": money = money - 500: darmor = 1: wt: my = my + 1: GOTO 1 ELSE LOCATE 15, 46: PRINT "HIS ARMOR IS BETTER!": wt: my = my + 1: GOTO 1
+
+LOOP
+
+1.5
+CLS
+desk
+COLOR 15
+LOCATE 3, 50
+PRINT "Å WISE MAN Å"
+LOCATE 5, 46
+PRINT "I AM A TEACHER OF ABILITIES"
+LOCATE 6, 46
+PRINT "WHEN YOU ARE READY, I WILL TEACH"
+LOCATE 7, 46
+PRINT "YOU A SPECIAL TECHNIQUE"
+
+IF nlev = 25 THEN IF nweapon <> 5 THEN LOCATE 9, 46: PRINT "NEON'S WEAPON IS NOW MAXED": nweapon = 5: yes = 2
+IF dlev = 25 THEN IF dweapon <> 5 THEN LOCATE 10, 46: PRINT "DAVID'S WEAPON IS NOW MAXED": dweapon = 5: yes = 2
+
+IF nlev > 19 THEN LOCATE 10, 46: PRINT "BOTH OF YOU SHALL LEARN ELEMENT": nskill = 5: yes = 1
+
+IF nskill = 3 THEN IF nlev > 12 THEN LOCATE 9, 46: PRINT "NEON SHALL LEARN DARKNESS": nskill = 4: yes = 1
+IF dskill = 3 THEN IF dlev > 16 THEN LOCATE 10, 46: PRINT "DAVID SHALL LEARN RECOVER": dskill = 4: yes = 1
+
+IF nskill = 2 THEN IF nlev > 8 THEN LOCATE 9, 46: PRINT "NEON SHALL LEARN FLASH": nskill = 3: yes = 1
+IF dskill = 2 THEN IF dlev > 11 THEN LOCATE 10, 46: PRINT "DAVID SHALL LEARN PAIN": dskill = 3: yes = 1
+
+IF nskill = 1 THEN IF nlev > 4 THEN LOCATE 9, 46: PRINT "NEON SHALL LEARN GLACIER": nskill = 2: yes = 1
+IF dskill = 1 THEN IF dlev > 5 THEN LOCATE 10, 46: PRINT "DAVID SHALL LEARN MYST": dskill = 2: yes = 1
+
+IF nskill = 0 THEN LOCATE 9, 46: PRINT "NEON SHALL LEARN LAVA": nskill = 1: yes = 1
+IF dskill = 0 THEN LOCATE 10, 46: PRINT "DAVID SHALL LEARN REMEDY": dskill = 1: yes = 1
+
+IF yes = 0 THEN LOCATE 11, 46: PRINT "RAISE YOUR LEVELS SO I CAN": LOCATE 12, 46: PRINT "TEACH YOU MORE ABILITIES"
+
+wt
+
+IF yes = 1 THEN LOCATE 12, 46: PRINT "YOU ARE NOW TAUGHT": wt
+IF yes = 2 THEN LOCATE 12, 46: PRINT "I AM NOW FINISHED": wt
+
+yes = 0
+
+GOTO 1
+
+1.6
+
+CLS
+
+castle
+
+DO
+
+portal
+
+a$ = INKEY$
+IF a$ = CHR$(0) + "H" THEN GOTO 3
+IF a$ = CHR$(0) + "P" THEN my = my + 1: GOTO 1
+LOOP
+
+3
+
+OPEN "savefile.hp2" FOR OUTPUT AS #1
+        WRITE #1, nhp, nhpmax, nmp, nmpmax
+        WRITE #1, nweapon, narmor
+        WRITE #1, nex, nlev
+        WRITE #1, nskill
+        WRITE #1, dhp, dhpmax, dmp, dmpmax
+        WRITE #1, dweapon, darmor
+        WRITE #1, dex, dlev
+        WRITE #1, dskill
+        WRITE #1, money, crystals
+CLOSE #1
+
+CHAIN "hell.hp2"
+
+
+sure:
+
+COLOR 15
+LOCATE 13, 37
+PRINT "REALLY QUIT?"
+
+DO
+
+xz$ = INKEY$
+IF UCASE$(xz$) = "Y" THEN CHAIN "hellpit2.bas" ELSE
+IF UCASE$(xz$) = "N" THEN GOTO 1 ELSE
+
+LOOP
+
+stats:
+CLS
+PAINT (1, 1), 10
+border
+COLOR 15
+LOCATE 3, 6
+PRINT "NEON   HP:", nhp, "/", nhpmax
+LOCATE 4, 6
+PRINT "       MP:", nmp, "/", nmpmax
+LOCATE 5, 6
+PRINT "    LEVEL:", nlev
+LOCATE 6, 6
+PRINT "       EX:", nex
+
+IF nweapon = 1 THEN nwname$ = "X-Stars"
+IF nweapon = 2 THEN nwname$ = "Ravage Stars"
+IF nweapon = 3 THEN nwname$ = "Hybrid Stars"
+IF nweapon = 4 THEN nwname$ = "Z-Stars"
+IF nweapon = 5 THEN nwname$ = "Exo-Stars"
+LOCATE 7, 6
+PRINT "   WEAPON:", nwname$
+
+IF narmor = 0 THEN naname$ = "None"
+IF narmor = 1 THEN naname$ = "X-Armor"
+IF narmor = 2 THEN naname$ = "Z-Armor"
+IF narmor = 3 THEN naname$ = "Exo-Vest"
+LOCATE 8, 6
+PRINT "    ARMOR:", naname$
+
+COLOR 1
+LOCATE 10, 7
+PRINT "DAVID HP:", dhp, "/", dhpmax
+LOCATE 11, 6
+PRINT "       MP:", dmp, "/", dmpmax
+LOCATE 12, 6
+PRINT "    LEVEL:", dlev
+LOCATE 13, 6
+PRINT "       EX:", dex
+IF dweapon = 1 THEN dwname$ = "X-Stars"
+IF dweapon = 2 THEN dwname$ = "Ravage Stars"
+IF dweapon = 3 THEN dwname$ = "Hybrid Stars"
+IF dweapon = 4 THEN dwname$ = "Z-Stars"
+IF dweapon = 5 THEN dwname$ = "Exo-Stars"
+LOCATE 14, 6
+PRINT "   WEAPON:", dwname$
+
+IF darmor = 0 THEN daname$ = "None"
+IF darmor = 1 THEN daname$ = "X-Armor"
+IF darmor = 2 THEN daname$ = "Z-Armor"
+IF darmor = 3 THEN daname$ = "Exo-Vest"
+LOCATE 15, 6
+PRINT "    ARMOR:", naname$
+
+COLOR 15
+LOCATE 23, 50
+PRINT "MONEY:", money
+
+LOCATE 23, 6
+COLOR 9: PRINT "CRYSTALS:"
+LOCATE 23, 16: COLOR 8: PRINT ""
+
+IF crystals = 1 THEN LOCATE 23, 16: COLOR 9: PRINT ""
+IF crystals = 2 THEN LOCATE 23, 16: COLOR 9: PRINT ""
+IF crystals = 3 THEN LOCATE 23, 16: COLOR 9: PRINT ""
+IF crystals = 4 THEN LOCATE 23, 16: COLOR 9: PRINT ""
+IF crystals = 5 THEN LOCATE 23, 16: COLOR 9: PRINT ""
+IF crystals = 6 THEN LOCATE 23, 16: COLOR 9: PRINT ""
+IF crystals = 6 THEN LINE (40, 179)-(166, 179), 4
+SLEEP
+GOTO 1
+
+SUB border
+PAINT (1, 1), 1
+LINE (4, 1)-(636, 198), 10, BF
+LINE (10, 4)-(630, 196), 0, BF
+END SUB
+
+SUB bump
+SOUND 155, .2
+END SUB
+
+SUB castle
+CLS
+COLOR 15
+LINE (100, 200)-(280, 80)
+LINE -(360, 80)
+LINE -(540, 200)
+PAINT (320, 100), 15
+COLOR 4
+LINE (160, 200)-(285, 80)
+LINE -(355, 80)
+LINE -(480, 200)
+PAINT (320, 100), 4
+COLOR 15
+LOCATE 4, 55
+PRINT " to enter portal"
+LOCATE 5, 55
+PRINT " to exit castle"
+END SUB
+
+SUB delay
+FOR d = 1 TO 25
+NEXT d
+END SUB
+
+SUB desk
+PAINT (1, 1), 1
+LINE (20, 9)-(620, 191), 7, BF
+COLOR 6
+LINE (20, 120)-(210, 190), , BF
+LINE (20, 110)-(230, 120), , BF
+LINE (60, 109)-(170, 80), 1, BF
+COLOR 0
+LINE (20, 120)-(210, 191), , B
+LINE (20, 110)-(230, 120), , B
+LINE (60, 109)-(170, 80), , B
+LINE (90, 109)-(90, 91)
+LINE (140, 109)-(140, 91)
+CIRCLE (115, 70), 21, 12, , , .54
+PAINT (115, 70), 12
+CIRCLE (111, 67), 3, 1
+CIRCLE (119, 67), 3, 1
+PAINT (111, 67), 1
+PAINT (119, 67), 1
+LINE (111, 76)-(119, 76), 0
+END SUB
+
+SUB portal
+0.198
+col = INT(RND * 3) + 1
+IF col = 2 THEN col = 13
+IF col = 3 THEN col = 15
+IF col = 1 THEN col = 4
+size = INT(RND * 100) + 1
+CIRCLE (320, 40), size, col
+END SUB
+
+SUB town
+PAINT (1, 1), 8
+LINE (10, 5)-(630, 185), 4, BF
+LINE (80, 110)-(140, 86), 3, BF
+LINE (530, 100)-(590, 76), 2, BF
+LINE (240, 160)-(300, 136), 1, BF
+LINE (240, 60)-(400, 0), 8, BF
+LINE (290, 60)-(350, 40), 6, BF
+COLOR 0
+LINE (240, 60)-(400, -1), , B
+LINE (240, 60)-(270, -1), , B
+LINE (400, 60)-(370, -1), , B
+LINE (320, 60)-(320, 40)
+COLOR 0
+LINE (100, 100)-(120, 110), , BF
+LINE (550, 100)-(570, 90), , BF
+LINE (260, 160)-(280, 150), , BF
+END SUB
+
+SUB wt
+DO: LOOP UNTIL INKEY$ <> ""
+END SUB
+

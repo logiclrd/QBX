@@ -1,0 +1,37 @@
+HELLPIT
+  Made By: Fig 1997            (I will get a copyright on the name)                    
+  Type of Game : Role Playing                                               
+  Players : 1                                                               
+  Characters : 2                                                            
+  Secrets : No (Very Sorry, I'll make it up in HELLPIT 2)                   
+  Files : 4 (Who.inf (info), hellpit1.bas (game), hellpit1.bat (startup)    
+          and this file (hellpit1.txt (help, etc.))                         
+
+        
+        This game is a medium sized RPG with good graphics, originality,   
+magics, experience, levels, hitpoints, magicpoints, bosses, etc.
+        The object of this game is to get all three of the hearts, and then
+try to defeat Satan.  It is really fun, and it should take about 2.5 hours to
+5 hours to pass.  I will continue the saga by making HELLPIT 2, and we'll see
+if I continue after that.  This was the game that I enjoyed most to program.
+I have had a lot of help from people on AOL, and I thank you people for this
+help.  If you would like to make a game with me, e-mail me at PANTERA55@aol.
+I am always willing to make a game with others.  
+        If you're not running this game through the .bat file, you may have
+some problems trying to SAVE or LOAD the game.  That is why I recommend you
+to run this game using the file HELLPIT1.bat.  If you still have troubles,
+just e-mail me.
+        If you have problems beating the game, then your problem is you.  I 
+can't help you in that.  Besides, this is an EASY RPG anyways.  Don't alter
+these files in any way PLEASE!
+        If anyone wants to upload this game to a BBS, do it, but don't take
+credit for my hard work (please!).  This game took me long to program.
+
+Look for these other titles by FIG Inc.:
+
+        HELLPIT II
+        HELLPIT III
+        FANTASY POWER ZONE
+        BIRTH OF THE DEVIL
+        BIRTH OF THE DEVIL 2
+

@@ -1,0 +1,240 @@
+DECLARE SUB town ()
+DECLARE SUB border ()
+DECLARE SUB david ()
+DECLARE SUB neon ()
+DECLARE SUB thesse ()
+
+SCREEN 8
+
+CLS
+
+border
+neon
+david
+thesse
+
+COLOR 15
+
+LOCATE 7, 25
+PRINT "NEON: We did it!  We have defeated the Essence!"
+LOCATE 8, 31
+PRINT "Our town is finally at peace!"
+PLAY "o2l2efegedac"
+
+LOCATE 12, 25
+PRINT "THESSE: I can't believe it!  We actually destroyed"
+LOCATE 13, 31
+PRINT "the Essence of Evil!  Hooray for Neon and David!"
+PLAY "o2l4ddgea#ddg#l1bo2l13del1b"
+
+LOCATE 17, 25
+PRINT "DAVID: I have finally fixed the mess that I started."
+LOCATE 18, 31
+PRINT "I am sorry that I put you two through all this."
+PLAY "o1l2egfa#ccd#fedc"
+
+SLEEP 1
+
+CLS
+
+0.07
+
+town
+
+c = 7
+
+0
+
+IF c = 15 THEN GOTO 0.5
+IF c = 8 THEN c = 15
+IF c = 7 THEN c = 8
+
+COLOR c
+
+LOCATE 1, 5
+PRINT "The town is now at peace.  Thesse was back to normal.  David took the"
+PRINT "crystals, and hid them in a secret place.  The quest has been a long one."
+PRINT "Neon has decided to take a break from reality, and travel to Reswed, a "
+PRINT "peaceful town with nice people.  Thesse went along with Neon.  David"
+PRINT "decided to practice his magic skills to become a better warrior, just in"
+PRINT "case an army attacked while Neon and Thesse were away.  The wise man "
+PRINT "taught him a couple of new Death spells.  As for the Kingdom, the portal"
+PRINT "was closed by David, and sealed by the wise man."
+
+GOTO 0
+
+0.5
+
+IF c = 7 THEN GOTO 0
+IF c = 8 THEN c = 7
+IF c = 15 THEN c = 8
+
+COLOR c
+LOCATE 1, 5
+PRINT "The town is now at peace.  Thesse was back to normal.  David took the"
+PRINT "crystals, and hid them in a secret place.  The quest has been a long one."
+PRINT "Neon has decided to take a break from reality, and travel to Reswed, a "
+PRINT "peaceful town with nice people.  Thesse went along with Neon.  David"
+PRINT "decided to practice his magic skills to become a better warrior, just in"
+PRINT "case an army attacked while Neon and Thesse were away.  The wise man "
+PRINT "taught him a couple of new Death spells.  As for the Kingdom, the portal"
+PRINT "was closed by David, and sealed by the wise man."
+
+LOCATE 17, 25
+PRINT "Hit ENTER to CONTINUE"
+IF INKEY$ = CHR$(13) THEN GOTO 1
+
+GOTO 0.5
+
+
+
+1
+
+CLS
+
+SCREEN 13
+
+DO
+
+FOR c = 38 TO 42
+
+COLOR c
+
+LOCATE 1, 15
+PRINT "CREDITS"
+
+LOCATE 4, 5
+PRINT "This game was completely made by"
+LOCATE 5, 5
+PRINT "Anthony Figliuzzi of FIG Inc."
+
+LOCATE 7, 15
+PRINT "SECRETS"
+LOCATE 9, 5
+PRINT "When Thesse is on your team, try"
+LOCATE 10, 5
+PRINT "BACKSPACE for the secret triple"
+LOCATE 11, 5
+PRINT "skill technique (Mp - 7 each)"
+LOCATE 12, 5
+PRINT "when it is Neon's turn"
+
+LOCATE 14, 5
+PRINT "Go to the top-left corner of the"
+LOCATE 15, 5
+PRINT "HELLPIT to find a secret room!"
+
+LOCATE 17, 5
+PRINT "To get the best weapons, reach"
+LOCATE 18, 5
+PRINT "Level 25 with Neon and David"
+
+LOCATE 20, 5
+PRINT "To get a secret dual technique"
+LOCATE 21, 5
+PRINT "with Neon and David, go to the"
+LOCATE 22, 5
+PRINT "Wise man when Neon's level is 20+"
+
+NEXT c
+LOOP UNTIL INKEY$ <> ""
+
+CLS
+
+SCREEN 8
+
+PAINT (1, 1), 4
+
+COLOR 1, 4
+PRINT "Thank you for playing HELLPIT II and congratulations on defeating it."
+COLOR 2, 4
+PRINT "If you have not played HELLPIT I yet, get it in AOL, go to my web page,"
+COLOR 1, 4
+PRINT "or e-mail me and ask for it.  Also, e-mail me to recieve my unreleased"
+COLOR 2, 4
+PRINT "games!  Please, please e-mail me with comments or questions about this or"
+COLOR 1, 4
+PRINT "any of my other games at PANTERA55@aol.com, and PLEASE visit my new WEB"
+COLOR 2, 4
+PRINT "SITE at http://members.aol.com/PANTERA55.  Once again, congratulations for"
+COLOR 1, 4
+PRINT "passing HELLPIT II, and thanks for playing!"
+
+DO
+PLAY "o1l7eegadded"
+LOOP UNTIL INKEY$ <> ""
+
+CHAIN "hellpit2.bas"
+
+SUB border
+PAINT (1, 1), 1
+LINE (4, 1)-(636, 198), 10, BF
+LINE (10, 4)-(630, 196), 0, BF
+END SUB
+
+SUB david
+LINE (73, 142)-(85, 154), 4, BF
+LINE (73, 141)-(85, 132), 1, BF
+LINE (76, 134)-(82, 142), 9, BF
+LINE (76, 143)-(82, 144), 12, BF
+CIRCLE (79, 127), 5, 12, , , .78
+PAINT (79, 127), 12
+LINE (81, 126)-(82, 126), 0, BF
+END SUB
+
+SUB neon
+LINE (72, 62)-(85, 74), 1, BF
+LINE (72, 61)-(85, 52), 15, BF
+CIRCLE (78, 47), 6, 12, , , .65
+PAINT (78, 47), 12
+LINE (75, 54)-(82, 62), 4, BF
+LINE (75, 63)-(82, 65), 12, BF
+LINE (81, 46)-(80, 46), 0, BF
+END SUB
+
+SUB thesse
+COLOR 15
+LINE (122, 115)-(140, 115)
+LINE -(135, 100)
+LINE -(135, 97)
+LINE -(139, 95)
+LINE -(135, 92)
+LINE -(125, 92)
+LINE -(127, 100)
+LINE -(122, 115)
+PAINT (130, 100), 15
+LINE (127, 100)-(135, 100), 1
+LINE (127, 101)-(136, 101), 1
+LINE (128, 94)-(134, 102), 9, BF
+LINE -(128, 103), 12, BF
+CIRCLE (131, 88), 5, 12, , , .7
+PAINT (131, 88), 12
+LINE (133, 87)-(134, 87), 0
+COLOR 14
+LINE (135, 85)-(127, 85)
+LINE -(125, 96)
+LINE -(123, 96)
+LINE -(125, 84)
+LINE -(134, 84)
+LINE (124, 96)-(126, 85)
+END SUB
+
+SUB town
+PAINT (1, 1), 8
+LINE (10, 5)-(630, 185), 4, BF
+LINE (80, 110)-(140, 86), 3, BF
+LINE (530, 100)-(590, 76), 2, BF
+LINE (240, 160)-(300, 136), 1, BF
+LINE (240, 60)-(400, 0), 8, BF
+LINE (290, 60)-(350, 40), 6, BF
+COLOR 0
+LINE (240, 60)-(400, -1), , B
+LINE (240, 60)-(270, -1), , B
+LINE (400, 60)-(370, -1), , B
+LINE (320, 60)-(320, 40)
+COLOR 0
+LINE (100, 100)-(120, 110), , BF
+LINE (550, 100)-(570, 90), , BF
+LINE (260, 160)-(280, 150), , BF
+END SUB
+

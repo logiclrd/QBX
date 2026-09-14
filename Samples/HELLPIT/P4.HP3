@@ -1,0 +1,679 @@
+DECLARE SUB horridmusic ()
+DECLARE SUB secrets ()
+DECLARE SUB newtown ()
+DECLARE SUB powerful ()
+DECLARE SUB world ()
+DECLARE SUB revives ()
+DECLARE SUB ndl ()
+DECLARE SUB iwon ()
+DECLARE SUB explosions (x!, y!)
+DECLARE SUB destruction ()
+DECLARE SUB psycho ()
+DECLARE SUB revive ()
+DECLARE SUB essence ()
+DECLARE SUB deth ()
+DECLARE SUB vain ()
+DECLARE SUB wattack ()
+DECLARE SUB wiseman ()
+DECLARE SUB dead ()
+DECLARE SUB dark ()
+DECLARE SUB lightning ()
+DECLARE SUB delay ()
+DECLARE SUB setrgb (Nr!, r!, g!, B!)
+DECLARE SUB clearwords ()
+DECLARE SUB bborder ()
+DECLARE SUB border ()
+DECLARE SUB fire ()
+
+SCREEN 8
+
+CLS
+
+COLOR 0, 0
+
+2
+ehpmax = 50000
+ehp = ehpmax
+
+whp = 5000: whpmax = 5000
+wmp = 1000: wmpmax = 1000
+
+2.1
+
+CLS
+bborder
+LOCATE 23, 3
+IF whp > 0 THEN COLOR 1 ELSE COLOR 4
+PRINT "WISEMAN HP:"; whp; "/"; whpmax; "MP :"; wmp; "/"; wmpmax
+
+LINE (500, 15)-(602, 20), 15, B
+LINE (501, 16)-(500 + ehp / ehpmax * 100, 19), 4, BF
+
+wiseman
+essence
+
+COLOR 15
+LOCATE 8, 23
+PRINT "WISEMAN:"
+LOCATE 9, 25
+PRINT "(A)ttack"
+LOCATE 11, 23
+PRINT "SKILLS:"
+LOCATE 12, 25: PRINT "(R)evive    (Mp - 5)"
+LOCATE 13, 25: PRINT "(P)sycho    (Mp - 8)"
+LOCATE 14, 25: PRINT "(V)ain      (Mp - 12)"
+LOCATE 15, 25: PRINT "(D)eth      (Mp - 15)"
+
+DO
+a$ = INKEY$
+IF UCASE$(a$) = "A" THEN GOTO 2.2
+IF UCASE$(a$) = "R" THEN IF wmp > 4 THEN wmp = wmp - 5: GOTO 2.21
+IF UCASE$(a$) = "P" THEN IF wmp > 7 THEN wmp = wmp - 8: GOTO 2.22
+IF UCASE$(a$) = "V" THEN IF wmp > 11 THEN wdmp = wmp - 12: GOTO 2.23
+IF UCASE$(a$) = "D" THEN IF wmp > 14 THEN wdmp = wmp - 15: GOTO 2.24
+horridmusic
+IF a$ = CHR$(0) + CHR$(134) THEN GOTO 2.25
+
+LOOP
+
+2.2
+
+clearwords
+wattack
+
+damage = (500 + INT(RND * 250) + 1)
+
+ehp = ehp - damage
+
+FOR s = 0 TO 63 STEP .03: setrgb 0, -s, -s, -s: NEXT s
+
+GOTO 2.29
+
+2.21
+
+clearwords
+revive
+
+wreg = whpmax - whp
+
+whp = whp + wreg
+
+GOTO 2.28
+
+2.22
+
+clearwords
+psycho
+
+damage = 750 + INT(RND * 1000) + 1
+
+ehp = ehp - damage
+
+GOTO 2.29
+
+2.23
+
+clearwords
+vain
+
+damage = 1000 + INT(RND * 1250) + 1
+
+ehp = ehp - damage
+
+GOTO 2.29
+
+2.24
+
+clearwords
+deth
+
+damage = 1500 + INT(RND * 1500) + 1
+
+ehp = ehp - damage
+
+GOTO 2.29
+
+2.25
+clearwords
+destruction
+damage = 5000 + INT(RND * 5000) + 1
+ehp = ehp - damage
+GOTO 2.29
+
+2.28
+
+FOR e = 1 TO wreg STEP 1
+COLOR 14
+LOCATE 9, 15
+PRINT e
+NEXT e
+
+GOTO 2.5
+
+2.29
+
+FOR e = 1 TO damage STEP 1
+
+COLOR 15
+LOCATE 8, 65
+PRINT e
+NEXT e
+
+delay
+
+IF ehp <= 0 THEN GOTO 3
+
+2.5
+
+CLS
+bborder
+wiseman
+
+LOCATE 23, 3
+IF whp > 0 THEN COLOR 1 ELSE COLOR 4
+PRINT "WISEMAN HP:"; whp; "/"; whpmax; "MP :"; wmp; "/"; wmpmax
+
+essence
+
+LINE (500, 15)-(602, 20), 15, B
+LINE (501, 16)-(500 + ehp / ehpmax * 100, 19), 4, BF
+
+attack = INT(RND * 2) + 1
+IF attack = 1 THEN fire ELSE dark
+
+wdam = 500 + INT(RND * 25) + 1
+whp = whp - wdam
+
+GOTO 2.55
+
+2.55
+FOR e = 1 TO wdam STEP 1
+COLOR 4
+LOCATE 16, 15
+PRINT e
+FOR d = 1 TO 10
+NEXT d
+NEXT e
+wdam = 0
+delay
+IF whp < 1 THEN dead
+GOTO 2.1
+
+3
+
+CLS
+
+bborder
+
+wiseman
+essence
+
+FOR h = 1 TO 45
+x = 500 + INT(RND * 80) + 1
+y = 60 + INT(RND * 80) + 1
+
+explosions x, y
+
+NEXT h
+
+LINE (480, 40)-(620, 160), 0, BF
+FOR s = 0 TO 63 STEP .02
+setrgb 0, -s, 0, 0
+NEXT s
+
+CLS
+
+iwon
+
+CLS
+LOCATE 3, 5
+PRINT "Congratulations, Wise Man!  You have forever destroyed the Essence of Evil,"
+LOCATE 4, 1
+PRINT "and you have saved all of mankind!"
+LOCATE 5, 5
+PRINT "You find a red orb on the floor.  You quickly realize that it is the orb of"
+LOCATE 6, 1
+PRINT "the raging chariot.  The orb of the raging chariot is a gift from above that"
+LOCATE 7, 1
+PRINT "will allow you any wish.  What is your wish?"
+LOCATE 9, 10
+PRINT "(R)evive Neon, David and Thesse"
+LOCATE 10, 10
+PRINT "(B)ecome the most powerful being alive"
+LOCATE 11, 10
+PRINT "(W)orld Destruction"
+LOCATE 13, 10
+PRINT "What is your choice?"
+
+DO
+a$ = INKEY$
+IF UCASE$(a$) = "R" THEN revives
+IF UCASE$(a$) = "B" THEN powerful
+IF UCASE$(a$) = "W" THEN world
+LOOP
+
+SUB bborder
+CLS
+PAINT (1, 1), 4
+LINE (10, 5)-(630, 195), 12, BF
+LINE (15, 10)-(625, 190), 0, BF
+END SUB
+
+SUB border
+CLS
+PAINT (1, 1), 4
+LINE (10, 5)-(630, 195), 12, BF
+LINE (15, 10)-(625, 190), 2, BF
+END SUB
+
+SUB clearwords
+LINE (150, 20)-(400, 160), 0, BF
+END SUB
+
+SUB covup
+LOCATE my, mx: COLOR 5: PRINT "Û"
+END SUB
+
+SUB dark
+FOR s = 0 TO 63 STEP .35
+CIRCLE (320, 100), s * 4, 1, , , .25
+CIRCLE (320, 100), s * 2.5, 1, , , .7
+setrgb 1, s, s, s
+setrgb 0, -s, -s, -s
+SOUND 200 - (s * 2), .05
+NEXT s
+END SUB
+
+SUB dead
+CLS
+COLOR 1, 4
+LOCATE 8, 20
+PRINT "You have been defeated, but not for good!"
+LOCATE 9, 20
+PRINT "You can't let evil win!  Not this time!!!"
+PLAY "o1l25egadgagcgacegadcgec"
+CHAIN "bye.hp3"
+SLEEP
+END SUB
+
+SUB delay
+FOR d = 1 TO 5000
+NEXT d
+END SUB
+
+SUB destruction
+FOR c = 5000 TO -5000 STEP -4
+LINE (c, 0)-(320, 100), 4
+setrgb 0, c, -c, c
+NEXT c
+
+FOR c = 5000 TO -5000 STEP -4
+LINE (c, 200)-(320, 100), 4
+setrgb 0, c, -c, c
+NEXT c
+setrgb 0, 0, 0, 0
+END SUB
+
+SUB deth
+FOR n = 1 TO 500
+s = INT(RND * 640) + 1
+ss = INT(RND * 640) + 1
+a = INT(RND * 200) + 1
+aa = INT(RND * 200) + 1
+LINE (s, a)-(ss, aa), 4
+setrgb 4, -n, n + 50, n
+SOUND 10000 + n, .04
+NEXT n
+setrgb 4, 50, 0, 0
+END SUB
+
+SUB essence
+FOR n = 1 TO 250
+x = 520 + INT(RND * 60) + 1
+y = 80 + INT(RND * 40) + 1
+c = INT(RND * 2) + 1: IF c = 1 THEN c = 4 ELSE c = 14
+LINE (x, y)-(x, y), c
+LINE (x, y)-(x, y), c
+NEXT n
+END SUB
+
+SUB explosions (x, y)
+
+FOR c = 0 TO 21
+cc = INT(RND * 2) + 1
+IF cc = 1 THEN cc = 4 ELSE cc = 12
+CIRCLE (x, y), c, cc
+setrgb 4, c * 3, 0, 0
+SOUND 40 + c, .04
+NEXT c
+
+END SUB
+
+SUB fire
+FOR s = 0 TO 126 STEP .25
+LINE (20, 190 - s)-(620, 190 - s), 4
+setrgb 4, s / 2, 0, 0
+SOUND 200 - s, .04
+NEXT s
+END SUB
+
+SUB horridmusic
+SOUND 40 + INT(RND * 200) + 1, .05
+END SUB
+
+SUB iwon
+a = 1
+
+CLS
+
+a1$ = "     WISEMAN: What?  That's it!  Too easy!"
+a2$ = "     ESSENCE: Noooo! It'll never be over!  I'll make sure to open portals for"
+a3$ = "years to come!  It'll never stop until evil wins!"
+a4$ = "     WISEMAN: Is that right?  I think you'll be needing these to open any more"
+a5$ = "portals!"
+a6$ = "     ESSENCE: The alpha chain?  The ring of chaos?  The staff of balance..."
+a7$ = "you have them?"
+a8$ = "     WISEMAN: And I have ALL of the crystals!"
+a9$ = "     ESSENCE: I will get them back!  "
+a10$ = "     WISEMAN: Ha!  I'm glad you think so!"
+a11$ = "     ESSENCE: What are you doing?"
+a12$ = "     The Wise Man opens a portal and throws the staff, the ring, the chain,"
+a13$ = "and all of the crystals into the portal.  The portal then closes.  The Wise"
+a14$ = "Man seals the portal shut with a spell."
+a15$ = "     ESSENCE: Noooooooooooooooooooooooooooooo!"
+a16$ = "     The Essence of Evil evapourates into thin air..."
+CLS
+
+COLOR 1, 0
+
+DO
+
+IF a = 1 THEN PRINT a1$
+IF a = 2 THEN PRINT a2$
+IF a = 3 THEN PRINT a3$
+IF a = 4 THEN PRINT a4$
+IF a = 5 THEN PRINT a5$
+IF a = 6 THEN PRINT a6$
+IF a = 7 THEN PRINT a7$
+IF a = 8 THEN PRINT a8$
+IF a = 9 THEN PRINT a9$
+IF a = 10 THEN PRINT a10$
+IF a = 11 THEN PRINT a11$
+IF a = 12 THEN PRINT a12$
+IF a = 13 THEN PRINT a13$
+IF a = 14 THEN PRINT a14$
+IF a = 15 THEN PRINT a15$
+IF a = 16 THEN PRINT a16$
+
+FOR s = 0 TO 63 STEP .025
+
+setrgb 1, 0, 0, s
+
+NEXT s
+
+ndl
+a = a + 1
+
+LOOP UNTIL a = 17
+SLEEP
+setrgb 0, 0, 0, 0
+END SUB
+
+SUB lightning
+FOR s = 0 TO 252 STEP .5
+LINE (520, 100)-(20, 70 + INT(RND * 60) + 1), 1
+setrgb 1, s, s, 0
+SOUND 50 + s, .04
+NEXT s
+setrgb 1, 0, 0, 50
+END SUB
+
+SUB ndl
+FOR d = 1 TO 5000
+NEXT d
+END SUB
+
+SUB newtown
+PAINT (1, 1), 8
+COLOR 10
+LINE (10, 5)-(630, 185), , BF
+COLOR 3
+LINE (80, 110)-(140, 86), , BF
+COLOR 2
+LINE (530, 100)-(590, 76), , BF
+COLOR 1
+LINE (240, 160)-(300, 136), , BF
+COLOR 8
+LINE (240, 60)-(400, 0), , BF
+COLOR 6
+LINE (290, 60)-(350, 40), , BF
+COLOR 0
+LINE (240, 60)-(400, -1), , B
+LINE (240, 60)-(270, -1), , B
+LINE (400, 60)-(370, -1), , B
+LINE (320, 60)-(320, 40)
+COLOR 15
+LINE (100, 100)-(120, 110), , BF
+LINE (550, 100)-(570, 90), , BF
+LINE (260, 160)-(280, 150), , BF
+
+LINE (290, 100)-(350, 120), 8, BF
+LINE (280, 120)-(360, 125), 8, BF
+
+LINE (290, 100)-(350, 120), 0, B
+LINE (280, 120)-(360, 125), 0, B
+
+DRAW "bm305,79c7d10f10r10e10u10e10u5r2e1u1l10d2l3d1r4d2g7l5u5h3l8g3d5l5h7u2r4u1l3u2l10d1f1r2d5f9"
+PAINT (315, 90), 7
+DRAW "bm305,79c8d10f10r10e10u10e10u5r2e1u1l10d2l3d1r4d2g7l5u5h3l8g3d5l5h7u2r4u1l3u2l10d1f1r2d5f9"
+
+
+END SUB
+
+SUB powerful
+
+CLS
+
+bborder
+
+wiseman
+
+DO
+FOR s = 0 TO 63 STEP .2
+setrgb 0, s, s, 0
+NEXT s
+LOOP UNTIL INKEY$ <> ""
+setrgb 0, 23, 13, 42
+
+CLS
+
+COLOR 4, 0
+PRINT "     It was unfortunate to see such warriors die, but the Wise Man has the"
+PRINT "absolute power of the universe.  The town joined forces with the town known"
+PRINT "as Tarra, and after a few attacks by towns that would have easily been the"
+PRINT "victorious team, the Wise Man made sure that every town knew who was the most"
+PRINT "powerful.  As for Neon, David and Thesse, a statue was put up in the middle "
+PRINT "of the newly founded town as a sign of their bravery."
+
+DO
+FOR s = 0 TO 63 STEP .2
+setrgb 4, -s, 0, 0
+NEXT s
+LOOP UNTIL INKEY$ <> ""
+
+setrgb 0, 0, 0, 0
+setrgb 4, 50, 0, 0
+secrets
+
+END SUB
+
+SUB psycho
+FOR n = 1 TO 620
+x = INT(RND * 640) + 1
+y = INT(RND * 200) + 1
+LINE (320, 100)-(x, y), 1
+SOUND 40 + INT(RND * 10000) + 1, .04
+setrgb 1, 0, 0, n
+NEXT n
+END SUB
+
+SUB revive
+FOR s = 0 TO 63 STEP .04: setrgb 0, s, s, 0: SOUND 10000 + (s * 50), .04: NEXT s
+FOR s = 63 TO 0 STEP -.04: setrgb 0, s, s, 0: NEXT s
+END SUB
+
+SUB revives
+CLS
+COLOR 4, 1
+PRINT "     You, the Wise Man, turn down Ultimate Power to save three warriors who"
+PRINT "risked their lives to save your town.  Neon, David, and Thesse crown the Wise"
+PRINT "Man as the leader of the town.  A statue is built in the middle of the town"
+PRINT "of the Wise Man."
+
+DO
+FOR s = 0 TO 63 STEP .2
+setrgb 1, 0, 0, s
+NEXT s
+LOOP UNTIL INKEY$ <> ""
+
+setrgb 1, 0, 0, 50
+
+COLOR 0, 0
+
+newtown
+
+SLEEP
+
+secrets
+
+END SUB
+
+SUB secrets
+CLS
+COLOR 15, 4
+PRINT "     Thank you for playing HELLPIT III: Final Flame!"
+PRINT "     A special thanks to the die hard fans of HELLPIT!"
+PRINT "     All programming was done by Anthony Figliuzzi of FIG Inc."
+PRINT
+PRINT "     What?  You think that I'm going to rip you off?  No way!"
+PRINT
+PRINT "                                 SECRETS"
+PRINT
+PRINT "     1.  In the first portal, go in between the wall to access a secret!"
+PRINT "     ex: ÛÛ (Through the wall from the bottom)"
+PRINT "     2.  At the very last boss, with the Wise Man, press 'F12' for the secret"
+PRINT "     move!  It takes no mp, and it's DAMN strong!"
+PRINT "     3.  Go to the bottom left corner in the town for FIG'S SECRET ROOM II!"
+PRINT "     4.  In the town, press 'F11' for THESSE'S secret weapon!"
+PRINT "     5.  In the town, press 'F2' for THESSE'S secret armor!"
+PRINT
+PRINT "     I'm sorry, but that's it for the HELLPITS.  I will be releasing HELLPIT"
+PRINT "     TRILOGY, with more secrets, debugging, and a STRATEGY GUIDE for all "
+PRINT "     three of the HELLPITS."
+PRINT
+PRINT "     E-Mail - PANTERA55@aol.com"
+PRINT "     Web Page - http://members.aol.com/PANTERA55"
+
+DO
+FOR a = 0 TO 63 STEP .2
+setrgb 4, a, 0, 0
+NEXT a
+LOOP UNTIL INKEY$ <> ""
+
+SLEEP
+CHAIN "bye.hp3"
+END SUB
+
+SUB setrgb (Nr, r, g, B)
+  OUT &H3C8, Nr
+  OUT &H3C9, r
+  OUT &H3C9, g
+  OUT &H3C9, B
+END SUB
+
+SUB vain
+FOR s = 0 TO 638 STEP 2
+a = s + INT(RND * 5) + 1
+c = INT(RND * 2) + 1
+IF c = 1 THEN c = 4 ELSE c = 12
+LINE (a, y + INT(RND * 150) + 1)-(a, 200), c
+SOUND 100 + (s / 6), .05
+setrgb 4, s / 10, 0, 0
+NEXT s
+
+FOR u = 200 TO 0 STEP -.5
+LINE (0, u)-(640, u), 4
+setrgb 4, u / 3.75, 0, 0
+SOUND 250 - u, .04
+NEXT u
+
+setrgb 4, 50, 0, 0
+END SUB
+
+SUB wattack
+FOR s = 0 TO 63 STEP .2
+CIRCLE (540, 100), s * 2, 4
+setrgb 4, -s, s, -s
+NEXT s
+
+FOR s = 0 TO 63 STEP .2
+CIRCLE (540, 100), s * 2, 0
+NEXT s
+
+setrgb 4, 50, 0, 0
+END SUB
+
+SUB wiseman
+DRAW "bm100,90c9d10f10r10e10u10e10u5r2e1u1l10d2l3d1r4d2g7l5u5h3l8g3d5l5h7u2r4u1l3u2l10d1f1r2d5f9"
+PAINT (110, 100), 9
+DRAW "bm100,90c14d10f10r10e10u10e10u5r2e1u1l10d2l3d1r4d2g7l5u5h3l8g3d5l5h7u2r4u1l3u2l10d1f1r2d5f9"
+END SUB
+
+SUB world
+
+CIRCLE (320, 100), 40, 9
+PAINT (320, 100), 9
+DRAW "bm330,90c2d4l2d3g3l2d3f4d1g4r3f4l3d1l13u1l5u3e2u1l4u1h5r14e2u4h2l3u4h2u3h3r6u1r14d5f2"
+PAINT (327, 92), 2
+DRAW "bm335,101c2r2d2f1g2h4e1r1"
+PAINT (334, 102), 2
+
+SLEEP 1
+
+
+FOR n = 1 TO 30
+x = 280 + INT(RND * 80) + 1
+y = 80 + INT(RND * 40) + 1
+FOR s = 0 TO 63
+c = INT(RND * 2) + 1
+IF c = 1 THEN c = 4 ELSE c = 12
+CIRCLE (x, y), s / 5, c
+SOUND 40 + s, .04
+setrgb 4, s, 0, 0
+NEXT s
+NEXT n
+
+CLS
+FOR s = 0 TO 63 STEP .02
+setrgb 0, -s, 0, 0
+NEXT s
+
+CLS
+
+COLOR 4, 1
+PRINT "     For some sick reason, you wanted the world to end.  Well, you recieved"
+PRINT "your wish.  Happy?  Now, humans and the dead roam around in hell.  The humans"
+PRINT "don't stay human for too long, though.  Except for the Wise Man."
+
+DO
+FOR s = 0 TO 63 STEP .2
+setrgb 1, 0, 0, s
+NEXT s
+LOOP UNTIL INKEY$ <> ""
+
+setrgb 1, 0, 0, 50
+
+secrets
+
+END SUB
+

@@ -1,0 +1,618 @@
+DECLARE SUB alright ()
+DECLARE SUB border ()
+DECLARE SUB setrgb (Nr!, r!, g!, B!)
+DECLARE SUB castle ()
+DECLARE SUB word (x!, y!, l$, c!)
+DECLARE SUB wt ()
+DECLARE SUB desk ()
+DECLARE SUB bump ()
+DECLARE SUB town ()
+
+SCREEN 8
+
+CLS
+
+OPEN "data.dat" FOR INPUT AS #1
+        INPUT #1, characters, bro, savefile
+        INPUT #1, dhp, dhpmax, dmp, dmpmax
+        INPUT #1, dlev, dex, dweapon, darmor
+        INPUT #1, nhp, nhpmax, nmp, nmpmax
+        INPUT #1, nlev, nex, nweapon, narmor
+        INPUT #1, thp, thpmax, tmp, tmpmax
+        INPUT #1, tlev, tex, tweapon, tarmor
+        INPUT #1, portal, money
+        CLOSE #1
+
+my = 15
+mx = 40
+
+COLOR 0, 0
+
+1
+town
+
+LOCATE my, mx
+COLOR 3
+PRINT ""
+
+GOTO 1.1
+
+1.1
+
+a$ = INKEY$
+IF a$ = CHR$(0) + "H" THEN my = my - 1: GOTO 1.2 ELSE
+IF a$ = CHR$(0) + "P" THEN my = my + 1: GOTO 1.2 ELSE
+IF a$ = CHR$(0) + "K" THEN mx = mx - 1: GOTO 1.2 ELSE
+IF a$ = CHR$(0) + "M" THEN mx = mx + 1: GOTO 1.2 ELSE
+IF a$ = CHR$(0) + CHR$(60) THEN IF characters = 3 THEN alright: tarmor = 2
+IF a$ = CHR$(0) + CHR$(133) THEN IF characters = 3 THEN alright: tweapon = 3
+IF a$ = CHR$(13) THEN GOSUB stats
+IF a$ = CHR$(27) THEN GOSUB sure
+GOTO 1.1
+
+1.2
+IF mx < 3 THEN bump: mx = mx + 1
+IF mx > 78 THEN bump: mx = mx - 1
+IF my < 2 THEN bump: my = my + 1
+IF my > 23 THEN bump: my = my - 1
+IF mx = 3 THEN IF my = 23 THEN GOTO 1.21
+IF my = 8 THEN IF mx > 31 THEN IF mx < 37 THEN bump: my = my + 1
+IF my = 8 THEN IF mx < 51 THEN IF mx > 44 THEN bump: my = my + 1
+IF my < 9 THEN IF mx = 31 THEN bump: mx = mx - 1
+IF my < 9 THEN IF mx = 50 THEN bump: mx = mx + 1
+IF my = 20 THEN IF mx < 36 THEN IF mx > 33 THEN GOTO 1.3
+IF my = 14 THEN IF mx < 16 THEN IF mx > 13 THEN GOTO 1.4
+IF my = 13 THEN IF mx < 72 THEN IF mx > 69 THEN GOTO 1.5
+IF my = 8 THEN IF mx > 36 THEN IF mx < 45 THEN GOTO 1.6
+GOTO 1
+
+1.21
+CLS
+desk
+COLOR 15
+LOCATE 5, 35
+PRINT "FIG'S SECRET ROOM II"
+LOCATE 7, 38
+PRINT "     Whaddaya want?"
+LOCATE 9, 38
+PRINT "     (F)ree Sleep and Save"
+LOCATE 10, 38
+PRINT "     (B)lood Rain Orbs"
+LOCATE 11, 38
+PRINT "     (L)eave"
+
+DO
+a$ = INKEY$
+IF UCASE$(a$) = "F" THEN GOTO 1.22
+IF UCASE$(a$) = "B" THEN GOTO 1.23
+IF UCASE$(a$) = "L" THEN CLS : mx = mx + 1: GOTO 1
+LOOP
+
+1.22
+dhp = dhpmax: dmp = dmpmax
+IF characters = 3 THEN
+nhp = nhpmax: nmp = nmpmax
+thp = thpmax: tmp = tmpmax
+END IF
+
+IF savefile = 1 THEN OPEN "save1.dat" FOR OUTPUT AS #1
+IF savefile = 2 THEN OPEN "save2.dat" FOR OUTPUT AS #1
+IF savefile = 3 THEN OPEN "save3.dat" FOR OUTPUT AS #1
+        WRITE #1, characters, bro, savefile
+        WRITE #1, dhp, dhpmax, dmp, dmpmax
+        WRITE #1, dlev, dex, dweapon, darmor
+        WRITE #1, nhp, nhpmax, nmp, nmpmax
+        WRITE #1, nlev, nex, nweapon, narmor
+        WRITE #1, thp, thpmax, tmp, tmpmax
+        WRITE #1, tlev, tex, tweapon, tarmor
+        WRITE #1, portal, money
+        CLOSE #1
+CLS
+mx = mx + 1
+GOTO 1
+
+1.23
+LOCATE 13, 38
+PRINT "Here's 3.  Now LEAVE!"
+bro = bro + 3
+SLEEP
+CLS
+mx = mx + 1
+GOTO 1
+
+1.3
+CLS
+desk
+word 320, 20, "R", 9
+word 340, 20, "O", 9
+word 360, 20, "Y", 9
+word 380, 20, "A", 9
+word 400, 20, "L", 9
+COLOR 15
+word 440, 20, "I", 9
+word 460, 20, "N", 9
+word 480, 20, "N", 9
+
+LOCATE 6, 46
+PRINT "WOULD YOU LIKE A ROOM?"
+LOCATE 7, 46
+PRINT "IT WILL COST"; dlev * 6; "$"
+LOCATE 8, 46
+PRINT "(Y)es or (N)o ?"
+
+DO
+
+a$ = INKEY$
+
+IF UCASE$(a$) = "Y" THEN IF money >= dlev * 6 THEN LOCATE 10, 46: PRINT "YOU ARE FULLY RECOVERED!": GOTO 1.31
+IF UCASE$(a$) = "N" THEN LOCATE 10, 46: PRINT "COME BACK SOON!": wt: my = my + 1: GOTO 1
+
+LOOP
+
+1.31
+dhp = dhpmax: dmp = dmpmax
+IF characters = 3 THEN
+nhp = nhpmax: nmp = nmpmax
+thp = thpmax: tmp = tmpmax
+END IF
+CLS
+my = my + 1
+town
+GOTO 1
+
+1.4
+CLS
+desk
+word 240, 20, "B", 9
+word 260, 20, "L", 9
+word 280, 20, "A", 9
+word 300, 20, "C", 9
+word 320, 20, "K", 9
+word 340, 20, "S", 9
+word 360, 20, "M", 9
+word 380, 20, "I", 9
+word 400, 20, "T", 9
+word 420, 20, "H", 9
+
+
+COLOR 15
+LOCATE 6, 41
+PRINT "What destruction!!!"
+LOCATE 7, 41
+PRINT "I have forged projectiles"
+LOCATE 8, 41
+PRINT "out of the blood drops that"
+LOCATE 9, 41
+PRINT "poured from the sky.  I can"
+LOCATE 10, 41
+PRINT "sell them to you for $125"
+LOCATE 11, 41
+PRINT "each.  Want any?"
+LOCATE 12, 41
+PRINT "(Y)es or (N)o ?"
+LOCATE 13, 41
+PRINT "Money - $", money
+
+DO
+a$ = INKEY$
+IF UCASE$(a$) = "Y" THEN GOTO 1.41
+IF UCASE$(a$) = "N" THEN GOTO 1.45
+LOOP
+
+1.41
+
+LOCATE 14, 41
+INPUT "How many?", hm
+
+IF hm = 0 THEN GOTO 1.45
+IF money / (hm * 125) >= 1 THEN money = money - (hm * 125): bro = bro + hm ELSE LOCATE 15, 41: PRINT "You can't afford that!"
+GOTO 1.45
+
+1.45
+IF savefile = 1 THEN OPEN "save1.dat" FOR OUTPUT AS #1
+IF savefile = 2 THEN OPEN "save2.dat" FOR OUTPUT AS #1
+IF savefile = 3 THEN OPEN "save3.dat" FOR OUTPUT AS #1
+        WRITE #1, characters, bro, savefile
+        WRITE #1, dhp, dhpmax, dmp, dmpmax
+        WRITE #1, dlev, dex, dweapon, darmor
+        WRITE #1, nhp, nhpmax, nmp, nmpmax
+        WRITE #1, nlev, nex, nweapon, narmor
+        WRITE #1, thp, thpmax, tmp, tmpmax
+        WRITE #1, tlev, tex, tweapon, tarmor
+        WRITE #1, portal, money
+        CLOSE #1
+
+LOCATE 16, 41
+PRINT "Your game is saved.  Now save us!"
+SLEEP
+my = my + 1
+CLS
+town
+GOTO 1
+
+
+
+
+
+
+wt
+my = my + 1
+CLS
+GOTO 1
+
+
+1.5
+CLS
+desk
+
+word 280, 20, "W", 9
+word 300, 20, "I", 9
+word 320, 20, "S", 9
+word 340, 20, "E", 9
+word 360, 20, "M", 9
+word 380, 20, "A", 9
+word 400, 20, "N", 9
+
+COLOR 15
+LOCATE 6, 41
+PRINT "I AM A TEACHER OF ABILITIES"
+LOCATE 7, 41
+PRINT "I had to put up a shield to block"
+LOCATE 8, 41
+PRINT "out the lightning.  I am weak."
+LOCATE 9, 41
+PRINT "Please let me rest"
+wt
+my = my + 1
+CLS
+GOTO 1
+
+1.6
+CLS
+castle
+
+DO
+
+FOR p = 0 TO 63 STEP 1
+CIRCLE (320, 80), p * 2, 0
+setrgb 0, p, 0, p
+NEXT p
+
+FOR p = 63 TO 0 STEP -1
+CIRCLE (320, 80), p * 2, 0
+setrgb 0, p, 0, p
+NEXT p
+
+a$ = INKEY$
+IF a$ = CHR$(0) + "P" THEN CLS : my = my + 1: town: GOTO 1
+IF a$ = CHR$(0) + "H" THEN GOTO 1.7
+LOOP
+
+1.7
+
+OPEN "data.dat" FOR OUTPUT AS #1
+        WRITE #1, characters, bro, savefile
+        WRITE #1, dhp, dhpmax, dmp, dmpmax
+        WRITE #1, dlev, dex, dweapon, darmor
+        WRITE #1, nhp, nhpmax, nmp, nmpmax
+        WRITE #1, nlev, nex, nweapon, narmor
+        WRITE #1, thp, thpmax, tmp, tmpmax
+        WRITE #1, tlev, tex, tweapon, tarmor
+        WRITE #1, portal, money
+        CLOSE #1
+
+
+IF portal = 1 THEN CHAIN "p1.hp3"
+IF portal = 2 THEN CHAIN "p2.hp3"
+IF portal = 3 THEN CHAIN "p3.hp3"
+
+
+sure:
+COLOR 15
+LOCATE 13, 37
+PRINT "REALLY QUIT?"
+
+DO
+xz$ = INKEY$
+IF UCASE$(xz$) = "Y" THEN CHAIN "bye.hp3"
+IF UCASE$(xz$) = "N" THEN CLS : GOTO 1
+LOOP
+
+
+stats:
+border
+IF dweapon = 1 THEN dwname$ = "EXO-STARS" ELSE dwname$ = "ENTITY STARS"
+IF darmor = 1 THEN daname$ = "EXO-VEST" ELSE daname$ = "ENTITY MAIL"
+IF characters = 3 THEN
+IF nweapon = 1 THEN nwname$ = "EXO-STARS" ELSE nwname$ = "ENTITY STARS"
+IF narmor = 1 THEN naname$ = "EXO-VEST" ELSE naname$ = "ENTITY MAIL"
+IF tweapon = 1 THEN twname$ = "EXO-SWORD"
+IF tweapon = 2 THEN twname$ = "ENTITY BLADE"
+IF tweapon = 3 THEN twname$ = "DREAM SWORD"
+IF tarmor = 1 THEN taname$ = "FIRE CAPE" ELSE taname$ = "ENTITY DRESS"
+END IF
+
+LOCATE 2, 5
+COLOR 15, 2
+PRINT "DAVID   HP:", dhp, "/", dhpmax
+LOCATE 3, 13
+PRINT "MP:", dmp, "/", dmpmax
+LOCATE 4, 5
+PRINT "WEAPON: ", dwname$, " ARMOR: ", daname$
+LOCATE 5, 5
+PRINT "LEVEL:"; dlev; "    EXPERIENCE POINTS:"; dex
+
+IF characters = 3 THEN
+LOCATE 6, 5
+PRINT "NEON    HP:", nhp, "/", nhpmax
+LOCATE 7, 13
+PRINT "MP:", nmp, "/", nmpmax
+LOCATE 8, 5
+PRINT "WEAPON:", nwname$, " ARMOR: ", naname$
+LOCATE 9, 5
+PRINT "LEVEL:"; nlev; "    EXPERIENCE POINTS:"; nex
+LOCATE 10, 5
+PRINT "THESSE  HP:", thp, "/", thpmax
+LOCATE 11, 13
+PRINT "MP:", tmp, "/", tmpmax
+LOCATE 12, 5
+PRINT "WEAPON:", twname$, " ARMOR: ", taname$
+LOCATE 13, 5
+PRINT "LEVEL:"; tlev; "    EXPERIENCE POINTS:"; tex
+END IF
+
+LOCATE 14, 5
+PRINT "MONEY:", money
+LOCATE 15, 5
+PRINT "BLOOD RAIN ORBS:", bro
+IF portal > 1 THEN COLOR 14 ELSE COLOR 8
+LOCATE 17, 5
+PRINT "      STAFF OF BALANCE - ô"
+IF portal > 2 THEN COLOR 14 ELSE COLOR 8
+LOCATE 18, 5
+PRINT "      RING OF CHAOS    - o"
+COLOR 8
+LOCATE 19, 5
+PRINT "      ALPHA CHAIN      - à"
+
+SLEEP
+CLS
+COLOR 0, 0
+town
+GOTO 1
+
+SUB alright
+FOR s = 500 TO 1000 STEP 5
+SOUND s, .1
+NEXT s
+
+
+END SUB
+
+SUB border
+CLS
+PAINT (1, 1), 4
+LINE (10, 5)-(630, 195), 12, BF
+LINE (15, 10)-(625, 190), 2, BF
+END SUB
+
+SUB bump
+SOUND 150, .1
+END SUB
+
+SUB castle
+
+CLS
+PAINT (1, 1), 7
+COLOR 4
+LINE (0, 200)-(250, 140)
+LINE -(390, 140)
+LINE -(640, 200)
+PAINT (320, 190), 4
+COLOR 14
+LINE (250, 140)-(390, 140)
+LINE -(350, 110)
+LINE -(290, 110)
+LINE -(250, 140)
+PAINT (320, 120), 14
+LINE (290, 110)-(350, 20), 6, BF
+LINE (220, 40)-(420, 55), 6, BF
+COLOR 15, 7
+LOCATE 5, 60
+PRINT " to enter portal"
+LOCATE 6, 60
+PRINT " to exit castle "
+COLOR 0, 0
+END SUB
+
+SUB desk
+PAINT (1, 1), 1
+LINE (20, 9)-(620, 191), 0, BF
+COLOR 6
+LINE (20, 120)-(210, 190), , BF
+LINE (20, 110)-(230, 120), , BF
+LINE (60, 109)-(170, 80), 1, BF
+COLOR 0
+LINE (20, 120)-(210, 191), , B
+LINE (20, 110)-(230, 120), , B
+LINE (60, 109)-(170, 80), , B
+LINE (90, 109)-(90, 91)
+LINE (140, 109)-(140, 91)
+CIRCLE (115, 70), 21, 12, , , .54
+PAINT (115, 70), 12
+CIRCLE (111, 67), 3, 1
+CIRCLE (119, 67), 3, 1
+PAINT (111, 67), 1
+PAINT (119, 67), 1
+LINE (111, 76)-(119, 76), 0
+END SUB
+
+SUB setrgb (Nr, r, g, B)
+  OUT &H3C8, Nr
+  OUT &H3C9, r
+  OUT &H3C9, g
+  OUT &H3C9, B
+END SUB
+
+SUB town
+PAINT (1, 1), 8
+LINE (10, 5)-(630, 185), 0, BF
+LINE (80, 110)-(140, 86), 3, BF
+LINE (530, 100)-(590, 76), 2, BF
+LINE (240, 160)-(300, 136), 1, BF
+LINE (240, 60)-(400, 0), 8, BF
+LINE (290, 60)-(350, 40), 6, BF
+COLOR 0
+LINE (240, 60)-(400, -1), , B
+LINE (240, 60)-(270, -1), , B
+LINE (400, 60)-(370, -1), , B
+LINE (320, 60)-(320, 40)
+COLOR 0
+LINE (100, 100)-(120, 110), 8, BF
+LINE (550, 100)-(570, 90), 8, BF
+LINE (260, 160)-(280, 150), 8, BF
+END SUB
+
+SUB word (x, y, l$, c)
+
+SELECT CASE l$
+        CASE IS = "A"
+        LINE (x, y + 2)-(x, y), c
+        LINE -(x + 15, y), c
+        LINE -(x + 15, y + 10), c
+        LINE -(x + 15, y + 6), c
+        LINE -(x + 3, y + 6), c
+        LINE (x + 3, y)-(x + 3, y + 10), c
+        CASE IS = "B"
+        LINE (x, y + 3)-(x + 5, y), c
+        LINE (x + 5, y)-(x + 18, y + 5), c, B
+        LINE -(x + 5, y + 10), c, B
+        CASE IS = "C"
+        LINE (x, y)-(x + 15, y), c
+        LINE (x, y)-(x, y + 10), c
+        LINE -(x + 15, y + 10), c
+        CASE IS = "D"
+        LINE (x, y)-(x + 13, y), c
+        LINE -(x + 15, y + 2), c
+        LINE -(x + 15, y + 8), c
+        LINE -(x + 13, y + 10), c
+        LINE -(x + 2, y + 10), c
+        LINE -(x + 2, y), c
+        CASE IS = "E"
+        LINE (x, y)-(x + 15, y), c
+        LINE (x, y + 10)-(x + 15, y + 10), c
+        LINE (x + 3, y)-(x + 3, y + 10), c
+        LINE (x + 3, y + 5)-(x + 12, y + 5), c
+        CASE IS = "F"
+        LINE (x, y)-(x + 15, y), c
+        LINE (x + 3, y)-(x + 3, y + 10), c
+        LINE (x + 3, y + 5)-(x + 12, y + 5), c
+        CASE IS = "G"
+        LINE (x, y)-(x + 15, y), c
+        LINE -(x + 15, y + 3), c
+        LINE (x, y)-(x, y + 10), c
+        LINE -(x + 15, y + 10), c
+        LINE -(x + 15, y + 6), c
+        LINE -(x + 6, y + 6), c
+        CASE IS = "H"
+        LINE (x, y)-(x, y + 10), c
+        LINE (x, y + 4)-(x + 15, y + 4), c
+        LINE (x + 15, y)-(x + 15, y + 10), c
+        CASE IS = "I"
+        LINE (x, y + 3)-(x, y), c
+        LINE -(x + 15, y), c
+        LINE (x + 7, y)-(x + 7, y + 10), c
+        LINE (x, y + 10)-(x + 15, y + 10), c
+        CASE IS = "J"
+        LINE (x, y + 3)-(x, y), c
+        LINE -(x + 15, y), c
+        LINE (x + 9, y)-(x + 9, y + 8), c
+        LINE -(x + 5, y + 10), c
+        LINE -(x + 2, y + 10), c
+        LINE -(x, y + 7), c
+        CASE IS = "K"
+        LINE (x, y)-(x + 3, y), c
+        LINE -(x + 3, y + 10), c
+        LINE (x + 3, y + 5)-(x + 13, y), c
+        LINE -(x + 15, y), c
+        LINE (x + 3, y + 5)-(x + 15, y + 10), c
+        CASE IS = "L"
+        LINE (x, y)-(x + 3, y), c
+        LINE -(x + 3, y + 10), c
+        LINE (x, y + 10)-(x + 15, y + 10), c
+        LINE -(x + 15, y + 7), c
+        CASE IS = "M"
+        LINE (x, y)-(x + 2, y), c
+        LINE -(x + 2, y + 10), c
+        LINE (x + 2, y)-(x + 9, y + 4), c
+        LINE -(x + 15, y), c
+        LINE -(x + 15, y + 10), c
+        CASE IS = "N"
+        LINE (x, y)-(x + 2, y), c
+        LINE -(x + 2, y + 10), c
+        LINE (x + 2, y)-(x + 15, y + 10), c
+        LINE -(x + 15, y), c
+        CASE IS = "O"
+        LINE (x, y + 2)-(x, y), c
+        LINE -(x + 2, y), c
+        LINE (x + 2, y)-(x + 15, y + 10), c, B
+        CASE IS = "P"
+        LINE (x, y)-(x + 2, y), c
+        LINE -(x + 15, y + 4), c, B
+        LINE (x + 2, y)-(x + 2, y + 10), c
+        CASE IS = "Q"
+        LINE (x, y + 2)-(x, y), c
+        LINE -(x + 2, y), c
+        LINE (x + 2, y)-(x + 15, y + 10), c, B
+        LINE (x + 12, y + 7)-(x + 15, y + 10), c
+        CASE IS = "R"
+        LINE (x, y)-(x + 2, y), c
+        LINE -(x + 15, y + 4), c, B
+        LINE (x + 2, y)-(x + 2, y + 10), c
+        LINE (x + 5, y + 4)-(x + 15, y + 10), c
+        CASE IS = "S"
+        LINE (x + 15, y)-(x, y + 5), c
+        LINE -(x + 15, y + 5), c
+        LINE -(x, y + 10), c
+        CASE IS = "T"
+        LINE (x, y + 2)-(x, y), c
+        LINE -(x + 15, y), c
+        LINE (x + 7, y)-(x + 7, y + 10), c
+        CASE IS = "U"
+        LINE (x, y)-(x, y + 10), c
+        LINE -(x + 15, y + 10), c
+        LINE -(x + 15, y), c
+        CASE IS = "V"
+        LINE (x, y)-(x + 3, y), c
+        LINE -(x + 9, y + 10), c
+        LINE -(x + 15, y), c
+        CASE IS = "W"
+        LINE (x, y)-(x + 1, y), c
+        LINE -(x + 1, y + 10), c
+        LINE -(x + 8, y), c
+        LINE -(x + 15, y + 10), c
+        LINE -(x + 15, y), c
+        CASE IS = "X"
+        LINE (x, y)-(x + 1, y), c
+        LINE -(x + 15, y + 10), c
+        LINE (x, y + 10)-(x + 1, y + 10), c
+        LINE -(x + 15, y), c
+        CASE IS = "Y"
+        LINE (x, y + 2)-(x, y), c
+        LINE -(x + 1, y), c
+        LINE -(x + 8, y + 4), c
+        LINE -(x + 15, y), c
+        LINE (x + 8, y + 4)-(x + 8, y + 10), c
+        CASE IS = "Z"
+        LINE (x, y + 2)-(x, y), c
+        LINE -(x + 15, y), c
+        LINE -(x, y + 10), c
+        LINE -(x + 15, y + 10), c
+        LINE -(x + 15, y + 8), c
+END SELECT
+END SUB
+
+SUB wt
+DO: LOOP UNTIL INKEY$ <> ""
+END SUB
+

@@ -1,0 +1,784 @@
+DECLARE SUB david ()
+DECLARE SUB neon ()
+DECLARE SUB takeme ()
+DECLARE SUB room ()
+DECLARE SUB top ()
+DECLARE SUB middle ()
+DECLARE SUB border ()
+DECLARE SUB barrier ()
+DECLARE SUB bottom ()
+
+SCREEN 8
+
+CLS
+
+OPEN "savefile.hp2" FOR INPUT AS #1
+        INPUT #1, nhp, nhpmax, nmp, nmpmax
+        INPUT #1, nweapon, narmor
+        INPUT #1, nex, nlev
+        INPUT #1, nskill
+        INPUT #1, dhp, dhpmax, dmp, dmpmax
+        INPUT #1, dweapon, darmor
+        INPUT #1, dex, dlev
+        INPUT #1, dskill
+        INPUT #1, money, crystals
+CLOSE #1
+
+my = 20
+mx = 40
+
+bottom
+
+1
+
+IF crystals < 2 THEN barrier
+
+LOCATE 6, 16: COLOR 0: PRINT "Û"
+LOCATE 6, 18: COLOR 4: PRINT ""
+
+IF crystals > 0 THEN LOCATE 6, 64: COLOR 0: PRINT "Û"
+IF crystals > 0 THEN LOCATE 6, 62: COLOR 4: PRINT ""
+
+
+LOCATE my, mx
+COLOR 14
+PRINT ""
+
+1.1
+
+a$ = INKEY$
+
+IF a$ = CHR$(0) + "H" THEN LOCATE my, mx: COLOR 4: PRINT "Û": my = my - 1: GOTO 1.2 ELSE
+IF a$ = CHR$(0) + "P" THEN LOCATE my, mx: COLOR 4: PRINT "Û": my = my + 1: GOTO 1.2 ELSE
+IF a$ = CHR$(0) + "K" THEN LOCATE my, mx: COLOR 4: PRINT "Û": mx = mx - 1: GOTO 1.2 ELSE
+IF a$ = CHR$(0) + "M" THEN LOCATE my, mx: COLOR 4: PRINT "Û": mx = mx + 1: GOTO 1.2 ELSE
+IF a$ = CHR$(27) THEN pl = 1: GOSUB sure
+IF a$ = CHR$(13) THEN pl = 1: GOSUB stats
+
+GOTO 1.1
+
+1.2
+
+IF mx = 1 THEN mx = 2
+IF mx = 80 THEN mx = 79
+IF my = 23 THEN my = 22
+IF my = 3 THEN IF crystals < 2 THEN my = 4
+IF my = 1 THEN my = 21: middle: GOTO 10
+IF my = 6 THEN IF mx = 16 THEN GOTO 2
+IF my = 6 THEN IF mx = 18 THEN GOTO 2.1
+IF crystals > 0 THEN IF my = 6 THEN IF mx = 64 THEN GOTO 2.6
+IF crystals > 0 THEN IF my = 6 THEN IF mx = 62 THEN GOTO 2.5
+IF my = 21 THEN IF mx = 40 THEN GOTO 1.5
+
+GOTO 1
+
+1.5
+
+CLS
+
+OPEN "savefile.hp2" FOR OUTPUT AS #1
+        WRITE #1, nhp, nhpmax, nmp, nmpmax
+        WRITE #1, nweapon, narmor
+        WRITE #1, nex, nlev
+        WRITE #1, nskill
+        WRITE #1, dhp, dhpmax, dmp, dmpmax
+        WRITE #1, dweapon, darmor
+        WRITE #1, dex, dlev
+        WRITE #1, dskill
+        WRITE #1, money, crystals
+CLOSE #1
+
+CHAIN "town.hp2"
+
+2
+
+OPEN "savefile.hp2" FOR OUTPUT AS #1
+        WRITE #1, nhp, nhpmax, nmp, nmpmax
+        WRITE #1, nweapon, narmor
+        WRITE #1, nex, nlev
+        WRITE #1, nskill
+        WRITE #1, dhp, dhpmax, dmp, dmpmax
+        WRITE #1, dweapon, darmor
+        WRITE #1, dex, dlev
+        WRITE #1, dskill
+        WRITE #1, money, crystals
+CLOSE #1
+
+CHAIN "p1.hp2"
+
+2.1
+
+CLS
+COLOR 15
+PRINT "     DO NOT ATTEMPT TO OBTAIN THE CRYSTAL!  YOU WILL BE DESTROYED"
+PRINT "IF YOU MAKE ANY ATTEMPT WHATSOEVER!  ANY ATTEMPT TO ENTER THE"
+PRINT "PORTAL TO THE LEFT WILL RESULT IN YOUR DEATH!"
+PRINT "                                         -QUEEN OF FIRE (THESSE)"
+SLEEP
+CLS
+
+bottom
+my = my + 1
+
+GOTO 1
+
+2.5
+
+CLS
+COLOR 15
+PRINT "     I CAN SEE YOU ARE BEING STUBBORN.  YOU HAVE BEEN IDENTIFIED"
+PRINT "AS DAVID AND NEON.  I WILL BE FOLLOWING YOUR EVERY STEP.  AS YOU"
+PRINT "CAN SEE, EACH CRYSTAL OPENS A NEW PORTAL.  ALL SIX WILL OPEN THE"
+PRINT "PORTAL INTO THE CORE.  WATCH OUT."
+PRINT "                                         -QUEEN OF FIRE (THESSE)"
+SLEEP
+CLS
+
+bottom
+my = my + 1
+
+GOTO 1
+
+2.6
+
+OPEN "savefile.hp2" FOR OUTPUT AS #1
+        WRITE #1, nhp, nhpmax, nmp, nmpmax
+        WRITE #1, nweapon, narmor
+        WRITE #1, nex, nlev
+        WRITE #1, nskill
+        WRITE #1, dhp, dhpmax, dmp, dmpmax
+        WRITE #1, dweapon, darmor
+        WRITE #1, dex, dlev
+        WRITE #1, dskill
+        WRITE #1, money, crystals
+CLOSE #1
+
+CHAIN "p2.hp2"
+
+
+10
+
+LOCATE my, mx
+COLOR 14
+PRINT ""
+
+IF crystals < 4 THEN barrier
+
+LOCATE 6, 16: COLOR 0: PRINT "Û"
+LOCATE 6, 18: COLOR 4: PRINT ""
+
+IF crystals > 2 THEN LOCATE 6, 64: COLOR 0: PRINT "Û"
+IF crystals > 2 THEN LOCATE 6, 62: COLOR 4: PRINT ""
+
+IF crystals = 6 THEN LOCATE 12, 40: COLOR 1: PRINT "Û"
+10.1
+
+a$ = INKEY$
+
+IF a$ = CHR$(0) + "H" THEN LOCATE my, mx: COLOR 4: PRINT "Û": my = my - 1: GOTO 10.2 ELSE
+IF a$ = CHR$(0) + "P" THEN LOCATE my, mx: COLOR 4: PRINT "Û": my = my + 1: GOTO 10.2 ELSE
+IF a$ = CHR$(0) + "K" THEN LOCATE my, mx: COLOR 4: PRINT "Û": mx = mx - 1: GOTO 10.2 ELSE
+IF a$ = CHR$(0) + "M" THEN LOCATE my, mx: COLOR 4: PRINT "Û": mx = mx + 1: GOTO 10.2 ELSE
+IF a$ = CHR$(27) THEN pl = 2: GOSUB sure
+IF a$ = CHR$(13) THEN pl = 2: GOSUB stats
+
+GOTO 10.1
+
+10.2
+
+IF mx = 1 THEN mx = 2
+IF mx = 80 THEN mx = 79
+IF my = 23 THEN my = 2: bottom: GOTO 1
+IF my = 3 THEN IF crystals < 4 THEN my = 4
+IF my = 1 THEN my = 21: top: GOTO 20
+IF my = 6 THEN IF mx = 16 THEN GOTO 10.3
+IF my = 6 THEN IF mx = 18 THEN GOTO 10.4
+IF crystals > 2 THEN IF my = 6 THEN IF mx = 64 THEN GOTO 10.5
+IF crystals > 2 THEN IF my = 6 THEN IF mx = 62 THEN GOTO 10.6
+IF crystals = 6 THEN IF my = 12 THEN IF mx = 40 THEN GOTO 11
+GOTO 10
+
+10.3
+
+OPEN "savefile.hp2" FOR OUTPUT AS #1
+        WRITE #1, nhp, nhpmax, nmp, nmpmax
+        WRITE #1, nweapon, narmor
+        WRITE #1, nex, nlev
+        WRITE #1, nskill
+        WRITE #1, dhp, dhpmax, dmp, dmpmax
+        WRITE #1, dweapon, darmor
+        WRITE #1, dex, dlev
+        WRITE #1, dskill
+        WRITE #1, money, crystals
+CLOSE #1
+
+CHAIN "p3.hp2"
+
+10.4
+
+CLS
+COLOR 15
+PRINT "     NEON!  WHY DON'T YOU COME WITH ME?  WHY ARE YOU ABANDONING "
+PRINT "ME?  DON'T YOU REALIZE THAT LIFE IS BASED ON THE ESSENCE OF PURE"
+PRINT "EVIL?  JOIN ME, PRINCE!  THE DARKNESS WILL ALWAYS OVERPOWER THE"
+PRINT "LIGHT!  UNTIL YOU ARE WITH ME, I WILL MAKE SURE THAT YOU'RE LIFE"
+PRINT "IS A LIVING HELL!"
+PRINT "     P.S I WILL BE GUARDING THE THIRD CRYSTAL!"
+PRINT
+PRINT "                                         -QUEEN OF FIRE (THESSE)"
+SLEEP
+CLS
+
+middle
+my = my + 1
+GOTO 10
+
+10.5
+OPEN "savefile.hp2" FOR OUTPUT AS #1
+        WRITE #1, nhp, nhpmax, nmp, nmpmax
+        WRITE #1, nweapon, narmor
+        WRITE #1, nex, nlev
+        WRITE #1, nskill
+        WRITE #1, dhp, dhpmax, dmp, dmpmax
+        WRITE #1, dweapon, darmor
+        WRITE #1, dex, dlev
+        WRITE #1, dskill
+        WRITE #1, money, crystals
+CLOSE #1
+
+CHAIN "p4.hp2"
+
+10.6
+
+CLS
+COLOR 15
+PRINT "     YOU FOOLS!  YOU THINK THAT SLAYING THESSE WOULD PUT AN END TO"
+PRINT "THE EVIL?  HA!  THE EVIL HAS JUST BEGUN!  FROM NOW ON, I'VE CHOSEN"
+PRINT "TO MAKE IT MY JOB TO HAVE YOU TWO DESTROYED.  CAN YOU FEEL THE    "
+PRINT "EVIL FLOW THROUGH YOUR BODIES?  THE EVIL IS SO THICK, YOU CAN'T GET"
+PRINT "IT OFF YOUR BODIES!"
+PRINT
+PRINT "                                         - THE ESSENCE OF EVIL"
+SLEEP
+CLS
+
+middle
+my = my + 1
+GOTO 10
+
+11
+CLS
+COLOR 15
+PRINT "     You hear a voice:"
+PRINT "     HA HA HA!  I welcome you, Neon and David.  I see that you want to"
+PRINT "ignore me when I tell you that you will die!  Come on, enter my portal,"
+PRINT "but know this: no mortal has ever survived!"
+SLEEP
+
+CLS
+
+neon
+
+david
+
+takeme
+
+SLEEP
+
+OPEN "savefile.hp2" FOR OUTPUT AS #1
+        WRITE #1, nhp, nhpmax, nmp, nmpmax
+        WRITE #1, nweapon, narmor
+        WRITE #1, nex, nlev
+        WRITE #1, nskill
+        WRITE #1, dhp, dhpmax, dmp, dmpmax
+        WRITE #1, dweapon, darmor
+        WRITE #1, dex, dlev
+        WRITE #1, dskill
+        WRITE #1, money, crystals
+CLOSE #1
+
+CHAIN "p7.hp2"
+
+20
+LOCATE my, mx
+COLOR 14
+PRINT ""
+
+LOCATE 6, 16: COLOR 0: PRINT "Û"
+LOCATE 6, 18: COLOR 4: PRINT ""
+
+IF crystals > 4 THEN LOCATE 6, 64: COLOR 0: PRINT "Û"
+IF crystals > 4 THEN LOCATE 6, 62: COLOR 4: PRINT ""
+
+20.1
+
+a$ = INKEY$
+
+IF a$ = CHR$(0) + "H" THEN LOCATE my, mx: COLOR 4: PRINT "Û": my = my - 1: GOTO 20.2 ELSE
+IF a$ = CHR$(0) + "P" THEN LOCATE my, mx: COLOR 4: PRINT "Û": my = my + 1: GOTO 20.2 ELSE
+IF a$ = CHR$(0) + "K" THEN LOCATE my, mx: COLOR 4: PRINT "Û": mx = mx - 1: GOTO 20.2 ELSE
+IF a$ = CHR$(0) + "M" THEN LOCATE my, mx: COLOR 4: PRINT "Û": mx = mx + 1: GOTO 20.2 ELSE
+IF a$ = CHR$(27) THEN pl = 3: GOSUB sure
+IF a$ = CHR$(13) THEN pl = 3: GOSUB stats
+
+GOTO 20.1
+
+20.2
+
+IF mx = 1 THEN mx = 2
+IF mx = 80 THEN mx = 79
+IF my = 23 THEN my = 2: middle: GOTO 10
+IF my = 1 THEN my = 2
+IF my = 6 THEN IF mx = 16 THEN GOTO 20.3
+IF my = 6 THEN IF mx = 18 THEN GOTO 20.4
+IF my = 2 THEN IF mx = 2 THEN GOTO 21
+IF crystals > 4 THEN IF my = 6 THEN IF mx = 64 THEN GOTO 20.5
+IF crystals > 4 THEN IF my = 6 THEN IF mx = 62 THEN GOTO 20.6
+
+GOTO 20
+
+20.3
+
+OPEN "savefile.hp2" FOR OUTPUT AS #1
+        WRITE #1, nhp, nhpmax, nmp, nmpmax
+        WRITE #1, nweapon, narmor
+        WRITE #1, nex, nlev
+        WRITE #1, nskill
+        WRITE #1, dhp, dhpmax, dmp, dmpmax
+        WRITE #1, dweapon, darmor
+        WRITE #1, dex, dlev
+        WRITE #1, dskill
+        WRITE #1, money, crystals
+CLOSE #1
+
+CHAIN "p5.hp2"
+
+20.4
+CLS
+COLOR 15
+PRINT "     YOU ARE GETTING VERY CLOSE TO ME, YOU WORTHLESS HUMANS!  DO"
+PRINT "YOU THINK YOU HAVE A CHANCE AGAINST ME?  I'LL TEAR YOUR MIND OUT,"
+PRINT "I'LL BURN YOUR SOUL!  I HOPE MY SKELETON GUARDS GIVE YOU A HELL "
+PRINT "OF A TIME!  REMEMBER, I WILL DESTROY YOU!"
+PRINT
+PRINT "                                         - THE ESSENCE OF EVIL"
+SLEEP
+top
+my = my + 1
+GOTO 20
+
+
+20.5
+OPEN "savefile.hp2" FOR OUTPUT AS #1
+        WRITE #1, nhp, nhpmax, nmp, nmpmax
+        WRITE #1, nweapon, narmor
+        WRITE #1, nex, nlev
+        WRITE #1, nskill
+        WRITE #1, dhp, dhpmax, dmp, dmpmax
+        WRITE #1, dweapon, darmor
+        WRITE #1, dex, dlev
+        WRITE #1, dskill
+        WRITE #1, money, crystals
+CLOSE #1
+
+CHAIN "p6.hp2"
+
+
+20.6
+CLS
+COLOR 15
+PRINT "     DID YOU KNOW THAT GETTING THE SIXTH CRYSTAL WILL OPEN THE"
+PRINT "PORTAL TO THE CORE OF HELL?  I AWAIT YOU FOOLS!  I WILL GIVE "
+PRINT "YOU A CHANCE TO SURRENDER.  ALL YOU HAVE TO DO IS PUT DOWN THE"
+PRINT "CRYSTALS, AND I'LL CLOSE THE PORTAL!  HEY, WHEN YOU'RE SOULS "
+PRINT "ARE BURNING IN HELL, DON'T BLAME ME!  I WARNED YOU!"
+PRINT
+PRINT "                                         - THE ESSENCE OF EVIL"
+SLEEP
+top
+my = my + 1
+GOTO 20
+
+21
+
+CLS
+room
+
+COLOR 15
+LOCATE 4, 32
+PRINT "ØWELCOME TO FIG'S SECRET ROOM!Ø"
+
+LOCATE 6, 35
+PRINT "THIS ROOM IS COMPLETELY SECRET.  DON'T"
+LOCATE 7, 35
+PRINT "TELL ANYONE!"
+LOCATE 8, 35
+PRINT "I HAVE THESE SERVICES:"
+LOCATE 9, 38
+PRINT "Max all Weapons and Armors for (B)oth"
+LOCATE 10, 38
+PRINT "(F)ully recover everything and save"
+LOCATE 11, 38
+PRINT "Boost (H)p max for both"
+LOCATE 12, 38
+PRINT "Boost (M)p max for both"
+LOCATE 13, 38
+PRINT "(N)othing"
+LOCATE 14, 35
+PRINT "*All of these cost 125 Gold Pieces"
+
+DO
+a$ = INKEY$
+IF UCASE$(a$) = "B" THEN IF money > 124 THEN money = money - 125: GOTO 21.1
+IF UCASE$(a$) = "F" THEN IF money > 124 THEN money = money - 125: GOTO 21.2
+IF UCASE$(a$) = "H" THEN IF money > 124 THEN money = money - 125: GOTO 21.3
+IF UCASE$(a$) = "M" THEN IF money > 124 THEN money = money - 125: GOTO 21.4
+IF UCASE$(a$) = "N" THEN GOTO 21.5
+LOOP
+
+21.1
+LOCATE 15, 35
+PRINT "YOU NOW HAVE EXO-STARS AND"
+LOCATE 16, 35
+PRINT "EXO-VESTS!"
+SLEEP
+CLS
+top
+my = my + 1
+nweapon = 5: narmor = 3
+dweapon = 5: darmor = 3
+GOTO 20
+
+21.2
+
+nhp = nhpmax: dhp = dhpmax
+nmp = nmpmax: dmp = dmpmax
+
+OPEN "savefile.hp2" FOR OUTPUT AS #1
+        WRITE #1, nhp, nhpmax, nmp, nmpmax
+        WRITE #1, nweapon, narmor
+        WRITE #1, nex, nlev
+        WRITE #1, nskill
+        WRITE #1, dhp, dhpmax, dmp, dmpmax
+        WRITE #1, dweapon, darmor
+        WRITE #1, dex, dlev
+        WRITE #1, dskill
+        WRITE #1, money, crystals
+CLOSE #1
+
+LOCATE 15, 35
+PRINT "YOU ARE NOW FULLY RECOVERED"
+LOCATE 16, 35
+PRINT "AND YOUR GAME IS SAVED!"
+SLEEP
+CLS
+top
+my = my + 1
+GOTO 20
+
+21.3
+nh = 12 + INT(RND * 11) + 1
+dh = 12 + INT(RND * 11) + 1
+
+LOCATE 15, 35
+PRINT "NEON'S HPMAX UP BY"; nh; "!"
+LOCATE 16, 35
+PRINT "DAVID'S HPMAX UP BY"; dh; "!"
+
+nhpmax = nhpmax + nh
+dhpmax = dhpmax + dh
+
+SLEEP
+CLS
+top
+my = my + 1
+GOTO 20
+
+21.4
+nm = 8 + INT(RND * 9) + 1
+dm = 8 + INT(RND * 9) + 1
+nmpmax = nmpmax + nm
+dmpmax = dmpmax + dm
+
+LOCATE 15, 35
+PRINT "NEON'S MPMAX UP BY"; nm; "!"
+LOCATE 16, 35
+PRINT "DAVID'S MPMAX UP BY"; dm; "!"
+SLEEP
+CLS
+top
+my = my + 1
+GOTO 20
+
+21.5
+LOCATE 15, 35
+PRINT "DON'T TELL ANYONE ABOUT THIS PLACE!"
+LOCATE 16, 35
+PRINT "COME BACK SOON!!!"
+SLEEP
+CLS
+top
+my = my + 1
+GOTO 20
+
+sure:
+COLOR 15
+LOCATE 13, 37
+PRINT "REALLY QUIT?"
+
+DO
+
+xz$ = INKEY$
+IF UCASE$(xz$) = "Y" THEN CHAIN "hellpit2.bas" ELSE
+IF UCASE$(xz$) = "N" THEN
+        IF pl = 1 THEN CLS : bottom: GOTO 1
+        IF pl = 2 THEN CLS : middle: GOTO 10
+        IF pl = 3 THEN CLS : top: GOTO 20
+END IF
+LOOP
+
+stats:
+CLS
+PAINT (1, 1), 10
+border
+COLOR 15
+LOCATE 3, 6
+PRINT "NEON   HP:", nhp, "/", nhpmax
+LOCATE 4, 6
+PRINT "       MP:", nmp, "/", nmpmax
+LOCATE 5, 6
+PRINT "    LEVEL:", nlev
+LOCATE 6, 6
+PRINT "       EX:", nex
+
+IF nweapon = 1 THEN nwname$ = "X-Stars"
+IF nweapon = 2 THEN nwname$ = "Ravage Stars"
+IF nweapon = 3 THEN nwname$ = "Hybrid Stars"
+IF nweapon = 4 THEN nwname$ = "Z-Stars"
+IF nweapon = 5 THEN nwname$ = "Exo-Stars"
+LOCATE 7, 6
+PRINT "   WEAPON:", nwname$
+
+IF narmor = 0 THEN naname$ = "None"
+IF narmor = 1 THEN naname$ = "X-Armor"
+IF narmor = 2 THEN naname$ = "Z-Armor"
+IF narmor = 3 THEN naname$ = "Exo-Vest"
+LOCATE 8, 6
+PRINT "    ARMOR:", naname$
+
+COLOR 1
+LOCATE 10, 7
+PRINT "DAVID HP:", dhp, "/", dhpmax
+LOCATE 11, 6
+PRINT "       MP:", dmp, "/", dmpmax
+LOCATE 12, 6
+PRINT "    LEVEL:", dlev
+LOCATE 13, 6
+PRINT "       EX:", dex
+IF dweapon = 1 THEN dwname$ = "X-Stars"
+IF dweapon = 2 THEN dwname$ = "Ravage Stars"
+IF dweapon = 3 THEN dwname$ = "Hybrid Stars"
+IF dweapon = 4 THEN dwname$ = "Z-Stars"
+IF dweapon = 5 THEN dwname$ = "Exo-Stars"
+LOCATE 14, 6
+PRINT "   WEAPON:", dwname$
+
+IF darmor = 0 THEN daname$ = "None"
+IF darmor = 1 THEN daname$ = "X-Armor"
+IF darmor = 2 THEN daname$ = "Z-Armor"
+IF darmor = 3 THEN daname$ = "Exo-Vest"
+LOCATE 15, 6
+PRINT "    ARMOR:", naname$
+
+COLOR 15
+LOCATE 23, 50
+PRINT "MONEY:", money
+
+LOCATE 23, 6
+COLOR 9: PRINT "CRYSTALS:"
+LOCATE 23, 16: COLOR 8: PRINT ""
+
+IF crystals = 1 THEN LOCATE 23, 16: COLOR 9: PRINT ""
+IF crystals = 2 THEN LOCATE 23, 16: COLOR 9: PRINT ""
+IF crystals = 3 THEN LOCATE 23, 16: COLOR 9: PRINT ""
+IF crystals = 4 THEN LOCATE 23, 16: COLOR 9: PRINT ""
+IF crystals = 5 THEN LOCATE 23, 16: COLOR 9: PRINT ""
+IF crystals = 6 THEN LOCATE 23, 16: COLOR 9: PRINT ""
+IF crystals = 6 THEN LINE (40, 179)-(166, 179), 4
+SLEEP
+IF pl = 1 THEN bottom: GOTO 1
+IF pl = 2 THEN middle: GOTO 10
+IF pl = 3 THEN top: GOTO 20
+
+SUB barrier
+
+COLOR 8
+
+FOR x = 2 TO 79
+
+LOCATE 3, x
+PRINT "Û"
+
+NEXT x
+END SUB
+
+SUB border
+PAINT (1, 1), 1
+LINE (4, 1)-(636, 198), 10, BF
+LINE (10, 4)-(630, 196), 0, BF
+END SUB
+
+SUB bottom
+
+CLS
+
+PAINT (1, 1), 4
+
+FOR x = 1 TO 80
+
+COLOR 0
+LOCATE 1, x
+PRINT "Û"
+
+COLOR 8
+LOCATE 23, x
+PRINT "Û"
+
+NEXT x
+
+FOR y = 2 TO 23
+
+LOCATE y, 1
+PRINT "Û"
+
+LOCATE y, 80
+PRINT "Û"
+
+NEXT y
+
+LINE (0, 183)-(640, 200), 0, BF
+
+COLOR 0
+LOCATE 21, 40
+PRINT "Û"
+
+END SUB
+
+SUB david
+LINE (73, 142)-(85, 154), 4, BF
+LINE (73, 141)-(85, 132), 1, BF
+LINE (76, 134)-(82, 142), 9, BF
+LINE (76, 143)-(82, 144), 12, BF
+CIRCLE (79, 127), 5, 12, , , .78
+PAINT (79, 127), 12
+LINE (81, 126)-(82, 126), 0, BF
+END SUB
+
+SUB middle
+
+CLS
+
+PAINT (1, 1), 4
+
+FOR x = 1 TO 80
+
+COLOR 0
+LOCATE 1, x
+PRINT "Û"
+
+COLOR 0
+LOCATE 23, x
+PRINT "Û"
+
+NEXT x
+
+FOR y = 2 TO 22
+
+COLOR 8
+LOCATE y, 1
+PRINT "Û"
+
+LOCATE y, 80
+PRINT "Û"
+
+NEXT y
+
+LINE (0, 183)-(640, 200), 0, BF
+
+END SUB
+
+SUB neon
+LINE (72, 62)-(85, 74), 1, BF
+LINE (72, 61)-(85, 52), 15, BF
+CIRCLE (78, 47), 6, 12, , , .65
+PAINT (78, 47), 12
+LINE (75, 54)-(82, 62), 4, BF
+LINE (75, 63)-(82, 65), 12, BF
+LINE (81, 46)-(80, 46), 0, BF
+END SUB
+
+SUB room
+PAINT (1, 1), 1
+LINE (20, 9)-(620, 191), 7, BF
+COLOR 6
+LINE (20, 120)-(210, 190), , BF
+LINE (20, 110)-(230, 120), , BF
+LINE (60, 109)-(170, 80), 1, BF
+COLOR 0
+LINE (20, 120)-(210, 191), , B
+LINE (20, 110)-(230, 120), , B
+LINE (60, 109)-(170, 80), , B
+LINE (90, 109)-(90, 91)
+LINE (140, 109)-(140, 91)
+CIRCLE (115, 70), 21, 12, , , .54
+PAINT (115, 70), 12
+CIRCLE (111, 67), 3, 1
+CIRCLE (119, 67), 3, 1
+PAINT (111, 67), 1
+PAINT (119, 67), 1
+LINE (111, 76)-(119, 76), 0
+END SUB
+
+SUB takeme
+
+FOR e = 1 TO 1000
+y = INT(RND * 200) + 1
+c = INT(RND * 2) + 1
+IF c = 1 THEN c = 8 ELSE c = 4
+LINE (0, y)-(640, y), c
+SOUND 2000 + (y * 2), .1
+NEXT e
+END SUB
+
+SUB top
+
+CLS
+
+PAINT (1, 1), 4
+
+FOR x = 1 TO 80
+
+COLOR 8
+LOCATE 1, x
+PRINT "Û"
+
+COLOR 0
+LOCATE 23, x
+PRINT "Û"
+
+NEXT x
+
+FOR y = 2 TO 22
+
+COLOR 8
+LOCATE y, 1
+PRINT "Û"
+
+LOCATE y, 80
+PRINT "Û"
+
+NEXT y
+
+LINE (0, 183)-(640, 200), 0, BF
+END SUB
+

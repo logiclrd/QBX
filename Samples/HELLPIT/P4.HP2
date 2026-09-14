@@ -1,0 +1,1568 @@
+DECLARE SUB cclearwords ()
+DECLARE SUB icemage ()
+DECLARE SUB darkmage ()
+DECLARE SUB firemage ()
+DECLARE SUB dragon ()
+DECLARE SUB flames ()
+DECLARE SUB dark ()
+DECLARE SUB ice ()
+DECLARE SUB dl ()
+DECLARE SUB element ()
+DECLARE SUB davidattack ()
+DECLARE SUB fire ()
+DECLARE SUB restor ()
+DECLARE SUB pain ()
+DECLARE SUB myst ()
+DECLARE SUB remedy ()
+DECLARE SUB darkness ()
+DECLARE SUB flash ()
+DECLARE SUB glacier ()
+DECLARE SUB delay ()
+DECLARE SUB lava ()
+DECLARE SUB clearwords ()
+DECLARE SUB bluestar ()
+DECLARE SUB star ()
+DECLARE SUB neonattack ()
+DECLARE SUB david ()
+DECLARE SUB neon ()
+DECLARE SUB border ()
+DECLARE SUB map ()
+
+RANDOMIZE TIMER
+
+SCREEN 8
+
+CLS
+
+OPEN "savefile.hp2" FOR INPUT AS #1
+        INPUT #1, nhp, nhpmax, nmp, nmpmax
+        INPUT #1, nweapon, narmor
+        INPUT #1, nex, nlev
+        INPUT #1, nskill
+        INPUT #1, dhp, dhpmax, dmp, dmpmax
+        INPUT #1, dweapon, darmor
+        INPUT #1, dex, dlev
+        INPUT #1, dskill
+        INPUT #1, money, crystals
+CLOSE #1
+
+my = 20
+mx = 75
+
+firemagehp = 179
+icemagehp = 181
+darkmagehp = 199
+
+map
+
+1
+
+IF crystals = 3 THEN COLOR 9: LOCATE 4, 75: PRINT ""
+
+LOCATE my, mx
+COLOR 14
+PRINT ""
+
+DO
+
+a$ = INKEY$
+
+IF a$ = CHR$(0) + "H" THEN LOCATE my, mx: COLOR 5: PRINT "Û": my = my - 1: GOTO 1.2 ELSE
+IF a$ = CHR$(0) + "P" THEN LOCATE my, mx: COLOR 5: PRINT "Û": my = my + 1: GOTO 1.2 ELSE
+IF a$ = CHR$(0) + "K" THEN LOCATE my, mx: COLOR 5: PRINT "Û": mx = mx - 1: GOTO 1.2 ELSE
+IF a$ = CHR$(0) + "M" THEN LOCATE my, mx: COLOR 5: PRINT "Û": mx = mx + 1: GOTO 1.2 ELSE
+IF a$ = CHR$(27) THEN GOSUB sure
+IF a$ = CHR$(13) THEN GOSUB stats
+
+LOOP
+
+1.2
+IF mx = 80 THEN mx = 79
+IF my = 22 THEN my = 21
+IF my = 2 THEN my = 3
+IF mx = 1 THEN mx = 2
+IF mx = 78 THEN IF my = 21 THEN GOTO 1.5
+IF my = 4 THEN IF mx = 75 THEN IF crystals = 3 THEN GOTO 5
+IF my = 14 THEN IF mx > 32 THEN my = my - 1
+IF my = 15 THEN IF mx > 32 THEN my = my + 1
+
+IF INT(RND * 19) + 1 = 12 THEN enemy = 1: GOTO 2
+IF INT(RND * 22) + 1 = 9 THEN enemy = 2: GOTO 2
+IF INT(RND * 24) + 1 = 8 THEN enemy = 3: GOTO 2
+
+GOTO 1
+
+1.5
+
+OPEN "savefile.hp2" FOR OUTPUT AS #1
+        WRITE #1, nhp, nhpmax, nmp, nmpmax
+        WRITE #1, nweapon, narmor
+        WRITE #1, nex, nlev
+        WRITE #1, nskill
+        WRITE #1, dhp, dhpmax, dmp, dmpmax
+        WRITE #1, dweapon, darmor
+        WRITE #1, dex, dlev
+        WRITE #1, dskill
+        WRITE #1, money, crystals
+CLOSE #1
+
+CHAIN "hell.hp2"
+
+
+2
+
+IF enemy = 1 THEN ehpmax = firemagehp: ehp = ehpmax
+IF enemy = 2 THEN ehpmax = icemagehp: ehp = ehpmax
+IF enemy = 3 THEN ehpmax = darkmagehp: ehp = ehpmax
+          
+
+2.1
+
+IF nhp <= 0 THEN GOTO 2.3
+
+CLS
+
+border
+
+IF nhp > 0 THEN COLOR 15 ELSE COLOR 4
+LOCATE 22, 3
+PRINT "NEON  HP:"; nhp; "/"; nhpmax; "MP :"; nmp; "/"; nmpmax
+
+LOCATE 23, 3
+IF dhp > 0 THEN COLOR 1 ELSE COLOR 4
+PRINT "DAVID HP:"; dhp; "/"; dhpmax; "MP :"; dmp; "/"; dmpmax
+
+neon
+IF dhp > 0 THEN david
+
+IF enemy = 1 THEN firemage
+IF enemy = 2 THEN icemage
+IF enemy = 3 THEN darkmage
+
+LINE (500, 10)-(602, 20), 15, B
+LINE (501, 11)-(500 + ehp / ehpmax * 100, 19), 4, BF
+
+COLOR 15
+LOCATE 8, 23
+PRINT "NEON:"
+LOCATE 9, 25
+PRINT "(A)ttack"
+LOCATE 10, 25
+PRINT "(R)un"
+                   LOCATE 11, 23: PRINT "SKILLS:"
+IF nskill > 0 THEN LOCATE 12, 25: PRINT "(L)ava      (Mp - 2)"
+IF nskill > 1 THEN LOCATE 13, 25: PRINT "(G)lacier   (Mp - 3)"
+IF nskill > 2 THEN LOCATE 14, 25: PRINT "(F)lash     (Mp - 4)"
+IF nskill > 3 THEN LOCATE 15, 25: PRINT "(D)arkness  (Mp - 6)"
+IF nskill = 5 THEN LOCATE 16, 23: PRINT "DUAL MAGIC:"
+IF nskill = 5 THEN LOCATE 17, 25: PRINT "(E)lement   (Mp - 6 each)"
+
+DO
+
+a$ = INKEY$
+
+IF UCASE$(a$) = "A" THEN GOTO 2.2
+IF UCASE$(a$) = "R" THEN IF INT(RND * nlev) + 1 > 7 THEN CLS : map: GOTO 1 ELSE GOTO 2.5
+IF UCASE$(a$) = "L" THEN IF nskill > 0 THEN IF nmp > 1 THEN nmp = nmp - 2: GOTO 2.21
+IF UCASE$(a$) = "G" THEN IF nskill > 1 THEN IF nmp > 2 THEN nmp = nmp - 3: GOTO 2.22
+IF UCASE$(a$) = "F" THEN IF nskill > 2 THEN IF nmp > 3 THEN nmp = nmp - 4: GOTO 2.23
+IF UCASE$(a$) = "D" THEN IF nskill > 3 THEN IF nmp > 5 THEN nmp = nmp - 6: GOTO 2.24
+IF UCASE$(a$) = "E" THEN IF nskill = 5 THEN IF nmp > 5 THEN IF dmp > 5 THEN nmp = nmp - 6: dmp = dmp - 6: GOTO 2.25
+
+LOOP
+
+2.2
+
+clearwords
+
+neonattack
+
+IF nweapon <> 5 THEN IF nweapon <> 1 THEN star ELSE bluestar
+IF nweapon = 5 THEN bluestar
+IF nweapon = 1 THEN bluestar
+
+damage = (nweapon * 2 + (2 * nlev) + INT(RND * nlev * nweapon) + 1)
+
+ehp = ehp - damage
+
+GOTO 2.29
+
+2.21
+
+clearwords
+lava
+
+IF enemy = 1 THEN damage = 3 * nlev + INT(RND * 5) + 1
+IF enemy = 2 THEN damage = 3 * nlev + INT(RND * 5) + 1
+IF enemy = 3 THEN damage = 3 * nlev + INT(RND * 5) + 1
+
+ehp = ehp - damage
+
+GOTO 2.29
+
+2.22
+
+clearwords
+glacier
+
+IF enemy = 1 THEN damage = 3 * nlev + INT(RND * 7) + 1
+IF enemy = 2 THEN damage = 3 * nlev + INT(RND * 7) + 1
+IF enemy = 3 THEN damage = 3 * nlev + INT(RND * 7) + 1
+
+ehp = ehp - damage
+
+GOTO 2.29
+
+2.23
+
+clearwords
+flash
+
+IF enemy = 1 THEN damage = 3 * nlev + INT(RND * 9) + 1
+IF enemy = 2 THEN damage = 3 * nlev + INT(RND * 9) + 1
+IF enemy = 3 THEN damage = 3 * nlev + INT(RND * 9) + 1
+
+ehp = ehp - damage
+
+GOTO 2.29
+
+2.24
+
+clearwords
+darkness
+
+IF enemy = 1 THEN damage = 3 * nlev + INT(RND * 10) + 1
+IF enemy = 2 THEN damage = 3 * nlev + INT(RND * 10) + 1
+IF enemy = 3 THEN damage = 3 * nlev + INT(RND * 10) + 1
+
+ehp = ehp - damage
+
+GOTO 2.29
+
+2.25
+
+clearwords
+element
+
+damage = nlev + dlev * 4 + INT(RND * nlev + dlev) + 1
+ehp = ehp - damage
+skip$ = "Y"
+
+GOTO 2.29
+
+2.29
+
+FOR e = 1 TO damage STEP 1
+
+COLOR 15
+LOCATE 8, 65
+PRINT e
+FOR D = 1 TO 40
+NEXT D
+NEXT e
+
+delay
+
+IF skip$ = "Y" THEN skip$ = "N": GOTO 2.5
+
+IF ehp <= 0 THEN GOTO 3
+
+2.3
+
+CLS
+
+IF dhp <= 0 THEN GOTO 2.5
+
+border
+
+IF nhp > 0 THEN COLOR 15 ELSE COLOR 4
+LOCATE 22, 3
+PRINT "NEON  HP:"; nhp; "/"; nhpmax; "MP :"; nmp; "/"; nmpmax
+
+LOCATE 23, 3
+IF dhp > 0 THEN COLOR 1 ELSE COLOR 4
+PRINT "DAVID HP:"; dhp; "/"; dhpmax; "MP :"; dmp; "/"; dmpmax
+
+IF nhp > 0 THEN neon
+david
+
+IF enemy = 1 THEN firemage
+IF enemy = 2 THEN icemage
+IF enemy = 3 THEN darkmage
+
+LINE (500, 10)-(602, 20), 15, B
+LINE (501, 11)-(500 + ehp / ehpmax * 100, 19), 4, BF
+
+COLOR 15
+LOCATE 8, 23
+PRINT "DAVID:"
+LOCATE 9, 25
+PRINT "(A)ttack"
+LOCATE 11, 23
+PRINT "SKILLS:"
+IF dskill > 0 THEN LOCATE 12, 25: PRINT "(R)emedy    (Mp - 2)"
+IF dskill > 1 THEN LOCATE 13, 25: PRINT "(M)yst      (Mp - 3)"
+IF dskill > 2 THEN LOCATE 14, 25: PRINT "(P)ain      (Mp - 4)"
+IF dskill > 3 THEN LOCATE 15, 25: PRINT "R(E)store   (Mp - 6)"
+
+DO
+
+a$ = INKEY$
+
+IF UCASE$(a$) = "A" THEN GOTO 2.4
+IF UCASE$(a$) = "R" THEN IF dskill > 0 THEN IF dmp > 1 THEN dmp = dmp - 2: GOTO 2.41
+IF UCASE$(a$) = "M" THEN IF dskill > 1 THEN IF dmp > 2 THEN dmp = dmp - 3: GOTO 2.42
+IF UCASE$(a$) = "P" THEN IF dskill > 2 THEN IF dmp > 3 THEN dmp = dmp - 4: GOTO 2.43
+IF UCASE$(a$) = "E" THEN IF dskill > 3 THEN IF dmp > 5 THEN dmp = dmp - 6: GOTO 2.44
+
+LOOP
+
+2.4
+
+clearwords
+davidattack
+
+IF dweapon <> 5 THEN IF dweapon <> 1 THEN star ELSE bluestar
+IF dweapon = 5 THEN bluestar
+IF dweapon = 1 THEN bluestar
+
+damage = (dweapon * 2 + (2 * dlev) + INT(RND * dlev * dweapon) + 1)
+
+ehp = ehp - damage
+
+GOTO 2.49
+
+2.41
+
+clearwords
+remedy
+
+nreg = (6 * dlev + INT(RND * (dlev * 2) + 1))
+dreg = (6 * dlev + INT(RND * (dlev * 2) + 1))
+
+nhp = nhp + nreg
+dhp = dhp + dreg
+
+IF nhp > nhpmax THEN nhp = nhpmax
+IF dhp > dhpmax THEN dhp = dhpmax
+
+GOTO 2.45
+
+2.42
+
+clearwords
+myst
+
+IF enemy = 1 THEN damage = 3 * dlev + INT(RND * 5) + 1
+IF enemy = 2 THEN damage = 3 * dlev + INT(RND * 5) + 1
+IF enemy = 3 THEN damage = 3 * dlev + INT(RND * 5) + 1
+
+ehp = ehp - damage
+
+GOTO 2.49
+
+2.43
+
+clearwords
+pain
+
+IF enemy = 1 THEN damage = 3 * dlev + INT(RND * 7) + 1
+IF enemy = 2 THEN damage = 3 * dlev + INT(RND * 7) + 1
+IF enemy = 3 THEN damage = 3 * dlev + INT(RND * 7) + 1
+
+ehp = ehp - damage
+
+GOTO 2.49
+
+2.44
+
+clearwords
+restor
+
+nreg = (10 * dlev + INT(RND * (dlev * 3) + 1))
+dreg = (10 * dlev + INT(RND * (dlev * 3) + 1))
+
+nhp = nhp + nreg
+dhp = dhp + dreg
+
+IF nhp > nhpmax THEN nhp = nhpmax
+IF dhp > dhpmax THEN dhp = dhpmax
+
+GOTO 2.45
+
+2.45
+
+FOR e = 1 TO nreg STEP 1
+COLOR 14
+LOCATE 7, 15
+PRINT e
+FOR D = 1 TO 40
+NEXT D
+NEXT e
+
+FOR e = 1 TO dreg STEP 1
+COLOR 14
+LOCATE 16, 15
+PRINT e
+FOR D = 1 TO 40
+NEXT D
+NEXT e
+
+GOTO 2.5
+
+2.49
+
+FOR e = 1 TO damage STEP 1
+
+COLOR 15
+LOCATE 8, 65
+PRINT e
+FOR D = 1 TO 40
+NEXT D
+NEXT e
+
+delay
+
+IF ehp <= 0 THEN GOTO 3
+
+2.5
+
+IF ehp <= 0 THEN GOTO 3
+
+border
+
+IF nhp > 0 THEN COLOR 15 ELSE COLOR 4
+LOCATE 22, 3
+PRINT "NEON  HP:"; nhp; "/"; nhpmax; "MP :"; nmp; "/"; nmpmax
+
+LOCATE 23, 3
+IF dhp > 0 THEN COLOR 1 ELSE COLOR 4
+PRINT "DAVID HP:"; dhp; "/"; dhpmax; "MP :"; dmp; "/"; dmpmax
+
+IF nhp > 0 THEN neon
+IF nhp > 0 THEN david
+
+IF enemy = 1 THEN firemage
+IF enemy = 2 THEN icemage
+IF enemy = 3 THEN darkmage
+
+LINE (500, 10)-(602, 20), 15, B
+LINE (501, 11)-(500 + ehp / ehpmax * 100, 19), 4, BF
+
+IF enemy = 1 THEN GOTO 2.51
+IF enemy = 2 THEN GOTO 2.52
+IF enemy = 3 THEN GOTO 2.53
+
+2.51
+fire
+
+ndam = 31 - nlev + INT(RND * 4) + 1 - (narmor * 3): IF ndam <= 0 THEN ndam = 1
+nhp = nhp - ndam
+
+ddam = 31 - dlev + INT(RND * 4) + 1 - (darmor * 3): IF ddam <= 0 THEN ddam = 1
+dhp = dhp - ddam
+
+GOTO 2.55
+
+
+2.52
+ice
+
+ndam = 36 - nlev + INT(RND * 4) + 1 - (narmor * 3): IF ndam <= 0 THEN ndam = 1
+nhp = nhp - ndam
+
+ddam = 36 - dlev + INT(RND * 4) + 1 - (darmor * 3): IF ddam <= 0 THEN ddam = 1
+dhp = dhp - ddam
+
+GOTO 2.55
+
+2.53
+dark
+
+ndam = 41 - nlev + INT(RND * 4) + 1 - (narmor * 3): IF ndam <= 0 THEN ndam = 1
+nhp = nhp - ndam
+
+ddam = 41 - dlev + INT(RND * 4) + 1 - (darmor * 3): IF ddam <= 0 THEN ddam = 1
+dhp = dhp - ddam
+
+GOTO 2.55
+
+2.55
+FOR e = 1 TO ndam STEP 1
+COLOR 4
+LOCATE 7, 15
+PRINT e
+FOR D = 1 TO 40
+NEXT D
+NEXT e
+ndam = 0
+IF nhp < 1 THEN IF dhp < 1 THEN GOSUB dead
+IF ddam = 0 THEN delay: GOTO 2.1
+
+2.56
+FOR e = 1 TO ddam STEP 1
+COLOR 4
+LOCATE 16, 15
+PRINT e
+FOR D = 1 TO 40
+NEXT D
+NEXT e
+ddam = 0
+delay
+IF nhp < 1 THEN IF dhp < 1 THEN GOSUB dead
+GOTO 2.1
+
+
+3
+IF enemy = 1 THEN en$ = "FIREMAGE"
+IF enemy = 2 THEN en$ = "ICEMAGE"
+IF enemy = 3 THEN en$ = "DARKMAGE"
+
+go = 10 + enemy * 3 + INT(RND * enemy * 3) + 1
+e = 8 + enemy * 2 + INT(RND * enemy * 4) + 1
+
+CLS
+border
+COLOR 15
+LOCATE 7, 15
+PRINT "You have been sucessful in defeating the "; en$; "!"
+LOCATE 8, 19
+PRINT "You have also found"; go; "gold and"
+LOCATE 9, 19
+PRINT "gained"; e; "experience points!"
+PLAY "o1l13eegeal27efeefgagbdo2l14eeeeegl33ededfeo4eeeegggo5ggggaaaabbbbb"
+money = money + go
+IF nhp > 0 THEN nex = nex + e
+IF dhp > 0 THEN dex = dex + e
+SLEEP
+GOSUB checkex
+
+
+5
+
+ehpmax = 2250
+ehp = 2250
+
+5.1
+
+IF nhp <= 0 THEN GOTO 5.3
+
+CLS
+
+border
+
+IF nhp > 0 THEN COLOR 15 ELSE COLOR 4
+LOCATE 22, 3
+PRINT "NEON  HP:"; nhp; "/"; nhpmax; "MP :"; nmp; "/"; nmpmax
+
+
+LOCATE 23, 3
+IF dhp > 0 THEN COLOR 1 ELSE COLOR 4
+PRINT "DAVID HP:"; dhp; "/"; dhpmax; "MP :"; dmp; "/"; dmpmax
+
+neon
+IF dhp > 0 THEN david
+
+dragon
+
+LINE (500, 10)-(602, 20), 15, B
+LINE (501, 11)-(500 + ehp / ehpmax * 100, 19), 4, BF
+
+COLOR 15
+LOCATE 8, 23
+PRINT "NEON:"
+LOCATE 9, 25
+PRINT "(A)ttack"
+LOCATE 10, 25
+PRINT "(R)un"
+                   LOCATE 11, 23: PRINT "SKILLS:"
+IF nskill > 0 THEN LOCATE 12, 25: PRINT "(L)ava      (Mp - 2)"
+IF nskill > 1 THEN LOCATE 13, 25: PRINT "(G)lacier   (Mp - 3)"
+IF nskill > 2 THEN LOCATE 14, 25: PRINT "(F)lash     (Mp - 4)"
+IF nskill > 3 THEN LOCATE 15, 25: PRINT "(D)arkness  (Mp - 6)"
+IF nskill = 5 THEN LOCATE 16, 23: PRINT "DUAL MAGIC:"
+IF nskill = 5 THEN LOCATE 17, 25: PRINT "(E)lement   (Mp - 6 each)"
+
+DO
+
+a$ = INKEY$
+
+IF UCASE$(a$) = "A" THEN GOTO 5.2
+IF UCASE$(a$) = "R" THEN GOTO 5.2
+IF UCASE$(a$) = "L" THEN IF nskill > 0 THEN IF nmp > 1 THEN nmp = nmp - 2: GOTO 5.21
+IF UCASE$(a$) = "G" THEN IF nskill > 1 THEN IF nmp > 2 THEN nmp = nmp - 3: GOTO 5.22
+IF UCASE$(a$) = "F" THEN IF nskill > 2 THEN IF nmp > 3 THEN nmp = nmp - 4: GOTO 5.23
+IF UCASE$(a$) = "D" THEN IF nskill > 3 THEN IF nmp > 5 THEN nmp = nmp - 6: GOTO 5.24
+IF UCASE$(a$) = "E" THEN IF nskill = 5 THEN IF nmp > 5 THEN IF dmp > 5 THEN nmp = nmp - 6: dmp = dmp - 6: GOTO 5.25
+
+LOOP
+
+5.2
+
+cclearwords
+
+neonattack
+
+IF nweapon <> 5 THEN IF nweapon <> 1 THEN star ELSE bluestar
+IF nweapon = 5 THEN bluestar
+IF nweapon = 1 THEN bluestar
+
+damage = (nweapon * 2 + (2 * nlev) + INT(RND * nlev * nweapon) + 1)
+
+ehp = ehp - damage
+
+GOTO 5.29
+
+5.21
+
+cclearwords
+lava
+
+damage = 3 * nlev + INT(RND * nlev) + 1
+
+ehp = ehp - damage
+
+GOTO 5.29
+
+5.22
+
+cclearwords
+glacier
+
+damage = 3 * nlev + INT(RND * nlev + 1) + 1
+
+ehp = ehp - damage
+
+GOTO 5.29
+
+5.23
+
+cclearwords
+flash
+
+damage = 3 * nlev + INT(RND * nlev + 2) + 1
+
+ehp = ehp - damage
+
+GOTO 5.29
+
+5.24
+
+cclearwords
+darkness
+
+damage = 3 * nlev + INT(RND * nlev + 3) + 1
+
+ehp = ehp - damage
+
+GOTO 5.29
+
+5.25
+cclearwords
+element
+damage = nlev + dlev * 4 + INT(RND * nlev * dlev) + 1
+ehp = ehp - damage
+
+skip$ = "Y"
+GOTO 5.29
+
+5.29
+
+FOR e = 1 TO damage STEP 1
+
+COLOR 15
+LOCATE 8, 65
+PRINT e
+FOR D = 1 TO 40
+NEXT D
+NEXT e
+
+delay
+
+IF skip$ = "Y" THEN skip$ = "N": GOTO 5.5
+
+IF ehp <= 0 THEN GOTO 6
+
+5.3
+
+CLS
+
+IF dhp <= 0 THEN GOTO 5.5
+
+border
+
+IF nhp > 0 THEN COLOR 15 ELSE COLOR 4
+LOCATE 22, 3
+PRINT "NEON  HP:"; nhp; "/"; nhpmax; "MP :"; nmp; "/"; nmpmax
+
+LOCATE 23, 3
+IF dhp > 0 THEN COLOR 1 ELSE COLOR 4
+PRINT "DAVID HP:"; dhp; "/"; dhpmax; "MP :"; dmp; "/"; dmpmax
+
+IF nhp > 0 THEN neon
+david
+
+dragon
+
+LINE (500, 10)-(602, 20), 15, B
+LINE (501, 11)-(500 + ehp / ehpmax * 100, 19), 4, BF
+
+COLOR 15
+LOCATE 8, 23
+PRINT "DAVID:"
+LOCATE 9, 25
+PRINT "(A)ttack"
+LOCATE 11, 23
+PRINT "SKILLS:"
+IF dskill > 0 THEN LOCATE 12, 25: PRINT "(R)emedy    (Mp - 2)"
+IF dskill > 1 THEN LOCATE 13, 25: PRINT "(M)yst      (Mp - 3)"
+IF dskill > 2 THEN LOCATE 14, 25: PRINT "(P)ain      (Mp - 4)"
+IF dskill > 3 THEN LOCATE 15, 25: PRINT "R(E)store   (Mp - 6)"
+
+DO
+
+a$ = INKEY$
+
+IF UCASE$(a$) = "A" THEN GOTO 5.4
+IF UCASE$(a$) = "R" THEN IF dskill > 0 THEN IF dmp > 1 THEN dmp = dmp - 2: GOTO 5.41
+IF UCASE$(a$) = "M" THEN IF dskill > 1 THEN IF dmp > 2 THEN dmp = dmp - 3: GOTO 5.42
+IF UCASE$(a$) = "P" THEN IF dskill > 2 THEN IF dmp > 3 THEN dmp = dmp - 4: GOTO 5.43
+IF UCASE$(a$) = "E" THEN IF dskill > 3 THEN IF dmp > 5 THEN dmp = dmp - 6: GOTO 5.44
+
+LOOP
+
+5.4
+
+cclearwords
+davidattack
+
+IF dweapon <> 5 THEN IF dweapon <> 1 THEN star ELSE bluestar
+IF dweapon = 5 THEN bluestar
+IF dweapon = 1 THEN bluestar
+
+damage = (dweapon * 2 + (2 * dlev) + INT(RND * dlev * dweapon) + 1)
+
+ehp = ehp - damage
+
+GOTO 5.49
+
+5.41
+
+cclearwords
+remedy
+
+nreg = (6 * dlev + INT(RND * (dlev * 2) + 1))
+dreg = (6 * dlev + INT(RND * (dlev * 2) + 1))
+
+nhp = nhp + nreg
+dhp = dhp + dreg
+
+IF nhp > nhpmax THEN nhp = nhpmax
+IF dhp > dhpmax THEN dhp = dhpmax
+
+GOTO 5.45
+
+5.42
+
+cclearwords
+myst
+
+damage = 3 * dlev + INT(RND * dlev + 1) + 1
+
+ehp = ehp - damage
+
+GOTO 5.49
+
+5.43
+
+cclearwords
+pain
+
+damage = 3 * dlev + INT(RND * dlev + 2) + 1
+
+ehp = ehp - damage
+
+GOTO 5.49
+
+5.44
+
+cclearwords
+restor
+
+nreg = (10 * dlev + INT(RND * (dlev * 3) + 1))
+dreg = (10 * dlev + INT(RND * (dlev * 3) + 1))
+
+nhp = nhp + nreg
+dhp = dhp + dreg
+
+IF nhp > nhpmax THEN nhp = nhpmax
+IF dhp > dhpmax THEN dhp = dhpmax
+
+GOTO 5.45
+
+5.45
+
+FOR e = 1 TO nreg STEP 1
+COLOR 14
+LOCATE 7, 15
+PRINT e
+FOR D = 1 TO 40
+NEXT D
+NEXT e
+
+FOR e = 1 TO dreg STEP 1
+COLOR 14
+LOCATE 16, 15
+PRINT e
+FOR D = 1 TO 40
+NEXT D
+NEXT e
+
+GOTO 5.5
+
+5.49
+
+FOR e = 1 TO damage STEP 1
+
+COLOR 15
+LOCATE 8, 65
+PRINT e
+FOR D = 1 TO 40
+NEXT D
+NEXT e
+
+delay
+
+IF ehp <= 0 THEN GOTO 6
+
+5.5
+
+IF ehp <= 0 THEN GOTO 6
+
+border
+
+IF nhp > 0 THEN COLOR 15 ELSE COLOR 4
+LOCATE 22, 3
+PRINT "NEON  HP:"; nhp; "/"; nhpmax; "MP :"; nmp; "/"; nmpmax
+
+LOCATE 23, 3
+IF dhp > 0 THEN COLOR 1 ELSE COLOR 4
+PRINT "DAVID HP:"; dhp; "/"; dhpmax; "MP :"; dmp; "/"; dmpmax
+
+IF nhp > 0 THEN neon
+IF nhp > 0 THEN david
+
+dragon
+
+LINE (500, 10)-(602, 20), 15, B
+LINE (501, 11)-(500 + ehp / ehpmax * 100, 19), 4, BF
+
+de = INT(RND * 2) + 1
+        IF de = 1 THEN GOTO 5.52
+        IF de = 2 THEN GOTO 5.53
+
+5.52
+flames
+
+ndam = 74 - nlev + INT(RND * 8) + 1 - (narmor * 4): IF ndam <= 0 THEN ndam = 1
+nhp = nhp - ndam
+
+ddam = 74 - dlev + INT(RND * 8) + 1 - (darmor * 4): IF ddam <= 0 THEN ddam = 1
+dhp = dhp - ddam
+
+GOTO 5.55
+
+5.53
+dark
+
+ndam = 70 - nlev + INT(RND * 8) + 1 - (narmor * 4): IF ndam <= 0 THEN ndam = 1
+nhp = nhp - ndam
+
+ddam = 70 - dlev + INT(RND * 8) + 1 - (darmor * 4): IF ddam <= 0 THEN ddam = 1
+dhp = dhp - ddam
+
+GOTO 5.55
+
+5.55
+FOR e = 1 TO ndam STEP 1
+COLOR 4
+LOCATE 7, 15
+PRINT e
+FOR D = 1 TO 40
+NEXT D
+NEXT e
+ndam = 0
+IF nhp < 1 THEN IF dhp < 1 THEN GOSUB dead
+IF ddam = 0 THEN delay: GOTO 5.1
+
+5.56
+FOR e = 1 TO ddam STEP 1
+COLOR 4
+LOCATE 16, 15
+PRINT e
+FOR D = 1 TO 40
+NEXT D
+NEXT e
+ddam = 0
+delay
+IF nhp < 1 THEN IF dhp < 1 THEN GOSUB dead
+GOTO 5.1
+
+6
+
+CLS
+border
+COLOR 15
+LOCATE 7, 19
+PRINT "You are honored, Neon and David.  You have obtained the"
+LOCATE 8, 19
+PRINT "4th crystal.  You have also recieved 100 experience points"
+LOCATE 9, 19
+PRINT "and 125 gold pieces.  You need two more crystals!!!!!!!!!"
+PLAY "o2l45adgbcegbcagdbagdbagbcbcgegbfagebagdbagdbgabdageccdgbf"
+
+nex = nex + 100
+dex = dex + 100
+money = money + 125
+crystals = 4
+
+SLEEP
+
+LOCATE 11, 10
+PRINT "Now is your chance at boosting your skills!"
+LOCATE 12, 10
+PRINT "Would you like Z-Armor for (B)oth, Hybrid Stars for "
+LOCATE 13, 10
+PRINT "(N)eon, Hybrid Stars for (D)avid, or (+) 20 to both "
+LOCATE 14, 10
+PRINT "of your Hit Point Max?"
+
+DO
+
+a$ = INKEY$
+
+IF UCASE$(a$) = "+" THEN dhpmax = dhpmax + 20: nhpmax = nhpmax + 20: GOTO 6.1
+IF UCASE$(a$) = "N" THEN nweapon = 3: GOTO 6.1
+IF UCASE$(a$) = "D" THEN dweapon = 3: GOTO 6.1
+IF UCASE$(a$) = "B" THEN narmor = 2: darmor = 2: GOTO 6.1
+
+LOOP
+
+6.1
+
+OPEN "savefile.hp2" FOR OUTPUT AS #1
+        WRITE #1, nhp, nhpmax, nmp, nmpmax
+        WRITE #1, nweapon, narmor
+        WRITE #1, nex, nlev
+        WRITE #1, nskill
+        WRITE #1, dhp, dhpmax, dmp, dmpmax
+        WRITE #1, dweapon, darmor
+        WRITE #1, dex, dlev
+        WRITE #1, dskill
+        WRITE #1, money, crystals
+CLOSE #1
+
+CHAIN "hell.hp2"
+
+sure:
+COLOR 15
+LOCATE 13, 37
+PRINT "REALLY QUIT?"
+
+DO
+
+xz$ = INKEY$
+IF UCASE$(xz$) = "Y" THEN CHAIN "hellpit2.bas" ELSE
+IF UCASE$(xz$) = "N" THEN CLS : map: GOTO 1 ELSE
+
+LOOP
+
+stats:
+CLS
+PAINT (1, 1), 10
+border
+COLOR 15
+LOCATE 3, 6
+PRINT "NEON   HP:", nhp, "/", nhpmax
+LOCATE 4, 6
+PRINT "       MP:", nmp, "/", nmpmax
+LOCATE 5, 6
+PRINT "    LEVEL:", nlev
+LOCATE 6, 6
+PRINT "       EX:", nex
+
+IF nweapon = 1 THEN nwname$ = "X-Stars"
+IF nweapon = 2 THEN nwname$ = "Ravage Stars"
+IF nweapon = 3 THEN nwname$ = "Hybrid Stars"
+IF nweapon = 4 THEN nwname$ = "Z-Stars"
+IF nweapon = 5 THEN nwname$ = "Exo-Stars"
+LOCATE 7, 6
+PRINT "   WEAPON:", nwname$
+
+IF narmor = 0 THEN naname$ = "None"
+IF narmor = 1 THEN naname$ = "X-Armor"
+IF narmor = 2 THEN naname$ = "Z-Armor"
+IF narmor = 3 THEN naname$ = "Exo-Vest"
+LOCATE 8, 6
+PRINT "    ARMOR:", naname$
+
+COLOR 1
+LOCATE 10, 7
+PRINT "DAVID HP:", dhp, "/", dhpmax
+LOCATE 11, 6
+PRINT "       MP:", dmp, "/", dmpmax
+LOCATE 12, 6
+PRINT "    LEVEL:", dlev
+LOCATE 13, 6
+PRINT "       EX:", dex
+IF dweapon = 1 THEN dwname$ = "X-Stars"
+IF dweapon = 2 THEN dwname$ = "Ravage Stars"
+IF dweapon = 3 THEN dwname$ = "Hybrid Stars"
+IF dweapon = 4 THEN dwname$ = "Z-Stars"
+IF dweapon = 5 THEN dwname$ = "Exo-Stars"
+LOCATE 14, 6
+PRINT "   WEAPON:", dwname$
+
+IF darmor = 0 THEN daname$ = "None"
+IF darmor = 1 THEN daname$ = "X-Armor"
+IF darmor = 2 THEN daname$ = "Z-Armor"
+IF darmor = 3 THEN daname$ = "Exo-Vest"
+LOCATE 15, 6
+PRINT "    ARMOR:", naname$
+
+COLOR 15
+LOCATE 23, 50
+PRINT "MONEY:", money
+
+LOCATE 23, 6
+COLOR 9: PRINT "CRYSTALS:"
+LOCATE 23, 16: COLOR 8: PRINT ""
+
+IF crystals = 1 THEN LOCATE 23, 16: COLOR 9: PRINT ""
+IF crystals = 2 THEN LOCATE 23, 16: COLOR 9: PRINT ""
+IF crystals = 3 THEN LOCATE 23, 16: COLOR 9: PRINT ""
+IF crystals = 4 THEN LOCATE 23, 16: COLOR 9: PRINT ""
+IF crystals = 5 THEN LOCATE 23, 16: COLOR 9: PRINT ""
+IF crystals = 6 THEN LOCATE 23, 16: COLOR 9: PRINT ""
+IF crystals = 6 THEN LINE (40, 179)-(166, 179), 4
+SLEEP
+
+CLS
+
+map
+
+GOTO 1
+
+checkex:
+
+IF nex > 5999 THEN IF nlev = 24 THEN nlev = 25: nup$ = "Y"
+IF nex > 4999 THEN IF nlev = 23 THEN nlev = 24: nup$ = "Y"
+IF nex > 4349 THEN IF nlev = 22 THEN nlev = 23: nup$ = "Y"
+IF nex > 3599 THEN IF nlev = 21 THEN nlev = 22: nup$ = "Y"
+IF nex > 2999 THEN IF nlev = 20 THEN nlev = 21: nup$ = "Y"
+IF nex > 2499 THEN IF nlev = 19 THEN nlev = 20: nup$ = "Y"
+IF nex > 2189 THEN IF nlev = 18 THEN nlev = 19: nup$ = "Y"
+IF nex > 1899 THEN IF nlev = 17 THEN nlev = 18: nup$ = "Y"
+IF nex > 1679 THEN IF nlev = 16 THEN nlev = 17: nup$ = "Y"
+IF nex > 1419 THEN IF nlev = 15 THEN nlev = 16: nup$ = "Y"
+IF nex > 1199 THEN IF nlev = 14 THEN nlev = 15: nup$ = "Y"
+IF nex > 999 THEN IF nlev = 13 THEN nlev = 14: nup$ = "Y"
+IF nex > 879 THEN IF nlev = 12 THEN nlev = 13: nup$ = "Y"
+IF nex > 719 THEN IF nlev = 11 THEN nlev = 12: nup$ = "Y"
+IF nex > 579 THEN IF nlev = 10 THEN nlev = 11: nup$ = "Y"
+IF nex > 449 THEN IF nlev = 9 THEN nlev = 10: nup$ = "Y"
+IF nex > 339 THEN IF nlev = 8 THEN nlev = 9: nup$ = "Y"
+IF nex > 249 THEN IF nlev = 7 THEN nlev = 8: nup$ = "Y"
+IF nex > 179 THEN IF nlev = 6 THEN nlev = 7: nup$ = "Y"
+IF nex > 116 THEN IF nlev = 5 THEN nlev = 6: nup$ = "Y"
+IF nex > 87 THEN IF nlev = 4 THEN nlev = 5: nup$ = "Y"
+IF nex > 57 THEN IF nlev = 3 THEN nlev = 4: nup$ = "Y"
+IF nex > 29 THEN IF nlev = 2 THEN nlev = 3: nup$ = "Y"
+IF nex > 13 THEN IF nlev = 1 THEN nlev = 2: nup$ = "Y"
+
+IF dex > 4999 THEN IF dlev = 24 THEN dlev = 25: dup$ = "Y"
+IF dex > 4299 THEN IF dlev = 23 THEN dlev = 24: dup$ = "Y"
+IF dex > 3699 THEN IF dlev = 22 THEN dlev = 23: dup$ = "Y"
+IF dex > 3099 THEN IF dlev = 21 THEN dlev = 22: dup$ = "Y"
+IF dex > 2599 THEN IF dlev = 20 THEN dlev = 21: dup$ = "Y"
+IF dex > 2299 THEN IF dlev = 19 THEN dlev = 20: dup$ = "Y"
+IF dex > 2019 THEN IF dlev = 18 THEN dlev = 19: dup$ = "Y"
+IF dex > 1759 THEN IF dlev = 17 THEN dlev = 18: dup$ = "Y"
+IF dex > 1519 THEN IF dlev = 16 THEN dlev = 17: dup$ = "Y"
+IF dex > 1299 THEN IF dlev = 15 THEN dlev = 16: dup$ = "Y"
+IF dex > 1119 THEN IF dlev = 14 THEN dlev = 15: dup$ = "Y"
+IF dex > 944 THEN IF dlev = 13 THEN dlev = 14: dup$ = "Y"
+IF dex > 819 THEN IF dlev = 12 THEN dlev = 13: dup$ = "Y"
+IF dex > 685 THEN IF dlev = 11 THEN dlev = 12: dup$ = "Y"
+IF dex > 536 THEN IF dlev = 10 THEN dlev = 11: dup$ = "Y"
+IF dex > 419 THEN IF dlev = 9 THEN dlev = 10: dup$ = "Y"
+IF dex > 314 THEN IF dlev = 8 THEN dlev = 9: dup$ = "Y"
+IF dex > 229 THEN IF dlev = 7 THEN dlev = 8: dup$ = "Y"
+IF dex > 159 THEN IF dlev = 6 THEN dlev = 7: dup$ = "Y"
+IF dex > 103 THEN IF dlev = 5 THEN dlev = 6: dup$ = "Y"
+IF dex > 77 THEN IF dlev = 4 THEN dlev = 5: dup$ = "Y"
+IF dex > 50 THEN IF dlev = 3 THEN dlev = 4: dup$ = "Y"
+IF dex > 26 THEN IF dlev = 2 THEN dlev = 3: dup$ = "Y"
+IF dex > 12 THEN IF dlev = 1 THEN dlev = 2: dup$ = "Y"
+   
+IF nup$ = "Y" THEN
+        CLS
+        border
+        COLOR 15
+        LOCATE 7, 27
+        PRINT "Experience has taught Neon well"
+        LOCATE 8, 27
+        PRINT "Neon's level is now"; nlev; "!"
+        PLAY "o3l23efedd#d#ddfgel37eeeeeeeeeeo5eacgbdo4efgabo5cdeaaaaaa"
+        nhpmax = nhpmax + 18
+        nmpmax = nmpmax + 8
+        nup$ = "N"
+        SLEEP
+END IF
+
+IF dup$ = "Y" THEN
+        CLS
+        border
+        COLOR 15
+        LOCATE 7, 27
+        PRINT "Experience has taught David well"
+        LOCATE 8, 27
+        PRINT "David's level is now"; dlev; "!"
+        PLAY "o1l23eeaaccacadadd#d#d#o4eacddel34o3eeeacdao2egggaeo1l45eeggggggggaaabcdadacbd"
+        dhpmax = dhpmax + 16
+        dmpmax = dmpmax + 5
+        SLEEP
+        dup$ = "N"
+END IF
+
+CLS
+map
+GOTO 1
+
+dead:
+
+CLS
+border
+COLOR 15
+LOCATE 6, 13
+PRINT "Unfortunately, the monsters have gotten the best of you."
+LOCATE 7, 13
+PRINT "When you wake up, you will awaken from this dream......."
+PLAY "o1l39agafagagaggagagaaaaeeeecbadefgababf"
+SLEEP
+CHAIN "town.hp2"
+
+SUB bluestar
+PCOPY 0, 1
+FOR st = 200 TO 550 STEP 8
+COLOR 1
+LINE (st, 94)-(st - 8, 97)
+LINE -(st, 101)
+LINE -(st + 8, 97)
+LINE -(st, 94)
+PAINT (st, 97), 1
+CIRCLE (st, 97), 3, 4
+PAINT (st, 97), 4
+SOUND 200 + (st / 3), .04
+PCOPY 1, 0
+NEXT st
+END SUB
+
+SUB border
+PAINT (1, 1), 1
+LINE (4, 1)-(636, 198), 10, BF
+LINE (10, 4)-(630, 196), 0, BF
+END SUB
+
+SUB cclearwords
+LINE (150, 20)-(360, 160), 0, BF
+
+END SUB
+
+SUB clearwords
+LINE (150, 20)-(400, 160), 0, BF
+END SUB
+
+SUB dark
+PCOPY 0, 1
+FOR inside = 160 TO 1 STEP -2
+CIRCLE (320, 100), inside, 8
+SOUND 200 + inside, .04
+PCOPY 1, 0
+NEXT inside
+FOR outside = 1 TO 250 STEP 1
+colorse = INT(RND * 3) + 1
+IF colorse = 1 THEN colorse = 7
+IF colorse = 2 THEN colorse = 8
+IF colorse = 3 THEN colorse = 0
+CIRCLE (320, 100), outside, colorse, , , .35
+SOUND 200 + colorse, .04
+NEXT outside
+END SUB
+
+SUB darkmage
+DRAW "bm520, 70c8r16f5d6f4d17f5d8f1d4f1d4l38u11e2u14e1u6e1u18e2g2r12f2d7g9h4"
+PAINT (530, 90), 8
+DRAW "bm520, 70c7r16f5d6f4d17f5d8f1d4f1d4l38u11e2u14e1u6e1u18e2g2r12f2d7g9h4"
+DRAW "bm531, 86r8f1d16l10u16"
+END SUB
+
+SUB darkness
+
+neonattack
+
+FOR B = 500 TO 1 STEP -1
+
+col = INT(RND * 2) + 1
+
+IF col = 1 THEN col = 7 ELSE col = 8
+
+x = 250 + INT(RND * 350) + 1
+y = 60 + INT(RND * 80) + 1
+
+LINE (x, y)-(x + B, y), col
+
+SOUND 100 + INT(RND * 100) + 1, .1
+
+NEXT B
+
+END SUB
+
+SUB david
+LINE (73, 142)-(85, 154), 4, BF
+LINE (73, 141)-(85, 132), 1, BF
+LINE (76, 134)-(82, 142), 9, BF
+LINE (76, 143)-(82, 144), 12, BF
+CIRCLE (79, 127), 5, 12, , , .78
+PAINT (79, 127), 12
+LINE (81, 126)-(82, 126), 0, BF
+END SUB
+
+SUB davidattack
+LINE (45, 120)-(115, 157), 0, BF
+LINE (183, 102)-(195, 114), 4, BF
+LINE (183, 101)-(195, 92), 1, BF
+LINE (186, 94)-(206, 97), 9, BF
+LINE (206, 94)-(212, 97), 12, BF
+CIRCLE (189, 87), 5, 12, , , .78
+PAINT (189, 87), 12
+LINE (191, 86)-(192, 86), 0, BF
+END SUB
+
+SUB delay
+
+FOR D = 1 TO 5000
+NEXT D
+
+END SUB
+
+SUB dragon
+DRAW "bm520, 195c10u34h35g5l78h21r67l83h6u9e9r28f11h11l17u12e14r105f135l112"
+PAINT (521, 177), 10
+DRAW "bm520, 195c2u34h35g5l78h21r67l83h6u9e9r28f11h11l17u12e14r105f135l112"
+
+LINE (420, 80)-(420, 95), 4
+LINE -(470, 70), 4
+LINE -(420, 80), 4
+PAINT (438, 85), 4
+
+CIRCLE (370, 100), 8, 0, , , 1.5
+PAINT (370, 100), 0
+
+CIRCLE (385, 100), 8, 0, , , 1.5
+PAINT (385, 100), 0
+
+LINE (420, 80)-(420, 95), 0
+LINE -(470, 70), 0
+LINE -(420, 80), 0
+END SUB
+
+SUB element
+lava
+myst
+glacier
+pain
+flash
+darkness
+END SUB
+
+SUB fire
+FOR e = 1 TO 250
+x = 15 + INT(RND * 170) + 1
+y = 25 + INT(RND * 140) + 1
+co = INT(RND * 2) + 1
+IF co = 1 THEN co = 4 ELSE co = 12
+LINE (x, y)-(x + 60, y), co
+SOUND 40 + x, .1
+NEXT e
+END SUB
+
+SUB firemage
+DRAW "bm520, 70c4r16f5d6f4d17f5d8f1d4f1d4l38u11e2u14e1u6e1u18e2g2r12f2d7g9h4"
+PAINT (530, 90), 4
+DRAW "bm520, 70c12r16f5d6f4d17f5d8f1d4f1d4l38u11e2u14e1u6e1u18e2g2r12f2d7g9h4"
+DRAW "bm531, 86r8f1d16l10u16"
+END SUB
+
+SUB flames
+FOR s = 1 TO 450
+wer = 30 + INT(RND * 180) + 1
+ert = INT(RND * 170) + 1
+LINE (wer, 190)-(wer, ert), 4
+LINE (wer, 190)-(wer - 3, ert), 4
+LINE (wer, 190)-(wer + 3, ert), 4
+SOUND 40 + ert, .07
+NEXT s
+END SUB
+
+SUB flash
+
+neonattack
+
+FOR s = 1 TO 250
+
+col = INT(RND * 2) + 1
+
+IF col = 1 THEN col = 14 ELSE col = 15
+
+LINE (210, 96)-(640, 60 + INT(RND * 80) + 1), col
+
+SOUND 4000, .19
+NEXT s
+
+END SUB
+
+SUB glacier
+FOR e = 1 TO 200
+
+x = INT(RND * 640) + 1
+y = INT(RND * 190) + 1
+
+LINE (x, y)-(x + 7, y + 2), 15
+
+SOUND 500 + INT(RND * 500), .07
+
+NEXT e
+
+FOR y = 400 TO 200 STEP -1
+
+col = INT(RND * 3) + 1
+
+IF col = 2 THEN col = 9
+IF col = 3 THEN col = 15
+
+LINE (420, y)-(530, y - 200), col
+LINE -(640, y), col
+
+SOUND 5000 - y, .1
+
+NEXT y
+END SUB
+
+SUB ice
+FOR e = 1 TO 10
+FOR D = 15 TO 170 STEP 3
+col = INT(RND * 3) + 1
+IF col = 2 THEN col = 9
+IF col = 3 THEN col = 15
+LINE (200, D)-(20, D + 10), col
+SOUND 6000 + (D * 20), .06
+NEXT D
+NEXT e
+END SUB
+
+SUB icemage
+DRAW "bm520, 70c1r16f5d6f4d17f5d8f1d4f1d4l38u11e2u14e1u6e1u18e2g2r12f2d7g9h4"
+PAINT (530, 90), 1
+DRAW "bm520, 70c9r16f5d6f4d17f5d8f1d4f1d4l38u11e2u14e1u6e1u18e2g2r12f2d7g9h4"
+DRAW "bm531, 86r8f1d16l10u16"
+END SUB
+
+SUB lava
+FOR y = 1 TO 180 STEP .6
+
+CIRCLE (430, y), 13, 4
+CIRCLE (450, y + 3), 14, 4
+CIRCLE (478, y + 9), 27, 4
+CIRCLE (520, y + 6), 18, 4
+CIRCLE (560, y - 24), 35, 4
+CIRCLE (612, y - 16), 19, 4
+
+SOUND 38 + y - y, .06
+
+NEXT y
+END SUB
+
+SUB light
+FOR e = 1 TO 200
+col = INT(RND * 2)
+IF col = 1 THEN col = 14 ELSE col = 15
+LINE (467, 112)-(0, 40 + INT(RND * 110) + 1), col
+SOUND 3000 + e + (col * 4), .08
+NEXT e
+END SUB
+
+SUB map
+PAINT (1, 1), 5
+
+FOR x = 1 TO 80
+
+COLOR 0
+LOCATE 1, x
+PRINT "Û"
+
+LOCATE 23, x
+PRINT "Û"
+
+COLOR 8
+LOCATE 22, x
+PRINT "Û"
+
+LOCATE 2, x
+PRINT "Û"
+
+NEXT x
+
+FOR y = 2 TO 22
+
+COLOR 8
+LOCATE y, 1
+PRINT "Û"
+
+LOCATE y, 80
+PRINT "Û"
+
+NEXT y
+
+FOR x = 33 TO 79
+
+COLOR 8
+LOCATE 14, x
+PRINT "Û"
+
+LOCATE 15, x
+PRINT "Û"
+
+NEXT x
+
+LINE (0, 180)-(640, 200), 0, BF
+
+COLOR 0
+LOCATE 21, 78
+PRINT "Û"
+END SUB
+
+SUB myst
+FOR e = 1 TO 900
+x = INT(RND * 320) + 1 + 300
+y = INT(RND * 190)
+LINE (x, y)-(x + 4, y + 1), 8
+SOUND 200 + e - e, .06
+NEXT e
+END SUB
+
+SUB neon
+LINE (72, 62)-(85, 74), 1, BF
+LINE (72, 61)-(85, 52), 15, BF
+CIRCLE (78, 47), 6, 12, , , .65
+PAINT (78, 47), 12
+LINE (75, 54)-(82, 62), 4, BF
+LINE (75, 63)-(82, 65), 12, BF
+LINE (81, 46)-(80, 46), 0, BF
+END SUB
+
+SUB neonattack
+LINE (40, 40)-(110, 77), 0, BF
+LINE (182, 102)-(195, 114), 1, BF
+LINE (182, 101)-(195, 92), 15, BF
+CIRCLE (188, 87), 6, 12, , , .65
+PAINT (188, 87), 12
+LINE (191, 86)-(190, 86), 0, BF
+LINE (185, 94)-(205, 97), 4, BF
+LINE (205, 94)-(210, 97), 12, BF
+END SUB
+
+SUB pain
+FOR e = 1 TO 3
+PCOPY 0, 1
+FOR x = 1 TO 640 STEP 17
+y = INT(RND * 70) + 1 + 60
+LINE (x, y)-(x + 20, y), 8
+LINE (x + 30, y - 20)-(x + 50, y - 20), 8
+LINE (x + 30, y + 20)-(x + 50, y + 20), 8
+SOUND 200, .05
+PCOPY 1, 0
+NEXT x
+NEXT e
+
+FOR s = 1 TO 750
+x = INT(RND * 200) + 1 + 400
+y = INT(RND * 100) + 1 + 50
+
+LINE (x, y)-(x + 20, y), 8
+SOUND 250, .05
+NEXT s
+END SUB
+
+SUB remedy
+up = 160
+0.365
+x = INT(RND * 200) + 1
+y = INT(RND * 20) + 1 + up
+LINE (x, y)-(x, y - 5), 14
+up = up - .5
+SOUND 5000 - (up * 10), .07
+IF up > 20 THEN GOTO 0.365
+END SUB
+
+SUB restor
+LINE (72, 62)-(85, 74), 1, BF
+LINE (72, 61)-(85, 52), 15, BF
+CIRCLE (78, 47), 6, 12, , , .65
+PAINT (78, 47), 12
+LINE (75, 54)-(82, 62), 4, BF
+LINE (75, 63)-(82, 65), 12, BF
+LINE (81, 46)-(80, 46), 0, BF
+FOR e = 1 TO 3
+PCOPY 0, 1
+FOR i = 50 TO 1 STEP -1
+CIRCLE (79, 55), i, 14
+CIRCLE (79, 132), i, 14
+SOUND 3000 + (i * 4), .05
+PCOPY 1, 0
+NEXT i
+NEXT e
+remedy
+
+END SUB
+
+SUB star
+PCOPY 0, 1
+FOR st = 200 TO 550 STEP 8
+COLOR 14
+LINE (st, 94)-(st - 8, 97)
+LINE -(st, 101)
+LINE -(st + 8, 97)
+LINE -(st, 94)
+PAINT (st, 97), 14
+CIRCLE (st, 97), 3, 1
+PAINT (st, 97), 1
+SOUND 200 + (st / 3), .04
+PCOPY 1, 0
+NEXT st
+END SUB
+
+SUB waterdrip
+FOR y = -10 TO 200 STEP 1
+co = INT(RND * 3) + 1
+IF co = 2 THEN co = 9
+IF co = 3 THEN co = 15
+CIRCLE (40, y - 3), 30, co
+CIRCLE (10, y), 30, co
+CIRCLE (90, y + 10), 22, co
+CIRCLE (119, y - 1), 8, co
+CIRCLE (156, y - 10), 41, co
+SOUND 2000 + y, .09
+NEXT y
+END SUB
+

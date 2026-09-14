@@ -1,0 +1,6 @@
+ECHO OFF
+CLS
+ECHO Please stand by.....
+QBASIC /RUN HELLPIT1.BAS
+
+

@@ -1,0 +1,20 @@
+- Edited September 26, 1997
+
+ HELLPIT I completed Late March 1997
+ HELLPIT II completed Mid May 1997                       
+ HELLPIT III completed Late June 1997
+ TRILOGY debugged, altered, and completed Early August 1997
+
+        Thank you for taking the time to read this file.  I'll start off by
+telling you that this is one of the best RPG series' to ever be completed in
+QBasic.  Play the games in order to fully understand the storyline.  To run
+the games, use 'trilogy.bat', or if you want to go directly to a game, just
+type in which one it is ('hellpit1', 'hellpit2', etc.).
+        
+        There are many new secrets added.  Beat the games to see the secrets
+of the games.  That's about it.  DON'T EDIT ANY OF THESE!  Now I'm done.
+
+SEND COMMENTS TO: PANTERA55@aol.com
+VISIT FIG WEB SITE AT: http://members.aol.com/PANTERA55
+ASK HOW TO JOIN FIG BY EMAILING: PANTERA55@aol.com
+

@@ -1,0 +1,349 @@
+DECLARE SUB setrgb (Nr!, r!, g!, B!)
+DECLARE SUB ll (x!, y!, l$, c!)
+DECLARE SUB cl (x!, y!, l$, c!)
+
+SCREEN 8
+
+COLOR 0, 0
+
+CLS
+
+PAINT (1, 1), 0
+LINE (20, 10)-(620, 190), 4, BF
+
+cl 160, 40, "T", 1
+cl 175, 40, "H", 1
+cl 190, 40, "A", 1
+cl 205, 40, "N", 1
+cl 220, 40, "K", 1
+cl 235, 40, "S", 1
+
+cl 265, 40, "F", 1
+cl 280, 40, "O", 1
+cl 295, 40, "R", 1
+
+cl 325, 40, "P", 1
+cl 340, 40, "L", 1
+cl 355, 40, "A", 1
+cl 370, 40, "Y", 1
+cl 385, 40, "I", 1
+cl 400, 40, "N", 1
+cl 415, 40, "G", 1
+
+ll 180, 80, "H", 2
+ll 200, 80, "E", 2
+ll 220, 80, "L", 2
+ll 240, 80, "L", 2
+ll 260, 80, "P", 2
+ll 280, 80, "I", 2
+ll 300, 80, "T", 2
+
+ll 340, 80, "I", 2
+ll 355, 80, "I", 2
+ll 370, 80, "I", 2
+
+cl 200, 100, "F", 2
+cl 215, 100, "I", 2
+cl 230, 100, "N", 2
+cl 245, 100, "A", 2
+cl 260, 100, "L", 2
+
+cl 295, 100, "F", 2
+cl 310, 100, "L", 2
+cl 325, 100, "A", 2
+cl 340, 100, "M", 2
+cl 355, 100, "E", 2
+
+0
+
+FOR s = 0 TO 63
+
+setrgb 1, 0, 0, -s
+setrgb 4, s, 0, 0
+setrgb 0, s, s, s
+setrgb 2, 0, -s, 0
+
+IF INKEY$ <> "" THEN GOTO 1
+NEXT s
+
+FOR s = 63 TO 0 STEP -1
+
+setrgb 1, 0, 0, -s
+setrgb 4, s, 0, 0
+setrgb 0, s, s, s
+setrgb 2, 0, -s, 0
+
+IF INKEY$ <> "" THEN GOTO 1
+
+NEXT s
+
+GOTO 0
+
+1
+SYSTEM
+
+SUB cl (x, y, l$, c)
+        COLOR c
+SELECT CASE l$
+        CASE IS = "A"
+        LINE (x, y + 8)-(x + 5, y)
+        LINE -(x + 10, y + 8)
+        LINE (x + 3, y + 4)-(x + 7, y + 4)
+        CASE IS = "B"
+        LINE (x, y)-(x + 8, y)
+        LINE -(x + 10, y + 1)
+        LINE -(x + 10, y + 3)
+        LINE -(x + 7, y + 4)
+        LINE -(x + 10, y + 5)
+        LINE -(x + 10, y + 7)
+        LINE -(x + 8, y + 8)
+        LINE -(x, y + 8)
+        LINE (x + 1, y + 4)-(x + 8, y + 4)
+        LINE (x + 1, y)-(x + 1, y + 8)
+        CASE IS = "C"
+        CIRCLE (x + 5, y + 4), 6, , .61, 5.7, .64
+        CASE IS = "D"
+        LINE (x, y)-(x + 7, y)
+        LINE -(x + 10, y + 4)
+        LINE -(x + 7, y + 8)
+        LINE -(x, y + 8)
+        LINE (x + 1, y)-(x + 1, y + 8)
+        CASE IS = "E"
+        LINE (x, y)-(x + 10, y)
+        LINE (x, y + 8)-(x + 10, y + 8)
+        LINE (x + 1, y + 4)-(x + 7, y + 4)
+        LINE (x + 1, y)-(x + 1, y + 8)
+        CASE IS = "F"
+        LINE (x, y)-(x + 10, y)
+        LINE (x + 1, y + 4)-(x + 7, y + 4)
+        LINE (x + 1, y)-(x + 1, y + 8)
+        CASE IS = "G"
+        CIRCLE (x + 5, y + 4), 6, , .61, 5.7, .64
+        LINE (x + 10, y + 5)-(x + 6, y + 5)
+        CASE IS = "H"
+        LINE (x, y)-(x, y + 8)
+        LINE (x + 10, y)-(x + 10, y + 8)
+        LINE (x, y + 4)-(x + 10, y + 4)
+        CASE IS = "I"
+        LINE (x, y)-(x + 10, y)
+        LINE (x, y + 8)-(x + 10, y + 8)
+        LINE (x + 5, y)-(x + 5, y + 8)
+        CASE IS = "J"
+        LINE (x, y)-(x + 10, y)
+        LINE (x + 6, y)-(x + 6, y + 8)
+        LINE -(x, y + 8)
+        LINE -(x, y + 5)
+        CASE IS = "K"
+        LINE (x, y)-(x, y + 8)
+        LINE (x + 10, y)-(x, y + 4)
+        LINE -(x + 10, y + 8)
+        CASE IS = "L"
+        LINE (x, y)-(x, y + 8)
+        LINE -(x + 10, y + 8)
+        CASE IS = "M"
+        LINE (x, y + 8)-(x, y)
+        LINE -(x + 5, y + 5)
+        LINE -(x + 10, y)
+        LINE -(x + 10, y + 8)
+        CASE IS = "N"
+        LINE (x, y + 8)-(x, y)
+        LINE -(x + 10, y + 8)
+        LINE -(x + 10, y)
+        CASE IS = "O"
+        CIRCLE (x + 5, y + 4), 6, , , , .64
+        CASE IS = "P"
+        LINE (x, y + 8)-(x, y)
+        LINE -(x + 10, y)
+        LINE -(x + 10, y + 4)
+        LINE -(x, y + 4)
+        CASE IS = "Q"
+        CIRCLE (x + 5, y + 4), 6, , , , .64
+        LINE (x + 7, y + 5)-(x + 10, y + 8)
+        CASE IS = "R"
+        LINE (x, y + 8)-(x, y)
+        LINE -(x + 10, y)
+        LINE -(x + 10, y + 4)
+        LINE -(x, y + 4)
+        LINE (x + 6, y + 4)-(x + 10, y + 8)
+        CASE IS = "S"
+        LINE (x + 10, y)-(x, y)
+        LINE -(x, y + 4)
+        LINE -(x + 10, y + 4)
+        LINE -(x + 10, y + 8)
+        LINE -(x, y + 8)
+        CASE IS = "T"
+        LINE (x, y)-(x + 10, y)
+        LINE (x + 5, y)-(x + 5, y + 8)
+        CASE IS = "U"
+        LINE (x, y)-(x, y + 7)
+        LINE (x + 1, y + 8)-(x + 9, y + 8)
+        LINE (x + 10, y + 7)-(x + 10, y)
+        CASE IS = "V"
+        LINE (x, y)-(x + 5, y + 8)
+        LINE -(x + 10, y)
+        CASE IS = "W"
+        LINE (x, y)-(x, y + 8)
+        LINE -(x + 5, y + 3)
+        LINE -(x + 10, y + 8)
+        LINE -(x + 10, y)
+        CASE IS = "X"
+        LINE (x, y)-(x + 10, y + 8)
+        LINE (x, y + 8)-(x + 10, y)
+        CASE IS = "Y"
+        LINE (x, y)-(x + 5, y + 4)
+        LINE (x + 10, y)-(x, y + 8)
+        CASE IS = "Z"
+        LINE (x, y)-(x + 10, y)
+        LINE -(x, y + 8)
+        LINE -(x + 10, y + 8)
+      
+        END SELECT
+END SUB
+
+SUB ll (x, y, l$, c)
+
+SELECT CASE l$
+        CASE IS = "A"
+        LINE (x, y + 2)-(x, y), c
+        LINE -(x + 15, y), c
+        LINE -(x + 15, y + 10), c
+        LINE -(x + 15, y + 6), c
+        LINE -(x + 3, y + 6), c
+        LINE (x + 3, y)-(x + 3, y + 10), c
+        CASE IS = "B"
+        LINE (x, y + 3)-(x + 5, y), c
+        LINE (x + 5, y)-(x + 18, y + 5), c, B
+        LINE -(x + 5, y + 10), c, B
+        CASE IS = "C"
+        LINE (x, y)-(x + 15, y), c
+        LINE (x, y)-(x, y + 10), c
+        LINE -(x + 15, y + 10), c
+        CASE IS = "D"
+        LINE (x, y)-(x + 13, y), c
+        LINE -(x + 15, y + 2), c
+        LINE -(x + 15, y + 8), c
+        LINE -(x + 13, y + 10), c
+        LINE -(x + 2, y + 10), c
+        LINE -(x + 2, y), c
+        CASE IS = "E"
+        LINE (x, y)-(x + 15, y), c
+        LINE (x, y + 10)-(x + 15, y + 10), c
+        LINE (x + 3, y)-(x + 3, y + 10), c
+        LINE (x + 3, y + 5)-(x + 12, y + 5), c
+        CASE IS = "F"
+        LINE (x, y)-(x + 15, y), c
+        LINE (x + 3, y)-(x + 3, y + 10), c
+        LINE (x + 3, y + 5)-(x + 12, y + 5), c
+        CASE IS = "G"
+        LINE (x, y)-(x + 15, y), c
+        LINE -(x + 15, y + 3), c
+        LINE (x, y)-(x, y + 10), c
+        LINE -(x + 15, y + 10), c
+        LINE -(x + 15, y + 6), c
+        LINE -(x + 6, y + 6), c
+        CASE IS = "H"
+        LINE (x, y)-(x, y + 10), c
+        LINE (x, y + 4)-(x + 15, y + 4), c
+        LINE (x + 15, y)-(x + 15, y + 10), c
+        CASE IS = "I"
+        LINE (x, y + 3)-(x, y), c
+        LINE -(x + 15, y), c
+        LINE (x + 7, y)-(x + 7, y + 10), c
+        LINE (x, y + 10)-(x + 15, y + 10), c
+        CASE IS = "J"
+        LINE (x, y + 3)-(x, y), c
+        LINE -(x + 15, y), c
+        LINE (x + 9, y)-(x + 9, y + 8), c
+        LINE -(x + 5, y + 10), c
+        LINE -(x + 2, y + 10), c
+        LINE -(x, y + 7), c
+        CASE IS = "K"
+        LINE (x, y)-(x + 3, y), c
+        LINE -(x + 3, y + 10), c
+        LINE (x + 3, y + 5)-(x + 13, y), c
+        LINE -(x + 15, y), c
+        LINE (x + 3, y + 5)-(x + 15, y + 10), c
+        CASE IS = "L"
+        LINE (x, y)-(x + 3, y), c
+        LINE -(x + 3, y + 10), c
+        LINE (x, y + 10)-(x + 15, y + 10), c
+        LINE -(x + 15, y + 7), c
+        CASE IS = "M"
+        LINE (x, y)-(x + 2, y), c
+        LINE -(x + 2, y + 10), c
+        LINE (x + 2, y)-(x + 9, y + 4), c
+        LINE -(x + 15, y), c
+        LINE -(x + 15, y + 10), c
+        CASE IS = "N"
+        LINE (x, y)-(x + 2, y), c
+        LINE -(x + 2, y + 10), c
+        LINE (x + 2, y)-(x + 15, y + 10), c
+        LINE -(x + 15, y), c
+        CASE IS = "O"
+        LINE (x, y + 2)-(x, y), c
+        LINE -(x + 2, y), c
+        LINE (x + 2, y)-(x + 15, y + 10), c, B
+        CASE IS = "P"
+        LINE (x, y)-(x + 2, y), c
+        LINE -(x + 15, y + 4), c, B
+        LINE (x + 2, y)-(x + 2, y + 10), c
+        CASE IS = "Q"
+        LINE (x, y + 2)-(x, y), c
+        LINE -(x + 2, y), c
+        LINE (x + 2, y)-(x + 15, y + 10), c, B
+        LINE (x + 12, y + 7)-(x + 15, y + 10), c
+        CASE IS = "R"
+        LINE (x, y)-(x + 2, y), c
+        LINE -(x + 15, y + 4), c, B
+        LINE (x + 2, y)-(x + 2, y + 10), c
+        LINE (x + 5, y + 4)-(x + 15, y + 10), c
+        CASE IS = "S"
+        LINE (x + 15, y)-(x, y + 5), c
+        LINE -(x + 15, y + 5), c
+        LINE -(x, y + 10), c
+        CASE IS = "T"
+        LINE (x, y + 2)-(x, y), c
+        LINE -(x + 15, y), c
+        LINE (x + 7, y)-(x + 7, y + 10), c
+        CASE IS = "U"
+        LINE (x, y)-(x, y + 10), c
+        LINE -(x + 15, y + 10), c
+        LINE -(x + 15, y), c
+        CASE IS = "V"
+        LINE (x, y)-(x + 3, y), c
+        LINE -(x + 9, y + 10), c
+        LINE -(x + 15, y), c
+        CASE IS = "W"
+        LINE (x, y)-(x + 1, y), c
+        LINE -(x + 1, y + 10), c
+        LINE -(x + 8, y), c
+        LINE -(x + 15, y + 10), c
+        LINE -(x + 15, y), c
+        CASE IS = "X"
+        LINE (x, y)-(x + 1, y), c
+        LINE -(x + 15, y + 10), c
+        LINE (x, y + 10)-(x + 1, y + 10), c
+        LINE -(x + 15, y), c
+        CASE IS = "Y"
+        LINE (x, y + 2)-(x, y), c
+        LINE -(x + 1, y), c
+        LINE -(x + 8, y + 4), c
+        LINE -(x + 15, y), c
+        LINE (x + 8, y + 4)-(x + 8, y + 10), c
+        CASE IS = "Z"
+        LINE (x, y + 2)-(x, y), c
+        LINE -(x + 15, y), c
+        LINE -(x, y + 10), c
+        LINE -(x + 15, y + 10), c
+        LINE -(x + 15, y + 8), c
+END SELECT
+
+END SUB
+
+SUB setrgb (Nr, r, g, B)
+  OUT &H3C8, Nr
+  OUT &H3C9, r
+  OUT &H3C9, g
+  OUT &H3C9, B
+END SUB
+
