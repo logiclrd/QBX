@@ -506,7 +506,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 				int xStart = x1;
 				int y = y1;
-				int yError = (dx + 1) >> 1;
+				int yError = sy * ((dx + 1) >> 1);
 
 				for (int x = x1; x <= x2; x++)
 				{
@@ -532,7 +532,7 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 				int sx = Math.Sign(x2 - x1);
 
-				for (int x = x1, y = y1, xError = (dy + 1) >> 1; y <= y2; y++)
+				for (int x = x1, y = y1, xError = sx * ((dy + 1) >> 1); y <= y2; y++)
 				{
 					PixelSet(x, y, attribute);
 
