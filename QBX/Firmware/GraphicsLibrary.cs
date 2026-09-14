@@ -492,34 +492,49 @@ public abstract class GraphicsLibrary : VisualLibrary
 	{
 		using (HidePointerForOperationIfPointerAware(x1, y1, x2, y2))
 		{
-			int dx = 2 * Math.Abs(x1 - x2);
-			int dy = 2 * Math.Abs(y1 - y2);
+			// This algorithm is a direct adaptation of the QBASIC LINE algorithm.
 
+			// First, ensure that x1 < x2, always.
+			if (x1 > x2)
+				(x1, y1, x2, y2) = (x2, y2, x1, y1);
+
+			// Then, calculate the deltas.
+			int dx = x2 - x1;
+			int dy = y2 - y1;
+
+			if (dy < 0)
+				dy = -dy;
+
+			// Direction we will be advancing y.
+			int sy = Math.Sign(y2 - y1);
+
+			// Out-of-band: Stash the last point for the next graphics operation.
 			LastPoint = CoordinateSystem.TranslateScreenToWindow(x2, y2);
 
 			if (dx > dy)
 			{
-				if (x1 > x2)
-					(x1, y1, x2, y2) = (x2, y2, x1, y1);
-
-				int sy = Math.Sign(y2 - y1);
+				// X-major: Line decomposes into horizontal spans, for which we have a primitive.
 
 				int xStart = x1;
 				int y = y1;
-				int yError = (dx >> 1) - dy;
+				int yError = 4 * dy - dx;
 
-				for (int x = x1; x <= x2; x++)
+				int stayIncrement = 4 * dy;
+				int advanceIncrement = 4 * (dy - dx);
+
+				// Decisions affect the next column, so x2 itself doesn't require a decision.
+				for (int x = x1; x < x2; x++)
 				{
-					yError += dy;
-
-					if (yError > dx)
+					if (yError < 0)
+						yError += stayIncrement;
+					else
 					{
-						HorizontalLine(xStart, x - 1, y, attribute);
+						HorizontalLine(xStart, x, y, attribute);
 
-						xStart = x;
-
-						yError -= dx;
+						xStart = x + 1;
 						y += sy;
+
+						yError += advanceIncrement;
 					}
 				}
 
@@ -527,21 +542,25 @@ public abstract class GraphicsLibrary : VisualLibrary
 			}
 			else
 			{
-				if (y1 > y2)
-					(x1, y1, x2, y2) = (x2, y2, x1, y1);
+				// Y-major: Line decomposes into individual pixels, one per row.
 
-				int sx = Math.Sign(x2 - x1);
+				int x = x1;
+				int y = y1;
+				int xError = 4 * dx - dy;
 
-				for (int x = x1, y = y1, xError = dy >> 1; y <= y2; y++)
+				int stayIncrement = 4 * dx;
+				int advanceIncrement = 4 * (dx - dy);
+
+				for (int i = 0; i <= dy; i++, y += sy)
 				{
 					PixelSet(x, y, attribute);
 
-					xError += dx;
-
-					if (xError > dy)
+					if (xError < 0)
+						xError += stayIncrement;
+					else
 					{
-						xError -= dy;
-						x += sx;
+						x++;
+						xError += advanceIncrement;
 					}
 				}
 			}
