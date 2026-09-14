@@ -338,7 +338,7 @@ namespace QBX.DevelopmentEnvironment
 
 							if (showIDEUIFeedback)
 							{
-								FocusedViewport.Heading = Path.GetFileName(resolvedPath);
+								FocusedViewport.Heading = ShortPath.GetFileName(resolvedPath);
 								Render();
 
 								lineCountCallback =
