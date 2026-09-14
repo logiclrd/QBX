@@ -7,6 +7,7 @@ using QBX.CodeModel.Statements;
 using QBX.DevelopmentEnvironment;
 using QBX.ExecutionEngine.Compiled;
 using QBX.LexicalAnalysis;
+using QBX.OperatingSystem;
 using QBX.Parser;
 using QBX.Utility;
 
@@ -37,7 +38,7 @@ public class CompilationUnit : IRenderableCode, IEditableUnit
 			_filePath = value;
 			_hasFilePath = true;
 
-			_name = Path.GetFileName(_filePath);
+			_name = ShortPath.GetFileName(_filePath);
 		}
 	}
 
