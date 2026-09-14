@@ -1904,6 +1904,12 @@ public class BasicParser(IdentifierRepository identifierRepository)
 						}
 					}
 
+					// IF a THEN b
+					// IF a THEN b ELSE c
+					// IF a THEN IF b THEN c ELSE d
+					// IF a THEN IF b THEN c ELSE d ELSE e
+					//           ^-- we start here with nestingLevel = 0, so we don't treat ELSE as a separator when nestingLevel > 0
+
 					while (true)
 					{
 						int separator = -1;
@@ -1937,7 +1943,10 @@ public class BasicParser(IdentifierRepository identifierRepository)
 								break;
 							}
 
-							recognizeIf = (subtoken.Type == TokenType.Colon);
+							recognizeIf =
+								(subtoken.Type == TokenType.Colon) ||
+								(subtoken.Type == TokenType.THEN) ||
+								(subtoken.Type == TokenType.ELSE);
 						}
 
 						if (separator < 0)
