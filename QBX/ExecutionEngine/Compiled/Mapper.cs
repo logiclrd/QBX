@@ -904,12 +904,15 @@ public class Mapper
 	{
 		void MatchUpNumberOfDimensions(int index)
 		{
-			var variable = _variables[index];
+			if (numberOfDimensions > 0)
+			{
+				var variable = _variables[index];
 
-			if (variable.NumberOfArrayDimensions < 0)
-				variable.NumberOfArrayDimensions = numberOfDimensions;
-			else if ((numberOfDimensions > 0) && (numberOfDimensions != variable.NumberOfArrayDimensions))
-				throw CompilerException.WrongNumberOfDimensions(nameToken);
+				if (variable.NumberOfArrayDimensions < 0)
+					variable.NumberOfArrayDimensions = numberOfDimensions;
+				else if (numberOfDimensions != variable.NumberOfArrayDimensions)
+					throw CompilerException.WrongNumberOfDimensions(nameToken);
+			}
 		}
 
 		implicitlyCreated = false;
@@ -986,6 +989,25 @@ public class Mapper
 		}
 
 		// Array
+
+		if (_arrayIndexByName.TryGetValue(name, out _))
+			return true;
+
+		if (qualifiedName != name)
+		{
+			if (_arrayIndexByName.TryGetValue(qualifiedName, out _))
+				return true;
+		}
+
+		return false;
+	}
+
+	public bool IsDeclaredArray(Identifier identifier, DataType dataType)
+		=> IsDeclaredArray(identifier.Value, dataType);
+
+	public bool IsDeclaredArray(string name, DataType dataType)
+	{
+		var qualifiedName = QualifyIdentifier(name, dataType);
 
 		if (_arrayIndexByName.TryGetValue(name, out _))
 			return true;

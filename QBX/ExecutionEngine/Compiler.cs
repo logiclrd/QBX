@@ -1435,7 +1435,10 @@ public class Compiler(IdentifierRepository identifierRepository)
 							variableIndex = mapper.DeclareArray(declaration.Name, dataType, declaration.NumberOfDimensions, declaration.NameToken);
 						else
 						{
-							variableIndex = mapper.ResolveArray(declaration.Name, dataType, declaration.NumberOfDimensions, out isNewArrayVariable, declaration.NameToken);
+							if (mapper.IsDeclaredArray(declaration.Name, dataType))
+								variableIndex = mapper.ResolveArray(declaration.Name, dataType, declaration.NumberOfDimensions, out isNewArrayVariable, declaration.NameToken);
+							else
+								variableIndex = mapper.DeclareArray(declaration.Name, dataType, declaration.NumberOfDimensions, declaration.NameToken);
 
 							if (routine.IsStaticArray(variableIndex))
 								throw CompilerException.ArrayAlreadyDimensioned(declaration.NameToken);
