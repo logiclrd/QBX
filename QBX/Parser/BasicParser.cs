@@ -473,17 +473,37 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 	internal Statement ParseStatementWithIndentation(ListRange<Token> tokens, Func<IEnumerable<Token>> consumeTokensToEndOfLine, bool isNested, Token endToken, bool ignoreErrors)
 	{
-		var indentation = "";
-
-		if ((tokens.Count > 0) && (tokens[0].Type == TokenType.Whitespace))
+		if (tokens.Any(token => token.Type == TokenType.Whitespace))
 		{
-			indentation = tokens[0].Value ?? "";
-			tokens = tokens.Slice(1);
+			var collapsed = new List<Token>();
+
+			var whitespace = new StringBuilder();
+
+			foreach (var t in tokens)
+			{
+				if (t.Type == TokenType.Whitespace)
+					whitespace.Append(t.Value);
+				else
+				{
+					if (whitespace.Length > 0)
+					{
+						t.PrecedingWhitespace = whitespace + t.PrecedingWhitespace;
+						whitespace.Clear();
+					}
+
+					collapsed.Add(t);
+				}
+			}
+
+			tokens = collapsed;
 		}
 
-		if ((tokens.Count > 0) && !string.IsNullOrEmpty(tokens[0].PrecedingWhitespace))
+		var indentation = "";
+
+		if ((tokens.Count > 0)
+		 && (tokens[0].PrecedingWhitespace is string leadingWhitespace))
 		{
-			indentation += tokens[0].PrecedingWhitespace;
+			indentation = leadingWhitespace;
 			tokens[0].PrecedingWhitespace = "";
 		}
 
@@ -527,31 +547,6 @@ public class BasicParser(IdentifierRepository identifierRepository)
 	{
 		if (!tokens.Any(token => token.Type != TokenType.Whitespace))
 			return new EmptyStatement();
-
-		if (tokens.Any(token => token.Type == TokenType.Whitespace))
-		{
-			var collapsed = new List<Token>();
-
-			var whitespace = new StringBuilder();
-
-			foreach (var t in tokens)
-			{
-				if (t.Type == TokenType.Whitespace)
-					whitespace.Append(t.Value);
-				else
-				{
-					if (whitespace.Length > 0)
-					{
-						t.PrecedingWhitespace = whitespace + t.PrecedingWhitespace;
-						whitespace.Clear();
-					}
-
-					collapsed.Add(t);
-				}
-			}
-
-			tokens = collapsed;
-		}
 
 		var tokenHandler = new TokenHandler(tokens, identifierRepository);
 
