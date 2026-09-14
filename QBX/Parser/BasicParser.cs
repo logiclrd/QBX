@@ -529,7 +529,29 @@ public class BasicParser(IdentifierRepository identifierRepository)
 			return new EmptyStatement();
 
 		if (tokens.Any(token => token.Type == TokenType.Whitespace))
-			tokens = tokens.Where(token => token.Type != TokenType.Whitespace).ToList();
+		{
+			var collapsed = new List<Token>();
+
+			var whitespace = new StringBuilder();
+
+			foreach (var t in tokens)
+			{
+				if (t.Type == TokenType.Whitespace)
+					whitespace.Append(t.Value);
+				else
+				{
+					if (whitespace.Length > 0)
+					{
+						t.PrecedingWhitespace = whitespace + t.PrecedingWhitespace;
+						whitespace.Clear();
+					}
+
+					collapsed.Add(t);
+				}
+			}
+
+			tokens = collapsed;
+		}
 
 		var tokenHandler = new TokenHandler(tokens, identifierRepository);
 
