@@ -492,8 +492,8 @@ public abstract class GraphicsLibrary : VisualLibrary
 	{
 		using (HidePointerForOperationIfPointerAware(x1, y1, x2, y2))
 		{
-			int dx = Math.Abs(x1 - x2);
-			int dy = Math.Abs(y1 - y2);
+			int dx = 2 * Math.Abs(x1 - x2);
+			int dy = 2 * Math.Abs(y1 - y2);
 
 			LastPoint = CoordinateSystem.TranslateScreenToWindow(x2, y2);
 
@@ -506,13 +506,13 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 				int xStart = x1;
 				int y = y1;
-				int yError = (dx + 1) >> 1;
+				int yError = (dx >> 1) - dy;
 
 				for (int x = x1; x <= x2; x++)
 				{
 					yError += dy;
 
-					if (yError >= dx)
+					if (yError > dx)
 					{
 						HorizontalLine(xStart, x - 1, y, attribute);
 
@@ -532,13 +532,13 @@ public abstract class GraphicsLibrary : VisualLibrary
 
 				int sx = Math.Sign(x2 - x1);
 
-				for (int x = x1, y = y1, xError = (dy + 1) >> 1; y <= y2; y++)
+				for (int x = x1, y = y1, xError = dy >> 1; y <= y2; y++)
 				{
 					PixelSet(x, y, attribute);
 
 					xError += dx;
 
-					if (xError >= dy)
+					if (xError > dy)
 					{
 						xError -= dy;
 						x += sx;
