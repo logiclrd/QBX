@@ -215,6 +215,19 @@ DECLARE FUNCTION IsNaNOrInf% (d#)
 DECLARE FUNCTION MeasureText% (text$)
 DECLARE FUNCTION RandomDustColour% ()
 
+DECLARE SUB GUSReset ()
+
+DECLARE SUB S3MFrameWait (frameticks%, lastframetick&, rowticks%, lastrowtick&, tickbase&, samples() AS SampleType, notes() AS NoteType, rownotes%(), nextrow%, nextnote%, channellastsample%(), globalvolume!)
+DECLARE SUB S3MInitializeTiming (lastframetick&, lastrowtick&, tickbase&)
+DECLARE SUB S3MJumpToSong (song AS SongType, nextrow%, nextnote%)
+DECLARE SUB S3MLoad (filenum%, samples() AS SampleType, songs() AS SongType, notes() AS NoteType, rownotes%(), globalvolume!, fps%, frameticks%, rowticks%, tickfrequency%)
+DECLARE SUB S3MMeasure (filenum%, numsamples%, numsongs%, numnotes%, numrows%)
+DECLARE SUB S3MPlayNote (samples() AS SampleType, note AS NoteType, channellastsample%(), globalvolume!)
+DECLARE SUB S3MProgramTimerRate (tickspersecond#)
+DECLARE SUB S3MResetTimerRate ()
+DECLARE SUB S3MRowUpdateCheck (rowticks%, lastrowtick&, tickbase&, samples() AS SampleType, notes() AS NoteType, rownotes%(), nextrow%, nextnote%, channellastsample%(), globalvolume!)
+DECLARE SUB S3MStop (nextrow%, nextnote%)
+
 TYPE RegTypeX
   AX AS INTEGER
   BX AS INTEGER
@@ -234,7 +247,7 @@ DIM rin AS RegTypeX, rout AS RegTypeX
 
 CONST FPSLimit% = 32
 
-CONST PI# = 3.14159265358979
+CONST PI# = 3.14159265358979#
 
 CONST FighterMomentum# = .8
 CONST FighterReticleAttraction# = .6
@@ -756,7 +769,7 @@ DO
         IF shotindex% <= MaxShots% THEN
           gunheat% = guncooldown%
 
-          angle# = PI# * .5 - 12 * SIN(fightertiltangle#) / 57.295779
+          angle# = PI# * .5 - 12 * SIN(fightertiltangle#) / 57.295779#
           cosa# = COS(angle#)
           sina# = SIN(angle#)
 
@@ -914,9 +927,9 @@ DO
 
       ScaleTransform transform#(), 3
 
-      RotateTransformZ transform#(), -10 * SIN(fightertiltangle#) / 57.295779
-      RotateTransformY transform#(), 10 * SIN(fightertiltangle#) / 57.295779
-      RotateTransformX transform#(), -100 / 57.295779
+      RotateTransformZ transform#(), -10 * SIN(fightertiltangle#) / 57.295779#
+      RotateTransformY transform#(), 10 * SIN(fightertiltangle#) / 57.295779#
+      RotateTransformX transform#(), -100 / 57.295779#
 
       RenderObject FighterVertices(), FighterNormals(), FighterFaces(), transform#(), rotation#(), FighterLightPosition, LightIntensity#, AmbientLightIntensity#, INT(fighterx#), FighterY%
     END IF
@@ -2107,9 +2120,9 @@ DO
 
     ScaleTransform transform#(), 3
 
-    RotateTransformZ transform#(), -10 * SIN(fightertiltangle#) / 57.295779
-    RotateTransformY transform#(), 10 * SIN(fightertiltangle#) / 57.295779
-    RotateTransformX transform#(), -100 / 57.295779
+    RotateTransformZ transform#(), -10 * SIN(fightertiltangle#) / 57.295779#
+    RotateTransformY transform#(), 10 * SIN(fightertiltangle#) / 57.295779#
+    RotateTransformX transform#(), -100 / 57.295779#
 
     RenderObject FighterVertices(), FighterNormals(), FighterFaces(), transform#(), rotation#(), FighterLightPosition, LightIntensity#, AmbientLightIntensity#, INT(fighterx#), INT(flyoffy#)
 
@@ -4063,7 +4076,7 @@ FOR i% = 1 TO MaxAliens%
           END IF
 
           IF Aliens(i%).Argument4 THEN
-            IF Aliens(i%).BossPieceWidth% > BossMinesMinimumWidth% THEN
+            IF Aliens(i%).BossPieceWidth > BossMinesMinimumWidth% THEN
               IF (Aliens(i%).FrameNumber AND 63) = 0 THEN
                 r# = RND - .5
 
