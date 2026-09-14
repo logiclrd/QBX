@@ -48,7 +48,7 @@ namespace QBX.DevelopmentEnvironment
 
 		public void LoadFile(string path, bool replaceExistingProgram, Action<int>? lineCountCallback = null, CodeModel.Statements.Statement? errorContext = null)
 		{
-			using (var reader = DOSOpenFile(path, errorContext))
+			using (var reader = DOSOpenFileReader(path, errorContext))
 				LoadFile(reader, path, replaceExistingProgram, lineCountCallback);
 		}
 
@@ -102,7 +102,7 @@ namespace QBX.DevelopmentEnvironment
 				{
 					try
 					{
-						makeFileReader = DOSOpenFile(makeFileName, errorContext);
+						makeFileReader = DOSOpenFileReader(makeFileName, errorContext);
 					}
 					catch { }
 				}
@@ -231,19 +231,21 @@ namespace QBX.DevelopmentEnvironment
 
 		public void SaveFile(IEditableUnit editable, string filePath, bool saveBackup = true)
 		{
-			if (saveBackup && File.Exists(filePath))
+			string longFilePath = ShortFileNames.Unmap(filePath);
+
+			if (saveBackup && File.Exists(longFilePath))
 			{
-				string backupExtension = Path.GetExtension(filePath) ?? ".BAS";
+				string backupExtension = Path.GetExtension(longFilePath) ?? ".BAS";
 
 				backupExtension = backupExtension.Remove(backupExtension.Length - 1) + "~";
 
-				string backupFilePath = Path.ChangeExtension(filePath, backupExtension);
+				string backupFilePath = Path.ChangeExtension(longFilePath, backupExtension);
 
 				File.Delete(backupFilePath);
-				File.Move(filePath, backupFilePath);
+				File.Move(longFilePath, backupFilePath);
 			}
 
-			using (var writer = new StreamWriter(filePath) { NewLine = "\r\n" })
+			using (var writer = DOSOpenFileWriter(longFilePath))
 				Save(editable, writer);
 
 			editable.FilePath = filePath;
@@ -253,9 +255,9 @@ namespace QBX.DevelopmentEnvironment
 				(editable == LoadedFiles.FirstOrDefault()) &&
 				LoadedFiles.Any(unit => (unit != editable) && unit.IncludeInBuild);
 
-			string makeFileName = Path.ChangeExtension(filePath, ".MAK");
+			string makeFileName = Path.ChangeExtension(longFilePath, ".MAK");
 
-			if (!FileIdentityUtility.IsSameFile(filePath, makeFileName))
+			if (!FileIdentityUtility.IsSameFile(longFilePath, makeFileName))
 			{
 				if (isMultiModule)
 				{
@@ -276,10 +278,12 @@ namespace QBX.DevelopmentEnvironment
 			{
 				string basePath = Path.GetDirectoryName(Path.GetFullPath(makeFilePath)) ?? ".";
 
-				using (var writer = new StreamWriter(makeFilePath))
+				using (var writer = new StreamWriter(makeFilePath, append: false, new CP437Encoding(ControlCharacterInterpretation.Semantic)))
 				{
+					writer.NewLine = "\r\n";
+
 					foreach (var unit in LoadedFiles.Where(u => u.IncludeInBuild))
-						writer.WriteLine(Path.GetRelativePath(basePath, unit.FilePath));
+						writer.WriteLine(Path.GetRelativePath(basePath, ShortFileNames.Unmap(unit.FilePath)));
 				}
 
 				return true;
@@ -322,7 +326,7 @@ namespace QBX.DevelopmentEnvironment
 
 					try
 					{
-						moduleReader = DOSOpenFile(resolvedPath, errorContext);
+						moduleReader = DOSOpenFileReader(resolvedPath, errorContext);
 					}
 					catch {}
 
@@ -400,12 +404,7 @@ namespace QBX.DevelopmentEnvironment
 
 			var unit = CompilationUnit.CreateNew();
 
-			string filePath = fileName;
-
-			if (Path.GetDirectoryName(filePath) == null)
-				filePath = Path.Combine(Environment.CurrentDirectory, filePath);
-
-			unit.FilePath = filePath;
+			unit.FilePath = ShortFileNames.GetFullPath(fileName);
 
 			if (replaceExistingProgram)
 				ClearProgram();
@@ -479,7 +478,7 @@ namespace QBX.DevelopmentEnvironment
 			return ShowDialog(dialog);
 		}
 
-		StreamReader DOSOpenFile(string fileName, CodeModel.Statements.Statement? errorContext)
+		StreamReader DOSOpenFileReader(string fileName, CodeModel.Statements.Statement? errorContext)
 		{
 			int fileHandle = -1;
 			bool openSucceeded = false;
@@ -522,8 +521,6 @@ namespace QBX.DevelopmentEnvironment
 				regularFileDescriptor.UnderlyingStream,
 				new CP437Encoding(ControlCharacterInterpretation.Semantic));
 
-			string actualFilePath = regularFileDescriptor.PhysicalPath;
-
 			reader.Closed +=
 				(_, _) =>
 				{
@@ -531,6 +528,47 @@ namespace QBX.DevelopmentEnvironment
 				};
 
 			return reader;
+		}
+
+		StreamWriter DOSOpenFileWriter(string fileName, CodeModel.Statements.Statement? errorContext = null)
+		{
+			if (Path.GetExtension(fileName) == "")
+			{
+				string longFileName = ShortFileNames.Unmap(fileName);
+
+				if (!File.Exists(longFileName))
+					fileName = fileName.TrimEnd('.') + ".BAS";
+			}
+
+			int fileHandle = Machine.DOS.OpenFile(
+				fileName,
+				OSFileMode.Create,
+				OSOpenMode.Access_ReadWrite | OSOpenMode.Share_DenyWrite);
+
+			if (Machine.DOS.LastError != DOSError.None)
+				throw RuntimeException.ForDOSError(Machine.DOS.LastError, errorContext);
+
+			if ((fileHandle < 2) || (fileHandle >= Machine.DOS.Files.Count))
+				throw RuntimeException.ForDOSError(DOSError.InvalidHandle, errorContext);
+
+			var fileDescriptor = Machine.DOS.Files[fileHandle];
+
+			if (fileDescriptor is not RegularFileDescriptor regularFileDescriptor)
+				throw RuntimeException.ForDOSError(DOSError.GeneralFailure, errorContext);
+
+			var writer = new ScopedStreamWriter(
+				regularFileDescriptor.UnderlyingStream,
+				new CP437Encoding(ControlCharacterInterpretation.Semantic));
+
+			writer.NewLine = "\r\n";
+
+			writer.Closed +=
+				(_, _) =>
+				{
+					Machine.DOS.CloseFile(fileHandle);
+				};
+
+			return writer;
 		}
 	}
 }

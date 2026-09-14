@@ -486,7 +486,7 @@ public partial class Program
 
 					try
 					{
-						reader = DOSOpenFile(replacementFilePath, errorContext);
+						reader = DOSOpenFileReader(replacementFilePath, errorContext);
 					}
 					catch (Exception e)
 					{
