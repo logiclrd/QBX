@@ -2162,6 +2162,8 @@ public class Compiler(IdentifierRepository identifierRepository)
 							{
 								TranslateStatement(element, ref statement, iterator, scopeState, subsequence, routine, compilation, module, out nextStatementInfo);
 
+								iterator.ProcessLabels(module.DataParser, subsequence);
+
 								if (nextStatementInfo != null)
 								{
 									throw CompilerException.NextWithoutFor(
