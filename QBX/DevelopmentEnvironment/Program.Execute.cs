@@ -109,7 +109,7 @@ public partial class Program
 	ExecutionContext? _chainFromContext = null;
 
 	[MemberNotNull(nameof(_compilation))]
-	public bool Compile(ExecutionContext? chainFromContext, out bool chainExecution, ref StatementPath? startingLineNumber)
+	public bool Compile(ExecutionContext? chainFromContext, out bool chainExecution, ref StatementPath? startingLineNumber, Action? prepareToPresentError = null)
 	{
 		_compilation = new Compilation();
 
@@ -156,6 +156,8 @@ public partial class Program
 		}
 		catch (Exception e)
 		{
+			prepareToPresentError?.Invoke();
+
 			PresentError(e);
 			return false;
 		}
@@ -166,14 +168,14 @@ public partial class Program
 	}
 
 	[MemberNotNullWhen(true, nameof(_executionContext))]
-	public bool Restart(bool keepOutput = false, StatementPath? startingLineNumber = null, Routine? embeddedInRoutine = null, ExecutionContext? chainFromContext = null)
+	public bool Restart(bool keepOutput = false, StatementPath? startingLineNumber = null, Routine? embeddedInRoutine = null, ExecutionContext? chainFromContext = null, Action? prepareToPresentError = null)
 	{
 		Terminate(keepOutput);
 
 		if (!EnsureAllCodeIsParsed())
 			return false;
 
-		if (!Compile(chainFromContext, out bool chainExecution, ref startingLineNumber))
+		if (!Compile(chainFromContext, out bool chainExecution, ref startingLineNumber, prepareToPresentError))
 			return false;
 
 		return StartExecution(chainExecution, startingLineNumber, embeddedInRoutine);
@@ -469,10 +471,18 @@ public partial class Program
 
 	void UnpauseExecution(Action action)
 	{
+		void PurgeInputBuffer()
+		{
+			while (Machine.Keyboard.GetNextEvent() is not null)
+				;
+		}
+
 		// During chain execution, when the new module is loaded, the current
 		// execution state is completely cleared. We still need a reference to
 		// that object, though.
 		var executionContext = _executionContext!;
+
+		bool alreadyPresentedError = false;
 
 		do
 		{
@@ -490,6 +500,14 @@ public partial class Program
 					}
 					catch (Exception e)
 					{
+						PurgeInputBuffer();
+
+						SaveOutput();
+						SetIDEVideoMode();
+
+						if (_executionContext != null)
+							UpdateAfterBreak();
+
 						PresentError(e);
 						return;
 					}
@@ -510,7 +528,17 @@ public partial class Program
 				bool success = Restart(
 					chainFromContext: executionContext,
 					startingLineNumber: executionContext.ExecutionState.StartingLineNumber,
-					keepOutput: true);
+					keepOutput: true,
+					prepareToPresentError:
+						() =>
+						{
+							PurgeInputBuffer();
+
+							SaveOutput();
+							SetIDEVideoMode();
+
+							alreadyPresentedError = true;
+						});
 
 				if (!success)
 					break;
@@ -530,9 +558,7 @@ public partial class Program
 			}
 		} while (executionContext.ExecutionState.ReplaceRunningProgram);
 
-		// Purge input buffer
-		while (Machine.Keyboard.GetNextEvent() is not null)
-			;
+		PurgeInputBuffer();
 
 		if (AbortOnBreak || (executionContext.ExitAutoRunToSystem && AutoRun))
 			Machine.KeepRunning = false;
@@ -541,17 +567,20 @@ public partial class Program
 			// Having entered break mode, SYSTEM should no longer exit to system.
 			AutoRun = false;
 
-			if (executionContext.ExecutionState.IsTerminated)
-				ExecutionEpilogue();
-			else
+			if (!alreadyPresentedError)
 			{
-				SaveOutput();
-				SetIDEVideoMode();
+				if (executionContext.ExecutionState.IsTerminated)
+					ExecutionEpilogue();
+				else
+				{
+					SaveOutput();
+					SetIDEVideoMode();
 
-				UpdateAfterBreak();
+					UpdateAfterBreak();
 
-				if (executionContext.ExecutionState.CurrentError != null)
-					PresentError(executionContext.ExecutionState.CurrentError);
+					if (executionContext.ExecutionState.CurrentError != null)
+						PresentError(executionContext.ExecutionState.CurrentError);
+				}
 			}
 		}
 	}
