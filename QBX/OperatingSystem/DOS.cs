@@ -1084,6 +1084,9 @@ public partial class DOS
 				fileName = ShortFileNames.GetFullPath(fileName);
 				fileName = ShortFileNames.Unmap(fileName);
 
+				if (!File.Exists(fileName))
+					TryResolveFileName(ref fileName);
+
 				if (!ShortFileNames.TryMap(fileName, out var shortPath))
 				{
 					if (!File.Exists(fileName))
@@ -1153,6 +1156,36 @@ public partial class DOS
 			actionTaken = default;
 
 			return -1;
+		}
+	}
+
+	Dictionary<string, string>? _pathResolutionCache;
+	DateTime _pathResolutionCacheExpiryUTC;
+
+	static TimeSpan PathResolutionCacheTime = TimeSpan.FromSeconds(5);
+
+	void TryResolveFileName(ref string fileName)
+	{
+		// Handles two cases:
+		// - Case sensitivity
+		// - DOS file "FILENAME." might exist on the host as "FILENAME." or "FILENAME".
+
+		if ((DateTime.UtcNow >= _pathResolutionCacheExpiryUTC) || (_pathResolutionCache == null))
+		{
+			_pathResolutionCache = Directory.GetFiles(Path.GetDirectoryName(fileName) ?? ".")
+				.ToDictionary(x => x, StringComparer.InvariantCultureIgnoreCase);
+
+			_pathResolutionCacheExpiryUTC = DateTime.UtcNow + PathResolutionCacheTime;
+		}
+
+		if (_pathResolutionCache.TryGetValue(fileName, out var caseInsensitiveMatch))
+			fileName = caseInsensitiveMatch;
+		else if (fileName.EndsWith('.'))
+		{
+			string trimmedFileName = fileName.TrimEnd('.');
+
+			if (_pathResolutionCache.TryGetValue(trimmedFileName, out var trimmedMatch))
+				fileName = trimmedMatch;
 		}
 	}
 
