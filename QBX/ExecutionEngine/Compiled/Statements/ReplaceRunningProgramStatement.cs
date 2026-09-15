@@ -30,9 +30,27 @@ public class ReplaceRunningProgramStatement(CodeModel.Statements.Statement sourc
 
 		try
 		{
+			int fileHandle = context.Machine.DOS.OpenFile(
+				fileName,
+				OSFileMode.Open,
+				OSOpenMode.Access_ReadOnly | OSOpenMode.Share_DenyWrite);
+
+			if (context.Machine.DOS.LastError == DOSError.FileNotFound)
+			{
+				fileName = fileName.TrimEnd('.') + ".BAS";
+
+				fileHandle = context.Machine.DOS.OpenFile(
+					fileName,
+					OSFileMode.Open,
+					OSOpenMode.Access_ReadOnly | OSOpenMode.Share_DenyWrite);
+			}
+
+			if (context.Machine.DOS.LastError != DOSError.None)
+				throw RuntimeException.ForDOSError(context.Machine.DOS.LastError, Source);
+
 			ConfigureContext(context);
 
-			throw new ReplaceRunningProgram(fileName, source);
+			throw new ReplaceRunningProgram(fileName, fileHandle, source);
 		}
 		catch (DOSException ex)
 		{

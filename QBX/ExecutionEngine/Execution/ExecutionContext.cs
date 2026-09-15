@@ -488,11 +488,7 @@ public class ExecutionContext
 		{
 			AttachEvents();
 
-			if (_executionState.StartingLineNumber != null)
-			{
-				_goTo = _executionState.StartingLineNumber;
-				_executionState.StartingLineNumber = null;
-			}
+			_goTo = _executionState.ClaimStartingLineNumber();
 
 			try
 			{
@@ -504,7 +500,8 @@ public class ExecutionContext
 				// the queue. END, in fact, does not. :-)
 				_persistentRuntimeState.PlayProcessor.StopSound();
 
-				_executionState.SetReplaceRunningProgram(replacement.ReplacementFilePath, replacement.StartingLineNumber, replacement.ErrorContext);
+				_executionState.SetReplaceRunningProgram(replacement);
+
 				return -1;
 			}
 			catch (EndProgram) { }

@@ -6,10 +6,12 @@ namespace QBX.ExecutionEngine.Execution;
 public class ReplaceRunningProgram : EndProgram
 {
 	string? _replacementFilePath;
+	int? _replacementFileHandle;
 	StatementPath? _startingLineNumber;
 	Statement? _errorContext;
 
 	public string? ReplacementFilePath => _replacementFilePath;
+	public int? ReplacementFileHandle => _replacementFileHandle;
 	public StatementPath? StartingLineNumber => _startingLineNumber;
 	public Statement? ErrorContext => _errorContext;
 
@@ -23,9 +25,10 @@ public class ReplaceRunningProgram : EndProgram
 		_errorContext = errorContext;
 	}
 
-	public ReplaceRunningProgram(string replacementFilePath, Statement? errorContext)
+	public ReplaceRunningProgram(string replacementFilePath, int? replacementFileHandle, Statement? errorContext)
 	{
 		_replacementFilePath = replacementFilePath;
+		_replacementFileHandle = replacementFileHandle;
 		_errorContext = errorContext;
 	}
 }
