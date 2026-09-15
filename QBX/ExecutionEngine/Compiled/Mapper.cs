@@ -791,8 +791,6 @@ public class Mapper
 		{
 			if (_variableIndexByName.ContainsKey(qualifiedName))
 				throw CompilerException.DuplicateDefinition(token);
-			if (_variableIndexByName.ContainsKey(unqualifiedName))
-				throw CompilerException.DuplicateDefinition(token);
 		}
 
 		int index = _variables.Count;
