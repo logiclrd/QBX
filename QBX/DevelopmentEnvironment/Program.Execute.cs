@@ -120,7 +120,7 @@ public partial class Program
 		if (_chainFromContext != null)
 		{
 			chainExecution = _chainFromContext.ExecutionState.ChainExecution;
-			startingLineNumber = _chainFromContext.ExecutionState.StartingLineNumber;
+			startingLineNumber = _chainFromContext.ExecutionState.PeekStartingLineNumber();
 
 			if (chainExecution)
 				_compilation.CommonBlocks = _chainFromContext.CommonBlocks;
@@ -486,17 +486,18 @@ public partial class Program
 
 		do
 		{
-			if (executionContext.ExecutionState.ReplaceRunningProgram)
+			if (executionContext.ExecutionState.ReplaceRunningProgram is ReplaceRunningProgram replacementProgram)
 			{
-				if (executionContext.ExecutionState.ReplacementProgramFilePath is string replacementFilePath)
+				if (replacementProgram.ReplacementFilePath is string replacementFilePath)
 				{
-					var errorContext = executionContext.ExecutionState.ReplaceErrorContext;
+					int? replacementFileHandle = replacementProgram.ReplacementFileHandle;
+					var errorContext = replacementProgram.ErrorContext;
 
 					StreamReader reader;
 
 					try
 					{
-						reader = DOSOpenFileReader(replacementFilePath, errorContext);
+						reader = DOSOpenFileReader(replacementFilePath, replacementFileHandle, errorContext);
 					}
 					catch (Exception e)
 					{
@@ -509,6 +510,7 @@ public partial class Program
 							UpdateAfterBreak();
 
 						PresentError(e);
+
 						return;
 					}
 
@@ -527,7 +529,7 @@ public partial class Program
 
 				bool success = Restart(
 					chainFromContext: executionContext,
-					startingLineNumber: executionContext.ExecutionState.StartingLineNumber,
+					startingLineNumber: replacementProgram.StartingLineNumber,
 					keepOutput: true,
 					prepareToPresentError:
 						() =>
@@ -556,7 +558,7 @@ public partial class Program
 				using (Machine.DOS.EnableBreak())
 					executionContext.Controls.WaitForInterruption();
 			}
-		} while (executionContext.ExecutionState.ReplaceRunningProgram);
+		} while (executionContext.ExecutionState.ReplaceRunningProgram != null);
 
 		PurgeInputBuffer();
 
@@ -607,7 +609,8 @@ public partial class Program
 		else
 			RestoreOutput();
 
-		if (_executionContext.ExecutionState.IsTerminated && !_executionContext.ExecutionState.ReplaceRunningProgram)
+		if (_executionContext.ExecutionState.IsTerminated
+		 && (_executionContext.ExecutionState.ReplaceRunningProgram == null))
 		{
 			if (AbortOnBreak || (_executionContext.ExitAutoRunToSystem && AutoRun))
 				Machine.KeepRunning = false;

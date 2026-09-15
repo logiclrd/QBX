@@ -15,9 +15,7 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 	public bool IgnoreExplicitBreakFromNextStatement { get; set; }
 	public RuntimeException? CurrentError => _currentError;
 	public bool ChainExecution => _chainExecution;
-	public bool ReplaceRunningProgram => _replaceRunningProgram;
-	public string? ReplacementProgramFilePath => _replacementProgramFilePath;
-	public CodeModel.Statements.Statement? ReplaceErrorContext => _replaceErrorContext;
+	public ReplaceRunningProgram? ReplaceRunningProgram => _replaceRunningProgram;
 	public StatementPath? StartingLineNumber { get => _startingLineNumber; set => _startingLineNumber = value; }
 
 	public bool IsTerminated => _isTerminated;
@@ -30,9 +28,7 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 	Stack<StackFrame> _stack = new Stack<StackFrame>();
 	RuntimeException? _currentError = null;
 	bool _chainExecution;
-	bool _replaceRunningProgram;
-	string? _replacementProgramFilePath;
-	CodeModel.Statements.Statement? _replaceErrorContext;
+	ReplaceRunningProgram? _replaceRunningProgram;
 	StatementPath? _startingLineNumber;
 	bool _isTerminated;
 
@@ -257,12 +253,24 @@ public class ExecutionState : IReadOnlyExecutionState, IExecutionControls
 		_startingLineNumber = startingLineNumber;
 	}
 
-	public void SetReplaceRunningProgram(string? replacementFilePath, StatementPath? startingLineNumber, CodeModel.Statements.Statement? errorContext)
+	public StatementPath? PeekStartingLineNumber()
 	{
-		_replaceRunningProgram = true;
-		_replacementProgramFilePath = replacementFilePath;
-		_startingLineNumber = startingLineNumber;
-		_replaceErrorContext = errorContext;
+		return _startingLineNumber;
+	}
+
+	public StatementPath? ClaimStartingLineNumber()
+	{
+		var ret = _startingLineNumber;
+
+		_startingLineNumber = null;
+
+		return ret;
+	}
+
+	public void SetReplaceRunningProgram(ReplaceRunningProgram replacement)
+	{
+		_replaceRunningProgram = replacement;
+		_startingLineNumber = replacement.StartingLineNumber;
 	}
 
 	public void EndExecution()

@@ -479,34 +479,45 @@ namespace QBX.DevelopmentEnvironment
 		}
 
 		StreamReader DOSOpenFileReader(string fileName, CodeModel.Statements.Statement? errorContext)
+			=> DOSOpenFileReader(fileName, alreadyOpenFileHandle: null, errorContext);
+
+		StreamReader DOSOpenFileReader(string fileName, int? alreadyOpenFileHandle, CodeModel.Statements.Statement? errorContext)
 		{
-			int fileHandle = -1;
-			bool openSucceeded = false;
+			int fileHandle;
 
-			if (Path.GetExtension(fileName) == "")
+			if (alreadyOpenFileHandle.HasValue)
+				fileHandle = alreadyOpenFileHandle.Value;
+			else
 			{
-				fileHandle = Machine.DOS.OpenFile(
-					fileName,
-					OSFileMode.Open,
-					OSOpenMode.Access_ReadOnly | OSOpenMode.Share_DenyNone);
+				fileHandle = -1;
 
-				switch (Machine.DOS.LastError)
+				bool openSucceeded = false;
+
+				if (Path.GetExtension(fileName) == "")
 				{
-					case DOSError.None: openSucceeded = true; break;
-					case DOSError.FileNotFound: fileName = fileName.TrimEnd('.') + ".BAS"; break;
-					default: throw RuntimeException.ForDOSError(Machine.DOS.LastError, errorContext);
+					fileHandle = Machine.DOS.OpenFile(
+						fileName,
+						OSFileMode.Open,
+						OSOpenMode.Access_ReadOnly | OSOpenMode.Share_DenyNone);
+
+					switch (Machine.DOS.LastError)
+					{
+						case DOSError.None: openSucceeded = true; break;
+						case DOSError.FileNotFound: fileName = fileName.TrimEnd('.') + ".BAS"; break;
+						default: throw RuntimeException.ForDOSError(Machine.DOS.LastError, errorContext);
+					}
 				}
-			}
 
-			if (!openSucceeded) // try again because we've altered fileName
-			{
-				fileHandle = Machine.DOS.OpenFile(
-					fileName,
-					OSFileMode.Open,
-					OSOpenMode.Access_ReadOnly | OSOpenMode.Share_DenyNone);
+				if (!openSucceeded) // try again because we've altered fileName
+				{
+					fileHandle = Machine.DOS.OpenFile(
+						fileName,
+						OSFileMode.Open,
+						OSOpenMode.Access_ReadOnly | OSOpenMode.Share_DenyNone);
 
-				if (Machine.DOS.LastError != DOSError.None)
-					throw RuntimeException.ForDOSError(Machine.DOS.LastError, errorContext);
+					if (Machine.DOS.LastError != DOSError.None)
+						throw RuntimeException.ForDOSError(Machine.DOS.LastError, errorContext);
+				}
 			}
 
 			if ((fileHandle < 2) || (fileHandle >= Machine.DOS.Files.Count))
