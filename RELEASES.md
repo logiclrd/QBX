@@ -1,5 +1,27 @@
 # QBX Releases
 
+## 1.25.0 - 2026-09-14
+
+### Fixed
+
+- `PLAY` and `SOUND` processing is now much more precise with the queue length and associated waits.
+- The IDE's file access now passes through the same DOS file layer as QuickBASIC code, ensuring consistent discoverability of files via `RUN filename$` and `CHAIN filename$`.
+- `DEF SEG` now propagates across `CHAIN` operations. Soft key macros persist even across `RUN filename$` and program termination, but whether the soft key macros bar is visible on-screen resets appropriately.
+- `CHAIN` is now reliable as a means to link together separate modules into a larger logical program. The chain target is loaded from the IDE thread, not the running program thread.
+- The IDE's file load progress updates are longer sent to the screen during the load involved in a `CHAIN`.
+- A crash that could occur when a separate thread resulted in the execution context reference being cleared partway through the execution epilogue ("Press any key to continue") has been fixed.
+- Opening a file dialog (prompt to save, save dialog, open dialog, create file dialog) now immediately cuts off any ongoing `PLAY` and clears the queue.
+- In inline `IF`/`THEN` parsing, an `IF` directly following `THEN` or `ELSE` is now correctly recognized.
+- When nested statements fail to parse, they no longer lose all their whitespace.
+- Statements which pass entire arrays into `SUB`s and `FUNCTION`s (`ary%()`) are no longer processed as indicating that the array should have 0 dimensions.
+- The `LINE` statement should now draw precisely the same pixels as the real QuickBASIC, which uses a quarter pixel bias instead of the more typical half pixel bias.
+- Entering break mode no longer resets the graphics window and coordinate system (`WINDOW`, `VIEW`).
+
+### Added
+
+- `PLAY(n)` function.
+- Legacy `OPEN` statement format: `OPEN moden$, filenum%, filename$[, recnum%]`
+
 ## 1.24.3 - 2026-09-12
 
 ### Fixed
