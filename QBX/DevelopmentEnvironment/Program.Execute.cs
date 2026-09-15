@@ -494,12 +494,15 @@ public partial class Program
 						return;
 					}
 
-					Load(
-						reader,
-						replacementFilePath,
-						replaceExistingProgram: true,
-						chainExecution: true,
-						errorContext: errorContext);
+					using (reader)
+					{
+						Load(
+							reader,
+							replacementFilePath,
+							replaceExistingProgram: true,
+							chainExecution: true,
+							errorContext: errorContext);
+					}
 				}
 
 				SaveOutput();
