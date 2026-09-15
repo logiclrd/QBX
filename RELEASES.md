@@ -1,5 +1,11 @@
 # QBX Releases
 
+## 1.25.1 - 2026-09-15
+
+### Fixed
+
+- File handles are no longer leaked by `CHAIN` and `RUN filename$`.
+
 ## 1.25.0 - 2026-09-14
 
 ### Fixed
