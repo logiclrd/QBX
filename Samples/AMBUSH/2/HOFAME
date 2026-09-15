@@ -1,0 +1,146 @@
+DECLARE SUB SBPlay3 (zreg%, zuration%, zoctave%, zaveform%)
+DECLARE SUB Queermusic ()
+DECLARE SUB Musc ()
+DECLARE SUB WriteReg (zeg%, zalue%)
+DECLARE SUB SBPlay2 (zreg%, zuration%, zoctave%, zaveform%)
+COMMON BEGINNINGTIME, Q, A, B, BLOCKX, BLOCKY, ELAPSEDTIME, STAIRWAY, HEALTH
+COMMON HEALTHMAX, ENEMIES, ROOM, ARCADE, DEATHS, snd, DETECTOR, STRENGTH
+COMMON SHELLS, LIGHT, BOSS, BOSSES, ORANGE, GRINDER, GRANADE, GRENADES, FLOOR
+COMMON Placeholder, Names, Loaded, Turbo, Invince, NAME$, LOAD, BOMB, SUIT
+COMMON SHOVEL, KEE, OPEN1, AMMOA, AMMOB, FOODA, FOODB, AMMOGET, FOODGET, NOTE
+COMMON LIGHTON, SUITON, ITEMUSE, Ending, SpecialCredits, Warping, OPEN2, SWORD
+COMMON ENDGAME, HARD
+PLAY "MBT140"
+jeruss: AA$ = INKEY$: IF AA$ = "" THEN GOTO jeruss
+AA$ = LCASE$(AA$)
+IF Names <> 500 THEN
+IF AA$ = CHR$(97) AND nam = 2 THEN nam = 3: GOTO jeruss
+IF snd <> 4 THEN IF nam = 3 AND AA$ = CHR$(108) THEN Names = 500: PLAY "O2L16Al8BO1L16CDCDCD": GOTO jeruss
+IF snd = 4 THEN IF nam = 3 AND AA$ = CHR$(108) THEN Names = 500: Musc: GOTO jeruss
+IF AA$ = CHR$(114) THEN nam = 1: GOTO jeruss
+IF nam = 1 AND AA$ = CHR$(101) THEN nam = 2: GOTO jeruss
+END IF
+IF Turbo <> 500 THEN
+IF AA$ = CHR$(113) THEN turb = 1: GOTO jeruss
+IF AA$ = CHR$(105) AND turb = 2 THEN turb = 3: GOTO jeruss
+IF turb = 1 AND AA$ = CHR$(117) THEN turb = 2: GOTO jeruss
+IF snd <> 4 THEN IF AA$ = CHR$(107) AND turb = 4 THEN Turbo = 500: PLAY "O2L16Al8BO1L16CDCDCD": GOTO jeruss
+IF snd = 4 THEN IF AA$ = CHR$(107) AND turb = 4 THEN Turbo = 500: Musc: GOTO jeruss
+IF turb = 3 AND AA$ = CHR$(99) THEN turb = 4: GOTO jeruss
+END IF
+IF Invince <> 500 THEN
+IF inv = 1 AND AA$ = CHR$(111) THEN inv = 2: GOTO jeruss
+IF snd <> 4 THEN IF AA$ = CHR$(100) AND inv = 2 THEN Invince = 500: PLAY "O2L16Al8BO1L16CDCDCD": GOTO jeruss
+IF snd = 4 THEN IF AA$ = CHR$(100) AND inv = 2 THEN Invince = 500: Musc: GOTO jeruss
+IF AA$ = CHR$(103) THEN inv = 1: GOTO jeruss
+END IF
+IF Loaded <> 500 THEN
+IF AA$ = CHR$(110) AND g = 2 THEN g = 3: GOTO jeruss
+IF snd <> 4 THEN IF g = 3 AND AA$ = CHR$(115) THEN Loaded = 500: PLAY "O2L16Al8BO1L16CDCDCD": GOTO jeruss
+IF snd = 4 THEN IF g = 3 AND AA$ = CHR$(115) THEN Loaded = 500: Musc: GOTO jeruss
+IF AA$ = CHR$(103) THEN g = 1: GOTO jeruss
+IF g = 1 AND AA$ = CHR$(117) OR AA$ = CHR$(117) AND inv = 1 THEN g = 2: GOTO jeruss
+END IF
+IF Ending <> 500 THEN
+IF AA$ = CHR$(101) THEN en = 1: GOTO jeruss
+IF AA$ = CHR$(110) AND en = 1 OR nam1 = 1 AND AA$ = CHR$(110) THEN en = 2: GOTO jeruss
+IF AA$ = CHR$(100) AND en = 2 OR AA$ = CHR$(100) AND inv = 2 THEN
+Ending = 500
+IF snd <> 4 THEN PLAY "O2L16Al8BO1L16CDCDCD"
+IF snd = 4 THEN Musc
+GOTO jeruss
+END IF
+END IF
+IF AA$ = CHR$(0) + CHR$(59) AND SpecialCredits <> 500 THEN
+SpecialCredits = 500
+IF snd <> 4 THEN PLAY "O2L16Al8BO1L16CDCDCD"
+IF snd = 4 THEN Musc
+GOTO jeruss
+END IF
+IF AA$ = CHR$(0) + CHR$(60) AND Warping <> 500 THEN
+Warping = 500
+IF snd <> 4 THEN PLAY "O2L16Al8BO1L16CDCDCD"
+IF snd = 4 THEN Musc
+GOTO jeruss
+END IF
+IF Flipped <> 500 THEN
+IF AA$ = CHR$(108) AND fl = 1 THEN fl = 2: GOTO jeruss
+IF fl = 3 AND AA$ = CHR$(112) AND snd = 4 THEN
+Musc: Flipped = 500
+WINDOW (0, 0)-(320, 200)
+IF snd = 4 THEN Queermusic
+GOTO jeruss
+END IF
+IF fl = 2 AND AA$ = CHR$(105) THEN fl = 3: GOTO jeruss
+IF AA$ = CHR$(102) AND fl = 0 THEN fl = 1: GOTO jeruss
+IF snd <> 4 THEN IF fl = 3 AND AA$ = CHR$(112) AND snd <> 4 THEN PLAY "O2L16Al8BO1L16CDCDCD": WINDOW (0, 0)-(320, 200): GOTO jeruss
+END IF
+Placeholder = 1
+CHAIN "ambush2.bas"
+
+DEFINT Z
+SUB Musc
+SBPlay2 600, 10, &HF27, &HF1: CALL WriteReg(&HB0, &H0)
+SBPlay2 1000, 20, &HF27, &HF1: CALL WriteReg(&HB0, &H0)
+FOR i = 1 TO 3
+SBPlay2 100, 8, &HF26, &HF1: CALL WriteReg(&HB0, &H0)
+SBPlay2 150, 8, &HF26, &HF1: CALL WriteReg(&HB0, &H0)
+NEXT
+END SUB
+
+DEFSNG Z
+SUB Queermusic
+FOR x% = 1000 TO 800 STEP -30
+SBPlay3 x%, 1, &H30, &H2: CALL WriteReg(&HB0, &H0)
+NEXT
+FOR x% = 800 TO 1000 STEP 30
+SBPlay3 x%, 1, &H30, &H2: CALL WriteReg(&HB0, &H0)
+NEXT
+END SUB
+
+DEFINT Z
+SUB SBPlay2 (zreg%, zuration%, zoctave%, zaveform%)
+CALL WriteReg(&H20, &HA39)
+CALL WriteReg(&H40, &HFA90)
+CALL WriteReg(&H60, &HA9)
+CALL WriteReg(&H80, &HD1)
+CALL WriteReg(&HA0, zreg%)
+CALL WriteReg(&H23, &HA3)
+CALL WriteReg(&H43, &H1)
+CALL WriteReg(&H63, &HFA1)
+CALL WriteReg(&H83, &HFD)
+CALL WriteReg(&HB0, zoctave%)
+CALL WriteReg(&HE0, zaveform%)
+Timeup! = TIMER + zuration% / 64
+WHILE Timeup! > TIMER: WEND
+END SUB
+
+SUB SBPlay3 (zreg%, zuration%, zoctave%, zaveform%)
+CALL WriteReg(&H20, &HB15)
+CALL WriteReg(&H40, &HF900)
+CALL WriteReg(&H60, &HFA8)
+CALL WriteReg(&H80, &HF9)
+CALL WriteReg(&HA0, zreg%)
+CALL WriteReg(&H23, &HEF30)
+CALL WriteReg(&H43, &H1)
+CALL WriteReg(&H63, &HF5)
+CALL WriteReg(&H83, &HF1)
+CALL WriteReg(&HB0, zoctave%)
+CALL WriteReg(&HE0, zaveform%)
+Timeup! = TIMER + zuration% / 64
+WHILE Timeup! > TIMER: WEND
+END SUB
+
+SUB WriteReg (zeg%, zalue%)
+OUT &H388, zeg
+
+  FOR ze = 0 TO 5
+  z = INP(&H388)
+  NEXT ze
+                                                     
+OUT &H389, zalue
+  FOR ze = 0 TO 34
+   z = INP(&H388)
+  NEXT ze
+END SUB
+

@@ -1,0 +1,1297 @@
+DECLARE SUB Slide2 (deeps!, wor!, speedoffadein!, tet$)
+DECLARE SUB Man ()
+DECLARE SUB Mirrordown (x1!, y1!, x2!, y2!)
+DECLARE SUB PoolOBlood ()
+DECLARE SUB SBPlay2 (zreg%, zuration%, zoctave%, zaveform%)
+DECLARE SUB Gamemusic ()
+DECLARE SUB KrivanEnd ()
+DECLARE SUB MeatGrinder ()
+DECLARE SUB LifeSubtract ()
+DECLARE SUB sbplay4 (zreg%, zuration%, zoctave%, zaveform%)
+DECLARE SUB WriteReg (zeg%, zalue%)
+DECLARE SUB Krivanmusic ()
+DECLARE SUB Gameover ()
+DECLARE SUB Loser ()
+DECLARE SUB KrivanDeadHit ()
+DECLARE SUB Getitem ()
+DECLARE SUB Bosskill ()
+DECLARE SUB Slide (row!, text$)
+DECLARE SUB Arrow ()
+DECLARE SUB ClearC ()
+DECLARE SUB Items ()
+DECLARE SUB What ()
+DECLARE SUB Background ()
+DECLARE SUB Life ()
+DECLARE SUB KrivanHit ()
+DECLARE SUB Krivan ()
+DECLARE SUB Krivan2.1 ()
+DECLARE SUB Krivan2.2 ()
+DIM SHARED BACK%(5000)
+COMMON BEGINNINGTIME, Q, a, B, BLOCKX, BLOCKY, ELAPSEDTIME, STAIRWAY, HEALTH
+COMMON HEALTHMAX, ENEMIES, ROOM, ARCADE, DEATHS, snd, DETECTOR, STRENGTH
+COMMON SHELLS, LIGHT, BOSS, BOSSES, ORANGE, GRINDER, GRANADE, GRENADES, FLOOR
+COMMON Placeholder, names, Loaded, Turbo, Invince, NAME$, LOAD, BOMB, SUIT
+COMMON SHOVEL, KEE, OPEN1, AMMOA, AMMOB, FOODA, FOODB, AMMOGET, FOODGET
+COMMON LIGHTON, SUITON, ITEMUSE, Ending, SpecialCredits, Warping, OPEN2, Sword
+COMMON ENDGAME, HARD
+DIM SHARED HITS, ORANGEUSE, FINAL
+RANDOMIZE TIMER
+DIM ARMS%(5000)
+DIM HAND%(3000)
+SCREEN 13
+CLS
+BOSSES = BOSS
+Background
+Sword = 1
+Life
+ITMES:
+PICK = 0
+W = INT(RND * 2) + 1
+IF DEAD = 0 THEN Krivan
+COLOR 200
+IF names = 0 THEN Slide 5, "Mr. Wuss"
+IF names = 500 THEN Slide 5, "Mr. Krivan"
+IF W = 1 THEN Slide 6, "draws near."
+IF W = 2 THEN Slide 6, "approaches you."
+IF ONCEINALIFETIME = 0 AND snd = 4 THEN Krivanmusic: ONCEINALIFETIME = 1
+What
+CLR = 16
+LOCATE 21, 25: PRINT STRING$(13, " ")
+IF ITEM = 0 THEN
+LOCATE 21, 27: PRINT "Shells:"; SHELLS
+END IF
+IF ITEM = 2 THEN
+LOCATE 21, 34: PRINT GRENADES
+LOCATE 21, 26: PRINT "Grenades:"
+END IF
+INKY: AA$ = INKEY$
+IF LEN(AA$) = 2 THEN FK% = ASC(RIGHT$(AA$, 1))
+IF FK% = 80 AND PICK <> 2 THEN PICK = PICK + 1: Arrow
+IF FK% = 72 AND PICK <> 0 THEN PICK = PICK - 1: Arrow
+IF ASD = 0 THEN CLR = CLR + .2
+IF ASD = 1 THEN CLR = CLR - .2
+IF CLR <= 16 THEN ASD = 0
+IF CLR >= 31 THEN ASD = 1
+COLOR CLR
+IF PICK = 0 THEN LOCATE 15, 25: PRINT CHR$(26)
+IF PICK = 1 THEN LOCATE 17, 25: PRINT CHR$(26)
+IF PICK = 2 THEN LOCATE 19, 25: PRINT CHR$(26)
+FK% = 0
+IF PLAYS = 0 THEN
+PLAYS = 1
+PLAY ON
+PLAY "T155MBP1"
+GOSUB PLAY1
+END IF
+IF AA$ <> CHR$(13) THEN GOTO INKY
+COLOR 200
+IF PICK = 0 AND ORANGEUSE = 0 AND DEAD = 0 OR PICK = 0 AND DEAD = 1 THEN
+IF ITEM <> 8 AND DEAD = 0 OR ITEM <> 7 AND DEAD = 1 THEN
+ClearC
+FOR i = 1 TO 200: NEXT
+Slide 6, "Your item does"
+Slide 7, "not hurt him"
+END IF
+IF ITEM = 7 AND DEAD = 1 THEN MeatGrinder
+IF ITEM = 8 AND DEAD = 0 THEN
+PALETTE 247, (256 * 21) + 63
+PALETTE 246, (256 * 31) + 63
+PALETTE 245, (256 * 41) + 63
+CIRCLE (24, 70), 4, 247, , , 1
+PAINT (24, 70), 247, 247
+CIRCLE (24, 70), 3, 246, , , 1
+PAINT (24, 70), 246, 246
+CIRCLE (24, 70), 2, 245, , , 1
+PAINT (24, 70), 245, 245
+ClearC
+Slide 6, "You've clogged"
+Slide 7, "his rifle!"
+ORANGEUSE = 1
+GOSUB HITBACK
+GOTO INKY
+END IF
+END IF
+IF ORANGEUSE = 1 AND DEAD = 0 THEN
+IF PICK = 0 THEN
+IF ITEM <> 10 THEN
+ClearC
+FOR i = 1 TO 200: NEXT
+Slide 6, "Your item does"
+Slide 7, "not hurt him"
+END IF
+END IF
+IF PICK = 0 AND DEAD = 0 THEN
+IF ITEM = 10 THEN
+ClearC
+Krivan2.1
+FOR delay = 1 TO 1000: NEXT
+RNDM = INT(RND * 2) + CINT(STRENGTH)
+IF RNDM = 0 + CINT(STRENGTH) THEN Slide 5, "Good move !"
+IF RNDM = 1 + CINT(STRENGTH) THEN Slide 5, "Excellent hit !"
+IF DEAD = 0 THEN
+LINE (1, 1)-(163, 149), 0, BF
+PUT (0, 150), BACK%, PSET
+END IF
+HITS = HITS + RNDM
+IF HITS < 20 THEN Krivan
+IF HITS >= 20 THEN Krivan2.2
+Slide 7, "You have reduced"
+Slide 8, "his life by   "
+LOCATE 8, 35: PRINT RNDM
+LOCATE 21, 25: PRINT STRING$(13, " ")
+END IF
+END IF
+END IF
+IF PICK = 1 THEN
+ClearC
+Items
+ClearC
+GOTO ITMES
+END IF
+IF PICK = 2 THEN
+ClearC
+YESORNO = INT(RND * 2) + 1
+Slide 6, "You run away"
+IF YESORNO = 2 THEN Slide 7, "but he stops you"
+IF YESORNO <> 2 THEN
+Slide 7, "from him."
+Slide 19, "(Hit any key)"
+DO: LOOP WHILE INKEY$ = ""
+PALETTE
+PLAY OFF
+CLS
+COLOR 15
+LOCATE 10, 15: PRINT "Please wait..."
+CHAIN "FLOOR1.mk!"
+END IF
+END IF
+GOSUB HITBACK
+GOTO INKY
+IF DEAD = 0 THEN
+LINE (1, 1)-(163, 149), 0, BF
+PUT (0, 150), BACK%, PSET
+END IF
+HITBACK:
+RNDM = INT(RND * 3) + 5
+FOR i = 1 TO 2000: NEXT
+IF names = 0 THEN Slide 11, "Mr. Wuss"
+IF names = 500 THEN Slide 11, "Mr. Krivan"
+Slide 12, "attacks !"
+IF ORANGEUSE = 1 AND DEAD = 0 THEN KrivanHit
+IF ORANGEUSE = 0 AND DEAD = 0 THEN
+PALETTE 247, 63
+FOR siz = 4 TO 56 STEP 4
+CIRCLE (24, 70), siz, 247
+PAINT (24 + siz - 1, 70), 247, 247
+FOR delay = 1 TO 155: NEXT
+NEXT
+END IF
+IF DEAD = 1 THEN KrivanDeadHit
+PALETTE 0, 63
+FOR delay = 1 TO 500: NEXT
+IF snd = 1 THEN PLAY "T220O0MBL64CEC+D+EDC+EF"
+PALETTE 0, 0
+IF DEAD = 0 THEN
+LINE (0, 1)-(163, 149), 0, BF
+PUT (0, 150), BACK%, PSET
+END IF
+IF DEAD = 0 THEN Krivan
+IF Invince <> 500 THEN
+Slide 14, "Your life has"
+Slide 15, "decreased by   "
+LOCATE 15, 36: PRINT RNDM
+HEALTH = HEALTH - RNDM
+Life
+END IF
+IF HEALTH <= 0 THEN Gameover: Loser
+Slide 19, "(Hit any key)"
+DO: LOOP UNTIL INKEY$ <> ""
+ClearC
+HG = INT(RND * 2) + 1
+IF names = 0 THEN Slide 5, "Mr. Wuss"
+IF names = 500 THEN Slide 5, "Mr. Krivan"
+IF HG = 1 THEN Slide 6, "looks angry."
+IF HG = 2 THEN Slide 6, "looks mad."
+What
+GOTO INKY
+RETURN
+PLAY1:
+ON PLAY(1) GOSUB PLAY2
+IF snd = 1 OR snd = 3 THEN PLAY "P1P1"
+IF snd = 2 THEN PLAY "O0L4CL12CCCL4CL12CCCL4CL12CCCD-D-D-D-D-D-"
+RETURN
+PLAY2:
+ON PLAY(1) GOSUB PLAY3
+IF snd = 1 OR snd = 3 THEN PLAY "P1P1"
+IF snd = 2 THEN PLAY "O0L4CL12CCCL4CL12CCCL4CL12CCCD-D-D-D-D-D-"
+RETURN
+PLAY3:
+ON PLAY(1) GOSUB PLAY4
+IF snd = 1 OR snd = 3 THEN PLAY "P1P1"
+IF snd = 2 THEN PLAY "L4CL12E-E-E-L4GL12GGGL4GL12GGGA-A-A-A-A-A-"
+RETURN
+PLAY4:
+ON PLAY(1) GOSUB PLAY5
+IF snd = 1 OR snd = 3 THEN PLAY "P1P1"
+IF snd = 2 THEN PLAY "L4GL12GGGL4GL12GGGL4GL12GGGE-E-E-E-E-E-"
+RETURN
+PLAY5:
+ON PLAY(1) GOSUB PLAY1
+IF snd = 1 OR snd = 3 THEN PLAY "P1P1"
+IF snd = 2 THEN PLAY "L4CL12CCCL4CL12CCCL4CL12CCCCCCCCC"
+RETURN
+
+SUB Arrow
+LOCATE 15, 25: PRINT " "
+LOCATE 17, 25: PRINT " "
+LOCATE 19, 25: PRINT " "
+END SUB
+
+SUB Background
+SHARED BACK%(), BOSS, HAND%()
+LINE (0, 0)-(163, 149), 0, BF
+i = 1
+a = 1
+B = 150
+c = 316
+d = 150
+FOR N = 1 TO 63
+PALETTE i, 256 * i
+LINE (a, B)-(c, d), i
+B = B + 1
+d = d + 1
+i = i + 1
+NEXT
+GET (0, 150)-(163, 186), BACK%
+VA = 80
+VB = 145
+GET (VA - 8, VB - 18)-(VA + 9, VB + 30), HAND%
+PALETTE 200, 4128768
+FOR i = 1 TO 100
+PALETTE 127 + g, g
+g = g + .6
+NEXT
+END SUB
+
+SUB Bosskill
+SHARED names, FINAL
+COLOR 31
+FINAL = 1
+PoolOBlood
+Slide 10, "You must now set the atomic bomb!"
+DO: LOOP UNTIL INKEY$ <> ""
+CLS
+END SUB
+
+SUB ClearC
+FOR i = 1 TO 19
+LOCATE i, 22
+PRINT STRING$(19, " ")
+NEXT
+END SUB
+
+SUB Gamemusic
+FOR i = 1 TO 4
+SBPlay2 1200, 10, &HA30, &HF1: CALL WriteReg(&HB0, &H0)
+NEXT
+SBPlay2 1175, 10, &HA30, &HF1: CALL WriteReg(&HB0, &H0)
+SBPlay2 1150, 10, &HA30, &HF1: CALL WriteReg(&HB0, &H0)
+SBPlay2 1125, 10, &HA30, &HF1: CALL WriteReg(&HB0, &H0)
+SBPlay2 1100, 10, &HA30, &HF1: CALL WriteReg(&HB0, &H0)
+FOR i = 1 TO 4
+SBPlay2 1200, 10, &HA26, &HF1: CALL WriteReg(&HB0, &H0)
+NEXT
+SBPlay2 1175, 10, &HA26, &HF1: CALL WriteReg(&HB0, &H0)
+SBPlay2 1150, 10, &HA26, &HF1: CALL WriteReg(&HB0, &H0)
+SBPlay2 1125, 10, &HA26, &HF1: CALL WriteReg(&HB0, &H0)
+SBPlay2 1100, 10, &HA26, &HF1: CALL WriteReg(&HB0, &H0)
+SBPlay2 1150, 10, &HA26, &HA9: CALL WriteReg(&HB0, &H0)
+SBPlay2 1190, 10, &HA26, &HA9: CALL WriteReg(&HB0, &H0)
+SBPlay2 1200, 13, &HA26, &HA9: CALL WriteReg(&HB0, &H0)
+END SUB
+
+SUB Gameover
+SHARED snd
+DIM g(29), a(28), m(29), e(29), o(28), v(29), t(29), r(29)
+PALETTE
+CLS
+COLOR 15
+LOCATE 1, 10: PRINT "g"
+g = 70
+gf = 9
+gd = 80
+gs = 0
+GET (g, gf)-(gd, gs), g
+CLS
+FOR gf = 9 TO 100
+PUT (g, gf), g, PSET
+FOR delay = 1 TO 25: NEXT
+NEXT
+LOCATE 1, 11: PRINT "a"
+a1 = 80
+a2 = 9
+a3 = 87
+GET (a1, a2)-(a3, a4), a
+LOCATE 1, 11: PRINT " "
+FOR a2 = 9 TO 100
+PUT (a1, a2), a, PSET
+FOR delay = 1 TO 25: NEXT
+NEXT
+LOCATE 1, 12: PRINT "m"
+m1 = 87
+m2 = 9
+m3 = 96
+GET (m1, m2)-(m3, m4), m
+LOCATE 1, 12: PRINT " "
+FOR m2 = 9 TO 100
+PUT (m1, m2), m, PSET
+FOR delay = 1 TO 25: NEXT
+NEXT
+LOCATE 1, 13: PRINT "e"
+e1 = 96
+e2 = 9
+e3 = 102
+GET (e1, e2)-(e3, e4), e
+LOCATE 1, 13: PRINT " "
+FOR e2 = 9 TO 100
+PUT (e1, e2), e, PSET
+FOR delay = 1 TO 25: NEXT
+NEXT
+LOCATE 1, 25: PRINT "o"
+o1o = 191
+o2o = 9
+o3o = 199
+GET (o1o, o2o)-(o3o, o4o), o
+LOCATE 1, 25: PRINT " "
+FOR o2o = 9 TO 100
+PUT (o1o, o2o), o, PSET
+FOR delay = 1 TO 25: NEXT
+NEXT
+LOCATE 1, 26: PRINT "v"
+v1v = 199
+v2v = 9
+v3v = 207
+GET (v1v, v2v)-(v3v, v4v), v
+LOCATE 1, 26: PRINT " "
+FOR v2v = 9 TO 100
+PUT (v1v, v2v), v, PSET
+FOR delay = 1 TO 25: NEXT
+NEXT
+
+LOCATE 1, 27: PRINT "e"
+o1o = 207
+o2o = 9
+o3o = 214
+GET (o1o, o2o)-(o3o, o4o), t
+LOCATE 1, 27: PRINT " "
+FOR o2o = 9 TO 100
+PUT (o1o, o2o), t, PSET
+FOR delay = 1 TO 25: NEXT
+NEXT
+LOCATE 1, 28: PRINT "r"
+o1o = 215
+o2o = 9
+o3o = 222
+GET (o1o, o2o)-(o3o, o4o), r
+LOCATE 1, 28: PRINT " "
+FOR o2o = 9 TO 100
+PUT (o1o, o2o), r, PSET
+FOR delay = 1 TO 25: NEXT
+NEXT
+ERASE g: ERASE a: ERASE m: ERASE e: ERASE o: ERASE v: ERASE t: ERASE r
+END SUB
+
+SUB Items
+SHARED ITEM, snd, LIGHT, GRANADE, SHOVEL, KEE, SUIT, DETECTOR, GRINDER, ORANGE
+SHARED BOMB, SHELLS, GRENADES, Sword
+FOR i = 1 TO 80 STEP 8
+LINE (184, 63 + i)-(303, 69 + i), 160, BF
+LINE (184, 63 + i)-(303, 69 + i), 150, B
+NEXT
+COLOR 200
+Slide 5, "Use"
+Slide 6, "Items"
+LOCATE 8, 24: PRINT "Shotgun        "
+LOCATE 8 + ITEM, 39: PRINT ""
+IF LIGHT = 1 THEN LOCATE 9, 24: PRINT "Flashlight     "
+IF GRANADE = 1 THEN LOCATE 10, 24: PRINT "Grenade        "
+IF SHOVEL = 1 THEN LOCATE 11, 24: PRINT "Shovel         "
+IF KEE = 1 THEN LOCATE 12, 24: PRINT "Key 1          "
+IF KEE = 2 THEN LOCATE 12, 24: PRINT "Key 1 and 2    "
+IF SUIT = 1 THEN LOCATE 13, 24: PRINT "Radiation Suit "
+IF DETECTOR = 1 THEN LOCATE 14, 24: PRINT "Boss detector  "
+IF GRINDER = 1 THEN LOCATE 15, 24: PRINT "Meat grinder   "
+IF ORANGE = 1 THEN LOCATE 16, 24: PRINT "Orange         "
+IF BOMB = 1 THEN LOCATE 17, 24: PRINT "Atomic Bomb    "
+IF Sword = 1 THEN LOCATE 18, 24: PRINT "Sword          "
+Slide 19, "Exit          "
+CLR = 16
+ITEMSINKY:
+DD$ = INKEY$
+IF LEN(DD$) = 2 THEN GK% = ASC(RIGHT$(DD$, 1))
+IF GK% = 72 AND MOVE <> 0 THEN MOVE = MOVE - 1: GOSUB HGH
+IF GK% = 80 AND MOVE <> 11 THEN MOVE = MOVE + 1: GOSUB HGH
+GK% = 0
+IF ASD = 0 THEN CLR = CLR + .1
+IF ASD = 1 THEN CLR = CLR - .1
+IF CLR <= 16 THEN ASD = 0
+IF CLR >= 31 THEN ASD = 1
+IF DD$ = CHR$(13) OR DD$ = " " THEN GOTO USEITEM
+COLOR CLR
+LOCATE 8 + MOVE, 23: PRINT CHR$(26)
+GOTO ITEMSINKY
+
+HGH:
+FOR i = 8 TO 19
+LOCATE i, 23: PRINT " "
+NEXT
+RETURN
+
+USEITEM:
+REPLY = 0
+COLOR 200
+IF MOVE = 0 THEN
+REPLY = 1
+LOCATE 21, 25: PRINT STRING$(13, " ")
+LOCATE 21, 27: PRINT "Shells:"; SHELLS
+END IF
+IF MOVE = 1 AND LIGHT = 1 THEN REPLY = 1
+IF MOVE = 2 AND GRANADE = 1 THEN
+REPLY = 1
+LOCATE 21, 25: PRINT STRING$(13, " ")
+LOCATE 21, 34: PRINT GRENADES
+LOCATE 21, 26: PRINT "Grenades:"
+END IF
+IF MOVE = 3 AND SHOVEL = 1 THEN REPLY = 1
+IF MOVE = 4 AND KEE = 1 THEN REPLY = 1
+IF MOVE = 4 AND KEE = 2 THEN REPLY = 1
+IF MOVE = 5 AND SUIT = 1 THEN REPLY = 1
+IF MOVE = 6 AND DETECTOR = 1 THEN REPLY = 1
+IF MOVE = 7 AND GRINDER = 1 THEN REPLY = 1
+IF MOVE = 8 AND ORANGE = 1 THEN REPLY = 1
+IF MOVE = 9 AND BOMB = 1 THEN REPLY = 1
+IF MOVE = 10 AND Sword = 1 THEN REPLY = 1
+IF MOVE = 11 THEN EXIT SUB
+COLOR 200
+IF REPLY = 0 THEN
+GOTO ITEMSINKY
+END IF
+IF REPLY = 1 THEN
+FOR i = 8 TO 19
+LOCATE i, 39
+PRINT " "
+NEXT
+ITEM = MOVE
+LOCATE 8 + ITEM, 39: PRINT ""
+GOTO ITEMSINKY
+END IF
+END SUB
+
+SUB Krivan
+LINE (51, 115)-(45, 134), 23
+LINE (34, 134)-(40, 105), 23
+LINE (40, 105)-(69, 105), 23
+LINE (69, 105)-(75, 135), 23
+LINE (64, 135)-(60, 114), 23
+LINE (60, 114)-(51, 115), 23
+LINE (34, 134)-(38, 152), 23
+LINE (45, 152)-(45, 134), 23
+LINE (38, 152)-(33, 162), 23
+LINE (33, 162)-(38, 166), 23
+LINE (38, 166)-(45, 152), 23
+LINE (75, 135)-(71, 154), 23
+LINE (64, 134)-(65, 155), 23
+LINE (65, 155)-(71, 154), 23
+LINE (71, 154)-(77, 165), 23
+LINE (77, 165)-(71, 167), 23
+LINE (71, 167)-(66, 155), 23
+LINE (49, 123)-(37, 122), 23
+LINE (69, 105)-(71, 73), 23
+LINE (71, 73)-(80, 86), 23
+LINE (80, 86)-(78, 103), 23
+LINE (78, 103)-(73, 107), 23
+LINE (73, 107)-(82, 114), 23
+LINE (82, 114)-(89, 105), 23
+LINE (89, 105)-(88, 82), 23
+LINE (88, 82)-(76, 65), 23
+LINE (76, 65)-(59, 57), 23
+LINE (40, 105)-(38, 73), 23
+LINE (38, 73)-(24, 74), 23
+LINE (24, 66)-(38, 64), 23
+CIRCLE (24, 70), 4, 23, , , 1
+LINE (38, 64)-(38, 73), 23
+LINE (38, 64)-(45, 57), 23
+LINE (45, 53)-(45, 60), 23
+LINE (59, 53)-(59, 61), 23
+CIRCLE (51, 43), 12, 23, , , 1.2
+LINE (75, 78)-(81, 72), 23
+LINE (67, 61)-(60, 70), 23
+LINE (60, 70)-(50, 71), 23
+LINE (50, 71)-(41, 61), 23
+LINE (42, 47)-(49, 44), 23
+LINE (49, 44)-(56, 46), 23
+LINE (56, 46)-(61, 42), 23
+LINE (49, 49)-(55, 51), 23, B
+CIRCLE (48, 39), 2, 23, , , 1
+PAINT (48, 39), 4, 23
+CIRCLE (56, 39), 2, 23, , , 1
+PAINT (56, 39), 4, 23
+PAINT (72, 159), 20, 23
+PAINT (56, 66), 50, 23
+PAINT (56, 79), 63, 23
+PAINT (82, 79), 50, 23
+PAINT (64, 110), 20, 23
+PAINT (38, 134), 26, 23
+PAINT (33, 70), 26, 23
+PAINT (25, 70), 19, 23
+PAINT (45, 43), 26, 23
+PAINT (45, 49), 50, 23
+IF ORANGEUSE = 1 THEN
+PALETTE 247, (256 * 21) + 63
+PALETTE 246, (256 * 31) + 63
+PALETTE 245, (256 * 41) + 63
+CIRCLE (24, 70), 4, 247, , , 1
+PAINT (24, 70), 247, 247
+CIRCLE (24, 70), 3, 246, , , 1
+PAINT (24, 70), 246, 246
+CIRCLE (24, 70), 2, 245, , , 1
+PAINT (24, 70), 245, 245
+END IF
+END SUB
+
+SUB Krivan2.1
+LINE (72, 61)-(89, 111), 0, BF
+LINE (79, 112)-(84, 114), 0, BF
+LINE (37, 75)-(20, 64), 0, BF
+LINE (67, 61)-(71, 65), 0, BF
+LINE (38, 73)-(25, 59), 23
+LINE (25, 59)-(25, 55), 23
+LINE (25, 55)-(29, 53), 23
+LINE (29, 53)-(33, 56), 23
+LINE (33, 56)-(40, 62), 23
+LINE (25, 59)-(29, 57), 23
+LINE (29, 57)-(30, 54), 23
+PAINT (34, 64), 26, 23
+PAINT (28, 55), 20, 23
+LINE (85, 54)-(60, 44), 22
+LINE (60, 44)-(51, 37), 22
+LINE (51, 37)-(43, 43), 22
+LINE (43, 43)-(50, 50), 22
+LINE (50, 50)-(55, 47), 22
+LINE (55, 47)-(64, 50), 22
+LINE (64, 50)-(71, 55), 22
+LINE (71, 73)-(85, 54), 23
+LINE (71, 55)-(66, 61), 23
+LINE (78, 64)-(70, 56), 23
+PAINT (71, 62), 61, 23
+LINE (71, 73)-(85, 54), 22
+LINE (71, 55)-(66, 61), 22
+LINE (78, 64)-(70, 56), 22
+PAINT (73, 53), 50, 22
+END SUB
+
+SUB Krivan2.2
+SHARED STRENGTH, HEALTHMAX, SHELLS, DEATHS, BOSS, names, Loaded, DEAD, ARMS%()
+LINE (0, 0)-(160, 140), 0, BF
+Krivan
+DIM uppertorso(5000)
+u1 = 91
+u2 = 115
+u3 = 15
+u4 = 29
+LINE (40, 55)-(62, 29), 0, BF
+LINE (27, 106)-(78, 167), 0, BF
+FOR N = 1 TO 50
+LINE (1, 150 + B)-(316, 150 + B), i
+B = B + 1
+i = i + 1
+NEXT
+PALETTE 240, 55
+PALETTE 241, 40
+PALETTE 242, 40
+CIRCLE (52, 56), 7, 242, , , -.7
+PAINT (52, 56), 240, 242
+PSET (52, 56), 63
+LINE (78, 112)-(74, 105), 23
+PAINT (78, 109), 50, 23
+LINE (40, 105)-(69, 105), 0
+CIRCLE (55, 107), 17, 242, , , -.8
+PAINT (55, 107), 240, 242
+GET (u3, u4)-(u1, u2), uppertorso
+LINE (0, 0)-(163, 149), 0, BF
+FOR u4 = 29 TO 96 STEP 5
+PUT (u3, u4), uppertorso, XOR
+FOR delay = 1 TO 100: NEXT
+PUT (u3, u4), uppertorso, XOR
+u2 = u2 + 1
+NEXT
+u4 = 91
+PUT (u3, u4), uppertorso, XOR
+FOR delay = 1 TO 100: NEXT
+PUT (u3, u4), uppertorso, XOR
+PUT (u3, u4), uppertorso, OR
+DEAD = 1
+VA = 80
+VB = 145
+CIRCLE (55, 169), 17, 241, , , -.8
+PAINT (55, 169), 240, 241
+GET (VA - 42, VB - 20)-(VA + 11, VB + 32), ARMS%
+END SUB
+
+SUB KrivanDeadHit
+SHARED ARMS%(), HAND%()
+VA = 80
+VB = 145
+PUT (VA - 8, VB - 18), HAND%, PSET
+LINE (VA - 9, VB - 11)-(VA - 7, VB - 1), 22
+LINE (VA - 7, VB - 1)-(VA - 10, VB + 7), 22
+LINE (VA - 10, VB + 7)-(VA - 14, VB + 6), 22
+LINE (VA - 14, VB + 6)-(VA - 17, VB + 13), 22
+LINE (VA - 17, VB + 13)-(VA - 4, VB + 18), 22
+LINE (VA - 4, VB + 18)-(VA - 2, VB + 8), 22
+LINE (VA - 2, VB + 8)-(VA + 3, VB - 3), 22
+LINE (VA + 3, VB - 3)-(VA - 3, VB - 18), 22
+LINE (VA - 7, VB - 4)-(VA + 2, VB - 7), 22
+LINE (VA - 3, VB - 17)-(VA - 8, VB - 11), 22
+PAINT (75, 149), 51, 22
+PAINT (75, 136), 63, 22
+FOR delay = 1 TO 800: NEXT
+PUT (VA - 8, VB - 18), HAND%, PSET
+LINE (VA - 9, VB - 11)-(VA - 13, VB - 10), 22
+LINE (VA - 13, VB - 10)-(VA - 16, VB - 3), 22
+LINE (VA - 16, VB - 3)-(VA - 16, VB + 4), 22
+LINE (VA - 16, VB + 4)-(VA - 23, VB + 5), 22
+LINE (VA - 23, VB + 5)-(VA - 32, VB + 1), 22
+LINE (VA - 32, VB + 1)-(VA - 34, VB - 5), 22
+LINE (VA - 34, VB - 5)-(VA - 31, VB - 15), 22
+LINE (VA - 31, VB - 15)-(VA - 23, VB - 18), 22
+LINE (VA - 23, VB - 18)-(VA - 16, VB - 13), 22
+LINE (VA - 16, VB - 13)-(VA - 15, VB - 5), 22
+LINE (VA - 17, VB - 14)-(VA - 15, VB - 20), 22
+PAINT (55, 139), 51, 22
+FOR delay = 1 TO 800: NEXT
+PUT (VA - 42, VB - 20), ARMS%, PSET
+END SUB
+
+SUB KrivanEnd
+SHARED names, HEALTHMAX, STRENGTH, DEATHS, BOSS
+COLOR 15
+Slide 5, "You have shoved"
+Slide 6, "him through the"
+Slide 7, "meat grinder"
+Slide 11, "You have killed"
+IF names = 0 THEN Slide 12, "Mr. Wuss in a"
+IF names = 500 THEN Slide 12, "Mr. Krivan in a"
+Slide 13, "bloody battle."
+Slide 16, "Good Job !"
+Slide 19, "(Hit any key)"
+DO: LOOP WHILE INKEY$ = ""
+ClearC
+Slide 6, "Your maximum"
+Slide 7, "health has"
+Slide 8, "increased by 1"
+Slide 12, "Your strength has"
+Slide 13, "increased by 1"
+Slide 19, "(Hit any key)"
+HEALTHMAX = HEALTHMAX + 1
+STRENGTH = STRENGTH + 1
+DEATHS = DEATHS + 1
+BOSS = 8
+DO: LOOP WHILE INKEY$ = ""
+PALETTE
+PLAY OFF
+Bosskill
+LOCATE 10, 15: PRINT "Please wait..."
+CHAIN "FLOOR1.mk!"
+END SUB
+
+SUB KrivanHit
+c1 = 48
+c2 = 56
+PALETTE 247, 63
+PAINT (48, 39), 247, 23
+PAINT (56, 39), 247, 23
+FOR c1 = 48 TO 52
+FOR i = 1 TO 900: NEXT
+CIRCLE (c1, 39), 2, 247
+CIRCLE (c2, 39), 2, 247
+c2 = c2 - 1
+NEXT
+FOR si = 1 TO 100 STEP 1
+FOR i = 1 TO 90: NEXT
+CIRCLE (52, 39), si, 247, , , .3
+NEXT
+END SUB
+
+SUB Krivanmusic
+savememo:
+sbplay4 1000, 9, &H27, &HF10: CALL WriteReg(&HB0, &H0)
+sbplay4 1200, 9, &HF27, &HF10: CALL WriteReg(&HB0, &H0)
+sbplay4 1000, 9, &HF27, &HF10: CALL WriteReg(&HB0, &H0)
+sbplay4 1200, 9, &HF27, &HF10: CALL WriteReg(&HB0, &H0)
+sbplay4 100, 9, &HF27, &HF10: CALL WriteReg(&HB0, &H0)
+sbplay4 300, 9, &HF27, &HF10: CALL WriteReg(&HB0, &H0)
+sbplay4 100, 9, &HF27, &HF10: CALL WriteReg(&HB0, &H0)
+sbplay4 300, 9, &HF27, &HF10: CALL WriteReg(&HB0, &H0)
+IF savemem = 1 THEN GOTO saveme
+savemem = 1: GOTO savememo
+saveme:
+savemem = 0
+savem:
+sbplay4 1000, 9, &HF25, &HF5: CALL WriteReg(&HB0, &H0)
+sbplay4 1200, 9, &HF25, &HF5: CALL WriteReg(&HB0, &H0)
+sbplay4 1000, 9, &HF25, &HF5: CALL WriteReg(&HB0, &H0)
+sbplay4 1200, 9, &HF25, &HF5: CALL WriteReg(&HB0, &H0)
+sbplay4 100, 9, &HF25, &HF5: CALL WriteReg(&HB0, &H0)
+sbplay4 300, 9, &HF25, &HF5: CALL WriteReg(&HB0, &H0)
+sbplay4 100, 9, &HF25, &HF5: CALL WriteReg(&HB0, &H0)
+sbplay4 300, 9, &HF25, &HF5: CALL WriteReg(&HB0, &H0)
+IF savemem = 1 THEN EXIT SUB
+savemem = 1: GOTO savem
+END SUB
+
+SUB Life
+SHARED HEALTH, HEALTHMAX
+HA = 193
+HB = 168
+CLR1 = 128
+LINE (HA + 1, HB)-(HA + 100, HB + 20), 0, BF
+FOR i = 1 TO (100 / CINT(HEALTHMAX)) * HEALTH
+LINE (HA + i, HB)-(HA + i, HB + 20), CLR1
+CLR1 = CLR1 + .45
+NEXT
+END SUB
+
+SUB Loser
+SHARED ENDGAME, snd
+DIM pieceofcrap(1 TO 554)
+DIM bottomhalf(1 TO 1870)
+DIM tophalf(1 TO 1870)
+
+x11 = 294
+x22 = 189
+x33 = 230
+x44 = 156
+
+LINE (233, 186)-(233, 158), 16
+LINE (233, 158)-(238, 158), 16
+LINE (238, 158)-(238, 183), 16
+LINE (238, 183)-(242, 183), 16
+LINE (242, 183)-(242, 187), 16
+LINE (242, 187)-(233, 187), 16
+CIRCLE (250, 173), 11, 16, , , 1.8
+CIRCLE (250, 173), 5, 16, , , 1.8
+LINE (264, 161)-(258, 161), 16
+LINE (258, 161)-(258, 166), 16
+LINE (258, 166)-(261, 166), 16
+LINE (261, 166)-(261, 184), 16
+LINE (261, 184)-(258, 184), 16
+LINE (258, 184)-(258, 187), 16
+LINE (258, 187)-(264, 187), 16
+LINE (264, 187)-(264, 164), 16
+LINE (264, 164)-(260, 164), 16
+LINE (260, 164)-(260, 163), 16
+LINE (260, 163)-(264, 161), 16
+LINE (268, 161)-(268, 187), 16
+LINE (268, 161)-(276, 161), 16
+LINE (276, 161)-(276, 164), 16
+LINE (276, 164)-(271, 164), 16
+LINE (271, 164)-(271, 173), 16
+LINE (271, 173)-(276, 173), 16
+LINE (276, 173)-(276, 177), 16
+LINE (276, 177)-(271, 177), 16
+LINE (271, 177)-(271, 184), 16
+LINE (268, 187)-(277, 187), 16
+LINE (277, 187)-(277, 184), 16
+LINE (277, 184)-(271, 184), 16
+LINE (281, 187)-(281, 161), 16
+LINE (281, 161)-(290, 161), 16
+LINE (290, 161)-(290, 169), 16
+LINE (290, 169)-(285, 169), 16
+LINE (285, 169)-(292, 187), 16
+LINE (292, 187)-(289, 187), 16
+LINE (289, 187)-(284, 174), 16
+LINE (284, 174)-(284, 187), 16
+LINE (284, 187)-(281, 187), 16
+LINE (284, 164)-(287, 166), 16, B
+PAINT (236, 162), 40, 16
+PAINT (250, 165), 40, 16
+PAINT (262, 167), 40, 16
+PAINT (270, 167), 40, 16
+PAINT (283, 168), 40, 16
+
+x11 = 294
+x22 = 189
+x33 = 230
+x44 = 156
+
+GET (x11, x22)-(x33, x44), pieceofcrap
+craphole = 230
+buttmunch = 155
+FOR wussykeyword = 1 TO 225
+PUT (craphole, buttmunch), pieceofcrap, PSET
+craphole = craphole - 1
+ FOR delay = 1 TO 20: NEXT
+NEXT
+FOR buttmunch = 155 TO 10 STEP -1
+PUT (craphole, buttmunch), pieceofcrap, PSET
+FOR delay = 1 TO 20: NEXT
+NEXT
+FOR craphole = 5 TO 115
+PUT (craphole, buttmunch), pieceofcrap, PSET
+FOR delay = 1 TO 20: NEXT
+NEXT
+FOR buttmunch = 10 TO 85
+PUT (craphole, buttmunch), pieceofcrap, PSET
+FOR delay = 1 TO 20: NEXT
+NEXT
+IF snd = 4 THEN Gamemusic
+FOR i = 16 TO 31
+COLOR i
+LOCATE 17, 8: PRINT "E-End Game, P-Play Again"
+LOCATE 19, 8: PRINT "  or S-Save and quit?"
+NEXT
+ERASE pieceofcrap
+bt1 = 55
+bt2 = 118
+bt3 = 250
+bt4 = 155
+DO
+AA$ = UCASE$(INKEY$)
+LOOP UNTIL AA$ = "E" OR AA$ = "P" OR AA$ = "S"
+IF AA$ = "E" THEN CLS : LOCATE 10, 5: PRINT "Press any key to end Ambush II": COLOR 0: END
+IF AA$ = "P" THEN CHAIN "AMBUSH2.bas"
+IF AA$ = "S" THEN ENDGAME = 1: CHAIN "ARCADE.mk!"
+GET (bt1, bt2)-(bt3, bt4), bottomhalf
+to1 = 55
+to2 = 118
+to3 = 250
+to4 = 85
+GET (to1, to2)-(to3, to4), tophalf
+
+FOR i = 1 TO 7000
+IF nomove <> 1 THEN PUT (bt1, bt2), bottomhalf, PSET
+PUT (to1, to2 - 35), tophalf, PSET
+IF nomove <> 1 THEN bt2 = bt2 + 1
+to2 = to2 - 1
+IF to2 = 35 THEN CLS : EXIT FOR
+IF bt2 = 160 THEN LINE (55, 193)-(250, 155), 16, BF: nomove = 1
+NEXT
+ERASE tophalf
+ERASE bottomhalf
+END SUB
+
+SUB Man
+SHARED coi
+LINE (0, 100)-(320, 100), coi
+LINE (129, 73)-(125, 93), coi
+LINE (125, 93)-(132, 92), coi
+LINE (132, 92)-(136, 77), coi
+LINE (136, 77)-(142, 77), coi
+LINE (142, 77)-(146, 94), coi
+LINE (146, 94)-(154, 93), coi
+LINE (154, 93)-(149, 68), coi
+LINE (149, 68)-(130, 67), coi
+LINE (130, 67)-(129, 73), coi
+LINE (124, 93)-(119, 96), coi
+LINE (119, 96)-(121, 99), coi
+LINE (121, 99)-(132, 92), coi
+LINE (154, 93)-(159, 97), coi
+LINE (159, 97)-(151, 98), coi
+LINE (151, 98)-(147, 94), coi
+LINE (149, 68)-(151, 49), coi
+LINE (151, 49)-(162, 59), coi
+LINE (162, 59)-(155, 65), coi
+LINE (155, 65)-(158, 69), coi
+LINE (158, 69)-(169, 59), coi
+LINE (169, 59)-(154, 44), coi
+LINE (154, 44)-(143, 42), coi
+LINE (130, 67)-(129, 49), coi
+LINE (129, 49)-(116, 55), coi
+LINE (116, 55)-(121, 63), coi
+LINE (121, 63)-(116, 65), coi
+LINE (116, 65)-(109, 51), coi
+LINE (109, 51)-(132, 42), coi
+LINE (129, 43)-(134, 46), coi
+LINE (134, 46)-(139, 47), coi
+LINE (139, 47)-(146, 43), coi
+CIRCLE (137, 35), 7, coi, , , 1.2
+PAINT (137, 35), 65, coi
+LINE (143, 42)-(141, 40), coi
+LINE (132, 42)-(133, 41), coi
+CIRCLE (135, 34), 1, 66, , , 1
+CIRCLE (139, 34), 1, 66, , , 1
+PSET (135, 34), 31
+PSET (139, 34), 31
+LINE (135, 38)-(137, 39), coi
+LINE (137, 39)-(138, 38), coi
+PAINT (137, 56), 4, coi
+PAINT (137, 45), 65, coi
+PAINT (137, 71), 32, coi
+PAINT (124, 95), coi, coi
+PAINT (151, 95), coi, coi
+LINE (158, 69)-(157, 72), coi
+LINE (157, 72)-(152, 69), coi
+LINE (152, 69)-(154, 65), coi
+PAINT (155, 68), 65, coi
+LINE (115, 64)-(113, 68), coi
+LINE (113, 68)-(121, 69), coi
+LINE (121, 69)-(125, 65), coi
+LINE (125, 65)-(122, 63), coi
+PAINT (121, 66), 65, coi
+END SUB
+
+SUB MeatGrinder
+DIM GRINDER(1 TO 4000)
+DIM organs(1 TO 1000)
+DIM organs2(1 TO 500)
+CLS
+PALETTE
+PALETTE 23, 256 * 23
+LINE (51, 115)-(45, 134), 23
+LINE (34, 134)-(40, 105), 23
+LINE (40, 105)-(69, 105), 23
+LINE (69, 105)-(75, 135), 23
+LINE (64, 135)-(60, 114), 23
+LINE (60, 114)-(51, 115), 23
+LINE (34, 134)-(38, 152), 23
+LINE (45, 152)-(45, 134), 23
+LINE (38, 152)-(33, 162), 23
+LINE (33, 162)-(38, 166), 23
+LINE (38, 166)-(45, 152), 23
+LINE (75, 135)-(71, 154), 23
+LINE (64, 134)-(65, 155), 23
+LINE (65, 155)-(71, 154), 23
+LINE (71, 154)-(77, 165), 23
+LINE (77, 165)-(71, 167), 23
+LINE (71, 167)-(66, 155), 23
+LINE (49, 123)-(37, 122), 23
+LINE (69, 105)-(71, 73), 23
+LINE (71, 73)-(80, 86), 23
+LINE (80, 86)-(78, 103), 23
+LINE (78, 103)-(73, 107), 23
+LINE (73, 107)-(82, 114), 23
+LINE (82, 114)-(89, 105), 23
+LINE (89, 105)-(88, 82), 23
+LINE (88, 82)-(76, 65), 23
+LINE (76, 65)-(59, 57), 23
+LINE (40, 105)-(38, 73), 23
+LINE (38, 73)-(24, 74), 23
+LINE (24, 66)-(38, 64), 23
+LINE (38, 64)-(38, 73), 23
+CIRCLE (24, 70), 4, 23, , , 1
+LINE (38, 64)-(45, 57), 23
+LINE (45, 53)-(45, 60), 23
+LINE (59, 53)-(59, 61), 23
+CIRCLE (51, 43), 12, 23, , , 1.2
+LINE (75, 78)-(81, 72), 23
+LINE (67, 61)-(60, 70), 23
+LINE (60, 70)-(50, 71), 23
+LINE (50, 71)-(41, 61), 23
+LINE (42, 47)-(49, 44), 23
+LINE (49, 44)-(56, 46), 23
+LINE (56, 46)-(61, 42), 23
+LINE (49, 49)-(55, 51), 23, B
+CIRCLE (48, 39), 2, 23, , , 1
+CIRCLE (56, 39), 2, 23, , , 1
+PALETTE 3, 256 * 3
+PALETTE 20, 256 * 20
+PALETTE 63, 256 * 63
+PALETTE 50, 256 * 50
+PALETTE 26, 256 * 26
+PALETTE 1, 256
+PALETTE 19, 256 * 19
+PAINT (48, 39), 3, 23
+PAINT (72, 159), 20, 23
+PAINT (56, 39), 3, 23
+PAINT (56, 66), 63, 23
+PAINT (56, 79), 50, 23
+PAINT (82, 79), 63, 23
+PAINT (64, 110), 1, 23
+PAINT (38, 134), 26, 23
+PAINT (33, 70), 26, 23
+PAINT (25, 70), 19, 23
+PAINT (45, 43), 26, 23
+PAINT (45, 49), 63, 23
+LINE (40, 55)-(62, 29), 0, BF
+CIRCLE (52, 56), 7, 4, , , -.7
+PAINT (52, 56), 41, 4
+PSET (52, 56), 31
+LINE (27, 106)-(78, 167), 0, BF
+LINE (78, 112)-(74, 105), 23
+PAINT (78, 109), 63, 23
+LINE (40, 105)-(69, 105), 0
+CIRCLE (55, 107), 17, 4, , , -.8
+PAINT (55, 107), 41, 4
+u1 = 91
+u2 = 115
+u3 = 15
+u4 = 29
+GET (u1, u2)-(u3, u4), GRINDER
+CLS
+LINE (34, 117)-(90, 117), 22
+LINE (90, 117)-(78, 136), 22
+LINE (51, 136)-(34, 117), 22
+LINE (51, 136)-(50, 145), 22
+LINE (50, 145)-(39, 146), 22
+LINE (39, 146)-(39, 154), 22
+LINE (39, 154)-(77, 154), 22
+LINE (77, 154)-(77, 147), 22
+LINE (77, 147)-(83, 147), 22
+LINE (83, 147)-(83, 152), 22
+LINE (83, 152)-(93, 152), 22
+LINE (93, 152)-(93, 149), 22
+LINE (93, 149)-(87, 149), 22
+LINE (87, 149)-(87, 144), 22
+LINE (87, 144)-(78, 144), 22
+LINE (77, 144)-(77, 137), 22
+PAINT (67, 128), 24, 22
+LINE (50, 143)-(39, 155), 0, BF
+LINE (51, 142)-(51, 154), 22
+FOR u4 = 12 TO 65
+PUT (u3, u4), GRINDER, PSET
+FOR delay = 1 TO 50: NEXT
+grad = 1
+IF u4 >= 30 THEN GET (u1 - grad, u2)-(u3, u4 - grad), GRINDER
+IF u4 >= 30 THEN grad = grad + 1
+NEXT
+LINE (45, 165)-(56, 162), 112
+LINE (56, 162)-(71, 165), 112
+LINE (71, 165)-(76, 161), 112
+LINE (76, 161)-(58, 157), 112
+LINE (58, 157)-(40, 162), 112
+LINE (40, 162)-(41, 166), 112
+LINE (41, 166)-(45, 165), 112
+PAINT (45, 163), 4, 112
+gu1 = 77
+gu2 = 156
+gu3 = 38
+gu4 = 167
+GET (gu1, gu2)-(gu3, gu4), organs
+LINE (gu1, gu2)-(gu3, gu4), 16, BF
+CIRCLE (60, 163), 17, 4, , , -.7
+PAINT (60, 163), 40, 4
+CIRCLE (60, 163), 10, 4, , , -.7
+PAINT (60, 163), 40, 4
+CIRCLE (60, 163), 2, 4, , , -.7
+PAINT (60, 163), 40, 4
+GET (gu1, gu2)-(gu3, gu4), organs2
+LINE (gu1, gu2)-(gu3, gu4), 16, BF
+alternate = 1
+FOR guts = 1 TO 21
+ gu2 = 155
+FOR gu2 = 155 TO 180
+IF alternate = 1 THEN PUT (gu3, gu2), organs, PSET
+IF alternate = 2 THEN PUT (gu3, gu2), organs2, PSET
+ FOR shotrdelay = 1 TO 50: NEXT
+NEXT
+ IF alternate = 1 THEN alternate = 2: GOTO lmrules
+ IF alternate = 2 THEN alternate = 1
+lmrules:
+NEXT
+KrivanEnd
+END SUB
+
+SUB Mirrordown (x1, y1, x2, y2)
+DIM Image(9000)
+GET (x1, y1)-(x2, y2), Image
+WINDOW (320, 200)-(0, 0)
+PUT (x1, y2), Image
+ERASE Image
+END SUB
+
+SUB PoolOBlood
+SHARED coi
+PALETTE
+CLS
+SCREEN 13
+DIM part1(500)
+DIM part2(500)
+y = 1
+FOR i = 113 TO 175
+PALETTE i, 65536 * y
+y = y + 1
+NEXT
+col = 113
+FOR i = 1 TO 100
+LINE (0, i)-(320, i), col
+col = col + .5
+NEXT
+coi = 23
+Man
+Mirrordown 103, 98, 170, 20
+PALETTE 254, 40
+WINDOW
+PALETTE 250, 40
+PALETTE 251, 50
+PALETTE 252, 35
+PALETTE 255, 34
+PALETTE 16, 52 * 65536
+LINE (0, 100)-(320, 100), 4
+CIRCLE (144, 150), 50, 4, , , 1.2
+PAINT (100, 150), 16, 4
+PAINT (189, 159), 16, 4
+PAINT (144, 150), 250, 23
+PAINT (144, 120), 251, 23
+PAINT (142, 165), 252, 23
+PAINT (140, 154), 252, 23
+PAINT (115, 131), 252, 23
+PAINT (157, 131), 252, 23
+CIRCLE (144, 150), 50, 23, , , 1.2
+PAINT (103, 150), 255, 23
+PAINT (144, 101), 255, 23
+CIRCLE (144, 150), 50, 4, , , 1.2
+CIRCLE (135, 164), 1, 254, , , 1
+CIRCLE (139, 164), 1, 254, , , 1
+coi = 24: Man: PALETTE 23, 50
+LINE (76, 131)-(72, 135), 4
+LINE (72, 135)-(72, 141), 4
+LINE (72, 141)-(76, 149), 4
+LINE (76, 149)-(80, 146), 4
+LINE (80, 146)-(81, 139), 4
+LINE (81, 139)-(78, 135), 4
+LINE (78, 135)-(76, 131), 4
+PAINT (76, 138), 22, 4
+GET (84, 150)-(70, 130), part1
+LINE (99, 164)-(94, 159), 4
+LINE (94, 159)-(92, 151), 4
+LINE (92, 151)-(99, 148), 4
+LINE (99, 148)-(97, 145), 4
+LINE (97, 145)-(90, 148), 4
+LINE (90, 148)-(89, 155), 4
+LINE (89, 155)-(91, 161), 4
+LINE (91, 161)-(94, 168), 4
+LINE (94, 168)-(99, 164), 4
+PAINT (95, 163), 112, 4
+GET (87, 144)-(101, 170), part2
+
+LINE (0, 100)-(320, 99), 113, BF
+LINE (0, 0)-(319, 199), 31, B
+FOR parts = 1 TO 17
+ kind = INT(RND * 2) + 1
+ SELECT CASE kind
+   CASE 1: p1 = INT(RND * 100) + 200
+           p3 = INT(RND * 100) + 200
+   CASE 2: p1 = INT(RND * 85) + 1
+           p3 = INT(RND * 85) + 1
+  END SELECT
+   p2 = INT(RND * 70) + 100
+   p4 = INT(RND * 70) + 100
+ PUT (p1, p2), part1, PSET
+ PUT (p3, p4), part2, PSET
+NEXT
+LINE (0, 0)-(319, 199), 31, B
+ERASE part1, part2
+
+FOR spot = 1 TO 230
+  p1 = INT(RND * 320) + 1
+  p2 = INT(RND * 100) + 100
+   SELECT CASE POINT(p1, p2)
+    CASE 16: CIRCLE (p1, p2), 1, 4
+             PAINT (p1, p2), 255, 4
+   END SELECT
+NEXT
+LINE (0, 0)-(319, 199), 31, B
+Slide2 2, 2, 1, " You watch your reflection in Mr."
+SELECT CASE names
+ CASE 500: Slide2 2, 3, 1, "Krivan's blood."
+ CASE 0: Slide2 2, 3, 1, "Wuss's blood."
+END SELECT
+DO UNTIL INKEY$ <> "": LOOP
+CLS
+PALETTE
+END SUB
+
+DEFINT Z
+SUB SBPlay2 (zreg%, zuration%, zoctave%, zaveform%)
+CALL WriteReg(&H20, &HA39)
+CALL WriteReg(&H40, &HFA90)
+CALL WriteReg(&H60, &HA9)
+CALL WriteReg(&H80, &HD1)
+CALL WriteReg(&HA0, zreg%)
+CALL WriteReg(&H23, &HA3)
+CALL WriteReg(&H43, &H1)
+CALL WriteReg(&H63, &HFA1)
+CALL WriteReg(&H83, &HFD)
+CALL WriteReg(&HB0, zoctave%)
+CALL WriteReg(&HE0, zaveform%)
+Timeup! = TIMER + zuration% / 64
+WHILE Timeup! > TIMER: WEND
+END SUB
+
+SUB sbplay4 (zreg%, zuration%, zoctave%, zaveform%)
+CALL WriteReg(&H20, &HC9)
+CALL WriteReg(&H40, &HF900)
+CALL WriteReg(&H60, &HF7)
+CALL WriteReg(&H80, &HF1)
+CALL WriteReg(&HA0, zreg%)
+CALL WriteReg(&H23, &HA3)
+CALL WriteReg(&H43, &H1)
+CALL WriteReg(&H63, &HFA1)
+CALL WriteReg(&H83, &HFD)
+CALL WriteReg(&HB0, zoctave%)
+CALL WriteReg(&HE0, zaveform%)
+Timeup! = TIMER + zuration% / 64
+WHILE Timeup! > TIMER: WEND
+END SUB
+
+DEFSNG Z
+SUB Slide (row, text$)
+SHARED FINAL
+mi = LEN(text$)
+IF FINAL = 0 THEN cent = 31 - INT(LEN(text$) / 2)
+IF FINAL = 1 THEN cent = 21 - INT(LEN(text$) / 2)
+speed = 175
+FOR im = 1 TO mi
+FOR delay = 1 TO speed: NEXT
+LOCATE row, cent
+IF im > 1 THEN PRINT MID$(text$, im, 1)
+IF im = 1 THEN PRINT LEFT$(text$, 1)
+LOCATE row, cent + 1: PRINT " "
+cent = cent + 1
+NEXT
+LOCATE row, cent: PRINT " "
+AA$ = INKEY$
+AA$ = ""
+END SUB
+
+SUB Slide2 (deeps, wor, speedoffadein, tet$)
+SCREEN 13
+mi = LEN(tet$)
+cent = 19 - INT(LEN(tet$) / 2)
+ FOR im = 1 TO mi
+     FOR delay = 1 TO deeps: NEXT
+     LOCATE wor, cent
+     FOR fadein = 16 TO 31
+       COLOR fadein
+       FOR delay = 1 TO speedoffadein: NEXT
+       LOCATE wor, cent
+       IF im > 1 THEN PRINT MID$(tet$, im, 1)
+       IF im = 1 THEN PRINT LEFT$(tet$, 1)
+     NEXT
+   cent = cent + 1
+ NEXT
+END SUB
+
+SUB What
+COLOR 200
+Slide 12, "What will you do ?"
+Slide 15, "Fight !!"
+Slide 17, "Use item"
+Slide 19, "Run away"
+END SUB
+
+DEFINT Z
+SUB WriteReg (zeg%, zalue%)
+OUT &H388, zeg
+
+  FOR ze = 0 TO 5
+  z = INP(&H388)
+  NEXT ze
+                                                  
+OUT &H389, zalue
+  FOR ze = 0 TO 34
+   z = INP(&H388)
+  NEXT ze
+END SUB
+

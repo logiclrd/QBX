@@ -1,0 +1,1591 @@
+DECLARE SUB Gamemusic ()
+DECLARE SUB SBPlay2 (zreg%, zuration%, zoctave%, zaveform%)
+DECLARE SUB WriteReg (zeg%, zalue%)
+DECLARE SUB Gameover ()
+DECLARE SUB Loser ()
+DECLARE SUB TheNote ()
+DECLARE SUB Flame1 ()
+DECLARE SUB Flame2 ()
+DECLARE SUB Flame3 ()
+DECLARE SUB Spiral1 ()
+DECLARE SUB Spiral2 ()
+DECLARE SUB Spiral3 ()
+DECLARE SUB Hole ()
+DECLARE SUB Room1 ()
+DECLARE SUB Useitem ()
+DECLARE SUB Items ()
+DECLARE SUB Rooms ()
+DECLARE SUB Map ()
+COMMON BEGINNINGTIME, Q, a, B, BLOCKX, BLOCKY, ELAPSEDTIME, STAIRWAY, HEALTH
+COMMON HEALTHMAX, ENEMIES, ROOM, ARCADE, DEATHS, snd, DETECTOR, STRENGTH
+COMMON SHELLS, LIGHT, BOSS, BOSSES, ORANGE, GRINDER, GRANADE, GRENADES, FLOOR
+COMMON Placeholder, Names, Loaded, Turbo, Invince, NAME$, LOAD, BOMB, SUIT
+COMMON SHOVEL, KEE, OPEN1, AMMOA, AMMOB, FOODA, FOODB, AMMOGET, FOODGET, Note
+COMMON LIGHTON, SUITON, ITEMUSE, Ending, SpecialCredits, Warping, OPEN2, SWORD
+COMMON ENDGAME, HARD
+DIM SHARED L1, L2, B1, B2, r1, r2, c1, c2, CLR1, CLR2, CLRO, ROOM$, DUG, NOTES
+ON ERROR GOTO ERRORMESSAGE
+SCREEN 13
+RANDOMIZE TIMER
+DIM MAN%(5000)
+DIM FLAME%(5000)
+DIM SPIRAL%(5000)
+DIM ENDGAME%(3000)
+DIM SHARED FLX, FLY, SPA, SPB
+ROOM = 25
+Rooms
+COLOR 43
+LOCATE 1, 9: PRINT "Ambush at South Range II"
+TIMESTOP = 500
+FK% = 0
+CLING = HEALTH
+GET (a - 5, B - 10)-(a + 5, B + 9), MAN%
+GOSUB BOD
+AA = a
+BB = B
+INKY: AA$ = UCASE$(INKEY$)
+IF snd = 3 THEN PLAY OFF: K = 1
+IF snd = 2 AND K = 0 THEN
+PLAY ON
+PLAY "T200MSMBL8O0"
+GOSUB PLAY1C
+K = 1
+END IF
+IF LEN(AA$) = 2 THEN FK% = ASC(RIGHT$(AA$, 1))
+AA = a
+BB = B
+IF AA$ = CHR$(13) THEN TIMESTOP = 500: FK% = 0
+IF SUITON = 0 THEN
+IF Turbo <> 500 THEN
+IF AA$ = "1" THEN Q = 1
+IF AA$ = "2" THEN Q = 2
+IF AA$ = "3" THEN Q = 4
+IF AA$ = CHR$(19) THEN Q = 10
+END IF
+IF Turbo = 500 THEN
+IF AA$ = "1" THEN Q = 2
+IF AA$ = "2" THEN Q = 5
+IF AA$ = "3" THEN Q = 9
+END IF
+END IF
+IF SUITON = 1 THEN Q = .6
+IF SUITON = 0 THEN
+IF Invince <> 500 THEN HEALTH = HEALTH - .05
+IF CLING - 1 = CINT(HEALTH) THEN
+IF snd = 1 THEN PLAY "T255MBO0L64BAGFEDC"
+LINE (a - 5, B - 10)-(a + 5, B + 9), 40, BF
+FOR delay = 1 TO 100: NEXT
+PUT (a - 5, B - 10), MAN%, PSET
+GET (a - 5, B - 10)-(a + 5, B + 9), MAN%
+CLING = CLING - 1
+END IF
+END IF
+IF FK% = 82 AND snd = 1 OR AA$ = "0" AND snd = 1 THEN PLAY "T255O0L64EFEFEF"
+IF AA$ = CHR$(27) THEN
+GET (123, 83)-(204, 107), ENDGAME%
+LINE (202, 105)-(125, 85), 0, B
+PAINT (126, 86), 0
+COLOR 15
+LOCATE 12, 17: PRINT "Quit Game"
+LOCATE 13, 18: PRINT "(Y/N) ?"
+LINE (124, 84)-(203, 106), 15, B
+LINE (204, 107)-(123, 83), 27, B
+DO
+AA$ = UCASE$(INKEY$)
+LOOP UNTIL AA$ = "Y" OR AA$ = "N"
+IF AA$ = "Y" THEN CLS : LOCATE 10, 5: PRINT "Press any key to end Ambush II": COLOR 0: END
+IF AA$ = "N" THEN PUT (123, 83), ENDGAME%, PSET
+END IF
+IF FK% = 59 THEN FK% = 0: TIMESTOP = 500: GOTO PAUSE
+IF FK% = 77 THEN AA = a + Q: TIMESTOP = 0
+IF FK% = 75 THEN AA = a - Q: TIMESTOP = 0
+IF FK% = 80 THEN BB = B + Q: TIMESTOP = 0
+IF FK% = 72 THEN BB = B - Q: TIMESTOP = 0
+IF FLAME = 0 THEN RNDM = INT(RND * 3) + 1
+IF RNDM = 3 THEN
+RNDM = 0: FLAME = 1: FLAMEB = 0
+IF ROOM <> 25 THEN FLX = INT(RND * 230) + 45: FLY = INT(RND * 130) + 45
+IF ROOM = 25 THEN FLX = INT(RND * 50) + 125: FLY = INT(RND * 120) + 45
+PUT (a - 5, B - 10), MAN%, PSET
+GET (FLX - 4, FLY - 12)-(FLX + 9, FLY + 5), FLAME%
+GET (a - 5, B - 10)-(a + 5, B + 9), MAN%
+END IF
+IF FLAME = 1 THEN
+IF FLAMEB < 40 THEN
+CIRCLE (FLX + 2, FLY), 2, 16, , , 1
+PAINT (FLX + 2, FLY), 120, 16
+END IF
+IF FLAMEB >= 40 AND FLAMEB < 70 THEN
+PUT (FLX - 4, FLY - 12), FLAME%, PSET
+Flame1
+END IF
+IF FLAMEB >= 70 AND FLAMEB < 100 THEN
+IF TRY = 0 THEN
+PUT (FLX - 4, FLY - 12), FLAME%, PSET
+Flame2
+TRY = 1
+GOTO NXT
+END IF
+IF TRY = 1 THEN
+PUT (FLX - 4, FLY - 12), FLAME%, PSET
+Flame3
+TRY = 0
+END IF
+END IF
+NXT:
+IF FLAMEB >= 100 THEN
+PUT (a - 5, B - 10), MAN%, PSET
+FLAME = 0: PUT (FLX - 4, FLY - 12), FLAME%, PSET
+GET (a - 5, B - 10)-(a + 5, B + 9), MAN%
+END IF
+FLAMEB = FLAMEB + 1
+END IF
+IF SPIRAL = 0 THEN RNDM1 = INT(RND * 3) + 1
+IF RNDM1 = 3 THEN
+RNDM1 = 0: SPIRAL = 1: SPIRALB = 0
+IF ROOM <> 25 THEN SPA = INT(RND * 230) + 45: SPB = INT(RND * 130) + 45
+IF ROOM = 25 THEN SPA = INT(RND * 50) + 125: SPB = INT(RND * 120) + 45
+PUT (a - 5, B - 10), MAN%, PSET
+GET (SPA - 10, SPB - 7)-(SPA + 10, SPB + 10), SPIRAL%
+GET (a - 5, B - 10)-(a + 5, B + 9), MAN%
+END IF
+IF SPIRAL = 1 THEN
+IF SPIRALB < 40 THEN
+PALETTE 247, 5120
+CIRCLE (SPA, SPB), 1, 247, , , 1
+PAINT (SPA, SPB), 120, 247
+END IF
+IF SPIRALB >= 40 AND SPIRALB < 70 THEN
+PUT (SPA - 10, SPB - 7), SPIRAL%, PSET
+Spiral1
+END IF
+IF SPIRALB >= 70 AND SPIRALB < 100 THEN
+IF TRY1 = 0 THEN
+PUT (SPA - 10, SPB - 7), SPIRAL%, PSET
+Spiral2
+TRY1 = 1
+GOTO NXT1
+END IF
+IF TRY1 = 1 THEN
+PUT (SPA - 10, SPB - 7), SPIRAL%, PSET
+Spiral3
+TRY1 = 0
+END IF
+END IF
+NXT1:
+IF SPIRALB >= 100 THEN
+PUT (a - 5, B - 10), MAN%, PSET
+SPIRAL = 0: PUT (SPA - 10, SPB - 7), SPIRAL%, PSET
+GET (a - 5, B - 10)-(a + 5, B + 9), MAN%
+END IF
+SPIRALB = SPIRALB + 1
+END IF
+IF a >= FLX - 9 AND a <= FLX + 14 AND B >= FLY - 20 AND B <= FLY + 15 THEN
+IF FLAME = 1 AND FLAMEB >= 60 AND SUITON = 0 AND Invince = 0 THEN
+HEALTH = HEALTH - 2: CLING = CINT(HEALTH)
+IF snd = 1 THEN PLAY "T255MBO0L64BAGFEDC"
+LINE (a - 5, B - 10)-(a + 5, B + 9), 40, BF
+FOR delay = 1 TO 100: NEXT
+PUT (a - 5, B - 10), MAN%, PSET
+IF LOOK = 80 THEN B = B - 10: BB = B: FK% = 0: TIMESTOP = 500: HIT = 1
+IF LOOK = 72 THEN B = B + 10: BB = B: FK% = 0: TIMESTOP = 500: HIT = 1
+IF LOOK = 75 THEN a = a + 10: AA = a: FK% = 0: TIMESTOP = 500: HIT = 1
+IF LOOK = 77 THEN a = a - 10: AA = a: FK% = 0: TIMESTOP = 500: HIT = 1
+FLAME = 0: PUT (FLX - 4, FLY - 12), FLAME%, PSET
+GET (a - 5, B - 10)-(a + 5, B + 9), MAN%
+END IF
+END IF
+IF a >= SPA - 15 AND a <= SPA + 15 AND B >= SPB - 15 AND B <= SPB + 20 THEN
+IF SPIRAL = 1 AND SPIRALB >= 60 AND SUITON = 0 AND Invince = 0 THEN
+HEALTH = HEALTH - 2: CLING = CINT(HEALTH)
+IF snd = 1 THEN PLAY "T255MBO0L64BAGFEDC"
+LINE (a - 5, B - 10)-(a + 5, B + 9), 40, BF
+FOR delay = 1 TO 100: NEXT
+PUT (a - 5, B - 10), MAN%, PSET
+IF LOOK = 80 THEN B = B - 10: BB = B: FK% = 0: TIMESTOP = 500: HIT1 = 1
+IF LOOK = 72 THEN B = B + 10: BB = B: FK% = 0: TIMESTOP = 500: HIT1 = 1
+IF LOOK = 75 THEN a = a + 10: AA = a: FK% = 0: TIMESTOP = 500: HIT1 = 1
+IF LOOK = 77 THEN a = a - 10: AA = a: FK% = 0: TIMESTOP = 500: HIT1 = 1
+SPIRAL = 0: PUT (SPA - 10, SPB - 7), SPIRAL%, PSET
+GET (a - 5, B - 10)-(a + 5, B + 9), MAN%
+END IF
+END IF
+IF HEALTH <= 0 THEN Gameover: Loser
+TIME = TIME + Q * 20
+IF TIMESTOP = 500 THEN TIME = -1
+IF TIME >= 200 THEN TIME = 0
+IF TIME >= 0 AND TIME <= 99 THEN
+PUT (a - 5, B - 10), MAN%, PSET
+B = BB
+a = AA
+GET (a - 5, B - 10)-(a + 5, B + 9), MAN%
+GOSUB BOD
+GOSUB ONE
+END IF
+IF TIME >= 100 AND TIME <= 199 THEN
+PUT (a - 5, B - 10), MAN%, PSET
+B = BB
+a = AA
+GET (a - 5, B - 10)-(a + 5, B + 9), MAN%
+GOSUB BOD
+GOSUB TWO
+END IF
+IF TIMESTOP = 500 THEN GOSUB BOD: GOSUB STAND
+IF FK% <> 0 THEN LOOK = FK%
+IF BORDER = 1 THEN IF a <= 45 OR a >= 275 OR B <= 40 OR B >= 152 THEN QWER = 1
+IF BORDER = 2 THEN IF a <= 55 OR a >= 265 OR B <= 50 OR B >= 142 THEN QWER = 1
+IF ROOM = 25 THEN
+IF a >= 40 AND a <= 130 AND B >= 32 AND B <= 170 THEN QWER = 1
+IF a >= 170 AND a <= 280 AND B >= 32 AND B <= 170 THEN QWER = 1
+IF FK% = 72 AND a >= 140 AND a <= 160 AND B >= 27 AND B <= 55 THEN CHAIN "FLOOR1.mk!"
+IF DUG = 1 AND AA$ = " " THEN
+IF a >= 128 AND a <= 171 AND B >= 131 AND B <= 156 THEN
+QW = a: WQ = B
+TheNote
+NOTES = 1
+PUT (a - 5, B - 10), MAN%, PSET
+Rooms
+GET (a - 5, B - 10)-(a + 5, B + 9), MAN%
+Hole
+NOTES = 0
+Note = 1
+BOMB = 1
+SWORD = 1
+a = QW: B = WQ
+GET (a - 5, B - 10)-(a + 5, B + 9), MAN%
+END IF
+END IF
+IF FK% = 82 AND ITEMUSE = 3 OR AA$ = "0" AND ITEMUSE = 3 THEN
+IF a >= 128 AND a <= 171 AND B >= 131 AND B <= 156 THEN
+PUT (a - 5, B - 10), MAN%, PSET: Hole
+DUG = 1: GET (a - 5, B - 10)-(a + 5, B + 9), MAN%
+END IF
+END IF
+END IF
+IF HIT = 1 AND QWER = 0 THEN HIT = 0
+IF HIT = 1 AND QWER = 1 THEN
+HIT = 0
+PUT (a - 5, B - 10), MAN%, PSET
+IF LOOK = 80 THEN B = B + 20: BB = B
+IF LOOK = 72 THEN B = B - 20: BB = B
+IF LOOK = 75 THEN a = a - 20: AA = a
+IF LOOK = 77 THEN a = a + 20: AA = a
+GET (a - 5, B - 10)-(a + 5, B + 9), MAN%
+END IF
+IF HIT1 = 1 AND QWER = 0 THEN HIT1 = 0
+IF HIT1 = 1 AND QWER = 1 THEN
+HIT1 = 0
+PUT (a - 5, B - 10), MAN%, PSET
+IF LOOK = 80 THEN B = B + 20: BB = B
+IF LOOK = 72 THEN B = B - 20: BB = B
+IF LOOK = 75 THEN a = a - 20: AA = a
+IF LOOK = 77 THEN a = a + 20: AA = a
+GET (a - 5, B - 10)-(a + 5, B + 9), MAN%
+END IF
+IF QWER = 1 THEN
+PUT (a - 5, B - 10), MAN%, PSET
+IF LOOK = 80 THEN B = B - Q: BB = B
+IF LOOK = 72 THEN B = B + Q: BB = B
+IF LOOK = 77 THEN a = a - Q: AA = a
+IF LOOK = 75 THEN a = a + Q: AA = a
+TIMESTOP = 500
+FK% = 0
+GET (a - 5, B - 10)-(a + 5, B + 9), MAN%
+QWER = 0
+END IF
+GOTO INKY
+BOD:
+IF SUITON = 0 THEN CL1 = 186: CL2 = 65: CL3 = 4
+IF SUITON = 1 THEN CL1 = 43: CL2 = 44: CL3 = 44
+CIRCLE (a, B - 7), 3, CL1, , , 1
+PAINT (a, B - 7), CL2, CL1
+LINE (a - 3, B - 4)-(a - 5, B - 3), CL1
+LINE (a - 5, B - 3)-(a - 5, B + 1), CL1
+LINE (a - 5, B + 1)-(a - 2, B + 1), CL1
+LINE (a - 2, B + 1)-(a - 2, B), CL1
+LINE (a + 3, B - 4)-(a + 5, B - 3), CL1
+LINE (a + 5, B - 3)-(a + 4, B + 1), CL1
+LINE (a + 4, B + 1)-(a + 2, B + 1), CL1
+LINE (a + 2, B + 1)-(a + 2, B), CL1
+LINE (a - 3, B + 2)-(a + 3, B + 2), CL1
+PAINT (a, B), CL3, CL1
+RETURN
+STAND:
+IF SUITON = 0 THEN CL1 = 186: CL2 = 55
+IF SUITON = 1 THEN CL1 = 43: CL2 = 44
+LINE (a - 2, B + 3)-(a - 1, B + 6), CL2, BF
+LINE (a + 1, B + 3)-(a + 2, B + 6), CL2, BF
+LINE (a - 1, B + 3)-(a + 1, B + 3), CL2
+LINE (a - 3, B + 2)-(a - 3, B + 7), CL1
+LINE (a - 3, B + 7)-(a, B + 7), CL1
+LINE (a, B + 7)-(a, B + 4), CL1
+LINE (a, B + 7)-(a + 3, B + 7), CL1
+LINE (a + 3, B + 7)-(a + 3, B + 2), CL1
+LINE (a + 3, B + 8)-(a - 3, B + 8), CL1
+FOR i = 1 TO 50: NEXT
+RETURN
+ONE:
+IF SUITON = 0 THEN CL1 = 186: CL2 = 55
+IF SUITON = 1 THEN CL1 = 43: CL2 = 44
+LINE (a - 3, B + 2)-(a - 3, B + 7), CL1
+LINE (a - 3, B + 7)-(a, B + 7), CL1
+LINE (a, B + 7)-(a, B + 4), CL1
+LINE (a, B + 5)-(a + 3, B + 6), CL1, B
+LINE (a + 3, B + 4)-(a + 3, B + 2), CL1
+LINE (a - 3, B + 8)-(a, B + 8), CL1
+PAINT (a, B + 3), CL2, CL1
+FOR i = 1 TO 50: NEXT
+RETURN
+TWO:
+IF SUITON = 0 THEN CL1 = 186: CL2 = 55
+IF SUITON = 1 THEN CL1 = 43: CL2 = 44
+LINE (a - 3, B + 2)-(a - 3, B + 6), CL1
+LINE (a + 3, B + 7)-(a, B + 7), CL1
+LINE (a, B + 7)-(a, B + 4), CL1
+LINE (a, B + 5)-(a - 2, B + 6), CL1, B
+LINE (a + 3, B + 7)-(a + 3, B + 2), CL1
+LINE (a + 3, B + 8)-(a, B + 8), CL1
+PAINT (a, B + 3), CL2, CL1
+FOR i = 1 TO 50: NEXT
+RETURN
+PAUSE:
+COLOR 43: LOCATE 1, 9: PRINT "Ambush at South Range II"
+COLOR 4
+LOCATE 2, 4: PRINT "Room: ";
+COLOR 15: PRINT "Boiler Room"
+LINE (20, 20)-(300, 180), 15, B
+LINE (21, 21)-(299, 179), 0, BF
+LOCATE 4, 18: PRINT "Pause"
+LOCATE 6, 5: PRINT "See Map"
+LOCATE 7, 5: PRINT "See Items"
+LOCATE 8, 5: PRINT "Use Items"
+COLOR 23: LOCATE 9, 5: PRINT "Save Game"
+COLOR 15: LOCATE 10, 5: PRINT "Sound On/Off/FX"
+LOCATE 11, 5: PRINT "Exit Pause"
+COLOR 54: LOCATE 13, 5: PRINT NAME$: COLOR 15
+LINE (30, 104)-(81, 104), 54
+LINE (30, 105)-(81, 105), 55
+LOCATE 15, 5: PRINT "Shells: ";
+COLOR 43: PRINT SHELLS: COLOR 15
+LOCATE 17, 5: PRINT "Grenades: ";
+COLOR 43: PRINT GRENADES: COLOR 15
+LOCATE 19, 5: PRINT "Deaths: ";
+COLOR 43: PRINT DEATHS: COLOR 15
+LOCATE 13, 22: PRINT "Health: ";
+COLOR 43: PRINT CINT(HEALTH): COLOR 15
+LOCATE 15, 22: PRINT "Maximum"
+LOCATE 16, 22: PRINT "Health: ";
+COLOR 43: PRINT CINT(HEALTHMAX): COLOR 15
+LOCATE 19, 22: PRINT "Strength: ";
+COLOR 43: PRINT CINT(STRENGTH): COLOR 15
+LOCATE 22, 5: PRINT "Time: ";
+HA = 170
+HB = 42
+CLR1 = 32
+LINE (HA, HB)-(HA + 100, HB + 20), 0, BF
+FOR i = 1 TO (100 / CINT(HEALTHMAX)) * HEALTH
+LINE (HA + i, HB)-(HA + i, HB + 20), CLR1
+CLR1 = CLR1 + .45
+NEXT
+I1 = 1
+PICK = 0
+AGA:
+DO
+AA$ = INKEY$
+IF LEN(AA$) = 2 THEN FK% = ASC(RIGHT$(AA$, 1))
+IF FK% = 72 AND PICK <> 0 THEN
+PICK = PICK - 1
+COLOR 15
+LOCATE 6, 5: PRINT "See Map"
+LOCATE 7, 5: PRINT "See Items"
+LOCATE 8, 5: PRINT "Use Items"
+COLOR 23: LOCATE 9, 5: PRINT "Save Game"
+COLOR 15: LOCATE 10, 5: PRINT "Sound On/Off/FX"
+LOCATE 11, 5: PRINT "Exit Pause"
+LOCATE 10, 22: PRINT STRING$(16, " ")
+END IF
+IF FK% = 80 AND PICK <> 5 THEN
+PICK = PICK + 1
+COLOR 15
+LOCATE 6, 5: PRINT "See Map"
+LOCATE 7, 5: PRINT "See Items"
+LOCATE 8, 5: PRINT "Use Items"
+COLOR 23: LOCATE 9, 5: PRINT "Save Game"
+COLOR 15: LOCATE 10, 5: PRINT "Sound On/Off/FX"
+LOCATE 11, 5: PRINT "Exit Pause"
+LOCATE 10, 22: PRINT STRING$(16, " ")
+END IF
+FK% = 0
+TIMING = TIMER - BEGINNINGTIME
+COLOR 15: LOCATE 22, 5: PRINT "Time: ";
+COLOR 43
+JIM = FIX(TIMING / 3600)
+IF FIX(JIM) = 0 THEN TIM = FIX(TIMING / 60)
+IF FIX(JIM) <> 0 THEN TIM = FIX((TIMING - JIM * 3600) / 60)
+IF FIX(JIM) = 0 THEN GIM = FIX(TIMING - TIM * 60)
+IF FIX(JIM) <> 0 THEN GIM = FIX((TIMING - JIM * 3600) - TIM * 60)
+IF JIM < 10 THEN PRINT USING "0#:"; JIM;  ELSE PRINT USING "##:"; JIM;
+IF TIM < 10 THEN PRINT USING "0#:"; TIM;  ELSE PRINT USING "##:"; TIM;
+IF GIM < 10 THEN PRINT USING "0#"; GIM ELSE PRINT USING "##"; GIM
+COLOR 15
+IF ASD = 0 THEN I1 = I1 + 4
+IF ASD = 1 THEN I1 = I1 - 4
+IF I1 >= 62 THEN ASD = 1: I1 = 62
+IF I1 <= 2 THEN ASD = 0: I1 = 2
+PALETTE 247, I1
+COLOR 247
+IF PICK = 0 THEN LOCATE 6, 5: PRINT "See Map"
+IF PICK = 1 THEN LOCATE 7, 5: PRINT "See Items"
+IF PICK = 2 THEN LOCATE 8, 5: PRINT "Use Items"
+IF PICK = 3 THEN COLOR 19: LOCATE 9, 5: PRINT "Save Game"
+IF PICK = 4 THEN
+LOCATE 10, 5: PRINT "Sound On/Off/FX"
+LOCATE 10, 22
+COLOR 15
+IF snd = 1 THEN snd$ = "Sound FX "
+IF snd = 2 THEN snd$ = "Music    "
+IF snd = 3 THEN snd$ = "No Sound "
+IF snd = 4 THEN snd$ = "Snd Bl FX"
+PRINT "Sound: "; snd$
+END IF
+IF PICK = 5 THEN LOCATE 11, 5: PRINT "Exit Pause"
+LOOP UNTIL AA$ = CHR$(13)
+IF PICK = 0 THEN Map: GOTO PAUSE
+IF PICK = 1 THEN Items: GOTO PAUSE
+IF PICK = 2 THEN Useitem: GOTO PAUSE
+IF PICK = 3 THEN GOTO AGA
+IF PICK = 4 THEN
+IF snd = 4 THEN snd = 1: GOTO AGA
+IF snd = 3 THEN snd = 4: GOTO AGA
+IF snd = 2 THEN snd = 3: PLAY OFF: GOTO AGA
+IF snd = 1 THEN snd = 2: K = 0: GOTO AGA
+END IF
+IF PICK = 5 THEN
+LINE (21, 21)-(299, 179), 0, BF
+QW = a: WQ = B
+Rooms
+a = QW: B = WQ
+GET (a - 5, B - 10)-(a + 5, B + 9), MAN%
+FK% = 0
+TIMESTOP = 500
+END IF
+COLOR 15
+GOTO INKY
+PLAY1C:
+ON PLAY(1) GOSUB PLAY2C
+PLAY "P1DD P4P8 DDD P1 DD P4P8 DDD"
+RETURN
+PLAY2C:
+ON PLAY(1) GOSUB PLAY3C
+PLAY "P1FF P4P8 FFF P1 FF P4P8 FFF"
+RETURN
+PLAY3C:
+ON PLAY(1) GOSUB PLAY4C
+PLAY "P1DD P4P8 DDD P1 DD P4P8 DDD"
+RETURN
+PLAY4C:
+ON PLAY(1) GOSUB PLAY1C
+PLAY "P1C+C+ P4P8 C+C+C+ P1 C+C+ P4P8 C+C+C+"
+RETURN
+ERRORMESSAGE:
+SCREEN 0
+CLS
+COLOR 20
+LOCATE 5, 20: PRINT "An unexpected error has occured in the software."
+COLOR 10
+LOCATE 8, 12: PRINT "The program cannot continue to run for some unexplained reason."
+COLOR 15
+LOCATE 12, 16: PRINT "You can either:"
+LOCATE 14, 19: PRINT "A) Quit game"
+LOCATE 16, 24: PRINT "or"
+LOCATE 18, 19: PRINT "B) Save & quit game"
+DO
+AA$ = UCASE$(INKEY$)
+LOOP UNTIL AA$ = "A" OR AA$ = "B"
+SCREEN 13
+IF AA$ = "A" THEN COLOR 0: END
+IF AA$ = "B" THEN ENDGAME = 1: CHAIN "ARCADE.mk!"
+
+SUB Flame1
+LINE (FLX, FLY - 6)-(FLX - 2, FLY - 1), 16
+LINE (FLX - 2, FLY - 1)-(FLX - 2, FLY + 2), 16
+LINE (FLX - 2, FLY + 2)-(FLX, FLY + 4), 16
+LINE (FLX, FLY + 4)-(FLX + 3, FLY + 4), 16
+LINE (FLX + 3, FLY + 4)-(FLX + 5, FLY + 2), 16
+LINE (FLX + 5, FLY + 2)-(FLX + 5, FLY - 2), 16
+LINE (FLX + 5, FLY - 2)-(FLX + 3, FLY - 4), 16
+LINE (FLX + 3, FLY - 4)-(FLX + 1, FLY - 6), 16
+LINE (FLX - 1, FLY + 2)-(FLX + 1, FLY + 1), 16
+LINE (FLX + 1, FLY + 1)-(FLX + 4, FLY + 1), 16
+PAINT (FLX + 2, FLY + 3), 2, 16
+PAINT (FLX + 2, FLY), 120, 16
+END SUB
+
+SUB Flame2
+LINE (FLX + 1, FLY + 4)-(FLX - 2, FLY + 1), 16
+LINE (FLX - 2, FLY + 1)-(FLX - 3, FLY - 3), 16
+LINE (FLX - 3, FLY - 3)-(FLX - 2, FLY - 8), 16
+LINE (FLX - 2, FLY - 8)-(FLX, FLY - 11), 16
+LINE (FLX, FLY - 11)-(FLX, FLY - 7), 16
+LINE (FLX, FLY - 7)-(FLX + 3, FLY - 7), 16
+LINE (FLX + 3, FLY - 7)-(FLX + 6, FLY - 11), 16
+LINE (FLX + 6, FLY - 11)-(FLX + 7, FLY - 4), 16
+LINE (FLX + 7, FLY - 4)-(FLX + 6, FLY + 1), 16
+LINE (FLX + 6, FLY + 1)-(FLX + 4, FLY + 4), 16
+LINE (FLX + 4, FLY + 4)-(FLX, FLY + 4), 16
+LINE (FLX - 1, FLY + 1)-(FLX + 3, FLY), 16
+LINE (FLX + 3, FLY)-(FLX + 6, FLY + 1), 16
+PAINT (FLX + 3, FLY + 2), 2, 16
+PAINT (FLX + 3, FLY - 4), 120, 16
+END SUB
+
+SUB Flame3
+LINE (FLX + 2, FLY + 4)-(FLX + 6, FLY + 3), 16
+LINE (FLX + 6, FLY + 3)-(FLX + 8, FLY - 2), 16
+LINE (FLX + 8, FLY - 2)-(FLX + 7, FLY - 6), 16
+LINE (FLX + 7, FLY - 6)-(FLX + 3, FLY - 11), 16
+LINE (FLX + 3, FLY - 11)-(FLX + 4, FLY - 7), 16
+LINE (FLX + 4, FLY - 7)-(FLX + 1, FLY - 8), 16
+LINE (FLX + 1, FLY - 8)-(FLX - 2, FLY - 11), 16
+LINE (FLX - 2, FLY - 11)-(FLX - 1, FLY - 7), 16
+LINE (FLX - 1, FLY - 7)-(FLX - 3, FLY - 3), 16
+LINE (FLX - 3, FLY - 3)-(FLX - 3, FLY), 16
+LINE (FLX - 3, FLY)-(FLX - 1, FLY + 3), 16
+LINE (FLX - 1, FLY + 3)-(FLX + 2, FLY + 4), 16
+LINE (FLX - 2, FLY + 1)-(FLX + 2, FLY - 1), 16
+LINE (FLX + 2, FLY - 1)-(FLX + 7, FLY - 1), 16
+PAINT (FLX + 3, FLY), 2, 16
+PAINT (FLX + 3, FLY - 3), 120, 16
+END SUB
+
+SUB Gamemusic
+SBPlay2 1200, 10, &HA30, &HF1: CALL WriteReg(&HB0, &H0)
+SBPlay2 1200, 10, &HA30, &HF1: CALL WriteReg(&HB0, &H0)
+SBPlay2 1200, 10, &HA30, &HF1: CALL WriteReg(&HB0, &H0)
+SBPlay2 1200, 10, &HA30, &HF1: CALL WriteReg(&HB0, &H0)
+SBPlay2 1175, 10, &HA30, &HF1: CALL WriteReg(&HB0, &H0)
+SBPlay2 1150, 10, &HA30, &HF1: CALL WriteReg(&HB0, &H0)
+SBPlay2 1125, 10, &HA30, &HF1: CALL WriteReg(&HB0, &H0)
+SBPlay2 1100, 10, &HA30, &HF1: CALL WriteReg(&HB0, &H0)
+SBPlay2 1200, 10, &HA26, &HF1: CALL WriteReg(&HB0, &H0)
+SBPlay2 1200, 10, &HA26, &HF1: CALL WriteReg(&HB0, &H0)
+SBPlay2 1200, 10, &HA26, &HF1: CALL WriteReg(&HB0, &H0)
+SBPlay2 1200, 10, &HA26, &HF1: CALL WriteReg(&HB0, &H0)
+SBPlay2 1175, 10, &HA26, &HF1: CALL WriteReg(&HB0, &H0)
+SBPlay2 1150, 10, &HA26, &HF1: CALL WriteReg(&HB0, &H0)
+SBPlay2 1125, 10, &HA26, &HF1: CALL WriteReg(&HB0, &H0)
+SBPlay2 1100, 10, &HA26, &HF1: CALL WriteReg(&HB0, &H0)
+SBPlay2 1150, 10, &HA26, &HA9: CALL WriteReg(&HB0, &H0)
+SBPlay2 1190, 10, &HA26, &HA9: CALL WriteReg(&HB0, &H0)
+SBPlay2 1200, 13, &HA26, &HA9: CALL WriteReg(&HB0, &H0)
+END SUB
+
+SUB Gameover
+DIM g(29), a(28), m(29), e(29), o(28), v(29), t(29), r(29)
+CLS
+COLOR 15
+LOCATE 1, 10: PRINT "g"
+g = 70
+gf = 9
+gd = 80
+gs = 0
+GET (g, gf)-(gd, gs), g
+CLS
+FOR gf = 9 TO 100
+PUT (g, gf), g, PSET
+FOR delay = 1 TO 25: NEXT
+NEXT
+LOCATE 1, 11: PRINT "a"
+a1 = 80
+a2 = 9
+a3 = 87
+GET (a1, a2)-(a3, a4), a
+LOCATE 1, 11: PRINT " "
+FOR a2 = 9 TO 100
+PUT (a1, a2), a, PSET
+FOR delay = 1 TO 25: NEXT
+NEXT
+LOCATE 1, 12: PRINT "m"
+m1 = 87
+m2 = 9
+m3 = 96
+GET (m1, m2)-(m3, m4), m
+LOCATE 1, 12: PRINT " "
+FOR m2 = 9 TO 100
+PUT (m1, m2), m, PSET
+FOR delay = 1 TO 25: NEXT
+NEXT
+LOCATE 1, 13: PRINT "e"
+e1 = 96
+e2 = 9
+e3 = 102
+GET (e1, e2)-(e3, e4), e
+LOCATE 1, 13: PRINT " "
+FOR e2 = 9 TO 100
+PUT (e1, e2), e, PSET
+FOR delay = 1 TO 25: NEXT
+NEXT
+LOCATE 1, 25: PRINT "o"
+o1o = 191
+o2o = 9
+o3o = 199
+GET (o1o, o2o)-(o3o, o4o), o
+LOCATE 1, 25: PRINT " "
+FOR o2o = 9 TO 100
+PUT (o1o, o2o), o, PSET
+FOR delay = 1 TO 25: NEXT
+NEXT
+LOCATE 1, 26: PRINT "v"
+v1v = 199
+v2v = 9
+v3v = 207
+GET (v1v, v2v)-(v3v, v4v), v
+LOCATE 1, 26: PRINT " "
+FOR v2v = 9 TO 100
+PUT (v1v, v2v), v, PSET
+FOR delay = 1 TO 25: NEXT
+NEXT
+
+LOCATE 1, 27: PRINT "e"
+o1o = 207
+o2o = 9
+o3o = 214
+GET (o1o, o2o)-(o3o, o4o), t
+LOCATE 1, 27: PRINT " "
+FOR o2o = 9 TO 100
+PUT (o1o, o2o), t, PSET
+FOR delay = 1 TO 25: NEXT
+NEXT
+LOCATE 1, 28: PRINT "r"
+o1o = 215
+o2o = 9
+o3o = 222
+GET (o1o, o2o)-(o3o, o4o), r
+LOCATE 1, 28: PRINT " "
+FOR o2o = 9 TO 100
+PUT (o1o, o2o), r, PSET
+FOR delay = 1 TO 25: NEXT
+NEXT
+ERASE g: ERASE a: ERASE m: ERASE e: ERASE o: ERASE v: ERASE t: ERASE r
+END SUB
+
+SUB Getitem (item)
+SHARED QW, WQ, a, B, ROOM
+CLS
+DIM thumbsup(1 TO 750)
+LINE (118, 187)-(118, 194), 23
+CIRCLE (96, 163), 9, 23, , , 1.2
+PAINT (96, 163), 65, 23
+LINE (89, 177)-(91, 170), 23
+LINE (101, 170)-(102, 177), 23
+LINE (102, 177)-(118, 186), 23
+LINE (118, 194)-(101, 185), 23
+LINE (101, 185)-(101, 194), 23
+LINE (101, 194)-(87, 194), 23
+LINE (87, 194)-(84, 183), 23
+LINE (84, 183)-(87, 175), 23
+LINE (89, 177)-(95, 180), 23
+LINE (95, 180)-(103, 178), 23
+LINE (104, 187)-(108, 181), 23
+LINE (88, 176)-(82, 170), 23
+LINE (81, 172)-(81, 166), 23
+LINE (81, 166)-(82, 162), 23
+LINE (82, 162)-(79, 162), 23
+LINE (79, 162)-(77, 165), 23
+LINE (77, 165)-(73, 165), 23
+LINE (73, 165)-(72, 170), 23
+LINE (72, 170)-(80, 172), 23
+PAINT (74, 170), 65, 23
+LINE (76, 172)-(78, 169), 23
+LINE (78, 168)-(77, 165), 23
+LINE (78, 167)-(73, 167), 23
+LINE (73, 169)-(78, 169), 23
+LINE (77, 172)-(84, 182), 23
+PAINT (97, 175), 65, 23
+PAINT (97, 183), 4, 23
+PAINT (109, 184), 65, 23
+PAINT (81, 173), 65, 23
+CIRCLE (99, 161), 2, 66, , , 1
+CIRCLE (93, 161), 2, 66, , , 1
+PAINT (99, 161), 31, 66
+PAINT (93, 161), 31, 66
+PSET (99, 161), 16
+PSET (93, 161), 16
+LINE (93, 166)-(95, 168), 16
+LINE (95, 168)-(97, 168), 16
+LINE (97, 168)-(99, 166), 16
+du1 = 70
+du2 = 140
+du3 = 119
+du4 = 195
+GET (du1, du2)-(du3, du4), thumbsup
+dud1 = 210
+dud2 = 140
+FOR dud2 = 140 TO 30 STEP -1
+   du2 = dud2
+   PUT (dud1, dud2), thumbsup, PSET
+   PUT (du1, du2), thumbsup, PSET
+  FOR delay = 1 TO 10: NEXT
+ NEXT
+PLAY "T255MBMNL64O3 FAAF P6 FAAF P6 FAAF P6"
+PLAY "FAAF P4 E-GGE- P4 GB-B-G P4 FAAF P4"
+FOR dud1 = 210 TO 140 STEP -1
+   PUT (dud1, dud2), thumbsup, PSET
+   PUT (du1, du2), thumbsup, PSET
+   du1 = du1 + 1
+ FOR delay = 1 TO 5: NEXT
+ NEXT
+IF item = 1 THEN wep$ = "Flashlight"
+IF item = 2 THEN wep$ = "Meat Grinder"
+IF item = 3 THEN wep$ = "Orange"
+IF item = 4 THEN wep$ = "Boss Detector"
+FOR i = 16 TO 31
+  COLOR i
+  LOCATE 15, 13: PRINT "You have found the"
+  FOR delay = 1 TO 40: NEXT
+  cent = 21 - INT(LEN(wep$) / 2)
+  LOCATE 17, cent: PRINT wep$; "!"
+ NEXT
+ERASE thumbsup
+DO: LOOP UNTIL INKEY$ <> ""
+CLS
+QW = a
+WQ = B
+Rooms
+a = QW
+B = WQ
+END SUB
+
+SUB Hole
+SHARED SPIRAL%(), FLAME%(), MAN%(), SPA, SPB, FLX, FLY, a, B, FLAME, SPIRAL
+IF SPIRAL = 1 THEN PUT (SPA - 10, SPB - 7), SPIRAL%, PSET
+IF FLAME = 1 THEN PUT (FLX - 4, FLY - 12), FLAME%, PSET
+PUT (a - 5, B - 10), MAN%, PSET
+LINE (166, 142)-(161, 136), 17
+LINE (161, 136)-(151, 133), 17
+LINE (151, 133)-(142, 133), 17
+LINE (142, 133)-(133, 136), 17
+LINE (133, 136)-(130, 143), 17
+LINE (130, 143)-(129, 148), 17
+LINE (129, 148)-(131, 153), 17
+LINE (131, 153)-(139, 157), 17
+LINE (139, 157)-(150, 158), 17
+LINE (150, 158)-(161, 157), 17
+LINE (161, 157)-(167, 152), 17
+LINE (167, 152)-(168, 145), 17
+LINE (168, 145)-(166, 142), 17
+LINE (135, 141)-(133, 148), 17
+LINE (133, 148)-(139, 153), 17
+LINE (139, 153)-(148, 154), 17
+LINE (148, 154)-(158, 153), 17
+LINE (158, 153)-(162, 150), 17
+LINE (162, 150)-(163, 145), 17
+LINE (163, 145)-(159, 141), 17
+LINE (159, 141)-(151, 138), 17
+LINE (151, 138)-(143, 137), 17
+LINE (143, 137)-(139, 138), 17
+LINE (139, 138)-(135, 141), 17
+CIRCLE (148, 146), 9, 17, , , -.5
+PAINT (131, 148), 114, 17
+PAINT (139, 144), 185, 17
+PAINT (148, 146), 17
+LINE (135, 150)-(131, 152), 17
+LINE (149, 154)-(149, 158), 17
+LINE (165, 153)-(161, 150), 17
+LINE (161, 136)-(159, 141), 17
+LINE (146, 138)-(145, 133), 17
+LINE (135, 140)-(132, 137), 17
+IF SPIRAL = 1 THEN GET (SPA - 10, SPB - 7)-(SPA + 10, SPB + 10), SPIRAL%
+IF FLAME = 1 THEN GET (FLX - 4, FLY - 12)-(FLX + 9, FLY + 5), FLAME%
+GET (a - 5, B - 10)-(a + 5, B + 9), MAN%
+END SUB
+
+SUB Items
+SHARED LIGHT, DETECTOR, ORANGE, GRINDER, GRANADE, SHOVEL, KEE, SUIT, BOMB
+SHARED SWORD
+DIM flashlight(1 TO 286)
+DIM ke(1 TO 286)
+DIM hovel(1 TO 286)
+DIM radiation(1 TO 286)
+DIM shotgun(1 TO 286)
+DIM grenade(1 TO 286)
+CLS
+F1 = 50: F2 = 7: f3 = 87: f4 = 36
+k1 = 222: k2 = 7: k3 = 259: k4 = 36
+s1 = 220: s2 = 153: s3 = 259: s4 = 180
+r1 = 89: r2 = 153: r3 = 52: r4 = 182
+u1 = 6: u2 = 108: u3 = 43: u4 = 79
+g1 = 269:  g2 = 79: g3 = 306: g4 = 108
+LINE (10, 94)-(10, 100), 22
+LINE (10, 100)-(23, 95), 22
+LINE (23, 95)-(35, 95), 22
+CIRCLE (35, 93), 2, 22, , , 1
+LINE (35, 91)-(10, 91), 22
+LINE (10, 91)-(10, 93), 22
+PAINT (11, 92), 24, 22
+LINE (33, 91)-(33, 89), 22
+LINE (22, 91)-(22, 95), 22
+LINE (22, 93)-(33, 93), 22
+LINE (17, 97)-(22, 100), 22
+LINE (22, 100)-(28, 100), 22
+LINE (28, 100)-(28, 96), 22
+PAINT (18, 93), 138, 22
+GET (u1, u2)-(u3, u4), shotgun
+
+IF SUIT = 1 THEN
+LINE (70, 165)-(65, 160), 43
+LINE (70, 165)-(75, 160), 43
+LINE (75, 160)-(65, 160), 43
+LINE (69, 168)-(65, 173), 43
+LINE (65, 173)-(60, 168), 43
+LINE (60, 168)-(68, 168), 43
+LINE (72, 168)-(77, 173), 43
+LINE (77, 173)-(81, 165), 43
+LINE (81, 165)-(72, 168), 43
+PAINT (66, 169), 44, 43
+PAINT (69, 162), 44, 43
+PAINT (78, 168), 44, 43
+GET (r1, r2)-(r3, r4), radiation
+END IF
+
+IF SHOVEL = 1 THEN
+LINE (242, 161)-(234, 171), 22
+LINE (237, 172)-(245, 162), 22
+LINE (245, 162)-(242, 161), 22
+LINE (242, 162)-(239, 157), 22
+LINE (239, 157)-(249, 159), 22
+LINE (249, 159)-(245, 162), 22
+LINE (240, 162)-(236, 156), 22
+LINE (236, 156)-(240, 155), 22
+LINE (240, 155)-(250, 156), 22
+LINE (250, 156)-(253, 160), 22
+LINE (253, 160)-(246, 162), 22
+LINE (234, 171)-(237, 172), 22
+LINE (242, 174)-(229, 169), 22
+LINE (229, 169)-(227, 176), 22
+LINE (227, 176)-(231, 179), 22
+LINE (231, 179)-(237, 178), 22
+LINE (237, 178)-(242, 174), 22
+PAINT (235, 175), 23, 22
+PAINT (238, 169), 115, 22
+PAINT (239, 156), 24, 22
+PAINT (239, 158), 24, 22
+PAINT (240, 160), 24, 22
+PAINT (241, 161), 24, 22
+GET (s1, s2)-(s3, s4), hovel
+END IF
+
+IF GRANADE = 1 THEN
+CIRCLE (287, 93), 11, 192, , , 1.4
+PAINT (287, 84), 144, 192
+LINE (287, 84)-(287, 102), 192
+LINE (281, 93)-(293, 93), 192
+LINE (291, 88)-(283, 88), 192
+LINE (283, 98)-(291, 98), 192
+LINE (284, 101)-(284, 85), 192
+LINE (290, 85)-(290, 101), 192
+LINE (292, 84)-(295, 81), 144
+GET (g1, g2)-(g3, g4), grenade
+END IF
+
+IF LIGHT = 1 THEN
+LINE (52, 20)-(68, 23), 25, B
+LINE (68, 20)-(71, 17), 25
+LINE (71, 17)-(71, 26), 25
+LINE (71, 26)-(68, 23), 25
+LINE (66, 21)-(69, 22), 16, BF
+LINE (71, 26)-(77, 32), 25
+LINE (71, 17)-(77, 11), 25
+LINE (74, 29)-(77, 22), 25
+LINE (77, 22)-(75, 14), 25
+PAINT (74, 23), 44, 25
+PAINT (64, 22), 28, 25
+GET (F1, F2)-(f3, f4), flashlight
+END IF
+
+IF KEE = 1 OR KEE = 2 THEN
+CIRCLE (240, 16), 4, 43, , , 1
+CIRCLE (240, 16), 3, 44, , , 1
+LINE (239, 20)-(241, 32), 44, BF
+LINE (239, 20)-(239, 32), 43
+LINE (241, 32)-(235, 32), 43
+LINE (236, 30)-(239, 30), 43
+GET (k1, k2)-(k3, k4), ke
+END IF
+
+CLS
+COLOR 15
+FOR i = 63 TO 140 STEP 16
+LINE (55, i)-(144, i + 9), 112, BF
+LINE (55, i)-(144, i + 9), 184, B
+NEXT
+FOR i = 63 TO 140 STEP 16
+LINE (159, i)-(264, i + 9), 112, BF
+LINE (159, i)-(264, i + 9), 184, B
+NEXT
+LINE (55, 143)-(168, 152), 112, BF
+LINE (55, 143)-(168, 152), 184, B
+LOCATE 7, 10: PRINT "Items      Miscellaneous"
+LOCATE 9, 8: PRINT "Shotgun    "
+IF LIGHT = 1 THEN LOCATE 11, 8: PRINT "Flashlight "
+IF GRANADE = 1 THEN LOCATE 13, 8: PRINT "Grenade    "
+IF SHOVEL = 1 THEN LOCATE 15, 8: PRINT "Shovel     "
+IF KEE = 1 THEN LOCATE 17, 8: PRINT "Key 1      "
+IF KEE = 2 THEN LOCATE 17, 8: PRINT "Key 1 and 2"
+IF SUIT = 1 THEN LOCATE 19, 8: PRINT "Radiation Suit"
+IF DETECTOR = 1 THEN LOCATE 9, 21: PRINT "Boss detector"
+IF GRINDER = 1 THEN LOCATE 11, 21: PRINT "Meat grinder "
+IF ORANGE = 1 THEN LOCATE 13, 21: PRINT "Orange       "
+IF BOMB = 1 THEN LOCATE 15, 21: PRINT "Atomic Bomb  "
+IF SWORD = 1 THEN LOCATE 17, 21: PRINT "Sword        "
+DO UNTIL INKEY$ <> ""
+IF LIGHT = 1 THEN PUT (F1, F2), flashlight, PSET
+IF KEE = 1 OR KEE = 2 THEN PUT (k1, k2), ke, PSET
+IF SHOVEL = 1 THEN PUT (s1, s2), hovel, PSET
+IF SUIT = 1 THEN PUT (r1, r2), radiation, PSET
+PUT (u1, u2), shotgun, PSET
+IF GRANADE = 1 THEN PUT (g1, g2), grenade, PSET
+
+IF S = 0 THEN s1 = s1 + 1
+IF s1 = 280 THEN S = 1
+IF S = 1 THEN s2 = s2 - 1
+IF s2 = 7 THEN S = 2
+IF S = 2 THEN s1 = s1 - 1
+IF s1 = 10 AND s2 = 7 THEN S = 3
+IF S = 3 THEN s2 = s2 + 1
+IF s2 = 160 THEN S = 0
+
+IF u = 0 THEN u2 = u2 + 1
+IF u2 = 160 THEN u = 1
+IF u = 1 THEN u1 = u1 + 1
+IF u1 = 280 THEN u = 2
+IF u = 2 THEN u2 = u2 - 1
+IF u2 = 7 THEN u = 3
+IF u = 3 THEN u1 = u1 - 1
+IF u1 = 10 AND u2 = 7 THEN u = 0
+
+IF g = 3 THEN g1 = g1 + 1
+IF g1 = 280 THEN g = 0
+IF g = 0 THEN g2 = g2 - 1
+IF g2 = 7 THEN g = 1
+IF g = 1 THEN g1 = g1 - 1
+IF g1 = 10 AND g2 = 7 THEN g = 2
+IF g = 2 THEN g2 = g2 + 1
+IF g2 = 160 THEN g = 3
+
+IF r = 0 THEN r1 = r1 + 1
+IF r1 = 280 THEN r = 1
+IF r = 1 THEN r2 = r2 - 1
+IF r2 = 7 THEN r = 2
+IF r = 2 THEN r1 = r1 - 1
+IF r1 = 10 AND r2 = 7 THEN r = 3
+IF r = 3 THEN r2 = r2 + 1
+IF r2 = 160 THEN r = 0
+
+IF flash = 0 THEN F1 = F1 - 1
+IF F1 = 10 AND F2 = 7 THEN flash = 1
+IF flash = 1 THEN F2 = F2 + 1
+IF F2 = 160 THEN flash = 2
+IF flash = 2 THEN F1 = F1 + 1
+IF F1 = 280 THEN flash = 3
+IF flash = 3 THEN F2 = F2 - 1
+IF F2 = 7 THEN flash = 0
+
+IF K = 0 THEN k1 = k1 - 1
+IF k1 = 10 AND k2 = 7 THEN K = 1
+IF K = 1 THEN k2 = k2 + 1
+IF k2 = 160 THEN K = 2
+IF K = 2 THEN k1 = k1 + 1
+IF k1 = 280 THEN K = 3
+IF K = 3 THEN k2 = k2 - 1
+IF k2 = 7 THEN K = 0
+LOOP
+CLS
+END SUB
+
+SUB Loser
+SHARED ENDGAME
+DIM pieceofcrap(1 TO 554)
+DIM bottomhalf(1 TO 1870)
+DIM tophalf(1 TO 1870)
+
+x11 = 294
+x22 = 189
+x33 = 230
+x44 = 156
+
+LINE (233, 186)-(233, 158), 16
+LINE (233, 158)-(238, 158), 16
+LINE (238, 158)-(238, 183), 16
+LINE (238, 183)-(242, 183), 16
+LINE (242, 183)-(242, 187), 16
+LINE (242, 187)-(233, 187), 16
+CIRCLE (250, 173), 11, 16, , , 1.8
+CIRCLE (250, 173), 5, 16, , , 1.8
+LINE (264, 161)-(258, 161), 16
+LINE (258, 161)-(258, 166), 16
+LINE (258, 166)-(261, 166), 16
+LINE (261, 166)-(261, 184), 16
+LINE (261, 184)-(258, 184), 16
+LINE (258, 184)-(258, 187), 16
+LINE (258, 187)-(264, 187), 16
+LINE (264, 187)-(264, 164), 16
+LINE (264, 164)-(260, 164), 16
+LINE (260, 164)-(260, 163), 16
+LINE (260, 163)-(264, 161), 16
+LINE (268, 161)-(268, 187), 16
+LINE (268, 161)-(276, 161), 16
+LINE (276, 161)-(276, 164), 16
+LINE (276, 164)-(271, 164), 16
+LINE (271, 164)-(271, 173), 16
+LINE (271, 173)-(276, 173), 16
+LINE (276, 173)-(276, 177), 16
+LINE (276, 177)-(271, 177), 16
+LINE (271, 177)-(271, 184), 16
+LINE (268, 187)-(277, 187), 16
+LINE (277, 187)-(277, 184), 16
+LINE (277, 184)-(271, 184), 16
+LINE (281, 187)-(281, 161), 16
+LINE (281, 161)-(290, 161), 16
+LINE (290, 161)-(290, 169), 16
+LINE (290, 169)-(285, 169), 16
+LINE (285, 169)-(292, 187), 16
+LINE (292, 187)-(289, 187), 16
+LINE (289, 187)-(284, 174), 16
+LINE (284, 174)-(284, 187), 16
+LINE (284, 187)-(281, 187), 16
+LINE (284, 164)-(287, 166), 16, B
+PAINT (236, 162), 40, 16
+PAINT (250, 165), 40, 16
+PAINT (262, 167), 40, 16
+PAINT (270, 167), 40, 16
+PAINT (283, 168), 40, 16
+
+x11 = 294
+x22 = 189
+x33 = 230
+x44 = 156
+
+GET (x11, x22)-(x33, x44), pieceofcrap
+craphole = 230
+buttmunch = 155
+FOR wussykeyword = 1 TO 225
+PUT (craphole, buttmunch), pieceofcrap, PSET
+craphole = craphole - 1
+ FOR delay = 1 TO 20: NEXT
+NEXT
+FOR buttmunch = 155 TO 10 STEP -1
+PUT (craphole, buttmunch), pieceofcrap, PSET
+FOR delay = 1 TO 20: NEXT
+NEXT
+FOR craphole = 5 TO 115
+PUT (craphole, buttmunch), pieceofcrap, PSET
+FOR delay = 1 TO 20: NEXT
+NEXT
+FOR buttmunch = 10 TO 85
+PUT (craphole, buttmunch), pieceofcrap, PSET
+FOR delay = 1 TO 20: NEXT
+NEXT
+IF snd = 4 THEN Gamemusic
+FOR i = 16 TO 31
+COLOR i
+LOCATE 17, 8: PRINT "E-End Game, P-Play Again"
+LOCATE 19, 8: PRINT "  or S-Save and quit?"
+NEXT
+ERASE pieceofcrap
+bt1 = 55
+bt2 = 118
+bt3 = 250
+bt4 = 155
+DO
+AA$ = UCASE$(INKEY$)
+LOOP UNTIL AA$ = "E" OR AA$ = "P" OR AA$ = "S"
+IF AA$ = "E" THEN CLS : LOCATE 10, 5: PRINT "Press any key to end Ambush II": COLOR 0: END
+IF AA$ = "P" THEN CHAIN "AMBUSH2.BAS"
+IF AA$ = "S" THEN ENDGAME = 1: CHAIN "ARCADE.mk!"
+GET (bt1, bt2)-(bt3, bt4), bottomhalf
+to1 = 55
+to2 = 118
+to3 = 250
+to4 = 85
+GET (to1, to2)-(to3, to4), tophalf
+
+FOR i = 1 TO 7000
+IF nomove <> 1 THEN PUT (bt1, bt2), bottomhalf, PSET
+PUT (to1, to2 - 35), tophalf, PSET
+IF nomove <> 1 THEN bt2 = bt2 + 1
+to2 = to2 - 1
+IF to2 = 35 THEN CLS : EXIT FOR
+IF bt2 = 160 THEN LINE (55, 193)-(250, 155), 16, BF: nomove = 1
+NEXT
+ERASE tophalf
+ERASE bottomhalf
+END SUB
+
+SUB Map
+SHARED a, B, BLOCKX, BLOCKY, DETECTOR, snd, BOSS
+DIM CIRC%(4000)
+LINE (21, 21)-(299, 179), 0, BF
+LINE (20, 20)-(300, 180), 15, B
+LINE (173, 144)-(299, 179), 120, BF
+LINE (299, 143)-(289, 123), 120, BF
+FOR i = 1 TO 10
+VA = INT(RND * 126) + 173
+VB = INT(RND * 35) + 144
+PSET (VA, VB), 43
+NEXT
+LINE (223, 32)-(223, 107), 15
+LINE (223, 107)-(172, 107), 15
+LINE (172, 72)-(172, 107), 15
+LINE (172, 72)-(96, 72), 15
+LINE (96, 72)-(96, 88), 15
+LINE (96, 88)-(57, 88), 15
+LINE (57, 88)-(57, 154), 15
+LINE (57, 154)-(172, 154), 15
+LINE (172, 154)-(172, 143), 15
+LINE (172, 143)-(288, 143), 15
+LINE (288, 143)-(288, 123), 15
+LINE (288, 123)-(271, 123), 15
+LINE (271, 123)-(271, 32), 15
+LINE (223, 32)-(271, 32), 15
+CIRCLE (192, 151), 4, 2, , , 1: PAINT (192, 151), 2, 2
+CIRCLE (195, 152), 4, 2, , , 1: PAINT (197, 152), 2, 2
+CIRCLE (209, 149), 4, 2, , , 1: PAINT (210, 151), 2, 2
+CIRCLE (211, 150), 4, 2, , , 1: PAINT (213, 152), 2, 2
+CIRCLE (263, 149), 4, 2, , , 1: PAINT (263, 149), 2, 2
+CIRCLE (261, 150), 4, 2, , , 1: PAINT (258, 151), 2, 2
+CIRCLE (283, 149), 3, 2, , , 1: PAINT (283, 149), 2, 2
+CIRCLE (281, 150), 4, 2, , , 1: PAINT (278, 150), 2, 2
+CIRCLE (232, 148), 4, 2, , , 1: PAINT (232, 148), 2, 2
+CIRCLE (236, 149), 4, 2, , , 1: PAINT (239, 149), 2, 2
+CIRCLE (230, 150), 4, 2, , , 1: PAINT (227, 150), 2, 2
+LINE (243, 144)-(244, 154), 24
+LINE (244, 154)-(247, 163), 24
+LINE (247, 163)-(251, 170), 24
+LINE (251, 170)-(260, 174), 24
+LINE (260, 174)-(286, 175), 24
+LINE (286, 175)-(299, 175), 24
+LINE (299, 169)-(261, 167), 24
+LINE (261, 167)-(256, 165), 24
+LINE (256, 165)-(253, 156), 24
+LINE (253, 156)-(253, 144), 24
+LINE (243, 144)-(253, 144), 24
+LINE (299, 175)-(299, 169), 24
+PAINT (250, 147), 25, 24
+LINE (272, 122)-(299, 21), 25, BF
+LINE (222, 59)-(96, 71), 25, BF
+LINE (173, 72)-(222, 106), 25, BF
+LINE (45, 59)-(56, 142), 25, BF
+LINE (57, 87)-(95, 59), 25, BF
+LINE (222, 21)-(21, 58), 120, BF
+LINE (21, 59)-(56, 179), 25, BF
+LINE (44, 179)-(172, 155), 25, BF
+LINE (220, 21)-(271, 31), 120, BF
+LINE (172, 155)-(172, 179), 24
+LINE (21, 59)-(222, 59), 24
+LINE (271, 21)-(271, 31), 24
+LINE (289, 123)-(299, 123), 24
+FOR i = 1 TO 20
+VA = INT(RND * 186) + 27
+VB = INT(RND * 27) + 27
+PSET (VA, VB), 43
+NEXT
+z = a - 150
+P = B - 90
+IF ROOM = 0 THEN
+IF BLOCKX = 5 THEN
+IF BLOCKY = 1 THEN CIRCLE (247 + (z) / 7, 83 + (P) / 4), 3, 15, , , 1
+IF BLOCKY = 2 THEN CIRCLE (247 + (z) / 7, 122 + (P) / 5), 3, 15, , , 1
+END IF
+IF BLOCKX = 4 AND BLOCKY = 2 THEN
+CIRCLE (200 + (z) / 7, 122 + (P) / 5), 3, 15, , , 1
+END IF
+IF BLOCKX = 3 AND BLOCKY = 2 THEN
+CIRCLE (143 + (z) / 7, 122 + (P) / 5), 3, 15, , , 1
+END IF
+IF BLOCKX = 2 AND BLOCKY = 2 THEN
+CIRCLE (86 + (z) / 7, 122 + (P) / 5), 3, 15, , , 1
+END IF
+END IF
+IF ROOM >= 0 THEN
+IF ROOM = 1 THEN CIRCLE (234 + (z) / 20, 81 + (P) / 15), 3, 15, , , 1
+IF ROOM = 2 THEN CIRCLE (234 + (z) / 20, 91 + (P) / 15), 3, 15, , , 1
+IF ROOM = 3 THEN CIRCLE (234 + (z) / 20, 101 + (P) / 15), 3, 15, , , 1
+IF ROOM = 4 THEN CIRCLE (260 + (z) / 20, 81 + (P) / 15), 3, 15, , , 1
+IF ROOM = 5 THEN CIRCLE (260 + (z) / 20, 91 + (P) / 15), 3, 15, , , 1
+IF ROOM = 6 THEN CIRCLE (260 + (z) / 20, 101 + (P) / 15), 3, 15, , , 1
+IF ROOM = 7 THEN CIRCLE (250 + (z) / 10, 133 + (P) / 15), 3, 15, , , 1
+IF ROOM = 8 THEN CIRCLE (198 + (z) / 7, 117 + (P) / 15), 3, 15, , , 1
+IF ROOM = 9 THEN CIRCLE (145 + (z) / 7, 117 + (P) / 15), 3, 15, , , 1
+IF ROOM = 10 THEN CIRCLE (116 + (z) / 10, 117 + (P) / 15), 3, 15, , , 1
+IF ROOM = 11 OR ROOM = 13 THEN CIRCLE (144 + (z) / 7, 133 + (P) / 15), 3, 15, , , 1
+IF ROOM = 12 THEN CIRCLE (120 + (z) / 20, 133 + (P) / 25), 3, 15, , , 1
+IF ROOM = 14 THEN CIRCLE (79 + (z) / 7, 117 + (P) / 15), 3, 15, , , 1
+IF ROOM = 15 THEN CIRCLE (79 + (z) / 20, 133 + (P) / 25), 3, 15, , , 1
+IF ROOM = 16 THEN CIRCLE (98 + (z) / 18, 133 + (P) / 25), 3, 15, , , 1
+END IF
+IF BOSS = 2 THEN VA = 185: VB = 116
+IF BOSS = 4 THEN VA = 242: VB = 135
+IF BOSS = 5 THEN VA = 94: VB = 132
+DO
+IF BOSS = 2 OR BOSS = 4 OR BOSS = 5 THEN
+IF DETECTOR = 1 THEN
+DER = DER + 1
+IF DER = 100 THEN
+GET (VA - 11, VB - 8)-(VA + 9, VB + 9), CIRC%
+LINE (VA - 10, VB + 8)-(VA - 4, VB), 112
+LINE (VA - 4, VB)-(VA - 11, VB - 6), 112
+LINE (VA - 11, VB - 6)-(VA - 8, VB - 8), 112
+LINE (VA - 8, VB - 8)-(VA - 1, VB - 3), 112
+LINE (VA - 1, VB - 3)-(VA + 6, VB - 8), 112
+LINE (VA + 6, VB - 8)-(VA + 8, VB - 8), 112
+LINE (VA + 8, VB - 8)-(VA + 9, VB - 6), 112
+LINE (VA + 9, VB - 6)-(VA + 4, VB - 1), 112
+LINE (VA + 4, VB - 1)-(VA + 3, VB + 1), 112
+LINE (VA + 3, VB + 1)-(VA + 9, VB + 8), 112
+LINE (VA + 9, VB + 8)-(VA + 6, VB + 9), 112
+LINE (VA + 6, VB + 9)-(VA, VB + 3), 112
+LINE (VA, VB + 3)-(VA - 7, VB + 9), 112
+LINE (VA - 7, VB + 9)-(VA - 10, VB + 9), 112
+PAINT (VA - 1, VB - 1), 4, 112
+IF snd = 1 THEN PLAY "MBT255O6L16C+"
+END IF
+IF DER = 200 THEN LINE (VA - 11, VB - 8)-(VA + 9, VB + 9), 0, BF: PUT (VA - 11, VB - 8), CIRC%: DER = 0
+END IF
+END IF
+LOOP UNTIL INKEY$ <> ""
+END SUB
+
+SUB Room1
+SHARED MAN%(), a, B, LIGHTON, SPIRAL%(), FLAME%(), SPA, SPB, FLX, FLY, SPIRAL
+SHARED FLAME
+IF LIGHTON = 1 THEN
+LINE (20, 20)-(300, 180), 17, B
+LINE (40, 40)-(280, 160), 17, B
+LINE (125, 40)-(175, 160), 17, B
+PAINT (30, 50), 18, 17
+LINE (20, 20)-(40, 40), 17
+LINE (20, 180)-(40, 160), 17
+LINE (280, 40)-(300, 20), 17
+LINE (280, 160)-(300, 180), 17
+PAINT (150, 90), 192, 17
+FOR i = 45 TO 160 STEP 10
+LINE (126, i)-(174, i), 0
+NEXT
+FOR i = 45 TO 160 STEP 20
+LINE (138, i)-(138, i + 10), 0
+NEXT
+FOR i = 45 TO 160 STEP 20
+LINE (162, i)-(162, i + 10), 0
+NEXT
+FOR i = 35 TO 160 STEP 20
+LINE (150, i)-(150, i + 10), 0
+NEXT
+LINE (150, 35)-(150, 39), 18, BF
+LINE (150, 165)-(150, 161), 18, BF
+LINE (170, 131)-(155, 143), 184
+LINE (155, 143)-(171, 156), 184
+LINE (171, 156)-(161, 156), 184
+LINE (161, 156)-(148, 145), 184
+LINE (148, 145)-(135, 156), 184
+LINE (135, 156)-(127, 156), 184
+LINE (127, 156)-(141, 142), 184
+LINE (141, 142)-(129, 132), 184
+LINE (129, 132)-(141, 132), 184
+LINE (141, 132)-(148, 138), 184
+LINE (148, 138)-(160, 131), 184
+LINE (160, 131)-(170, 131), 184
+PAINT (164, 134), 112, 184
+PAINT (60, 60), 19, 17
+PAINT (260, 60), 19, 17
+B1 = 77
+B2 = -40
+LINE (B1 + 59, B2 + 80)-(B1 + 86, B2 + 80), 114
+LINE (B1 + 50, B2 + 60)-(B1 + 91, B2 + 60), 114
+LINE (B1 + 59, B2 + 80)-(B1 + 50, B2 + 60), 114
+LINE (B1 + 86, B2 + 80)-(B1 + 91, B2 + 60), 114
+PAINT (B1 + 79, B2 + 70), 6, 114
+CIRCLE (B1 + 79, B2 + 70), 2, 42, , , 1
+PAINT (B1 + 79, B2 + 70), 43, 42
+IF NOTES = 0 AND DUG = 1 THEN GET (a - 5, B - 10)-(a + 5, B + 9), MAN%: Hole
+END IF
+IF LIGHTON = 0 THEN
+LINE (20, 20)-(300, 180), 0, B
+LINE (40, 40)-(280, 160), 0, B
+END IF
+IF SPIRAL = 1 THEN GET (SPA - 10, SPB - 7)-(SPA + 10, SPB + 10), SPIRAL%
+IF FLAME = 1 THEN GET (FLX - 4, FLY - 12)-(FLX + 9, FLY + 5), FLAME%
+END SUB
+
+SUB Rooms
+SHARED ROOM, BORDER, a, B, LIGHTON
+IF LIGHTON = 1 THEN
+LINE (20, 20)-(300, 180), 15, B
+LINE (21, 21)-(299, 179), 0, BF
+LINE (40, 40)-(280, 160), 15, B
+END IF
+BORDER = 1: Room1: a = 150: B = 57
+LOCATE 2, 4
+COLOR 4: PRINT "Room: ";
+COLOR 15: PRINT "Boiler Room"
+END SUB
+
+DEFINT Z
+SUB SBPlay2 (zreg%, zuration%, zoctave%, zaveform%)
+CALL WriteReg(&H20, &HA39)
+CALL WriteReg(&H40, &HFA90)
+CALL WriteReg(&H60, &HA9)
+CALL WriteReg(&H80, &HD1)
+CALL WriteReg(&HA0, zreg%)
+CALL WriteReg(&H23, &HA3)
+CALL WriteReg(&H43, &H1)
+CALL WriteReg(&H63, &HFA1)
+CALL WriteReg(&H83, &HFD)
+CALL WriteReg(&HB0, zoctave%)
+CALL WriteReg(&HE0, zaveform%)
+Timeup! = TIMER + zuration% / 64
+WHILE Timeup! > TIMER: WEND
+END SUB
+
+DEFSNG Z
+SUB Spiral1
+PALETTE 247, 5120
+CIRCLE (SPA, SPB), 2, 247, , , 1
+PAINT (SPA, SPB), 120, 247
+LINE (SPA, SPB + 3)-(SPA - 5, SPB + 4), 247
+LINE (SPA - 5, SPB + 4)-(SPA - 9, SPB + 1), 120
+LINE (SPA - 9, SPB + 1)-(SPA - 10, SPB - 3), 247
+LINE (SPA - 10, SPB - 3)-(SPA - 10, SPB - 6), 120
+LINE (SPA + 1, SPB - 3)-(SPA + 5, SPB - 2), 247
+LINE (SPA + 5, SPB - 2)-(SPA + 8, SPB + 1), 120
+LINE (SPA + 8, SPB + 1)-(SPA + 8, SPB + 5), 247
+LINE (SPA + 8, SPB + 5)-(SPA + 5, SPB + 8), 120
+LINE (SPA + 5, SPB + 8)-(SPA - 2, SPB + 9), 247
+LINE (SPA - 2, SPB + 9)-(SPA - 6, SPB + 9), 120
+LINE (SPA - 3, SPB - 2)-(SPA - 2, SPB - 5), 247
+LINE (SPA - 2, SPB - 5)-(SPA + 1, SPB - 7), 120
+LINE (SPA + 1, SPB - 7)-(SPA + 5, SPB - 7), 247
+LINE (SPA + 5, SPB - 7)-(SPA + 8, SPB - 4), 120
+LINE (SPA + 8, SPB - 4)-(SPA + 9, SPB - 1), 247
+
+END SUB
+
+SUB Spiral2
+PALETTE 247, 5120
+CIRCLE (SPA, SPB), 2, 247, , , 1
+PAINT (SPA, SPB), 120, 247
+LINE (SPA - 3, SPB + 1)-(SPA - 5, SPB + 2), 247
+LINE (SPA - 5, SPB + 2)-(SPA - 8, SPB + 1), 120
+LINE (SPA - 8, SPB + 1)-(SPA - 8, SPB - 3), 247
+LINE (SPA - 8, SPB - 3)-(SPA - 4, SPB - 7), 120
+LINE (SPA - 4, SPB - 7)-(SPA - 10, SPB - 2), 247
+LINE (SPA - 10, SPB - 2)-(SPA - 10, SPB + 2), 120
+LINE (SPA - 10, SPB + 2)-(SPA - 4, SPB + 4), 247
+LINE (SPA - 4, SPB + 4)-(SPA - 1, SPB + 3), 120
+LINE (SPA, SPB + 3)-(SPA + 3, SPB + 4), 247
+LINE (SPA + 3, SPB + 4)-(SPA + 4, SPB + 7), 120
+LINE (SPA + 4, SPB + 7)-(SPA + 1, SPB + 9), 247
+LINE (SPA + 1, SPB + 9)-(SPA - 4, SPB + 10), 120
+LINE (SPA - 4, SPB + 10)-(SPA + 5, SPB + 9), 247
+LINE (SPA + 5, SPB + 9)-(SPA + 7, SPB + 5), 120
+LINE (SPA + 7, SPB + 5)-(SPA + 3, SPB + 2), 247
+LINE (SPA + 3, SPB - 2)-(SPA + 6, SPB - 3), 120
+LINE (SPA + 6, SPB - 3)-(SPA + 9, SPB - 1), 247
+LINE (SPA + 9, SPB - 1)-(SPA + 10, SPB + 4), 120
+LINE (SPA + 10, SPB + 4)-(SPA + 10, SPB + 6), 247
+LINE (SPA + 10, SPB + 6)-(SPA + 8, SPB + 1), 120
+LINE (SPA + 8, SPB + 1)-(SPA + 5, SPB - 1), 247
+LINE (SPA + 5, SPB - 1)-(SPA + 3, SPB), 120
+LINE (SPA - 2, SPB - 3)-(SPA - 1, SPB - 6), 247
+LINE (SPA - 1, SPB - 6)-(SPA + 2, SPB - 7), 120
+LINE (SPA + 2, SPB - 7)-(SPA + 6, SPB - 6), 247
+LINE (SPA + 6, SPB - 6)-(SPA + 9, SPB - 5), 120
+LINE (SPA + 9, SPB - 5)-(SPA + 2, SPB - 5), 247
+LINE (SPA + 2, SPB - 5)-(SPA, SPB - 3), 120
+END SUB
+
+SUB Spiral3
+PALETTE 247, 5120
+CIRCLE (SPA, SPB), 2, 247, , , 1
+PAINT (SPA, SPB), 120, 247
+LINE (SPA - 3, SPB)-(SPA - 6, SPB - 1), 247
+LINE (SPA - 6, SPB - 1)-(SPA - 5, SPB - 4), 120
+LINE (SPA - 5, SPB - 4)-(SPA - 2, SPB - 6), 247
+LINE (SPA - 2, SPB - 6)-(SPA + 2, SPB - 7), 120
+LINE (SPA + 2, SPB - 7)-(SPA - 3, SPB - 4), 247
+LINE (SPA - 3, SPB - 4)-(SPA - 4, SPB - 1), 120
+LINE (SPA + 1, SPB - 3)-(SPA + 4, SPB - 4), 247
+LINE (SPA + 4, SPB - 4)-(SPA + 8, SPB - 3), 120
+LINE (SPA + 8, SPB - 3)-(SPA + 10, SPB), 247
+LINE (SPA + 10, SPB)-(SPA + 10, SPB + 3), 120
+LINE (SPA + 10, SPB + 3)-(SPA + 7, SPB - 2), 247
+LINE (SPA + 7, SPB - 2)-(SPA + 2, SPB - 2), 120
+LINE (SPA + 3, SPB)-(SPA + 6, SPB + 3), 247
+LINE (SPA + 6, SPB + 3)-(SPA + 7, SPB + 7), 120
+LINE (SPA + 7, SPB + 7)-(SPA + 5, SPB + 9), 247
+LINE (SPA + 5, SPB + 9)-(SPA + 6, SPB + 4), 120
+LINE (SPA + 6, SPB + 4)-(SPA + 2, SPB + 2), 247
+LINE (SPA - 2, SPB + 3)-(SPA - 1, SPB + 5), 120
+LINE (SPA - 1, SPB + 5)-(SPA - 5, SPB + 6), 247
+LINE (SPA - 5, SPB + 6)-(SPA - 8, SPB + 5), 120
+LINE (SPA - 8, SPB + 5)-(SPA - 2, SPB + 7), 247
+LINE (SPA - 2, SPB + 7)-(SPA + 1, SPB + 4), 120
+END SUB
+
+SUB TheNote
+CLS
+SCREEN 13
+FOR i = 16 TO 31
+COLOR i
+LINE (66, 3)-(171, 6), i
+LINE (171, 6)-(176, 15), i
+LINE (176, 15)-(189, 5), i
+LINE (189, 5)-(253, 7), i
+LINE (253, 7)-(248, 96), i
+LINE (248, 96)-(251, 191), i
+LINE (251, 191)-(139, 193), i
+LINE (139, 193)-(70, 186), i
+LINE (70, 186)-(64, 108), i
+LINE (64, 108)-(73, 97), i
+LINE (73, 97)-(65, 57), i
+LINE (65, 57)-(66, 3), i
+LOCATE 4, 11: PRINT "Hello Son,"
+LOCATE 6, 10: PRINT "I prayed you would"
+LOCATE 7, 10: PRINT "never need to use this"
+LOCATE 8, 10: PRINT "kit, but I didn't want"
+LOCATE 9, 10: PRINT "to strand you in war."
+LOCATE 11, 10: PRINT "The items in here are"
+LOCATE 12, 11: PRINT "the sword, the bomb,"
+LOCATE 13, 11: PRINT "and this note. You"
+LOCATE 14, 10: PRINT "must blow up the whole"
+LOCATE 15, 10: PRINT "school with the bomb."
+LOCATE 16, 10: PRINT "But you must kill one"
+LOCATE 17, 10: PRINT " more person first."
+LOCATE 19, 10: PRINT "You must win. You are"
+LOCATE 20, 13: PRINT "our last hope!"
+LOCATE 22, 15: PRINT "Your father"
+AA$ = INKEY$
+AA$ = ""
+NEXT
+WHILE INKEY$ = "": WEND
+CLS
+LOCATE 1, 9: PRINT "Ambush at South Range II"
+END SUB
+
+SUB Useitem
+SHARED ITEMUSE, LIGHT, GRANADE, SHOVEL, SUIT, KEE, GRINDER, DETECTOR, BOMB
+SHARED ORANGE, SUITON, LIGHTON, snd, Q, SWORD
+CLS
+COLOR 15
+FOR i = 63 TO 140 STEP 16
+LINE (55, i)-(144, i + 9), 112, BF
+LINE (55, i)-(144, i + 9), 184, B
+NEXT
+FOR i = 63 TO 140 STEP 16
+LINE (159, i)-(264, i + 9), 112, BF
+LINE (159, i)-(264, i + 9), 184, B
+NEXT
+LINE (55, 143)-(168, 152), 112, BF
+LINE (55, 143)-(168, 152), 184, B
+LOCATE 4, 9: PRINT "Which item will you use ?"
+LOCATE 7, 10: PRINT "Items      Miscellaneous"
+LOCATE 9, 8: PRINT "Shotgun    "
+IF LIGHT = 1 THEN LOCATE 11, 8: PRINT "Flashlight "
+IF LIGHTON = 1 THEN LOCATE 11, 6: PRINT CHR$(26)
+IF GRANADE = 1 THEN LOCATE 13, 8: PRINT "Grenade    "
+IF SHOVEL = 1 THEN LOCATE 15, 8: PRINT "Shovel     "
+IF KEE = 1 THEN LOCATE 17, 8: PRINT "Key 1      "
+IF KEE = 2 THEN LOCATE 17, 8: PRINT "Key 1 and 2"
+IF SUIT = 1 THEN LOCATE 19, 8: PRINT "Radiation Suit"
+IF SUITON = 1 THEN LOCATE 19, 6: PRINT CHR$(26)
+IF DETECTOR = 1 THEN LOCATE 9, 21: PRINT "Boss detector"
+IF GRINDER = 1 THEN LOCATE 11, 21: PRINT "Meat grinder "
+IF ORANGE = 1 THEN LOCATE 13, 21: PRINT "Orange       "
+IF BOMB = 1 THEN LOCATE 15, 21: PRINT "Atomic Bomb  "
+IF SWORD = 1 THEN LOCATE 17, 21: PRINT "Sword        "
+IF ITEMUSE < 6 THEN LOCATE ITEMUSE * 2 + 9, 6: PRINT CHR$(26)
+IF ITEMUSE > 5 THEN LOCATE ITEMUSE * 2 - 3, 35: PRINT CHR$(27)
+LOCATE 22, 8: PRINT "Esc   Enter   ";
+FOR i = 24 TO 27: PRINT CHR$(i); "  "; : NEXT
+LINE (55, 63)-(144, 72), 15, B
+AGAT:
+DO
+AA$ = INKEY$
+IF LEN(AA$) = 2 THEN FK% = ASC(RIGHT$(AA$, 1))
+IF PICK <> 10 AND FK% = 80 THEN PICK = PICK + 1: GOSUB HET
+IF PICK <> 0 AND FK% = 72 THEN PICK = PICK - 1: GOSUB HET
+IF PICK < 5 AND FK% = 77 THEN PICK = PICK + 6: GOSUB HET
+IF PICK > 6 AND FK% = 75 THEN PICK = PICK - 6: GOSUB HET
+FK% = 0
+LOOP UNTIL AA$ = CHR$(13) OR AA$ = CHR$(27)
+IF AA$ = CHR$(27) THEN EXIT SUB
+IF PICK = 0 THEN REPLY = 1
+IF PICK = 1 AND LIGHT = 1 AND LIGHTON = 1 THEN LIGHTON = 0: REPLY = 1: GOTO g
+IF PICK = 1 AND LIGHT = 1 AND LIGHTON = 0 THEN LIGHTON = 1: REPLY = 1: GOTO g
+IF PICK = 2 AND GRANADE = 1 THEN REPLY = 1
+IF PICK = 3 AND SHOVEL = 1 THEN REPLY = 1
+IF PICK = 4 AND KEE > 0 THEN REPLY = 1
+IF PICK = 5 AND SUIT = 1 AND SUITON = 1 THEN SUITON = 0: Q = 2: REPLY = 1: GOTO g
+IF PICK = 5 AND SUIT = 1 AND SUITON = 0 THEN SUITON = 1: REPLY = 1: GOTO g
+IF PICK = 6 AND DETECTOR = 1 THEN REPLY = 1
+IF PICK = 7 AND GRINDER = 1 THEN REPLY = 1
+IF PICK = 8 AND ORANGE = 1 THEN REPLY = 1
+IF PICK = 9 AND BOMB = 1 THEN REPLY = 1
+IF PICK = 10 AND SWORD = 1 THEN REPLY = 1
+g:
+IF REPLY = 1 THEN
+IF PICK <> 5 AND PICK <> 1 THEN
+ITEMUSE = PICK
+LOCATE 9, 6: PRINT " "
+LOCATE 13, 6: PRINT " "
+LOCATE 15, 6: PRINT " "
+LOCATE 17, 6: PRINT " "
+FOR i = 9 TO 17 STEP 2
+LOCATE i, 35: PRINT " "
+NEXT
+END IF
+IF REPLY = 1 THEN
+IF PICK < 6 THEN LOCATE PICK * 2 + 9, 6: PRINT CHR$(26)
+IF PICK > 5 THEN LOCATE PICK * 2 - 3, 35: PRINT CHR$(27)
+END IF
+IF SUITON = 0 THEN LOCATE 19, 6: PRINT " "
+IF LIGHTON = 0 THEN LOCATE 11, 6: PRINT " "
+REPLY = 0
+GOTO AGAT
+END IF
+IF snd = 1 THEN
+PLAY "T255MBL64"
+FOR i = 1 TO 7
+PLAY "O0CO4E-"
+NEXT
+END IF
+GOTO AGAT
+
+HET:
+FOR i = 63 TO 140 STEP 16
+LINE (55, i)-(144, i + 9), 184, B
+IF PICK < 6 AND PICK * 16 + 63 = i THEN LINE (55, i)-(144, i + 9), 15, B
+LINE (55, 143)-(168, 152), 184, B
+IF PICK = 5 THEN LINE (55, 143)-(168, 152), 15, B
+NEXT
+FOR i = 63 TO 140 STEP 16
+LINE (159, i)-(264, i + 9), 184, B
+IF PICK > 5 AND (PICK - 6) * 16 + 63 = i THEN LINE (159, i)-(264, i + 9), 15, B
+NEXT
+RETURN
+END SUB
+
+DEFINT Z
+SUB WriteReg (zeg%, zalue%)
+OUT &H388, zeg
+
+  FOR ze = 0 TO 5
+  z = INP(&H388)
+  NEXT ze
+                                                  
+OUT &H389, zalue
+  FOR ze = 0 TO 34
+   z = INP(&H388)
+  NEXT ze
+END SUB
+

@@ -1,0 +1,996 @@
+DECLARE SUB Bossmusic ()
+DECLARE SUB SBPlay2 (zreg%, zuration%, zoctave%, zaveform%)
+DECLARE SUB WriteReg (zeg%, zalue%)
+DECLARE SUB Outside ()
+DECLARE SUB Dude1.2 ()
+DECLARE SUB Dude1.3 ()
+DECLARE SUB Gameover ()
+DECLARE SUB Charge1 ()
+DECLARE SUB Gunswitch ()
+DECLARE SUB Center (ROW, TEXT$)
+DECLARE FUNCTION MouseInit% ()
+DECLARE SUB MouseStatus (Lb%, Rb%, xMouse%, yMouse%)
+DECLARE SUB MouseRange (X1%, Y1%, x2%, Y2%)
+DECLARE SUB MousePut (X%, Y%)
+DECLARE SUB MouseHide ()
+DECLARE SUB MouseDriver (ax%, bx%, cx%, dx%)
+DECLARE SUB MouseShow ()
+DECLARE SUB Display ()
+DECLARE SUB Boxes ()
+COMMON BEGINNINGTIME, Q, A, B, BLOCKX, BLOCKY, ELAPSEDTIME, STAIRWAY, HEALTH
+COMMON HEALTHMAX, ENEMIES, ROOM, ARCADE, DEATHS, snd, DETECTOR, STRENGTH
+COMMON SHELLS, LIGHT, BOSS, BOSSES, ORANGE, GRINDER, GRANADE, GRENADES, FLOOR
+COMMON Placeholder, Names, Loaded, Turbo, Invince, NAME$, LOAD, BOMB, SUIT
+COMMON SHOVEL, KEE, OPEN1, AMMOA, AMMOB, FOODA, FOODB, AMMOGET, FOODGET, NOTE
+COMMON LIGHTON, SUITON, ITEMUSE, Ending, SpecialCredits, Warping, OPEN2, SWORD
+COMMON ENDGAME, HARD
+SCREEN 13
+CLS
+IF ARCADE = 1 THEN GOTO arcadegame
+Display
+IF ENDGAME = 1 THEN HEALTH = 5
+NamesV$ = NAME$: ASV = A: BSV = B: BLOCKXSV = BLOCKX: BLOCKYSV = BLOCKY
+HEALTHSV = HEALTH: HLTHMAXSV = HEALTHMAX: ROOMSV = ROOM: FLOORSV = FLOOR
+DEATHSV = DEATHS: STRENGTHSV = STRENGTH: LIGHTSV = LIGHT: ORANGESV = ORANGE
+GRANADESV = GRANADE: BOMBSV = BOMB: KEESV = KEE: SUITSV = SUIT: BOSSV = BOSS
+DETECTORSV = DETECTOR: GRINDERSV = GRINDER: SHOVELSV = SHOVEL: NamesV = Names
+SHELLSV = SHELLS: GRENADESV = GRENADES: LoadedV = Loaded: TurboV = Turbo
+InvinceV = Invince: EndingV = Ending: SpecialCreditsV = SpecialCredits
+WarpingV = Warping: SWORDV = SWORD: NOTEV = NOTE: HARDV = HARD
+OPEN "A2DATA" FOR INPUT AS 1
+INPUT #1, NAME1$, FLOOR1, ROOM1, HLTH1, HLTHMAX1, ELAPSE1, STRENGTH1, DEATHS1
+INPUT #1, NAME2$, FLOOR2, ROOM2, HLTH2, HLTHMAX2, ELAPSE2, STRENGTH2, DEATHS2
+INPUT #1, NAME3$, FLOOR3, ROOM3, HLTH3, HLTHMAX3, ELAPSE3, STRENGTH3, DEATHS3
+INPUT #1, NAME4$, FLOOR4, ROOM4, HLTH4, HLTHMAX4, ELAPSE4, STRENGTH4, DEATHS4
+INPUT #1, ORANGE1, GRANADE1, SHOVEL1, KEE1, SUIT1, DETECTOR1, GRINDER1, BOMB1
+INPUT #1, ORANGE2, GRANADE2, SHOVEL2, KEE2, SUIT2, DETECTOR2, GRINDER2, BOMB2
+INPUT #1, ORANGE3, GRANADE3, SHOVEL3, KEE3, SUIT3, DETECTOR3, GRINDER3, BOMB3
+INPUT #1, ORANGE4, GRANADE4, SHOVEL4, KEE4, SUIT4, DETECTOR4, GRINDER4, BOMB4
+INPUT #1, LIGHT1, SHELLS1, GRENADES1, A1, B1, BOSS1, NAMES1, LOADED1, TURBO1
+INPUT #1, LIGHT2, SHELLS2, GRENADES2, A2, B2, BOSS2, NAMES2, LOADED2, TURBO2
+INPUT #1, LIGHT3, SHELLS3, GRENADES3, A3, B3, BOSS3, NAMES3, LOADED3, TURBO3
+INPUT #1, LIGHT4, SHELLS4, GRENADES4, A4, B4, BOSS4, NAMES4, LOADED4, TURBO4
+INPUT #1, INVINCE1, BLOCKX1, BLOCKY1, ENDING1, WARPING1, SPECIAL1, SWORD1
+INPUT #1, INVINCE2, BLOCKX2, BLOCKY2, ENDING2, WARPING2, SPECIAL2, SWORD2
+INPUT #1, INVINCE3, BLOCKX3, BLOCKY3, ENDING3, WARPING3, SPECIAL3, SWORD3
+INPUT #1, INVINCE4, BLOCKX4, BLOCKY4, ENDING4, WARPING4, SPECIAL4, SWORD4
+INPUT #1, NOTE1, HARD1
+INPUT #1, NOTE2, HARD2
+INPUT #1, NOTE3, HARD3
+INPUT #1, NOTE4, HARD4
+CLOSE #1
+COLOR 54
+LOCATE 9, 2: PRINT NAME1$
+LOCATE 13, 2: PRINT NAME2$
+LOCATE 17, 2: PRINT NAME3$
+LOCATE 21, 2: PRINT NAME4$
+COLOR 15
+Boxes
+WRITEE:
+FOR GOROUND = 0 TO 3
+ROOM$ = ""
+ROOM = 0
+FLOOR = 0
+GOSUB GETSD
+ITEMS = 0
+IF LIGHT = 1 THEN ITEMS = ITEMS + 1
+IF ORANGE = 1 THEN ITEMS = ITEMS + 1
+IF GRANADE = 1 THEN ITEMS = ITEMS + 1
+IF BOMB = 1 THEN ITEMS = ITEMS + 1
+IF SWORD = 1 THEN ITEMS = ITEMS + 1
+IF KEE = 1 THEN ITEMS = ITEMS + 1
+IF SUIT = 1 THEN ITEMS = ITEMS + 1
+IF DETECTOR = 1 THEN ITEMS = ITEMS + 1
+IF GRINDER = 1 THEN ITEMS = ITEMS + 1
+IF SHOVEL = 1 THEN ITEMS = ITEMS + 1
+ITEMS = ITEMS + 1
+IF FLOOR = 1 THEN GOSUB TEXT1
+IF FLOOR = 2 THEN GOSUB TEXT2
+G = GOROUND * 4
+LOCATE 7 + G, 9: PRINT STRING$(31, " ")
+LOCATE 8 + G, 9: PRINT STRING$(31, " ")
+LOCATE 9 + G, 9: PRINT STRING$(31, " ")
+IF ELAPSEDTIME = 0 THEN EMP = 1
+IF EMP = 1 THEN COLOR 40: LOCATE 8 + G, 10: PRINT "Empty File": COLOR 15
+IF SCN = 0 AND EMP = 0 THEN
+LOCATE 7 + G, 9: PRINT ROOM$
+LOCATE 7 + G, 32: PRINT "Floor"; FLOOR
+LOCATE 8 + G, 9: PRINT "Time: "; : COLOR 43: PRINT "01:34:56": COLOR 15
+COLOR 15: LOCATE 8 + G, 9: PRINT "Time: ";
+COLOR 43
+JIM = FIX(ELAPSEDTIME / 3600)
+IF FIX(JIM) = 0 THEN TIM = FIX(ELAPSEDTIME / 60)
+IF FIX(JIM) <> 0 THEN TIM = FIX((ELAPSEDTIME - JIM * 3600) / 60)
+IF FIX(JIM) = 0 THEN GIM = FIX(ELAPSEDTIME - TIM * 60)
+IF FIX(JIM) <> 0 THEN GIM = FIX((ELAPSEDTIME - JIM * 3600) - TIM * 60)
+IF JIM < 10 THEN PRINT USING "0#:"; JIM;  ELSE PRINT USING "##:"; JIM;
+IF TIM < 10 THEN PRINT USING "0#:"; TIM;  ELSE PRINT USING "##:"; TIM;
+IF GIM < 10 THEN PRINT USING "0#"; GIM ELSE PRINT USING "##"; GIM
+COLOR 15
+LOCATE 9 + G, 9: PRINT "Health:"; CINT(HEALTH); "of"; CINT(HEALTHMAX)
+END IF
+IF SCN = 1 AND EMP = 0 THEN
+LOCATE 7 + G, 9: PRINT "Strength:"; : COLOR 43: PRINT CINT(STRENGTH): COLOR 15
+LOCATE 8 + G, 9: PRINT "Deaths:"; : COLOR 43: PRINT DEATHS: COLOR 15
+LOCATE 9 + G, 9: PRINT "Items collected:"; : COLOR 43: PRINT ITEMS: COLOR 15
+END IF
+EMP = 0
+NEXT
+DO
+AA$ = INKEY$
+IF LEN(AA$) = 2 THEN FK% = ASC(RIGHT$(AA$, 1))
+IF FK% = 77 AND SCN = 0 THEN SCN = 1: GOTO WRITEE
+IF FK% = 75 AND SCN = 1 THEN SCN = 0: GOTO WRITEE
+IF PICK <> 4 AND FK% = 80 THEN PICK = PICK + 1: Boxes
+IF PICK <> -1 AND FK% = 72 THEN PICK = PICK - 1: Boxes
+IF PICK = -1 THEN LINE (3, 28)-(91, 43), 247, B
+IF PICK = 0 THEN LINE (3, 43)-(314, 75), 247, B: LINE (59, 43)-(59, 75), 247
+IF PICK = 1 THEN LINE (3, 75)-(314, 107), 247, B: LINE (59, 75)-(59, 107), 247
+IF PICK = 2 THEN
+LINE (3, 107)-(314, 139), 247, B: LINE (59, 107)-(59, 139), 247
+END IF
+IF PICK = 3 THEN
+LINE (3, 139)-(314, 171), 247, B: LINE (59, 139)-(59, 171), 247
+END IF
+IF PICK = 4 THEN LINE (3, 171)-(59, 187), 247, B
+IF ENDGAME = 0 AND ERACE = 0 AND PICK = 4 AND AA$ = CHR$(13) THEN
+IF Placeholder = 0 THEN
+GOSUB GETBACK
+Placeholder = 2: CHAIN "AMBUSH2.bas"
+END IF
+IF Placeholder = 3 THEN
+GOSUB GETBACK
+IF FLOOR = 1 THEN CHAIN "FLOOR1.mk!"
+IF FLOOR = 2 THEN CHAIN "FLOOR2.mk!"
+END IF
+END IF
+IF PICK = 4 AND ERACE = 1 AND AA$ = CHR$(13) THEN ERACE = 0: Display: GOTO WRITEE
+IF PICK = -1 AND ERACE = 1 AND AA$ = CHR$(13) THEN ERACE = 0: Display: GOTO WRITEE
+IF PICK = -1 AND ERACE = 0 AND AA$ = CHR$(13) THEN ERACE = 1: Display: GOTO WRITEE
+IF ERACE = 0 AND AA$ = CHR$(13) THEN GOTO LOADORSAVE
+IF ERACE = 1 AND AA$ = CHR$(13) THEN GOTO ERASEFILE
+IF i = 63 THEN ASD = 1
+IF i = 0 THEN ASD = 0
+IF ASD = 0 THEN i = i + 1
+IF ASD = 1 THEN i = i - 1
+PALETTE 247, 65536 * i + i
+FK% = 0
+LOOP
+TEXT1:
+IF ROOM = 0 THEN ROOM$ = "Hallway"
+IF ROOM = 1 THEN ROOM$ = "Mrs. Yesac"
+IF ROOM = 2 THEN ROOM$ = "Mrs. Nouhlac"
+IF ROOM = 3 THEN ROOM$ = "Mr. Kemp"
+IF ROOM = 4 THEN ROOM$ = "Mr. Natas"
+IF ROOM = 5 THEN ROOM$ = "Mrs. Ssabmud"
+IF ROOM = 6 THEN ROOM$ = "Mr. Revelc"
+IF ROOM = 7 THEN ROOM$ = "Retard Room"
+IF ROOM = 8 OR ROOM = 9 THEN ROOM$ = "Gymnasium"
+IF ROOM = 10 THEN ROOM$ = "Mrs. Badlose"
+IF ROOM = 11 THEN ROOM$ = "Mrs. Rellim"
+IF ROOM = 12 THEN ROOM$ = "Locker Room"
+IF ROOM = 13 OR ROOM = 14 THEN ROOM$ = "Home Economics"
+IF ROOM = 15 THEN ROOM$ = "Cafeteria"
+IF ROOM = 16 THEN ROOM$ = "Retard Room"
+IF ROOM = 17 THEN ROOM$ = "Food Storage Room"
+IF ROOM = 18 THEN ROOM$ = "Mr. Kane"
+IF ROOM = 19 THEN ROOM$ = "Mr. Thomas"
+IF ROOM = 20 THEN ROOM$ = "Band Room"
+IF ROOM = 21 THEN ROOM$ = "Old Gym"
+IF ROOM = 22 THEN ROOM$ = "Shop Room"
+IF ROOM = 23 THEN ROOM$ = "Weapon Storage Room"
+RETURN
+TEXT2:
+IF ROOM = 0 THEN ROOM$ = "Hallway"
+IF ROOM = 7 THEN ROOM$ = "Mrs. Van Pelt"
+IF ROOM = 8 THEN ROOM$ = "Mr. Carlile"
+IF ROOM = 9 THEN ROOM$ = "Mr. Numergut"
+IF ROOM = 10 THEN ROOM$ = "Mr. Baldwin"
+IF ROOM = 12 THEN ROOM$ = "Ms. Mitchell"
+IF ROOM = 14 THEN ROOM$ = "Mr. Human"
+IF ROOM = 11 OR ROOM = 13 THEN ROOM$ = "Study Hall"
+IF ROOM = 15 THEN ROOM$ = "Computer Room"
+IF ROOM = 16 THEN ROOM$ = "Library"
+RETURN
+LOADORSAVE:
+IF Placeholder = 0 AND ENDGAME = 0 THEN
+GOROUND = PICK: GOSUB GETSD
+IF ELAPSEDTIME = 0 THEN GOTO WRITEE
+BEGINNINGTIME = TIMER - ELAPSEDTIME
+IF FLOOR = 1 THEN LOAD = 1: CHAIN "FLOOR1.mk!"
+IF FLOOR = 2 THEN LOAD = 1: CHAIN "FLOOR2.mk!"
+END IF
+IF Placeholder = 3 OR ENDGAME = 1 THEN
+GOSUB GETPICK
+ELAPSEDTIME = TIMER - BEGINNINGTIME
+IF PICK = 0 THEN ELAPSE1 = ELAPSEDTIME
+IF PICK = 1 THEN ELAPSE2 = ELAPSEDTIME
+IF PICK = 2 THEN ELAPSE3 = ELAPSEDTIME
+IF PICK = 3 THEN ELAPSE4 = ELAPSEDTIME
+GOSUB WRITESTUFF
+GOSUB GETBACK
+IF ENDGAME = 1 THEN CLS : LOCATE 10, 5: PRINT "Press any key to end Ambush II": COLOR 0: END
+CLS
+FOR i = -15 TO 0
+LINE (92 + i, 59 + i)-(219 + i, 59 + i), 31 + i
+LINE (92 + i, 59 + i)-(92 + i, 123 + i), 31 + i
+NEXT
+LINE (92 + i, 59 + i)-(219 + i, 123 + i), 31 + i / 4, B
+LOCATE 13, 15: PRINT "Continue game"
+LOCATE 14, 15: PRINT "Quit game"
+LOCATE 10, 14: PRINT "Save Options"
+CLR = 16
+PICK = 0
+DO
+AA$ = INKEY$
+IF LEN(AA$) = 2 THEN FK% = ASC(RIGHT$(AA$, 1))
+IF FK% = 72 THEN PICK = 0: LOCATE 14, 13: PRINT " "
+IF FK% = 80 THEN PICK = 1: LOCATE 13, 13: PRINT " "
+COLOR CLR
+IF PICK = 0 THEN LOCATE 13, 13: PRINT CHR$(26)
+IF PICK = 1 THEN LOCATE 14, 13: PRINT CHR$(26)
+IF ASD = 0 THEN CLR = CLR + .1
+IF ASD = 1 THEN CLR = CLR - .1
+IF CLR <= 16 THEN ASD = 0
+IF CLR >= 31 THEN ASD = 1
+LOOP UNTIL AA$ = CHR$(13)
+IF PICK = 0 THEN
+IF FLOOR = 1 THEN CHAIN "FLOOR1.mk!"
+IF FLOOR = 2 THEN CHAIN "FLOOR2.mk!"
+END IF
+IF PICK = 1 THEN
+CLS : COLOR 15: LOCATE 7, 10: PRINT "Press any key to quit": COLOR 0: END
+END IF
+END IF
+GETSD:
+IF GOROUND = 0 THEN
+FLOOR = FLOOR1: ROOM = ROOM1: HEALTH = HLTH1: HEALTHMAX = HLTHMAX1
+ELAPSEDTIME = ELAPSE1: STRENGTH = STRENGTH1: DEATHS = DEATHS1: NOTE = NOTE1
+LIGHT = LIGHT1: ORANGE = ORANGE1: GRANADE = GRANADE1: BOMB = BOMB1: KEE = KEE1
+SUIT = SUIT1: DETECTOR = DETECTOR1: GRINDER = GRINDER1: SHOVEL = SHOVEL1
+SHELLS = SHELLS1: GRENADES = GRENADES1: A = A1: B = B1: BOSS = BOSS1
+HARD = HARD1
+Names = NAMES1
+Loaded = LOADED1
+Turbo = TURBO1
+Invince = INVINCE1
+Ending = ENDING1
+Warping = WARPING1
+IF NamesV = 500 THEN Names = 500
+IF EndingV = 500 THEN Ending = 500
+IF InvinceV = 500 THEN Invince = 500
+IF WarpingV = 500 THEN Warping = 500
+IF LoadedV = 500 THEN Loaded = 500
+IF TurboV = 500 THEN Turbo = 500
+SpecialCredits = SPECIAL1
+BLOCKX = BLOCKX1: BLOCKY = BLOCKY1: NAME$ = NAME1$: SWORD = SWORD1
+END IF
+IF GOROUND = 1 THEN
+FLOOR = FLOOR2: ROOM = ROOM2: HEALTH = HLTH2: HEALTHMAX = HLTHMAX2
+ELAPSEDTIME = ELAPSE2: STRENGTH = STRENGTH2: DEATHS = DEATHS2: NOTE = NOTE2
+LIGHT = LIGHT2: ORANGE = ORANGE2: GRANADE = GRANADE2: BOMB = BOMB2: KEE = KEE2
+SUIT = SUIT2: DETECTOR = DETECTOR2: GRINDER = GRINDER2: SHOVEL = SHOVEL2
+SHELLS = SHELLS2: GRENADES = GRENADES2: A = A2: B = B2: BOSS = BOSS2
+HARD = HARD2
+Names = NAMES2
+Loaded = LOADED2
+Turbo = TURBO2
+Invince = INVINCE2
+Ending = ENDING2
+Warping = WARPING2
+IF NamesV = 500 THEN Names = 500
+IF EndingV = 500 THEN Ending = 500
+IF InvinceV = 500 THEN Invince = 500
+IF WarpingV = 500 THEN Warping = 500
+IF LoadedV = 500 THEN Loaded = 500
+IF TurboV = 500 THEN Turbo = 500
+SpecialCredits = SPECIAL2
+BLOCKX = BLOCKX2: BLOCKY = BLOCKY2: NAME$ = NAME2$: SWORD = SWORD2
+END IF
+IF GOROUND = 2 THEN
+FLOOR = FLOOR3: ROOM = ROOM3: HEALTH = HLTH3: HEALTHMAX = HLTHMAX3
+ELAPSEDTIME = ELAPSE3: STRENGTH = STRENGTH3: DEATHS = DEATHS3: NOTE = NOTE3
+LIGHT = LIGHT3: ORANGE = ORANGE3: GRANADE = GRANADE3: BOMB = BOMB3: KEE = KEE3
+SUIT = SUIT3: DETECTOR = DETECTOR3: GRINDER = GRINDER3: SHOVEL = SHOVEL3
+SHELLS = SHELLS3: GRENADES = GRENADES3: A = A3: B = B3: BOSS = BOSS3
+HARD = HARD3
+Names = NAMES3
+Loaded = LOADED3
+Turbo = TURBO3
+Invince = INVINCE3
+Ending = ENDING3
+Warping = WARPING3
+IF NamesV = 500 THEN Names = 500
+IF EndingV = 500 THEN Ending = 500
+IF InvinceV = 500 THEN Invince = 500
+IF WarpingV = 500 THEN Warping = 500
+IF LoadedV = 500 THEN Loaded = 500
+IF TurboV = 500 THEN Turbo = 500
+SpecialCredits = SPECIAL3
+BLOCKX = BLOCKX3: BLOCKY = BLOCKY3: NAME$ = NAME3$: SWORD = SWORD3
+END IF
+IF GOROUND = 3 THEN
+FLOOR = FLOOR4: ROOM = ROOM4: HEALTH = HLTH4: HEALTHMAX = HLTHMAX4
+ELAPSEDTIME = ELAPSE4: STRENGTH = STRENGTH4: DEATHS = DEATHS4: NOTE = NOTE4
+LIGHT = LIGHT4: ORANGE = ORANGE4: GRANADE = GRANADE4: BOMB = BOMB4: KEE = KEE4
+SUIT = SUIT4: DETECTOR = DETECTOR4: GRINDER = GRINDER4: SHOVEL = SHOVEL4
+SHELLS = SHELLS4: GRENADES = GRENADES4: A = A4: B = B4: BOSS = BOSS4
+HARD = HARD4
+Names = NAMES4
+Loaded = LOADED4
+Turbo = TURBO4
+Invince = INVINCE4
+Ending = ENDING4
+Warping = WARPING4
+IF NamesV = 500 THEN Names = 500
+IF EndingV = 500 THEN Ending = 500
+IF InvinceV = 500 THEN Invince = 500
+IF WarpingV = 500 THEN Warping = 500
+IF LoadedV = 500 THEN Loaded = 500
+IF TurboV = 500 THEN Turbo = 500
+SpecialCredits = SPECIAL4
+BLOCKX = BLOCKX4: BLOCKY = BLOCKY4: NAME$ = NAME4$: SWORD = SWORD4
+END IF
+RETURN
+GETPICK:
+IF PICK = 0 THEN
+NAME1$ = NamesV$: A1 = ASV: B1 = BSV: BLOCKX1 = BLOCKXSV: BLOCKY1 = BLOCKYSV
+HLTH1 = HEALTHSV: HLTHMAX1 = HLTHMAXSV: ROOM1 = ROOMSV: FLOOR1 = FLOORSV
+DEATHS1 = DEATHSV: STRENGTH1 = STRENGTHSV: LIGHT1 = LIGHTSV: SWORD1 = SWORDV
+GRANADE1 = GRANADESV: BOMB1 = BOMBSV: KEE1 = KEESV: SUIT1 = SUITSV
+DETECTOR1 = DETECTORSV: GRINDER1 = GRINDERSV: SHOVEL1 = SHOVELSV
+SHELLS1 = SHELLSV: GRENADES1 = GRENADESV: LOADED1 = LoadedV: TURBO1 = TurboV
+INVINCE1 = InvinceV: BOSS1 = BOSSV: NAMES1 = NamesV: ORANGE1 = ORANGESV
+ENDING1 = EndingV: WARPING1 = WarpingV: SPECIAL1 = SpecialCreditsV
+NOTE1 = NOTEV: HARD1 = HARDV
+END IF
+IF PICK = 1 THEN
+NAME2$ = NamesV$: A2 = ASV: B2 = BSV: BLOCKX2 = BLOCKXSV: BLOCKY2 = BLOCKYSV
+HLTH2 = HEALTHSV: HLTHMAX2 = HLTHMAXSV: ROOM2 = ROOMSV: FLOOR2 = FLOORSV
+DEATHS2 = DEATHSV: STRENGTH2 = STRENGTHSV: LIGHT2 = LIGHTSV: SWORD2 = SWORDV
+GRANADE2 = GRANADESV: BOMB2 = BOMBSV: KEE2 = KEESV: SUIT2 = SUITSV
+DETECTOR2 = DETECTORSV: GRINDER2 = GRINDERSV: SHOVEL2 = SHOVELSV
+SHELLS2 = SHELLSV: GRENADES2 = GRENADESV: LOADED2 = LoadedV: TURBO2 = TurboV
+INVINCE2 = InvinceV: BOSS2 = BOSSV: NAMES2 = NamesV: ORANGE2 = ORANGESV
+ENDING2 = EndingV: WARPING2 = WarpingV: SPECIAL2 = SpecialCreditsV
+NOTE2 = NOTEV: HARD2 = HARDV
+END IF
+IF PICK = 2 THEN
+NAME3$ = NamesV$: A3 = ASV: B3 = BSV: BLOCKX3 = BLOCKXSV: BLOCKY3 = BLOCKYSV
+HLTH3 = HEALTHSV: HLTHMAX3 = HLTHMAXSV: ROOM3 = ROOMSV: FLOOR3 = FLOORSV
+DEATHS3 = DEATHSV: STRENGTH3 = STRENGTHSV: LIGHT3 = LIGHTSV: SWORD3 = SWORDV
+GRANADE3 = GRANADESV: BOMB3 = BOMBSV: KEE3 = KEESV: SUIT3 = SUITSV
+DETECTOR3 = DETECTORSV: GRINDER3 = GRINDERSV: SHOVEL3 = SHOVELSV
+SHELLS3 = SHELLSV: GRENADES3 = GRENADESV: LOADED3 = LoadedV: TURBO3 = TurboV
+INVINCE3 = InvinceV: BOSS3 = BOSSV: NAMES3 = NamesV: ORANGE3 = ORANGESV
+ENDING3 = EndingV: WARPING3 = WarpingV: SPECIAL3 = SpecialCreditsV
+NOTE3 = NOTEV: HARD3 = HARDV
+END IF
+IF PICK = 3 THEN
+NAME4$ = NamesV$: A4 = ASV: B4 = BSV: BLOCKX4 = BLOCKXSV: BLOCKY4 = BLOCKYSV
+HLTH4 = HEALTHSV: HLTHMAX4 = HLTHMAXSV: ROOM4 = ROOMSV: FLOOR4 = FLOORSV
+DEATHS4 = DEATHSV: STRENGTH4 = STRENGTHSV: LIGHT4 = LIGHTSV: SWORD4 = SWORDV
+GRANADE4 = GRANADESV: BOMB4 = BOMBSV: KEE4 = KEESV: SUIT4 = SUITSV
+DETECTOR4 = DETECTORSV: GRINDER4 = GRINDERSV: SHOVEL4 = SHOVELSV
+SHELLS4 = SHELLSV: GRENADES4 = GRENADESV: LOADED4 = LoadedV: TURBO4 = TurboV
+INVINCE4 = InvinceV: BOSS4 = BOSSV: NAMES4 = NamesV: ORANGE4 = ORANGESV
+ENDING4 = EndingV: WARPING4 = WarpingV: SPECIAL4 = SpecialCreditsV
+NOTE4 = NOTEV: HARD4 = HARDV
+END IF
+RETURN
+GETBACK:
+NAME$ = NamesV$: A = ASV: B = BSV: BLOCKX = BLOCKXSV: BLOCKY = BLOCKYSV
+HEALTH = HEALTHSV: HEALTHMAX = HLTHMAXSV: ROOM = ROOMSV: FLOOR = FLOORSV
+DEATHS = DEATHSV: STRENGTH = STRENGTHSV: LIGHT = LIGHTSV: ORANGE = ORANGESV
+GRANADE = GRANADESV: BOMB = BOMBSV: KEE = KEESV: SUIT = SUITSV: BOSS = BOSSV
+DETECTOR = DETECTORSV: GRINDER = GRINDERSV: SHOVEL = SHOVELSV: Names = NamesV
+SHELLS = SHELLSV: GRENADES = GRENADESV: Loaded = LoadedV: Turbo = TurboV
+Invince = InvinceV: Ending = EndingV: Warping = WarpingV: SWORD = SWORDV
+SpecialCredits = SpecialCreditsV: NOTE = NOTEV: HARD = HARDV
+RETURN
+ERASEFILE:
+IF PICK = 0 THEN ELAPSE1 = 0: NAME1$ = "      "
+IF PICK = 1 THEN ELAPSE2 = 0: NAME2$ = "      "
+IF PICK = 2 THEN ELAPSE3 = 0: NAME3$ = "      "
+IF PICK = 3 THEN ELAPSE4 = 0: NAME4$ = "      "
+COLOR 54
+LOCATE 9, 2: PRINT NAME1$
+LOCATE 13, 2: PRINT NAME2$
+LOCATE 17, 2: PRINT NAME3$
+LOCATE 21, 2: PRINT NAME4$
+GOSUB WRITESTUFF
+ERACE = 0
+Display
+GOTO WRITEE
+WRITESTUFF:
+OPEN "A2DATA" FOR OUTPUT AS #1
+WRITE #1, NAME1$, FLOOR1, ROOM1, HLTH1, HLTHMAX1, ELAPSE1, STRENGTH1, DEATHS1
+WRITE #1, NAME2$, FLOOR2, ROOM2, HLTH2, HLTHMAX2, ELAPSE2, STRENGTH2, DEATHS2
+WRITE #1, NAME3$, FLOOR3, ROOM3, HLTH3, HLTHMAX3, ELAPSE3, STRENGTH3, DEATHS3
+WRITE #1, NAME4$, FLOOR4, ROOM4, HLTH4, HLTHMAX4, ELAPSE4, STRENGTH4, DEATHS4
+WRITE #1, ORANGE1, GRANADE1, SHOVEL1, KEE1, SUIT1, DETECTOR1, GRINDER1, BOMB1
+WRITE #1, ORANGE2, GRANADE2, SHOVEL2, KEE2, SUIT2, DETECTOR2, GRINDER2, BOMB2
+WRITE #1, ORANGE3, GRANADE3, SHOVEL3, KEE3, SUIT3, DETECTOR3, GRINDER3, BOMB3
+WRITE #1, ORANGE4, GRANADE4, SHOVEL4, KEE4, SUIT4, DETECTOR4, GRINDER4, BOMB4
+WRITE #1, LIGHT1, SHELLS1, GRENADES1, A1, B1, BOSS1, NAMES1, LOADED1, TURBO1
+WRITE #1, LIGHT2, SHELLS2, GRENADES2, A2, B2, BOSS2, NAMES2, LOADED2, TURBO2
+WRITE #1, LIGHT3, SHELLS3, GRENADES3, A3, B3, BOSS3, NAMES3, LOADED3, TURBO3
+WRITE #1, LIGHT4, SHELLS4, GRENADES4, A4, B4, BOSS4, NAMES4, LOADED4, TURBO4
+WRITE #1, INVINCE1, BLOCKX1, BLOCKY1, ENDING1, WARPING1, SPECIAL1, SWORD1
+WRITE #1, INVINCE2, BLOCKX2, BLOCKY2, ENDING2, WARPING2, SPECIAL2, SWORD2
+WRITE #1, INVINCE3, BLOCKX3, BLOCKY3, ENDING3, WARPING3, SPECIAL3, SWORD3
+WRITE #1, INVINCE4, BLOCKX4, BLOCKY4, ENDING4, WARPING4, SPECIAL4, SWORD4
+WRITE #1, NOTE1, HARD1
+WRITE #1, NOTE2, HARD2
+WRITE #1, NOTE3, HARD3
+WRITE #1, NOTE4, HARD4
+CLOSE #1
+RETURN
+arcadegame:
+ARCADE = 1
+DEF SEG = &HA000
+DIM CIRC%(2000)
+DIM CIRC1%(2000)
+DIM HIT%(1000)
+DIM BIG%(10500)
+DIM BIG1%(10000)
+DIM SHARED mouse$: mouse$ = SPACE$(57)
+toBEGIN:
+CLS
+SCREEN 9
+CIRCLE (320, 175), 358, 31
+LINE (55, 0)-(585, 0), 31
+LINE (54, 349)-(587, 349), 31
+LINE (639, 55)-(639, 293), 31
+LINE (0, 58)-(0, 291), 31
+PAINT (319, 0), 0, 15
+PAINT (319, 180), 0, 15
+PAINT (0, 10), 0, 15
+PAINT (0, 190), 0, 15
+WIDTH 80
+keyb = 1
+COLOR 10
+Center 4, "Only Level: Your Mission"
+COLOR 14
+Center 7, "You are fighting this guy that jumps up and down to harm you."
+Center 9, "When he lands you spill your coffee all over yourself, so"
+Center 11, "kill that piece of crap as soon as possible. This is 100% mouse"
+Center 13, "compatible. Press the right button to bomb and the left"
+Center 15, "button to spray bullets."
+COLOR 10
+Center 19, "Good Luck!"
+WHILE INKEY$ = "": WEND
+CLS
+SCREEN 13
+FOR i% = 1 TO 57:  READ A$:  H$ = CHR$(VAL("&H" + A$))
+MID$(mouse$, i%, 1) = H$: NEXT i%
+DATA 55,89,E5,8B,5E,0C,8B,07,50,8B,5E,0A,8B,07,50,8B
+DATA 5E,08,8B,0F,8B,5E,06,8B,17,5B,58,1E,07,CD,33,53
+DATA 8B,5E,0C,89,07,58,8B,5E,0A,89,07,8B,5E,08,89,0F
+DATA 8B,5E,06,89,17,5D,CA,08,00
+RESTORE
+ms% = MouseInit%
+IF NOT ms% THEN
+  SCREEN 0
+  WIDTH 80
+  CLS
+  PRINT "Have you just awakened from a 10 year coma or are"
+  PRINT "you just too cheap to spring for a mouse?"
+ARCADE = 1
+CHAIN "FLOOR1.mk!"
+END IF
+SCREEN 13
+BOMBS = 5
+OUCH = 0
+OUCHYOU = 0
+AMMO = 999
+DELAY = 0
+BOSS:
+va = 125
+va2 = 133
+LINE (154, va2 + 47)-(va + 37, va2 + 12), 31
+LINE (154, va2 + 47)-(va + 18, va2 + 47), 31
+LINE (va + 18, va2 + 47)-(va + 14, va2), 31
+LINE (va + 14, va2)-(va + 64, va2), 31
+LINE (va + 58, va2 + 47)-(va + 63, va2), 31
+LINE (va + 58, va2 + 47)-(va + 51, va2 + 47), 31
+LINE (va + 51, va2 + 47)-(va + 45, va2 + 12), 31
+LINE (va + 45, va2 + 12)-(va + 37, va2 + 12), 31
+LINE (va + 18, va2 + 47)-(va + 7, va2 + 54), 31
+LINE (va + 7, va2 + 54)-(va + 8, va2 + 61), 31
+LINE (va + 8, va2 + 61)-(va + 29, va2 + 47), 31
+LINE (va + 58, va2 + 47)-(va + 71, va2 + 57), 31
+LINE (va + 71, va2 + 57)-(va + 67, va2 + 65), 31
+LINE (va + 67, va2 + 65)-(va + 51, va2 + 47), 31
+LINE (va + 63, va2)-(va + 68, va2 - 43), 31
+LINE (va + 68, va2 - 43)-(va + 95, va2 - 28), 31
+LINE (va + 95, va2 - 28)-(va + 78, va2 - 13), 31
+LINE (va + 89, va2 - 9)-(va + 112, va2 - 31), 31
+LINE (va + 112, va2 - 31)-(va + 71, va2 - 54), 31
+LINE (va + 71, va2 - 54)-(va + 45, va2 - 59), 31
+LINE (va + 45, va2 - 59)-(va + 29, va2 - 54), 31
+LINE (va + 29, va2 - 54)-(va + 19, va2 - 54), 31
+LINE (va + 19, va2 - 54)-(va + 11, va2 - 59), 31
+LINE (va + 11, va2 - 59)-(va - 6, va2 - 56), 31
+LINE (va - 6, va2 - 56)-(va - 44, va2 - 37), 31
+LINE (va - 44, va2 - 37)-(va - 30, va2 - 21), 31
+LINE (va - 20, va2 - 23)-(va - 29, va2 - 33), 31
+LINE (va - 29, va2 - 33)-(va + 3, va2 - 44), 31
+LINE (va + 3, va2 - 44)-(va + 14, va2), 31
+LINE (va - 20, va2 - 23)-(va - 30, va2 - 21), 31
+LINE (va - 30, va2 - 21)-(va - 33, va2 - 14), 31
+LINE (va - 33, va2 - 14)-(va - 22, va2 - 10), 31
+LINE (va - 22, va2 - 10)-(va - 14, va2 - 14), 31
+LINE (va - 14, va2 - 14)-(va - 20, va2 - 23), 31
+LINE (va + 78, va2 - 13)-(va + 89, va2 - 9), 31
+LINE (va + 89, va2 - 9)-(va + 92, va2), 31
+LINE (va + 92, va2)-(va + 79, va2 + 3), 31
+LINE (va + 79, va2 + 3)-(va + 71, va2 - 5), 31
+LINE (va + 71, va2 - 5)-(va + 78, va2 - 13), 31
+CIRCLE (va + 29, va2 - 82), 14, 31, , , 1.2
+LINE (va + 24, va2 - 68)-(va + 13, va2 - 57), 31
+LINE (va + 41, va2 - 58)-(va + 34, va2 - 69), 31
+LINE (va + 26, va2 - 79)-(va + 33, va2 - 77), 31, B
+LINE (va + 31, va2 - 87)-(va + 33, va2 - 85), 31, B
+LINE (va + 24, va2 - 85)-(va + 26, va2 - 87), 31, B
+LINE (va + 23, va2 - 90)-(va + 26, va2 - 89), 31
+LINE (va + 35, va2 - 90)-(va + 32, va2 - 89), 31
+PAINT (va + 32, va2 - 74), 65, 31
+PAINT (va + 32, va2 - 62), 65, 31
+PAINT (va - 22, va2 - 21), 65, 31
+PAINT (va + 79, va2 - 7), 65, 31
+PAINT (va + 54, va2 - 7), 98, 31
+PAINT (va + 35, va2 + 3), 103, 31
+PAINT (va + 20, va2 + 49), 27, 31
+PAINT (va + 57, va2 + 50), 27, 31
+Outside
+MouseRange 20, 20, 620, 185
+GOSUB TALKBOSS
+GOSUB HEALTH
+vg = 164: vy = 179: jt = 3: ji = 21
+CC = 195
+FOR i = 1 TO 10
+LINE (vg, jt)-(vy, ji), 15, B
+LINE (vg + 1, jt + 1)-(vy - 1, ji - 1), CC, BF
+vg = vg + 15: vy = vy + 15
+CC = CC + 1.7
+NEXT
+Outside
+PLAY "T155MBL8O1F#FF#FED#EFF#FF#FED#EF"
+X = 70
+Y = 90
+BOSSINKY: Q$ = INKEY$
+MouseStatus Lb%, Rb%, X%, Y%
+MouseShow
+DELAY = DELAY + 1
+IF OUCH >= 10 THEN GOSUB KILLBOSS
+IF DELAY = 350 THEN GOSUB GETHIT
+IF OUCHYOU >= 10 THEN Gameover: GOTO toBEGIN
+IF Lb% = -1 THEN GOSUB FIRE
+IF Rb% = -1 AND BOMBS <> 0 THEN F = X%: F1 = Y%: GOSUB BOOM
+LOCATE 22, 2: PRINT "Bombs :"; BOMBS
+LOCATE 23, 2: PRINT "Ammo  :"; AMMO
+Q$ = LCASE$(Q$)
+IF Q$ = " " THEN GOSUB FIRE
+IF Q$ = "p" THEN GOSUB PAUSE
+IF Q$ = CHR$(27) THEN
+MouseHide
+GET (40, 70)-(249, 90), BIG%
+LOCATE 10, 11: COLOR 15: PRINT "Wimping out already ?"
+DO
+END$ = INKEY$
+LOOP UNTIL END$ <> ""
+PUT (40, 70), BIG%, PSET
+IF UCASE$(LEFT$(END$, 1)) = "Y" THEN CLS : END
+COLOR 14
+GOTO BOSSINKY
+END IF
+GOTO BOSSINKY
+PAUSE:
+MouseHide
+GET (40, 70)-(259, 90), BIG%
+COLOR 15
+LOCATE 10, 17: PRINT "PAUSE"
+DO
+AA$ = INKEY$
+LOOP UNTIL UCASE$(AA$) = "P"
+COLOR 14
+PUT (40, 70), BIG%, PSET
+RETURN
+FIRE:
+IF GUN = 1 AND AMMO = 0 THEN
+PLAY "MBO6T255L64FG"
+END IF
+PLAY "MBO0T255L64CDCDCDCD"
+AMMO = AMMO - 1
+IF X% / 2 >= 135 AND X% / 2 <= 190 AND Y% >= 75 AND Y% <= 133 THEN
+MouseHide
+CIRCLE (X% / 2, Y%), 2, 112, , , 1: PAINT (X% / 2, Y%), 4, 112
+OUCH = OUCH + .05
+GOSUB HITBOSS
+END IF
+RETURN
+HITBOSS:
+vg = 164: vy = 179: jt = 3: ji = 21
+FOR i = 1 TO OUCH
+LINE (vg + 1, jt + 1)-(vy - 1, ji - 1), 12, BF
+vg = vg + 15: vy = vy + 15
+NEXT
+Outside
+RETURN
+TALKBOSS:
+COLOR 14
+LOCATE 3, 7: PRINT "Don't shoot me in the chest."
+LOCATE 4, 6: PRINT "It's my one and only weakness."
+PLAY "T155MFL8O3F#FF#FED#EFF#FF#FED#EF"
+LOCATE 3, 1: PRINT STRING$(39, " ")
+LOCATE 4, 1: PRINT STRING$(39, " ")
+RETURN
+HEALTH:
+vg = 4: vy = 19: jt = 3: ji = 21
+CC = 16
+FOR i = 1 TO 10
+LINE (vg, jt)-(vy, ji), 15, B
+LINE (vg + 1, jt + 1)-(vy - 1, ji - 1), CC, BF
+vg = vg + 15: vy = vy + 15
+CC = CC + 1.4
+NEXT
+vg = 4: vy = 19: jt = 3: ji = 21
+FOR i = 1 TO OUCHYOU
+LINE (vg, jt)-(vy, ji), 15, B
+LINE (vg + 1, jt + 1)-(vy - 1, ji - 1), 12, BF
+vg = vg + 15: vy = vy + 15
+NEXT
+Outside
+RETURN
+GETHIT:
+MouseHide
+GET (81, 35)-(237, 133), BIG%
+GET (132, 133)-(196, 199), BIG1%
+FOR i = 1 TO 6
+PUT (81, 35), BIG%, PSET
+PUT (132, 133), BIG1%, PSET
+FOR DE = 1 TO 100: NEXT
+PUT (81, 25), BIG%, PSET
+PUT (132, 123), BIG1%, PSET
+LINE (81, 25)-(237, 35), 0, BF
+LINE (195, 135)-(220, 140), 0, BF
+LINE (81, 185)-(237, 198), 0, BF
+FOR DE = 1 TO 100: NEXT
+NEXT
+PUT (81, 35), BIG%, PSET
+PUT (132, 133), BIG1%, PSET
+DELAY = 0
+MouseShow
+OUCHYOU = OUCHYOU + 3
+GOSUB HEALTH
+RETURN
+BOOM:
+MouseHide
+FOR i = 1 TO 63
+PALETTE 0, i
+FOR WIT = 1 TO 10: NEXT
+NEXT
+FOR i = 63 TO 1 STEP -1
+PALETTE 0, i
+FOR WIT = 1 TO 10: NEXT
+NEXT
+IF X% / 2 >= 135 AND X% / 2 <= 190 AND Y% >= 75 AND Y% <= 133 THEN
+CIRCLE (F / 2, F1), 3, 112, , , 1
+PAINT (F / 2, F1), 4, 112
+END IF
+OUCH = OUCH + .5
+BOMBS = BOMBS - 1
+GOSUB HITBOSS
+RETURN
+KILLBOSS:
+MouseHide
+CLS
+Outside
+Dude1.2
+FOR i = 1 TO 500: NEXT
+CLS
+Outside
+Dude1.3
+FOR i = 1 TO 2000: NEXT
+Outside
+FOR i = 16 TO 31
+COLOR i
+keyb = 3
+Center 4, "You have accomplished your"
+Center 6, "mission in the arcade game"
+Center 8, "  but that was as I said,"
+Center 10, "just an arcade game. Much"
+Center 12, "more serious matters must"
+Center 14, "  now be taken of in reality."
+NEXT
+WHILE INKEY$ = "": WEND
+CHAIN "FLOOR1.mk!"
+
+SUB Boxes
+LINE (3, 28)-(91, 43), 15, B
+LINE (3, 43)-(314, 75), 15, B
+LINE (3, 75)-(314, 107), 15, B
+LINE (3, 107)-(314, 139), 15, B
+LINE (3, 139)-(314, 171), 15, B
+LINE (3, 171)-(59, 187), 15, B
+LINE (59, 43)-(59, 171), 15
+LINE (3, 171)-(59, 187), 15, B
+END SUB
+
+SUB Center (ROW, TEXT$)
+    SHARED keyb
+    IF keyb <> 3 THEN
+    LOCATE ROW, 41 - LEN(TEXT$) / 2
+    PRINT TEXT$;
+    END IF
+    IF keyb = 3 THEN
+    LOCATE ROW, 21 - LEN(TEXT$) / 2
+    PRINT TEXT$;
+    END IF
+END SUB
+
+SUB Display
+SHARED Placeholder, ERACE, ENDGAME
+COLOR 47
+LOCATE 2, 10: PRINT "Ambush at South Range II"
+COLOR 15
+IF ENDGAME = 0 THEN
+IF Placeholder = 0 THEN LOCATE 4, 14: PRINT "Load Saved Game"
+IF Placeholder = 3 THEN LOCATE 4, 17: PRINT "Save Game"
+END IF
+IF ENDGAME = 1 THEN LOCATE 4, 14: PRINT "Save Game & Quit"
+IF ERACE = 0 THEN LOCATE 5, 2: PRINT "Erase File"
+IF ERACE = 1 THEN LOCATE 5, 2: PRINT "What File?"
+LOCATE 7, 2: PRINT "Game 1"
+LOCATE 11, 2: PRINT "Game 2"
+LOCATE 15, 2: PRINT "Game 3"
+LOCATE 19, 2: PRINT "Game 4"
+LOCATE 23, 2: PRINT "Exit"
+LOCATE 23, 15
+FOR CHR = 24 TO 27
+PRINT CHR$(CHR); "  ";
+NEXT
+LOCATE 23, 27: PRINT "Enter"
+END SUB
+
+SUB Dude1.2
+va = 150
+va2 = 150
+LINE (va + 6, va2 + 19)-(va - 3, va2 - 7), 17
+LINE (va + 12, va2 + 19)-(va + 11, va2 - 2), 17
+LINE (va + 11, va2 - 2)-(va + 16, va2 - 2), 17
+LINE (va + 16, va2 - 2)-(va + 19, va2 + 20), 17
+LINE (va + 27, va2 + 20)-(va + 33, va2 - 9), 17
+LINE (va + 33, va2 - 9)-(va - 3, va2 - 9), 17
+LINE (va - 3, va2 - 9)-(va - 3, va2 - 7), 17
+LINE (va - 3, va2 - 9)-(va - 12, va2 - 28), 17
+LINE (va + 33, va2 - 9)-(va + 40, va2 - 30), 17
+LINE (va + 40, va2 - 30)-(va + 62, va2 - 40), 17
+LINE (va + 62, va2 - 40)-(va + 62, va2 - 57), 17
+LINE (va + 62, va2 - 57)-(va + 55, va2 - 57), 17
+LINE (va + 55, va2 - 57)-(va + 52, va2 - 45), 17
+LINE (va + 52, va2 - 45)-(va + 40, va2 - 40), 17
+LINE (va + 55, va2 - 57)-(va + 51, va2 - 62), 17
+LINE (va + 51, va2 - 62)-(va + 58, va2 - 67), 17
+LINE (va + 58, va2 - 67)-(va + 65, va2 - 63), 17
+LINE (va + 65, va2 - 63)-(va + 62, va2 - 57), 17
+LINE (va + 40, va2 - 40)-(va + 21, va2 - 46), 17
+LINE (va + 21, va2 - 46)-(va + 19, va2 - 52), 17
+LINE (va + 6, va2 - 52)-(va + 4, va2 - 45), 17
+LINE (va + 4, va2 - 45)-(va - 13, va2 - 40), 17
+LINE (va - 13, va2 - 40)-(va - 32, va2 - 45), 17
+LINE (va - 12, va2 - 28)-(va - 36, va2 - 36), 17
+LINE (va - 36, va2 - 36)-(va - 46, va2 - 60), 17
+LINE (va - 46, va2 - 60)-(va - 40, va2 - 60), 17
+LINE (va - 40, va2 - 60)-(va - 32, va2 - 45), 17
+LINE (va - 39, va2 - 60)-(va - 35, va2 - 65), 17
+LINE (va - 35, va2 - 65)-(va - 43, va2 - 71), 17
+LINE (va - 43, va2 - 71)-(va - 51, va2 - 68), 17
+LINE (va - 51, va2 - 68)-(va - 47, va2 - 60), 17
+LINE (va + 6, va2 + 19)-(va + 6, va2 + 25), 17
+LINE (va + 6, va2 + 25)-(va + 10, va2 + 27), 17
+LINE (va + 10, va2 + 27)-(va + 11, va2 + 15), 17
+LINE (va + 11, va2 + 15)-(va + 9, va2 + 12), 17
+LINE (va + 9, va2 + 12)-(va + 6, va2 + 16), 17
+LINE (va + 19, va2 + 20)-(va + 23, va2 + 27), 17
+LINE (va + 23, va2 + 27)-(va + 27, va2 + 21), 17
+LINE (va + 27, va2 + 21)-(va + 23, va2 + 14), 17
+LINE (va + 23, va2 + 14)-(va + 20, va2 + 21), 17
+LINE (va - 5, va2 - 42)-(va + 12, va2 - 36), 17
+LINE (va + 12, va2 - 36)-(va + 31, va2 - 42), 17
+CIRCLE (va + 12, va2 - 59), 8, 17, , , 1.2
+LINE (va + 6, va2 - 52)-(va + 8, va2 - 53), 17
+LINE (va + 19, va2 - 52)-(va + 17, va2 - 54), 17
+LINE (va + 10, va2 - 60)-(va + 10, va2 - 59), 17, B
+LINE (va + 14, va2 - 60)-(va + 14, va2 - 59), 17, B
+CIRCLE (va + 12, va2 - 56), 2, 17, , , 1
+CIRCLE (va + 12, va2 - 27), 3, 17, , , 1
+CIRCLE (va + 12, va2 - 27), 9, 17, , , 1.2
+PAINT (va + 12, va2 - 27), 112, 17
+PAINT (va + 17, va2 - 27), 4, 17
+PAINT (va + 15, va2 - 43), 65, 17
+PAINT (va + 13, va2 - 62), 65, 17
+PAINT (va + 57, va2 - 61), 65, 17
+PAINT (va - 41, va2 - 63), 65, 17
+PAINT (va - 41, va2 - 55), 98, 17
+PAINT (va + 2, va2 - 5), 103, 17
+PAINT (va + 2, va2 + 5), 103, 17
+PAINT (va + 22, va2 + 5), 103, 17
+PAINT (va + 9, va2 + 19), 27, 17
+PAINT (va + 23, va2 + 20), 27, 17
+END SUB
+
+SUB Dude1.3
+va = 150
+va2 = 156
+LINE (va + 2, va2 + 25)-(va - 9, va2 + 15), 16
+LINE (va - 9, va2 + 15)-(va - 16, va2 + 13), 16
+LINE (va - 16, va2 + 13)-(va - 20, va2 + 15), 16
+LINE (va - 20, va2 + 15)-(va - 14, va2 + 24), 16
+LINE (va - 14, va2 + 24)-(va - 3, va2 + 30), 16
+LINE (va - 3, va2 + 30)-(va + 2, va2 + 26), 16
+LINE (va + 2, va2 + 26)-(va + 6, va2 + 19), 16
+LINE (va + 6, va2 + 19)-(va + 21, va2 + 19), 16
+LINE (va + 21, va2 + 19)-(va + 24, va2 + 24), 16
+LINE (va + 24, va2 + 24)-(va + 36, va2 + 15), 16
+LINE (va + 36, va2 + 15)-(va + 43, va2 + 15), 16
+LINE (va + 43, va2 + 15)-(va + 44, va2 + 20), 16
+LINE (va + 44, va2 + 20)-(va + 33, va2 + 29), 16
+LINE (va + 33, va2 + 29)-(va + 27, va2 + 30), 16
+LINE (va + 27, va2 + 30)-(va + 24, va2 + 24), 16
+LINE (va + 29, va2 + 20)-(va + 25, va2 + 15), 16
+LINE (va + 25, va2 + 15)-(va + 6, va2 + 15), 16
+LINE (va - 2, va2 + 22)-(va + 4, va2 + 14), 16
+LINE (va + 4, va2 + 14)-(va + 7, va2 + 15), 16
+LINE (va + 4, va2 + 14)-(va + 7, va2 + 8), 16
+LINE (va + 25, va2 + 15)-(va + 22, va2 + 7), 16
+LINE (va + 22, va2 + 7)-(va + 33, va2 + 7), 16
+LINE (va + 33, va2 + 7)-(va + 33, va2 + 4), 16
+LINE (va + 33, va2 + 4)-(va + 21, va2 + 3), 16
+LINE (va + 21, va2 + 3)-(va + 17, va2 + 4), 16
+LINE (va + 17, va2 + 4)-(va + 14, va2 + 4), 16
+LINE (va + 14, va2 + 4)-(va + 8, va2 + 3), 16
+LINE (va + 8, va2 + 3)-(va - 4, va2 + 4), 16
+LINE (va - 4, va2 + 4)-(va - 4, va2 + 6), 16
+LINE (va - 4, va2 + 6)-(va + 7, va2 + 7), 16
+LINE (va - 4, va2 + 6)-(va - 7, va2 + 4), 16, B
+LINE (va + 33, va2 + 4)-(va + 38, va2 + 3), 16
+LINE (va + 38, va2 + 3)-(va + 39, va2 + 5), 16
+LINE (va + 39, va2 + 5)-(va + 33, va2 + 7), 16
+LINE (va + 7, va2 + 10)-(va + 10, va2 + 14), 16
+LINE (va + 22, va2 + 14)-(va + 23, va2 + 11), 16
+LINE (va + 27, va2 + 4)-(va + 28, va2 + 7), 16
+LINE (va + 3, va2 + 7)-(va + 5, va2 + 3), 16
+CIRCLE (va + 15, va2 + 9), 3, 16, , , 1.2
+LINE (va + 18, va2 + 3)-(va + 17, va2 + 2), 16
+LINE (va + 10, va2 + 3)-(va + 12, va2), 16
+LINE (va + 17, va2 + 1)-(va + 19, va2 - 3), 16
+LINE (va + 19, va2 - 3)-(va + 15, va2 - 6), 16
+LINE (va + 15, va2 - 6)-(va + 11, va2 - 6), 16
+LINE (va + 10, va2 - 6)-(va + 9, va2 - 3), 16
+LINE (va + 9, va2 - 3)-(va + 12, va2), 16
+PAINT (va + 15, va2 + 9), 112, 16
+PAINT (va + 10, va2 + 9), 4, 16
+PAINT (va + 2, va2 + 5), 98, 16
+PAINT (va + 7, va2 + 13), 98, 16
+PAINT (va + 24, va2 + 14), 98, 16
+PAINT (va + 30, va2 + 6), 98, 16
+PAINT (va + 15, va2 + 2), 65, 16
+PAINT (va - 5, va2 + 5), 65, 16
+PAINT (va + 35, va2 + 5), 65, 16
+PAINT (va + 35, va2 + 19), 27, 16
+PAINT (va + 25, va2 + 19), 103, 16
+PAINT (va - 9, va2 + 19), 27, 16
+END SUB
+
+SUB Gameover
+SHARED SPD, SCORE, INI1$, INI2$, INI3$, HITS, keyb
+MouseHide
+COLOR 15
+SPD = 350
+FOR i = 1 TO SPD * 4: NEXT: CLS : SCREEN 13
+CIRCLE (158, 98), 185, 30
+LINE (17, 0)-(299, 0), 30
+LINE (18, 199)-(297, 199), 30
+LINE (319, 23)-(319, 173), 30
+LINE (0, 19)-(0, 178), 30
+PAINT (319, 0), 16, 30
+PAINT (319, 180), 16, 30
+PAINT (0, 10), 16, 30
+PAINT (0, 190), 16, 30
+FOR i = 3 TO 13:  LOCATE i, 16: PRINT "G": LOCATE i - 1, 16: PRINT " "
+FOR A = 1 TO SPD: NEXT: NEXT: PLAY "t255mbl64o0cdcdcdcdcdcdcdcdp16cp64ddcp32d"
+FOR i = 3 TO 13:  LOCATE i, 18: PRINT "A": LOCATE i - 1, 18: PRINT " "
+FOR A = 1 TO SPD: NEXT: NEXT: PLAY "t255mbl64o0cdcdcdcdcdcdcdcdp16cp32ddcp64d"
+FOR i = 3 TO 13:  LOCATE i, 20: PRINT "M": LOCATE i - 1, 20: PRINT " "
+FOR A = 1 TO SPD: NEXT: NEXT: PLAY "t255mbl64o0cdcdcdcdcdcdcdcdp16cp32ddcp64d"
+FOR i = 3 TO 13:  LOCATE i, 22: PRINT "E": LOCATE i - 1, 22: PRINT " "
+FOR A = 1 TO SPD: NEXT: NEXT: PLAY "t255mbl64o0cdcdcdcdcdcdcdcdp16cp32ddcp64d"
+FOR i = 32 TO 23 STEP -1: LOCATE 13, i: PRINT "O V E R": LOCATE 13, i + 7: PRINT " "
+FOR A = 1 TO SPD: NEXT: NEXT: PLAY "t255mbl64o0cdcdcdcdcdcdcdcdp16cp32ddcp64d"
+FOR i = 15 TO 12 STEP -1: LOCATE 13, i: PRINT "G A M E": LOCATE 13, i + 7: PRINT " "
+FOR A = 1 TO SPD * 4: NEXT: NEXT
+DO
+AA$ = INKEY$
+LOOP UNTIL AA$ <> ""
+FOR i = 16 TO 31
+COLOR i
+keyb = 3
+Center 3, "Since you obviously have the motor"
+Center 4, "skills of an infant, perhaps "
+Center 5, "you would like to try again"
+Center 6, "and prove you really don't suck."
+Center 9, "P-play again, G-go back to Ambush II"
+NEXT
+DO
+AA$ = INKEY$
+LOOP UNTIL UCASE$(AA$) = "P" OR UCASE$(AA$) = "G"
+IF UCASE$(AA$) = "G" THEN CHAIN "FLOOR1.mk!"
+END SUB
+
+DEFLNG A-Z
+SUB MouseDriver (ax%, bx%, cx%, dx%)
+  DEF SEG = VARSEG(mouse$)
+  mouse% = SADD(mouse$)
+  CALL Absolute(ax%, bx%, cx%, dx%, mouse%)
+END SUB
+
+DEFINT A-Z
+SUB MouseHide
+ ax% = 2
+ MouseDriver ax%, 0, 0, 0
+END SUB
+
+DEFLNG A-Z
+FUNCTION MouseInit%
+  ax% = 0
+  MouseDriver ax%, 0, 0, 0
+  MouseInit% = ax%
+END FUNCTION
+
+SUB MousePut (X%, Y%)
+  ax% = 4
+  cx% = X%
+  dx% = Y%
+  MouseDriver ax%, 0, cx%, dx%
+END SUB
+
+SUB MouseRange (X1%, Y1%, x2%, Y2%)
+  ax% = 7
+  cx% = X1%
+  dx% = x2%
+MouseDriver ax%, 0, cx%, dx%
+  ax% = 8
+  cx% = Y1%
+  dx% = Y2%
+  MouseDriver ax%, 0, cx%, dx%
+END SUB
+
+SUB MouseShow
+  ax% = 1
+  MouseDriver ax%, 0, 0, 0
+END SUB
+
+SUB MouseStatus (Lb%, Rb%, xMouse%, yMouse%)
+  ax% = 3
+  MouseDriver ax%, bx%, cx%, dx%
+  Lb% = ((bx% AND 1) <> 0)
+  Rb% = ((bx% AND 2) <> 0)
+  xMouse% = cx%
+  yMouse% = dx%
+END SUB
+
+DEFSNG A-Z
+SUB Outside
+CIRCLE (158, 98), 185, 31
+LINE (17, 0)-(299, 0), 31
+LINE (18, 199)-(297, 199), 31
+LINE (319, 23)-(319, 173), 31
+LINE (0, 19)-(0, 178), 31
+PAINT (317, 3), 0, 31
+PAINT (310, 190), 0, 31
+PAINT (0, 10), 0, 31
+PAINT (0, 190), 0, 31
+END SUB
+

@@ -1,0 +1,1041 @@
+DECLARE SUB Stars (zdir%)
+DECLARE SUB Center (row!, text$)
+DECLARE SUB Slide2 (deeps!, wor!, speedoffadein!, tet$)
+DECLARE SUB Slide (speed!, row!, text$)
+DECLARE SUB Back (sped!, orw!, words$)
+COMMON BEGINNINGTIME, Q, A, B, BLOCKX, BLOCKY, ELAPSEDTIME, STAIRWAY, HEALTH
+COMMON HEALTHMAX, ENEMIES, ROOM, ARCADE, DEATHS, snd, DETECTOR, STRENGTH
+COMMON SHELLS, LIGHT, BOSS, BOSSES, ORANGE, GRINDER, GRANADE, GRENADES, FLOOR
+COMMON Placeholder, Names, Loaded, Turbo, Invince, NAME$, LOAD, BOMB, SUIT
+COMMON SHOVEL, KEE, OPEN1, AMMOA, AMMOB, FOODA, FOODB, AMMOGET, FOODGET, NOTE
+COMMON LIGHTON, SUITON, ITEMUSE, Ending, Specialcredits, Warping, OPEN2, SWORD
+COMMON ENDGAME, HARD
+DEFINT Z
+DIM MAN%(10000)
+CLS
+SCREEN 13
+IF Specialcredits = 500 THEN GOTO SpCr
+TIMING = TIMER - BEGINNINGTIME
+IF Ending = 500 THEN GOTO SKIP
+IF Loaded = 500 OR Turbo = 500 OR Invince = 500 OR Warping = 500 THEN
+Center 6, "Losers never win and cheaters never"
+Center 8, "prosper. Since you cheated we're not"
+Center 10, "going to let you see the ending."
+Center 12, "Hell, we're not going to even let you"
+Center 14, "see the credits!"
+COLOR 0
+SYSTEM
+END IF
+IF HARD = 1 THEN GOTO STUPIDENDING
+IF TIMING / 3600 > 1 THEN GOTO STUPIDENDING
+SKIP:
+y = 2296576
+FOR i = 197 TO 150 STEP -1
+PALETTE i, y
+y = y + 1
+NEXT
+A = 0
+FOR i = 197 TO 150 STEP -1
+LINE (3, A)-(316, A - 1), i, BF
+A = A + 2
+NEXT
+LINE (316, 162)-(3, 162), 29
+LINE (3, 92)-(124, 92), 29
+LINE (124, 92)-(124, 68), 29
+LINE (124, 68)-(316, 68), 29
+LINE (204, 162)-(173, 136), 29, B
+LINE (189, 136)-(189, 162), 29
+LINE (173, 151)-(204, 151), 29
+LINE (238, 149)-(233, 147), 29
+LINE (233, 147)-(229, 149), 29
+LINE (229, 149)-(226, 151), 29
+LINE (226, 151)-(225, 155), 29
+LINE (225, 155)-(228, 160), 29
+LINE (228, 160)-(244, 160), 29
+LINE (244, 160)-(250, 162), 29
+LINE (238, 149)-(245, 147), 29
+LINE (245, 147)-(257, 151), 29
+LINE (257, 151)-(265, 148), 29
+LINE (265, 148)-(267, 149), 29
+LINE (267, 149)-(270, 153), 29
+LINE (270, 153)-(267, 158), 29
+LINE (267, 158)-(264, 161), 29
+LINE (261, 149)-(261, 133), 29
+LINE (261, 133)-(234, 133), 29
+LINE (234, 133)-(234, 148), 29
+LINE (235, 143)-(260, 143), 29
+LINE (261, 136)-(234, 136), 29
+LINE (3, 163)-(316, 196), 120, BF
+LINE (173, 162)-(170, 196), 29
+LINE (204, 162)-(207, 196), 29
+LINE (143, 161)-(148, 155), 29
+LINE (148, 155)-(151, 149), 29
+LINE (151, 149)-(147, 146), 29
+LINE (147, 146)-(142, 145), 29
+LINE (142, 145)-(136, 145), 29
+LINE (136, 145)-(133, 147), 29
+LINE (133, 147)-(129, 148), 29
+LINE (129, 148)-(124, 144), 29
+LINE (124, 144)-(116, 146), 29
+LINE (116, 146)-(112, 149), 29
+LINE (112, 149)-(111, 153), 29
+LINE (111, 153)-(108, 159), 29
+LINE (108, 159)-(110, 162), 29
+LINE (86, 148)-(71, 138), 29, B
+LINE (65, 138)-(50, 148), 29, B
+LINE (25, 148)-(10, 138), 29, B
+LINE (4, 138)-(4, 148), 29
+LINE (4, 148)-(3, 148), 29
+LINE (3, 138)-(3, 138), 29
+PAINT (135, 154), 119, 29
+PAINT (232, 154), 119, 29
+LINE (141, 90)-(156, 80), 29, B
+LINE (162, 80)-(177, 90), 29, B
+LINE (202, 90)-(217, 80), 29, B
+LINE (223, 80)-(238, 90), 29, B
+LINE (263, 90)-(278, 80), 29, B
+LINE (284, 80)-(299, 90), 29, B
+LINE (3, 92)-(3, 162), 29
+LINE (316, 69)-(316, 162), 29
+LINE (170, 196)-(207, 196), 29
+CIRCLE (214, 179), 7, 29, , , 1.2
+LINE (213, 179)-(215, 147), 29, B
+CIRCLE (214, 144), 2, 29, , , 1
+LINE (217, 143)-(223, 158), 29
+LINE (223, 158)-(216, 161), 29
+LINE (216, 151)-(219, 148), 29
+LINE (217, 150)-(220, 159), 29
+LINE (216, 157)-(218, 160), 29
+PAINT (166, 151), 114, 29
+PAINT (214, 145), 14, 29
+PAINT (214, 181), 22, 29
+PAINT (239, 135), 4, 29
+PAINT (178, 168), 27, 29
+PAINT (150, 84), 0, 29
+PAINT (167, 84), 0, 29
+PAINT (207, 84), 0, 29
+PAINT (230, 84), 0, 29
+PAINT (269, 84), 0, 29
+PAINT (291, 84), 0, 29
+LINE (214, 159)-(214, 166), 0
+PAINT (216, 159), 4, 29
+PAINT (221, 156), 4, 29
+PAINT (217, 147), 1, 29
+LINE (214, 175)-(214, 170), 0
+LINE (165, 170)-(126, 173), 2
+LINE (111, 183)-(84, 180), 2
+LINE (55, 180)-(28, 183), 2
+LINE (230, 183)-(248, 181), 2
+LINE (253, 166)-(279, 170), 2
+PAINT (239, 146), 115, 29
+PAINT (214, 163), 114, 29
+PAINT (217, 154), 31, 29
+PAINT (239, 138), 29, 29
+FOR DELAY = 1 TO 15000: NEXT
+LINE (88, 8)-(77, 34), 44
+LINE (77, 34)-(31, 12), 44
+LINE (31, 12)-(42, 73), 44
+LINE (42, 73)-(9, 110), 44
+LINE (9, 110)-(72, 126), 44
+LINE (72, 126)-(25, 171), 44
+LINE (25, 171)-(120, 149), 44
+LINE (120, 149)-(151, 187), 44
+LINE (151, 187)-(191, 146), 44
+LINE (191, 146)-(256, 178), 44
+LINE (256, 178)-(238, 126), 44
+LINE (238, 126)-(293, 103), 44
+LINE (293, 103)-(246, 76), 44
+LINE (246, 76)-(293, 38), 44
+LINE (293, 38)-(228, 32), 44
+LINE (228, 32)-(196, 8), 44
+LINE (196, 8)-(153, 35), 44
+LINE (153, 35)-(88, 8), 44
+PAINT (153, 50), 44, 44
+LINE (135, 46)-(102, 32), 42
+LINE (102, 32)-(82, 54), 42
+LINE (82, 54)-(53, 37), 42
+LINE (53, 37)-(58, 78), 42
+LINE (58, 78)-(32, 103), 42
+LINE (32, 103)-(77, 113), 42
+LINE (77, 113)-(74, 140), 42
+LINE (74, 140)-(120, 136), 42
+LINE (120, 136)-(151, 166), 42
+LINE (151, 166)-(192, 133), 42
+LINE (192, 133)-(235, 153), 42
+LINE (235, 153)-(224, 116), 42
+LINE (224, 116)-(271, 100), 42
+LINE (270, 99)-(231, 72), 42
+LINE (231, 72)-(267, 45), 42
+LINE (267, 45)-(218, 42), 42
+LINE (218, 42)-(195, 22), 42
+LINE (195, 22)-(153, 46), 42
+LINE (153, 46)-(136, 46), 42
+PAINT (153, 50), 42, 42
+LINE (143, 62)-(106, 47), 4
+LINE (106, 47)-(92, 70), 4
+LINE (92, 70)-(70, 63), 4
+LINE (70, 63)-(77, 87), 4
+LINE (77, 87)-(57, 96), 4
+LINE (57, 96)-(103, 101), 4
+LINE (103, 101)-(95, 123), 4
+LINE (95, 123)-(133, 120), 4
+LINE (133, 120)-(158, 136), 4
+LINE (158, 136)-(185, 110), 4
+LINE (185, 110)-(204, 120), 4
+LINE (204, 120)-(211, 102), 4
+LINE (211, 102)-(235, 93), 4
+LINE (235, 93)-(212, 76), 4
+LINE (212, 76)-(226, 56), 4
+LINE (226, 56)-(191, 45), 4
+LINE (191, 45)-(144, 62), 4
+PAINT (153, 60), 4, 4
+WINDOW SCREEN (DX - 20, DY)-(320 - DX, 200 - DY - 30)
+FOR i = 34 TO 5 STEP -1.5
+PALETTE i + 213, i
+PALETTE i + 214, i
+NEXT
+FOR i = 34 TO 5 STEP -1.5
+LINE (145, 92)-(138, 106), i + 213
+LINE (135, 106)-(142, 85), i + 213
+LINE (135, 106)-(138, 106), i + 213
+LINE (148, 92)-(145, 92), i + 213
+LINE (148, 94)-(148, 92), i + 213
+LINE (144, 94)-(148, 94), i + 213
+LINE (144, 94)-(145, 92), i + 213
+LINE (142, 85)-(153, 88), i + 213
+LINE (153, 88)-(152, 97), i + 213
+LINE (152, 97)-(144, 97), i + 213
+LINE (144, 97)-(144, 94), i + 213
+LINE (153, 88)-(155, 78), i + 213
+LINE (155, 78)-(166, 69), i + 213
+LINE (166, 69)-(163, 66), i + 213
+LINE (163, 66)-(153, 75), i + 213
+LINE (153, 75)-(149, 74), i + 213
+LINE (149, 74)-(148, 72), i + 213
+LINE (148, 72)-(145, 72), i + 213
+LINE (145, 72)-(144, 74), i + 213
+LINE (144, 74)-(131, 65), i + 213
+LINE (131, 65)-(128, 68), i + 213
+LINE (128, 68)-(141, 78), i + 213
+LINE (141, 78)-(142, 85), i + 213
+CIRCLE (147, 69), 4, i + 213, , , 1
+PAINT (144, 85), i + 213, i + 213
+PAINT (144, 89), i + 213, i + 213
+CIRCLE (147, 69), 4, i + 214, , , 1
+PAINT (147, 69), i + 214, i + 214
+WINDOW SCREEN (DX - 20, DY)-(320 - DX, 200 - DY - 30)
+DX = DX + 8
+DY = DY + 4
+FOR DELAY = 1 TO 300: NEXT
+NEXT
+FOR DELAY = 1 TO 6000: NEXT
+WINDOW SCREEN (0, 0)-(320, 200)
+PALETTE
+onground:
+CLS
+col = 16
+FOR size = 157 TO 1 STEP -1
+CIRCLE (161, 27), size, col, , , -.9
+col = col + .09
+NEXT
+co = 16
+FOR B = 50 TO 195
+LINE (4, B)-(315, B), co
+co = co + .5
+IF co >= 19 THEN co = 16
+NEXT
+LINE (138, 134)-(114, 152), 112
+LINE (114, 152)-(121, 173), 112
+LINE (109, 175)-(101, 146), 112
+LINE (101, 146)-(134, 124), 112
+LINE (134, 124)-(136, 98), 112
+LINE (136, 98)-(176, 98), 112
+LINE (176, 98)-(182, 124), 112
+LINE (182, 124)-(209, 152), 112
+LINE (209, 152)-(195, 174), 112
+LINE (183, 173)-(194, 152), 112
+LINE (194, 152)-(172, 135), 112
+LINE (172, 135)-(160, 129), 112
+LINE (160, 129)-(152, 129), 112
+LINE (152, 129)-(139, 134), 112
+LINE (121, 173)-(109, 175), 112
+LINE (183, 173)-(195, 174), 112
+PAINT (186, 170), 4, 112
+CIRCLE (154, 149), 14, 66, , , 1
+LINE (146, 137)-(145, 132), 66
+LINE (160, 129)-(152, 129), 66
+LINE (162, 138)-(165, 132), 66
+LINE (145, 132)-(152, 129), 66
+LINE (160, 129)-(165, 132), 66
+PAINT (154, 149), 65, 66
+PAINT (163, 134), 65, 66
+LINE (121, 173)-(126, 178), 66
+LINE (126, 178)-(119, 184), 66
+LINE (119, 184)-(107, 181), 66
+LINE (107, 181)-(109, 176), 66
+LINE (196, 174)-(201, 181), 66
+LINE (201, 181)-(190, 184), 66
+LINE (190, 184)-(179, 179), 66
+LINE (179, 179)-(183, 173), 66
+LINE (121, 173)-(109, 175), 66
+LINE (183, 173)-(195, 174), 66
+PAINT (183, 177), 65, 66
+PAINT (121, 177), 65, 66
+LINE (136, 98)-(139, 67), 54
+LINE (139, 67)-(146, 68), 54
+LINE (146, 68)-(151, 90), 54
+LINE (151, 90)-(161, 90), 54
+LINE (161, 90)-(164, 68), 54
+LINE (164, 68)-(171, 67), 54
+LINE (171, 67)-(176, 98), 54
+LINE (136, 98)-(176, 98), 54
+PAINT (170, 68), 55, 54
+LINE (146, 68)-(145, 59), 114
+LINE (145, 59)-(139, 57), 114
+LINE (139, 57)-(139, 67), 114
+LINE (164, 68)-(165, 58), 114
+LINE (165, 58)-(171, 57), 114
+LINE (171, 57)-(171, 67), 114
+LINE (164, 68)-(171, 67), 114
+LINE (139, 67)-(146, 68), 114
+PAINT (166, 59), 6, 114
+PAINT (140, 59), 6, 114
+FOR i = 1 TO 25000: NEXT
+CLS
+co = 18
+FOR B = 0 TO 195
+LINE (4, B)-(315, B), co
+co = co + .5
+IF co >= 20 THEN co = 18
+NEXT
+LINE (152, 86)-(105, 88), 16
+LINE (105, 88)-(103, 104), 16
+LINE (103, 104)-(153, 103), 16
+LINE (153, 103)-(158, 118), 16
+LINE (158, 118)-(162, 132), 16
+LINE (162, 132)-(170, 136), 16
+LINE (170, 136)-(179, 132), 16
+LINE (179, 132)-(175, 102), 16
+LINE (175, 102)-(194, 101), 16
+LINE (194, 101)-(205, 97), 16
+LINE (205, 97)-(209, 91), 16
+LINE (209, 91)-(203, 86), 16
+LINE (203, 86)-(174, 84), 16
+LINE (174, 84)-(172, 60), 16
+LINE (172, 60)-(166, 56), 16
+LINE (166, 56)-(160, 55), 16
+LINE (160, 55)-(153, 60), 16
+LINE (153, 60)-(152, 86), 16
+LINE (195, 86)-(195, 100), 16
+PAINT (184, 96), 23, 16
+LINE (187, 113)-(183, 119), 16
+LINE (183, 119)-(181, 117), 16
+LINE (181, 117)-(185, 110), 16
+LINE (185, 110)-(193, 111), 16
+LINE (193, 111)-(194, 124), 16
+LINE (194, 124)-(190, 123), 16
+LINE (190, 123)-(190, 114), 16
+LINE (190, 114)-(187, 113), 16
+LINE (194, 124)-(196, 128), 16
+LINE (196, 128)-(191, 129), 16
+LINE (191, 129)-(190, 124), 16
+LINE (183, 119)-(182, 121), 16
+LINE (182, 121)-(179, 120), 16
+LINE (179, 120)-(181, 117), 16
+PAINT (200, 91), 112, 16
+PAINT (192, 117), 32, 16
+PAINT (192, 126), 6, 16
+PAINT (181, 120), 6, 16
+LINE (193, 111)-(194, 106), 17
+LINE (194, 106)-(200, 102), 17
+LINE (200, 102)-(197, 100), 17
+LINE (197, 100)-(193, 103), 17
+LINE (193, 103)-(191, 103), 17
+LINE (185, 110)-(193, 111), 17
+LINE (185, 110)-(186, 105), 17
+LINE (186, 105)-(180, 106), 17
+LINE (180, 106)-(179, 104), 17
+LINE (179, 104)-(186, 102), 17
+LINE (186, 102)-(188, 101), 17
+LINE (192, 101)-(191, 103), 17
+CIRCLE (190, 99), 2, 17, , , 1
+PAINT (188, 104), 4, 17
+CIRCLE (190, 99), 2, 66, , , 1
+PAINT (190, 99), 65, 66
+Slide 100, 4, "You climb into the airplane"
+Back 100, 19, "and jet to freedom..."
+FOR DELAY = 1 TO 25000: NEXT
+CLS
+SCREEN 12
+DIM starmap(400)
+PALETTE 5, 13119
+LINE (308, 216)-(300, 224), 15
+LINE (300, 224)-(288, 224), 15
+LINE (288, 224)-(297, 233), 15
+LINE (297, 233)-(288, 242), 15
+LINE (288, 242)-(308, 237), 15
+LINE (308, 216)-(316, 224), 15
+LINE (316, 224)-(326, 224), 15
+LINE (326, 224)-(318, 232), 15
+LINE (318, 232)-(328, 242), 15
+LINE (328, 242)-(309, 237), 15
+PAINT (309, 229), 5, 15
+PAINT (326, 241), 5, 15
+GET (285, 243)-(330, 214), starmap
+CLS
+LINE (367, 232)-(373, 250), 15
+LINE (373, 250)-(377, 272), 15
+LINE (377, 272)-(385, 277), 15
+LINE (385, 277)-(393, 273), 15
+LINE (393, 273)-(382, 223), 15
+LINE (382, 223)-(385, 214), 15
+LINE (385, 214)-(408, 184), 15
+LINE (408, 184)-(421, 170), 15
+LINE (421, 170)-(425, 158), 15
+LINE (425, 158)-(418, 145), 15
+LINE (418, 145)-(419, 129), 15
+LINE (419, 129)-(433, 105), 15
+LINE (433, 105)-(451, 94), 15
+LINE (451, 94)-(451, 85), 15
+LINE (451, 85)-(477, 57), 15
+LINE (477, 57)-(483, 49), 15
+LINE (483, 49)-(479, 41), 15
+LINE (479, 41)-(504, 3), 15
+LINE (367, 232)-(349, 224), 15
+LINE (349, 224)-(320, 225), 15
+LINE (320, 225)-(322, 229), 15
+LINE (322, 229)-(318, 230), 15
+LINE (318, 230)-(314, 227), 15
+LINE (314, 227)-(288, 228), 15
+LINE (288, 228)-(281, 253), 15
+LINE (281, 253)-(282, 290), 15
+LINE (282, 290)-(291, 325), 15
+LINE (291, 325)-(315, 334), 15
+LINE (315, 334)-(341, 340), 15
+LINE (341, 340)-(358, 338), 15
+LINE (358, 338)-(366, 322), 15
+LINE (366, 322)-(375, 319), 15
+LINE (375, 319)-(383, 323), 15
+LINE (383, 323)-(377, 358), 15
+LINE (377, 358)-(399, 362), 15
+LINE (399, 362)-(405, 375), 15
+LINE (405, 375)-(404, 411), 15
+LINE (404, 411)-(411, 439), 15
+LINE (411, 439)-(426, 444), 15
+LINE (426, 444)-(438, 442), 15
+LINE (438, 442)-(448, 476), 15
+LINE (442, 476)-(438, 465), 15
+LINE (438, 465)-(430, 454), 15
+LINE (430, 454)-(410, 457), 15
+LINE (410, 457)-(396, 446), 15
+LINE (396, 446)-(388, 413), 15
+LINE (388, 413)-(375, 390), 15
+LINE (375, 390)-(347, 384), 15
+LINE (347, 384)-(326, 372), 15
+LINE (326, 372)-(266, 364), 15
+LINE (266, 364)-(239, 341), 15
+LINE (239, 341)-(242, 337), 15
+LINE (242, 337)-(228, 290), 15
+LINE (228, 290)-(215, 241), 15
+LINE (215, 241)-(211, 227), 15
+LINE (211, 227)-(204, 226), 15
+LINE (204, 226)-(212, 296), 15
+LINE (212, 296)-(206, 298), 15
+LINE (206, 298)-(203, 287), 15
+LINE (203, 287)-(198, 255), 15
+LINE (198, 255)-(195, 224), 15
+LINE (195, 224)-(185, 209), 15
+LINE (185, 209)-(175, 195), 15
+LINE (175, 195)-(168, 169), 15
+LINE (168, 169)-(161, 137), 15
+LINE (161, 137)-(171, 109), 15
+LINE (171, 109)-(183, 76), 15
+LINE (183, 76)-(191, 77), 15
+LINE (191, 77)-(190, 83), 15
+LINE (190, 83)-(193, 84), 15
+LINE (193, 84)-(195, 77), 15
+LINE (195, 77)-(197, 65), 15
+LINE (197, 65)-(193, 53), 15
+LINE (193, 53)-(184, 50), 15
+LINE (184, 50)-(185, 44), 15
+LINE (185, 44)-(192, 42), 15
+LINE (192, 42)-(185, 36), 15
+LINE (185, 36)-(189, 29), 15
+LINE (189, 29)-(187, 3), 15
+LINE (188, 69)-(185, 58), 15
+LINE (185, 58)-(179, 57), 15
+LINE (179, 57)-(181, 70), 15
+LINE (181, 70)-(188, 69), 15
+LINE (197, 67)-(301, 67), 15
+LINE (332, 77)-(347, 70), 15
+LINE (347, 70)-(359, 72), 15
+LINE (359, 72)-(363, 83), 15
+LINE (363, 83)-(346, 82), 15
+LINE (346, 82)-(348, 77), 15
+LINE (348, 77)-(332, 77), 15
+LINE (352, 86)-(343, 90), 15
+LINE (343, 90)-(339, 103), 15
+LINE (339, 103)-(341, 109), 15
+LINE (341, 109)-(347, 105), 15
+LINE (347, 105)-(349, 93), 15
+LINE (349, 93)-(356, 90), 15
+LINE (356, 90)-(352, 86), 15
+LINE (358, 88)-(363, 91), 15
+LINE (363, 91)-(360, 99), 15
+LINE (361, 98)-(363, 101), 15
+LINE (363, 101)-(364, 98), 15
+LINE (364, 98)-(366, 103), 15
+LINE (366, 103)-(369, 94), 15
+LINE (369, 94)-(372, 97), 15
+LINE (372, 97)-(373, 91), 15
+LINE (373, 91)-(365, 86), 15
+LINE (365, 86)-(358, 88), 15
+LINE (361, 113)-(371, 107), 15
+LINE (371, 107)-(375, 108), 15
+LINE (375, 108)-(373, 112), 15
+LINE (373, 112)-(363, 116), 15
+LINE (363, 116)-(360, 113), 15
+LINE (377, 105)-(385, 103), 15
+LINE (385, 103)-(389, 102), 15
+LINE (389, 102)-(391, 98), 15
+LINE (391, 98)-(385, 98), 15
+LINE (385, 98)-(377, 100), 15
+LINE (377, 100)-(377, 105), 15
+LINE (332, 76)-(316, 72), 15
+LINE (316, 72)-(301, 67), 15
+LINE (373, 91)-(387, 95), 15
+LINE (387, 95)-(425, 71), 15
+LINE (425, 71)-(437, 73), 15
+LINE (437, 73)-(448, 62), 15
+LINE (448, 62)-(458, 68), 15
+LINE (458, 68)-(453, 74), 15
+LINE (453, 74)-(458, 78), 15
+LINE (284, 244)-(271, 234), 15
+LINE (271, 234)-(266, 221), 15
+LINE (266, 221)-(257, 219), 15
+LINE (257, 219)-(249, 224), 15
+LINE (249, 224)-(239, 218), 15
+LINE (239, 218)-(205, 215), 15
+LINE (205, 215)-(192, 218), 15
+LINE (3, 3)-(636, 476), 15, B
+LINE (362, 83)-(365, 86), 15
+PALETTE 1, 73984
+PALETTE 2, 2883584
+PALETTE 3, 7168
+PALETTE 4, 63
+PAINT (314, 170), 1, 15
+PAINT (314, 63), 3, 15
+PAINT (184, 64), 1, 15
+PAINT (267, 242), 1, 15
+PAINT (303, 231), 2, 15
+PAINT (212, 246), 2, 15
+PAINT (345, 99), 2, 15
+PAINT (345, 75), 2, 15
+PAINT (367, 92), 2, 15
+PAINT (380, 101), 2, 15
+PAINT (371, 109), 2, 15
+PALETTE 0, 256 * 33
+LOCATE 9, 30: PRINT "Greenford, Ohio"
+LOCATE 21, 11: PRINT "Mexico City, Mexico"
+PUT (354, 112), starmap, OR
+PUT (234, 302), starmap, OR
+LINE (78, 320)-(232, 336), 15, B
+PAINT (90, 323), 2, 15
+PAINT (123, 326), 2, 15
+PAINT (228, 326), 2, 15
+LINE (78, 320)-(232, 336), 2, B
+PUT (354, 112), starmap, OR
+PUT (234, 302), starmap, OR
+plane1 = 374
+plane2 = 122
+FOR flight = 1 TO 160
+LINE (plane1, plane2)-(plane1 + 1, plane2 + 1), 4, BF
+plane2 = plane2 + 1
+plane1 = plane1 - .75
+ IF flight > 100 THEN plane1 = plane1 + .15
+ FOR DELAY = 1 TO 240: NEXT
+NEXT
+FOR flight = 1 TO 30
+ LINE (plane1, plane2)-(plane1 + 1, plane2 + 1), 4, BF
+plane2 = plane2 + 1
+plane1 = plane1 - .2
+FOR DELAY = 1 TO 240: NEXT
+NEXT
+FOR DELAY = 1 TO 2000: NEXT
+CLS
+SCREEN 13
+co = 16
+FOR B = 181 TO 195
+LINE (4, B)-(315, B), co
+co = co + 1
+NEXT
+LINE (98, 188)-(108, 188), 22
+LINE (146, 188)-(159, 188), 22
+LINE (114, 154)-(126, 117), 23
+LINE (126, 117)-(141, 117), 23
+LINE (141, 117)-(148, 154), 23
+LINE (148, 154)-(140, 177), 23
+LINE (140, 177)-(153, 179), 23
+LINE (153, 179)-(164, 150), 23
+LINE (164, 150)-(152, 104), 23
+LINE (152, 104)-(112, 105), 23
+LINE (112, 105)-(99, 152), 23
+LINE (99, 152)-(105, 179), 23
+LINE (105, 179)-(118, 176), 23
+LINE (118, 176)-(114, 154), 23
+LINE (105, 179)-(94, 192), 23
+LINE (94, 192)-(104, 196), 23
+LINE (104, 196)-(118, 176), 23
+LINE (154, 179)-(163, 192), 23
+LINE (163, 192)-(147, 194), 23
+LINE (147, 194)-(140, 177), 23
+LINE (152, 104)-(162, 64), 23
+LINE (162, 64)-(181, 69), 23
+LINE (181, 69)-(200, 64), 23
+LINE (200, 64)-(213, 57), 23
+LINE (213, 57)-(205, 27), 23
+LINE (205, 27)-(197, 26), 23
+LINE (197, 26)-(195, 33), 23
+LINE (195, 33)-(200, 34), 23
+LINE (200, 34)-(198, 51), 23
+LINE (198, 51)-(188, 46), 23
+LINE (188, 46)-(181, 44), 23
+LINE (181, 44)-(161, 50), 23
+LINE (161, 50)-(142, 45), 23
+CIRCLE (129, 25), 16, 23, , , 1.2
+LINE (112, 105)-(104, 63), 23
+LINE (104, 63)-(83, 67), 23
+LINE (83, 67)-(67, 65), 23
+LINE (67, 65)-(52, 59), 23
+LINE (52, 59)-(49, 46), 23
+LINE (49, 46)-(53, 24), 23
+LINE (53, 24)-(62, 20), 23
+LINE (62, 20)-(66, 26), 23
+LINE (66, 26)-(60, 28), 23
+LINE (60, 28)-(63, 40), 23
+LINE (63, 40)-(64, 48), 23
+LINE (64, 48)-(72, 52), 23
+LINE (72, 52)-(82, 46), 23
+LINE (81, 46)-(93, 47), 23
+LINE (93, 47)-(105, 50), 23
+LINE (105, 50)-(121, 44), 23
+LINE (121, 44)-(121, 37), 23
+LINE (139, 37)-(142, 45), 23
+LINE (90, 47)-(92, 65), 23
+LINE (169, 66)-(171, 47), 23
+LINE (115, 46)-(127, 53), 23
+LINE (127, 53)-(135, 54), 23
+LINE (135, 54)-(149, 47), 23
+LINE (98, 58)-(81, 59), 23
+LINE (166, 58)-(185, 59), 23
+LINE (162, 65)-(142, 69), 23
+LINE (104, 63)-(124, 69), 23
+LINE (133, 76)-(132, 92), 23
+PAINT (132, 68), 4, 23
+PAINT (132, 48), 65, 23
+PAINT (132, 37), 65, 23
+PAINT (88, 54), 65, 23
+PAINT (176, 54), 65, 23
+PAINT (148, 112), 32, 23
+PAINT (148, 182), 6, 23
+PAINT (109, 182), 6, 23
+LINE (124, 27)-(128, 30), 23
+LINE (128, 30)-(132, 30), 23
+LINE (132, 30)-(135, 27), 23
+CIRCLE (125, 21), 2, 66, , , 1
+CIRCLE (134, 21), 2, 66, , , 1
+PAINT (125, 21), 31, 66
+PAINT (134, 21), 31, 66
+PSET (125, 21), 16
+PSET (134, 21), 16
+LOCATE 14, 22: PRINT "You made it!!!"
+FOR DELAY = 1 TO 27000: NEXT
+STUPIDENDING:
+CLS
+SCREEN 13
+Slide2 10, 2, 40, "Congratulations!!"
+Slide2 10, 4, 40, "You celebrate your stunning defeat"
+IF Names = 500 THEN
+Slide2 10, 5, 40, "of the Krivan army with all your"
+Slide2 10, 6, 40, "Mexican friends. Mr. Krivan is no"
+END IF
+IF Names = 0 THEN
+Slide2 10, 5, 40, "of the Wuss army with all your"
+Slide2 10, 6, 40, "Mexican friends. Mr. Wuss is no"
+END IF
+Slide2 10, 7, 40, "more. You know your father would"
+Slide2 10, 8, 40, "be proud to see this. And you can"
+Slide2 10, 9, 40, "now rest easy knowing future"
+Slide2 10, 10, 40, "generations can live without fear"
+IF Names = 500 THEN Slide2 10, 11, 40, "of another Krivan."
+IF Names = 0 THEN Slide2 10, 11, 40, "of another Wuss."
+COLOR 43
+LOCATE 14, 7: PRINT "Finishing time: ";
+JIM = FIX(TIMING / 3600)
+IF FIX(JIM) = 0 THEN TIM = FIX(TIMING / 60)
+IF FIX(JIM) <> 0 THEN TIM = FIX((TIMING - JIM * 3600) / 60)
+IF FIX(JIM) = 0 THEN GIM = FIX(TIMING - TIM * 60)
+IF FIX(JIM) <> 0 THEN GIM = FIX((TIMING - JIM * 3600) - TIM * 60)
+IF JIM < 10 THEN PRINT USING "0#:"; JIM;  ELSE PRINT USING "##:"; JIM;
+IF TIM < 10 THEN PRINT USING "0#:"; TIM;  ELSE PRINT USING "##:"; TIM;
+IF GIM < 10 THEN PRINT USING "0#"; GIM ELSE PRINT USING "##"; GIM
+COLOR 15
+Slide2 10, 19, 40, "The End - For Now"
+DO UNTIL INKEY$ <> "": LOOP
+SpCr:
+RANDOMIZE TIMER
+DEFINT Z
+SCREEN 13
+CLS
+FOR zi = 1 TO 63: PALETTE zi, zi: NEXT
+zi = 1
+FOR Zy = 64 TO 125: PALETTE Zy, 65536 * zi + zi: zi = zi + 1: NEXT
+PALETTE 150, 3092271
+Ztotal = 120
+DIM SHARED Zstara(Ztotal)
+DIM SHARED Zstarx(Ztotal)
+DIM SHARED Zspeeda(Ztotal)
+DIM SHARED Zst(3)
+PALETTE 256, 0
+Zst(1) = 1: Zst(2) = 2: Zst(3) = 3
+FOR Znum = 1 TO Ztotal
+ Zspeedsel = INT(RND * 3) + 1
+ Zspeeda(Znum) = Zst(Zspeedsel)
+Zstara(Znum) = INT(RND * 320) + 1
+Zstarx(Znum) = INT(RND * 200) + 1
+NEXT
+zi = 1
+FOR j = 151 TO 213
+PALETTE j, zi * 256: zi = zi + 1
+NEXT
+ZNOMORE = 0
+zi = 1
+DO UNTIL ZNOMORE = 1
+Stars 1
+COLOR zi
+Center 1, "Ambush at South Range II Staff"
+IF ZNOMORE = 0 THEN zi = zi + 1
+IF zi = 63 THEN ZNOMORE = 1
+ZSPD = 100
+FOR Zcompensation = 1 TO ZSPD: NEXT
+LOOP
+ZNOMORE = 0
+zi = 1
+DO UNTIL ZNOMORE = 1
+Stars 1
+IF MOVE = 0 THEN COLOR zi: LOCATE 6, 5: PRINT "Main Programmer: Luke Kucalaba"
+IF MOVE = 1 THEN COLOR zi: LOCATE 9, 5: PRINT "Graphics: Luke Molnar"
+IF MOVE = 2 THEN COLOR zi: LOCATE 12, 5: PRINT "Music: Luke Kucalaba"
+IF MOVE = 3 THEN COLOR zi: LOCATE 15, 5: PRINT "Concept: Luke Molnar"
+IF MOVE = 4 THEN
+COLOR zi: LOCATE 18, 5: PRINT "Brought to you by:"
+LOCATE 20, 8: PRINT "Molnar \ Kucalaba Productions"
+END IF
+IF ZNOMORE = 0 THEN zi = zi + 2
+IF zi = 63 AND MOVE = 4 THEN ZNOMORE = 1
+IF zi = 63 THEN zi = 1: MOVE = MOVE + 1
+LOOP
+zi = 63
+ZNOMORE = 0
+DO UNTIL ZNOMORE = 1
+Stars 2
+COLOR zi
+Center 1, "Ambush at South Range II Staff"
+LOCATE 6, 5: PRINT "Main Programmer: Luke Kucalaba"
+Stars 2
+LOCATE 9, 5: PRINT "Graphics: Luke Molnar"
+LOCATE 12, 5: PRINT "Music: Luke Kucalaba"
+Stars 2
+LOCATE 15, 5: PRINT "Concept: Luke Molnar"
+Stars 2
+LOCATE 18, 5: PRINT "Brought to you by:"
+LOCATE 20, 8: PRINT "Molnar \ Kucalaba Productions"
+IF ZNOMORE = 0 THEN zi = zi - 3
+Stars 2
+IF zi < 0 THEN EXIT DO
+LOOP
+ZNOMORE = 0
+zi = 1
+ZGFGF = 2
+DO UNTIL ZNOMORE = 1
+Stars 3
+COLOR zi
+Center 1, "Special Thanks"
+IF ZNOMORE = 0 THEN zi = zi + 1
+IF zi = 63 THEN ZNOMORE = 1
+ZSPD = 100
+FOR Zcompensation = 1 TO ZSPD: NEXT
+LOOP
+ZNOMORE = 0
+zi = 1
+DO UNTIL ZNOMORE = 1
+Stars 3
+COLOR zi
+Center 4, "Bret Levin"
+Center 6, "Chris Guirl"
+Center 8, "Rick Oliver"
+ZSPD = 100
+FOR Zcompensation = 1 TO ZSPD: NEXT
+IF ZNOMORE = 0 THEN zi = zi + 1
+IF zi = 63 THEN ZNOMORE = 1
+LOOP
+zi = 63
+ZNOMORE = 0
+DO UNTIL ZNOMORE = 1
+Stars 3
+COLOR zi
+Center 1, "Special Thanks"
+Center 4, "Bret Levin"
+Center 6, "Chris Guirl"
+Center 8, "Rick Oliver"
+IF ZNOMORE = 0 THEN zi = zi - 1
+IF zi = 1 THEN EXIT DO
+LOOP
+DO UNTIL zi = 15
+ZSPD = 100
+FOR Zcompensation = 1 TO ZSPD: NEXT
+Stars 4
+zi = zi + 1
+LOOP
+IF Specialcredits = 500 THEN
+ZGFGF = 0
+DO UNTIL ZNOMORE = 1
+Stars 4
+COLOR zi
+LOCATE 1, 2: PRINT "People Who Can Kiss My Hairy Butt (LM)"
+IF ZNOMORE = 0 THEN zi = zi + 1
+IF zi = 63 THEN ZNOMORE = 1
+ZSPD = 100
+FOR Zcompensation = 1 TO ZSPD: NEXT
+LOOP
+ZNOMORE = 0
+zi = zi + 1
+AP = 1
+READ PERSON$(AP)
+F = 4
+DO UNTIL ZNOMORE = 1
+Stars 4
+COLOR zi
+Center F, PERSON$(AP)
+IF ZNOMORE = 0 THEN zi = zi + 1
+IF zi = 124 AND F = 12 THEN ZNOMORE = 1
+IF zi = 125 THEN F = F + 2: AP = AP + 1: READ PERSON$(AP): zi = 64
+LOOP
+zi = 63
+yi = 125
+ZNOMORE = 0
+DO UNTIL ZNOMORE = 1
+Stars 4
+COLOR zi
+LOCATE 1, 2: PRINT "People Who Can Kiss My Hairy Butt (LM)"
+COLOR yi
+G = 4
+FOR D = 1 TO 5
+Center G, PERSON$(D)
+G = G + 2
+Stars 4
+NEXT
+IF ZNOMORE <> 1 THEN
+zi = zi - 3
+yi = yi - 3
+END IF
+IF yi <= 64 THEN EXIT DO
+LOOP
+DO UNTIL zi = 15
+Stars 4
+ZSPD = 100
+FOR Zcompensation = 1 TO ZSPD: NEXT
+zi = zi + 1
+LOOP
+zi = 1
+ZGFGF = 1
+DO UNTIL ZNOMORE = 1
+Stars 5
+COLOR zi
+LOCATE 1, 2: PRINT "People Who Can Kiss My Hairy Butt (LK)"
+IF ZNOMORE = 0 THEN zi = zi + 1
+IF zi = 63 THEN ZNOMORE = 1
+ZSPD = 100
+FOR Zcompensation = 1 TO ZSPD: NEXT
+LOOP
+ZNOMORE = 0
+FOR zi = 1 TO 200: NEXT
+zi = 1
+F = 4
+AP = AP + 1
+READ PERSON$(AP)
+zi = 151
+DO UNTIL ZNOMORE = 1
+Stars 6
+COLOR zi
+Center F, PERSON$(AP)
+IF zi = 212 AND F = 12 THEN ZNOMORE = 1
+IF zi = 213 THEN F = F + 2: AP = AP + 1: READ PERSON$(AP): zi = 151
+IF ZNOMORE = 0 THEN zi = zi + 1
+LOOP
+ZNOMORE = 0
+zi = 213
+zj = 63
+yi = 63
+DO UNTIL ZNOMORE = 1
+Stars 6
+COLOR zj
+LOCATE 1, 2: PRINT "People Who Can Kiss My Hairy Butt (LK)"
+COLOR zi
+G = 4
+FOR D = 6 TO 10
+Center G, PERSON$(D)
+G = G + 2
+Stars 6
+NEXT
+IF ZNOMORE <> 1 THEN
+zi = zi - 3
+yi = yi - 3
+zj = zj - 3
+END IF
+IF yi <= 1 THEN EXIT DO
+LOOP
+END IF
+EMAIL:
+ZGFGF = 0
+zi = 1
+ZNOMORE = 0
+DO UNTIL ZNOMORE = 1
+Stars 7
+COLOR zi
+PALETTE zi, zi
+Center 11, "Send Molnar \ Kucalaba Productions"
+Center 12, "some e-mail"
+Stars 7
+Center 14, "Screen name: Blood 225"
+Center 16, "Internet: Blood 225@aol.com"
+IF ZNOMORE <> 1 THEN zi = zi + 2
+IF zi >= 63 THEN ZNOMORE = 1
+ZSPD = 100
+FOR Zcompensation = 1 TO ZSPD: NEXT
+LOOP
+FOR i = 1 TO 25
+Stars 7
+FOR comp = 1 TO 150: NEXT
+NEXT
+ZNOMORE = 0
+zi = 63
+PALETTE zi, zi
+DO UNTIL ZNOMORE = 1
+Stars 7
+COLOR zi
+Center 11, "Send Molnar \ Kucalaba Productions"
+Center 12, "some e-mail"
+Stars 7
+Center 14, "Screen name: Blood 225"
+Center 16, "Internet: Blood 225@aol.com"
+IF ZNOMORE <> 1 THEN zi = zi - 2
+IF zi < 1 THEN EXIT DO
+ZSPD = 100
+FOR Zcompensation = 1 TO ZSPD: NEXT
+LOOP
+zi = 1
+ZNOMORE = 0
+DO UNTIL ZNOMORE = 1
+Stars 2
+COLOR zi
+PALETTE zi, zi
+LOCATE 10, 8: PRINT "We Thank You For Playing!"
+LOCATE 14, 16: PRINT "The End?"
+IF ZNOMORE = 0 THEN zi = zi + 1
+IF zi = 63 THEN ZNOMORE = 1
+ZSPD = 100
+FOR Zcompensation = 1 TO ZSPD: NEXT
+LOOP
+z = 1
+ch = 1
+DO UNTIL INKEY$ <> ""
+Stars z
+ch = ch + 1
+IF ch = 90 THEN z = z + 1: ch = 1
+IF z = 9 THEN z = 1
+LOOP
+CLS
+IF Specialcredits = 500 THEN Placeholder = 4: CHAIN "AMBUSH2.BAS"
+DATA "Adam Booth","Paul Goodwin","Robbie Thies","Mike Italiano","Nathan Molnar"
+DATA "Gary Kohler","Ethan Shumacher","Sarah Macovitz","Vimal Patel"
+DATA "Joann Kucalaba"
+
+DEFSNG Z
+SUB Back (sped, orw, words$)
+mi = LEN(words$)
+cent = 21 - INT(LEN(words$) / 2) + (mi)
+   FOR im = mi TO 1 STEP -1
+    FOR DELAY = 1 TO sped: NEXT
+    LOCATE orw, cent
+    IF im > 1 THEN PRINT MID$(words$, im, 1)
+    IF im = 1 THEN PRINT LEFT$(words$, 1)
+    cent = cent - 1
+   NEXT
+END SUB
+
+SUB Center (row, text$)
+cent = 19 - INT(LEN(text$) / 2)
+LOCATE row, cent: PRINT text$
+END SUB
+
+SUB Slide (speed, row, text$)
+mi = LEN(text$)
+cent = 21 - INT(LEN(text$) / 2)
+ FOR im = 1 TO mi
+   FOR DELAY = 1 TO speed: NEXT
+   LOCATE row, cent
+   IF im > 1 THEN PRINT MID$(text$, im, 1)
+   IF im = 1 THEN PRINT LEFT$(text$, 1)
+   cent = cent + 1
+  NEXT
+END SUB
+
+SUB Slide2 (deeps, wor, speedoffadein, tet$)
+SCREEN 13
+mi = LEN(tet$)
+cent = 19 - INT(LEN(tet$) / 2)
+ FOR im = 1 TO mi
+     FOR DELAY = 1 TO deeps: NEXT
+     LOCATE wor, cent
+     FOR fadein = 16 TO 31
+       COLOR fadein
+       FOR DELAY = 1 TO speedoffadein: NEXT
+       LOCATE wor, cent
+       IF im > 1 THEN PRINT MID$(tet$, im, 1)
+       IF im = 1 THEN PRINT LEFT$(tet$, 1)
+     NEXT
+   cent = cent + 1
+ NEXT
+END SUB
+
+DEFINT Z
+SUB Stars (zdir)
+SHARED Ztotal
+FOR Znum = 1 TO Ztotal
+  IF POINT(Zstara(Znum), Zstarx(Znum)) = 150 THEN PSET (Zstara(Znum), Zstarx(Znum)), 256
+   IF zdir < 4 THEN Zstara(Znum) = Zstara(Znum) + Zspeeda(Znum)
+   IF zdir > 4 AND zdir <> 8 THEN Zstara(Znum) = Zstara(Znum) - Zspeeda(Znum)
+   SELECT CASE zdir
+     CASE 1: Zstarx(Znum) = Zstarx(Znum) + 1
+             IF Zstarx(Znum) >= 200 THEN Zstarx(Znum) = 1: Zstara(Znum) = INT(RND * 320) + 1
+     CASE 2: Zstara(Znum) = Zstara(Znum) + 1
+             IF Zstarx(Znum) <= 0 THEN Zstarx(Znum) = 200: Zstara(Znum) = INT(RND * 320) + 1
+     CASE 3: Zstarx(Znum) = Zstarx(Znum) - 1
+             IF Zstarx(Znum) <= 0 THEN Zstarx(Znum) = 200: Zstara(Znum) = INT(RND * 320) + 1
+     CASE 4: Zstarx(Znum) = Zstarx(Znum) + Zspeeda(Znum)
+             IF Zstarx(Znum) >= 200 THEN Zstara(Znum) = INT(RND * 320) + 1: Zstarx(Znum) = 0
+     CASE 5: Zstarx(Znum) = Zstarx(Znum) + 1
+             IF Zstarx(Znum) >= 200 THEN Zstara(Znum) = INT(RND * 320) + 1: Zstarx(Znum) = 0
+     CASE 6: IF Zstara(Znum) <= 0 THEN Zstarx(Znum) = INT(RND * 200) + 1: Zstara(Znum) = 320
+     CASE 7: Zstarx(Znum) = Zstarx(Znum) - 1
+             IF Zstarx(Znum) <= 0 THEN Zstara(Znum) = INT(RND * 320) + 1: Zstarx(Znum) = 200
+     CASE 8: Zstarx(Znum) = Zstarx(Znum) - Zspeeda(Znum)
+             IF Zstarx(Znum) = 0 THEN Zstara(Znum) = INT(RND * 320) + 1: Zstarx(Znum) = 200
+    END SELECT
+   IF zdir < 4 THEN IF Zstara(Znum) >= 320 THEN Zstarx(Znum) = INT(RND * 200) + 1: Zstara(Znum) = 1
+   IF zdir > 4 THEN IF zdir <> 8 THEN IF Zstara(Znum) <= 0 THEN Zstarx(Znum) = INT(RND * 200) + 1: Zstara(Znum) = 320
+   IF POINT(Zstara(Znum), Zstarx(Znum)) = 0 OR POINT(Zstara(Znum), Zstarx(Znum)) = 150 THEN PSET (Zstara(Znum), Zstarx(Znum)), 150
+  NEXT
+END SUB
+
