@@ -4009,7 +4009,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 					case TokenType.PLAY: eventControl.EventType = EventType.Play; needSourceExpression = false; break;
 					case TokenType.SIGNAL: eventControl.EventType = EventType.OS2Signal; break;
 					case TokenType.STRIG: eventControl.EventType = EventType.JoystickTrigger; break;
-					case TokenType.TIMER: eventControl.EventType = EventType.Timer; break;
+					case TokenType.TIMER: eventControl.EventType = EventType.Timer; needSourceExpression = false; break;
 					case TokenType.UEVENT: eventControl.EventType = EventType.UserEvent; needSourceExpression = false; break;
 				}
 
