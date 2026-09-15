@@ -111,7 +111,6 @@ public partial class Program
 			_savedVisualLibrary ??= Machine.VideoFirmware.VisualLibrary;
 
 			_savedVisualLibrary.ActivePageNumber = _savedActivePageNumber;
-			_savedVisualLibrary.RefreshParameters();
 
 			_savedVisualLibrary.UpdateCharacterLineWindow(_savedCharacterLineWindowStart, _savedCharacterLineWindowEnd);
 			_savedVisualLibrary.MoveCursor(_savedCursorX, _savedCursorY);
