@@ -38,13 +38,13 @@ public class ScopedStreamReader : StreamReader
 
 	public event EventHandler? Closed;
 
-	public override void Close()
+	protected override void Dispose(bool disposing)
 	{
 		// Close the underlying stream first. If that throws, ensure we still raise the Closed event.
 
 		try
 		{
-			base.Close();
+			base.Dispose(disposing);
 		}
 		catch
 		{
