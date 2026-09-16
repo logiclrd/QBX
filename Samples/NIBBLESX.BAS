@@ -530,7 +530,16 @@ SUB PlayNibbles (NumPlayers, speed, iterations&, diff$)
                         SpacePause "     Level" + STR$(curLevel) + ",  Push Space"
                         IF NumPlayers = 1 THEN sammy(2).row = 0
                         number = 1
-                        IF diff$ = "Y" THEN speed = speed - 10: curSpeed = speed
+                        IF diff$ = "Y" THEN
+                            IF speed > 40 THEN
+                                speed = speed - 10
+                            ELSEIF speed > 12 THEN
+                                speed = speed - (speed - 4) \ 4
+                            ELSEIF speed > 6 THEN
+                                speed = speed - 1
+                            END IF
+                            curSpeed = speed
+                        END IF
                     END IF
                     nonum = TRUE
                     IF curSpeed < 1 THEN curSpeed = 1
