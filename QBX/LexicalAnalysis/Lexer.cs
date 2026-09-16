@@ -732,7 +732,7 @@ public class Lexer(TextReader input, CompilationElement? element = null, int sta
 
 							if (keyword != null)
 								yield return keyword;
-							else
+							else if (qualifiedWord.Length > 0)
 								yield return Token.ForIdentifier(line, tokenStartColumn, qualifiedWord, dataType);
 
 							buffer.Clear();
