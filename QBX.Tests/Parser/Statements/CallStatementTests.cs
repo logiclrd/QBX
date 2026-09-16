@@ -16,9 +16,9 @@ public class CallStatementTests
 	public void ShouldParse(string statement, CallStatementType callStatementType, int numArguments)
 	{
 		// Arrange
-		var tokens = new Lexer(statement).ToList();
+		ListRange<Token> tokens = new Lexer(statement).ToList();
 
-		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
+		BasicParser.CollapseWhitespaceTokens(ref tokens);
 
 		var identifierRepository = new IdentifierRepository();
 

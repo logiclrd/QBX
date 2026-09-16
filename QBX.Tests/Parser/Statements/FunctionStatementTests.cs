@@ -15,9 +15,9 @@ public class FunctionStatementTests
 	public void ShouldParse(string definition, string functionName, string[]? arguments, bool expectIsStatic)
 	{
 		// Arrange
-		var tokens = new Lexer(definition).ToList();
+		ListRange<Token> tokens = new Lexer(definition).ToList();
 
-		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
+		BasicParser.CollapseWhitespaceTokens(ref tokens);
 
 		var identifierRepository = new IdentifierRepository();
 

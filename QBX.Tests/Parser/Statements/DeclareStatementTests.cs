@@ -144,9 +144,9 @@ public class DeclareStatementTests
 	public void ShouldParse(string declaration, TokenType declarationTypeTokenType, string name, bool expectCDecl, string? expectAlias, string[]? parameters)
 	{
 		// Arrange
-		var tokens = new Lexer(declaration).ToList();
+		ListRange<Token> tokens = new Lexer(declaration).ToList();
 
-		tokens.RemoveAll(token => token.Type == TokenType.Whitespace);
+		BasicParser.CollapseWhitespaceTokens(ref tokens);
 
 		var identifierRepository = new IdentifierRepository();
 

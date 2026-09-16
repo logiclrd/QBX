@@ -471,7 +471,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 		return ParseStatementWithIndentation(tokens, consumeTokensToEndOfLine: () => Array.Empty<Token>(), isNested, endToken, ignoreErrors);
 	}
 
-	internal Statement ParseStatementWithIndentation(ListRange<Token> tokens, Func<IEnumerable<Token>> consumeTokensToEndOfLine, bool isNested, Token endToken, bool ignoreErrors)
+	internal static void CollapseWhitespaceTokens(ref ListRange<Token> tokens)
 	{
 		if (tokens.Any(token => token.Type == TokenType.Whitespace))
 		{
@@ -497,6 +497,11 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 			tokens = collapsed;
 		}
+	}
+
+	internal Statement ParseStatementWithIndentation(ListRange<Token> tokens, Func<IEnumerable<Token>> consumeTokensToEndOfLine, bool isNested, Token endToken, bool ignoreErrors)
+	{
+		CollapseWhitespaceTokens(ref tokens);
 
 		var indentation = "";
 
