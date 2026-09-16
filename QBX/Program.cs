@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using System.Threading;
 
@@ -14,10 +15,28 @@ class Program
 {
 	class SDLDispatcher : IDispatcher
 	{
+		ConcurrentQueue<Action> _actionQueue = new ConcurrentQueue<Action>();
+
+		void Thunk(nint userdata)
+		{
+			if (_actionQueue.TryDequeue(out var action))
+				action();
+		}
+
+		public SDLDispatcher()
+		{
+			_thunkDelegate = Thunk;
+		}
+
+		// Persistent delegate object that is never referenced only in flight from managed code.
+		SDL.MainThreadCallback _thunkDelegate;
+
 		public void Dispatch(Action action)
 		{
+			_actionQueue.Enqueue(action);
+
 			SDL.RunOnMainThread(
-				_ => action(),
+				_thunkDelegate,
 				default,
 				waitComplete: false);
 		}
