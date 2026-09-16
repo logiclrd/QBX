@@ -3658,6 +3658,12 @@ public class Compiler(IdentifierRepository identifierRepository)
 					{
 						var returnType = function.ReturnType ?? throw new Exception("Internal error: function with no return type");
 
+						if (CodeModel.TypeCharacter.TryParse(identifier.Identifier.Value.Last(), out var typeCharacter))
+						{
+							if (Mapper.GetPrimitiveDataType(typeCharacter) != returnType.PrimitiveType)
+								throw CompilerException.DuplicateDefinition(identifier.Token);
+						}
+
 						if (function.ParameterDefinitions.Count > 0)
 							throw CompilerException.ArgumentCountMismatch(expression.Token);
 
@@ -3853,6 +3859,17 @@ public class Compiler(IdentifierRepository identifierRepository)
 						{
 							implicitForwardReference = true;
 							parameterDefinitions = function.ParameterDefinitions;
+						}
+
+						if (function != null)
+						{
+							var returnType = function.ReturnType ?? throw new Exception("Internal error: function with no return type");
+
+							if (CodeModel.TypeCharacter.TryParse(identifier.Value.Last(), out var typeCharacter))
+							{
+								if (Mapper.GetPrimitiveDataType(typeCharacter) != returnType.PrimitiveType)
+									throw CompilerException.DuplicateDefinition(identifierToken);
+							}
 						}
 
 						var translatedCallExpression = new CallExpression();
