@@ -578,7 +578,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 				tokenHandler.Advance(1);
 			}
 			else
-				typeElement.Name = tokenHandler.ExpectIdentifier(allowTypeCharacter: false);
+				typeElement.Name = tokenHandler.ExpectIdentifier(allowTypeCharacter: false, allowDots: false);
 
 			if (tokenHandler.NextTokenIs(TokenType.OpenParenthesis))
 			{
@@ -652,7 +652,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 				}
 
 				default:
-					typeElement.ElementUserType = tokenHandler.ExpectIdentifier(allowTypeCharacter: false);
+					typeElement.ElementUserType = tokenHandler.ExpectIdentifier(allowTypeCharacter: false, allowDots: false);
 					break;
 			}
 
@@ -760,7 +760,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 			case TokenType.CALL:
 			{
-				var targetName = tokenHandler.ExpectIdentifier(allowTypeCharacter: false);
+				var targetName = tokenHandler.ExpectIdentifier(allowTypeCharacter: false, allowDots: true);
 
 				ExpressionList? arguments = null;
 
@@ -1079,7 +1079,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 					{
 						tokenHandler.Expect(TokenType.Slash);
 
-						common.BlockName = tokenHandler.ExpectIdentifier(allowTypeCharacter: false);
+						common.BlockName = tokenHandler.ExpectIdentifier(allowTypeCharacter: false, allowDots: true);
 
 						tokenHandler.Expect(TokenType.Slash);
 					}
@@ -1137,7 +1137,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 				var declarationType = tokenHandler.ExpectOneOf(TokenType.SUB, TokenType.FUNCTION);
 
-				var name = tokenHandler.ExpectIdentifier(allowTypeCharacter: true, out var nameToken);
+				var name = tokenHandler.ExpectIdentifier(allowTypeCharacter: true, allowDots: true, out var nameToken);
 
 				if ((declarationType.Type == TokenType.SUB)
 				 && TypeCharacter.TryParse(name.Value.Last(), out _))
@@ -1204,7 +1204,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 				}
 				else if (tokenHandler.NextToken.Type == TokenType.Identifier)
 				{
-					var identifier = tokenHandler.ExpectIdentifier(allowTypeCharacter: true, out var identifierToken);
+					var identifier = tokenHandler.ExpectIdentifier(allowTypeCharacter: true, allowDots: true, out var identifierToken);
 
 					if (!identifier.Value.StartsWith("FN", StringComparison.OrdinalIgnoreCase))
 						throw new SyntaxErrorException(identifierToken, "DEF function name must begin with FN");
@@ -1268,7 +1268,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 					Identifier? rangeStart = null;
 					Identifier? rangeEnd = null;
 
-					rangeStart = rangeTokenHandler.ExpectIdentifier(allowTypeCharacter: false, out var identifierToken);
+					rangeStart = rangeTokenHandler.ExpectIdentifier(allowTypeCharacter: false, allowDots: false, out var identifierToken);
 
 					if ((rangeStart.Value.Length != 1)
 					 || !char.IsAsciiLetter(rangeStart.Value[0]))
@@ -1281,7 +1281,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 						rangeTokenHandler.Expect(TokenType.Minus);
 						rangeTokenHandler.ExpectMoreTokens();
 
-						rangeEnd = rangeTokenHandler.ExpectIdentifier(allowTypeCharacter: false, out identifierToken);
+						rangeEnd = rangeTokenHandler.ExpectIdentifier(allowTypeCharacter: false, allowDots: false, out identifierToken);
 
 						if ((rangeEnd.Value.Length != 1)
 						 || !char.IsAsciiLetter(rangeEnd.Value[0]))
@@ -1519,7 +1519,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 				var forStatement = new ForStatement();
 
 				forStatement.CounterVariableToken = tokenHandler.NextToken;
-				forStatement.CounterVariable = tokenHandler.ExpectIdentifier(allowTypeCharacter: true);
+				forStatement.CounterVariable = tokenHandler.ExpectIdentifier(allowTypeCharacter: true, allowDots: true);
 
 				tokenHandler.Expect(TokenType.Equals);
 
@@ -3814,7 +3814,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 					var declaration = new VariableScopeDeclaration();
 
-					declaration.Name = declarationHandler.ExpectIdentifier(allowTypeCharacter: true, out declaration.NameToken);
+					declaration.Name = declarationHandler.ExpectIdentifier(allowTypeCharacter: true, allowDots: true, out declaration.NameToken);
 
 					if (declarationHandler.NextTokenIs(TokenType.OpenParenthesis))
 					{
@@ -3833,7 +3833,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 						declarationHandler.Advance();
 
 						if (declarationHandler.NextTokenIs(TokenType.Identifier))
-							declaration.UserType = declarationHandler.ExpectIdentifier(allowTypeCharacter: false, out declaration.TypeToken);
+							declaration.UserType = declarationHandler.ExpectIdentifier(allowTypeCharacter: false, allowDots: false, out declaration.TypeToken);
 						else
 						{
 							if (!declarationHandler.NextToken.IsDataType)
@@ -3930,6 +3930,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 				statement.Name = tokenHandler.ExpectIdentifier(
 					allowTypeCharacter: statement is FunctionStatement,
+					allowDots: true,
 					out statement.NameToken);
 
 				if ((token.Type == TokenType.SUB)
@@ -4044,7 +4045,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 			{
 				var type = new TypeStatement();
 
-				type.Name = tokenHandler.ExpectIdentifier(allowTypeCharacter: false);
+				type.Name = tokenHandler.ExpectIdentifier(allowTypeCharacter: false, allowDots: false);
 
 				tokenHandler.ExpectEndOfTokens();
 
@@ -4449,7 +4450,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 			try
 			{
-				targetName = tokenHandler.ExpectIdentifier(allowTypeCharacter: false);
+				targetName = tokenHandler.ExpectIdentifier(allowTypeCharacter: false, allowDots: true);
 			}
 			catch (SyntaxErrorException)
 			{
@@ -4550,7 +4551,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 		tokenHandler.ExpectMoreTokens("Expected variable declaration");
 
-		declaration.Name = tokenHandler.ExpectIdentifier(allowTypeCharacter: true, out declaration.NameToken);
+		declaration.Name = tokenHandler.ExpectIdentifier(allowTypeCharacter: true, allowDots: true, out declaration.NameToken);
 
 		if (tokenHandler.NextTokenIs(TokenType.OpenParenthesis))
 		{
@@ -4593,7 +4594,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 			tokenHandler.Advance();
 
 			if (tokenHandler.NextTokenIs(TokenType.Identifier))
-				declaration.UserType = tokenHandler.ExpectIdentifier(allowTypeCharacter: false, out declaration.TypeToken);
+				declaration.UserType = tokenHandler.ExpectIdentifier(allowTypeCharacter: false, allowDots: true, out declaration.TypeToken);
 			else
 			{
 				if (!tokenHandler.NextToken.IsDataType)
@@ -5012,8 +5013,6 @@ public class BasicParser(IdentifierRepository identifierRepository)
 						config.MaximumParameterCount,
 						config.FileNumberParameter);
 
-					// TODO: isAssignable
-
 					return new KeywordFunctionExpression(tokens[0], expressionList);
 				}
 
@@ -5089,6 +5088,48 @@ public class BasicParser(IdentifierRepository identifierRepository)
 					var minusToken = tokens[0].SplitMinusToken();
 
 					return new UnaryExpression(minusToken, ParseExpression(tokens, endToken));
+				}
+			}
+
+			// Oddball identifiers that end in a dot will either have lastOperatorIndex pointing at the last
+			// token, or it'll be one before and the last token will be a type-declaration character.
+			if (tokens[lastOperatorIndex].Type == TokenType.Period)
+			{
+				bool tryDottedIdentifier = false;
+
+				if (lastOperatorIndex == tokens.Count - 1)
+					tryDottedIdentifier = true;
+				else if (lastOperatorIndex == tokens.Count - 2)
+				{
+					switch (tokens[tokens.Count - 1].Value)
+					{
+						case "%":
+						case "&":
+						case "!":
+						case "#":
+						case "$":
+						case "@":
+							tryDottedIdentifier = true;
+							break;
+					}
+				}
+
+				if (tokens.Slice(1).Any(token => !string.IsNullOrEmpty(token.PrecedingWhitespace)))
+					tryDottedIdentifier = false;
+
+				if (tryDottedIdentifier)
+				{
+					var tokenHandler = new TokenHandler(tokens, identifierRepository);
+
+					try
+					{
+						Token? dottedIdentifierToken = null;
+						var dottedIdentifier = tokenHandler.ExpectIdentifier(allowTypeCharacter: false, allowDots: true, out dottedIdentifierToken);
+
+						if ((dottedIdentifierToken != null) && !tokenHandler.HasMoreTokens)
+							return new IdentifierExpression(dottedIdentifierToken, dottedIdentifier);
+					}
+					catch { }
 				}
 			}
 
@@ -5174,6 +5215,26 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 					if (parsed != null)
 						return parsed;
+				}
+			}
+
+			// Last ditch: Do we have a dotted identifier that can't be interpreted as an expression?
+			// E.g., "a.3.b", where the 3 can't be a field name.
+			if (tokens.All(t => (t.Type == TokenType.Identifier) || (t.Type == TokenType.Number) || (t.Type == TokenType.Period)))
+			{
+				if (tokens.Slice(1).All(t => string.IsNullOrEmpty(t.PrecedingWhitespace)))
+				{
+					var tokenHandler = new TokenHandler(tokens, identifierRepository);
+
+					try
+					{
+						Token? dottedIdentifierToken = null;
+						var dottedIdentifier = tokenHandler.ExpectIdentifier(allowTypeCharacter: false, allowDots: true, out dottedIdentifierToken);
+
+						if ((dottedIdentifierToken != null) && !tokenHandler.HasMoreTokens)
+							return new IdentifierExpression(dottedIdentifierToken, dottedIdentifier);
+					}
+					catch { }
 				}
 			}
 

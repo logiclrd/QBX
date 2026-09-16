@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 
 using QBX.CodeModel;
 using QBX.CodeModel.Statements;
@@ -41,6 +42,12 @@ public class Token(MutableBox<int> line, int column, TokenType type, string valu
 		}
 	}
 
+	public bool IsWord =>
+		(Type == TokenType.Identifier) ||
+		s_wordTokens.Contains(Type) ||
+		((Type == TokenType.Number) && s_wordTokenPattern.IsMatch(Value));
+
+	public bool IsWordStart => (Value.Length > 0) && char.IsLetter(Value[0]) && IsWord;
 
 	public static bool TryGetKeywordFunctionAttribute(TokenType tokenType, [NotNullWhen(true)] out KeywordFunctionAttribute? value)
 		=> s_keywordFunctions.TryGetValue(tokenType, out value);
@@ -112,6 +119,28 @@ public class Token(MutableBox<int> line, int column, TokenType type, string valu
 		.Where(f => f.TokenCharacter != null)
 		.Select(f => (TokenCharacter: f.TokenCharacter!.Character, Field: f))
 		.ToDictionary(key => key.TokenCharacter, value => new Token(CreateDummyLine(), 0, value.Field.TokenType, value.TokenCharacter.ToString()));
+
+	const string LetterDigitOrPeriod = @"[\p{L}0-9.]";
+
+	static Regex s_wordTokenPattern = new Regex($"^{LetterDigitOrPeriod}+$", RegexOptions.Singleline);
+
+	static HashSet<TokenType> s_wordTokens =
+		typeof(TokenType).GetFields(BindingFlags.Public | BindingFlags.Static)
+		.Select(f =>
+			(
+				TokenType: (TokenType)f.GetValue(null)!,
+				TokenCharacter: f.GetCustomAttribute<TokenCharacterAttribute>()?.Character,
+				TokenValue: f.GetCustomAttribute<TokenValueAttribute>()?.Value,
+				Keyword: f.GetCustomAttribute<KeywordTokenAttribute>()?.Keyword
+			))
+		.Select(f =>
+			(
+				TokenType: f.TokenType,
+				Value: f.TokenValue ?? f.TokenCharacter?.ToString() ?? f.Keyword ?? ""
+			))
+		.Where(f => s_wordTokenPattern.IsMatch(f.Value))
+		.Select(f => f.TokenType)
+		.ToHashSet();
 
 	public static Token GetStatic(MutableBox<int> line, int column, string sourceText, TokenType type) => new Token(line, column, type, value: sourceText);
 

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Linq;
+using System.Text;
 
+using QBX.ExecutionEngine.Compiled.Statements;
 using QBX.LexicalAnalysis;
 
 namespace QBX.Parser;
@@ -110,30 +112,85 @@ public class TokenHandler(ListRange<Token> tokens, IdentifierRepository identifi
 
 	public bool NextTokenIs(TokenType type) => HasMoreTokens && (_tokens[_tokenIndex].Type == type);
 
-	public Identifier ExpectIdentifier(bool allowTypeCharacter)
-		=> ExpectIdentifier(allowTypeCharacter, out _);
+	public Identifier ExpectIdentifier(bool allowTypeCharacter, bool allowDots)
+		=> ExpectIdentifier(allowTypeCharacter, allowDots, out _);
 
-	public Identifier ExpectIdentifier(bool allowTypeCharacter, out Token identifierToken)
+	public Identifier ExpectIdentifier(bool allowTypeCharacter, bool allowDots, out Token identifierToken)
 	{
 		if (!HasMoreTokens)
 			throw new SyntaxErrorException(FindTokenToBlame(), "Unexpected end of statement");
 
-		identifierToken = _tokens[_tokenIndex];
+		var firstToken = _tokens[_tokenIndex];
 
-		if (identifierToken.Type != TokenType.Identifier)
-			throw new SyntaxErrorException(identifierToken, "Expected identifier");
+		if (!firstToken.IsWordStart)
+			throw new SyntaxErrorException(firstToken, "Expected identifier");
 
-		string identifier = identifierToken.Value ?? "";
+		int numTokens = 1;
 
-		if (identifier.Length == 0)
-			throw new Exception("Internal error: Identifier token with no value");
+		if (allowDots)
+		{
+			// Combine any combination of adjacent dots and word-like tokens (including numbers -- as long as they don't contain symbols),
+			// optionally terminated with a type-declaration character.
 
-		char lastCh = identifier.Last();
+			bool IsTypeDeclarationCharacterToken(Token token)
+			{
+				switch (token.Value)
+				{
+					case "%":
+					case "&":
+					case "!":
+					case "#":
+					case "$":
+					case "@":
+						return true;
+				}
 
-		if (!allowTypeCharacter && char.IsSymbol(lastCh))
+				return false;
+			}
+
+			while (_tokenIndex + numTokens < _tokens.Count)
+			{
+				var nextToken = _tokens[_tokenIndex + numTokens];
+
+				if (!string.IsNullOrEmpty(nextToken.PrecedingWhitespace))
+					break;
+				if ((nextToken.Type != TokenType.Period) && !nextToken.IsWord && !IsTypeDeclarationCharacterToken(nextToken))
+					break;
+
+				numTokens++;
+
+				if (char.IsSymbol(nextToken.Value.Last()))
+					break;
+			}
+		}
+
+		string identifier;
+
+		if (numTokens == 1)
+		{
+			identifierToken = firstToken;
+			identifier = identifierToken.Value;
+
+			if (identifierToken.Type != TokenType.Identifier)
+				throw new SyntaxErrorException(identifierToken, "Expected identifier");
+
+			_tokenIndex++;
+		}
+		else
+		{
+			var builder = new StringBuilder();
+
+			for (int i=0; i < numTokens; i++)
+				builder.Append(_tokens[_tokenIndex++].Value);
+
+			identifier = builder.ToString();
+
+			identifierToken = new Token(firstToken.LineNumberBox, firstToken.Column, TokenType.Identifier, identifier);
+			identifierToken.PrecedingWhitespace = firstToken.PrecedingWhitespace;
+		}
+
+		if (!allowTypeCharacter && char.IsSymbol(identifier.Last()))
 			throw new SyntaxErrorException(identifierToken, "Identifier cannot end with %, &, !, #, $, or @");
-
-		_tokenIndex++;
 
 		return identifierRepository.UpdateCanonicalIdentifier(identifier);
 	}

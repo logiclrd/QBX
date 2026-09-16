@@ -4182,6 +4182,72 @@ public class Compiler(IdentifierRepository identifierRepository)
 							throw CompilerException.InvalidConstant(blameToken);
 						}
 
+						var dottedIdentifierToken = new Token(BlameLineNumber(binaryExpression.Token), column, TokenType.Identifier, dottedIdentifier);
+
+						// Check for a matching FUNCTION.
+
+						var unqualifiedIdentifier = Mapper.UnqualifyIdentifier(dottedIdentifier);
+
+						if (module.TryGetNativeProcedure(unqualifiedIdentifier, out var nativeProcedure))
+						{
+							var translatedCallExpression = new NativeProcedureCallExpression();
+
+							if ((nativeProcedure.ParameterTypes != null)
+							 && (nativeProcedure.ParameterTypes.Length > 0))
+								throw CompilerException.ArgumentCountMismatch(dottedIdentifierToken);
+
+							translatedCallExpression.LocalThunk = nativeProcedure.BuildThunk([], compilation.UseDirectMarshalling);
+							translatedCallExpression.TargetToken = dottedIdentifierToken;
+
+							return translatedCallExpression;
+						}
+
+						bool isForwardReference = module.UnresolvedReferences.TryGetDeclaration(unqualifiedIdentifier, out var forwardReference);
+
+						if (compilation.IsRegistered(unqualifiedIdentifier) || isForwardReference)
+						{
+							if (forAssignment)
+								throw CompilerException.DuplicateDefinition(dottedIdentifierToken);
+
+							if (compilation.Subs.ContainsKey(unqualifiedIdentifier))
+								throw new CompilerException(dottedIdentifierToken, "Cannot invoke a SUB as a function");
+
+							Routine? function;
+							IReadOnlyList<ParameterDefinition>? parameterDefinitions = null;
+
+							if (module.TryGetFunctionFacade(unqualifiedIdentifier, out var functionFacade))
+							{
+								function = functionFacade.Routine;
+								parameterDefinitions = functionFacade.ParameterDefinitions;
+							}
+							else if (!compilation.Functions.TryGetValue(unqualifiedIdentifier, out function))
+							{
+								if (!isForwardReference)
+									throw new Exception("Internal error: identifier " + unqualifiedIdentifier + " is registered but is neither a SUB nor a FUNCTION?");
+
+								if (forwardReference!.RoutineType != RoutineType.Function)
+									throw CompilerException.DuplicateDefinition(expression.Token);
+
+								parameterDefinitions = forwardReference.ParameterDefinitions;
+							}
+
+							if (function != null)
+							{
+								if ((parameterDefinitions != null)
+								 && (parameterDefinitions.Count > 0))
+									throw CompilerException.ArgumentCountMismatch(dottedIdentifierToken);
+
+								var translatedCallExpression = new CallExpression();
+
+								translatedCallExpression.Target = function;
+
+								if (routine == null)
+									throw CompilerException.InvalidConstant(dottedIdentifierToken);
+
+								return translatedCallExpression;
+							}
+						}
+
 						int variableIndex = mapper.ResolveVariable(dottedIdentifier);
 
 						if (variableIndex < 0)
@@ -4309,10 +4375,12 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 		column = default;
 
-		if (binaryExpression.Operator != CodeModel.Expressions.Operator.Field)
+		if ((binaryExpression.Operator != CodeModel.Expressions.Operator.Field)
+		 || !string.IsNullOrEmpty(binaryExpression.Token?.PrecedingWhitespace))
 			return;
 
-		if (binaryExpression.Right is not CodeModel.Expressions.IdentifierExpression rightIdentifier)
+		if ((binaryExpression.Right is not CodeModel.Expressions.IdentifierExpression rightIdentifier)
+		 || !string.IsNullOrEmpty(rightIdentifier.Token?.PrecedingWhitespace))
 			return;
 
 		switch (binaryExpression.Left)
