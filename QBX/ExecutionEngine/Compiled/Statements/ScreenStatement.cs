@@ -36,6 +36,7 @@ public class ScreenStatement(CodeModel.Statements.ScreenStatement source) : Exec
 
 				context.RuntimeState.LastScreenMode = qbMode;
 				context.RuntimeState.HaveGraphicsViewport = false;
+				context.RuntimeState.BackgroundColour = 0;
 
 				context.VisualLibrary = context.Machine.VideoFirmware.VisualLibrary;
 

@@ -92,16 +92,22 @@ public class ColorStatement(CodeModel.Statements.ColorStatement source) : Execut
 			// CGA modes
 			if (Argument1Expression != null)
 			{
-				int newBackgroundAttribute = Argument1Expression.EvaluateAndCoerceToInt(context, stackFrame);
+				int newBackgroundColour = Argument1Expression.EvaluateAndCoerceToInt(context, stackFrame);
 
-				if ((newBackgroundAttribute < 0) || (newBackgroundAttribute > 255))
+				if ((newBackgroundColour < 0) || (newBackgroundColour > 255))
 					throw RuntimeException.IllegalFunctionCall(Argument1Expression.Source);
 
-				newBackgroundAttribute &= 15;
+				newBackgroundColour &= 15;
+
+				// Populate bit 4 for RGBI intensity.
+				if (newBackgroundColour >= 8)
+					newBackgroundColour |= 16;
+
+				context.RuntimeState.BackgroundColour = newBackgroundColour;
 
 				context.Machine.InPort(InputStatusRegisters.InputStatus1Port);
 				context.Machine.OutPort(AttributeControllerRegisters.IndexAndDataWritePort, 0);
-				context.Machine.OutPort(AttributeControllerRegisters.IndexAndDataWritePort, unchecked((byte)newBackgroundAttribute));
+				context.Machine.OutPort(AttributeControllerRegisters.IndexAndDataWritePort, unchecked((byte)newBackgroundColour));
 				context.Machine.OutPort(AttributeControllerRegisters.IndexAndDataWritePort, AttributeControllerRegisters.Index_PaletteAddressSourceBit);
 			}
 
@@ -114,7 +120,7 @@ public class ColorStatement(CodeModel.Statements.ColorStatement source) : Execut
 
 				newCGAPalette &= 1;
 
-				context.Machine.VideoFirmware.LoadCGAPalette(newCGAPalette, intensity: false);
+				context.Machine.VideoFirmware.LoadCGAPalette(newCGAPalette, intensity: false, backgroundColour: context.RuntimeState.BackgroundColour);
 			}
 
 			// argument 3 is ignored
@@ -134,6 +140,16 @@ public class ColorStatement(CodeModel.Statements.ColorStatement source) : Execut
 					int newAttribute = Argument1Expression.EvaluateAndCoerceToInt(context, stackFrame);
 
 					graphicsLibrary.SetDrawingAttribute(newAttribute);
+				}
+
+				if (Argument2Expression != null)
+				{
+					int newBackgroundColour = Argument2Expression.EvaluateAndCoerceToInt(context, stackFrame);
+
+					context.Machine.InPort(InputStatusRegisters.InputStatus1Port);
+					context.Machine.OutPort(AttributeControllerRegisters.IndexAndDataWritePort, 0); // Remap attribute 0
+					context.Machine.OutPort(AttributeControllerRegisters.IndexAndDataWritePort, unchecked((byte)newBackgroundColour));
+					context.Machine.OutPort(AttributeControllerRegisters.IndexAndDataWritePort, AttributeControllerRegisters.Index_PaletteAddressSourceBit);
 				}
 			}
 		}

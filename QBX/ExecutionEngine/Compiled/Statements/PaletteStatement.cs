@@ -47,13 +47,17 @@ public class PaletteStatement(CodeModel.Statements.PaletteStatement source) : Ex
 				if ((colour < 0) || (colour > 15))
 					throw RuntimeException.IllegalFunctionCall();
 
-				// I'm not sure what exactly this translation is, VGA->EGA? Anyway,
-				// it's what QuickBASIC itself does in SCREEN 1 / mode 5h.
+				// This is emulation of the CGA RGBI monitor interface. Bits 2-0 of the colour encode the
+				// RGB value, bit 4 encodes the intensity, and bit 3 is ignored. QuickBASIC sets bit 4 and
+				// leaves bit 3 set.
+				//
+				// The CGA colour 6 anomaly is handled by the default palette loaded during mode switch.
+				// With the CGA palette loaded, 6 is brown. With the EGA palette, 20 is brown, and the
+				// initial attribute mappings map attribute 6 to colour 20.
 				if (colour >= 8)
 					colour |= 16;
 
 				goto case PaletteMode.Attribute;
-
 			case PaletteMode.Attribute:
 				// Remap the DAC colour to which the specified attribute maps.
 				if ((colour < 0) || (colour > 63))

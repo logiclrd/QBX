@@ -805,7 +805,7 @@ public partial class Video(Machine machine)
 		return false;
 	}
 
-	public void LoadCGAPalette(int cgaPalette = 1, bool monochrome = false, bool intensity = false, bool reloadDAC = false)
+	public void LoadCGAPalette(int cgaPalette = 1, bool monochrome = false, bool intensity = false, bool reloadDAC = false, int backgroundColour = 0)
 	{
 		if (reloadDAC)
 		{
@@ -860,16 +860,18 @@ public partial class Video(Machine machine)
 		}
 		else
 		{
+			byte backgroundByte = unchecked((byte)backgroundColour);
+
 			switch (cgaPalette)
 			{
 				case 0:
-					machine.GraphicsArray.AttributeController.Registers[0] = 0;
+					machine.GraphicsArray.AttributeController.Registers[0] = backgroundByte;
 					machine.GraphicsArray.AttributeController.Registers[1] = unchecked((byte)(intensity ? 58 : 2));
 					machine.GraphicsArray.AttributeController.Registers[2] = unchecked((byte)(intensity ? 60 : 4));
 					machine.GraphicsArray.AttributeController.Registers[3] = unchecked((byte)(intensity ? 62 : 6));
 					break;
 				case 1:
-					machine.GraphicsArray.AttributeController.Registers[0] = 0;
+					machine.GraphicsArray.AttributeController.Registers[0] = backgroundByte;
 					machine.GraphicsArray.AttributeController.Registers[1] = unchecked((byte)(intensity ? 59 : 3));
 					machine.GraphicsArray.AttributeController.Registers[2] = unchecked((byte)(intensity ? 61 : 5));
 					machine.GraphicsArray.AttributeController.Registers[3] = unchecked((byte)(intensity ? 63 : 7));
@@ -878,7 +880,7 @@ public partial class Video(Machine machine)
 				// plug an actual CGA into a colour composite monitor but disable the Color
 				// Burst signal. Trivial to emulate on VGA with attribute mapping.
 				case 2:
-					machine.GraphicsArray.AttributeController.Registers[0] = 0;
+					machine.GraphicsArray.AttributeController.Registers[0] = backgroundByte;
 					machine.GraphicsArray.AttributeController.Registers[1] = unchecked((byte)(intensity ? 59 : 3));
 					machine.GraphicsArray.AttributeController.Registers[2] = unchecked((byte)(intensity ? 60 : 4));
 					machine.GraphicsArray.AttributeController.Registers[3] = unchecked((byte)(intensity ? 63 : 7));

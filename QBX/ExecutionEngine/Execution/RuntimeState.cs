@@ -8,6 +8,7 @@ public class RuntimeState
 {
 	public int SegmentBase;
 	public int LastScreenMode = 0;
+	public int BackgroundColour;
 	public bool TextCursorVisible = false;
 	public bool HaveGraphicsViewport = false;
 	public PaletteMode PaletteMode = PaletteMode.Attribute;
