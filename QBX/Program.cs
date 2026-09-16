@@ -52,7 +52,8 @@ class Program
 			return ConsoleAPIStrategy.ExecuteProxy();
 		}
 
-		DebugExceptionHelper.Install();
+		if (System.Diagnostics.Debugger.IsAttached)
+			DebugExceptionHelper.Install();
 
 		var machine = new Machine();
 
