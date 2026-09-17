@@ -3321,10 +3321,13 @@ public class Compiler(IdentifierRepository identifierRepository)
 						{
 							int moduleIndex = mapper.ModuleMapper.GetVariableByName(rootVariableName);
 
-							var moduleType = mapper.ModuleMapper.GetVariableType(moduleIndex);
+							if (moduleIndex >= 0)
+							{
+								var moduleType = mapper.ModuleMapper.GetVariableType(moduleIndex);
 
-							if (moduleType.IsUserType && !declaration.HasExplicitTypeClause)
-								throw CompilerException.AsClauseRequired(declaration.NameToken);
+								if (moduleType.IsUserType && !declaration.HasExplicitTypeClause)
+									throw CompilerException.AsClauseRequired(declaration.NameToken);
+							}
 						}
 
 						mapper.LinkModuleVariable(declaration.Name, rootVariableName, variableType);
