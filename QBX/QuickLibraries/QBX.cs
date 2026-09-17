@@ -36,9 +36,10 @@ public class QBX(Machine machine, EventHub eventHub) : QuickLibrary
 	}
 
 	[Export]
-	public void Absolute(short address)
+	public void Absolute(short address, params ushort[] args)
 	{
-		throw RuntimeException.IllegalFunctionCall();
+		// Do nothing.
+		//throw RuntimeException.IllegalFunctionCall();
 	}
 
 	[Export]

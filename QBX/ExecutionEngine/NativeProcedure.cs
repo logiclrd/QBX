@@ -46,23 +46,36 @@ public class NativeProcedure(object site, MethodInfo implementation)
 
 		var parameters = implementation.GetParameters();
 
-		if (parameterTypes.Count != parameters.Length)
+		var finalParameter = parameters.LastOrDefault();
+
+		bool paramsArray =
+			(finalParameter != null) &&
+			(finalParameter.GetCustomAttribute<ParamArrayAttribute>() != null) &&
+			!finalParameter.IsOut &&
+			finalParameter.ParameterType.IsArray;
+
+		if (paramsArray ? (parameterTypes.Count < parameters.Length) : (parameterTypes.Count != parameters.Length))
 			throw CompilerException.ArgumentCountMismatch(context: null);
 
-		var marshallers = new Marshaller[parameters.Length];
+		var marshallers = new Marshaller[parameterTypes.Count];
 
-		for (int i = 0; i < parameters.Length; i++)
+		int maxParameterIndex = parameters.Length - 1;
+
+		for (int i = 0; i < parameterTypes.Count; i++)
 		{
 			var parameterType = parameterTypes[i];
 
-			var nativeParameterType = parameters[i].ParameterType;
+			var parameter = parameters[Math.Min(i, maxParameterIndex)];
 
-			if (parameters[i].IsOut)
+			var nativeParameterType = parameter.ParameterType;
+
+			if (((i >= maxParameterIndex) && paramsArray)
+			 || parameter.IsOut)
 				nativeParameterType = nativeParameterType.GetElementType() ?? nativeParameterType;
 
 			if (useIndirectMarshalling)
 			{
-				var fixedLengthAttribute = parameters[i].GetCustomAttribute<FixedLengthAttribute>();
+				var fixedLengthAttribute = parameter.GetCustomAttribute<FixedLengthAttribute>();
 
 				marshallers[i] = IndirectMarshaller.Construct(nativeParameterType, fixedLengthAttribute);
 			}
@@ -133,7 +146,41 @@ public class NativeProcedure(object site, MethodInfo implementation)
 			if (parameterType == null)
 				throw new Exception("Sanity failure");
 
-			if (!parameters[i].IsOut)
+			if ((i == maxParameterIndex) && paramsArray)
+			{
+				int paramsArrayParamCount = parameterTypes.Count - parameters.Length + 1;
+
+				parameterType = parameterType.GetElementType() ?? parameterType;
+
+				blockBody.Add(Expression.Assign(
+					marshalledArguments[i],
+					Expression.NewArrayBounds(
+						parameterType,
+						Expression.Constant(paramsArrayParamCount))));
+
+				while (i < parameterTypes.Count)
+				{
+					blockBody.Add(Expression.Assign(
+						marshalTemporary,
+						Expression.Constant(null)));
+
+					blockBody.Add(Expression.Call(
+						Expression.Constant(marshallers[i]), mapMethod,
+						Expression.ArrayIndex(inputParameter, Expression.Constant(i)),
+						marshalTemporary));
+
+					blockBody.Add(Expression.Assign(
+						Expression.ArrayAccess(
+							marshalledArguments[maxParameterIndex],
+							Expression.Constant(i - maxParameterIndex)),
+						Expression.Convert(marshalTemporary, parameterType)));
+
+					i++;
+				}
+
+				break;
+			}
+			else if (!parameters[i].IsOut)
 			{
 				blockBody.Add(Expression.Assign(
 					marshalTemporary,
