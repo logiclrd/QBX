@@ -3563,7 +3563,8 @@ public class Compiler(IdentifierRepository identifierRepository)
 				translatedArguments.Add(translatedExpression);
 			}
 
-			translated.EnsureParameterTypes(parameterDefinitions, matchFacades);
+			if (parameterDefinitions != null)
+				translated.EnsureParameterTypes(parameterDefinitions, matchFacades);
 		}
 	}
 
