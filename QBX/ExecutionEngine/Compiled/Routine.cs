@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using QBX.CodeModel.Statements;
+using QBX.ExecutionEngine.Compiled.Expressions;
 using QBX.ExecutionEngine.Compiled.Statements;
 using QBX.LexicalAnalysis;
 using QBX.Parser;
@@ -208,7 +209,7 @@ public class Routine : Sequence
 			{
 				var param = parameterDefinitions[i];
 
-				var paramType = mapper.ResolveType(param);
+				var paramType = mapper.ResolveType(param, out bool useTypeCharacter);
 
 				ParameterDefinitions.Add(new ParameterDefinition(param, paramType));
 
@@ -232,9 +233,9 @@ public class Routine : Sequence
 				}
 
 				if (param.IsArray == false)
-					ParameterVariableIndices[i] = mapper.DeclareVariable(name, paramType);
+					ParameterVariableIndices[i] = mapper.DeclareVariable(name, paramType, useTypeCharacter, param.HasExplicitTypeClause);
 				else
-					ParameterVariableIndices[i] = mapper.DeclareArray(name, paramType, numberOfDimensions: -1);
+					ParameterVariableIndices[i] = mapper.DeclareArray(name, paramType, numberOfDimensions: -1, useTypeCharacter, param.HasExplicitTypeClause);
 
 				if (paramType.IsUserType)
 					mapper.AddDisallowedSlug(name.Value);

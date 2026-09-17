@@ -108,7 +108,8 @@ public class Mapper
 	HashSet<string> _disallowedSlugs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 	HashSet<int> _predeclaredArrayIndices = new HashSet<int>();
 
-	Dictionary<string, int> _firstDeclarationByName = new(StringComparer.OrdinalIgnoreCase);
+	Dictionary<string, int> _firstVariableByName = new(StringComparer.OrdinalIgnoreCase);
+	Dictionary<string, int> _firstArrayByName = new(StringComparer.OrdinalIgnoreCase);
 
 	HashSet<string> _globalVariableNames = new HashSet<string>();
 	HashSet<string> _globalArrayNames = new HashSet<string>();
@@ -237,35 +238,96 @@ public class Mapper
 
 		foreach (var name in _moduleMapper._globalVariableNames)
 		{
-			if (_variableIndexByName.ContainsKey(name))
-				continue;
-
 			int moduleIndex = _moduleMapper.ResolveVariable(name);
 
-			var variableType = _moduleMapper.GetVariableType(moduleIndex);
+			if (moduleIndex < 0)
+				throw new Exception("Internal error: Failed to resolve global variable '" + name + "'");
 
-			int localIndex = DeclareVariable(name, variableType ?? DataType.ForPrimitiveDataType(GetTypeForIdentifier(name)));
+			var moduleVariable = _moduleMapper.GetVariable(moduleIndex);
 
-			var info = _variables[localIndex];
+			if (_variableIndexByName.ContainsKey(moduleVariable.Name))
+				continue;
 
-			info.LinkedToModuleVariableIndex = moduleIndex;
+			var localVariable = CreateLocalVariable(moduleVariable);
+
+			localVariable.LinkedToModuleVariableIndex = moduleIndex;
+
+			if (!UnderlayVariable(name, localVariable))
+				_variables.Remove(localVariable);
 		}
 
 		foreach (var name in _moduleMapper._globalArrayNames)
 		{
-			if (_arrayIndexByName.ContainsKey(name))
-				continue;
-
 			int moduleIndex = _moduleMapper.ResolveArray(name, arrayType: null, numberOfDimensions: -1, implicitlyCreated: out _);
 
-			var arrayType = _moduleMapper.GetVariableType(moduleIndex);
+			if (moduleIndex < 0)
+				throw new Exception("Internal error: Failed to resolve global array '" + name + "'");
 
-			int localIndex = DeclareArray(name, arrayType, numberOfDimensions: -1);
+			var moduleVariable = _moduleMapper.GetVariable(moduleIndex);
 
-			var info = _variables[localIndex];
+			if (_variableIndexByName.ContainsKey(moduleVariable.Name))
+				continue;
 
-			info.LinkedToModuleVariableIndex = moduleIndex;
+			var localVariable = CreateLocalVariable(moduleVariable);
+
+			localVariable.LinkedToModuleVariableIndex = moduleIndex;
+
+			if (!UnderlayArray(name, localVariable))
+				_variables.Remove(localVariable);
 		}
+	}
+
+	VariableInfo GetVariable(int index)
+		=> _variables[index];
+
+	VariableInfo CreateLocalVariable(VariableInfo remoteVariable)
+	{
+		int index = _variables.Count;
+
+		var localVariable = new VariableInfo(remoteVariable.Name, nameToken: null, index);
+
+		localVariable.Type = remoteVariable.Type;
+		localVariable.HasExplicitTypeClause = remoteVariable.HasExplicitTypeClause;
+		localVariable.NumberOfArrayDimensions = remoteVariable.NumberOfArrayDimensions;
+
+		_variables.Add(localVariable);
+
+		return localVariable;
+	}
+
+	bool UnderlayVariable(string name, VariableInfo variable)
+		=> Underlay(name, variable, _variableIndexByName);
+
+	bool UnderlayArray(string name, VariableInfo variable)
+		=> Underlay(name, variable, _arrayIndexByName);
+
+	bool Underlay(string name, VariableInfo variable, Dictionary<string, int> mappingTable)
+	{
+		bool mapped = false;
+
+		if (variable.Type.IsUserType || variable.HasExplicitTypeClause)
+		{
+			string unqualifiedName = UnqualifyIdentifier(name);
+
+			if (!mappingTable.ContainsKey(unqualifiedName))
+			{
+				mappingTable[unqualifiedName] = variable.Index;
+				mapped = true;
+			}
+		}
+
+		if (variable.Type.IsPrimitiveType)
+		{
+			string qualifiedName = QualifyIdentifier(name);
+
+			if (!mappingTable.ContainsKey(qualifiedName))
+			{
+				mappingTable[qualifiedName] = variable.Index;
+				mapped = true;
+			}
+		}
+
+		return mapped;
 	}
 
 	public bool IsLinkedVariable(string name, DataType dataType)
@@ -816,7 +878,7 @@ public class Mapper
 		{
 			if (hasExplicitTypeClause)
 			{
-				if (_firstDeclarationByName.TryGetValue(unqualifiedName, out int firstDeclarationIndex))
+				if (_firstVariableByName.TryGetValue(unqualifiedName, out int firstDeclarationIndex))
 				{
 					var firstDeclaration = _variables[firstDeclarationIndex];
 
@@ -859,8 +921,8 @@ public class Mapper
 
 		_variables.Add(info);
 
-		if (!_firstDeclarationByName.ContainsKey(unqualifiedName))
-			_firstDeclarationByName[unqualifiedName] = index;
+		if (!_firstVariableByName.ContainsKey(unqualifiedName))
+			_firstVariableByName[unqualifiedName] = index;
 
 		if (_semiscopeMode != SemiscopeMode.Setup)
 		{
@@ -891,11 +953,14 @@ public class Mapper
 		int index;
 
 		// Try to resolve what we're given first; it won't be qualified
-		// if its type is a UDT.
+		// if its type is a UDT. Also, if it was declared using an explicit
+		// AS clause, then the qualification can be omitted.
 		if ((_semiscopeOverlay != null)
-		 && _semiscopeOverlay.TryGetValue(name, out index))
+		 && _semiscopeOverlay.TryGetValue(name, out index)
+		 && (_variables[index].Type.IsUserType || _variables[index].HasExplicitTypeClause))
 			return index;
-		if (_variableIndexByName.TryGetValue(name, out index))
+		if (_variableIndexByName.TryGetValue(name, out index)
+		 && (_variables[index].Type.IsUserType || _variables[index].HasExplicitTypeClause))
 			return index;
 
 		// Next try qualifying it. If it's not UDT-typed, then the primary
@@ -943,7 +1008,7 @@ public class Mapper
 
 		if (!isDuplicateDefinition)
 		{
-			if (_firstDeclarationByName.TryGetValue(unqualifiedName, out int firstDeclarationIndex))
+			if (_firstArrayByName.TryGetValue(unqualifiedName, out int firstDeclarationIndex))
 			{
 				var firstDeclaration = _variables[firstDeclarationIndex];
 
@@ -990,13 +1055,12 @@ public class Mapper
 
 		_variables.Add(info);
 
-		if (!_firstDeclarationByName.ContainsKey(unqualifiedName))
-			_firstDeclarationByName[unqualifiedName] = index;
-
 		_arrayIndexByName[registrationName] = index;
-
 		if (dataType.IsPrimitiveType)
 			_arrayIndexByName[qualifiedName] = index;
+
+		if (!_firstArrayByName.ContainsKey(unqualifiedName))
+			_firstArrayByName[unqualifiedName] = index;
 
 		return index;
 	}
@@ -1027,8 +1091,10 @@ public class Mapper
 		int index;
 
 		// Try to resolve what we're given first; it won't be qualified
-		// if its type is a UDT.
-		if (_arrayIndexByName.TryGetValue(name, out index))
+		// if its type is a UDT. Also, if it was declared using an explicit
+		// AS clause, then the qualification can be omitted.
+		if (_arrayIndexByName.TryGetValue(name, out index)
+		 && (_variables[index].Type.IsUserType || _variables[index].HasExplicitTypeClause))
 		{
 			MatchUpNumberOfDimensions(index);
 
@@ -1217,41 +1283,54 @@ public class Mapper
 		}
 	}
 
-	public DataType ResolveType(CodeModel.ParameterDefinition param)
+	public DataType ResolveType(CodeModel.VariableDeclarationBase declaration)
+		=> ResolveType(declaration, out _);
+
+	public DataType ResolveType(CodeModel.VariableDeclarationBase declaration, out bool useTypeCharacter)
 	{
-		if (param.AnyType)
-			throw new Exception("Internal error: Cannot resolve ANY to a DataType");
+		DataType dataType;
 
-		if ((param.Name is QualifiedIdentifier qualifiedName)
-		 && (qualifiedName.TypeCharacter != null))
-			return ResolveType(qualifiedName.TypeCharacter.Type, null, 0, param.IsArray, param.NameToken);
-		else if ((param.Type != CodeModel.DataType.Unspecified) || (param.UserType != null))
-			return ResolveType(param.Type, param.UserType, 0, param.IsArray, param.TypeToken);
-		else
-		{
-			var dataType = DataType.ForPrimitiveDataType(GetTypeForIdentifier(param.Name));
+		useTypeCharacter = false;
 
-			if (param.IsArray)
-				dataType = dataType.MakeArrayType();
-
-			return dataType;
-		}
-	}
-
-	public DataType ResolveType(CodeModel.VariableDeclaration declaration)
-	{
 		if (declaration.Name is QualifiedIdentifier qualifiedName)
-			return ResolveType(qualifiedName.TypeCharacter.Type, null, 0, declaration.Subscripts != null, declaration.NameToken);
-		else if ((declaration.Type != CodeModel.DataType.Unspecified) || (declaration.UserType != null))
-			return ResolveType(declaration.Type, declaration.UserType, 0, declaration.Subscripts != null, declaration.TypeToken);
+		{
+			dataType = ResolveType(qualifiedName.TypeCharacter.Type, null, 0, declaration.HasSubscripts, declaration.NameToken);
+			useTypeCharacter = true;
+		}
+		else if (declaration.UserType != null)
+			dataType = ResolveType(declaration.UserType);
+		else if (declaration.Type != CodeModel.DataType.Unspecified)
+		{
+			if ((declaration.Type == CodeModel.DataType.STRING)
+			 && (declaration.FixedStringLength != null))
+			{
+				int fixedLength;
+
+				if (!int.TryParse(declaration.FixedStringLength, out fixedLength))
+				{
+					if (!TryResolveConstant(declaration.FixedStringLength, out var constValue)
+					 || !constValue.Type.IsInteger
+					 || (constValue is not IntegerLiteralValue integerConstValue)
+					 || (integerConstValue.Value < 1))
+						throw new CompilerException(declaration.FixedStringLengthToken, "Invalid constant");
+
+					fixedLength = integerConstValue.Value;
+				}
+
+				dataType = DataType.MakeFixedStringType(fixedLength);
+			}
+			else
+				dataType = DataType.FromCodeModelDataType(declaration.Type);
+		}
 		else
 		{
-			var dataType = DataType.ForPrimitiveDataType(GetTypeForIdentifier(declaration.Name));
-
-			if (declaration.Subscripts != null)
-				dataType = dataType.MakeArrayType();
-
-			return dataType;
+			dataType = DataType.ForPrimitiveDataType(GetTypeForIdentifier(declaration.Name));
+			useTypeCharacter = true;
 		}
+
+		if (declaration.HasSubscripts)
+			dataType = dataType.MakeArrayType();
+
+		return dataType;
 	}
 }

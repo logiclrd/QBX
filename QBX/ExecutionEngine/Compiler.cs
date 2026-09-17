@@ -1399,11 +1399,11 @@ public class Compiler(IdentifierRepository identifierRepository)
 					DataType dataType;
 					bool useTypeCharacter;
 
-					dataType = ResolveVariableDeclarationType(declaration, out useTypeCharacter, mapper);
+					dataType = mapper.ResolveType(declaration, out useTypeCharacter);
 
 					int variableIndex;
 
-					if (declaration.Subscripts == null)
+					if (!dataType.IsArray)
 					{
 						if (!dimStatement.DeclareScalars)
 							throw new Exception("Internal error: DimStatement that does not declare scalars with a Declaration with no Subscripts");
@@ -1420,8 +1420,6 @@ public class Compiler(IdentifierRepository identifierRepository)
 					}
 					else
 					{
-						dataType = dataType.MakeArrayType();
-
 						bool isNewArrayVariable = true;
 
 						if (dimStatement.AlwaysDeclareArrays)
@@ -3295,7 +3293,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 				foreach (var declaration in variableScopeStatement.Declarations)
 				{
-					var variableType = ResolveVariableDeclarationType(declaration, out bool useTypeCharacter, mapper);
+					var variableType = mapper.ResolveType(declaration, out bool useTypeCharacter);
 
 					if (declaration.IsArray == false)
 					{
@@ -3513,46 +3511,6 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 		if (nextStatementInfo == null)
 			iterator.Advance();
-	}
-
-	DataType ResolveVariableDeclarationType(CodeModel.VariableDeclarationBase declaration, out bool useTypeCharacter, Mapper mapper)
-	{
-		DataType dataType;
-
-		useTypeCharacter = false;
-
-		if (declaration.UserType != null)
-			dataType = mapper.ResolveType(declaration.UserType);
-		else if (declaration.Type != CodeModel.DataType.Unspecified)
-		{
-			if ((declaration.Type == CodeModel.DataType.STRING)
-			 && (declaration.FixedStringLength != null))
-			{
-				int fixedLength;
-
-				if (!int.TryParse(declaration.FixedStringLength, out fixedLength))
-				{
-					if (!mapper.TryResolveConstant(declaration.FixedStringLength, out var constValue)
-					 || !constValue.Type.IsInteger
-					 || (constValue is not IntegerLiteralValue integerConstValue)
-					 || (integerConstValue.Value < 1))
-						throw new CompilerException(declaration.FixedStringLengthToken, "Invalid constant");
-
-					fixedLength = integerConstValue.Value;
-				}
-
-				dataType = DataType.MakeFixedStringType(fixedLength);
-			}
-			else
-				dataType = DataType.FromCodeModelDataType(declaration.Type);
-		}
-		else
-		{
-			dataType = DataType.ForPrimitiveDataType(mapper.GetTypeForIdentifier(declaration.Name));
-			useTypeCharacter = true;
-		}
-
-		return dataType;
 	}
 
 	static bool IsUnintentionalAlias(CodeModel.Expressions.Expression sourceExpression, Evaluable translatedExpression)
