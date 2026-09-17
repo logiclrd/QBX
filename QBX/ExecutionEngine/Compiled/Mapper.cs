@@ -74,6 +74,7 @@ namespace QBX.ExecutionEngine.Compiled;
 
 public class Mapper
 {
+	Module _module;
 	Mapper? _moduleMapper;
 
 	public Mapper ModuleMapper => _moduleMapper ?? this;
@@ -106,6 +107,8 @@ public class Mapper
 	Dictionary<string, int> _arrayIndexByName = new(StringComparer.OrdinalIgnoreCase);
 	HashSet<string> _disallowedSlugs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 	HashSet<int> _predeclaredArrayIndices = new HashSet<int>();
+
+	Dictionary<string, int> _firstDeclarationByName = new(StringComparer.OrdinalIgnoreCase);
 
 	HashSet<string> _globalVariableNames = new HashSet<string>();
 	HashSet<string> _globalArrayNames = new HashSet<string>();
@@ -153,6 +156,8 @@ public class Mapper
 		public int Index => index;
 		public DataType Type = DataType.Integer;
 
+		public bool HasExplicitTypeClause = false;
+
 		public bool IsStaticArray = false;
 		public int NumberOfArrayDimensions = -1;
 
@@ -164,8 +169,10 @@ public class Mapper
 		public bool IsLinked => (LinkedToModuleVariableIndex >= 0) || (LinkedToCommonBlock != null);
 	}
 
-	public Mapper(Routine mainRoutine)
+	public Mapper(Module module, Routine mainRoutine)
 	{
+		_module = module;
+
 		Routine = mainRoutine;
 
 		_identifierTypes.AsSpan().Fill(PrimitiveDataType.Single);
@@ -173,8 +180,10 @@ public class Mapper
 		DeclareVariable("@ExitCode", DataType.Long);
 	}
 
-	Mapper(Mapper moduleMapper, Routine subroutine)
+	Mapper(Module module, Mapper moduleMapper, Routine subroutine)
 	{
+		_module = module;
+
 		_moduleMapper = moduleMapper;
 
 		Routine = subroutine;
@@ -259,15 +268,19 @@ public class Mapper
 		}
 	}
 
-	public bool IsLinkedVariable(string name)
+	public bool IsLinkedVariable(string name, DataType dataType)
 	{
+		name = QualifyIdentifier(name, dataType);
+
 		return
 			_variableIndexByName.TryGetValue(name, out var index) &&
 			(_variables[index].LinkedToModuleVariableIndex >= 0);
 	}
 
-	public bool IsLinkedArray(string name)
+	public bool IsLinkedArray(string name, DataType dataType)
 	{
+		name = QualifyIdentifier(name, dataType);
+
 		return
 			_arrayIndexByName.TryGetValue(name, out var index) &&
 			(_variables[index].LinkedToModuleVariableIndex >= 0);
@@ -553,7 +566,7 @@ public class Mapper
 		if (_moduleMapper != null)
 			throw new InvalidOperationException("Cannot create a mapper scope off of a scope");
 
-		return new Mapper(this, subroutine);
+		return new Mapper(_module, this, subroutine);
 	}
 
 	public bool IsLinkedToCommonBlock(int variableIndex)
@@ -584,12 +597,6 @@ public class Mapper
 		if (_moduleMapper == null)
 			throw new Exception("Cannot link to a module variable from the Module Mapper");
 
-		if (variableType.IsPrimitiveType)
-		{
-			localName = QualifyIdentifier(localName);
-			moduleName = QualifyIdentifier(moduleName);
-		}
-
 		int localIndex = ResolveVariable(localName);
 		int moduleIndex = _moduleMapper.ResolveVariable(moduleName);
 
@@ -604,17 +611,6 @@ public class Mapper
 			throw new Exception("The Mapper is frozen");
 		if (_moduleMapper == null)
 			throw new Exception("Cannot link to a module variable from the Module Mapper");
-
-		if (arrayType == null)
-		{
-			localName = QualifyIdentifier(localName);
-			moduleName = QualifyIdentifier(moduleName);
-		}
-		else if (arrayType.IsPrimitiveType)
-		{
-			localName = QualifyIdentifier(localName, arrayType.PrimitiveType);
-			moduleName = QualifyIdentifier(moduleName, arrayType.PrimitiveType);
-		}
 
 		int localIndex = ResolveArray(localName);
 		int moduleIndex = _moduleMapper.ResolveArray(moduleName);
@@ -766,7 +762,7 @@ public class Mapper
 		_semiscopeOverlay = null;
 	}
 
-	public int DeclareVariable(string name, DataType dataType, Token? token = null)
+	public int DeclareVariable(string name, DataType dataType, bool useTypeCharacter = true, bool hasExplicitTypeClause = false, Token? token = null)
 	{
 		if (_isFrozen)
 			throw new Exception("The Mapper is frozen");
@@ -778,43 +774,116 @@ public class Mapper
 		var qualifiedName = QualifyIdentifier(name, dataType);
 		var unqualifiedName = UnqualifyIdentifier(name);
 
-		if (_constantValueByName.TryGetValue(unqualifiedName, out _)
+		// You can't DIM a variable with the same name as a SUB or FUNCTION. But, where the error
+		// manifests depends on where the code is and the type of collision.
+		//
+		// - If the collision is with a FUNCTION, it's always a "Duplicate definition" on the
+		//   variable declaration.
+		// - If the collision is with a DECLARE SUB/FUNCTION, it's always a "Duplicate definition"
+		//   on the variable declaration.
+		// - Main module: The DIM is permitted, and an error is generated on the SUB/FUNCTION
+		//   opening line: "Sub and Function or Variable of the same name"
+		// - Inside SUB or FUNCTION: "Duplicate definition on the variable declaration.
+
+		bool isDuplicateDefinition = false;
+
+		var unqualifiedIdentifier = Identifier.Standalone(unqualifiedName);
+
+		if (_module.SubFacades.ContainsKey(unqualifiedIdentifier)
+		 || _module.FunctionFacades.ContainsKey(unqualifiedIdentifier))
+			isDuplicateDefinition = true;
+
+		if (!isDuplicateDefinition
+		 && _module.Routines.TryGetValue(unqualifiedIdentifier, out var routine)
+		 && (routine != this.Routine)) // function return value variable
+		{
+			if ((routine.OpeningStatement is CodeModel.Statements.FunctionStatement)
+			 || (_moduleMapper != null))
+				isDuplicateDefinition = true;
+		}
+
+		if (!isDuplicateDefinition
+		 && _constantValueByName.TryGetValue(unqualifiedName, out _)
 		 && !_hiddenConstants.Contains(unqualifiedName))
-			throw CompilerException.DuplicateDefinition(token);
-		if ((_moduleMapper != null)
+			isDuplicateDefinition = true;
+
+		if (!isDuplicateDefinition
+		 && (_moduleMapper != null)
 		 && _moduleMapper._constantValueByName.TryGetValue(unqualifiedName, out _))
-			throw CompilerException.DuplicateDefinition(token);
+			isDuplicateDefinition = true;
+
+		if (!isDuplicateDefinition)
+		{
+			if (hasExplicitTypeClause)
+			{
+				if (_firstDeclarationByName.TryGetValue(unqualifiedName, out int firstDeclarationIndex))
+				{
+					var firstDeclaration = _variables[firstDeclarationIndex];
+
+					if (!firstDeclaration.HasExplicitTypeClause
+					 && firstDeclaration.Type.Equals(dataType))
+						throw CompilerException.AsClauseRequiredOnFirstDeclaration(token);
+				}
+
+				// If any qualified version of this variable name has been used, then it is not
+				// legal to declare an unqualified version as well.
+
+				if (GetVariableNames().Select(name => name.UnqualifiedName).Contains(unqualifiedName))
+					isDuplicateDefinition = true;
+			}
+
+			if (_variableIndexByName.ContainsKey(unqualifiedName))
+				isDuplicateDefinition = true;
+		}
+
+		string registrationName = useTypeCharacter ? qualifiedName : unqualifiedName;
 
 		// During semiscope setup, we allow new declarations to shadow
 		// existing ones for DEF FN parameters.
 		if (_semiscopeMode != SemiscopeMode.Setup)
 		{
-			if (_variableIndexByName.ContainsKey(qualifiedName))
-				throw CompilerException.DuplicateDefinition(token);
+			if (_variableIndexByName.ContainsKey(registrationName)
+			 || _variableIndexByName.ContainsKey(qualifiedName))
+				isDuplicateDefinition = true;
 		}
+
+		if (isDuplicateDefinition)
+			throw CompilerException.DuplicateDefinition(token);
 
 		int index = _variables.Count;
 
-		var info = new VariableInfo(name, token, index);
+		var info = new VariableInfo(registrationName, token, index);
 
 		info.Type = dataType;
+		info.HasExplicitTypeClause = hasExplicitTypeClause;
 
 		_variables.Add(info);
 
+		if (!_firstDeclarationByName.ContainsKey(unqualifiedName))
+			_firstDeclarationByName[unqualifiedName] = index;
+
 		if (_semiscopeMode != SemiscopeMode.Setup)
 		{
-			_variableIndexByName[name] = index;
-			if (name != qualifiedName)
+			_variableIndexByName[registrationName] = index;
+			if (dataType.IsPrimitiveType)
 				_variableIndexByName[qualifiedName] = index;
 		}
 		else
 		{
-			_semiscopeOverlay![name] = index;
-			if (name != qualifiedName)
-				_semiscopeOverlay![qualifiedName] = index;
+			_semiscopeOverlay![registrationName] = index;
+			if (dataType.IsPrimitiveType)
+				_semiscopeOverlay[qualifiedName] = index;
 		}
 
 		return index;
+	}
+
+	public int GetVariableByName(string name)
+	{
+		if (_variableIndexByName.TryGetValue(name, out var index))
+			return index;
+
+		return -1;
 	}
 
 	public int ResolveVariable(string name, DataType? dataType = null)
@@ -859,46 +928,86 @@ public class Mapper
 		_predeclaredArrayIndices.Add(nameIndex);
 	}
 
-	public int DeclareArray(string name, DataType dataType, int numberOfDimensions, Token? token = null)
+	public int DeclareArray(string name, DataType dataType, int numberOfDimensions, bool useTypeCharacter = true, bool hasExplicitTypeClause = false, Token? token = null)
 	{
 		if (_isFrozen)
 			throw new Exception("The Mapper is frozen");
 
 		var qualifiedName = QualifyIdentifier(name, dataType);
+		var unqualifiedName = UnqualifyIdentifier(name);
 
-		if (!_arrayIndexByName.TryGetValue(qualifiedName, out var index))
-			index = -1;
+		bool isDuplicateDefinition = false;
 
-		if (index >= 0)
+		if (_module.IsRegistered(Identifier.Standalone(unqualifiedName)))
+			isDuplicateDefinition = true;
+
+		if (!isDuplicateDefinition)
 		{
-			if (!_predeclaredArrayIndices.Remove(index))
-				throw CompilerException.DuplicateDefinition(token);
-		}
-		else
-			index = _variables.Count;
+			if (_firstDeclarationByName.TryGetValue(unqualifiedName, out int firstDeclarationIndex))
+			{
+				var firstDeclaration = _variables[firstDeclarationIndex];
 
-		var info = new VariableInfo(qualifiedName, token, index);
+				if (hasExplicitTypeClause
+				 && !firstDeclaration.HasExplicitTypeClause
+				 && firstDeclaration.Type.Equals(dataType))
+					throw CompilerException.AsClauseRequiredOnFirstDeclaration(token);
+			}
+		}
+
+		int index = -1;
+
+		if (!isDuplicateDefinition)
+		{
+			if (!_arrayIndexByName.TryGetValue(qualifiedName, out index))
+				index = -1;
+
+			if (index >= 0)
+			{
+				var existingVariable = _variables[index];
+
+				if (hasExplicitTypeClause
+				 && !existingVariable.HasExplicitTypeClause
+				 && existingVariable.Type.Equals(dataType))
+					throw CompilerException.AsClauseRequiredOnFirstDeclaration(token);
+
+				if (!_predeclaredArrayIndices.Remove(index))
+					isDuplicateDefinition = true;
+			}
+			else
+				index = _variables.Count;
+		}
+
+		if (isDuplicateDefinition)
+			throw CompilerException.DuplicateDefinition(token);
+
+		string registrationName = useTypeCharacter ? qualifiedName : unqualifiedName;
+
+		var info = new VariableInfo(registrationName, token, index);
 
 		info.Type = dataType;
+		info.HasExplicitTypeClause = hasExplicitTypeClause;
 		info.NumberOfArrayDimensions = numberOfDimensions;
 
 		_variables.Add(info);
 
-		_arrayIndexByName[name] = index;
+		if (!_firstDeclarationByName.ContainsKey(unqualifiedName))
+			_firstDeclarationByName[unqualifiedName] = index;
 
-		if (qualifiedName != name)
+		_arrayIndexByName[registrationName] = index;
+
+		if (dataType.IsPrimitiveType)
 			_arrayIndexByName[qualifiedName] = index;
 
 		return index;
 	}
 
-	public int ResolveArray(string name, DataType? arrayType = null, int numberOfDimensions = -1, Token? nameToken = null)
-		=> ResolveArray(name, arrayType, numberOfDimensions, createImplicitly: false, out _, nameToken);
+	public int ResolveArray(string name, DataType? arrayType = null, int numberOfDimensions = -1, bool useTypeCharacter = true, Token? nameToken = null)
+		=> ResolveArray(name, arrayType, numberOfDimensions, createImplicitly: false, out _, useTypeCharacter, nameToken);
 
-	public int ResolveArray(string name, DataType? arrayType, int numberOfDimensions, out bool implicitlyCreated, Token? nameToken = null)
-		=> ResolveArray(name, arrayType, numberOfDimensions, createImplicitly: true, out implicitlyCreated, nameToken);
+	public int ResolveArray(string name, DataType? arrayType, int numberOfDimensions, out bool implicitlyCreated, bool useTypeCharacter = true, Token? nameToken = null)
+		=> ResolveArray(name, arrayType, numberOfDimensions, createImplicitly: true, out implicitlyCreated, useTypeCharacter, nameToken);
 
-	int ResolveArray(string name, DataType? arrayType, int numberOfDimensions, bool createImplicitly, out bool implicitlyCreated, Token? nameToken = null)
+	int ResolveArray(string name, DataType? arrayType, int numberOfDimensions, bool createImplicitly, out bool implicitlyCreated, bool useTypeCharacter = true, Token? nameToken = null)
 	{
 		void MatchUpNumberOfDimensions(int index)
 		{
@@ -959,7 +1068,7 @@ public class Mapper
 			arrayType = elementType.MakeArrayType();
 		}
 
-		return DeclareArray(qualifiedName, arrayType, numberOfDimensions, nameToken);
+		return DeclareArray(qualifiedName, arrayType, numberOfDimensions, useTypeCharacter, token: nameToken);
 	}
 
 	public bool IsDeclaredVariableOrArray(Identifier identifier)

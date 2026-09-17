@@ -5,7 +5,7 @@ using QBX.ExecutionEngine.Execution;
 
 namespace QBX.ExecutionEngine.Compiled;
 
-public class DataType
+public class DataType : IEquatable<DataType>
 {
 	public readonly PrimitiveDataType PrimitiveType;
 	public readonly UserDataType? UserType;
@@ -163,6 +163,23 @@ public class DataType
 			return UserTypeFacade == otherType.UserTypeFacade;
 
 		return false;
+	}
+
+	public override bool Equals(object? obj)
+		=> Equals(obj as DataType);
+
+	public override int GetHashCode()
+	{
+		var hash = new HashCode();
+
+		hash.Add(IsArray);
+		hash.Add(PrimitiveType);
+		hash.Add(UserType);
+		hash.Add(UserTypeFacade);
+		hash.Add(IsArray);
+		hash.Add(ByteSize);
+
+		return hash.ToHashCode();
 	}
 
 	public override string ToString()

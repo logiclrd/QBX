@@ -180,8 +180,16 @@ public class CompilerException : Exception
 		=> new CompilerException(expression, "Fixed-length string illegal", "-179");
 	public static CompilerException ParameterTypeMismatch(Token? context)
 		=> new CompilerException(context, "Parameter type mismatch", "-182");
+	public static CompilerException AsClauseRequiredOnFirstDeclaration(Token? context)
+		=> new CompilerException(context, "AS clause required on first declaration", "-184");
+	public static CompilerException AsClauseRequired(Token? context)
+		=> new CompilerException(context, "AS clause required", "-185");
 	public static CompilerException StatementsAndLabelsIllegalBetweenSelectCaseAndCase(CodeModel.Statements.Statement? statement)
 		=> new CompilerException(statement, "Statements/labels illegal between SELECT CASE and CASE", "-186");
 	public static CompilerException WrongNumberOfDimensions(Token? context)
 		=> new CompilerException(context, "Wrong number of dimensions", "-190");
+
+	// This weird error doesn't seem to have an associated error code or help context.
+	public static CompilerException SubAndFunctionOrVariableOfSameName(Token? context)
+		=> new CompilerException(context, "Sub and Function or Variable of the same name", helpContextString: "");
 }

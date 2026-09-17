@@ -256,10 +256,18 @@ public class Compiler(IdentifierRepository identifierRepository)
 			module.ResetArrayBase();
 			moduleMapper.HideTypeFacades();
 
+			var mainModuleVariableNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
 			foreach (var routine in routines)
 			{
 				if (routine.IsCallable)
 					routine.Mapper.LinkGlobalVariablesAndArrays();
+
+				// You can't DIM a variable with the same name as a SUB, but when you do this, the
+				// error manifests on the SUB.
+				if ((routine.Source.Type == CodeModel.CompilationElementType.Sub)
+				 && mainModuleVariableNames.Contains(routine.Name.Value))
+					throw CompilerException.SubAndFunctionOrVariableOfSameName(routine.OpeningStatement?.NameToken);
 
 				var element = routine.Source;
 
@@ -388,20 +396,29 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 						if (!variableType.IsArray)
 						{
-							moduleMapper.DeclareVariable(hiddenVariableName, variableType, variable.NameToken);
+							moduleMapper.DeclareVariable(hiddenVariableName, variableType, token: variable.NameToken);
 							mapper.LinkModuleVariable(variable.Name, hiddenVariableName, variableType);
 						}
 						else
 						{
-							moduleMapper.DeclareArray(hiddenVariableName, variableType, numberOfDimensions: -1, variable.NameToken);
+							moduleMapper.DeclareArray(hiddenVariableName, variableType, numberOfDimensions: -1, token: variable.NameToken);
 							mapper.LinkModuleArray(variable.Name, hiddenVariableName, variableType);
 						}
 					}
 				}
 
-				// Keep the main module unfrozen for now in case later routines want
-				// to add variables to make them STATIC.
-				if (routine.Source.Type != CodeModel.CompilationElementType.Main)
+				if (routine.Source.Type == CodeModel.CompilationElementType.Main)
+				{
+					// Keep the main module unfrozen for now in case later routines want
+					// to add variables to make them STATIC. But, capture variable names
+					// to test for collisions with SUB names.
+
+					mainModuleVariableNames.UnionWith(routines
+						.Single(routine => routine.Source.Type == CodeModel.CompilationElementType.Main)
+						.Mapper.GetVariableNames()
+						.Select(name => name.UnqualifiedName));
+				}
+				else
 				{
 					routine.Mapper.Freeze();
 
@@ -1086,7 +1103,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 						variableIndex = mapper.DeclareVariable(
 							declaration.Name,
 							variableTypes[i],
-							declaration.NameToken);
+							token: declaration.NameToken);
 					}
 					else
 					{
@@ -1095,7 +1112,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 							variableTypes[i],
 							declaration.NumberOfDimensions,
 							out bool createdImplicitly,
-							declaration.NameToken);
+							nameToken: declaration.NameToken);
 
 						if (createdImplicitly)
 							mapper.AllowArrayRedeclaration(declaration.Name, variableTypes[i]);
@@ -1388,7 +1405,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 						if (!dimStatement.DeclareScalars)
 							throw new Exception("Internal error: DimStatement that does not declare scalars with a Declaration with no Subscripts");
 
-						variableIndex = mapper.DeclareVariable(declaration.Name, dataType);
+						variableIndex = mapper.DeclareVariable(declaration.Name, dataType, useTypeCharacter, declaration.HasExplicitTypeClause, declaration.NameToken);
 
 						if (dimStatement.Shared)
 						{
@@ -1405,13 +1422,13 @@ public class Compiler(IdentifierRepository identifierRepository)
 						bool isNewArrayVariable = true;
 
 						if (dimStatement.AlwaysDeclareArrays)
-							variableIndex = mapper.DeclareArray(declaration.Name, dataType, declaration.NumberOfDimensions, declaration.NameToken);
+							variableIndex = mapper.DeclareArray(declaration.Name, dataType, declaration.NumberOfDimensions, useTypeCharacter, declaration.HasExplicitTypeClause, declaration.NameToken);
 						else
 						{
 							if (mapper.IsDeclaredArray(declaration.Name, dataType))
-								variableIndex = mapper.ResolveArray(declaration.Name, dataType, declaration.NumberOfDimensions, out isNewArrayVariable, declaration.NameToken);
+								variableIndex = mapper.ResolveArray(declaration.Name, dataType, declaration.NumberOfDimensions, out isNewArrayVariable, useTypeCharacter, declaration.NameToken);
 							else
-								variableIndex = mapper.DeclareArray(declaration.Name, dataType, declaration.NumberOfDimensions, declaration.NameToken);
+								variableIndex = mapper.DeclareArray(declaration.Name, dataType, declaration.NumberOfDimensions, useTypeCharacter, declaration.HasExplicitTypeClause, declaration.NameToken);
 
 							if (routine.IsStaticArray(variableIndex))
 								throw CompilerException.ArrayAlreadyDimensioned(declaration.NameToken);
@@ -3281,21 +3298,30 @@ public class Compiler(IdentifierRepository identifierRepository)
 					{
 						// If the variable is both DIM SHARED from the root scope and SHARED in this scope,
 						// that's okay. We just don't have any work to do here; it's already linked.
-						if (mapper.IsLinkedVariable(declaration.Name))
+						if (mapper.IsLinkedVariable(declaration.Name, variableType))
 							continue;
 
-						mapper.DeclareVariable(declaration.Name, variableType, declaration.NameToken);
+						mapper.DeclareVariable(declaration.Name, variableType, useTypeCharacter, declaration.HasExplicitTypeClause, declaration.NameToken);
 
-						var rootVariableName = declaration.Name;
+						string rootVariableName = declaration.Name;
 
 						if (createNewVariables)
 						{
 							var hiddenVariableName = Identifier.Standalone(
 								"<" + element.Name + ">" + declaration.Name);
 
-							rootMapper.DeclareVariable(hiddenVariableName, variableType, declaration.NameToken);
+							rootMapper.DeclareVariable(hiddenVariableName, variableType, useTypeCharacter, declaration.HasExplicitTypeClause, declaration.NameToken);
 
 							rootVariableName = hiddenVariableName;
+						}
+						else
+						{
+							int moduleIndex = mapper.ModuleMapper.GetVariableByName(rootVariableName);
+
+							var moduleType = mapper.ModuleMapper.GetVariableType(moduleIndex);
+
+							if (moduleType.IsUserType && !declaration.HasExplicitTypeClause)
+								throw CompilerException.AsClauseRequired(declaration.NameToken);
 						}
 
 						mapper.LinkModuleVariable(declaration.Name, rootVariableName, variableType);
@@ -3304,12 +3330,12 @@ public class Compiler(IdentifierRepository identifierRepository)
 					{
 						// If the variable is both DIM SHARED from the root scope and SHARED in this scope,
 						// that's okay. We just don't have any work to do here; it's already linked.
-						if (mapper.IsLinkedArray(declaration.Name))
+						if (mapper.IsLinkedArray(declaration.Name, variableType))
 							continue;
 
 						variableType = variableType.MakeArrayType();
 
-						mapper.DeclareArray(declaration.Name, variableType, numberOfDimensions: -1, declaration.NameToken);
+						mapper.DeclareArray(declaration.Name, variableType, numberOfDimensions: -1, useTypeCharacter, declaration.HasExplicitTypeClause, declaration.NameToken);
 
 						var rootVariableName = declaration.Name;
 
@@ -3318,7 +3344,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 							var hiddenVariableName = Identifier.Standalone(
 								"<" + element.Name + ">" + declaration.Name);
 
-							rootMapper.DeclareArray(hiddenVariableName, variableType, numberOfDimensions: -1, declaration.NameToken);
+							rootMapper.DeclareArray(hiddenVariableName, variableType, numberOfDimensions: -1, useTypeCharacter, declaration.HasExplicitTypeClause, declaration.NameToken);
 
 							rootVariableName = hiddenVariableName;
 						}
@@ -3969,7 +3995,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 				}
 				else
 				{
-					var variableIndex = mapper.ResolveArray(identifier, arrayType: null, callOrIndexExpression.Arguments.Count, out bool implicitlyCreated, identifierToken);
+					var variableIndex = mapper.ResolveArray(identifier, arrayType: null, callOrIndexExpression.Arguments.Count, out bool implicitlyCreated, nameToken: identifierToken);
 
 					if (variableIndex < 0)
 					{

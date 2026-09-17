@@ -80,7 +80,7 @@ public class Routine : Sequence
 		Source = source;
 
 		Mapper = (moduleMapper == null)
-			? new Mapper(this)
+			? new Mapper(module, this)
 			: moduleMapper.CreateScope(this);
 
 		Name = GetName(source);

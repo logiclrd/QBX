@@ -1,5 +1,4 @@
 ﻿using QBX.LexicalAnalysis;
-using QBX.Parser;
 
 namespace QBX.ExecutionEngine.Compiled;
 
@@ -9,4 +8,8 @@ public class VariableName(string name, Token? nameToken, int variableIndex, bool
 	public Token? NameToken => nameToken;
 	public int VariableIndex => variableIndex;
 	public bool IsLinked => isLinked;
+
+	readonly string _unqualifiedName = Mapper.UnqualifyIdentifier(name);
+
+	public string UnqualifiedName => _unqualifiedName;
 }
