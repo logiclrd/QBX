@@ -183,7 +183,10 @@ public class Compiler(IdentifierRepository identifierRepository)
 							typeElementStatements.Add(typeElementStatement);
 							break;
 
-						case CodeModel.Statements.EndTypeStatement:
+						case CodeModel.Statements.EndTypeStatement endTypeStatement:
+							if (!typeElementStatements.Any())
+								throw CompilerException.ElementNotDefined(endTypeStatement.FirstToken);
+
 							TranslateTypeDefinition(typeStatement, typeElementStatements, moduleMapper, compilation, module);
 
 							typeStatement = null;

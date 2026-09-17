@@ -142,6 +142,8 @@ public class CompilerException : Exception
 		=> new CompilerException(statement, "Illegal in SUB, FUNCTION or DEF FN", "-151");
 	public static CompilerException ElementNotDefined(CodeModel.Expressions.Expression? expression)
 		=> new CompilerException(expression, "Element not defined", "-155");
+	public static CompilerException ElementNotDefined(Token? context)
+		=> new CompilerException(context, "Element not defined", "-155");
 	public static CompilerException TypeNotDefined(Token? context)
 		=> new CompilerException(context, "Type not defined", "-156");
 	public static CompilerException EndSubOrEndFunctionMustBeLastLine(CodeModel.Statements.Statement? statement)
