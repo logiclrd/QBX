@@ -471,32 +471,31 @@ public class BasicParser(IdentifierRepository identifierRepository)
 		return ParseStatementWithIndentation(tokens, consumeTokensToEndOfLine: () => Array.Empty<Token>(), isNested, endToken, ignoreErrors);
 	}
 
+	internal static IEnumerable<Token> CollapseWhitespaceTokens(IEnumerable<Token> tokens)
+	{
+		var whitespace = new StringBuilder();
+
+		foreach (var t in tokens)
+		{
+			if (t.Type == TokenType.Whitespace)
+				whitespace.Append(t.Value);
+			else
+			{
+				if (whitespace.Length > 0)
+				{
+					t.PrecedingWhitespace = whitespace + t.PrecedingWhitespace;
+					whitespace.Clear();
+				}
+
+				yield return t;
+			}
+		}
+	}
+
 	internal static void CollapseWhitespaceTokens(ref ListRange<Token> tokens)
 	{
 		if (tokens.Any(token => token.Type == TokenType.Whitespace))
-		{
-			var collapsed = new List<Token>();
-
-			var whitespace = new StringBuilder();
-
-			foreach (var t in tokens)
-			{
-				if (t.Type == TokenType.Whitespace)
-					whitespace.Append(t.Value);
-				else
-				{
-					if (whitespace.Length > 0)
-					{
-						t.PrecedingWhitespace = whitespace + t.PrecedingWhitespace;
-						whitespace.Clear();
-					}
-
-					collapsed.Add(t);
-				}
-			}
-
-			tokens = collapsed;
-		}
+			tokens = CollapseWhitespaceTokens(tokens).ToList();
 	}
 
 	internal Statement ParseStatementWithIndentation(ListRange<Token> tokens, Func<IEnumerable<Token>> consumeTokensToEndOfLine, bool isNested, Token endToken, bool ignoreErrors)
@@ -1856,7 +1855,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 			case TokenType.IF:
 			case TokenType.ELSEIF:
 			{
-				tokens = tokens.Concat(consumeTokensToEndOfLine()).ToList();
+				tokens = tokens.Concat(CollapseWhitespaceTokens(consumeTokensToEndOfLine())).ToList();
 
 				tokenHandler = new TokenHandler(tokens, identifierRepository);
 				tokenHandler.Advance();
