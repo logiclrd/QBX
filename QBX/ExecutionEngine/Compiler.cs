@@ -1377,36 +1377,9 @@ public class Compiler(IdentifierRepository identifierRepository)
 				foreach (var declaration in dimStatement.Declarations)
 				{
 					DataType dataType;
+					bool useTypeCharacter;
 
-					// TODO: it needs to be possible to DIM dotted identifiers
-
-					if (declaration.UserType != null)
-						dataType = mapper.ResolveType(declaration.UserType);
-					else if (declaration.Type != CodeModel.DataType.Unspecified)
-					{
-						if ((declaration.Type == CodeModel.DataType.STRING)
-						 && (declaration.FixedStringLength != null))
-						{
-							int fixedLength;
-
-							if (!int.TryParse(declaration.FixedStringLength, out fixedLength))
-							{
-								if (!mapper.TryResolveConstant(declaration.FixedStringLength, out var constValue)
-								 || !constValue.Type.IsInteger
-								 || (constValue is not IntegerLiteralValue integerConstValue)
-								 || (integerConstValue.Value < 1))
-									throw new CompilerException(declaration.FixedStringLengthToken, "Invalid constant");
-
-								fixedLength = integerConstValue.Value;
-							}
-
-							dataType = DataType.MakeFixedStringType(fixedLength);
-						}
-						else
-							dataType = DataType.FromCodeModelDataType(declaration.Type);
-					}
-					else
-						dataType = DataType.ForPrimitiveDataType(mapper.GetTypeForIdentifier(declaration.Name));
+					dataType = ResolveVariableDeclarationType(declaration, out useTypeCharacter, mapper);
 
 					int variableIndex;
 
@@ -3302,14 +3275,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 				foreach (var declaration in variableScopeStatement.Declarations)
 				{
-					DataType variableType;
-
-					if (declaration.UserType != null)
-						variableType = mapper.ResolveType(declaration.UserType, declaration.TypeToken);
-					else if (declaration.Type != null)
-						variableType = DataType.FromCodeModelDataType(declaration.Type.Value);
-					else
-						variableType = DataType.ForPrimitiveDataType(mapper.GetTypeForIdentifier(declaration.Name));
+					var variableType = ResolveVariableDeclarationType(declaration, out bool useTypeCharacter, mapper);
 
 					if (declaration.IsArray == false)
 					{
@@ -3515,6 +3481,46 @@ public class Compiler(IdentifierRepository identifierRepository)
 
 		if (nextStatementInfo == null)
 			iterator.Advance();
+	}
+
+	DataType ResolveVariableDeclarationType(CodeModel.VariableDeclarationBase declaration, out bool useTypeCharacter, Mapper mapper)
+	{
+		DataType dataType;
+
+		useTypeCharacter = false;
+
+		if (declaration.UserType != null)
+			dataType = mapper.ResolveType(declaration.UserType);
+		else if (declaration.Type != CodeModel.DataType.Unspecified)
+		{
+			if ((declaration.Type == CodeModel.DataType.STRING)
+			 && (declaration.FixedStringLength != null))
+			{
+				int fixedLength;
+
+				if (!int.TryParse(declaration.FixedStringLength, out fixedLength))
+				{
+					if (!mapper.TryResolveConstant(declaration.FixedStringLength, out var constValue)
+					 || !constValue.Type.IsInteger
+					 || (constValue is not IntegerLiteralValue integerConstValue)
+					 || (integerConstValue.Value < 1))
+						throw new CompilerException(declaration.FixedStringLengthToken, "Invalid constant");
+
+					fixedLength = integerConstValue.Value;
+				}
+
+				dataType = DataType.MakeFixedStringType(fixedLength);
+			}
+			else
+				dataType = DataType.FromCodeModelDataType(declaration.Type);
+		}
+		else
+		{
+			dataType = DataType.ForPrimitiveDataType(mapper.GetTypeForIdentifier(declaration.Name));
+			useTypeCharacter = true;
+		}
+
+		return dataType;
 	}
 
 	static bool IsUnintentionalAlias(CodeModel.Expressions.Expression sourceExpression, Evaluable translatedExpression)

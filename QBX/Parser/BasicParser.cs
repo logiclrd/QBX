@@ -3800,7 +3800,9 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 				tokenHandler.ExpectMoreTokens();
 
-				foreach (var declarationTokens in SplitCommaDelimitedList(tokenHandler.RemainingTokens))
+				var endTokenRef = new TokenRef();
+
+				foreach (var declarationTokens in SplitCommaDelimitedList(tokenHandler.RemainingTokens, endTokenRef))
 				{
 					if (declarationTokens.Count == 0)
 					{
@@ -3809,43 +3811,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 						throw new SyntaxErrorException(tokens[range.Offset], "Expected: identifier");
 					}
 
-					var declarationHandler = new TokenHandler(declarationTokens, identifierRepository);
-
-					var declaration = new VariableScopeDeclaration();
-
-					declaration.Name = declarationHandler.ExpectIdentifier(allowTypeCharacter: true, allowDots: true, out declaration.NameToken);
-
-					if (declarationHandler.NextTokenIs(TokenType.OpenParenthesis))
-					{
-						declarationHandler.Expect(TokenType.OpenParenthesis);
-						declarationHandler.Expect(TokenType.CloseParenthesis);
-
-						declaration.IsArray = true;
-					}
-
-					if (declarationHandler.NextTokenIs(TokenType.AS))
-					{
-						if ((declaration.Name is QualifiedIdentifier qualifiedName)
-						 && (qualifiedName.TypeCharacter != null))
-							throw new SyntaxErrorException(declarationTokens[0], "Identifier cannot end with %, &, !, #, $ or @");
-
-						declarationHandler.Advance();
-
-						if (declarationHandler.NextTokenIs(TokenType.Identifier))
-							declaration.UserType = declarationHandler.ExpectIdentifier(allowTypeCharacter: false, allowDots: false, out declaration.TypeToken);
-						else
-						{
-							if (!declarationHandler.NextToken.IsDataType)
-								throw new SyntaxErrorException(declarationHandler.NextToken, "Expected data type");
-
-							declaration.Type = DataTypeConverter.FromToken(declarationHandler.NextToken);
-							declaration.TypeToken = declarationHandler.NextToken;
-
-							declarationHandler.Advance();
-						}
-					}
-
-					declarationHandler.ExpectEndOfTokens();
+					var declaration = ParseVariableScopeDeclaration(declarationTokens, endTokenRef.Token ?? tokenHandler.EndToken);
 
 					scopeStatement.Declarations.Add(declaration);
 				}
@@ -4544,15 +4510,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 	VariableDeclaration ParseVariableDeclaration(ListRange<Token> tokens, Token endToken, bool requireSubscripts)
 	{
-		var tokenHandler = new TokenHandler(tokens, identifierRepository);
-
-		var declaration = new VariableDeclaration();
-
-		tokenHandler.ExpectMoreTokens("Expected variable declaration");
-
-		declaration.Name = tokenHandler.ExpectIdentifier(allowTypeCharacter: true, allowDots: true, out declaration.NameToken);
-
-		if (tokenHandler.NextTokenIs(TokenType.OpenParenthesis))
+		void HandleArraySubscripts(VariableDeclaration declaration, TokenHandler tokenHandler)
 		{
 			declaration.Subscripts = new VariableDeclarationSubscriptList();
 
@@ -4572,6 +4530,81 @@ public class BasicParser(IdentifierRepository identifierRepository)
 					"Expected: expression");
 			}
 		}
+
+		return ParseVariableDeclarationCommon<VariableDeclaration>(
+			tokens,
+			endToken,
+			requireSubscripts,
+			HandleArraySubscripts);
+	}
+
+	private VariableDeclarationSubscript ParseVariableDeclarationSubscript(ListRange<Token> subscriptTokens, Token endToken)
+	{
+		var boundExpressions = SplitDelimitedList(subscriptTokens, TokenType.TO).ToList();
+
+		if (boundExpressions.Count > 2)
+		{
+			var range = boundExpressions[2].Unwrap();
+
+			throw new SyntaxErrorException(range.List[range.Offset - 1], "Expected: )");
+		}
+
+		var subscript = new VariableDeclarationSubscript();
+
+		switch (boundExpressions.Count)
+		{
+			case 1:
+			{
+				subscript.Bound1 = ParseExpression(boundExpressions[0], endToken);
+
+				break;
+			}
+			case 2:
+			{
+				var bound2Range = boundExpressions[1].Unwrap();
+
+				var midToken = bound2Range.List[bound2Range.Offset - 1];
+
+				subscript.Bound1 = ParseExpression(boundExpressions[0], midToken);
+				subscript.Bound2 = ParseExpression(boundExpressions[1], endToken);
+
+				break;
+			}
+		}
+
+		return subscript;
+	}
+
+	private VariableScopeDeclaration ParseVariableScopeDeclaration(ListRange<Token> tokens, Token endToken)
+	{
+		void HandleArraySubscripts(VariableScopeDeclaration declaration, TokenHandler declarationHandler)
+		{
+			declarationHandler.Expect(TokenType.OpenParenthesis);
+			declarationHandler.Expect(TokenType.CloseParenthesis);
+
+			declaration.IsArray = true;
+		}
+
+		return ParseVariableDeclarationCommon<VariableScopeDeclaration>(
+			tokens,
+			endToken,
+			requireSubscripts: false,
+			HandleArraySubscripts);
+	}
+
+	TDeclaration ParseVariableDeclarationCommon<TDeclaration>(ListRange<Token> tokens, Token endToken, bool requireSubscripts, Action<TDeclaration, TokenHandler> handleArraySubscripts)
+		where TDeclaration : VariableDeclarationBase, new()
+	{
+		var tokenHandler = new TokenHandler(tokens, identifierRepository);
+
+		var declaration = new TDeclaration();
+
+		tokenHandler.ExpectMoreTokens("Expected variable declaration");
+
+		declaration.Name = tokenHandler.ExpectIdentifier(allowTypeCharacter: true, allowDots: true, out declaration.NameToken);
+
+		if (tokenHandler.NextTokenIs(TokenType.OpenParenthesis))
+			handleArraySubscripts(declaration, tokenHandler);
 		else if (requireSubscripts)
 		{
 			throw new SyntaxErrorException(
@@ -4654,43 +4687,6 @@ public class BasicParser(IdentifierRepository identifierRepository)
 		tokenHandler.ExpectEndOfTokens();
 
 		return declaration;
-	}
-
-	private VariableDeclarationSubscript ParseVariableDeclarationSubscript(ListRange<Token> subscriptTokens, Token endToken)
-	{
-		var boundExpressions = SplitDelimitedList(subscriptTokens, TokenType.TO).ToList();
-
-		if (boundExpressions.Count > 2)
-		{
-			var range = boundExpressions[2].Unwrap();
-
-			throw new SyntaxErrorException(range.List[range.Offset - 1], "Expected: )");
-		}
-
-		var subscript = new VariableDeclarationSubscript();
-
-		switch (boundExpressions.Count)
-		{
-			case 1:
-			{
-				subscript.Bound1 = ParseExpression(boundExpressions[0], endToken);
-
-				break;
-			}
-			case 2:
-			{
-				var bound2Range = boundExpressions[1].Unwrap();
-
-				var midToken = bound2Range.List[bound2Range.Offset - 1];
-
-				subscript.Bound1 = ParseExpression(boundExpressions[0], midToken);
-				subscript.Bound2 = ParseExpression(boundExpressions[1], endToken);
-
-				break;
-			}
-		}
-
-		return subscript;
 	}
 
 	enum AllowRepresentationSpecifiers
