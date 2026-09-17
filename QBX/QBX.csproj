@@ -18,7 +18,9 @@
 
 	<ItemGroup>
 		<PackageReference Include="SDL3-CS" Version="3.*" />
-		<PackageReference Include="SDL3-CS.Native" Version="3.*" />
+		<PackageReference Include="SDL3-CS.Windows" Version="3.*" />
+		<PackageReference Include="SDL3-CS.Linux" Version="3.*" />
+		<PackageReference Include="SDL3-CS.MacOS" Version="3.*" />
 		<PackageReference Include="CSharpTest.Net.Collections" Version="14.906.1403.1082">
 			<NoWarn>NU1701</NoWarn>
 		</PackageReference>
