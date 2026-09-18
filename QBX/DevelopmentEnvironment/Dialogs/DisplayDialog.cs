@@ -203,22 +203,22 @@ public class DisplayDialog : Dialog
 		cmdHelp.AccessKeyIndex = 0;
 		cmdHelp.Activated += cmdHelp_Activated;
 
-		Widgets.Add(bdrColour);
-		Widgets.Add(lblUserInterfaceElement);
-		Widgets.Add(lstUserInterfaceElement);
-		Widgets.Add(lblForeground);
-		Widgets.Add(lstForeground);
-		Widgets.Add(lblBackground);
-		Widgets.Add(lstBackground);
-		Widgets.Add(lblSampleText);
-		Widgets.Add(bdrDisplayOptions);
-		Widgets.Add(chkScrollBars);
-		Widgets.Add(lblScrollBarsLabel);
-		Widgets.Add(lblTabStops);
-		Widgets.Add(txtTabStops);
-		Widgets.Add(cmdOK);
-		Widgets.Add(cmdCancel);
-		Widgets.Add(cmdHelp);
+		AddWidget(bdrColour);
+		AddWidget(lblUserInterfaceElement);
+		AddWidget(lstUserInterfaceElement);
+		AddWidget(lblForeground);
+		AddWidget(lstForeground);
+		AddWidget(lblBackground);
+		AddWidget(lstBackground);
+		AddWidget(lblSampleText);
+		AddWidget(bdrDisplayOptions);
+		AddWidget(chkScrollBars);
+		AddWidget(lblScrollBarsLabel);
+		AddWidget(lblTabStops);
+		AddWidget(txtTabStops);
+		AddWidget(cmdOK);
+		AddWidget(cmdCancel);
+		AddWidget(cmdHelp);
 
 		SetFocus(lstUserInterfaceElement);
 	}

@@ -20,7 +20,7 @@ public class HelpPopupDialog : Dialog
 		int listBoxLines = this.Height - 4;
 		int visibleLines = listBoxLines - 2;
 
-		Widgets.Add(
+		AddWidget(
 			new VerticalListBox<string>()
 			{
 				X = 1,
@@ -32,7 +32,7 @@ public class HelpPopupDialog : Dialog
 				ShowScrollBar = (visibleLines < topic.Lines.Count),
 			}.AddItems(topic.Lines.Select(line => line.ToPlainTextString())));
 
-		Widgets.Add(
+		AddWidget(
 			new Button()
 			{
 				X = midX - 4,

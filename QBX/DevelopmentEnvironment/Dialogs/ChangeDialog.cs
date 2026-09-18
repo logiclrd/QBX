@@ -24,7 +24,7 @@ public class ChangeDialog : SearchDialogBase
 	}
 #pragma warning restore
 
-	protected override void AddDialogButtons(List<Widget> widgets)
+	protected override void AddDialogButtons()
 	{
 		cmdFindAndVerify = new Button();
 		cmdChangeAll = new Button();
@@ -63,10 +63,10 @@ public class ChangeDialog : SearchDialogBase
 		cmdHelp.AccessKeyIndex = 0;
 		cmdHelp.Activated = cmdHelp_Activated;
 
-		widgets.Add(cmdFindAndVerify);
-		widgets.Add(cmdChangeAll);
-		widgets.Add(cmdCancel);
-		widgets.Add(cmdHelp);
+		AddWidget(cmdFindAndVerify);
+		AddWidget(cmdChangeAll);
+		AddWidget(cmdCancel);
+		AddWidget(cmdHelp);
 	}
 
 	private void cmdFindAndVerify_Activated()

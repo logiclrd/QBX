@@ -22,9 +22,11 @@ public class FindDialog : SearchDialogBase
 	}
 #pragma warning restore
 
-	protected override void ConfigureDialog(List<Widget> widgets)
+	protected override void ConfigureDialog()
 	{
 		Height -= 3;
+
+		var widgets = base.Widgets;
 
 		for (int i=0; i < widgets.Count; i++)
 		{
@@ -32,7 +34,7 @@ public class FindDialog : SearchDialogBase
 
 			if ((widget.Y > 1) && (widget.Y <= 4))
 			{
-				widgets.RemoveAt(i);
+				RemoveWidgetAt(i);
 				i--;
 			}
 
@@ -42,7 +44,7 @@ public class FindDialog : SearchDialogBase
 		}
 	}
 
-	protected override void AddDialogButtons(List<Widget> widgets)
+	protected override void AddDialogButtons()
 	{
 		cmdOK = new Button();
 		cmdCancel = new Button();
@@ -71,9 +73,9 @@ public class FindDialog : SearchDialogBase
 		cmdHelp.AccessKeyIndex = 0;
 		cmdHelp.Activated = cmdHelp_Activated;
 
-		widgets.Add(cmdOK);
-		widgets.Add(cmdCancel);
-		widgets.Add(cmdHelp);
+		AddWidget(cmdOK);
+		AddWidget(cmdCancel);
+		AddWidget(cmdHelp);
 	}
 
 	private void cmdOK_Activated()

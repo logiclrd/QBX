@@ -23,7 +23,7 @@ public class PromptToDeleteProcedureDialog : Dialog
 
 		int midX = (Width - 2) / 2;
 
-		Widgets.Add(
+		AddWidget(
 			new Label()
 			{
 				X = 2,
@@ -31,7 +31,7 @@ public class PromptToDeleteProcedureDialog : Dialog
 				Text = "Delete procedure from module?",
 			}.AutoSize());
 
-		Widgets.Add(
+		AddWidget(
 			new Button()
 			{
 				X = midX - 15,
@@ -41,7 +41,7 @@ public class PromptToDeleteProcedureDialog : Dialog
 				Activated = () => { Close(); OnDelete(); }
 			});
 
-		Widgets.Add(
+		AddWidget(
 			new Button()
 			{
 				X = midX - 4,
@@ -52,7 +52,7 @@ public class PromptToDeleteProcedureDialog : Dialog
 				Activated = () => { Close(); OnDoNotDelete(); }
 			});
 
-		Widgets.Add(
+		AddWidget(
 			new Button()
 			{
 				X = midX + 7,

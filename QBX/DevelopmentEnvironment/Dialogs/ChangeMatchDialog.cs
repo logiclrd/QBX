@@ -77,10 +77,10 @@ public class ChangeMatchDialog : Dialog
 		cmdHelp.AccessKeyIndex = 0;
 		cmdHelp.Activated = cmdHelp_Activated;
 
-		Widgets.Add(cmdChange);
-		Widgets.Add(cmdSkip);
-		Widgets.Add(cmdCancel);
-		Widgets.Add(cmdHelp);
+		AddWidget(cmdChange);
+		AddWidget(cmdSkip);
+		AddWidget(cmdCancel);
+		AddWidget(cmdHelp);
 
 		SetFocus(cmdChange);
 	}

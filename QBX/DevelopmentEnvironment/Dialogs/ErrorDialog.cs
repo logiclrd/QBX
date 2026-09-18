@@ -36,7 +36,7 @@ public class ErrorDialog : Dialog
 
 		int midX = Width / 2;
 
-		Widgets.Add(
+		AddWidget(
 			new Label()
 			{
 				X = (Width - errorMessage.Length) / 2 - 1,
@@ -45,7 +45,7 @@ public class ErrorDialog : Dialog
 				Text = errorMessage,
 			});
 
-		Widgets.Add(
+		AddWidget(
 			new Button()
 			{
 				X = midX - 10,
@@ -55,7 +55,7 @@ public class ErrorDialog : Dialog
 				Activated = cmdOK_Activated
 			});
 
-		Widgets.Add(
+		AddWidget(
 			new Button()
 			{
 				X = midX + 1,

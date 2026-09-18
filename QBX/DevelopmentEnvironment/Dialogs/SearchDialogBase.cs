@@ -122,9 +122,9 @@ public abstract class SearchDialogBase : Dialog
 		}
 	}
 
-	protected abstract void AddDialogButtons(List<Widget> widgets);
+	protected abstract void AddDialogButtons();
 
-	protected virtual void ConfigureDialog(List<Widget> widgets) { }
+	protected virtual void ConfigureDialog() { }
 
 	[MemberNotNull(nameof(lblFindWhat))]
 	[MemberNotNull(nameof(bdrFindWhat))]
@@ -309,21 +309,21 @@ public abstract class SearchDialogBase : Dialog
 
 		var widgets = new List<Widget>();
 
-		widgets.Add(lblFindWhat);
-		widgets.Add(bdrFindWhat);
-		widgets.Add(lblChangeTo);
-		widgets.Add(bdrChangeTo);
-		widgets.Add(chkMatchUpperLowercase);
-		widgets.Add(lblMatchUpperLowercaseLabel);
-		widgets.Add(chkWholeWord);
-		widgets.Add(lblWholeWordLabel);
-		widgets.Add(bdrSearch);
+		AddWidget(lblFindWhat);
+		AddWidget(bdrFindWhat);
+		AddWidget(lblChangeTo);
+		AddWidget(bdrChangeTo);
+		AddWidget(chkMatchUpperLowercase);
+		AddWidget(lblMatchUpperLowercaseLabel);
+		AddWidget(chkWholeWord);
+		AddWidget(lblWholeWordLabel);
+		AddWidget(bdrSearch);
 
-		ConfigureDialog(widgets);
+		ConfigureDialog();
 
-		AddDialogButtons(widgets);
+		AddDialogButtons();
 
-		Widgets.AddRange(widgets);
+		AddWidgets(widgets);
 
 		SetFocus(bdrFindWhat);
 	}

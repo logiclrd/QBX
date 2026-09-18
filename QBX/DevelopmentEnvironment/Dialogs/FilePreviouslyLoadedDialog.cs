@@ -16,7 +16,7 @@ public class FilePreviouslyLoadedDialog : Dialog
 
 		int midX = Width / 2;
 
-		Widgets.Add(
+		AddWidget(
 			new Label()
 			{
 				X = 3,
@@ -25,7 +25,7 @@ public class FilePreviouslyLoadedDialog : Dialog
 				Text = BaseMessage,
 			});
 
-		Widgets.Add(
+		AddWidget(
 			new Label()
 			{
 				X = Width / 2 - filePath.Length / 2,
@@ -33,7 +33,7 @@ public class FilePreviouslyLoadedDialog : Dialog
 				Text = filePath,
 			}.AutoSize());
 
-		Widgets.Add(
+		AddWidget(
 			new Button()
 			{
 				X = midX - 10,
@@ -43,7 +43,7 @@ public class FilePreviouslyLoadedDialog : Dialog
 				Activated = cmdOK_Activated
 			});
 
-		Widgets.Add(
+		AddWidget(
 			new Button()
 			{
 				X = midX + 1,

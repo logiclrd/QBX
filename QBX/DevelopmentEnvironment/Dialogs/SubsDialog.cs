@@ -176,15 +176,15 @@ public class SubsDialog : Dialog
 		cmdHelp.AccessKeyIndex = 0;
 		cmdHelp.Activated = cmdHelp_Activated;
 
-		Widgets.Add(lblChooseProgramItem);
-		Widgets.Add(lstItems);
-		Widgets.Add(lblSelectedItemDescription);
-		Widgets.Add(cmdEditInActive);
-		Widgets.Add(cmdEditInSplit);
-		Widgets.Add(cmdCancel);
-		Widgets.Add(cmdDelete);
-		Widgets.Add(cmdMove);
-		Widgets.Add(cmdHelp);
+		AddWidget(lblChooseProgramItem);
+		AddWidget(lstItems);
+		AddWidget(lblSelectedItemDescription);
+		AddWidget(cmdEditInActive);
+		AddWidget(cmdEditInSplit);
+		AddWidget(cmdCancel);
+		AddWidget(cmdDelete);
+		AddWidget(cmdMove);
+		AddWidget(cmdHelp);
 
 		SetFocus(lstItems);
 	}

@@ -15,7 +15,7 @@ public class MatchNotFoundDialog : Dialog
 		Width = 25;
 		Height = 7;
 
-		Widgets.Add(
+		AddWidget(
 			new Label()
 			{
 				X = 4,
@@ -23,7 +23,7 @@ public class MatchNotFoundDialog : Dialog
 				Text = "Match not found",
 			}.AutoSize());
 
-		Widgets.Add(
+		AddWidget(
 			new Button()
 			{
 				X = 2,
@@ -33,7 +33,7 @@ public class MatchNotFoundDialog : Dialog
 				Activated = () => { Close(); },
 			});
 
-		Widgets.Add(
+		AddWidget(
 			new Button()
 			{
 				X = 13,

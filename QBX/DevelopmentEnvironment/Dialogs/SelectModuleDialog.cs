@@ -116,11 +116,11 @@ public class SelectModuleDialog : Dialog
 		cmdHelp.AccessKeyIndex = 0;
 		cmdHelp.Activated = cmdHelp_Activated;
 
-		Widgets.Add(lblChooseNewMainModule);
-		Widgets.Add(lstItems);
-		Widgets.Add(cmdOK);
-		Widgets.Add(cmdCancel);
-		Widgets.Add(cmdHelp);
+		AddWidget(lblChooseNewMainModule);
+		AddWidget(lstItems);
+		AddWidget(cmdOK);
+		AddWidget(cmdCancel);
+		AddWidget(cmdHelp);
 
 		SetFocus(lstItems);
 	}

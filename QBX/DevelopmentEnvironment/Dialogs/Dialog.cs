@@ -22,16 +22,64 @@ public abstract class Dialog(Machine machine, Configuration configuration) : IFo
 
 	public string Title = "";
 
-	public List<Widget> Widgets = new List<Widget>();
+	public IReadOnlyList<Widget> Widgets => _widgets;
+
+	List<Widget> _widgets = new List<Widget>();
+
+	void AttachWidgetEvents(Widget widget)
+	{
+	}
+
+	void DetachWidgetEvents(Widget widget)
+	{
+	}
+
+	public void AddWidget(Widget widget)
+	{
+		_widgets.Add(widget);
+
+		AttachWidgetEvents(widget);
+	}
+
+	public void AddWidgets(IEnumerable<Widget> widgets)
+	{
+		_widgets.AddRange(widgets);
+
+		foreach (var widget in widgets)
+			AttachWidgetEvents(widget);
+	}
+
+	public void RemoveWidget(Widget widget)
+	{
+		if (_widgets.Remove(widget))
+			DetachWidgetEvents(widget);
+	}
+
+	public void RemoveWidgetAt(int index)
+	{
+		var widget = _widgets[index];
+
+		_widgets.RemoveAt(index);
+
+		DetachWidgetEvents(widget);
+	}
+
+	public void ClearWidgets()
+	{
+		foreach (var widget in _widgets)
+			DetachWidgetEvents(widget);
+
+		_widgets.Clear();
+	}
 
 	public string? HelpContextString;
 
 	public IEnumerable<Widget> EnumerateAllWidgets()
-		=> Widgets.SelectMany(widget => widget.EnumerateAllWidgets());
+		=> _widgets.SelectMany(widget => widget.EnumerateAllWidgets());
 
 	public Widget? FocusedWidget =>
-		((_focusedWidgetIndex >= 0) && (_focusedWidgetIndex < Widgets.Count))
-		? Widgets[_focusedWidgetIndex]
+		((_focusedWidgetIndex >= 0) && (_focusedWidgetIndex < _widgets.Count))
+		? _widgets[_focusedWidgetIndex]
 		: null;
 
 	int _focusedWidgetIndex = -1;
@@ -41,14 +89,14 @@ public abstract class Dialog(Machine machine, Configuration configuration) : IFo
 		while (widget.FocusTarget != null)
 			widget = widget.FocusTarget;
 
-		SetFocus(Widgets.IndexOf(widget));
+		SetFocus(_widgets.IndexOf(widget));
 	}
 
 	AccessKeyMap? _accessKeyMap = null;
 
 	public bool TrySetFocus(byte accessKey)
 	{
-		_accessKeyMap ??= new AccessKeyMap(Widgets);
+		_accessKeyMap ??= new AccessKeyMap(_widgets);
 
 		if (_accessKeyMap.TryGetValue(accessKey, out var widget))
 		{
@@ -80,9 +128,9 @@ public abstract class Dialog(Machine machine, Configuration configuration) : IFo
 	{
 		if (index != _focusedWidgetIndex)
 		{
-			if ((_focusedWidgetIndex >= 0) && (_focusedWidgetIndex < Widgets.Count))
+			if ((_focusedWidgetIndex >= 0) && (_focusedWidgetIndex < _widgets.Count))
 			{
-				var widget = Widgets[_focusedWidgetIndex];
+				var widget = _widgets[_focusedWidgetIndex];
 
 				widget.IsFocused = false;
 				widget.NotifyLostFocus(this);
@@ -90,9 +138,9 @@ public abstract class Dialog(Machine machine, Configuration configuration) : IFo
 
 			_focusedWidgetIndex = index;
 
-			if ((_focusedWidgetIndex >= 0) && (_focusedWidgetIndex < Widgets.Count))
+			if ((_focusedWidgetIndex >= 0) && (_focusedWidgetIndex < _widgets.Count))
 			{
-				var widget = Widgets[_focusedWidgetIndex];
+				var widget = _widgets[_focusedWidgetIndex];
 
 				widget.IsFocused = true;
 				widget.NotifyGotFocus(this);
@@ -133,7 +181,7 @@ public abstract class Dialog(Machine machine, Configuration configuration) : IFo
 
 	public void RenderWidgets(TextLibrary visual, IntegerRect bounds)
 	{
-		foreach (var widget in Widgets)
+		foreach (var widget in _widgets)
 		{
 			configuration.DisplayAttributes.DialogBoxNormalText.Set(visual);
 
@@ -177,10 +225,10 @@ public abstract class Dialog(Machine machine, Configuration configuration) : IFo
 				do
 				{
 					if (input.Modifiers.ShiftKey)
-						newFocusedWidgetIndex = (newFocusedWidgetIndex + Widgets.Count - 1) % Widgets.Count;
+						newFocusedWidgetIndex = (newFocusedWidgetIndex + _widgets.Count - 1) % _widgets.Count;
 					else
-						newFocusedWidgetIndex = (newFocusedWidgetIndex + 1) % Widgets.Count;
-				} while (!Widgets[newFocusedWidgetIndex].IsTabStop);
+						newFocusedWidgetIndex = (newFocusedWidgetIndex + 1) % _widgets.Count;
+				} while (!_widgets[newFocusedWidgetIndex].IsTabStop);
 
 				SetFocus(newFocusedWidgetIndex);
 

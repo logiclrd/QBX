@@ -35,7 +35,7 @@ public class PromptToSaveDialog : Dialog
 
 		int midX = (Width - 2) / 2;
 
-		Widgets.Add(
+		AddWidget(
 			new Label()
 			{
 				X = 2,
@@ -43,7 +43,7 @@ public class PromptToSaveDialog : Dialog
 				Text = "One or more loaded files are not saved. Save them now?",
 			}.AutoSize());
 
-		Widgets.Add(
+		AddWidget(
 			new Button()
 			{
 				X = midX - 20,
@@ -53,7 +53,7 @@ public class PromptToSaveDialog : Dialog
 				Activated = () => { Close(); OnSave(); },
 			});
 
-		Widgets.Add(
+		AddWidget(
 			new Button()
 			{
 				X = midX - 10,
@@ -64,7 +64,7 @@ public class PromptToSaveDialog : Dialog
 				Activated = () => { Close(); OnDoNotSave(); },
 			});
 
-		Widgets.Add(
+		AddWidget(
 			new Button()
 			{
 				X = midX + 1,
@@ -74,7 +74,7 @@ public class PromptToSaveDialog : Dialog
 				Activated = Close,
 			});
 
-		Widgets.Add(
+		AddWidget(
 			new Button()
 			{
 				X = midX + 12,

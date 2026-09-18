@@ -18,7 +18,7 @@ public class CannotContinueDialog : Dialog
 		Height = 7;
 		HelpContextString = "-198";
 
-		Widgets.Add(
+		AddWidget(
 			new Label()
 			{
 				X = 2,
@@ -27,7 +27,7 @@ public class CannotContinueDialog : Dialog
 				Text = Message,
 			});
 
-		Widgets.Add(
+		AddWidget(
 			new Button()
 			{
 				X = 23,
@@ -37,7 +37,7 @@ public class CannotContinueDialog : Dialog
 				Activated = cmdOK_Activated
 			});
 
-		Widgets.Add(
+		AddWidget(
 			new Button()
 			{
 				X = 33,
@@ -47,7 +47,7 @@ public class CannotContinueDialog : Dialog
 				Activated = cmdCancel_Activated
 			});
 
-		Widgets.Add(
+		AddWidget(
 			new Button()
 			{
 				X = 44,

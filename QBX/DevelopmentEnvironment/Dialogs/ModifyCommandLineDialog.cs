@@ -88,11 +88,11 @@ public class ModifyCommandLineDialog : Dialog
 		cmdHelp.Text = "Help";
 		cmdHelp.Activated += cmdHelp_Activated;
 
-		Widgets.Add(lblPrompt);
-		Widgets.Add(bdrCommandLine);
-		Widgets.Add(cmdOK);
-		Widgets.Add(cmdCancel);
-		Widgets.Add(cmdHelp);
+		AddWidget(lblPrompt);
+		AddWidget(bdrCommandLine);
+		AddWidget(cmdOK);
+		AddWidget(cmdCancel);
+		AddWidget(cmdHelp);
 
 		SetFocus(bdrCommandLine);
 	}

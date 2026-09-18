@@ -144,16 +144,16 @@ public class OpenFileDialog : DialogWithDirectoryList
 		cmdHelp.AccessKeyIndex = 0;
 		cmdHelp.Activated = cmdHelp_Activated;
 
-		Widgets.Add(lblFileName);
-		Widgets.Add(bdrFileName);
-		Widgets.Add(lblCurrentDirectory);
-		Widgets.Add(lblFiles);
-		Widgets.Add(lstFiles);
-		Widgets.Add(lblDirectories);
-		Widgets.Add(lstDirectories);
-		Widgets.Add(cmdOK);
-		Widgets.Add(cmdCancel);
-		Widgets.Add(cmdHelp);
+		AddWidget(lblFileName);
+		AddWidget(bdrFileName);
+		AddWidget(lblCurrentDirectory);
+		AddWidget(lblFiles);
+		AddWidget(lstFiles);
+		AddWidget(lblDirectories);
+		AddWidget(lstDirectories);
+		AddWidget(cmdOK);
+		AddWidget(cmdCancel);
+		AddWidget(cmdHelp);
 
 		SetFocus(bdrFileName);
 	}

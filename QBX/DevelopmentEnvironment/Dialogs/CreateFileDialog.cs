@@ -157,12 +157,12 @@ public class CreateFileDialog : Dialog
 		cmdHelp.AccessKeyIndex = 0;
 		cmdHelp.Activated = cmdHelp_Activated;
 
-		Widgets.Add(lblFileName);
-		Widgets.Add(bdrFileName);
-		Widgets.Add(cnvFileTypes);
-		Widgets.Add(cmdOK);
-		Widgets.Add(cmdCancel);
-		Widgets.Add(cmdHelp);
+		AddWidget(lblFileName);
+		AddWidget(bdrFileName);
+		AddWidget(cnvFileTypes);
+		AddWidget(cmdOK);
+		AddWidget(cmdCancel);
+		AddWidget(cmdHelp);
 
 		formatGroup.Select(optModule, cnvFileTypes);
 

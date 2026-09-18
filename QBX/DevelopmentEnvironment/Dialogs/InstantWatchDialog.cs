@@ -83,12 +83,12 @@ public class InstantWatchDialog : Dialog
 		cmdHelp.AccessKeyIndex = 0;
 		cmdHelp.Activated = OnShowHelpPopup;
 
-		Widgets.Add(bdrExpression);
-		Widgets.Add(bdrValue);
+		AddWidget(bdrExpression);
+		AddWidget(bdrValue);
 
-		Widgets.Add(cmdAddWatch);
-		Widgets.Add(cmdCancel);
-		Widgets.Add(cmdHelp);
+		AddWidget(cmdAddWatch);
+		AddWidget(cmdCancel);
+		AddWidget(cmdHelp);
 
 		SetFocus(cmdAddWatch);
 	}

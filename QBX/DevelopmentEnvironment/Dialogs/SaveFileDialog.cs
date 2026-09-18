@@ -199,15 +199,15 @@ public class SaveFileDialog : DialogWithDirectoryList
 		cmdHelp.AccessKeyIndex = 0;
 		cmdHelp.Activated = cmdHelp_Activated;
 
-		Widgets.Add(lblFileName);
-		Widgets.Add(bdrFileName);
-		Widgets.Add(lblCurrentDirectory);
-		Widgets.Add(lblDirectories);
-		Widgets.Add(lstDirectories);
-		Widgets.Add(bdrFormat);
-		Widgets.Add(cmdOK);
-		Widgets.Add(cmdCancel);
-		Widgets.Add(cmdHelp);
+		AddWidget(lblFileName);
+		AddWidget(bdrFileName);
+		AddWidget(lblCurrentDirectory);
+		AddWidget(lblDirectories);
+		AddWidget(lstDirectories);
+		AddWidget(bdrFormat);
+		AddWidget(cmdOK);
+		AddWidget(cmdCancel);
+		AddWidget(cmdHelp);
 
 		formatGroup.Select(optText, cnvFormats);
 
