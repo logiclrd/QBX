@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 
+using QBX.CodeModel;
 using QBX.DevelopmentEnvironment.Dialogs;
 using QBX.DevelopmentEnvironment.Help;
 using QBX.ExecutionEngine;
@@ -12,6 +13,7 @@ using QBX.ExecutionEngine.Execution;
 using QBX.ExecutionEngine.Execution.Events;
 using QBX.Firmware;
 using QBX.Hardware;
+using QBX.Parser;
 using QBX.QuickLibraries;
 
 namespace QBX.DevelopmentEnvironment;
@@ -648,6 +650,53 @@ public partial class Program : HostedProgram, IOvertypeFlag
 		}
 	}
 
+	Viewport AttachViewport(Viewport viewport)
+	{
+		viewport.GetElementByName += viewport_GetElementByName;
+
+		return viewport;
+	}
+
+	IEditableElement? viewport_GetElementByName(string name)
+	{
+		var identifier = Identifier.Standalone(name);
+
+		if (identifier is QualifiedIdentifier qualifiedIdentifier)
+			identifier = qualifiedIdentifier.UnqualifiedIdentifier;
+
+		foreach (var unit in LoadedFiles)
+		{
+			foreach (var element in unit.Elements)
+				if (element.DisplayName == identifier)
+					return element;
+		}
+
+		return null;
+	}
+
+	public void ActivateViewportForElement(IEditableElement element)
+	{
+		if (FocusedViewport.EditableElement != element)
+		{
+			if (element.Name == ImmediateRoutineName)
+				FocusedViewport = ImmediateViewport;
+			else
+			{
+				if (PrimaryViewport.EditableElement == element)
+					FocusedViewport = PrimaryViewport;
+				else if (SplitViewport?.EditableElement == element)
+					FocusedViewport = SplitViewport;
+
+				if ((FocusedViewport == HelpViewport)
+				 || (FocusedViewport == ImmediateViewport))
+					FocusedViewport = PrimaryViewport;
+
+				if (FocusedViewport.EditableElement != element)
+					FocusedViewport.SwitchTo(element);
+			}
+		}
+	}
+
 	public void SwitchToNextViewport()
 	{
 		// Forward
@@ -676,6 +725,61 @@ public partial class Program : HostedProgram, IOvertypeFlag
 			FocusedViewport = SplitViewport ?? PrimaryViewport;
 
 		UpdateSearchMenu();
+	}
+
+	[MemberNotNull(nameof(SplitViewport))]
+	void ShowSplitViewport()
+	{
+		if (SplitViewport != null)
+			return;
+
+		SplitViewport = AttachViewport(new Viewport(Clipboard));
+
+		// Height does not include the top frame line.
+		int totalPrimaryHeight = PrimaryViewport.Height + 1;
+
+		int totalSplitHeight = totalPrimaryHeight / 2;
+
+		totalPrimaryHeight -= totalSplitHeight;
+
+		// Height does not include the top frame line.
+		PrimaryViewport.Height = totalPrimaryHeight - 1;
+		SplitViewport.Height = totalSplitHeight - 1;
+
+		int reclaimLines = 0;
+
+		if (PrimaryViewport.Height < 1)
+		{
+			reclaimLines += 1 - PrimaryViewport.Height;
+			PrimaryViewport.Height = 1;
+		}
+
+		if (SplitViewport.Height < 1)
+		{
+			reclaimLines += 1 - SplitViewport.Height;
+			SplitViewport.Height = 1;
+		}
+
+		if (reclaimLines > 0)
+		{
+			while ((ImmediateViewport.Height > 1) && (reclaimLines > 0))
+			{
+				ImmediateViewport.Height--;
+				reclaimLines--;
+			}
+
+			if ((reclaimLines > 0) && (HelpViewport != null))
+			{
+				while ((HelpViewport.Height > 1) && (reclaimLines > 0))
+				{
+					HelpViewport.Height--;
+					reclaimLines--;
+				}
+			}
+		}
+
+		if (FocusedViewport.EditableElement is IEditableElement element)
+			SplitViewport.SwitchTo(element);
 	}
 
 	public TDialog ShowDialog<TDialog>(TDialog dialog)

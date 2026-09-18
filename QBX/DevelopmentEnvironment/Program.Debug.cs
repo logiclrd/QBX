@@ -33,29 +33,6 @@ public partial class Program
 	HashSet<CodeLine> _breakpoints = new HashSet<CodeLine>();
 	List<Watch> _watches = new List<Watch>();
 
-	void ActivateViewportForElement(IEditableElement element)
-	{
-		if (FocusedViewport.EditableElement != element)
-		{
-			if (element.Name == ImmediateRoutineName)
-				FocusedViewport = ImmediateViewport;
-			else
-			{
-				if (PrimaryViewport.EditableElement == element)
-					FocusedViewport = PrimaryViewport;
-				else if (SplitViewport?.EditableElement == element)
-					FocusedViewport = SplitViewport;
-
-				if ((FocusedViewport == HelpViewport)
-				 || (FocusedViewport == ImmediateViewport))
-					FocusedViewport = PrimaryViewport;
-
-				if (FocusedViewport.EditableElement != element)
-					FocusedViewport.SwitchTo(element);
-			}
-		}
-	}
-
 	private bool ClearNextStatement()
 	{
 		bool hadNextStatement = (_nextStatement != null);
