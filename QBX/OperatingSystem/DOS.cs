@@ -433,8 +433,8 @@ public partial class DOS
 
 	public void Beep()
 	{
-		_machine.Speaker.ChangeSound(true, false, frequency: 1000, false, hold: TimeSpan.FromMilliseconds(200));
-		_machine.Speaker.ChangeSound(false, false, frequency: 1000, false);
+		_machine.Speaker.ChangeSound(true, false, frequency: 900, false, hold: TimeSpan.FromMilliseconds(275)); // About 5 timer ticks
+		_machine.Speaker.ChangeSound(false, false, frequency: 900, false);
 	}
 
 	public void FlushStandardInput()
