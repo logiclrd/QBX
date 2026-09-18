@@ -556,6 +556,12 @@ public partial class Program : HostedProgram, IOvertypeFlag
 
 	bool _closeRequested;
 
+	public void Beep()
+	{
+		Machine.Speaker.ChangeSound(true, false, frequency: 750, false, hold: TimeSpan.FromMilliseconds(55)); // About 1 timer tick
+		Machine.Speaker.ChangeSound(false, false, frequency: 750, false);
+	}
+
 	public override void Run(CancellationToken cancellationToken)
 	{
 		if (Aborted)
@@ -680,6 +686,19 @@ public partial class Program : HostedProgram, IOvertypeFlag
 		dialog.Y = (TextLibrary.Height - dialog.Height) / 2;
 
 		Dialogs.Add(dialog);
+
+		dialog.Beep +=
+			() =>
+			{
+				Beep();
+			};
+
+		dialog.SetClipboard +=
+			(newValue) =>
+			{
+				Clipboard.Clear();
+				Clipboard.ContentSingleLine = newValue;
+			};
 
 		dialog.ShowHelpPopup +=
 			(_, helpContextString) =>

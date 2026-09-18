@@ -719,7 +719,7 @@ public partial class Program
 		switch (action)
 		{
 			case TextEditorAction.Beep:
-				Machine.DOS.Beep();
+				Beep();
 				break;
 
 			case TextEditorAction.Menu:

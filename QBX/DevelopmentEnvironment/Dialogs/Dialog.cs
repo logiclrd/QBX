@@ -26,12 +26,22 @@ public abstract class Dialog(Machine machine, Configuration configuration) : IFo
 
 	List<Widget> _widgets = new List<Widget>();
 
+	public event Action? Beep;
+	public event Action<string>? SetClipboard;
+
+	void widget_Beep() => Beep?.Invoke();
+	void widget_SetClipboard(string newValue) => SetClipboard?.Invoke(newValue);
+
 	void AttachWidgetEvents(Widget widget)
 	{
+		widget.Beep += widget_Beep;
+		widget.SetClipboard += widget_SetClipboard;
 	}
 
 	void DetachWidgetEvents(Widget widget)
 	{
+		widget.Beep -= widget_Beep;
+		widget.SetClipboard -= widget_SetClipboard;
 	}
 
 	public void AddWidget(Widget widget)

@@ -20,6 +20,8 @@ public abstract class Widget
 
 	public Action? GotFocus;
 	public Action? LostFocus;
+	public Action? Beep;
+	public Action<string>? SetClipboard;
 
 	internal virtual void NotifyGotFocus(IFocusContext focusContext) => GotFocus?.Invoke();
 	internal virtual void NotifyLostFocus(IFocusContext focusContext) => LostFocus?.Invoke();

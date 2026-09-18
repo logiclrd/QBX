@@ -26,6 +26,9 @@ public class Border : Widget, IWrapperWidget
 	{
 		Child = child;
 
+		child.Beep += () => Beep?.Invoke();
+		child.SetClipboard += (newValue) => SetClipboard?.Invoke(newValue);
+
 		X = child.X - 1;
 		Y = child.Y - 1;
 		Width = child.Width + 2;
