@@ -311,7 +311,6 @@ public partial class Program
 						{
 							case (char)10:
 							case (char)13:
-								_inTextEditorChord = TextEditorChordType.CtrlP;
 								action = TextEditorAction.Beep;
 								break;
 							default:
