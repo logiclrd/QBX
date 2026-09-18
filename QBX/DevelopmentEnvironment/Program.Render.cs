@@ -979,15 +979,15 @@ public partial class Program
 
 			_statusCharBuffer[0] = CP437Encoding.GetByteGraphic('│');
 
-			if (_inTextEditorChord != TextEditorChordType.None)
+			if (TextInputChordManager.ChordType != TextInputChordType.None)
 			{
 				_statusCharBuffer[2] = (byte)'^';
 
-				switch (_inTextEditorChord)
+				switch (TextInputChordManager.ChordType)
 				{
-					case TextEditorChordType.CtrlK: _statusCharBuffer[3] = (byte)'K'; break;
-					case TextEditorChordType.CtrlP: _statusCharBuffer[3] = (byte)'P'; break;
-					case TextEditorChordType.CtrlQ: _statusCharBuffer[3] = (byte)'Q'; break;
+					case TextInputChordType.CtrlK: _statusCharBuffer[3] = (byte)'K'; break;
+					case TextInputChordType.CtrlP: _statusCharBuffer[3] = (byte)'P'; break;
+					case TextInputChordType.CtrlQ: _statusCharBuffer[3] = (byte)'Q'; break;
 				}
 			}
 

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -18,17 +17,7 @@ namespace QBX.DevelopmentEnvironment;
 public partial class Program
 {
 	bool _alreadyPresentedError = false;
-	TextEditorChordType _inTextEditorChord = TextEditorChordType.None;
 	bool _performCutAfterRender;
-
-	enum TextEditorChordType
-	{
-		None,
-
-		CtrlP, // quote character
-		CtrlQ, // editor shortcut
-		CtrlK, // set bookmark
-	}
 
 	enum TextEditorAction
 	{
@@ -279,11 +268,11 @@ public partial class Program
 		if (input.ScanCode == ScanCode.Alt)
 			action = TextEditorAction.Menu;
 
-		var wasInChord = _inTextEditorChord;
+		var wasInChord = TextInputChordManager.ChordType;
 
-		if (_inTextEditorChord != TextEditorChordType.None)
+		if (TextInputChordManager.ChordType != TextInputChordType.None)
 		{
-			_inTextEditorChord = TextEditorChordType.None;
+			TextInputChordManager.ChordType = TextInputChordType.None;
 
 			isNormalText = false;
 
@@ -296,13 +285,13 @@ public partial class Program
 				case ScanCode.F4:
 				case ScanCode.F6:
 				case ScanCode.F9:
-					_inTextEditorChord = wasInChord;
+					TextInputChordManager.ChordType = wasInChord;
 					break;
 			}
 
 			switch (wasInChord)
 			{
-				case TextEditorChordType.CtrlK:
+				case TextInputChordType.CtrlK:
 				{
 					switch (input.TextCharacter)
 					{
@@ -314,7 +303,7 @@ public partial class Program
 
 					break;
 				}
-				case TextEditorChordType.CtrlP:
+				case TextInputChordType.CtrlP:
 				{
 					if (input.HasTextCharacter)
 					{
@@ -336,7 +325,7 @@ public partial class Program
 						{
 							case ScanCode.Return:
 							case ScanCode.Delete:
-								_inTextEditorChord = TextEditorChordType.CtrlP;
+								TextInputChordManager.ChordType = TextInputChordType.CtrlP;
 								action = TextEditorAction.Beep;
 								break;
 
@@ -361,7 +350,7 @@ public partial class Program
 								break;
 
 							default:
-								_inTextEditorChord = wasInChord;
+								TextInputChordManager.ChordType = wasInChord;
 								break;
 						}
 					}
@@ -371,7 +360,7 @@ public partial class Program
 
 					break;
 				}
-				case TextEditorChordType.CtrlQ:
+				case TextInputChordType.CtrlQ:
 				{
 					if (input.HasTextCharacter)
 					{
@@ -400,7 +389,7 @@ public partial class Program
 			}
 		}
 
-		if ((action == TextEditorAction.None) && (wasInChord == TextEditorChordType.None))
+		if ((action == TextEditorAction.None) && (wasInChord == TextInputChordType.None))
 		{
 			switch (input.TextCharacter)
 			{
@@ -413,10 +402,11 @@ public partial class Program
 				case (char)('G' - 64): action = TextEditorAction.Del; break;
 				case (char)('H' - 64): action = TextEditorAction.Backspace; break;
 				case (char)('J' - 64): action = TextEditorAction.NextLine; break;
-				case (char)('K' - 64): _inTextEditorChord = TextEditorChordType.CtrlK; break;
+				case (char)('K' - 64): TextInputChordManager.ChordType = TextInputChordType.CtrlK; break;
 				case (char)('N' - 64): action = TextEditorAction.SplitLine; break;
-				case (char)('P' - 64): _inTextEditorChord = TextEditorChordType.CtrlP; break;
-				case (char)('Q' - 64): _inTextEditorChord = TextEditorChordType.CtrlQ; break;
+				case (char)('O' - 64): action = TextEditorAction.Beep; break;
+				case (char)('P' - 64): TextInputChordManager.ChordType = TextInputChordType.CtrlP; break;
+				case (char)('Q' - 64): TextInputChordManager.ChordType = TextInputChordType.CtrlQ; break;
 				case (char)('R' - 64): action = TextEditorAction.PageUp; break;
 				case (char)('S' - 64): action = TextEditorAction.CharLeft; break;
 				case (char)('T' - 64): action = TextEditorAction.DelWord; break;
