@@ -47,36 +47,43 @@ DO
     a$ = INKEY$
   LOOP WHILE a$ = ""
 
-  CLS
+  sel% = VAL(a$)
 
-  SELECT CASE a$
-    CASE "1":
-      GenerateMazeHuntAndKill maze%(), 0, 0 ' no bias to straight lines
-      DrawMaze maze%()
-      WHILE INKEY$ = "": WEND
-    CASE "2":
-      GenerateMazeHuntAndKill maze%(), 5, 0 ' prefer straight lines
-      DrawMaze maze%()
-      WHILE INKEY$ = "": WEND
-    CASE "3":
-      GenerateMazeHuntAndKill maze%(), 0, 1 ' prefer vertical axis
-      DrawMaze maze%()
-      WHILE INKEY$ = "": WEND
-    CASE "4":
-      GenerateMazeHuntAndKill maze%(), 0, 2 ' prefer horizontal axis
-      DrawMaze maze%()
-      WHILE INKEY$ = "": WEND
-    CASE "5":
-      LoadImage "BOXES.RAW", image%()
-      GenerateMazeHuntAndKillImage maze%(), image%()
-      DrawMaze maze%()
-      WHILE INKEY$ = "": WEND
-    CASE "6":
-      LoadImage "SIMON.RAW", image%()
-      GenerateMazeHuntAndKillImage maze%(), image%()
-      DrawMaze maze%()
-      WHILE INKEY$ = "": WEND
-  END SELECT
+  IF sel% >= 1 AND sel% <= 6 THEN
+    FOR x% = 0 TO 639
+      FOR y% = (sel% - 1) * 16 TO sel% * 16 - 1
+        PSET (x%, y%), POINT(x%, y%) XOR 15
+      NEXT y%
+    NEXT x%
+
+    st# = TIMER
+    FOR delay% = 1 TO 5
+      WHILE st# = TIMER: WEND
+      st# = TIMER
+    NEXT delay%
+
+    CLS
+
+    SELECT CASE sel%
+      CASE 1:
+        GenerateMazeHuntAndKill maze%(), 0, 0 ' no bias to straight lines
+      CASE 2:
+        GenerateMazeHuntAndKill maze%(), 5, 0 ' prefer straight lines
+      CASE 3:
+        GenerateMazeHuntAndKill maze%(), 0, 1 ' prefer vertical axis
+      CASE 4:
+        GenerateMazeHuntAndKill maze%(), 0, 2 ' prefer horizontal axis
+      CASE 5:
+        LoadImage "BOXES.RAW", image%()
+        GenerateMazeHuntAndKillImage maze%(), image%()
+      CASE 6:
+        LoadImage "SIMON.RAW", image%()
+        GenerateMazeHuntAndKillImage maze%(), image%()
+    END SELECT
+
+    DrawMaze maze%()
+    WHILE INKEY$ = "": WEND
+  END IF
 LOOP UNTIL ASC(a$) = 27
 
 SCREEN 0
