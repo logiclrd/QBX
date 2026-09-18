@@ -674,6 +674,18 @@ public partial class Program : HostedProgram, IOvertypeFlag
 		return null;
 	}
 
+	void ActivateViewportsForNewUnit(IEditableUnit unit)
+	{
+		if ((FocusedViewport == HelpViewport)
+		 || (FocusedViewport == ImmediateViewport))
+			FocusedViewport = PrimaryViewport;
+
+		PrimaryViewport.SwitchTo(unit.Elements[0]);
+
+		if (SplitViewport != null)
+			SplitViewport.SwitchTo(unit.Elements[0]);
+	}
+
 	public void ActivateViewportForElement(IEditableElement element)
 	{
 		if (FocusedViewport.EditableElement != element)

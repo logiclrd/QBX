@@ -40,10 +40,7 @@ namespace QBX.DevelopmentEnvironment
 			LoadedFiles.Add(unit);
 			ResetCallsMenu();
 
-			PrimaryViewport.SwitchTo(unit.Elements[0]);
-
-			if (SplitViewport != null)
-				SplitViewport.SwitchTo(unit.Elements[0]);
+			ActivateViewportsForNewUnit(unit);
 		}
 
 		public void LoadFile(string path, bool replaceExistingProgram, Action<int>? lineCountCallback = null, CodeModel.Statements.Statement? errorContext = null)
@@ -155,10 +152,10 @@ namespace QBX.DevelopmentEnvironment
 			if (unit != mainModule)
 				mainModule.IsPristine = false; // trigger save to .MAK file
 
-			PrimaryViewport.SwitchTo(unit.Elements[0]);
-
-			if (SplitViewport != null)
-				SplitViewport.SwitchTo(unit.Elements[0]);
+			if (LoadedFiles.Count == 1)
+				ActivateViewportsForNewUnit(unit);
+			else
+				ActivateViewportForElement(unit.Elements[0]);
 		}
 
 		private bool FileIsAlreadyLoaded(string filePath)
@@ -307,8 +304,9 @@ namespace QBX.DevelopmentEnvironment
 			try
 			{
 				var dummyUnit = CompilationUnit.CreateNew();
+				var dummyElement = dummyUnit.Elements[0];
 
-				FocusedViewport.SwitchTo(dummyUnit.Elements[0]);
+				ActivateViewportsForNewUnit(dummyUnit);
 
 				while (true)
 				{
@@ -316,6 +314,7 @@ namespace QBX.DevelopmentEnvironment
 
 					if (relativePath == null)
 					{
+						// Finished .MAK file; return the focused viewport to the first loaded unit.
 						FocusedViewport.SwitchTo(LoadedFiles[0].Elements[0]);
 						break;
 					}
@@ -338,6 +337,9 @@ namespace QBX.DevelopmentEnvironment
 
 							if (showIDEUIFeedback)
 							{
+								// Show blank content with the heading set to the file that's being loaded.
+								ActivateViewportForElement(dummyElement);
+
 								FocusedViewport.Heading = ShortPath.GetFileName(resolvedPath);
 								Render();
 
@@ -358,9 +360,10 @@ namespace QBX.DevelopmentEnvironment
 									lineCountCallback: lineCountCallback);
 							}
 
-							success = true;
+							if (LoadedFiles.Count == 1)
+								ActivateViewportsForNewUnit(LoadedFiles[0]);
 
-							FocusedViewport.SwitchTo(dummyUnit.Elements[0]);
+							success = true;
 						}
 					}
 				}
