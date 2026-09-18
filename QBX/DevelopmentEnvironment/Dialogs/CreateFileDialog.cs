@@ -2,6 +2,9 @@
 using System.Diagnostics.CodeAnalysis;
 
 using QBX.DevelopmentEnvironment.Dialogs.Widgets;
+using QBX.ExecutionEngine;
+using QBX.ExecutionEngine.Compiled.Statements;
+using QBX.Firmware.Fonts;
 using QBX.Hardware;
 
 namespace QBX.DevelopmentEnvironment.Dialogs;
@@ -27,7 +30,67 @@ public class CreateFileDialog : Dialog
 	Button cmdCancel;
 	Button cmdHelp;
 
-	public string FileName => txtFileName.Text.ToString();
+	public string FileName
+	{
+		get
+		{
+			var inputStringValue = txtFileName.Text;
+
+			for (int i=0; i < inputStringValue.Length; i++)
+				inputStringValue[i] = CP437Encoding.ToUpper(inputStringValue[i]);
+
+			string input = inputStringValue.ToString();
+
+			if (input.Contains(' '))
+				throw RuntimeException.BadFileName();
+
+			int dotIndex = input.IndexOf('.');
+
+			string fileName;
+			string extension;
+
+			if (dotIndex < 0)
+			{
+				if (input.Length > 8)
+				{
+					int extensionLength = input.Length - 8;
+
+					if (extensionLength > 3)
+						extensionLength = 3;
+
+					fileName = input.Substring(0, 8);
+					extension = input.Substring(8, extensionLength);
+				}
+				else
+				{
+					fileName = input;
+					extension = "BAS";
+				}
+			}
+			else
+			{
+				if (input.IndexOf('.', startIndex: dotIndex + 1) >= 0)
+					throw RuntimeException.BadFileName();
+
+				int fileNameLength = dotIndex;
+				int extensionLength = input.Length - dotIndex;
+
+				if (fileNameLength > 8)
+					fileNameLength = 8;
+				if (extensionLength > 3)
+					extensionLength = 3;
+
+				fileName = input.Substring(0, fileNameLength);
+				extension = input.Substring(dotIndex + 1, extensionLength);
+			}
+
+			fileName = fileName + "." + extension;
+
+			txtFileName.Text.Set(fileName);
+
+			return fileName;
+		}
+	}
 
 	public event Action? CreateFile;
 
@@ -197,9 +260,6 @@ public class CreateFileDialog : Dialog
 
 	protected override void OnActivated()
 	{
-		if (!txtFileName.Text.Contains((byte)'.'))
-			txtFileName.Text.Append(".BAS");
-
 		CreateFile?.Invoke();
 
 		Close();
