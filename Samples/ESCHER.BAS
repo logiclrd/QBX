@@ -35,7 +35,7 @@ CONST TILING = 0
 CONST SUBDIVISION = 1
 
 ' Enough for the default {3,7} example and MAXDIST = 4.7.
-CONST MAXTILES = 1200
+CONST MAXTILES = 1600
 CONST MAXSTACK = 256
 
 ' Number of straight screen segments used to approximate a
@@ -88,7 +88,7 @@ scrR = 220
 model% = KLEIN
 figure% = TILING
 
-maxTier% = 5
+maxTier% = 7
 
 ' Derivation:
 '
@@ -126,9 +126,9 @@ DO
     CIRCLE (scrCX, scrCY), scrR, 8
 
     LOCATE 30, 1
-    PRINT tileCount%; " polygons [ T=Tiling, S=Escher Tesselation | P=Poincare, K=Klein ]   Q=quit";
+    PRINT LTRIM$(STR$(tileCount%)); " polygons [ T=Tiling, S=Escher Tesselation | P=Poincare, K=Klein ]  Q=quit";
 
-    IF truncated% THEN PRINT "   [TRUNCATED]";
+    IF truncated% THEN LOCATE 29, 1: PRINT "[TRUNCATED]";
 
     DO
         k$ = UCASE$(INKEY$)
