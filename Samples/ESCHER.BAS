@@ -196,61 +196,62 @@ END SUB
 ' ================================================================
 SUB DrawEdge (a AS HPoint, b AS HPoint, model%, col%)
 
-    ' In the Klein model a hyperbolic geodesic projects EXACTLY
-    ' to a straight Euclidean chord.
-
     IF model% = KLEIN THEN
+
+        ' In the Klein model a hyperbolic geodesic projects EXACTLY
+        ' to a straight Euclidean chord.
 
         ProjectPoint a, model%, x1!, y1!
         ProjectPoint b, model%, x2!, y2!
 
         LINE (x1!, y1!)-(x2!, y2!), col%
 
-        EXIT SUB
+    ELSE
+
+        ' In the Poincare model the edge becomes a circular arc.
+        '
+        ' Rather than deriving that screen-space circle, stay completely
+        ' in hyperbolic space.  Interpolate along the actual hyperbolic
+        ' geodesic and project each resulting HPoint.
+
+        c# = -MinkDot#(a, b)
+
+        ' Protect ACosh against roundoff.
+        IF c# < 1# THEN c# = 1#
+
+        distance# = ACosh#(c#)
+
+        IF distance# < .000000000001# THEN EXIT SUB
+
+        denominator# = HSinh#(distance#)
+
+        ProjectPoint a, model%, oldX!, oldY!
+
+        FOR i% = 1 TO EDGESEGS
+
+            u# = i% / EDGESEGS
+
+            wa# = HSinh#((1# - u#) * distance#) / denominator#
+            wb# = HSinh#(u# * distance#) / denominator#
+
+            DIM p AS HPoint
+
+            p.x = wa# * a.x + wb# * b.x
+            p.y = wa# * a.y + wb# * b.y
+            p.t = wa# * a.t + wb# * b.t
+
+            NormalizePoint p
+
+            ProjectPoint p, model%, newX!, newY!
+
+            LINE (oldX!, oldY!)-(newX!, newY!), col%
+
+            oldX! = newX!
+            oldY! = newY!
+
+        NEXT i%
+
     END IF
-
-    ' In the Poincare model the edge becomes a circular arc.
-    '
-    ' Rather than deriving that screen-space circle, stay completely
-    ' in hyperbolic space.  Interpolate along the actual hyperbolic
-    ' geodesic and project each resulting HPoint.
-
-    c# = -MinkDot#(a, b)
-
-    ' Protect ACosh against roundoff.
-    IF c# < 1# THEN c# = 1#
-
-    distance# = ACosh#(c#)
-
-    IF distance# < .000000000001# THEN EXIT SUB
-
-    denominator# = HSinh#(distance#)
-
-    ProjectPoint a, model%, oldX!, oldY!
-
-    FOR i% = 1 TO EDGESEGS
-
-        u# = i% / EDGESEGS
-
-        wa# = HSinh#((1# - u#) * distance#) / denominator#
-        wb# = HSinh#(u# * distance#) / denominator#
-
-        DIM p AS HPoint
-
-        p.x = wa# * a.x + wb# * b.x
-        p.y = wa# * a.y + wb# * b.y
-        p.t = wa# * a.t + wb# * b.t
-
-        NormalizePoint p
-
-        ProjectPoint p, model%, newX!, newY!
-
-        LINE (oldX!, oldY!)-(newX!, newY!), col%
-
-        oldX! = newX!
-        oldY! = newY!
-
-    NEXT i%
 
 END SUB
 
