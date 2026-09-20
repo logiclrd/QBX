@@ -705,7 +705,7 @@ SUB GenerateTiling (polysides%, vertexq%, model%, figure%, tileCount%, truncated
     CopyPoint centre, stackC(top)
 
     stackSkip(top) = -1
-    stackParity(top) = 0
+    stackParity(top) = 1
     top = top + 1
 
     ' Initial centre is (0,0) in either disk.
