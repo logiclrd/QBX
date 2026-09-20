@@ -1,5 +1,48 @@
 # QBX Releases
 
+## 1.26.0 - 2026-09-20
+
+### Fixed
+
+- Situations where the IDE fails to restore the video mode when entering break mode have been corrected.
+- The parsing of `TIMER ON`/`OFF`/`STOP` no longer incorrectly expects an argument.
+- Loading files whose DOS filename ends in `.` (i.e., no extension) now works correctly.
+- `CHAIN` and `RUN` statements now attempt to open the target file in the context of the running QuickBASIC program, and can therefore enter break mode on a runtime error when it fails.
+- Labels inside `IF`/`THEN`/`ELSE` blocks are now consistently processed.
+- Incorrect code that has a type-declaration character immediately after a `.` no longer tries to process an empty identifier.
+- Dotted identifiers can now contain components that are keywords or numbers, and can end in dots (e.g. `SUB a.3.1.`).
+- Function call translation now validates the type-declaration character specified, if any.
+- The `NIBBLESX.BAS` fixes to Microsoft Nibbles now has a carefully-defined progression to the game speed with a cap.
+- The palette modes for `SCREEN 7` and `SCREEN 8` are now correctly CGA.
+- The `background&` parameter to `COLOR` in EGA modes is now processed.
+- A rare crash that could occur because a callback delegate passed to SDL temporarily had no managed references and could, with exceptionally bad timing, get garbage collected just before SDL tried to call it has been fixed.
+- The first-chance exception handler used as a debug assistant is no longer attached when there is no debugger attached.
+- Fixed-length string types are now recognized in `SHARED` and `STATIC` statements.
+- Errors in variable name collision/coexistence rules have been fixed.
+- Situations where `DIM SHARED` might link the wrong variable when multiple variables have names differing only in type-declaration character have been fixed.
+- Empty `TYPE` blocks now produce the correct compile-time error.
+- Invalid situations where a variable or array is referred to without an `AS` clause after being initially introduced with with one now produce the correct error.
+- The `Absolute` native procedure provided by `QBX.QLB` emulation no longer raises an error. It simply does nothing, which hopefully will look like a missing/unavailable driver for code using `CALL Absolute` for e.g. mouse input.
+- Parameters to a `SUB` or `FUNCTION` can now have the same names as `DIM SHARED` and `COMMON SHARED` global variables, in which case they have priority and occlude them.
+- The MS-DOS Beep and QuickBASIC IDE beep (e.g. when you press ^O) are now distinct. The QuickBASIC beep matches the observed behaviour of QuickBASIC 7.1 in DOSBox-X. The MS-DOS Beep is actually controlled by the BIOS that is installed, so different machines have different beeps anyway.
+- Clipboard and keyboard state inside IDE dialogs now share the main text editor state.
+- Text inputs inside IDE dialogs now support the full range of control characters and chords, at least where applicable.
+- The "Create File" IDE action now handles filenames in the same way as QuickBASIC.
+- Viewport management in the IDE is more consistent, and the appearance while loading multi-module programs, with or without the Split viewport activated, should match QuickBASIC more closely.
+- Instances where user code ended up in the Immediate viewport have been fixed.
+
+### Infrastructure
+
+- Native procedure call mapping now supports `params` arguments in the underlying implementation.
+
+### Packaging
+
+- The `SDL3-CS` native components are now included via the `SDL3-CS.Windows`, `SDL3-CS.Linux` and `SDL3-CS.MacOS` platform-specific packages instead of the deprecated `SDL3-CS.Native` grab-all.
+
+### Debugging
+
+- The debug exception helper filter is now a lot more picky about which exception types it breaks on. This only affects the experience of running QBX with a debugger attached.
+
 ## 1.25.1 - 2026-09-15
 
 ### Fixed
