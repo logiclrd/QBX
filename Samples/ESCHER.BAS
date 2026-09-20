@@ -24,15 +24,21 @@ TYPE HPoint
     t AS DOUBLE
 END TYPE
 
+TYPE UVPoint
+    u AS DOUBLE
+    v AS DOUBLE
+END TYPE
+
 CONST PI = 3.14159265358979#
-CONST POLYSIDES = 3
-CONST VERTEXQ = 7
+CONST TILINGPOLYSIDES = 3
+CONST TILINGVERTEXQ = 7
 
 CONST KLEIN = 0
 CONST POINCARE = 1
 
 CONST TILING = 0
 CONST SUBDIVISION = 1
+CONST DEMONS = 2
 
 ' Enough for the default {3,7} example and MAXDIST = 4.7.
 CONST MAXTILES = 1600
@@ -42,22 +48,39 @@ CONST MAXSTACK = 256
 ' projected Poincare geodesic.
 CONST EDGESEGS = 12
 
+' Demons and Angels Parameters
+CONST DEMONPOLYSIDES = 6
+CONST DEMONVERTEXQ = 4
+
+CONST MAXPOLYSIDES = (TILINGPOLYSIDES + DEMONPOLYSIDES + (TILINGPOLYSIDES + DEMONPOLYSIDES) ^ 2 ^ .5) / 2
+
+' Maximum number of points in the demon outline. In case it gets switched out.
+CONST MAXDEMONPOINTS = 200
+
 DECLARE FUNCTION ACosh# (x#)
+DECLARE FUNCTION HCosh# (x#)
 DECLARE FUNCTION HSinh# (x#)
 DECLARE FUNCTION MinkDot# (a AS HPoint, b AS HPoint)
 DECLARE FUNCTION AlreadySeen% (p AS HPoint, count%)
 
 DECLARE SUB CopyPoint (a AS HPoint, b AS HPoint)
 DECLARE SUB NormalizePoint (p AS HPoint)
+DECLARE SUB GenerateTiling (polysides%, vertexq%, model%, figure%, tileCount%, truncated%)
 DECLARE SUB EdgeNormal (a AS HPoint, b AS HPoint, n AS HPoint)
 DECLARE SUB ReflectPoint (p AS HPoint, n AS HPoint, r AS HPoint)
 
 DECLARE SUB ProjectPoint (p AS HPoint, model%, sx!, sy!)
 DECLARE SUB DrawEdge (a AS HPoint, b AS HPoint, model%, col%)
-DECLARE SUB DrawPolygon (v() AS HPoint, model%, col%)
-DECLARE SUB GenerateTiling (model%, tileCount%, truncated%)
+DECLARE SUB DrawPolygon (polysides%, v() AS HPoint, model%, col%)
 DECLARE SUB RingPoint (tier%, index%, edgeLength#, p AS HPoint)
 DECLARE SUB DrawEscherTesselation (maxTier%, model%, edgeLength#, tileCount%, truncated%)
+
+DECLARE SUB LoadDemon ()
+DECLARE SUB BuildSectorFrame (c AS HPoint, a AS HPoint, b AS HPoint, f AS HPoint, s AS HPoint)
+DECLARE SUB ExpAtFrame (u#, v#, c AS HPoint, f AS HPoint, s AS HPoint, p AS HPoint)
+DECLARE SUB NormalizeSpaceVector (v AS HPoint)
+DECLARE SUB DrawEscherHexagon (v() AS HPoint, c AS HPoint, parity%, model%, col%)
+DECLARE SUB DrawDemonSector (c AS HPoint, a AS HPoint, b AS HPoint, model%, col%)
 
 DIM SHARED scrCX AS INTEGER
 DIM SHARED scrCY AS INTEGER
@@ -65,19 +88,25 @@ DIM SHARED scrR AS INTEGER
 
 ' Explicit traversal stack.  We need retain only polygons which
 ' have not yet been processed.
-DIM SHARED stackV(0 TO MAXSTACK - 1, 0 TO POLYSIDES - 1) AS HPoint
+DIM SHARED stackV(0 TO MAXSTACK - 1, 0 TO MAXPOLYSIDES - 1) AS HPoint
 DIM SHARED stackC(0 TO MAXSTACK - 1) AS HPoint
 DIM SHARED stackSkip(0 TO MAXSTACK - 1) AS INTEGER
+DIM SHARED stackParity(0 TO MAXSTACK - 1) AS INTEGER
 
 ' To recognize polygons reached by two different paths, storing
 ' only their centre in Poincare coordinates is sufficient.
 DIM SHARED seenX(0 TO MAXTILES - 1) AS DOUBLE
 DIM SHARED seenY(0 TO MAXTILES - 1) AS DOUBLE
 
+' Demons and Angels!
+DIM SHARED Demon(MAXDEMONPOINTS) AS UVPoint
+DIM SHARED DemonCount AS INTEGER
 
 ' ------------------------------------------------
 ' Main program
 ' ------------------------------------------------
+
+LoadDemon
 
 SCREEN 12
 
@@ -115,18 +144,27 @@ DO
 
     SELECT CASE figure%
         CASE TILING:
-            PRINT "Tiling: {"; LTRIM$(STR$(POLYSIDES)); ","; LTRIM$(STR$(VERTEXQ)); "}"
-            GenerateTiling model%, tileCount%, truncated%
+            PRINT "Tiling: {"; LTRIM$(STR$(TILINGPOLYSIDES)); ","; LTRIM$(STR$(TILINGVERTEXQ)); "}"
+            GenerateTiling TILINGPOLYSIDES, TILINGVERTEXQ, model%, figure%, tileCount%, truncated%
         CASE SUBDIVISION:
             PRINT "Escher tesselation: "; LTRIM$(STR$(maxTier%)); " tiers with edge length "; LTRIM$(STR$(edgeLength#)); "}"
             DrawEscherTesselation maxTier%, model%, edgeLength#, tileCount%, truncated%
+        CASE DEMONS:
+            PRINT "Demons and Angels"
+
+            ' Lay a white background for the angels,
+            ' to carve the black demons out of
+            CIRCLE (scrCX, scrCY), scrR, 8
+            PAINT (scrCX, scrCY), 15, 8
+
+            GenerateTiling DEMONPOLYSIDES, DEMONVERTEXQ, model%, figure%, tileCount%, truncated%
     END SELECT
 
     ' Boundary at hyperbolic infinity.
     CIRCLE (scrCX, scrCY), scrR, 8
 
     LOCATE 30, 1
-    PRINT LTRIM$(STR$(tileCount%)); " polygons [ T=Tiling, S=Escher Tesselation | P=Poincare, K=Klein ]  Q=quit";
+    PRINT LTRIM$(STR$(tileCount%)); " polygons [ T=Tiling, S=Tesselation, D=Demons | P=Poincare, K=Klein ]  Q=quit";
 
     IF truncated% THEN LOCATE 29, 1: PRINT "[TRUNCATED]";
 
@@ -137,6 +175,7 @@ DO
     SELECT CASE k$
         CASE "T": figure% = TILING
         CASE "S": figure% = SUBDIVISION
+        CASE "D": figure% = DEMONS
 
         CASE "P": model% = POINCARE
         CASE "K": model% = KLEIN
@@ -147,6 +186,32 @@ LOOP
 
 SCREEN 0
 END
+
+DemonData:
+DATA 92
+DATA .867909932,0,.882128971,.043955949,.918992066,.070826638,1.02653730,.087006719
+DATA 1.09393406,.107128876,1.09393406,.107128876,1.09393406,.107128495,1.07265040,.126092059
+DATA 1.03059491,.136494138,.940475521,.128723795,.863264163,.097637657,.774522004,.090559706
+DATA .777606462,.161032866,.802801818,.208218255,.846983206,.248491164,.890492253,.294041845
+DATA .976537195,.487818109,.992652031,.573107917,.902312644,.468357222,.802465087,.395433240
+DATA .692318044,.362756431,.571079858,.348961308,.517664962,.298250384,.450670705,.258633549
+DATA .381620590,.248728268,.322039359,.257365054,.338018717,.175474294,.347469642,.098191218
+DATA .333860086,.082436066,.307474946,.076365057,.285027317,.080695364,.283235907,.096143782
+DATA .174579461,.066665854,.155698938,.073775832,.152175607,.090770121,.166364340,.140366680
+DATA .167484533,.187366198,.167265658,.187366198,.167046782,.187366198,.166827907,.187366198
+DATA .166609032,.187366198,.166390156,.187366198,.166171281,.187366198,.096018933,.120717778
+DATA .080561845,.066059249,.053099165,.025149804,0,0,.053099165,-.02514980
+DATA .080561845,-.06605925,.096018933,-.12071778,.166171281,-.18736620,.166390156,-.18736620
+DATA .166609032,-.18736620,.166827907,-.18736620,.167046782,-.18736620,.167265658,-.18736620
+DATA .167484533,-.18736620,.166364340,-.14036668,.152175607,-.09077012,.155698938,-.07377583
+DATA .174579461,-.06666585,.283235907,-.09614378,.285027317,-.08069536,.307474946,-.07636506
+DATA .333860086,-.08243607,.347469642,-.09819122,.338018717,-.17547429,.322039359,-.25736505
+DATA .381620590,-.24872827,.450670705,-.25863355,.517664962,-.29825038,.571079858,-.34896131
+DATA .692318044,-.36275643,.802465087,-.39543324,.902312644,-.46835722,.992652031,-.57310792
+DATA .976537195,-.48781811,.890492253,-.29404185,.846983206,-.24849116,.802801818,-.20821825
+DATA .777606462,-.16103287,.774522004,-.09055971,.863264163,-.09763766,.940475521,-.12872380
+DATA 1.03059491,-.13649414,1.07265040,-.12609206,1.09393406,-.10712849,1.09393406,-.10712888
+DATA 1.09393406,-.10712888,1.02653730,-.08700672,.918992066,-.07082664,.882128971,-.04395595
 
 
 FUNCTION ACosh# (x#)
@@ -183,11 +248,126 @@ FUNCTION AlreadySeen% (p AS HPoint, count%)
 
 END FUNCTION
 
+SUB BuildSectorFrame (c AS HPoint, a AS HPoint, b AS HPoint, f AS HPoint, s AS HPoint)
+
+    DIM r AS HPoint
+    DIM hint AS HPoint
+
+    ' -----------------------------------------------------------
+    ' Forward direction:
+    '
+    ' A+B points toward the midpoint of edge AB. Project it into
+    ' the tangent plane at C.
+    '
+    ' For <C,C> = -1:
+    '
+    '     tangent(V) = V + <C,V>C
+    ' -----------------------------------------------------------
+
+    r.x = a.x + b.x
+    r.y = a.y + b.y
+    r.t = a.t + b.t
+
+    d# = MinkDot#(c, r)
+
+    f.x = r.x + d# * c.x
+    f.y = r.y + d# * c.y
+    f.t = r.t + d# * c.t
+
+    NormalizeSpaceVector f
+
+
+    ' -----------------------------------------------------------
+    ' Sideways direction.
+    '
+    ' Construct a vector Minkowski-orthogonal to both C and F.
+    '
+    ' This is the same Lorentz-cross-product construction used for
+    ' the normal of a hyperbolic geodesic.
+    ' -----------------------------------------------------------
+
+    s.x = c.t * f.y - c.y * f.t
+    s.y = c.x * f.t - c.t * f.x
+    s.t = c.x * f.y - c.y * f.x
+
+    NormalizeSpaceVector s
+
+
+    ' -----------------------------------------------------------
+    ' Choose the orientation of S from the actual edge ordering.
+    '
+    ' A-B points from B toward A. Project that into C's tangent
+    ' plane and make S point to the same side.
+    '
+    ' This is important because reflection reverses polygon
+    ' orientation, and we WANT the demon to be reflected with it.
+    ' -----------------------------------------------------------
+
+    hint.x = a.x - b.x
+    hint.y = a.y - b.y
+    hint.t = a.t - b.t
+
+    d# = MinkDot#(c, hint)
+
+    hint.x = hint.x + d# * c.x
+    hint.y = hint.y + d# * c.y
+    hint.t = hint.t + d# * c.t
+
+    IF MinkDot#(s, hint) < 0# THEN
+        s.x = -s.x
+        s.y = -s.y
+        s.t = -s.t
+    END IF
+
+END SUB
+
 SUB CopyPoint (a AS HPoint, b AS HPoint)
 
     b.x = a.x
     b.y = a.y
     b.t = a.t
+
+END SUB
+
+SUB DrawDemonSector (c AS HPoint, a AS HPoint, b AS HPoint, model%, col%)
+
+    DIM forward AS HPoint
+    DIM sideways AS HPoint
+    DIM p1 AS HPoint
+    DIM p2 AS HPoint
+    DIM centroid AS UVPoint
+
+    BuildSectorFrame c, a, b, forward, sideways
+
+    ExpAtFrame Demon(0).u, Demon(0).v, c, forward, sideways, p2
+
+    FOR i% = 1 TO DemonCount
+
+        IF i% = DemonCount THEN j% = 0 ELSE j% = i%
+
+        p1 = p2
+        ExpAtFrame Demon(j%).u, Demon(j%).v, c, forward, sideways, p2
+
+        ' This is the existing projection-aware geodesic renderer:
+        ' straight in Klein, curved in Poincare.
+        DrawEdge p1, p2, model%, col%
+
+        ' Sum up the points to average them to find the centroid
+        centroid.u = centroid.u + Demon(j%).u
+        centroid.v = centroid.v + Demon(j%).v
+
+    NEXT i%
+
+    ' Finish up centroid calculation
+    centroid.u = centroid.u / DemonCount
+    centroid.v = centroid.v / DemonCount
+
+    ' Fill the demon
+    ExpAtFrame centroid.u, centroid.v, c, forward, sideways, p1
+
+    ProjectPoint p1, model%, x!, y!
+
+    PAINT (x!, y!), col%, col%
 
 END SUB
 
@@ -252,6 +432,32 @@ SUB DrawEdge (a AS HPoint, b AS HPoint, model%, col%)
         NEXT i%
 
     END IF
+
+END SUB
+
+SUB DrawEscherHexagon (v() AS HPoint, c AS HPoint, parity%, model%, col%)
+
+    ' The six triangular sectors around a {6,4} hexagon alternate:
+    '
+    '     demon, angel, demon, angel, demon, angel
+    '
+    ' Only demons are explicitly drawn.  If their outline is fitted
+    ' correctly, the angels are exactly the negative space.
+    '
+    ' parity toggles on every move to an adjacent hexagon.
+
+    FOR edge% = 0 TO 5
+
+        IF (edge% + parity%) MOD 2 = 0 THEN
+
+            nextEdge% = edge% + 1
+            IF nextEdge% = 6 THEN nextEdge% = 0
+
+            DrawDemonSector c, v(edge%), v(nextEdge%), model%, col%
+
+        END IF
+
+    NEXT edge%
 
 END SUB
 
@@ -346,11 +552,11 @@ END SUB
 ' ================================================================
 ' Rendering geodesics
 ' ================================================================
-SUB DrawPolygon (v() AS HPoint, model%, col%)
+SUB DrawPolygon (polysides%, v() AS HPoint, model%, col%)
 
-    FOR i% = 0 TO POLYSIDES - 1
+    FOR i% = 0 TO polysides% - 1
 
-        j% = (i% + 1) MOD POLYSIDES
+        j% = (i% + 1) MOD polysides%
 
         DrawEdge v(i%), v(j%), model%, col%
 
@@ -380,13 +586,46 @@ SUB EdgeNormal (a AS HPoint, b AS HPoint, n AS HPoint)
 
 END SUB
 
+SUB ExpAtFrame (u#, v#, c AS HPoint, f AS HPoint, s AS HPoint, p AS HPoint)
+
+    ' Exponential map from the ordinary 2-D tangent plane at C onto
+    ' the hyperboloid:
+    '
+    ' P = cosh(r) C + sinh(r) (u F + v S) / r
+    '
+    ' where r = sqrt(u^2 + v^2).
+    '
+    ' Thus the prototype path itself stays "pristine": its ordinary
+    ' Euclidean coordinates are interpreted as tangent vectors, and
+    ' this routine turns them into genuine hyperbolic points.
+
+    r# = SQR(u# * u# + v# * v#)
+
+    IF r# < .000000000001# THEN
+        CopyPoint c, p
+        EXIT SUB
+    END IF
+
+    ch# = HCosh#(r#)
+    shOverR# = HSinh#(r#) / r#
+
+    p.x = ch# * c.x + shOverR# * (u# * f.x + v# * s.x)
+    p.y = ch# * c.y + shOverR# * (u# * f.y + v# * s.y)
+    p.t = ch# * c.t + shOverR# * (u# * f.t + v# * s.t)
+
+    ' The equation above preserves the hyperboloid exactly in
+    ' mathematics; this only removes floating-point drift.
+    NormalizePoint p
+
+END SUB
+
 ' ================================================================
 ' Construct the hyperbolic tessellation.
 ' ================================================================
-SUB GenerateTiling (model%, tileCount%, truncated%)
+SUB GenerateTiling (polysides%, vertexq%, model%, figure%, tileCount%, truncated%)
 
-    DIM first(0 TO POLYSIDES - 1) AS HPoint
-    DIM cur(0 TO POLYSIDES - 1) AS HPoint
+    DIM first(0 TO polysides% - 1) AS HPoint
+    DIM cur(0 TO polysides% - 1) AS HPoint
 
     DIM centre AS HPoint
     DIM childCentre AS HPoint
@@ -411,8 +650,8 @@ SUB GenerateTiling (model%, tileCount%, truncated%)
     '
     '     cosh(R) = cot(pi/p) cot(pi/q)
 
-    ap# = PI / POLYSIDES
-    aq# = PI / VERTEXQ
+    ap# = PI / polysides%
+    aq# = PI / vertexq%
 
     cotp# = COS(ap#) / SIN(ap#)
     cotq# = COS(aq#) / SIN(aq#)
@@ -439,9 +678,9 @@ SUB GenerateTiling (model%, tileCount%, truncated%)
     ' No disk coordinates are involved here.
     ' ------------------------------------------------------------
 
-    FOR i% = 0 TO POLYSIDES - 1
+    FOR i% = 0 TO polysides% - 1
 
-        theta# = 2# * PI * i% / POLYSIDES
+        theta# = 2# * PI * i% / polysides%
 
         first(i%).x = sinhR# * COS(theta#)
         first(i%).y = sinhR# * SIN(theta#)
@@ -457,13 +696,14 @@ SUB GenerateTiling (model%, tileCount%, truncated%)
 
     top = 0
 
-    FOR i% = 0 TO POLYSIDES - 1
+    FOR i% = 0 TO polysides% - 1
         CopyPoint first(i%), stackV(top, i%)
     NEXT i%
 
     CopyPoint centre, stackC(top)
 
     stackSkip(top) = -1
+    stackParity(top) = 0
     top = top + 1
 
     ' Initial centre is (0,0) in either disk.
@@ -482,24 +722,28 @@ SUB GenerateTiling (model%, tileCount%, truncated%)
 
         top = top - 1
 
-        FOR i% = 0 TO POLYSIDES - 1
+        FOR i% = 0 TO polysides% - 1
             CopyPoint stackV(top, i%), cur(i%)
         NEXT i%
 
         CopyPoint stackC(top), centre
 
         cameFrom = stackSkip(top)
+        tileParity% = stackParity(top)
 
         tileCount% = tileCount% + 1
 
-        DrawPolygon cur(), model%, 15
+        SELECT CASE figure%
+            CASE TILING: DrawPolygon polysides%, cur(), model%, 15
+            CASE DEMONS: DrawEscherHexagon cur(), centre, tileParity%, model%, 0
+        END SELECT
 
-        FOR edge% = 0 TO POLYSIDES - 1
+        FOR edge% = 0 TO polysides% - 1
 
             ' Don't immediately reflect back into our parent.
             IF edge% <> cameFrom THEN
 
-                nextEdge% = (edge% + 1) MOD POLYSIDES
+                nextEdge% = (edge% + 1) MOD polysides%
 
                 EdgeNormal cur(edge%), cur(nextEdge%), normal
 
@@ -530,7 +774,7 @@ SUB GenerateTiling (model%, tileCount%, truncated%)
                             ' Now perform the same genuine hyperbolic
                             ' reflection on every vertex.
 
-                            FOR j% = 0 TO POLYSIDES - 1
+                            FOR j% = 0 TO polysides% - 1
                                 ReflectPoint cur(j%), normal, stackV(top, j%)
                             NEXT j%
 
@@ -540,6 +784,7 @@ SUB GenerateTiling (model%, tileCount%, truncated%)
                             ' fixed, so the same edge index leads
                             ' straight back again.
                             stackSkip(top) = edge%
+                            stackParity(top) = 1 - tileParity%
 
                             top = top + 1
                         END IF
@@ -553,11 +798,34 @@ SUB GenerateTiling (model%, tileCount%, truncated%)
 
 END SUB
 
+FUNCTION HCosh# (x#)
+
+    HCosh# = (EXP(x#) + EXP(-x#)) / 2#
+
+END FUNCTION
+
 FUNCTION HSinh# (x#)
 
     HSinh# = (EXP(x#) - EXP(-x#)) / 2#
 
 END FUNCTION
+
+SUB LoadDemon
+
+    RESTORE DemonData
+
+    READ DemonCount
+
+    IF DemonCount < 3 OR DemonCount > MAXDEMONPOINTS THEN
+        PRINT "Bad demon point count:"; DemonCount
+        END
+    END IF
+
+    FOR i% = 0 TO DemonCount - 1
+        READ Demon(i%).u, Demon(i%).v
+    NEXT i%
+
+END SUB
 
 ' ================================================================
 ' Minkowski / hyperboloid geometry
@@ -578,6 +846,33 @@ SUB NormalizePoint (p AS HPoint)
     ' t merely removes accumulated floating-point drift.
 
     p.t = SQR(1# + p.x * p.x + p.y * p.y)
+
+END SUB
+
+SUB NormalizeSpaceVector (v AS HPoint)
+
+    ' A tangent vector in the hyperboloid model is spacelike:
+    '
+    '     <v,v> > 0
+    '
+    ' Normalize it to Minkowski length +1.
+
+    m2# = MinkDot#(v, v)
+
+    IF m2# <= 0# THEN
+        PRINT "Bad tangent vector"
+        PRINT "X ="; v.x
+        PRINT "Y ="; v.y
+        PRINT "T ="; v.t
+        PRINT "<V,V> ="; m2#
+        END
+    END IF
+
+    m# = SQR(m2#)
+
+    v.x = v.x / m#
+    v.y = v.y / m#
+    v.t = v.t / m#
 
 END SUB
 
