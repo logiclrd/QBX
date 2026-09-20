@@ -163,10 +163,12 @@ DO
     ' Boundary at hyperbolic infinity.
     CIRCLE (scrCX, scrCY), scrR, 8
 
+    LOCATE 29, 1
+    PRINT LTRIM$(STR$(tileCount%)); " polygons";
     LOCATE 30, 1
-    PRINT LTRIM$(STR$(tileCount%)); " polygons [ T=Tiling, S=Tesselation, D=Demons | P=Poincare, K=Klein ]  Q=quit";
+    PRINT " [ T=Tiling, S=Tesselation, D=Demons | P=Poincare, K=Klein ]  Q=quit";
 
-    IF truncated% THEN LOCATE 29, 1: PRINT "[TRUNCATED]";
+    IF truncated% THEN LOCATE 28, 1: PRINT "[TRUNCATED]";
 
     DO
         k$ = UCASE$(INKEY$)
