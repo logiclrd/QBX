@@ -1,0 +1,21 @@
+Subject:  BALDY: platform game
+Author:  Danny Tenedorio
+Uploaded By:  Slapys
+Date:  6/12/1998
+
+File:  BALDY2~1.BAS (37183 bytes) 
+Estimated Download Time (32016 baud):  < 1 minute
+Download Count:  2075
+
+Equipment:  PC
+Needs:  Qbasic
+
+Keywords:  Tenedorio, Baldy, QBASIC, Games, Programming, Teenz
+
+TYPE:  Freely Distributable
+VERSION:  May 1998
+
+     Baldy is a platform-style action game, with several levels featuring obstacles such as fire, water, ice, and more.
+
+DOCUMENTATION:  Online help
+
