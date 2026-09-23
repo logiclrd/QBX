@@ -86,7 +86,7 @@ public partial class Program
 
 	public void PresentError(SyntaxErrorException error)
 	{
-		PresentError(error.Message, error.Token, avoidContext: true);
+		PresentError(error.Message, error.Token, error.HelpContextString, avoidContext: true);
 	}
 
 	public void PresentError(CompilerException error)

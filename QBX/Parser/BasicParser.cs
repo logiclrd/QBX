@@ -194,10 +194,10 @@ public class BasicParser(IdentifierRepository identifierRepository)
 					precedingWhitespaceToken = null;
 				}
 
-				if (line.LineNumber != null)
+				if ((line.LineNumber != null) || (TrimLineNumber(token.Value) is not string lineNumber))
 					throw new SyntaxErrorException(token, "Expected: statement");
 
-				line.LineNumber = identifierRepository.UpdateCanonicalIdentifier(TrimLineNumber(token.Value));
+				line.LineNumber = identifierRepository.UpdateCanonicalIdentifier(lineNumber);
 				line.LineNumberToken = token;
 
 				precedingWhitespaceToken = null;
@@ -216,26 +216,43 @@ public class BasicParser(IdentifierRepository identifierRepository)
 						labelIndex++;
 					}
 
+					bool consumedColon = false;
+
 					if (!line.Statements.Any()
-					 && (line.Label == null)
-					 && (buffer.Count == labelIndex + 1)
-					 && (buffer[labelIndex].Type == TokenType.Identifier)
-					 && (buffer[labelIndex].Value is string labelName)
-					 && (labelName.Length > 0)
-					 && !char.IsSymbol(labelName.Last()))
+					 && (line.Label == null))
 					{
-						line.Label =
-							new Label()
-							{
-								Indentation = whitespace,
-								Name = identifierRepository.UpdateCanonicalIdentifier(labelName),
-							};
+						var labelParser = new TokenHandler(buffer.Slice(labelIndex), identifierRepository);
 
-						line.LabelToken = buffer[labelIndex];
+						string? labelName = null;
+						Token labelToken = labelParser.NextToken;
 
-						buffer.Clear();
+						try
+						{
+							labelName = labelParser.ExpectIdentifier(allowTypeCharacter: false, allowDots: true, out labelToken);
+						}
+						catch { }
+
+						if (labelName?.Length > 40)
+							throw SyntaxErrorException.IdentifierTooLong(labelToken);
+
+						if ((labelName != null) && !labelParser.HasMoreTokens)
+						{
+							line.Label =
+								new Label()
+								{
+									Indentation = whitespace,
+									Name = identifierRepository.UpdateCanonicalIdentifier(labelName),
+								};
+
+							line.LabelToken = buffer[labelIndex];
+
+							buffer.Clear();
+
+							consumedColon = true;
+						}
 					}
-					else
+
+					if (!consumedColon)
 					{
 						IEnumerable<Token> ConsumeTokensToEndOfLine()
 						{
@@ -1826,28 +1843,57 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 				tokenHandler.ExpectMoreTokens();
 
-				switch (tokenHandler.NextToken.Type)
+				// Target formats:
+				// - Line number: Allows leading zeros but trims them. Allows up to one decimal point.
+				//                Scientific notation is not recognized.
+				// - Label: First character must be an ASCII letter. Arbitrary dots allowed.
+				//
+				// Maximum length 40 characters in either case, applies before trimming.
+
+				var labelToken = tokenHandler.NextToken;
+
+				switch (labelToken.Type)
 				{
 					case TokenType.Number:
-						statement.TargetLineNumber = identifierRepository.UpdateCanonicalIdentifier(TrimLineNumber(tokenHandler.NextToken.Value));
-						break;
+						if (TrimLineNumber(labelToken.Value) is string lineNumber)
+						{
+							tokenHandler.Advance();
+							tokenHandler.ExpectEndOfTokens();
+
+							statement.TargetLineNumber = identifierRepository.UpdateCanonicalIdentifier(lineNumber);
+						}
+
+						throw new SyntaxErrorException(labelToken, "Expected: label or line number");
 
 					case TokenType.Identifier:
-						string labelName = tokenHandler.NextToken.Value ?? throw new Exception("Internal error: Identifier token with no value");
+						string labelName;
 
-						if (labelName.Length == 0)
-							throw new Exception("Internal error: Identifier token with empty string");
+						try
+						{
+							labelName = tokenHandler.ExpectIdentifier(allowTypeCharacter: true, allowDots: true, out labelToken);
+						}
+						catch
+						{
+							goto default;
+						}
 
-						if (char.IsSymbol(labelName.Last()))
-							throw new SyntaxErrorException(tokenHandler.NextToken, "Expected: label");
+						if (labelName.Length > 40)
+							throw SyntaxErrorException.IdentifierTooLong(labelToken);
+
+						if (tokenHandler.HasMoreTokens
+						 || char.IsSymbol(labelName.Last()))
+							throw new SyntaxErrorException(labelToken, "Expected: label");
+
+						tokenHandler.ExpectEndOfTokens();
 
 						statement.TargetLabel = identifierRepository.UpdateCanonicalIdentifier(labelName);
 
 						break;
+
+					default:
+						throw new SyntaxErrorException(labelToken, "Expected: label or line number");
 				}
 
-				tokenHandler.Advance();
-				tokenHandler.ExpectEndOfTokens();
 
 				return statement;
 			}
@@ -1908,9 +1954,12 @@ public class BasicParser(IdentifierRepository identifierRepository)
 							//   IF condition THEN linenumber
 							//   IF condition THEN ... ELSE linenumber
 
+							if (TrimLineNumber(tokens[0].Value) is not string lineNumber)
+								throw new SyntaxErrorException(tokens[0], "Expected: end of statement");
+
 							var statement = new BareLineNumberGoToStatement();
 
-							statement.TargetLineNumber = identifierRepository.UpdateCanonicalIdentifier(TrimLineNumber(tokens[0].Value));
+							statement.TargetLineNumber = identifierRepository.UpdateCanonicalIdentifier(lineNumber);
 
 							list.Add(statement);
 						}
@@ -2652,30 +2701,52 @@ public class BasicParser(IdentifierRepository identifierRepository)
 						tokenHandler.Expect(TokenType.GOTO);
 						tokenHandler.ExpectMoreTokens();
 
+						Token labelToken = tokenHandler.NextToken;
+
 						switch (tokenHandler.NextToken.Type)
 						{
 							case TokenType.Number:
-								if (int.TryParse(tokenHandler.NextToken.Value, out var parsedLineNumber)
+								if (int.TryParse(labelToken.Value, out var parsedLineNumber)
 								 && (parsedLineNumber == 0))
 									onError.Action = OnErrorAction.DoNotHandle;
 								else
-									onError.TargetLineNumber = identifierRepository.UpdateCanonicalIdentifier(TrimLineNumber(tokenHandler.NextToken.Value));
+								{
+									if (TrimLineNumber(labelToken.Value) is not string lineNumber)
+										goto default;
+
+									onError.TargetLineNumber = identifierRepository.UpdateCanonicalIdentifier(lineNumber);
+								}
 
 								break;
 
 							case TokenType.Identifier:
-								string labelName = tokenHandler.NextToken.Value ?? throw new Exception("Internal error: Identifier token with no value");
+								string labelName;
 
-								if (labelName.Length == 0)
-									throw new Exception("Internal error: Identifier token with empty string");
+								try
+								{
+									labelName = tokenHandler.ExpectIdentifier(allowTypeCharacter: true, allowDots: true, out labelToken);
+								}
+								catch
+								{
+									goto default;
+								}
 
-								if (char.IsSymbol(labelName.Last()))
-									throw new SyntaxErrorException(tokenHandler.NextToken, "Expected: label");
+								if (labelName.Length > 40)
+									throw SyntaxErrorException.IdentifierTooLong(labelToken);
+
+								if (tokenHandler.HasMoreTokens
+								 || char.IsSymbol(labelName.Last()))
+									goto default;
 
 								onError.TargetLabel = identifierRepository.UpdateCanonicalIdentifier(labelName);
 
 								break;
+
+							default:
+								throw new SyntaxErrorException(tokenHandler.NextToken, "Expected: 0 or label or line number");
 						}
+
+						tokenHandler.ExpectEndOfTokens();
 					}
 					else if (tokenHandler.NextTokenIs(TokenType.RESUME))
 					{
@@ -2784,28 +2855,42 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 								if (target[0].Type == TokenType.Number)
 								{
-									if (target[0].Value.StartsWith('-')
-									 || target[0].Value.StartsWith('&')
-									 || target[0].Value.Contains('e')
-									 || target[0].Value.Contains('d'))
+									if (TrimLineNumber(target[0].Value) is not string lineNumber)
 										throw new SyntaxErrorException(target[0], "Expected: label or line number");
 
-									var lineNumber = identifierRepository.UpdateCanonicalIdentifier(TrimLineNumber(target[0].Value));
+									var jumpTarget = identifierRepository.UpdateCanonicalIdentifier(lineNumber);
 
-									computedBranch.Targets.Add(new ComputedBranchTarget(lineNumber, target[0]));
+									computedBranch.Targets.Add(new ComputedBranchTarget(jumpTarget, target[0]));
 
 									continue;
 								}
 
-								if (target.Count > 1)
-									throw new SyntaxErrorException(target[1], "Expected: , or end of statement");
+								var labelParser = new TokenHandler(target, identifierRepository);
 
-								if (target[0].Type != TokenType.Identifier)
-									throw new Exception("Sanity failure");
+								string labelName;
+								Token labelToken = labelParser.NextToken;
 
-								var label = identifierRepository.GetOrAddCanonicalIdentifier(target[0].Value);
+								try
+								{
+									labelName = labelParser.ExpectIdentifier(allowTypeCharacter: true, allowDots: true, out labelToken);
+								}
+								catch
+								{
+									throw new SyntaxErrorException(labelToken, "Expected: label or line number");
+								}
 
-								computedBranch.Targets.Add(new ComputedBranchTarget(label, target[0]));
+								if (labelName.Length > 40)
+									throw SyntaxErrorException.IdentifierTooLong(labelToken);
+
+								if (char.IsSymbol(labelName.Last()))
+									throw new SyntaxErrorException(labelToken, "Expected: label or line number");
+
+								if (labelParser.HasMoreTokens)
+									throw new SyntaxErrorException(labelParser.NextToken, "Expected: , or end of statement");
+
+								var label = identifierRepository.UpdateCanonicalIdentifier(labelName);
+
+								computedBranch.Targets.Add(new ComputedBranchTarget(label, labelToken));
 							}
 
 							return computedBranch;
@@ -3600,31 +3685,50 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 				if (tokenHandler.HasMoreTokens)
 				{
-					switch (tokenHandler.NextToken.Type)
+					var labelToken = tokenHandler.NextToken;
+
+					switch (labelToken.Type)
 					{
 						case TokenType.NEXT:
+							tokenHandler.Advance();
 							resume.NextStatement = true;
 							break;
 
 						case TokenType.Number:
-							resume.TargetLineNumber = identifierRepository.UpdateCanonicalIdentifier(TrimLineNumber(tokenHandler.NextToken.Value));
+							tokenHandler.Advance();
+
+							if (TrimLineNumber(labelToken.Value) is not string lineNumber)
+								goto default;
+
+							resume.TargetLineNumber = identifierRepository.UpdateCanonicalIdentifier(lineNumber);
 							break;
 
 						case TokenType.Identifier:
-							string labelName = tokenHandler.NextToken.Value ?? throw new Exception("Internal error: Identifier token with no value");
+							string labelName;
 
-							if (labelName.Length == 0)
-								throw new Exception("Internal error: Identifier token with empty string");
+							try
+							{
+								labelName = tokenHandler.ExpectIdentifier(allowTypeCharacter: true, allowDots: true, out labelToken);
+							}
+							catch
+							{
+								goto default;
+							}
 
-							if (char.IsSymbol(labelName.Last()))
-								throw new SyntaxErrorException(tokenHandler.NextToken, "Expected: label");
+							if (labelName.Length > 40)
+								throw SyntaxErrorException.IdentifierTooLong(labelToken);
+
+							if (tokenHandler.HasMoreTokens
+							 || char.IsSymbol(labelName.Last()))
+								goto default;
 
 							resume.TargetLabel = identifierRepository.UpdateCanonicalIdentifier(labelName);
 
 							break;
-					}
 
-					tokenHandler.Advance();
+						default:
+							throw new SyntaxErrorException(tokenHandler.NextToken, "Expected: 0 or label or line number or NEXT or end of statement");
+					}
 
 					tokenHandler.ExpectEndOfTokens();
 				}
@@ -3638,28 +3742,11 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 				if (tokenHandler.HasMoreTokens)
 				{
-					static bool ContainsOnlyDigits([NotNullWhen(true)] string? tokenValue)
-					{
-						if ((tokenValue == null)
-						 || (tokenValue.Length == 0))
-							return false;
-
-						for (int i=0; i < tokenValue.Length; i++)
-						{
-							char ch = tokenValue[i];
-
-							if ((ch < '0') || (ch > '9'))
-								return false;
-						}
-
-						return true;
-					}
-
 					var argumentExpression = ParseExpressionForStatement(run, tokenHandler.RemainingTokens, tokenHandler.EndToken);
 
 					if ((argumentExpression is LiteralExpression literal)
-					 && ContainsOnlyDigits(literal.Token?.Value))
-						run.StartingLineNumber = identifierRepository.UpdateCanonicalIdentifier(TrimLineNumber(literal.Token.Value));
+					 && (TrimLineNumber(literal.Token?.Value) is string lineNumber))
+						run.StartingLineNumber = identifierRepository.UpdateCanonicalIdentifier(lineNumber);
 					else
 						run.FileNameExpression = argumentExpression;
 				}
@@ -5295,14 +5382,40 @@ public class BasicParser(IdentifierRepository identifierRepository)
 		return false;
 	}
 
-	string TrimLineNumber(string lineNumber)
+	string? TrimLineNumber(string? lineNumber)
 	{
+		if (lineNumber == null)
+			return null;
+
 		// QuickBASIC seems to treat line number tokens as numbers when their value is in the range 0..65529.
 		if (int.TryParse(lineNumber, out var numericValue)
 		 && (numericValue >= 0)
 		 && (numericValue < 65530))
 			return numericValue.ToString();
 		else
+		{
+			// Line numbers may contain at most one period and at most 40 characters. The period may not be in
+			// the first position but it may be in the last.
+
+			if (lineNumber.Length > 40)
+				return null;
+
+			bool containsDot = false;
+
+			for (int i=0; i < lineNumber.Length; i++)
+			{
+				if (lineNumber[i] == '.')
+				{
+					if (containsDot || (i == 0))
+						return null;
+
+					containsDot = true;
+				}
+				else if (!char.IsAsciiDigit(lineNumber[i]))
+					return null;
+			}
+
 			return lineNumber;
+		}
 	}
 }
