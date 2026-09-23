@@ -188,12 +188,6 @@ public class BasicParser(IdentifierRepository identifierRepository)
 			      && !line.Statements.Any()
 			      && !buffer.Any())
 			{
-				if (precedingWhitespaceToken != null)
-				{
-					buffer.Add(precedingWhitespaceToken);
-					precedingWhitespaceToken = null;
-				}
-
 				if ((line.LineNumber != null) || (TrimLineNumber(token.Value) is not string lineNumber))
 					throw new SyntaxErrorException(token, "Expected: statement");
 
@@ -237,6 +231,9 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 						if ((labelName != null) && !labelParser.HasMoreTokens)
 						{
+							if (line.LineNumber == null)
+								whitespace = "";
+
 							line.Label =
 								new Label()
 								{
