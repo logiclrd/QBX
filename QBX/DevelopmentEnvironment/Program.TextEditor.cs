@@ -916,6 +916,9 @@ public partial class Program
 										}
 									}
 
+									// Recalculate indentation
+									indentation = eventSiteViewport.GetLineIndentation(newCursorY);
+
 									// Step 2: Insert right part as new line being edited
 									newCursorY++;
 									newCursorX = indentation;
