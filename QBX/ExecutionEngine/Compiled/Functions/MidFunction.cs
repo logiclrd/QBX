@@ -78,9 +78,15 @@ public class MidFunction : Function
 		int start = StartExpression.EvaluateAndCoerceToInt(context, stackFrame) - 1;
 		int length = LengthExpression?.EvaluateAndCoerceToInt(context, stackFrame) ?? (stringLength - start);
 
-		if ((start < 0) || (length < 0) || (start + length > stringLength))
+		if ((start < 0) || (length < 0))
 			throw RuntimeException.IllegalFunctionCall(Source);
 
-		return stringVariable.Substring(start, length);
+		if (start + length > stringVariable.Value.Length)
+			length = stringVariable.Value.Length - start;
+
+		if (length > 0)
+			return stringVariable.Substring(start, length);
+		else
+			return new StringVariable();
 	}
 }
