@@ -72,7 +72,7 @@ GOTO top
 		lines[3].Label.Should().BeNull();
 		lines[4].Label.Should().NotBeNull();
 		lines[4].Label!.Name.Should().Be(ID("retry"));
-		lines[4].Label!.Indentation.Should().Be("    ");
+		lines[4].Label!.Indentation.Should().Be(""); // Label at start of line: whitespace collapsed
 		lines[4].Statements.Should().HaveCount(1);
 		lines[4].Statements[0].Should().BeOfType<PrintStatement>();
 	}
