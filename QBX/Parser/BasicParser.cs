@@ -213,7 +213,8 @@ public class BasicParser(IdentifierRepository identifierRepository)
 					bool consumedColon = false;
 
 					if (!line.Statements.Any()
-					 && (line.Label == null))
+					 && (line.Label == null)
+					 && (labelIndex < buffer.Count))
 					{
 						var labelParser = new TokenHandler(buffer.Slice(labelIndex), identifierRepository);
 
