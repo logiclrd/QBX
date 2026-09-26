@@ -1,5 +1,16 @@
 # QBX Releases
 
+## 1.27.0 - 2026-09-25
+
+### Fixed
+
+- The `MID$` function no longer raises errors about ranges extending past the end of the string.
+- Labels can now consistently use dots, both in their definitions and references from `GOTO`, `GOSUB`, `RESTORE` and `RETURN` statements.
+- Whitespace preceding line numbers is no longer transposed to the other side of the line number.
+- Labels at the start of the line now snap to the start of the line.
+- In the text editor, after pressing Return, if a line loses its indenting because of having a line number or label, the cursor is aligned with the new start of the line.
+- `GET #` no longer refuses to retrieve record 1. (It was converting it to a 0-based value for the back-end before range checking it.)
+
 ## 1.26.0 - 2026-09-20
 
 ### Fixed
