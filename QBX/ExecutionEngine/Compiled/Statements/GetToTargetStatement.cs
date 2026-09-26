@@ -42,10 +42,13 @@ public class GetToTargetStatement(CodeModel.Statements.GetStatement source) : Ge
 
 		if (RecordNumberExpression != null)
 		{
-			int recordNumber = RecordNumberExpression.EvaluateAndCoerceToInt(context, stackFrame) - 1;
+			int recordNumber = RecordNumberExpression.EvaluateAndCoerceToInt(context, stackFrame);
 
 			if (recordNumber < 1)
 				throw RuntimeException.BadRecordNumber(Source);
+
+			// The back-end uses 0-based record numbers.
+			recordNumber--;
 
 			if (openFile.IOMode == OpenFileIOMode.Random)
 				openFile.CurrentRecordNumber = recordNumber;
