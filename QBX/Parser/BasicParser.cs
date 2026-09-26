@@ -2700,7 +2700,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 						Token labelToken = tokenHandler.NextToken;
 
-						switch (tokenHandler.NextToken.Type)
+						switch (labelToken.Type)
 						{
 							case TokenType.Number:
 								if (int.TryParse(labelToken.Value, out var parsedLineNumber)
@@ -2713,6 +2713,8 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 									onError.TargetLineNumber = identifierRepository.UpdateCanonicalIdentifier(lineNumber);
 								}
+
+								tokenHandler.Advance();
 
 								break;
 
