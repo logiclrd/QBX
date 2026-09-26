@@ -1852,15 +1852,15 @@ public class BasicParser(IdentifierRepository identifierRepository)
 				switch (labelToken.Type)
 				{
 					case TokenType.Number:
-						if (TrimLineNumber(labelToken.Value) is string lineNumber)
-						{
-							tokenHandler.Advance();
-							tokenHandler.ExpectEndOfTokens();
+						if (TrimLineNumber(labelToken.Value) is not string lineNumber)
+							throw new SyntaxErrorException(labelToken, "Expected: label or line number");
 
-							statement.TargetLineNumber = identifierRepository.UpdateCanonicalIdentifier(lineNumber);
-						}
+						tokenHandler.Advance();
+						tokenHandler.ExpectEndOfTokens();
 
-						throw new SyntaxErrorException(labelToken, "Expected: label or line number");
+						statement.TargetLineNumber = identifierRepository.UpdateCanonicalIdentifier(lineNumber);
+
+						break;
 
 					case TokenType.Identifier:
 						string labelName;
