@@ -1,5 +1,12 @@
 # QBX Releases
 
+## 1.27.1 - 2026-09-30
+
+### Fixed
+
+- The palette modes for `SCREEN 7` and `SCREEN 8` are now correctly the CGA emulation mode of EGA, as emulated by VGA.
+- The `PALETTE` statement now correctly maps CGA emulation colour values in `SCREEN 7` and `SCREEN 8`.
+
 ## 1.27.0 - 2026-09-25
 
 ### Fixed
