@@ -1,0 +1,296 @@
+{
+  "source": "Catacomb Abyss shareware",
+  "mapIndex": 0,
+  "mapName": "Towne Cemetary",
+  "width": 40,
+  "height": 28,
+  "player": {
+    "x": 18,
+    "y": 25,
+    "direction": 1
+  },
+  "headOffset": 114096,
+  "dictionaryOffset": 160588,
+  "wallCodes": [
+    24,
+    25,
+    39,
+    45,
+    46,
+    47,
+    49,
+    53,
+    55,
+    57,
+    58,
+    60
+  ],
+  "slots": [
+    {
+      "code": 24,
+      "side": "light",
+      "chunk": 275
+    },
+    {
+      "code": 24,
+      "side": "dark",
+      "chunk": 275
+    },
+    {
+      "code": 25,
+      "side": "light",
+      "chunk": 273
+    },
+    {
+      "code": 25,
+      "side": "dark",
+      "chunk": 274
+    },
+    {
+      "code": 39,
+      "side": "light",
+      "chunk": 215
+    },
+    {
+      "code": 39,
+      "side": "dark",
+      "chunk": 214
+    },
+    {
+      "code": 45,
+      "side": "light",
+      "chunk": 226
+    },
+    {
+      "code": 45,
+      "side": "dark",
+      "chunk": 227
+    },
+    {
+      "code": 46,
+      "side": "light",
+      "chunk": 230
+    },
+    {
+      "code": 46,
+      "side": "dark",
+      "chunk": 231
+    },
+    {
+      "code": 47,
+      "side": "light",
+      "chunk": 271
+    },
+    {
+      "code": 47,
+      "side": "dark",
+      "chunk": 272
+    },
+    {
+      "code": 49,
+      "side": "light",
+      "chunk": 234
+    },
+    {
+      "code": 49,
+      "side": "dark",
+      "chunk": 235
+    },
+    {
+      "code": 53,
+      "side": "light",
+      "chunk": 242
+    },
+    {
+      "code": 53,
+      "side": "dark",
+      "chunk": 243
+    },
+    {
+      "code": 55,
+      "side": "light",
+      "chunk": 246
+    },
+    {
+      "code": 55,
+      "side": "dark",
+      "chunk": 247
+    },
+    {
+      "code": 57,
+      "side": "light",
+      "chunk": 250
+    },
+    {
+      "code": 57,
+      "side": "dark",
+      "chunk": 251
+    },
+    {
+      "code": 58,
+      "side": "light",
+      "chunk": 252
+    },
+    {
+      "code": 58,
+      "side": "dark",
+      "chunk": 253
+    },
+    {
+      "code": 60,
+      "side": "light",
+      "chunk": 256
+    },
+    {
+      "code": 60,
+      "side": "dark",
+      "chunk": 257
+    }
+  ],
+  "lightSlots": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    2,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    4,
+    0,
+    0,
+    0,
+    0,
+    0,
+    6,
+    8,
+    10,
+    0,
+    12,
+    0,
+    0,
+    0,
+    14,
+    0,
+    16,
+    0,
+    18,
+    20,
+    0,
+    22,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "darkSlots": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    3,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    5,
+    0,
+    0,
+    0,
+    0,
+    0,
+    7,
+    9,
+    11,
+    0,
+    13,
+    0,
+    0,
+    0,
+    15,
+    0,
+    17,
+    0,
+    19,
+    21,
+    0,
+    23,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ]
+}
