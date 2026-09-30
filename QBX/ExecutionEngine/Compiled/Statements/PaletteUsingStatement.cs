@@ -46,7 +46,7 @@ public abstract class PaletteUsingStatement(CodeModel.Statements.PaletteStatemen
 			if (colour == -1)
 				continue;
 
-			PaletteStatement.AlterPalette(attribute, colour, context.RuntimeState.PaletteMode, context.Machine);
+			PaletteStatement.AlterPalette(attribute, colour, context.RuntimeState.PaletteMode, context.RuntimeState.EGAMonitorMode, context.Machine);
 		}
 	}
 }

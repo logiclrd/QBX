@@ -12,6 +12,7 @@ public class RuntimeState
 	public bool TextCursorVisible = false;
 	public bool HaveGraphicsViewport = false;
 	public PaletteMode PaletteMode = PaletteMode.Attribute;
+	public EGAMonitorMode EGAMonitorMode;
 	public int MaximumAttribute = 15;
 	public int MaximumColour = 63;
 	public bool DisplaySoftKeyMacroLine = false;

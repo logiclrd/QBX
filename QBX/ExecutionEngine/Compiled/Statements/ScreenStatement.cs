@@ -56,6 +56,8 @@ public class ScreenStatement(CodeModel.Statements.ScreenStatement source) : Exec
 							_ => throw new Exception("Internal error: Unrecognized palette type " + modeParams.PaletteType)
 						};
 
+					context.RuntimeState.EGAMonitorMode = Video.Modes[hardwareMode]!.EGAMonitorMode;
+
 					context.RuntimeState.MaximumAttribute = modeParams.Use256Colours ? 255 : 15;
 
 					if (modeParams.ShiftRegisterInterleave)

@@ -1,6 +1,7 @@
 using System;
 
 using QBX.ExecutionEngine.Execution;
+using QBX.Firmware;
 using QBX.Hardware;
 
 using static QBX.Hardware.GraphicsArray;
@@ -31,7 +32,7 @@ public class PaletteStatement(CodeModel.Statements.PaletteStatement source) : Ex
 
 		try
 		{
-			AlterPalette(attribute, colour, context.RuntimeState.PaletteMode, context.Machine);
+			AlterPalette(attribute, colour, context.RuntimeState.PaletteMode, context.RuntimeState.EGAMonitorMode, context.Machine);
 		}
 		catch (RuntimeException ex)
 		{
@@ -39,7 +40,7 @@ public class PaletteStatement(CodeModel.Statements.PaletteStatement source) : Ex
 		}
 	}
 
-	public static void AlterPalette(int attribute, int colour, PaletteMode paletteMode, Machine machine)
+	public static void AlterPalette(int attribute, int colour, PaletteMode paletteMode, EGAMonitorMode egaMonitorMode, Machine machine)
 	{
 		switch (paletteMode)
 		{
@@ -60,6 +61,22 @@ public class PaletteStatement(CodeModel.Statements.PaletteStatement source) : Ex
 				goto case PaletteMode.Attribute;
 			case PaletteMode.Attribute:
 				// Remap the DAC colour to which the specified attribute maps.
+
+				if (egaMonitorMode == EGAMonitorMode.CGA)
+				{
+					if ((colour < 0) || (colour > 15))
+						throw RuntimeException.IllegalFunctionCall();
+
+					// Extend the high-intensity bit one place. With the RGBI colour interpretation (CGA
+					// emulation), the red and blue intensity bits are ignored, and the green intensity
+					// bit is used for all 3 channels. Thus, if the supplied colour is a "bright" colour
+					// (8-15), we need to translate it to an EGA palette index where the green intensity
+					// bit is set.
+
+					if ((colour & 0b1000) != 0)
+						colour |= 0b010_000;
+				}
+
 				if ((colour < 0) || (colour > 63))
 					throw RuntimeException.IllegalFunctionCall();
 
