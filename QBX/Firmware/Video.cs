@@ -395,7 +395,7 @@ public partial class Video(Machine machine)
 		switch (mode.PaletteType)
 		{
 			case PaletteType.CGA: LoadCGAPalette(monochrome: mode.IsMonochrome, intensity: true, reloadDAC: true); break;
-			case PaletteType.EGA: LoadEGAPalette(); break;
+			case PaletteType.EGA: LoadEGAPalette(mode.EGAMonitorMode); break;
 			case PaletteType.VGA: LoadVGAPalette(); break;
 		}
 	}
@@ -891,13 +891,22 @@ public partial class Video(Machine machine)
 		}
 	}
 
-	void BuildEGAPalette(Span<byte> paletteBytes)
+	void BuildEGAPalette(Span<byte> paletteBytes, EGAMonitorMode monitorMode)
 	{
 		for (int i = 0; i < 64; i++)
 		{
 			int r = (i & 0b100100) >> 2;
 			int g = (i & 0b010010) >> 1;
 			int b = (i & 0b001001) >> 0;
+
+			if (monitorMode == EGAMonitorMode.CGA)
+			{
+				// 2:2:2 => RGBI
+				int intensity = g & 0b1000;
+
+				r = (r & 1) | intensity;
+				b = (b & 1) | intensity;
+			}
 
 			// 0bB00A => 0bAB
 			r = (r >> 3) | ((r & 1) << 1);
@@ -917,9 +926,9 @@ public partial class Video(Machine machine)
 		}
 	}
 
-	public void LoadEGAPalette()
+	public void LoadEGAPalette(EGAMonitorMode monitorMode)
 	{
-		BuildEGAPalette(machine.GraphicsArray.DAC.Palette.AsSpan());
+		BuildEGAPalette(machine.GraphicsArray.DAC.Palette.AsSpan(), monitorMode);
 
 		machine.GraphicsArray.DAC.RebuildBGRA();
 

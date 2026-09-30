@@ -8,6 +8,7 @@ public class ModeParameters
 	public bool IsGraphicsMode;
 	public bool IsMonochrome;
 	public PaletteType PaletteType;
+	public EGAMonitorMode EGAMonitorMode;
 	public BaseAddress BaseAddress;
 	public CharacterWidth CharacterWidth;
 	public int CharacterHeight;
