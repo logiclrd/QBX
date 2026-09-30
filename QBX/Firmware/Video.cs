@@ -899,6 +899,8 @@ public partial class Video(Machine machine)
 			int g = (i & 0b010010) >> 1;
 			int b = (i & 0b001001) >> 0;
 
+			bool attenuateGreen = false;
+
 			if (monitorMode == EGAMonitorMode.CGA)
 			{
 				// 2:2:2 => RGBI
@@ -906,6 +908,11 @@ public partial class Video(Machine machine)
 
 				r = (r & 1) | intensity;
 				b = (b & 1) | intensity;
+
+				// CGA quirk: For RGBA colour 0110 specifically (red + green, low-intensity), which would
+				// normally be a dull yellow, the monitor halves the green component, giving a brown
+				// instead.
+				attenuateGreen = (r == 1) && (g == 1) && (b == 0);
 			}
 
 			// 0bB00A => 0bAB
@@ -917,6 +924,9 @@ public partial class Video(Machine machine)
 			r *= 0b10101;
 			g *= 0b10101;
 			b *= 0b10101;
+
+			if (attenuateGreen)
+				g >>= 1;
 
 			paletteBytes[0] = (byte)r;
 			paletteBytes[1] = (byte)g;
