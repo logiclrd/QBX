@@ -319,6 +319,35 @@ public class CompilationUnit : IRenderableCode, IEditableUnit
 
 		var unit = BasicParser.Parse(lexer, ignoreErrors, lineCountCallback);
 
+		// Serialize and re-parse the exact same code, because canonical formatting might shift
+		// tokens, and using the original tokens might result in highlighting the wrong characters
+		// for errors.
+		var buffer = new StringWriter();
+		bool lastLineEmpty = false;
+
+		for (int i = 0; i < unit.Elements.Count; i++)
+		{
+			var element = unit.Elements[i];
+
+			if (i > 0)
+			{
+				if (!lastLineEmpty)
+					buffer.WriteLine();
+			}
+
+			foreach (var line in element.Lines)
+			{
+				line.Render(buffer);
+				lastLineEmpty = line.IsEmpty;
+			}
+		}
+
+		lexer = new Lexer(new StringReader(buffer.ToString()));
+		lexer.TabSize = tabSize;
+
+		unit = BasicParser.Parse(lexer, ignoreErrors, lineCountCallback);
+
+		// Now process the loaded lines.
 		unit.FilePath = filePath;
 
 		var allSingleTypeMap = CompilationElement.MakeDefaultDefTypeMap();
