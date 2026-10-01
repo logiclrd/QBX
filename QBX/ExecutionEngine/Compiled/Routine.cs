@@ -233,9 +233,9 @@ public class Routine : Sequence
 				}
 
 				if (param.IsArray == false)
-					ParameterVariableIndices[i] = mapper.DeclareVariable(name, paramType, useTypeCharacter, param.HasExplicitTypeClause);
+					ParameterVariableIndices[i] = mapper.DeclareVariable(name, paramType, useTypeCharacter, param.HasExplicitTypeClause, param.NameToken);
 				else
-					ParameterVariableIndices[i] = mapper.DeclareArray(name, paramType, numberOfDimensions: -1, useTypeCharacter, param.HasExplicitTypeClause);
+					ParameterVariableIndices[i] = mapper.DeclareArray(name, paramType, numberOfDimensions: -1, useTypeCharacter, param.HasExplicitTypeClause, param.NameToken);
 
 				if (paramType.IsUserType)
 					mapper.AddDisallowedSlug(name.Value);
