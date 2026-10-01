@@ -217,15 +217,15 @@ DECLARE FUNCTION RandomDustColour% ()
 
 DECLARE SUB GUSReset ()
 
-DECLARE SUB S3MFrameWait (frameticks%, lastframetick&, rowticks%, lastrowtick&, tickbase&, samples() AS SampleType, notes() AS NoteType, rownotes%(), nextrow%, nextnote%, channellastsample%(), globalvolume!)
+DECLARE SUB S3MFrameWait (fps%, frameticks%, rowticks%, tickfrequency%, lastframetick&, lastrowtick&, tickbase&, samples() AS SampleType, notes() AS NoteType, rownotes%(), nextrow%, nextnote%, channellastsample%(), globalvolume!, speed%, tempo%)
 DECLARE SUB S3MInitializeTiming (lastframetick&, lastrowtick&, tickbase&)
 DECLARE SUB S3MJumpToSong (song AS SongType, nextrow%, nextnote%)
-DECLARE SUB S3MLoad (filenum%, samples() AS SampleType, songs() AS SongType, notes() AS NoteType, rownotes%(), globalvolume!, fps%, frameticks%, rowticks%, tickfrequency%)
+DECLARE SUB S3MLoad (filenum%, samples() AS SampleType, songs() AS SongType, notes() AS NoteType, rownotes%(), globalvolume!, speed%, tempo%, fps%, frameticks%, rowticks%, tickfrequency%)
 DECLARE SUB S3MMeasure (filenum%, numsamples%, numsongs%, numnotes%, numrows%)
-DECLARE SUB S3MPlayNote (samples() AS SampleType, note AS NoteType, channellastsample%(), globalvolume!)
+DECLARE SUB S3MPlayNote (samples() AS SampleType, note AS NoteType, channellastsample%(), globalvolume!, speed%, tempo%, fps%, frameticks%, rowticks%, tickfrequency%)
 DECLARE SUB S3MProgramTimerRate (tickspersecond#)
 DECLARE SUB S3MResetTimerRate ()
-DECLARE SUB S3MRowUpdateCheck (rowticks%, lastrowtick&, tickbase&, samples() AS SampleType, notes() AS NoteType, rownotes%(), nextrow%, nextnote%, channellastsample%(), globalvolume!)
+DECLARE SUB S3MRowUpdateCheck (fps%, frameticks%, rowticks%, tickfrequency%, lastrowtick&, tickbase&, samples() AS SampleType, notes() AS NoteType, rownotes%(), nextrow%, nextnote%, channellastsample%(), globalvolume!, speed%, tempo%)
 DECLARE SUB S3MStop (nextrow%, nextnote%)
 
 TYPE RegTypeX
@@ -558,7 +558,7 @@ DIM songrownotes%(1 TO numrows%)
 
 GUSReset
 
-S3MLoad 1, songsamples(), songsongs(), songnotes(), songrownotes%(), songglobalvolume!, FPSLimit%, frameticks%, songrowticks%, tickfrequency%
+S3MLoad 1, songsamples(), songsongs(), songnotes(), songrownotes%(), songglobalvolume!, songinitialspeed%, songinitialtempo%, FPSLimit%, frameticks%, songrowticks%, tickfrequency%
 
 CLOSE #1
 
@@ -716,6 +716,9 @@ DIM songchannellastsample%(31)
 DO
   S3MJumpToSong songsongs(1), songnextrow%, songnextnote%
 
+  songspeed% = songinitialspeed%
+  songtempo% = songinitialtempo%
+
   TitleScreen FighterVertices(), FighterNormals(), FighterFaces(), FighterLightPosition, exitgame%
 
   S3MStop songnextrow%, songnextnote%
@@ -727,6 +730,9 @@ DO
   CALL InterruptX(&H33, rin, rout)
 
   S3MJumpToSong songsongs(2), songnextrow%, songnextnote%
+
+  songspeed% = songinitialspeed%
+  songtempo% = songinitialtempo%
 
   ResetGameState Dusts(), Shots(), Rocks(), Aliens(), Booms(), Splats(), BossPieceActive%(), score&, gunheat%, roundnumber%, nextround%, isbossround%
 
@@ -2515,7 +2521,7 @@ FLOOR# = e% + (e% > d#)
 END FUNCTION
 
 SUB FrameWait
-SHARED frameticks%, songrowticks%
+SHARED frameticks%, songrowticks%, tickfrequency%
 SHARED lastframetick&, songlastrowtick&
 SHARED tickbase&
 SHARED songsamples() AS SampleType
@@ -2524,8 +2530,10 @@ SHARED songrownotes%()
 SHARED songnextrow%, songnextnote%
 SHARED songchannellastsample%()
 SHARED songglobalvolume!
+SHARED songspeed%, songtempo%
 
-S3MFrameWait frameticks%, lastframetick&, songrowticks%, songlastrowtick&, tickbase&, songsamples(), songnotes(), songrownotes%(), songnextrow%, songnextnote%, songchannellastsample%(), songglobalvolume!
+S3MFrameWait FPSLimit%, frameticks%, songrowticks%, tickfrequency%, lastframetick&, songlastrowtick&, tickbase&, songsamples(), songnotes(), songrownotes%(), songnextrow%, songnextnote%, songchannellastsample%(), songglobalvolume!, songspeed%,  _
+songtempo%
 END SUB
 
 SUB GetArtDimensions (filename$, w%, h%)
@@ -3121,7 +3129,7 @@ SELECT CASE effect%
     note.Volume = .5
 END SELECT
 
-S3MPlayNote songsamples(), note, songchannellastsample%(), 1
+S3MPlayNote songsamples(), note, songchannellastsample%(), 1, 0, 0, 0, 0, 0, 0
 END SUB
 
 SUB PutArt (ox#, oy#, angle#, pixels%(), mask%())
@@ -3683,7 +3691,8 @@ NEXT i%
 END SUB
 
 SUB SongUpdateCheck
-SHARED songrowticks%, songlastrowtick&
+SHARED frameticks%, songrowticks%, tickfrequency%
+SHARED songlastrowtick&
 SHARED tickbase&
 SHARED songsamples() AS SampleType
 SHARED songnotes() AS NoteType
@@ -3691,8 +3700,9 @@ SHARED songrownotes%()
 SHARED songnextrow%, songnextnote%
 SHARED songchannellastsample%()
 SHARED songglobalvolume!
+SHARED songspeed%, songtempo%
 
-S3MRowUpdateCheck songrowticks%, songlastrowtick&, tickbase&, songsamples(), songnotes(), songrownotes%(), songnextrow%, songnextnote%, songchannellastsample%(), songglobalvolume!
+S3MRowUpdateCheck FPSLimit%, frameticks%, songrowticks%, tickfrequency%, songlastrowtick&, tickbase&, songsamples(), songnotes(), songrownotes%(), songnextrow%, songnextnote%, songchannellastsample%(), songglobalvolume!, songspeed%, songtempo%
 END SUB
 
 SUB SortFaces (faces() AS FaceType, first%, last%)

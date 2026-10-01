@@ -23,6 +23,17 @@ TYPE NoteType
   Volume AS SINGLE
 END TYPE
 
+DECLARE SUB GUSReset ()
+DECLARE SUB GUSStopNote (voicenumber%)
+
+DECLARE SUB S3MFrameWait (fps%, frameticks%, rowticks%, tickfrequency%, lastframetick&, lastrowtick&, tickbase&, samples() AS SampleType, notes() AS NoteType, rownotes%(), nextrow%, nextnote%, channellastsample%(), globalvolume!, speed%, tempo%)
+DECLARE SUB S3MInitializeTiming (lastframetick&, lastrowtick&, tickbase&)
+DECLARE SUB S3MJumpToSong (song AS SongType, nextrow%, nextnote%)
+DECLARE SUB S3MLoad (filenum%, samples() AS SampleType, songs() AS SongType, notes() AS NoteType, rownotes%(), globalvolume!, initialspeed%, initialtempo%, fps%, frameticks%, rowticks%, tickfrequency%)
+DECLARE SUB S3MMeasure (filenum%, numsamples%, numsongs%, numnotes%, numrows%)
+DECLARE SUB S3MProgramTimerRate (tickspersecond#)
+DECLARE SUB S3MResetTimerRate ()
+
 DECLARE FUNCTION SelectFile$ ()
 DECLARE FUNCTION SelectSong% (numsongs%, numrows%, songs() AS SongType, notes() AS NoteType, rownotes%(), rowticks%, tickfrequency%)
 
@@ -59,7 +70,9 @@ DIM songrownotes%(1 TO numrows%)
 
 GUSReset
 
-S3MLoad 1, songsamples(), songsongs(), songnotes(), songrownotes%(), globalvolume!, 60, frameticks%, rowticks%, tickfrequency%
+CONST FramesPerSecond% = 60
+
+S3MLoad 1, songsamples(), songsongs(), songnotes(), songrownotes%(), globalvolume!, initialspeed%, initialtempo%, FramesPerSecond%, frameticks%, rowticks%, tickfrequency%
 
 CLOSE #1
 
@@ -86,6 +99,9 @@ DO
 
   S3MJumpToSong songsongs(selectedsong%), nextrow%, nextnote%
 
+  speed% = initialspeed%
+  tempo% = initialtempo%
+
   lastrow% = nextrow%
   lastnote% = nextnote%
 
@@ -94,7 +110,7 @@ DO
   S3MInitializeTiming lastframetick&, lastrowtick&, tickbase&
 
   DO
-    S3MFrameWait frameticks%, lastframetick&, rowticks%, lastrowtick&, tickbase&, songsamples(), songnotes(), songrownotes%(), nextrow%, nextnote%, channellastsample%(), globalvolume!
+    S3MFrameWait FramesPerSecond%, frameticks%, rowticks%, tickfrequency%, lastframetick&, lastrowtick&, tickbase&, songsamples(), songnotes(), songrownotes%(), nextrow%, nextnote%, channellastsample%(), globalvolume!, speed%, tempo%
 
     UpdateVisualization chan1line%, channelvisage%(), channelvisx%(), songsamples(), songnotes(), songrownotes%(), nextrow%, lastrow%, lastnote%, rowspersecond!
 
