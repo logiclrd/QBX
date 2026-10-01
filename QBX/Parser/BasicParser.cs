@@ -77,6 +77,9 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 								unit.Elements.Add(element);
 
+								// Update shared reference shared by all tokens on this line.
+								line.CompilationElement = element;
+
 								element.FirstLineIndex = lineIndex - prelude.Count;
 
 								element.AddLines(prelude);
