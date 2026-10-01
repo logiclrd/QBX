@@ -288,7 +288,7 @@ public partial class Program
 
 		try
 		{
-			var lexer = new Lexer(directCodeTextReader, immediateElement);
+			var lexer = new Lexer(directCodeTextReader);
 
 			var parsedCodeLine = parser.ParseCodeLines(lexer).SingleOrDefault();
 
@@ -298,6 +298,11 @@ public partial class Program
 
 				return ExecuteDirect(parsedCodeLine, immediateUnit, immediateElement);
 			}
+		}
+		catch (SyntaxErrorException error)
+		{
+			error.Token.OwnerElementRef?.Value = immediateElement;
+			throw;
 		}
 		finally
 		{

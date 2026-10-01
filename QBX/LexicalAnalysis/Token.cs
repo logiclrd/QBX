@@ -23,7 +23,9 @@ public class Token(MutableBox<int> line, int column, TokenType type, string valu
 
 	public MutableBox<int> LineNumberBox => line;
 
-	public CompilationElement? OwnerElement;
+	public SharedRef<CompilationElement>? OwnerElementRef;
+
+	public CompilationElement? OwnerElement => OwnerElementRef?.Value;
 	public Statement? OwnerStatement;
 
 	public int Length => value.Length;

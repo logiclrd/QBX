@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -30,7 +29,6 @@ public class BasicParser(IdentifierRepository identifierRepository)
 			mainElement.Type = CompilationElementType.Main;
 
 			unit.Elements.Add(mainElement);
-			tokenStream.CurrentElement = mainElement;
 
 			var element = mainElement;
 			bool betweenElements = false;
@@ -43,6 +41,9 @@ public class BasicParser(IdentifierRepository identifierRepository)
 			{
 				foreach (var line in parser.ParseCodeLines(tokenStream, ignoreErrors))
 				{
+					// Update shared reference shared by all tokens on this line.
+					line.CompilationElement = element;
+
 					lineIndex++;
 
 					lineCountCallback?.Invoke(lineIndex);
@@ -75,7 +76,6 @@ public class BasicParser(IdentifierRepository identifierRepository)
 								element = new CompilationElement(unit);
 
 								unit.Elements.Add(element);
-								tokenStream.CurrentElement = element;
 
 								element.FirstLineIndex = lineIndex - prelude.Count;
 
@@ -123,9 +123,9 @@ public class BasicParser(IdentifierRepository identifierRepository)
 			catch (SyntaxErrorException error)
 			{
 				// The error's context needs to link back to the CompilationElement for the IDE to highlight it.
-				if (error.Token.OwnerElement == null)
-					error.Token.OwnerElement = element;
-
+				// The tokens all share a common shared reference to an owner CompilationElement, but it hasn't
+				// been filled in yet.
+				error.Token.OwnerElementRef?.Value = element;
 				throw;
 			}
 		}
@@ -149,6 +149,7 @@ public class BasicParser(IdentifierRepository identifierRepository)
 
 			var token = enumerator.Current;
 
+			token.OwnerElementRef = line.CompilationElementRef;
 			line.SourceLineIndex = token.LineNumberBox;
 
 			if (token.Type == TokenType.NewLine)
@@ -265,6 +266,8 @@ public class BasicParser(IdentifierRepository identifierRepository)
 									tokenPeeked = true;
 									break;
 								}
+
+								token.OwnerElementRef = line.CompilationElementRef;
 
 								yield return token;
 							}

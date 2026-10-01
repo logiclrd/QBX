@@ -1672,20 +1672,24 @@ public partial class Program
 
 								line.Render(new StringWriter(buffer), includeCRLF: false);
 
-								var lexer = new Lexer(new StringBuilderReader(buffer), element, startingLineNumber: i);
+								var lexer = new Lexer(new StringBuilderReader(buffer), startingLineNumber: i);
 
 								try
 								{
 									var parsedCodeLine = parser.ParseCodeLines(lexer).SingleOrDefault();
+
+									// The tokens on this line have a common shared ref to their owner element,
+									// but it hasn't been filled in yet.
+									parsedCodeLine?.CompilationElement = element;
 
 									element.ReplaceLine(i, parsedCodeLine ?? CodeLine.CreateEmpty());
 								}
 								catch (SyntaxErrorException error)
 								{
 									// The error's context needs to link back to the CompilationElement for the IDE to highlight it.
-									if (error.Token.OwnerElement == null)
-										error.Token.OwnerElement = element;
-
+									// The tokens on the line that generated the error all share a common shared ref to their owner
+									// element but it hasn't been filled in yet.
+									error.Token.OwnerElementRef?.Value = element;
 									throw;
 								}
 							}

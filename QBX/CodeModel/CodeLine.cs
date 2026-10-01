@@ -15,7 +15,15 @@ namespace QBX.CodeModel;
 
 public class CodeLine : IRenderableCode, IEditableLine
 {
-	public CompilationElement? CompilationElement { get; set; }
+	SharedRef<CompilationElement> _compilationElementRef = new SharedRef<CompilationElement>();
+
+	public SharedRef<CompilationElement> CompilationElementRef => _compilationElementRef;
+
+	public CompilationElement? CompilationElement
+	{
+		get => _compilationElementRef.Value;
+		set => _compilationElementRef.Value = value;
+	}
 
 	// Linked to the shared line index boxes in Tokens by the parser,
 	// used to keep line indexes up-to-date when lines are added/removed.

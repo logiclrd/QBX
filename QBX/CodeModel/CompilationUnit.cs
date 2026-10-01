@@ -256,14 +256,17 @@ public class CompilationUnit : IRenderableCode, IEditableUnit
 
 			declaration.Render(buffer);
 
-			var lexer = new Lexer(buffer.ToString(), MainElement);
+			var lexer = new Lexer(buffer.ToString());
 
 			var parser = new BasicParser(IdentifierRepository);
 
 			var parsedDeclaration = parser.ParseCodeLines(lexer, ignoreErrors: true).FirstOrDefault();
 
 			if (parsedDeclaration != null)
+			{
+				parsedDeclaration.CompilationElement = MainElement;
 				newDeclarations.Add(parsedDeclaration);
+			}
 		}
 
 		if (newDeclarations.Any())

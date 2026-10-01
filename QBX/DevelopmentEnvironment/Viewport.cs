@@ -267,11 +267,15 @@ public class Viewport
 
 		try
 		{
-			var lexer = new Lexer(new StringBuilderReader(buffer), element, startingLineNumber: CursorY);
+			var lexer = new Lexer(new StringBuilderReader(buffer), startingLineNumber: CursorY);
 
 			var parser = new BasicParser(unit.IdentifierRepository);
 
 			var parsedCodeLine = parser.ParseCodeLines(lexer).SingleOrDefault();
+
+			// The tokens on this code line all share a common shared reference to their owner element,
+			// but it hasn't been filled in yet.
+			parsedCodeLine?.CompilationElementRef?.Value = element;
 
 			if (parsedCodeLine?.Statements.FirstOrDefault() is ProperSubroutineOpeningStatement startScopeStatement)
 			{
@@ -366,14 +370,20 @@ public class Viewport
 
 										line.Render(writer);
 
-										lexer = new Lexer(new StringBuilderReader(thisLineBuffer), EditableElement as CompilationElement, startingLineNumber: i);
+										lexer = new Lexer(new StringBuilderReader(thisLineBuffer), startingLineNumber: i);
 
 										try
 										{
 											var reparsedLine = parser.ParseCodeLines(lexer).SingleOrDefault();
 
 											if (reparsedLine != null)
+											{
+												// The tokens on this line have a common shared reference to their owner element,
+												// but it hasn't been filled in yet.
+												reparsedLine.CompilationElement = EditableElement as CompilationElement;
+
 												existingCodeElement.ReplaceLine(i, reparsedLine);
+											}
 										}
 										catch
 										{
@@ -439,9 +449,13 @@ public class Viewport
 
 					parsedCodeLine.Render(writer);
 
-					lexer = new Lexer(new StringBuilderReader(buffer), EditableElement as CompilationElement, startingLineNumber: CursorY);
+					lexer = new Lexer(new StringBuilderReader(buffer), startingLineNumber: CursorY);
 
 					parsedCodeLine = parser.ParseCodeLines(lexer).SingleOrDefault();
+
+					// The tokens on this line have a common shared ref to their owner element,
+					// but it hasn't been filled in yet.
+					parsedCodeLine?.CompilationElement = element;
 				}
 				catch { }
 			}
@@ -458,8 +472,7 @@ public class Viewport
 			if (e is SyntaxErrorException error)
 			{
 				// The error's context needs to link back to the CompilationElement for the IDE to highlight it.
-				if (error.Token.OwnerElement == null)
-					error.Token.OwnerElement = element;
+				error.Token.OwnerElementRef?.Value = element;
 			}
 
 			ReplaceCurrentLine(CodeLine.CreateUnparsed(buffer.ToString()));

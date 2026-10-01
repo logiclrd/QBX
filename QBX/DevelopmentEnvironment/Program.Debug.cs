@@ -489,7 +489,7 @@ public partial class Program
 				{
 					try
 					{
-						var lexer = new Lexer(watch.Expression, currentRoutine.Source);
+						var lexer = new Lexer(watch.Expression);
 
 						var tokens = lexer.ToList();
 
