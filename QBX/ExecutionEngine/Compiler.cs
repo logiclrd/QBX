@@ -2859,7 +2859,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 						CodeModel.Statements.PutSpriteAction.Or => PutSpriteAction.Or,
 						CodeModel.Statements.PutSpriteAction.ExclusiveOr => PutSpriteAction.ExclusiveOr,
 
-						_ => PutSpriteAction.PixelSet
+						_ => PutSpriteAction.ExclusiveOr
 					};
 
 				container.Append(translatedPutStatement);
