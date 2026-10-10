@@ -1,5 +1,18 @@
 # QBX Releases
 
+## 1.27.2 - 2026-10-09
+
+### Fixed
+
+- Some situations where the IDE failed to jump to the location of an error have been corrected.
+- If a token moves in a line during load because of reformatting and then an error occurs highlighting that token, the correct range of characters is now highlighted.
+- Errors from `DIM` statements now correctly highlight the name token of the offending declaration.
+- Errors in `SUB` and `FUNCTION` opening lines no longer cause the IDE to jump to the end of the preceding `SUB` or `FUNCTION` (or the main module).
+- In the `Samples` folder, under `SHRIKE`, the `MINS3M.BAS` player now supports `Txx` and `Axx` effects to modify speed and tempo mid-song.
+- Statements that take references to arrays by their bare identifiers (`ERASE arr%`, `GET (x1, y1)-(x2, y2), arr%`, `PUT (x, y), arr%`) no longer attempt to implicitly declare the array if it has not already been `DIM`ensioned.
+- The `DRAW` processor no longer applies the current `S`cale to absolute-coordinate `M`ove commands.
+- The default `PUT` (sprite) action verb is now correctly `XOR`.
+
 ## 1.27.1 - 2026-09-30
 
 ### Fixed
