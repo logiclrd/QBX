@@ -3676,7 +3676,7 @@ public class Compiler(IdentifierRepository identifierRepository)
 				{
 					if (parseIdentifiersAsArrays)
 					{
-						int variableIndex = mapper.ResolveArray(identifier.Identifier, arrayType: null, numberOfDimensions: -1, out _);
+						int variableIndex = mapper.ResolveArray(identifier.Identifier, arrayType: null, numberOfDimensions: -1);
 						var variableType = mapper.GetVariableType(variableIndex);
 
 						if (variableIndex < 0)
