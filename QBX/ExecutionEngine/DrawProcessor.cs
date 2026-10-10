@@ -115,6 +115,7 @@ public class DrawProcessor : ProcessorCommon
 					if (ch == M)
 					{
 						int sign = 1;
+						double scale = 1;
 
 						relative = false;
 
@@ -127,10 +128,13 @@ public class DrawProcessor : ProcessorCommon
 							}
 
 							if (relative)
+							{
+								scale = _scale;
 								AdvanceAndSkipWhitespace(ref input);
+							}
 						}
 
-						dx = _scale * sign * ExpectInteger(ref input, executionContext);
+						dx = scale * sign * ExpectInteger(ref input, executionContext);
 
 						SkipWhitespace(ref input);
 
@@ -142,11 +146,11 @@ public class DrawProcessor : ProcessorCommon
 						switch (input[0])
 						{
 							case Plus: sign = +1; AdvanceAndSkipWhitespace(ref input); break;
-							case Minus:  sign = -1; AdvanceAndSkipWhitespace(ref input); break;
+							case Minus: sign = -1; AdvanceAndSkipWhitespace(ref input); break;
 							default: sign = +1; break;
 						}
 
-						dy = _scale * sign * ExpectInteger(ref input, executionContext);
+						dy = scale * sign * ExpectInteger(ref input, executionContext);
 					}
 					else
 					{
