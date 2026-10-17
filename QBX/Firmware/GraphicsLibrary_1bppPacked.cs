@@ -967,44 +967,52 @@ public class GraphicsLibrary_1bppPacked : GraphicsLibrary
 	{
 		if ((x & 7) != 0)
 			base.DrawCharacterScan(x, y, characterWidth, glyphScan);
-		else if ((DrawingAttribute & 0x80) == 0)
-		{
-			int o = y * _stride + (x >> 3);
-
-			if ((o >= 0) && (o < _planeBytesUsed))
-			{
-				var vramSpan = Array.VRAM.AsSpan();
-
-				int planeMask = Array.Graphics.Registers.BitMask;
-
-				if ((planeMask & 1) != 0)
-					vramSpan.Slice(_plane0Offset, _planeBytesUsed)[o] = glyphScan;
-				if ((planeMask & 2) != 0)
-					vramSpan.Slice(_plane1Offset, _planeBytesUsed)[o] = glyphScan;
-				if ((planeMask & 4) != 0)
-					vramSpan.Slice(_plane2Offset, _planeBytesUsed)[o] = glyphScan;
-				if ((planeMask & 8) != 0)
-					vramSpan.Slice(_plane3Offset, _planeBytesUsed)[o] = glyphScan;
-			}
-		}
 		else
 		{
+			bool exclusiveOr = ((DrawingAttribute & 0x80) != 0);
+
 			int o = y * _stride + (x >> 3);
 
 			if ((o >= 0) && (o < _planeBytesUsed))
 			{
-				var vramSpan = Array.VRAM.AsSpan();
+				if (Array.TryGetSpan(0, Array.VRAM.Length, out var vramSpan))
+				{
+					int planeMask = Array.Graphics.Registers.BitMask;
 
-				int planeMask = Array.Graphics.Registers.BitMask;
+					if (exclusiveOr)
+					{
+						if ((planeMask & 1) != 0)
+							vramSpan.Slice(_plane0Offset, _planeBytesUsed)[o] ^= glyphScan;
+						if ((planeMask & 2) != 0)
+							vramSpan.Slice(_plane1Offset, _planeBytesUsed)[o] ^= glyphScan;
+						if ((planeMask & 4) != 0)
+							vramSpan.Slice(_plane2Offset, _planeBytesUsed)[o] ^= glyphScan;
+						if ((planeMask & 8) != 0)
+							vramSpan.Slice(_plane3Offset, _planeBytesUsed)[o] ^= glyphScan;
+					}
+					else
+					{
+						if ((planeMask & 1) != 0)
+							vramSpan.Slice(_plane0Offset, _planeBytesUsed)[o] = glyphScan;
+						if ((planeMask & 2) != 0)
+							vramSpan.Slice(_plane1Offset, _planeBytesUsed)[o] = glyphScan;
+						if ((planeMask & 4) != 0)
+							vramSpan.Slice(_plane2Offset, _planeBytesUsed)[o] = glyphScan;
+						if ((planeMask & 8) != 0)
+							vramSpan.Slice(_plane3Offset, _planeBytesUsed)[o] = glyphScan;
+					}
+				}
+				else
+				{
+					// The graphics array wants to be in charge of the write.
 
-				if ((planeMask & 1) != 0)
-					vramSpan.Slice(_plane0Offset, _planeBytesUsed)[o] ^= glyphScan;
-				if ((planeMask & 2) != 0)
-					vramSpan.Slice(_plane1Offset, _planeBytesUsed)[o] ^= glyphScan;
-				if ((planeMask & 4) != 0)
-					vramSpan.Slice(_plane2Offset, _planeBytesUsed)[o] ^= glyphScan;
-				if ((planeMask & 8) != 0)
-					vramSpan.Slice(_plane3Offset, _planeBytesUsed)[o] ^= glyphScan;
+					o += Array.Graphics.MemoryMapBaseAddress;
+
+					if (exclusiveOr)
+						Array[o] ^= glyphScan;
+					else
+						Array[o] = glyphScan;
+				}
 			}
 		}
 	}

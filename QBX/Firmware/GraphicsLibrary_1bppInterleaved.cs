@@ -823,35 +823,39 @@ public class GraphicsLibrary_1bppInterleaved : GraphicsLibrary
 	{
 		if ((x & 7) != 0)
 			base.DrawCharacterScan(x, y, characterWidth, glyphScan);
-		else if ((DrawingAttribute & 0x80) == 0)
-		{
-			var vramSpan = Array.VRAM.AsSpan();
-
-			var plane = ((y & 1) == 0)
-				? vramSpan.Slice(_plane0Offset, _planeBytesUsed)
-				: vramSpan.Slice(_plane1Offset, _planeBytesUsed);
-
-			y >>= 1;
-
-			int o = y * _stride + (x >> 3);
-
-			if ((o >= 0) && (o < _planeBytesUsed))
-				plane[o] = glyphScan;
-		}
 		else
 		{
-			var vramSpan = Array.VRAM.AsSpan();
-
-			var plane = ((y & 1) == 0)
-				? vramSpan.Slice(_plane0Offset, _planeBytesUsed)
-				: vramSpan.Slice(_plane1Offset, _planeBytesUsed);
+			int planeOffset = ((y & 1) == 0)
+				? _plane0Offset
+				: _plane1Offset;
 
 			y >>= 1;
 
 			int o = y * _stride + (x >> 3);
 
-			if ((o >= 0) && (o < _planeBytesUsed))
-				plane[o] ^= glyphScan;
+			bool exclusiveOr = ((DrawingAttribute & 0x80) != 0);
+
+			if (Array.TryGetSpan(planeOffset, _planeBytesUsed, out var plane))
+			{
+				if ((o >= 0) && (o < plane.Length))
+				{
+					if (exclusiveOr)
+						plane[o] ^= glyphScan;
+					else
+						plane[o] = glyphScan;
+				}
+			}
+			else
+			{
+				// The graphics array wants to be in charge of the write.
+
+				planeOffset += Array.Graphics.MemoryMapBaseAddress;
+
+				if (exclusiveOr)
+					Array[planeOffset + o] ^= glyphScan;
+				else
+				  Array[planeOffset + o] = glyphScan;
+			}
 		}
 	}
 }

@@ -7,6 +7,8 @@ public class GraphicsArray : IMemory
 {
 	public byte[] VRAM = new byte[256 * 1024];
 
+	public byte ReadLatch0, ReadLatch1, ReadLatch2, ReadLatch3;
+
 	public int Length => VRAM.Length;
 
 	public class GraphicsRegisters
@@ -63,6 +65,10 @@ public class GraphicsArray : IMemory
 		public bool Shift256;
 		public bool ShiftInterleave;
 		public bool HostOddEvenRead;
+		public bool WriteThrough;
+		public int WriteRotate;
+		public GraphicsArrayVRAMWriteOperation WriteOperation;
+		public GraphicsArrayVRAMWriteMode WriteMode;
 		public bool ChainOddEven;
 
 		public readonly RegisterSet Registers;
@@ -146,6 +152,15 @@ public class GraphicsArray : IMemory
 					owner.Shift256 = ((GraphicsMode & GraphicsMode_Shift256) != 0);
 					owner.ShiftInterleave = ((GraphicsMode & GraphicsMode_ShiftInterleave) != 0);
 					owner.HostOddEvenRead = ((GraphicsMode & GraphicsMode_HostOddEvenRead) != 0);
+					owner.WriteMode = (GraphicsArrayVRAMWriteMode)(GraphicsMode & GraphicsMode_WriteModeMask);
+
+					owner.WriteRotate = DataRotate & DataRotate_RotateMask;
+					owner.WriteOperation = (GraphicsArrayVRAMWriteOperation)(DataRotate & DataRotate_OperationMask);
+
+					owner.WriteThrough =
+						(owner.WriteMode == GraphicsArrayVRAMWriteMode.Direct) &&
+						(owner.WriteOperation == GraphicsArrayVRAMWriteOperation.Copy) &&
+						(owner.WriteRotate == 0);
 				}
 			}
 		}
@@ -943,6 +958,14 @@ public class GraphicsArray : IMemory
 					| ((offset & 1) << Sequencer.AddressShift);
 			}
 
+			if ((offset >= 0) && (offset < 65536))
+			{
+				ReadLatch0 = VRAM[offset + 0x00000];
+				ReadLatch1 = VRAM[offset + 0x10000];
+				ReadLatch2 = VRAM[offset + 0x20000];
+				ReadLatch3 = VRAM[offset + 0x30000];
+			}
+
 			int linearOffset = offset + Graphics.MemoryMapReadOffset;
 
 			if (linearOffset < VRAM.Length)
@@ -956,6 +979,10 @@ public class GraphicsArray : IMemory
 
 			if (offset < Graphics.MemoryMapSize)
 			{
+				var rotatedValue = value;
+
+				rotatedValue >>= Graphics.WriteRotate;
+
 				bool evenPlanesEnabledForThisAddress = true;
 				bool oddPlanesEnabledForThisAddress = true;
 
@@ -971,14 +998,278 @@ public class GraphicsArray : IMemory
 						| ((offset >> Sequencer.AddressShift) & 1);
 				}
 
-				if (Sequencer.Plane0WriteEnable && evenPlanesEnabledForThisAddress)
-					VRAM[offset] = value;
-				if (Sequencer.Plane1WriteEnable && oddPlanesEnabledForThisAddress)
-					VRAM[offset + 0x10000] = value;
-				if (Sequencer.Plane2WriteEnable && evenPlanesEnabledForThisAddress)
-					VRAM[offset + 0x20000] = value;
-				if (Sequencer.Plane3WriteEnable && oddPlanesEnabledForThisAddress)
-					VRAM[offset + 0x30000] = value;
+				switch (Graphics.WriteMode)
+				{
+					case GraphicsArrayVRAMWriteMode.Direct:
+						switch (Graphics.WriteOperation)
+						{
+							case GraphicsArrayVRAMWriteOperation.Copy:
+								if (Sequencer.Plane0WriteEnable && evenPlanesEnabledForThisAddress)
+									VRAM[offset] = rotatedValue;
+								if (Sequencer.Plane1WriteEnable && oddPlanesEnabledForThisAddress)
+									VRAM[offset + 0x10000] = rotatedValue;
+								if (Sequencer.Plane2WriteEnable && evenPlanesEnabledForThisAddress)
+									VRAM[offset + 0x20000] = rotatedValue;
+								if (Sequencer.Plane3WriteEnable && oddPlanesEnabledForThisAddress)
+									VRAM[offset + 0x30000] = rotatedValue;
+								break;
+							case GraphicsArrayVRAMWriteOperation.AND:
+								if (Sequencer.Plane0WriteEnable && evenPlanesEnabledForThisAddress)
+									VRAM[offset] &= rotatedValue;
+								if (Sequencer.Plane1WriteEnable && oddPlanesEnabledForThisAddress)
+									VRAM[offset + 0x10000] &= rotatedValue;
+								if (Sequencer.Plane2WriteEnable && evenPlanesEnabledForThisAddress)
+									VRAM[offset + 0x20000] &= rotatedValue;
+								if (Sequencer.Plane3WriteEnable && oddPlanesEnabledForThisAddress)
+									VRAM[offset + 0x30000] &= rotatedValue;
+								break;
+							case GraphicsArrayVRAMWriteOperation.OR:
+								if (Sequencer.Plane0WriteEnable && evenPlanesEnabledForThisAddress)
+									VRAM[offset] |= rotatedValue;
+								if (Sequencer.Plane1WriteEnable && oddPlanesEnabledForThisAddress)
+									VRAM[offset + 0x10000] |= rotatedValue;
+								if (Sequencer.Plane2WriteEnable && evenPlanesEnabledForThisAddress)
+									VRAM[offset + 0x20000] |= rotatedValue;
+								if (Sequencer.Plane3WriteEnable && oddPlanesEnabledForThisAddress)
+									VRAM[offset + 0x30000] |= rotatedValue;
+								break;
+							case GraphicsArrayVRAMWriteOperation.XOR:
+								if (Sequencer.Plane0WriteEnable && evenPlanesEnabledForThisAddress)
+									VRAM[offset] ^= rotatedValue;
+								if (Sequencer.Plane1WriteEnable && oddPlanesEnabledForThisAddress)
+									VRAM[offset + 0x10000] ^= rotatedValue;
+								if (Sequencer.Plane2WriteEnable && evenPlanesEnabledForThisAddress)
+									VRAM[offset + 0x20000] ^= rotatedValue;
+								if (Sequencer.Plane3WriteEnable && oddPlanesEnabledForThisAddress)
+									VRAM[offset + 0x30000] ^= rotatedValue;
+								break;
+						}
+
+						break;
+
+					case GraphicsArrayVRAMWriteMode.Latched:
+						// Only works if the latches were filled (typically by using the get accessor of this indexer).
+
+						switch (Graphics.WriteOperation)
+						{
+							case GraphicsArrayVRAMWriteOperation.Copy:
+								if (Sequencer.Plane0WriteEnable && evenPlanesEnabledForThisAddress)
+									VRAM[offset] = ReadLatch0;
+								if (Sequencer.Plane1WriteEnable && oddPlanesEnabledForThisAddress)
+									VRAM[offset + 0x10000] = ReadLatch1;
+								if (Sequencer.Plane2WriteEnable && evenPlanesEnabledForThisAddress)
+									VRAM[offset + 0x20000] = ReadLatch2;
+								if (Sequencer.Plane3WriteEnable && oddPlanesEnabledForThisAddress)
+									VRAM[offset + 0x30000] = ReadLatch3;
+								break;
+							case GraphicsArrayVRAMWriteOperation.AND:
+								if (Sequencer.Plane0WriteEnable && evenPlanesEnabledForThisAddress)
+									VRAM[offset] &= ReadLatch0;
+								if (Sequencer.Plane1WriteEnable && oddPlanesEnabledForThisAddress)
+									VRAM[offset + 0x10000] &= ReadLatch1;
+								if (Sequencer.Plane2WriteEnable && evenPlanesEnabledForThisAddress)
+									VRAM[offset + 0x20000] &= ReadLatch2;
+								if (Sequencer.Plane3WriteEnable && oddPlanesEnabledForThisAddress)
+									VRAM[offset + 0x30000] &= ReadLatch3;
+								break;
+							case GraphicsArrayVRAMWriteOperation.OR:
+								if (Sequencer.Plane0WriteEnable && evenPlanesEnabledForThisAddress)
+									VRAM[offset] |= ReadLatch0;
+								if (Sequencer.Plane1WriteEnable && oddPlanesEnabledForThisAddress)
+									VRAM[offset + 0x10000] |= ReadLatch1;
+								if (Sequencer.Plane2WriteEnable && evenPlanesEnabledForThisAddress)
+									VRAM[offset + 0x20000] |= ReadLatch2;
+								if (Sequencer.Plane3WriteEnable && oddPlanesEnabledForThisAddress)
+									VRAM[offset + 0x30000] |= ReadLatch3;
+								break;
+							case GraphicsArrayVRAMWriteOperation.XOR:
+								if (Sequencer.Plane0WriteEnable && evenPlanesEnabledForThisAddress)
+									VRAM[offset] ^= ReadLatch0;
+								if (Sequencer.Plane1WriteEnable && oddPlanesEnabledForThisAddress)
+									VRAM[offset + 0x10000] ^= ReadLatch1;
+								if (Sequencer.Plane2WriteEnable && evenPlanesEnabledForThisAddress)
+									VRAM[offset + 0x20000] ^= ReadLatch2;
+								if (Sequencer.Plane3WriteEnable && oddPlanesEnabledForThisAddress)
+									VRAM[offset + 0x30000] ^= ReadLatch3;
+								break;
+						}
+
+						break;
+
+					case GraphicsArrayVRAMWriteMode.BulkPlanar:
+						// Value from CPU specifies one bit per plane; expand bit out to write all 8
+						// pixels at the specified address.
+
+						switch (Graphics.WriteOperation)
+						{
+							case GraphicsArrayVRAMWriteOperation.Copy:
+								if (Sequencer.Plane0WriteEnable && evenPlanesEnabledForThisAddress)
+									VRAM[offset + 0x00000] = unchecked((byte)(((rotatedValue & 0b0001) >> 0) * 0xFF));
+								if (Sequencer.Plane1WriteEnable && oddPlanesEnabledForThisAddress)
+									VRAM[offset + 0x10000] = unchecked((byte)(((rotatedValue & 0b0010) >> 1) * 0xFF));
+								if (Sequencer.Plane2WriteEnable && evenPlanesEnabledForThisAddress)
+									VRAM[offset + 0x20000] = unchecked((byte)(((rotatedValue & 0b0100) >> 2) * 0xFF));
+								if (Sequencer.Plane3WriteEnable && oddPlanesEnabledForThisAddress)
+									VRAM[offset + 0x30000] = unchecked((byte)(((rotatedValue & 0b1000) >> 3) * 0xFF));
+								break;
+							case GraphicsArrayVRAMWriteOperation.AND:
+								if (Sequencer.Plane0WriteEnable && evenPlanesEnabledForThisAddress)
+									VRAM[offset + 0x00000] &= unchecked((byte)(((rotatedValue & 0b0001) >> 0) * 0xFF));
+								if (Sequencer.Plane1WriteEnable && oddPlanesEnabledForThisAddress)
+									VRAM[offset + 0x10000] &= unchecked((byte)(((rotatedValue & 0b0010) >> 1) * 0xFF));
+								if (Sequencer.Plane2WriteEnable && evenPlanesEnabledForThisAddress)
+									VRAM[offset + 0x20000] &= unchecked((byte)(((rotatedValue & 0b0100) >> 2) * 0xFF));
+								if (Sequencer.Plane3WriteEnable && oddPlanesEnabledForThisAddress)
+									VRAM[offset + 0x30000] &= unchecked((byte)(((rotatedValue & 0b1000) >> 3) * 0xFF));
+								break;
+							case GraphicsArrayVRAMWriteOperation.OR:
+								if (Sequencer.Plane0WriteEnable && evenPlanesEnabledForThisAddress)
+									VRAM[offset + 0x00000] |= unchecked((byte)(((rotatedValue & 0b0001) >> 0) * 0xFF));
+								if (Sequencer.Plane1WriteEnable && oddPlanesEnabledForThisAddress)
+									VRAM[offset + 0x10000] |= unchecked((byte)(((rotatedValue & 0b0010) >> 1) * 0xFF));
+								if (Sequencer.Plane2WriteEnable && evenPlanesEnabledForThisAddress)
+									VRAM[offset + 0x20000] |= unchecked((byte)(((rotatedValue & 0b0100) >> 2) * 0xFF));
+								if (Sequencer.Plane3WriteEnable && oddPlanesEnabledForThisAddress)
+									VRAM[offset + 0x30000] |= unchecked((byte)(((rotatedValue & 0b1000) >> 3) * 0xFF));
+								break;
+							case GraphicsArrayVRAMWriteOperation.XOR:
+								if (Sequencer.Plane0WriteEnable && evenPlanesEnabledForThisAddress)
+									VRAM[offset + 0x00000] ^= unchecked((byte)(((rotatedValue & 0b0001) >> 0) * 0xFF));
+								if (Sequencer.Plane1WriteEnable && oddPlanesEnabledForThisAddress)
+									VRAM[offset + 0x10000] ^= unchecked((byte)(((rotatedValue & 0b0010) >> 1) * 0xFF));
+								if (Sequencer.Plane2WriteEnable && evenPlanesEnabledForThisAddress)
+									VRAM[offset + 0x20000] ^= unchecked((byte)(((rotatedValue & 0b0100) >> 2) * 0xFF));
+								if (Sequencer.Plane3WriteEnable && oddPlanesEnabledForThisAddress)
+									VRAM[offset + 0x30000] ^= unchecked((byte)(((rotatedValue & 0b1000) >> 3) * 0xFF));
+								break;
+						}
+
+						break;
+
+					case GraphicsArrayVRAMWriteMode.RenderBitmap:
+						// Partially-implemented; latch source is not implemented, and the current
+						// address is always used. See GraphicsArrayVRAMWriteMode.cs.
+						//
+						// Value from CPU is a bitmask indicating which pixels should be written.
+						// Unset bits are left untouched (properly copied from the read latch, but
+						// we currently just use the same memory as the write target). Set bits are
+						// filled with bits from the Set/Reset register.
+
+						byte keepMask = unchecked((byte)~rotatedValue);
+						byte replaceMask = rotatedValue;
+
+						byte attribute = Graphics.Registers.SetReset;
+
+						switch (Graphics.WriteOperation)
+						{
+							case GraphicsArrayVRAMWriteOperation.Copy:
+								if (Sequencer.Plane0WriteEnable && evenPlanesEnabledForThisAddress)
+								{
+									VRAM[offset + 0x00000] = unchecked((byte)(
+										(VRAM[offset + 0x00000] & keepMask) | (((attribute & 0b0001) >> 0) * replaceMask)));
+								}
+
+								if (Sequencer.Plane1WriteEnable && oddPlanesEnabledForThisAddress)
+								{
+									VRAM[offset + 0x10000] = unchecked((byte)(
+										(VRAM[offset + 0x10000] & keepMask) | (((attribute & 0b0010) >> 1) * replaceMask)));
+								}
+
+								if (Sequencer.Plane2WriteEnable && evenPlanesEnabledForThisAddress)
+								{
+									VRAM[offset + 0x20000] = unchecked((byte)(
+										(VRAM[offset + 0x20000] & keepMask) | (((attribute & 0b0100) >> 2) * replaceMask)));
+								}
+
+								if (Sequencer.Plane3WriteEnable && oddPlanesEnabledForThisAddress)
+								{
+									VRAM[offset + 0x30000] = unchecked((byte)(
+										(VRAM[offset + 0x30000] & keepMask) | (((attribute & 0b1000) >> 3) * replaceMask)));
+								}
+
+								break;
+							case GraphicsArrayVRAMWriteOperation.AND:
+								if (Sequencer.Plane0WriteEnable && evenPlanesEnabledForThisAddress)
+								{
+									VRAM[offset + 0x00000] &= unchecked((byte)(
+										(VRAM[offset + 0x00000] & keepMask) | (((attribute & 0b0001) >> 0) * replaceMask)));
+								}
+
+								if (Sequencer.Plane1WriteEnable && oddPlanesEnabledForThisAddress)
+								{
+									VRAM[offset + 0x10000] &= unchecked((byte)(
+										(VRAM[offset + 0x10000] & keepMask) | (((attribute & 0b0010) >> 1) * replaceMask)));
+								}
+
+								if (Sequencer.Plane2WriteEnable && evenPlanesEnabledForThisAddress)
+								{
+									VRAM[offset + 0x20000] &= unchecked((byte)(
+										(VRAM[offset + 0x20000] & keepMask) | (((attribute & 0b0100) >> 2) * replaceMask)));
+								}
+
+								if (Sequencer.Plane3WriteEnable && oddPlanesEnabledForThisAddress)
+								{
+									VRAM[offset + 0x30000] &= unchecked((byte)(
+										(VRAM[offset + 0x30000] & keepMask) | (((attribute & 0b1000) >> 3) * replaceMask)));
+								}
+
+								break;
+							case GraphicsArrayVRAMWriteOperation.OR:
+								if (Sequencer.Plane0WriteEnable && evenPlanesEnabledForThisAddress)
+								{
+									VRAM[offset + 0x00000] |= unchecked((byte)(
+										(VRAM[offset + 0x00000] & keepMask) | (((attribute & 0b0001) >> 0) * replaceMask)));
+								}
+
+								if (Sequencer.Plane1WriteEnable && oddPlanesEnabledForThisAddress)
+								{
+									VRAM[offset + 0x10000] |= unchecked((byte)(
+										(VRAM[offset + 0x10000] & keepMask) | (((attribute & 0b0010) >> 1) * replaceMask)));
+								}
+
+								if (Sequencer.Plane2WriteEnable && evenPlanesEnabledForThisAddress)
+								{
+									VRAM[offset + 0x20000] |= unchecked((byte)(
+										(VRAM[offset + 0x20000] & keepMask) | (((attribute & 0b0100) >> 2) * replaceMask)));
+								}
+
+								if (Sequencer.Plane3WriteEnable && oddPlanesEnabledForThisAddress)
+								{
+									VRAM[offset + 0x30000] |= unchecked((byte)(
+										(VRAM[offset + 0x30000] & keepMask) | (((attribute & 0b1000) >> 3) * replaceMask)));
+								}
+
+								break;
+							case GraphicsArrayVRAMWriteOperation.XOR:
+								if (Sequencer.Plane0WriteEnable && evenPlanesEnabledForThisAddress)
+								{
+									VRAM[offset + 0x00000] ^= unchecked((byte)(
+										(VRAM[offset + 0x00000] & keepMask) | (((attribute & 0b0001) >> 0) * replaceMask)));
+								}
+
+								if (Sequencer.Plane1WriteEnable && oddPlanesEnabledForThisAddress)
+								{
+									VRAM[offset + 0x10000] ^= unchecked((byte)(
+										(VRAM[offset + 0x10000] & keepMask) | (((attribute & 0b0010) >> 1) * replaceMask)));
+								}
+
+								if (Sequencer.Plane2WriteEnable && evenPlanesEnabledForThisAddress)
+								{
+									VRAM[offset + 0x20000] ^= unchecked((byte)(
+										(VRAM[offset + 0x20000] & keepMask) | (((attribute & 0b0100) >> 2) * replaceMask)));
+								}
+
+								if (Sequencer.Plane3WriteEnable && oddPlanesEnabledForThisAddress)
+								{
+									VRAM[offset + 0x30000] ^= unchecked((byte)(
+										(VRAM[offset + 0x30000] & keepMask) | (((attribute & 0b1000) >> 3) * replaceMask)));
+								}
+
+								break;
+						}
+
+						break;
+				}
 			}
 		}
 	}
@@ -993,14 +1284,17 @@ public class GraphicsArray : IMemory
 
 	public bool TryGetSpan(int offset, int length, out Span<byte> span)
 	{
-		offset -= Graphics.MemoryMapBaseAddress;
-
-		if ((offset >= 0)
-		 && (offset < VRAM.Length)
-		 && (VRAM.Length - offset <= length))
+		if (Graphics.WriteThrough)
 		{
-			span = VRAM.AsSpan().Slice(offset, length);
-			return true;
+			offset -= Graphics.MemoryMapBaseAddress;
+
+			if ((offset >= 0)
+			&& (offset < VRAM.Length)
+			&& (VRAM.Length - offset <= length))
+			{
+				span = VRAM.AsSpan().Slice(offset, length);
+				return true;
+			}
 		}
 
 		span = Span<byte>.Empty;

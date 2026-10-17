@@ -446,22 +446,28 @@ public class GraphicsLibrary_8bppFlat : GraphicsLibrary
 
 		int characterBit = 128;
 
-		var vram = Array.VRAM.AsSpan().Slice(StartAddress);
+		byte colour = unchecked((byte)DrawingAttribute);
 
 		if (x + characterWidth > Width)
 			characterWidth = Width - x;
 
-		byte colour = unchecked((byte)DrawingAttribute);
-
-		for (int xx = 0; xx < characterWidth; xx++)
+		if (Array.TryGetSpan(o, 8, out var vram))
 		{
-			if ((glyphScan & characterBit) != 0)
-				vram[o] = colour;
-			else
-				vram[o] = 0;
+			for (int xx = 0; xx < characterWidth; xx++)
+			{
+				if ((glyphScan & characterBit) != 0)
+					vram[xx] = colour;
+				else
+					vram[xx] = 0;
 
-			o++;
-			characterBit >>= 1;
+				characterBit >>= 1;
+			}
+		}
+		else
+		{
+			// The graphics array wants to be in charge of the write.
+			if ((o >= 0) && (o < Array.VRAM.Length))
+				Array[Array.Graphics.MemoryMapBaseAddress + o] = colour;
 		}
 	}
 }
