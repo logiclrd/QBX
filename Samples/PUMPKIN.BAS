@@ -1,4 +1,5 @@
-DECLARE SUB RotateForPresentation ()
+DECLARE SUB RotateMeshForPresentation ()
+DECLARE SUB RotatePointForPresentation (x!, y!, z!)
 ' PUMPKIN.BAS -- QuickBASIC 4.5, VGA 320x200x256 (SCREEN 13)
 ' A low-resolution software rasterizer with a cut hollow shell,
 ' a twelve-lobed pumpkin, a curved stem, and lit 3-D Perlin fog.
@@ -58,7 +59,7 @@ DECLARE FUNCTION Fade! (t!)
 DECLARE FUNCTION Grad! (h%, x!, y!, z!)
 DECLARE FUNCTION Noise3! (x!, y!, z!)
 DECLARE FUNCTION FogD! (x!, y!, z!)
-DECLARE FUNCTION Lit% (x!, y!, z!)
+DECLARE FUNCTION Lit% (BYVAL x!, BYVAL y!, BYVAL z!)
 DECLARE FUNCTION HueValue! (a!, b!, h!)
 DECLARE SUB MakePalette ()
 DECLARE SUB Triangle (fi%)
@@ -75,12 +76,23 @@ DIM SHARED P%(0 TO 511)
 DIM SHARED ZB%(0 TO SW - 1, 0 TO SH - 1)
 DIM SHARED BASEC%(0 TO SW - 1, 0 TO SH - 1)
 DIM SHARED StemBase!
+DIM SHARED ctilt!, stilt!
+DIM SHARED cturn!, sturn!
+
+atilt! = 10 / 57.295779#
+aturn! = 15 / 57.295779#
+
+ctilt! = COS(atilt!)
+stilt! = SIN(atilt!)
+
+cturn! = COS(aturn!)
+sturn! = SIN(aturn!)
 
 RANDOMIZE TIMER
 CALL MakeHoles
 CALL MakeShell
 CALL MakeStem
-CALL RotateForPresentation
+CALL RotateMeshForPresentation
 CALL InitNoise
 
 SCREEN 13
@@ -204,9 +216,10 @@ FUNCTION IsHole% (x!, y!, z!)
     NEXT k%
 END FUNCTION
 
-FUNCTION Lit% (x!, y!, z!)
+FUNCTION Lit% (BYVAL x!, BYVAL y!, BYVAL z!)
     ' Light is inside the shell. The front polygons are angular apertures
     ' extending radially from the origin, so they cast conical light beams.
+    RotatePointForPresentation x!, y!, z!
     yp! = y! / YSQUASH
     d! = SQR(x! * x! + z! * z! + yp! * yp!)
     IF d! < .88 * OuterRad!(x!, y!, z!) THEN
@@ -545,21 +558,21 @@ SUB RenderFog
     DEF SEG
 END SUB
 
-SUB RotateForPresentation
-atilt! = 10 / 57.295779#
-aturn! = 15 / 57.295779#
-
-ctilt! = COS(atilt!)
-stilt! = SIN(atilt!)
-
-cturn! = COS(aturn!)
-sturn! = SIN(aturn!)
-
+SUB RotateMeshForPresentation
 FOR i% = 1 TO NV%
   x! = V(i%).x
   y! = V(i%).y
   z! = V(i%).z
 
+  RotatePointForPresentation x!, y!, z!
+
+  V(i%).x = x!
+  V(i%).y = y!
+  V(i%).z = z!
+NEXT i%
+END SUB
+
+SUB RotatePointForPresentation (x!, y!, z!)
   ny! = y! * ctilt! - z! * stilt!
   nz! = y! * stilt! + z! * ctilt!
   y! = ny!: z! = nz!
@@ -567,11 +580,6 @@ FOR i% = 1 TO NV%
   nx! = x! * cturn! - z! * sturn!
   nz! = x! * sturn! + z! * cturn!
   x! = nx!: z! = nz!
-
-  V(i%).x = x!
-  V(i%).y = y!
-  V(i%).z = z!
-NEXT i%
 END SUB
 
 SUB Triangle (fi%)
