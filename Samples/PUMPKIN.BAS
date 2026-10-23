@@ -1,5 +1,3 @@
-DECLARE SUB RotateMeshForPresentation ()
-DECLARE SUB RotatePointForPresentation (x!, y!, z!)
 ' PUMPKIN.BAS -- QuickBASIC 4.5, VGA 320x200x256 (SCREEN 13)
 ' A low-resolution software rasterizer with a cut hollow shell,
 ' a twelve-lobed pumpkin, a curved stem, and lit 3-D Perlin fog.
@@ -49,6 +47,8 @@ DECLARE FUNCTION VIndex% (i%, j%, layer%)
 DECLARE SUB MakeHoles ()
 DECLARE SUB MakeShell ()
 DECLARE SUB MakeStem ()
+DECLARE SUB RotateMeshForPresentation ()
+DECLARE SUB RotateForPresentation ()
 DECLARE FUNCTION InPoly% (x!, y!, k%)
 DECLARE FUNCTION IsHole% (x!, y!, z!)
 DECLARE FUNCTION Angle! (x!, z!)
@@ -573,13 +573,15 @@ NEXT i%
 END SUB
 
 SUB RotatePointForPresentation (x!, y!, z!)
-  ny! = y! * ctilt! - z! * stilt!
-  nz! = y! * stilt! + z! * ctilt!
-  y! = ny!: z! = nz!
+' First, apply X axis tilt
+ny! = y! * ctilt! - z! * stilt!
+nz! = y! * stilt! + z! * ctilt!
+y! = ny!: z! = nz!
 
-  nx! = x! * cturn! - z! * sturn!
-  nz! = x! * sturn! + z! * cturn!
-  x! = nx!: z! = nz!
+' Then, top-down rotation
+nx! = x! * cturn! - z! * sturn!
+nz! = x! * sturn! + z! * cturn!
+x! = nx!: z! = nz!
 END SUB
 
 SUB Triangle (fi%)
@@ -719,6 +721,19 @@ SUB Triangle (fi%)
             END IF
         NEXT px%
     NEXT py%
+END SUB
+
+SUB UnrotatePointForPresentation (x!, y!, z!)
+' Opposite order of RotatePointForPresentation:
+' First, undo top-down rotation
+nx! = z! * sturn! + x! * cturn!
+nz! = z! * cturn! - x! * sturn!
+x! = nx!: z! = nz!
+
+' Then, undo X axis tilt
+ny! = z! * stilt! + y! * ctilt!
+nz! = z! * ctilt! - y! * stilt!
+y! = ny!: z! = nz!
 END SUB
 
 FUNCTION VIndex% (i%, j%, layer%)
